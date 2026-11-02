@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,6 +155,46 @@ public class CDSModulePackager {
             }
             jarOptions.setMainClass(mainClass);
         }
+
+        Path jarFile = outputDir.resolve(moduleName + ".jar");
+        CDSJarUtils.buildFromSourceDirectory(jarFile.toString(), src.toString(), jarOptions, javacOptions);
+
+        return jarFile;
+    }
+
+    public Path createAutomaticModularJar(String moduleName) throws Exception {
+       return createAutomaticModularJarWithMainClass(moduleName, null, (JarOptions)null);
+    }
+
+    public Path createAutomaticModularJar(String moduleName, String... javacOptions) throws Exception {
+       return createAutomaticModularJarWithMainClass(moduleName, null, (JarOptions)null, javacOptions);
+    }
+
+
+    public Path createAutomaticModularJarWithMainClass(String moduleName, String mainClass, String... javacOptions) throws Exception {
+        return createAutomaticModularJarWithMainClass(moduleName, mainClass, (JarOptions)null, javacOptions);
+    }
+
+    // Compile all files under ${this.srcRoot}/${moduleName}.
+    public Path createAutomaticModularJarWithMainClass(String moduleName,
+                                                       String mainClass,
+                                                       JarOptions jarOptions,
+                                                       String... javacOptions) throws Exception {
+        Path src = srcRoot.resolve(moduleName);
+
+        if (javacOptions == null) {
+            javacOptions = new String[] {};
+        }
+
+        if (jarOptions == null) {
+            jarOptions = JarOptions.of();
+        }
+
+        if (mainClass != null) {
+            jarOptions.setMainClass(mainClass);
+        }
+
+        jarOptions.setAutomaticModule(moduleName);
 
         Path jarFile = outputDir.resolve(moduleName + ".jar");
         CDSJarUtils.buildFromSourceDirectory(jarFile.toString(), src.toString(), jarOptions, javacOptions);

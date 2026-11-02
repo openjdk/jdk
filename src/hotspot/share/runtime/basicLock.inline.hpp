@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "runtime/objectMonitor.inline.hpp"
 
 inline ObjectMonitor* BasicLock::object_monitor_cache() const {
-  assert(UseObjectMonitorTable, "must be");
 #if !defined(ZERO) && (defined(X86) || defined(AARCH64) || defined(RISCV64) || defined(PPC64) || defined(S390))
   return reinterpret_cast<ObjectMonitor*>(get_monitor());
 #else
@@ -42,12 +41,10 @@ inline ObjectMonitor* BasicLock::object_monitor_cache() const {
 }
 
 inline void BasicLock::clear_object_monitor_cache() {
-  assert(UseObjectMonitorTable, "must be");
   set_monitor(nullptr);
 }
 
 inline void BasicLock::set_object_monitor_cache(ObjectMonitor* mon) {
-  assert(UseObjectMonitorTable, "must be");
   set_monitor(mon);
 }
 

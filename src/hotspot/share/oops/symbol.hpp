@@ -101,7 +101,8 @@ class ClassLoaderData;
 #define PERM_REFCOUNT 0xffff
 #endif
 
-class Symbol : public MetaspaceObj {
+// VerificationType::TypeMask == 0x7 demands 8-byte aligned Symbol*
+class alignas(8) Symbol : public MetaspaceObj {
   friend class VMStructs;
   friend class SymbolTable;
   friend class vmSymbols;
@@ -249,7 +250,7 @@ class Symbol : public MetaspaceObj {
   int index_of_at(int i, const char* substr, int substr_len) const;
 
   // Three-way compare for sorting; returns -1/0/1 if receiver is </==/> than arg
-  // note that the ordering is not alfabetical
+  // note that the ordering is not alphabetical
   inline int fast_compare(const Symbol* other) const;
 
   // Returns receiver converted to null-terminated UTF-8 string; string is

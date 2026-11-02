@@ -36,7 +36,7 @@ import com.sun.jdi.event.MonitorContendedEnteredEvent;
 /**
  * Request for notification of a thread in the target VM entering a monitor
  * after waiting for it to be released by another thread.
- * When an enabled MonitorContededEnteredRequest is satisfied, an
+ * When an enabled MonitorContendedEnteredRequest is satisfied, an
  * {@link EventSet event set} containing a
  * {@link MonitorContendedEnteredEvent MonitorContendedEnteredEvent}
  * will be placed on the {@link EventQueue EventQueue}.

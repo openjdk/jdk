@@ -182,4 +182,10 @@ value class ValueClassSuperInitFails extends AR <Object> implements Iterable<Obj
     // these two should FAIL
     int a = b;
     int aa = super.b;
+
+    public static value class Forward {
+        int y = this.x; // FAIL, qualified access
+        int z = Forward.this.x; // FAIL, qualified access
+        int x = 1;
+    }
 }

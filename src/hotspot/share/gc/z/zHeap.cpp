@@ -26,6 +26,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "gc/z/zAdaptiveHeap.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
@@ -48,6 +49,8 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/os.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
 static const ZStatCounter ZCounterUndoPageAllocation("Memory", "Undo Page Allocation", ZStatUnitOpsPerSecond);
@@ -61,7 +64,7 @@ ZHeap::ZHeap()
   : _page_allocator(MinHeapSize, InitialHeapSize, SoftMaxHeapSize, MaxHeapSize),
     _page_table(),
     _object_allocator(),
-    _serviceability(InitialHeapSize, min_capacity(), max_capacity()),
+    _serviceability(InitialHeapSize, static_min_capacity(), static_max_capacity()),
     _old(&_page_table, &_page_allocator),
     _young(&_page_table, _old.forwarding_table(), &_page_allocator),
     _tlab_usage(),
@@ -86,8 +89,13 @@ ZHeap::ZHeap()
   }
 
   // Update statistics
-  _young.stat_heap()->at_initialize(_page_allocator.min_capacity(), _page_allocator.max_capacity());
-  _old.stat_heap()->at_initialize(_page_allocator.min_capacity(), _page_allocator.max_capacity());
+  _young.stat_heap()->at_initialize(_page_allocator.static_min_capacity(), MaxHeapSize);
+  _old.stat_heap()->at_initialize(_page_allocator.static_min_capacity(), MaxHeapSize);
+
+  // Initialize Adaptive heap generation data
+  if (ZAdaptiveHeapSizing) {
+    ZAdaptiveHeap::initialize_generation_data();
+  }
 
   // Successfully initialized
   _initialized = true;
@@ -97,16 +105,24 @@ bool ZHeap::is_initialized() const {
   return _initialized;
 }
 
-size_t ZHeap::min_capacity() const {
-  return _page_allocator.min_capacity();
+size_t ZHeap::static_min_capacity() const {
+  return _page_allocator.static_min_capacity();
 }
 
-size_t ZHeap::max_capacity() const {
-  return _page_allocator.max_capacity();
+size_t ZHeap::static_max_capacity() const {
+  return _page_allocator.static_max_capacity();
 }
 
-size_t ZHeap::soft_max_capacity() const {
-  return _page_allocator.soft_max_capacity();
+size_t ZHeap::dynamic_max_capacity() const {
+  return _page_allocator.dynamic_max_capacity();
+}
+
+size_t ZHeap::current_max_capacity() const {
+  return _page_allocator.current_max_capacity();
+}
+
+size_t ZHeap::heuristic_max_capacity() const {
+  return _page_allocator.heuristic_max_capacity();
 }
 
 size_t ZHeap::capacity() const {
@@ -115,6 +131,16 @@ size_t ZHeap::capacity() const {
 
 size_t ZHeap::used() const {
   return _page_allocator.used();
+}
+
+void ZHeap::adapt_heuristic_max_capacity(ZGenerationId generation) {
+  precond(ZAdaptiveHeapSizing);
+  _page_allocator.adapt_heuristic_max_capacity(generation);
+}
+
+void ZHeap::adjust_capacity(size_t used_soon) {
+  precond(ZAdaptiveHeapSizing);
+  _page_allocator.adjust_capacity(used_soon);
 }
 
 size_t ZHeap::used_generation(ZGenerationId id) const {

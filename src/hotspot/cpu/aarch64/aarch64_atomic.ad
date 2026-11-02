@@ -31,10 +31,16 @@
 // can't check the type of memory ordering here, so we always emit a
 // STLXR.
 
+// CompareAndSwapX, GetAndSetX, and GetAndAddX represent sequentially
+// consistent operations. C2 emits a trailing MemBarAcquire for
+// these nodes, so their AArch64 implementation always needs acquire semantics.
+// Non-acquiring match rules would consequently be unreachable.
+
 // This section is generated from aarch64_atomic_ad.m4
 
 
 instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -50,6 +56,7 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %}
 
 instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -65,6 +72,7 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %}
 
 instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -79,6 +87,7 @@ instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %}
 
 instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -93,7 +102,7 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 %}
 
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -108,7 +117,7 @@ instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN ne
 %}
 
 instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -214,98 +223,6 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-  match(Set res (CompareAndSwapB mem (Binary oldval newval)));
-  ins_cost(2*VOLATILE_REF_COST);
-  effect(KILL cr);
-  format %{
-    "cmpxchgb $res = $mem, $oldval, $newval\t# (byte) if $mem == $oldval then $mem <-- $newval"
-    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
-  %}
-  ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::byte, memory_order_release);
-    __ csetw($res$$Register, Assembler::EQ);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-  match(Set res (CompareAndSwapS mem (Binary oldval newval)));
-  ins_cost(2*VOLATILE_REF_COST);
-  effect(KILL cr);
-  format %{
-    "cmpxchgs $res = $mem, $oldval, $newval\t# (short) if $mem == $oldval then $mem <-- $newval"
-    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
-  %}
-  ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::halfword, memory_order_release);
-    __ csetw($res$$Register, Assembler::EQ);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
-  match(Set res (CompareAndSwapI mem (Binary oldval newval)));
-  ins_cost(2*VOLATILE_REF_COST);
-  effect(KILL cr);
-  format %{
-    "cmpxchgw $res = $mem, $oldval, $newval\t# (int) if $mem == $oldval then $mem <-- $newval"
-    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
-  %}
-  ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, memory_order_release);
-    __ csetw($res$$Register, Assembler::EQ);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
-  match(Set res (CompareAndSwapL mem (Binary oldval newval)));
-  ins_cost(2*VOLATILE_REF_COST);
-  effect(KILL cr);
-  format %{
-    "cmpxchg $res = $mem, $oldval, $newval\t# (long) if $mem == $oldval then $mem <-- $newval"
-    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
-  %}
-  ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, memory_order_release);
-    __ csetw($res$$Register, Assembler::EQ);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
-  match(Set res (CompareAndSwapN mem (Binary oldval newval)));
-  ins_cost(2*VOLATILE_REF_COST);
-  effect(KILL cr);
-  format %{
-    "cmpxchgw $res = $mem, $oldval, $newval\t# (narrow oop) if $mem == $oldval then $mem <-- $newval"
-    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
-  %}
-  ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word, memory_order_release);
-    __ csetw($res$$Register, Assembler::EQ);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
-  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
-  ins_cost(2*VOLATILE_REF_COST);
-  effect(KILL cr);
-  format %{
-    "cmpxchg $res = $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval"
-    "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
-  %}
-  ins_encode %{
-    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword, memory_order_release);
-    __ csetw($res$$Register, Assembler::EQ);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set res (CompareAndSwapB mem (Binary oldval newval)));
@@ -403,6 +320,7 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
 %}
 
 instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(KILL cr);
@@ -418,6 +336,7 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %}
 
 instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(KILL cr);
@@ -433,6 +352,7 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %}
 
 instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapI mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(KILL cr);
@@ -448,6 +368,7 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %}
 
 instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
+  predicate(!needs_acquiring_load_exclusive(n));
   match(Set res (WeakCompareAndSwapL mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(KILL cr);
@@ -463,7 +384,7 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 %}
 
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(KILL cr);
@@ -479,7 +400,7 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
 %}
 
 instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   ins_cost(2*VOLATILE_REF_COST);
   effect(KILL cr);
@@ -590,48 +511,6 @@ instruct weakCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP
   ins_pipe(pipe_slow);
 %}
 
-instruct getAndSetI(indirect mem, iRegI newval, iRegINoSp oldval) %{
-  match(Set oldval (GetAndSetI mem newval));
-  ins_cost(2*VOLATILE_REF_COST);
-  format %{ "atomic_xchgw  $oldval, $newval, [$mem]" %}
-  ins_encode %{
-    __ atomic_xchgw($oldval$$Register, $newval$$Register, as_Register($mem$$base));
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-instruct getAndSetL(indirect mem, iRegL newval, iRegLNoSp oldval) %{
-  match(Set oldval (GetAndSetL mem newval));
-  ins_cost(2*VOLATILE_REF_COST);
-  format %{ "atomic_xchg  $oldval, $newval, [$mem]" %}
-  ins_encode %{
-    __ atomic_xchg($oldval$$Register, $newval$$Register, as_Register($mem$$base));
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-instruct getAndSetN(indirect mem, iRegN newval, iRegNNoSp oldval) %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
-  match(Set oldval (GetAndSetN mem newval));
-  ins_cost(2*VOLATILE_REF_COST);
-  format %{ "atomic_xchgw  $oldval, $newval, [$mem]" %}
-  ins_encode %{
-    __ atomic_xchgw($oldval$$Register, $newval$$Register, as_Register($mem$$base));
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-instruct getAndSetP(indirect mem, iRegP newval, iRegPNoSp oldval) %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
-  match(Set oldval (GetAndSetP mem newval));
-  ins_cost(2*VOLATILE_REF_COST);
-  format %{ "atomic_xchg  $oldval, $newval, [$mem]" %}
-  ins_encode %{
-    __ atomic_xchg($oldval$$Register, $newval$$Register, as_Register($mem$$base));
-  %}
-  ins_pipe(pipe_serial);
-%}
-
 instruct getAndSetIAcq(indirect mem, iRegI newval, iRegINoSp oldval) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set oldval (GetAndSetI mem newval));
@@ -676,16 +555,6 @@ instruct getAndSetPAcq(indirect mem, iRegP newval, iRegPNoSp oldval) %{
   ins_pipe(pipe_serial);
 %}
 
-instruct getAndAddI(indirect mem, iRegINoSp newval, iRegIorL2I incr) %{
-  match(Set newval (GetAndAddI mem incr));
-  ins_cost(2*VOLATILE_REF_COST+1);
-  format %{ "get_and_addI $newval, [$mem], $incr" %}
-  ins_encode %{
-    __ atomic_addw($newval$$Register, $incr$$Register, as_Register($mem$$base));
-  %}
-  ins_pipe(pipe_serial);
-%}
-
 instruct getAndAddIAcq(indirect mem, iRegINoSp newval, iRegIorL2I incr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set newval (GetAndAddI mem incr));
@@ -693,17 +562,6 @@ instruct getAndAddIAcq(indirect mem, iRegINoSp newval, iRegIorL2I incr) %{
   format %{ "get_and_addI_acq $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addalw($newval$$Register, $incr$$Register, as_Register($mem$$base));
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-instruct getAndAddINoRes(indirect mem, Universe dummy, iRegIorL2I incr) %{
-  predicate(n->as_LoadStore()->result_not_used());
-  match(Set dummy (GetAndAddI mem incr));
-  ins_cost(2*VOLATILE_REF_COST);
-  format %{ "get_and_addI noreg, [$mem], $incr" %}
-  ins_encode %{
-    __ atomic_addw(noreg, $incr$$Register, as_Register($mem$$base));
   %}
   ins_pipe(pipe_serial);
 %}
@@ -719,16 +577,6 @@ instruct getAndAddIAcqNoRes(indirect mem, Universe dummy, iRegIorL2I incr) %{
   ins_pipe(pipe_serial);
 %}
 
-instruct getAndAddIConst(indirect mem, iRegINoSp newval, immIAddSub incr) %{
-  match(Set newval (GetAndAddI mem incr));
-  ins_cost(2*VOLATILE_REF_COST+1);
-  format %{ "get_and_addI $newval, [$mem], $incr" %}
-  ins_encode %{
-    __ atomic_addw($newval$$Register, $incr$$constant, as_Register($mem$$base));
-  %}
-  ins_pipe(pipe_serial);
-%}
-
 instruct getAndAddIAcqConst(indirect mem, iRegINoSp newval, immIAddSub incr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set newval (GetAndAddI mem incr));
@@ -736,17 +584,6 @@ instruct getAndAddIAcqConst(indirect mem, iRegINoSp newval, immIAddSub incr) %{
   format %{ "get_and_addI_acq $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addalw($newval$$Register, $incr$$constant, as_Register($mem$$base));
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-instruct getAndAddINoResConst(indirect mem, Universe dummy, immIAddSub incr) %{
-  predicate(n->as_LoadStore()->result_not_used());
-  match(Set dummy (GetAndAddI mem incr));
-  ins_cost(2*VOLATILE_REF_COST);
-  format %{ "get_and_addI noreg, [$mem], $incr" %}
-  ins_encode %{
-    __ atomic_addw(noreg, $incr$$constant, as_Register($mem$$base));
   %}
   ins_pipe(pipe_serial);
 %}
@@ -762,16 +599,6 @@ instruct getAndAddIAcqNoResConst(indirect mem, Universe dummy, immIAddSub incr) 
   ins_pipe(pipe_serial);
 %}
 
-instruct getAndAddL(indirect mem, iRegLNoSp newval, iRegL incr) %{
-  match(Set newval (GetAndAddL mem incr));
-  ins_cost(2*VOLATILE_REF_COST+1);
-  format %{ "get_and_addL $newval, [$mem], $incr" %}
-  ins_encode %{
-    __ atomic_add($newval$$Register, $incr$$Register, as_Register($mem$$base));
-  %}
-  ins_pipe(pipe_serial);
-%}
-
 instruct getAndAddLAcq(indirect mem, iRegLNoSp newval, iRegL incr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set newval (GetAndAddL mem incr));
@@ -779,17 +606,6 @@ instruct getAndAddLAcq(indirect mem, iRegLNoSp newval, iRegL incr) %{
   format %{ "get_and_addL_acq $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addal($newval$$Register, $incr$$Register, as_Register($mem$$base));
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-instruct getAndAddLNoRes(indirect mem, Universe dummy, iRegL incr) %{
-  predicate(n->as_LoadStore()->result_not_used());
-  match(Set dummy (GetAndAddL mem incr));
-  ins_cost(2*VOLATILE_REF_COST);
-  format %{ "get_and_addL noreg, [$mem], $incr" %}
-  ins_encode %{
-    __ atomic_add(noreg, $incr$$Register, as_Register($mem$$base));
   %}
   ins_pipe(pipe_serial);
 %}
@@ -805,16 +621,6 @@ instruct getAndAddLAcqNoRes(indirect mem, Universe dummy, iRegL incr) %{
   ins_pipe(pipe_serial);
 %}
 
-instruct getAndAddLConst(indirect mem, iRegLNoSp newval, immLAddSub incr) %{
-  match(Set newval (GetAndAddL mem incr));
-  ins_cost(2*VOLATILE_REF_COST+1);
-  format %{ "get_and_addL $newval, [$mem], $incr" %}
-  ins_encode %{
-    __ atomic_add($newval$$Register, $incr$$constant, as_Register($mem$$base));
-  %}
-  ins_pipe(pipe_serial);
-%}
-
 instruct getAndAddLAcqConst(indirect mem, iRegLNoSp newval, immLAddSub incr) %{
   predicate(needs_acquiring_load_exclusive(n));
   match(Set newval (GetAndAddL mem incr));
@@ -822,17 +628,6 @@ instruct getAndAddLAcqConst(indirect mem, iRegLNoSp newval, immLAddSub incr) %{
   format %{ "get_and_addL_acq $newval, [$mem], $incr" %}
   ins_encode %{
     __ atomic_addal($newval$$Register, $incr$$constant, as_Register($mem$$base));
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-instruct getAndAddLNoResConst(indirect mem, Universe dummy, immLAddSub incr) %{
-  predicate(n->as_LoadStore()->result_not_used());
-  match(Set dummy (GetAndAddL mem incr));
-  ins_cost(2*VOLATILE_REF_COST);
-  format %{ "get_and_addL noreg, [$mem], $incr" %}
-  ins_encode %{
-    __ atomic_add(noreg, $incr$$constant, as_Register($mem$$base));
   %}
   ins_pipe(pipe_serial);
 %}

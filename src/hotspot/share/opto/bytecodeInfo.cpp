@@ -89,7 +89,7 @@ static bool is_init_with_ea(ciMethod* callee_method,
   if (callee_method->is_object_constructor()) {
     return true; // constructor
   }
-  if ((caller_method->is_object_constructor() || caller_method->is_class_initializer()) &&
+  if (caller_method->is_object_constructor() &&
       caller_method != C->method() &&
       caller_method->holder()->is_subclass_of(callee_method->holder())) {
     return true; // super constructor is called from inlined constructor

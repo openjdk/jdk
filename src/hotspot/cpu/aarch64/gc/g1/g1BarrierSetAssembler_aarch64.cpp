@@ -246,7 +246,7 @@ static void generate_post_barrier(MacroAssembler* masm,
   assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, noreg, rscratch1);
 
   // Does store cross heap regions?
- #if INCLUDE_CDS
+#if INCLUDE_CDS
   // AOT code needs to load the barrier grain shift from the aot
   // runtime constants area in the code cache otherwise we can compile
   // it as an immediate operand
@@ -303,7 +303,7 @@ static void generate_c2_barrier_runtime_call(MacroAssembler* masm, G1BarrierStub
     __ mov(c_rarg0, arg);
   }
   __ mov(c_rarg1, rthread);
-  __ mov(rscratch1, runtime_path);
+  __ lea(rscratch1, RuntimeAddress(runtime_path));
   __ blr(rscratch1);
 }
 
@@ -445,7 +445,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
 #undef __
 #define __ ce->masm()->
 
-void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub) {
+void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStubC1* stub) {
   G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
   // At this point we know that marking is in progress.
   // If do_load() is true then we have to emit the

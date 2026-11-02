@@ -37,7 +37,7 @@ import java.io.*;
  * for ClassType, InterfaceType
  */
 
-public class modifiers001 extends Log {
+public class modifiers001 {
     static java.io.PrintStream out_stream;
     static boolean verbose_mode = false;
 
@@ -125,11 +125,7 @@ public class modifiers001 extends Log {
         Binder binder   = new Binder(argsHandler, logHandler);
 
 
-        if (argsHandler.verbose()) {
-            debugee = binder.bindToDebugee(debugeeName + " -vbs");
-        } else {
-            debugee = binder.bindToDebugee(debugeeName);
-        }
+        debugee = binder.bindToDebugee(debugeeName);
 
         IOPipe pipe     = new IOPipe(debugee);
 

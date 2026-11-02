@@ -581,14 +581,14 @@ const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
   return phase_times->_gc_par_phases[phase]->short_name();
 }
 
-G1EvacPhaseWithTrimTimeTracker::G1EvacPhaseWithTrimTimeTracker(G1ParScanThreadState* pss, Tickspan& total_time, Tickspan& trim_time) :
-  _pss(pss),
+G1EvacPhaseWithTrimTimeTracker::G1EvacPhaseWithTrimTimeTracker(G1ParScanThreadState* par_scan_state, Tickspan& total_time, Tickspan& trim_time) :
+  _par_scan_state(par_scan_state),
   _start(Ticks::now()),
   _total_time(total_time),
   _trim_time(trim_time),
   _stopped(false) {
 
-  assert(_pss->trim_ticks().value() == 0, "Possibly remaining trim ticks left over from previous use");
+  assert(_par_scan_state->trim_ticks().value() == 0, "Possibly remaining trim ticks left over from previous use");
 }
 
 G1EvacPhaseWithTrimTimeTracker::~G1EvacPhaseWithTrimTimeTracker() {
@@ -599,9 +599,9 @@ G1EvacPhaseWithTrimTimeTracker::~G1EvacPhaseWithTrimTimeTracker() {
 
 void G1EvacPhaseWithTrimTimeTracker::stop() {
   assert(!_stopped, "Should only be called once");
-  _total_time += (Ticks::now() - _start) - _pss->trim_ticks();
-  _trim_time += _pss->trim_ticks();
-  _pss->reset_trim_ticks();
+  _total_time += (Ticks::now() - _start) - _par_scan_state->trim_ticks();
+  _trim_time += _par_scan_state->trim_ticks();
+  _par_scan_state->reset_trim_ticks();
   _stopped = true;
 }
 
@@ -625,9 +625,8 @@ G1GCParPhaseTimesTracker::~G1GCParPhaseTimesTracker() {
 
 G1EvacPhaseTimesTracker::G1EvacPhaseTimesTracker(G1GCPhaseTimes* phase_times,
                                                  G1ParScanThreadState* pss,
-                                                 G1GCPhaseTimes::GCParPhases phase,
-                                                 uint worker_id) :
-  G1GCParPhaseTimesTracker(phase_times, phase, worker_id),
+                                                 G1GCPhaseTimes::GCParPhases phase) :
+  G1GCParPhaseTimesTracker(phase_times, phase, pss->worker_id()),
   _total_time(),
   _trim_time(),
   _trim_tracker(pss, _total_time, _trim_time) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,7 +43,7 @@ class AbstractCounter {
   T _c;
 
   // Only allow unsigned values for now
-  STATIC_ASSERT(std::is_signed<T>::value == false);
+  static_assert(std::is_signed<T>::value == false);
 
 public:
 
@@ -86,7 +86,7 @@ class AbstractAtomicCounter {
   volatile T _c;
 
   // Only allow unsigned values for now
-  STATIC_ASSERT(std::is_signed<T>::value == false);
+  static_assert(std::is_signed<T>::value == false);
 
 public:
 
@@ -168,4 +168,3 @@ typedef AbstractMemoryRangeCounter<unsigned, size_t> MemRangeCounter;
 } // namespace metaspace
 
 #endif // SHARE_MEMORY_METASPACE_COUNTERS_HPP
-

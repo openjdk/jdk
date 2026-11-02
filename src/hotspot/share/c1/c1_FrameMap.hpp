@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ class FrameMap : public CompilationResourceObj {
   }
 
   FrameMap(ciMethod* method, int monitors, int reserved_argument_area_size);
-  bool finalize_frame(int nof_slots, bool needs_stack_repair);
+  bool finalize_frame(int nof_slots);
 
   int   reserved_argument_area_size () const     { return _reserved_argument_area_size; }
   int   framesize                   () const     { assert(_framesize != -1, "hasn't been calculated"); return _framesize; }

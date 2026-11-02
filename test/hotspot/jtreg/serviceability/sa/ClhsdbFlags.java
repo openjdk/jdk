@@ -109,7 +109,7 @@ public class ClhsdbFlags {
                 "-XX:NativeMemoryTracking=off",    // ccstr
                 "-XX:OnError='echo error'",        // ccstrlist
                 "-XX:CompileThresholdScaling=1.0", // double
-                "-XX:ErrorLogTimeout=120");        // uint64_t
+                "-XX:MaxDirectMemorySize=4294967297");        // uint64_t
             theApp = new LingeredApp();
             LingeredApp.startAppExactJvmOpts(theApp, vmArgs);
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
@@ -127,7 +127,7 @@ public class ClhsdbFlags {
                     "NativeMemoryTracking = \"off\"",
                     "OnError = \"'echo error'\"",
                     "CompileThresholdScaling = 1.0",
-                    "ErrorLogTimeout = 120"));
+                    "MaxDirectMemorySize = 4294967297"));
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
         } catch (Exception ex) {

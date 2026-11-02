@@ -57,7 +57,11 @@ public:
   ciKlass*  accessing_klass() const              { return _accessing_klass; }
 
   ciType*   return_type() const                  { return _return_type; }
-  ciType*   type_at(int index) const             { return _types.at(index)->unwrap(); }
+  ciType*   type_at(int index) const {
+    ciType* type = _types.at(index);
+    assert(type == type->unwrap(), "signature type should not be wrapped");
+    return _types.at(index)->unwrap();
+  }
 
   int       size() const                         { return _size; }
   int       count() const                        { return _types.length(); }

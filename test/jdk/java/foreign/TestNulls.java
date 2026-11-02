@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules java.base/jdk.internal.ref
- * @run testng/othervm
+ * @run junit/othervm
  *     --enable-native-access=ALL-UNNAMED
  *     TestNulls
  */
@@ -32,9 +32,6 @@
 import java.lang.foreign.*;
 
 import jdk.internal.ref.CleanerFactory;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.NoInjection;
-import org.testng.annotations.Test;
 
 import java.lang.constant.Constable;
 import java.lang.foreign.Arena;
@@ -62,8 +59,12 @@ import java.util.stream.Stream;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
-import static org.testng.Assert.*;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * This test makes sure that public API classes (listed in {@link TestNulls#CLASSES}) throws NPEs whenever
@@ -75,6 +76,7 @@ import static org.testng.Assert.fail;
  * by adding/removing default mappings for standard carrier types (see {@link #DEFAULT_VALUES} or by
  * adding/removing custom replacements (see {@link #REPLACEMENT_VALUES}).
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestNulls {
 
     static final Class<?>[] CLASSES = new Class<?>[] {
@@ -189,20 +191,20 @@ public class TestNulls {
         addReplacements(Set.class, null, Stream.of(new Object[] { null }).collect(Collectors.toSet()));
     }
 
-    @Test(dataProvider = "cases")
-    public void testNulls(String testName, @NoInjection Method meth, Object receiver, Object[] args) {
+    @ParameterizedTest(autoCloseArguments = false)
+    @MethodSource("cases")
+    public void testNulls(String testName, Method meth, Object receiver, Object[] args) {
         try {
             meth.invoke(receiver, args);
             fail("Method invocation completed normally");
         } catch (InvocationTargetException ex) {
             Class<?> cause = ex.getCause().getClass();
-            assertEquals(cause, NullPointerException.class, "got " + cause.getName() + " - expected NullPointerException");
+            assertEquals(NullPointerException.class, cause, "got " + cause.getName() + " - expected NullPointerException");
         } catch (Throwable ex) {
             fail("Unexpected exception: " + ex);
         }
     }
 
-    @DataProvider(name = "cases")
     static Iterator<Object[]> cases() {
         List<Object[]> cases = new ArrayList<>();
         for (Class<?> clazz : CLASSES) {

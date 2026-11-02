@@ -462,6 +462,10 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   }
 }
 
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  ShouldNotReachHere();
+}
+
 void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   assert(src->is_register(), "should not call otherwise");
   assert(dest->is_stack(), "should not call otherwise");
@@ -2115,7 +2119,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   if (basic_type == T_ARRAY) basic_type = T_OBJECT;
 
   // If we don't know anything or it's an object array, just go through the generic arraycopy
-  if (default_type == nullptr) {
+  if (default_type == nullptr || !default_type->is_loaded()) {
 
     // save arguments, because they will be killed by a runtime call
     save_in_reserved_area(R0, R1, R2, R3);
@@ -2559,7 +2563,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   fatal("Type profiling not implemented on this platform");
 }
 
-void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
+void LIR_Assembler::emit_profile_value_type(LIR_OpProfileValueType* op) {
   Unimplemented();
 }
 
@@ -2868,7 +2872,7 @@ void LIR_Assembler::check_orig_pc() {
   Unimplemented();
 }
 
-int LIR_Assembler::store_inline_type_fields_to_buf(ciInlineKlass* vk) {
+int LIR_Assembler::store_value_type_fields_to_buf(ciValueKlass* vk) {
   Unimplemented();
   return 0;
 }
@@ -2878,7 +2882,10 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
 }
 
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
-  Unimplemented();
+  // Since there is no markWord::null_free_array_bit_in_place on ARM32,
+  // setting the EQ flag by cmp(tmp, tmp) by will tell C1 that the array is NOT null-free.
+  Register tmp = op->tmp()->as_register();
+  __ cmp(tmp, tmp);
 }
 
 void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op) {

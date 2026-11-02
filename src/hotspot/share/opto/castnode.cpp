@@ -28,13 +28,13 @@
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/graphKit.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "utilities/checkedCast.hpp"
 
 const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::FloatingNarrowing(true, true, "floating narrowing dependency"); // not pinned, narrows type
@@ -115,9 +115,9 @@ Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return this;
   }
 
-  // Push cast through InlineTypeNode
-  if (in(1)->is_InlineType()) {
-    return ideal_cast_of_inline_type_node(phase);
+  // Push cast through ValueTypeNode
+  if (in(1)->is_ValueType()) {
+    return ideal_cast_of_value_type_node(phase);
   }
 
   if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
@@ -204,6 +204,11 @@ TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt)
 
 bool ConstraintCastNode::higher_equal_types(PhaseGVN* phase, const Node* other) const {
   const Type* t = phase->type(other);
+  if ((t->isa_rawptr() && (type()->isa_oopptr() || type()->isa_klassptr())) ||
+      ((t->isa_oopptr() || t->isa_klassptr()) && type()->isa_rawptr())) {
+    assert(is_CheckCastPP(), "unrelated types from %s", Name());
+    return false;
+  }
   if (!t->higher_equal_speculative(type())) {
     return false;
   }
@@ -222,8 +227,12 @@ Node* ConstraintCastNode::pin_node_under_control_impl() const {
   return make_cast_for_type(in(0), in(1), bottom_type(), _dependency.with_pinned_dependency(), _extra_types);
 }
 
-Node* ConstraintCastNode::ideal_cast_of_inline_type_node(PhaseGVN* phase) {
-  InlineTypeNode* vt = in(1)->as_InlineType();
+Node* ConstraintCastNode::ideal_cast_of_value_type_node(PhaseGVN* phase) {
+  ValueTypeNode* vt = in(1)->as_ValueType();
+  if (type()->isa_rawptr() != nullptr) {
+    return nullptr;
+  }
+
   const Type* join = vt->type()->filter(type());
   if (join == Type::TOP) {
     // Do not push a dead Cast since its type can be unrelated
@@ -242,7 +251,7 @@ Node* ConstraintCastNode::ideal_cast_of_inline_type_node(PhaseGVN* phase) {
 
   // The only possible case left is that the cast is a cast to not-null
   assert(join == vt->type()->filter(TypePtr::NOTNULL), "must be");
-  InlineTypeNode* res = vt->clone()->as_InlineType();
+  ValueTypeNode* res = vt->clone()->as_ValueType();
   res->set_null_marker(*phase);
 
   // Push the cast to the oop input if possible
@@ -348,7 +357,7 @@ void CastIINode::remove_range_check_cast(Compile* C) {
     // range check or a null divisor check.
     assert(in(0) != nullptr, "All RangeCheck CastII must have a control dependency");
     ResourceMark rm;
-    Unique_Node_List wq;
+    Unique_Node_List<Node> wq;
     wq.push(this);
     for (uint next = 0; next < wq.size(); ++next) {
       Node* m = wq.at(next);
@@ -470,7 +479,7 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 //------------------------------Identity---------------------------------------
 // If input is already higher or equal to cast type, then this is an identity.
 Node* CheckCastPPNode::Identity(PhaseGVN* phase) {
-  if (in(1)->is_InlineType() && _type->isa_instptr() && phase->type(in(1))->inline_klass()->is_subtype_of(_type->is_instptr()->instance_klass())) {
+  if (in(1)->is_ValueType() && _type->isa_instptr() && phase->type(in(1))->value_klass()->is_subtype_of(_type->is_instptr()->instance_klass())) {
     return in(1);
   }
   return ConstraintCastNode::Identity(phase);
@@ -773,24 +782,24 @@ const TypeInteger* ConstraintCastNode::widen_type(const PhaseGVN* phase, const T
   }
 
   const TypeInteger* in_type = phase->type(in(1))->isa_integer(bt);
-  if (in_type != nullptr &&
-      (in_type->lo_as_long() != this_type->lo_as_long() ||
-       in_type->hi_as_long() != this_type->hi_as_long())) {
-    jlong lo1 = this_type->lo_as_long();
-    jlong hi1 = this_type->hi_as_long();
-    int w1 = this_type->_widen;
-    if (lo1 >= 0) {
+  if (in_type != nullptr) {
+    jlong lo = this_type->lo_as_long();
+    jlong hi = this_type->hi_as_long();
+    int w = this_type->_widen;
+    if (lo >= 0) {
       // Keep a range assertion of >=0.
-      lo1 = 0;        hi1 = max_signed_integer(bt);
-    } else if (hi1 < 0) {
+      lo = 0;
+      hi = max_signed_integer(bt);
+    } else if (hi < 0) {
       // Keep a range assertion of <0.
-      lo1 = min_signed_integer(bt); hi1 = -1;
+      lo = min_signed_integer(bt);
+      hi = -1;
     } else {
-      lo1 = min_signed_integer(bt); hi1 = max_signed_integer(bt);
+      lo = min_signed_integer(bt);
+      hi = max_signed_integer(bt);
     }
-    return TypeInteger::make(MAX2(in_type->lo_as_long(), lo1),
-                             MIN2(in_type->hi_as_long(), hi1),
-                             MAX2((int)in_type->_widen, w1), bt);
+    // Must filter in the same direction as Value
+    return in_type->filter(TypeInteger::make(lo, hi, w, bt))->is_integer(bt);
   }
   return this_type;
 }

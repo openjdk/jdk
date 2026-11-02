@@ -71,34 +71,7 @@ inline void G1ParScanThreadState::reset_trim_ticks() {
 }
 
 inline void G1ParScanThreadState::remember_nmethod_into_region(G1HeapRegion* r, nmethod* nm) {
-  uint index = r->hrm_index();
-
-  G1NmethodSet** nmethods = _nmethods_to_add.get(index);
-  if (nmethods != nullptr) {
-    (*nmethods)->push(nm);
-  } else {
-    G1NmethodSet* new_set = new G1NmethodSet(3);
-    new_set->push(nm);
-    bool put_result = _nmethods_to_add.put(index, new_set);
-    assert(put_result, "must be");
-    _nmethods_to_add.maybe_grow(3 /* load_factor */);
-  }
-}
-
-inline size_t G1ParScanThreadState::num_nmethods(uint region) const {
-  G1NmethodSet** nmethods = _nmethods_to_add.get(region);
-  return nmethods != nullptr ? (size_t)(*nmethods)->length() : 0;
-}
-
-template <typename Function>
-inline void G1ParScanThreadState::iterate_nmethods(uint index, Function fn) {
-  G1NmethodSet** nmethods = _nmethods_to_add.get(index);
-  if (nmethods == nullptr) {
-    return;
-  }
-  for (nmethod* nm : **nmethods) {
-    fn(nm);
-  }
+  _code_root_pairs.push(G1CodeRootPair{r->hrm_index(), nm});
 }
 
 template <typename T>

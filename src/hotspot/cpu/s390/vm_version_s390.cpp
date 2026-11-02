@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,6 +328,15 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
   }
+
+  if (ValueTypePassFieldsAsArgs) {
+    warning("ValueTypePassFieldsAsArgs not supported on this CPU.");
+    FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
+  }
+  if (ValueTypeReturnedAsFields) {
+    warning("ValueTypeReturnedAsFields not supported on this CPU.");
+    FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
+  }
 }
 
 
@@ -417,7 +426,7 @@ void VM_Version::set_cpu_info_string() {
     _model_string = "unknown model";
     strcpy(buf, "z/Architecture (ambiguous detection)");
   }
-  _cpu_info_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf, mtInternal);
 
   if (has_Crypto_AES()) {
     assert(strlen(_cpu_info_string) + 3*8 < sizeof(buf), "increase buffer size");
@@ -427,7 +436,7 @@ void VM_Version::set_cpu_info_string() {
                  has_Crypto_AES192() ? ", aes192" : "",
                  has_Crypto_AES256() ? ", aes256" : "");
     os::free((void *)_cpu_info_string);
-    _cpu_info_string = os::strdup(buf);
+    _cpu_info_string = os::strdup(buf, mtInternal);
   }
 
   if (has_Crypto_SHA()) {
@@ -439,7 +448,7 @@ void VM_Version::set_cpu_info_string() {
                  has_Crypto_SHA512() ? ", sha512" : "",
                  has_Crypto_GHASH()  ? ", ghash"  : "");
     os::free((void *)_cpu_info_string);
-    _cpu_info_string = os::strdup(buf);
+    _cpu_info_string = os::strdup(buf, mtInternal);
   }
 }
 
@@ -1114,7 +1123,7 @@ void VM_Version::determine_features() {
   a->z_br(Z_R14);
 
   address code_end = a->pc();
-  a->flush();
+  a->invalidate_icache();
 
   cbuf.insts()->set_end(code_end);
 

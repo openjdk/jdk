@@ -99,7 +99,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->try_resolve_jobject_in_native(masm, Robj, R3_ARG1, R4_ARG2, Rtmp, slow);
 
-  __ srwi(Rtmp, R5_ARG3, jfieldIDWorkaround::offset_shift); // offset
+  __ srdi(Rtmp, R5_ARG3, jfieldIDWorkaround::offset_shift); // offset
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();   // Used by the segfault handler
@@ -154,7 +154,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ load_const_optimized(R12, slow_case_addr, R0);
   __ call_c_and_return_to_caller(R12); // tail call
 
-  __ flush();
+  __ invalidate_icache();
 
   return fast_entry;
 }

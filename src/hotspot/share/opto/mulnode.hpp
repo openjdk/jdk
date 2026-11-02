@@ -217,7 +217,7 @@ public:
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeTuple::LONG_PAIR; }
 
-  virtual Node* match(const ProjNode* proj, const Matcher* m, const RegMask* mask);
+  virtual Node* match(const ProjNode* proj, const Matcher* m);
 
   static MulHiLoLNode* make(Node* mul_hi);
 };

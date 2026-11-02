@@ -32,9 +32,9 @@
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArray.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -78,7 +78,7 @@ LIR_Opr LIRGenerator::syncTempOpr()     { return FrameMap::r0_opr; }
 LIR_Opr LIRGenerator::getThreadTemp()   { return LIR_OprFact::illegalOpr; }
 
 
-LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
+LIR_Opr LIRGenerator::result_register_for(ValueType* type) {
   LIR_Opr opr;
   switch (type->tag()) {
     case intTag:     opr = FrameMap::r0_opr;          break;
@@ -96,7 +96,7 @@ LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
 }
 
 
-LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
+LIR_Opr LIRGenerator::rlock_byte() {
   LIR_Opr reg = new_register(T_INT);
   set_vreg_flag(reg, LIRGenerator::byte_reg);
   return reg;
@@ -236,15 +236,6 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
 }
 
 
-
-void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
-  LIR_Opr pointer = new_pointer_register();
-  __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, type);
-  increment_counter(addr, step);
-}
-
-
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
   LIR_Opr imm;
   switch(addr->type()) {
@@ -326,7 +317,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   }
 
   CodeStub* throw_ie_stub =
-      x->maybe_inlinetype() ?
+      x->maybe_valuetype() ?
       new SimpleExceptionStub(StubId::c1_throw_identity_exception_id, obj.result(), state_for(x)) :
       nullptr;
 
@@ -1137,7 +1128,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   CodeEmitInfo* info = state_for(x, x->needs_state_before() ? x->state_before() : x->state());
   LIR_Opr reg = result_register_for(x->type());
   new_instance(reg, x->klass(), x->is_unresolved(),
-               !x->is_unresolved() && x->klass()->is_inlinetype(),
+               !x->is_unresolved() && x->klass()->is_value_klass(),
                FrameMap::r10_oop_opr,
                FrameMap::r11_oop_opr,
                FrameMap::r4_oop_opr,
@@ -1182,7 +1173,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   // in case of patching (i.e., object class is not yet loaded), we need to reexecute the instruction
   // and therefore provide the state before the parameters have been consumed
   CodeEmitInfo* patching_info = nullptr;
-  if (!x->klass()->is_loaded() || PatchALot) {
+  ciKlass* obj = ciObjArrayKlass::make(x->klass());
+  if (!x->klass()->is_loaded() || !obj->is_loaded() || PatchALot) {
     patching_info =  state_for(x, x->state_before());
   }
 
@@ -1198,15 +1190,13 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   length.load_item_force(FrameMap::r19_opr);
   LIR_Opr len = length.result();
 
-  ciKlass* obj = ciObjArrayKlass::make(x->klass());
-
   // TODO 8265122 Implement a fast path for this
   bool is_flat = obj->is_loaded() && obj->is_flat_array_klass();
   bool is_null_free = obj->is_loaded() && obj->as_array_klass()->is_elem_null_free();
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info, is_null_free);
-  if (obj == ciEnv::unloaded_ciobjarrayklass()) {
-    BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
+  if (x->klass()->is_loaded() && !obj->is_loaded()) {
+    BAILOUT("encountered unloaded ciobjarrayklass due to out of memory error");
   }
 
   klass2reg_with_patching(klass_reg, obj, patching_info);

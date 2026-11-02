@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,6 +179,7 @@ abstract class Function {
                     long secondsToAdd = d.getSeconds();
                     long nanosToAdd = d.getNano();
                     if ((secondsToAdd | nanosToAdd) == 0) {
+                        count++;
                         return;
                     }
                     long s = Math.addExact(seconds, secondsToAdd);

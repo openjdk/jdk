@@ -24,18 +24,22 @@
 
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLinkedClassTable.hpp"
+#include "cds/aotModules.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -67,7 +71,7 @@ void AOTLinkedClassBulkLoader::preload_classes(JavaThread* current) {
 void AOTLinkedClassBulkLoader::preload_classes_impl(TRAPS) {
   precond(CDSConfig::is_using_aot_linked_classes());
 
-  ClassLoaderDataShared::restore_archived_modules_for_preloading_classes(THREAD);
+  AOTModules::restore_archived_modules_for_preloading_classes(THREAD);
   Handle h_platform_loader(THREAD, SystemDictionary::java_platform_loader());
   Handle h_system_loader(THREAD, SystemDictionary::java_system_loader());
 
@@ -84,6 +88,13 @@ void AOTLinkedClassBulkLoader::preload_classes_impl(TRAPS) {
   initiate_loading(THREAD, "app", h_system_loader, table->boot2());
   initiate_loading(THREAD, "app", h_system_loader, table->platform());
   preload_classes_in_table(table->app(), "app", h_system_loader, CHECK);
+
+  // Do this after all boot/platform/app classes are loaded, but before bytecode execution.
+  AOTHeap::load_cached_resolved_methods();
+
+  if (CDSConfig::is_redumping_aot_configuration()) {
+   AOTSystemDictionary::copy_unregistered_classes_for_retraining(THREAD);
+  }
 }
 
 void AOTLinkedClassBulkLoader::preload_classes_in_table(Array<InstanceKlass*>* classes,
@@ -139,10 +150,44 @@ void AOTLinkedClassBulkLoader::link_classes(JavaThread* current) {
   }
 }
 
+static void allocate_scratch_oops(Klass* k, TRAPS) {
+#if INCLUDE_CDS_JAVA_HEAP
+  precond(CDSConfig::can_allocate_scratch_oops());
+  if (k->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    ConstantPool* cp = ik->constants();
+    if (cp->cache() != nullptr) {
+      objArrayOop resolved_references = cp->resolved_references();
+      if (resolved_references != nullptr) {
+        objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), resolved_references->length(), CHECK);
+        AOTHeap::add_scratch_resolved_references(cp, scratch_references);
+      }
+    }
+  }
+
+  java_lang_Class::create_scratch_mirror(k, CHECK);
+  for (ArrayKlass* ak = k->array_klass_or_null(); ak != nullptr; ak = ak->higher_dimension()) {
+    java_lang_Class::create_scratch_mirror(ak, CHECK);
+  }
+#endif
+}
+
 void AOTLinkedClassBulkLoader::link_classes_impl(TRAPS) {
   precond(CDSConfig::is_using_aot_linked_classes());
 
   AOTLinkedClassTable* table = AOTLinkedClassTable::get();
+
+  if (CDSConfig::is_redumping_aot_configuration()) {
+    allocate_scratch_oops(Universe::fillerArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::boolArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::charArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::floatArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::doubleArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::byteArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::shortArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::intArrayKlass(), CHECK);
+    allocate_scratch_oops(Universe::longArrayKlass(), CHECK);
+  }
 
   link_classes_in_table(table->boot1(), CHECK);
   link_classes_in_table(table->boot2(), CHECK);
@@ -170,6 +215,9 @@ void AOTLinkedClassBulkLoader::link_classes_in_table(Array<InstanceKlass*>* clas
       // at this point.
       InstanceKlass* ik = classes->at(i);
       ik->link_class(CHECK);
+      if (CDSConfig::is_redumping_aot_configuration()) {
+        allocate_scratch_oops(ik, CHECK);
+      }
     }
   }
 }
@@ -420,7 +468,7 @@ void AOTLinkedClassBulkLoader::init_classes_for_loader(Handle class_loader, Arra
   }
 
   if (!early_only) {
-    HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
+    AOTHeap::init_classes_for_special_subgraph(class_loader, CHECK);
   }
 }
 

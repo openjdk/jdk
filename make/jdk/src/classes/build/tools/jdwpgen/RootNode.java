@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,12 @@ class RootNode extends AbstractNamedNode {
         writer.println("<!DOCTYPE html>");
         writer.println("<html lang=\"en\">");
         writer.println("<head>");
+        writer.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
         writer.println("<meta charset=\"utf-8\"/>");
         writer.println("<title>" + comment() + "</title>");
         writer.println("<style>");
-        writer.println("body { background-color:white; }");
-        writer.println("table { border: 1px solid grey; border-spacing:0px; border-collapse: separate; width: 90%; }");
-        writer.println("td, th { padding: 3px; border: 1px solid black; font-weight: normal; text-align: left; }");
+        writer.println("table { border-spacing:0px; width: 90%; }");
+        writer.println("td, th { padding: 3px; font-weight: normal; text-align: left; }");
         writer.println(".bold { font-weight: bold; }");
         writer.println(".centered { text-align: center; }");
         for (int i = 0; i < maxStructIndent; i++) {

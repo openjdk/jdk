@@ -27,7 +27,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.DateFormatSymbols;
+import java.time.OffsetTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.format.DecimalStyle;
@@ -41,6 +43,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
@@ -50,11 +53,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /*
  * @test
  * @bug 8081022 8151876 8166875 8177819 8189784 8206980 8277049 8278434 8346948
- *      8174269 8371842
+ *      8174269 8371842 8388214 8392994
  * @key randomness
  */
 
@@ -63,6 +67,14 @@ import org.junit.jupiter.params.provider.MethodSource;
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
+
+    // Explicit dstOffset attributes from CLDR v48.2 metazone data.
+    private static final Map<String, ZoneOffset> CLDR_EXPLICIT_DST_OFFSETS = Map.of(
+            "Africa/Windhoek", ZoneOffset.of("+02:00"),
+            "America/Vancouver", ZoneOffset.of("-07:00"),
+            "Canada/Pacific", ZoneOffset.of("-07:00"),
+            "Europe/Dublin", ZoneOffset.of("+01:00"),
+            "Eire", ZoneOffset.of("+01:00"));
 
     private static final Locale[] SAMPLE_LOCALES = {
         Locale.US, Locale.UK, Locale.FRANCE, Locale.GERMANY, Locale.ITALY, Locale.forLanguageTag("es"),
@@ -95,10 +107,11 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                 long epochMilli = zdt.toInstant().toEpochMilli();
                 boolean isDST = tz.inDaylightTime(new Date(epochMilli));
                 // Some zones now use an explicit daylight offset in CLDR without java.util.TimeZone
-                // reporting DST for the instant, so prefer the daylight name when the effective
-                // offset is greater than the raw standard offset.
-                boolean useDaylightName = isDST
-                        || (tz.getDSTSavings() == 0 && tz.getOffset(epochMilli) > tz.getRawOffset());
+                // reporting DST for the instant.
+                ZoneOffset explicitDstOffset = CLDR_EXPLICIT_DST_OFFSETS.get(zid);
+                boolean useDaylightName = explicitDstOffset != null
+                        ? zdt.getOffset().equals(explicitDstOffset)
+                        : isDST;
                 for (Locale locale : SAMPLE_LOCALES) {
                     String longDisplayName = tz.getDisplayName(useDaylightName, TimeZone.LONG, locale);
                     String shortDisplayName = tz.getDisplayName(useDaylightName, TimeZone.SHORT, locale);
@@ -288,5 +301,14 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
         dtf = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(pattern).toFormatter(Locale.US);
         assertEquals(input, dtf.format(ZonedDateTime.parse(input, dtf)));
         assertEquals(input, dtf.format(ZonedDateTime.parse(lc, dtf)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"-07:00", "-08:00", "+09:00"})
+    public void test_offsetTimeUsesGenericZoneName(String offset) {
+        DateTimeFormatter format =
+            DateTimeFormatter.ofPattern("zzzz", Locale.US)
+                .withZone(ZoneId.of("America/Vancouver"));
+        assertEquals("Pacific Time", format.format(OffsetTime.parse("12:00" + offset)));
     }
 }

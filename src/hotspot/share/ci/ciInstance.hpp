@@ -67,6 +67,8 @@ public:
   // Constant value of a field at the specified offset.
   ciConstant field_value_by_offset(int field_offset);
 
+  intptr_t hash() const;
+
   ciKlass* java_lang_Class_klass();
   char* java_lang_String_str(char* buf, size_t buflen);
 };

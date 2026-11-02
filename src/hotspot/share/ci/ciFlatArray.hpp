@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CIFLATARRAY_HPP
-#define SHARE_VM_CI_CIFLATARRAY_HPP
+#ifndef SHARE_CI_CIFLATARRAY_HPP
+#define SHARE_CI_CIFLATARRAY_HPP
 
 #include "ci/ciArray.hpp"
 #include "ci/ciClassList.hpp"
@@ -31,6 +31,7 @@
 // ciFlatArray
 //
 // This class represents a flatArrayOop in the HotSpot virtual machine.
+// TODO 8388127: Sync ciArray class hierarchy with arrayOopDesc class hierarchy.
 class ciFlatArray : public ciArray {
   CI_PACKAGE_ACCESS
 
@@ -52,4 +53,4 @@ public:
   ciConstant null_marker_of_element_by_index(int index);
 };
 
-#endif // SHARE_VM_CI_CIFLATARRAY_HPP
+#endif // SHARE_CI_CIFLATARRAY_HPP

@@ -37,6 +37,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -44,7 +45,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLOutputFactory;
@@ -128,6 +128,8 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             packageFile = null;
         }
 
+        upgradeCode = Objects.requireNonNull(pkg.upgradeCode());
+
         initFileAssociations();
     }
 
@@ -199,22 +201,6 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         }
     }
 
-    private static UUID createNameUUID(String str) {
-        return UUID.nameUUIDFromBytes(str.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private static UUID createNameUUID(Path path, String role) {
-        if (path.isAbsolute() || !ROOT_DIRS.contains(path.getName(0))) {
-            throw throwInvalidPathException(path);
-        }
-        // Paths are case insensitive on Windows
-        String keyPath = path.toString().toLowerCase();
-        if (role != null) {
-            keyPath = role + "@" + keyPath;
-        }
-        return createNameUUID(keyPath);
-    }
-
     /**
      * Value for Id attribute of various WiX elements.
      */
@@ -228,7 +214,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         RemoveFolder("rm");
 
         Id() {
-            this.prefix = name().toLowerCase();
+            this.prefix = name().toLowerCase(Locale.ROOT);
         }
 
         Id(String prefix) {
@@ -255,12 +241,23 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         private static String of(Path path, String prefix, String role) {
             Objects.requireNonNull(role);
             Objects.requireNonNull(prefix);
-            return String.format("%s%s", prefix,
-                    createNameUUID(path, role).toString().replace("-", ""));
+            return String.format("%s%s", prefix, createId(path, role));
         }
 
         static String of(Path path, String prefix) {
             return of(path, prefix, prefix);
+        }
+
+        private static String createId(Path path, String role) {
+            if (path.isAbsolute() || !ROOT_DIRS.contains(path.getName(0))) {
+                throw throwInvalidPathException(path);
+            }
+            // Paths are case insensitive on Windows
+            String keyPath = path.toString().toLowerCase(Locale.ROOT);
+            if (role != null) {
+                keyPath = role + "@" + keyPath;
+            }
+            return UUID.nameUUIDFromBytes(keyPath.getBytes(StandardCharsets.UTF_8)).toString().replace("-", "");
         }
 
         private final String prefix;
@@ -283,10 +280,6 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             this.id = Id.valueOf(name());
         }
 
-        UUID guidOf(Path path) {
-            return createNameUUID(path, name());
-        }
-
         String idOf(Path path) {
             return id.of(path);
         }
@@ -300,23 +293,24 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         }
 
         static void startElement(WixToolsetType wixType, XMLStreamWriter xml, String componentId,
-                String componentGuid) throws XMLStreamException, IOException {
+                UUID componentGuid) throws XMLStreamException, IOException {
+
+            Objects.requireNonNull(componentId);
+            Objects.requireNonNull(componentGuid);
+
             xml.writeStartElement("Component");
             switch (wixType) {
                 case Wix3 -> {
                     xml.writeAttribute("Win64", is64Bit() ? "yes" : "no");
-                    xml.writeAttribute("Guid", componentGuid);
                 }
                 case Wix4 -> {
                     xml.writeAttribute("Bitness", is64Bit() ? "always64" : "always32");
-                    if (!componentGuid.equals("*")) {
-                        xml.writeAttribute("Guid", componentGuid);
-                    }
                 }
                 default -> {
                     throw new IllegalArgumentException();
                 }
             }
+            xml.writeAttribute("Guid", String.format("{%s}", componentGuid));
             xml.writeAttribute("Id", componentId);
         }
 
@@ -369,9 +363,17 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         startDirectoryElement(xml, "DirectoryRef", directoryRefPath);
 
+        final var componentKey = new WixComponentKey().path(path).role(role.name());
+
+        final Optional<RegistryKeyPath> regKeyPath = !systemWide || role.isRegistryKeyPath() ?
+                Optional.of(new RegistryKeyPath(directoryRefPath)) : Optional.empty();
+
+        regKeyPath.ifPresent(v -> {
+            v.configureComponentKey(componentKey);
+        });
+
         final String componentId = "c" + role.idOf(path);
-        Component.startElement(getWixType(), xml, componentId, String.format(
-                "{%s}", role.guidOf(path)));
+        Component.startElement(getWixType(), xml, componentId, finalizeComponentKey(componentKey));
 
         if (role == Component.Shortcut) {
             String property = shortcutFolders.stream().filter(shortcutFolder -> {
@@ -394,9 +396,8 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             }
         }
 
-        boolean isRegistryKeyPath = !systemWide || role.isRegistryKeyPath();
-        if (isRegistryKeyPath) {
-            addRegistryKeyPath(xml, directoryRefPath);
+        if (regKeyPath.isPresent()) {
+            regKeyPath.orElseThrow().write(xml);
             if ((role.isFile() || (role == Component.CreateFolder
                     && !systemWide)) && !SYSTEM_DIRS.contains(directoryRefPath)) {
                 xml.writeStartElement("RemoveFolder");
@@ -415,7 +416,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             xml.writeAttribute("Id", role.idOf(path));
         }
 
-        if (!isRegistryKeyPath) {
+        if (regKeyPath.isEmpty()) {
             xml.writeAttribute("KeyPath", "yes");
         }
 
@@ -821,31 +822,45 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         }
     }
 
-    private void addRegistryKeyPath(XMLStreamWriter xml, Path path) throws
-            XMLStreamException, IOException {
-        addRegistryKeyPath(xml, path, () -> "ProductCode", () -> "[ProductCode]");
-    }
+    private final class RegistryKeyPath {
 
-    private void addRegistryKeyPath(XMLStreamWriter xml, Path path,
-            Supplier<String> nameAttr, Supplier<String> valueAttr) throws
-            XMLStreamException, IOException {
-
-        String regRoot = USER_PROFILE_DIRS.stream().anyMatch(path::startsWith)
-                || !systemWide ? "HKCU" : "HKLM";
-
-        xml.writeStartElement("RegistryKey");
-        xml.writeAttribute("Root", regRoot);
-        xml.writeAttribute("Key", registryKeyPath);
-        if (!isWithWix36Features()) {
-            xml.writeAttribute("Action", "createAndRemoveOnUninstall");
+        RegistryKeyPath(Path path, String nameAttrValue, String valueAttrValue) {
+            this.path = Objects.requireNonNull(path);
+            this.nameAttrValue = Objects.requireNonNull(nameAttrValue);
+            this.valueAttrValue = Objects.requireNonNull(valueAttrValue);
         }
-        xml.writeStartElement("RegistryValue");
-        xml.writeAttribute("Type", "string");
-        xml.writeAttribute("KeyPath", "yes");
-        xml.writeAttribute("Name", nameAttr.get());
-        xml.writeAttribute("Value", valueAttr.get());
-        xml.writeEndElement(); // <RegistryValue>
-        xml.writeEndElement(); // <RegistryKey>
+
+        RegistryKeyPath(Path path) {
+            this(path, "ProductCode", "[ProductCode]");
+        }
+
+        String registryRoot() {
+            return USER_PROFILE_DIRS.stream().anyMatch(path::startsWith) || !systemWide ? "HKCU" : "HKLM";
+        }
+
+        WixComponentKey configureComponentKey(WixComponentKey key) {
+            return key.regkey(Path.of(registryRoot()).resolve(registryKeyPath).toString());
+        }
+
+        void write(XMLStreamWriter xml) throws XMLStreamException, IOException {
+            xml.writeStartElement("RegistryKey");
+            xml.writeAttribute("Root", registryRoot());
+            xml.writeAttribute("Key", registryKeyPath);
+            if (!isWithWix36Features()) {
+                xml.writeAttribute("Action", "createAndRemoveOnUninstall");
+            }
+            xml.writeStartElement("RegistryValue");
+            xml.writeAttribute("Type", "string");
+            xml.writeAttribute("KeyPath", "yes");
+            xml.writeAttribute("Name", nameAttrValue);
+            xml.writeAttribute("Value", valueAttrValue);
+            xml.writeEndElement(); // <RegistryValue>
+            xml.writeEndElement(); // <RegistryKey>
+        }
+
+        private final Path path;
+        private final String nameAttrValue;
+        private final String valueAttrValue;
     }
 
     private String addDirectoryCleaner(XMLStreamWriter xml, Path path) throws
@@ -858,6 +873,8 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         final String baseId = Id.of(path, "rm_rf");
         final String propertyId = baseId.toUpperCase();
         final String componentId = ("c" + baseId);
+
+        final var regKeyPath = new RegistryKeyPath(INSTALLDIR, propertyId, toWixPath(path));
 
         xml.writeStartElement("Property");
         xml.writeAttribute("Id", propertyId);
@@ -872,11 +889,15 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         xml.writeStartElement("DirectoryRef");
         xml.writeAttribute("Id", INSTALLDIR.toString());
-        Component.startElement(getWixType(), xml, componentId, "*");
+        Component.startElement(
+                getWixType(),
+                xml,
+                componentId,
+                finalizeComponentKey(
+                        regKeyPath.configureComponentKey(
+                                new WixComponentKey().path(path).role("RemoveFolderRecursive"))));
 
-        addRegistryKeyPath(xml, INSTALLDIR, () -> propertyId, () -> {
-            return toWixPath(path);
-        });
+        regKeyPath.write(xml);
 
         xml.writeStartElement(getWixNamespaces().get(WixNamespace.Util),
                 "RemoveFolderEx");
@@ -891,6 +912,15 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private boolean isWithWix36Features() {
         return DottedVersion.compareComponents(getWixVersion(), DottedVersion.greedy("3.6")) >= 0;
+    }
+
+    private UUID finalizeComponentKey(WixComponentKey key) {
+        final var path = Path.of(key.get(WixComponentKey.Attribute.PATH));
+        if (path.isAbsolute() || !ROOT_DIRS.contains(path.getName(0))) {
+            throw throwInvalidPathException(path);
+        }
+        key.upgradeCode(upgradeCode);
+        return key.toGuid();
     }
 
     // Does the following conversions:
@@ -987,6 +1017,8 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     private Set<String> defaultedMimes;
 
     private PackageFile packageFile;
+
+    private UUID upgradeCode;
 
     private static final Path TARGETDIR = Path.of("TARGETDIR");
 

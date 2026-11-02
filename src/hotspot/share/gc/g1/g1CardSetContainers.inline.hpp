@@ -276,7 +276,7 @@ inline size_t G1CardSetBitMap::header_size_in_bytes() {
 }
 
 inline Atomic<G1CardSetHowl::ContainerPtr> const* G1CardSetHowl::container_addr(EntryCountType index) const {
-  assert(index < _num_entries.load_relaxed(), "precondition");
+  precond(index < _num_buckets);
   return buckets() + index;
 }
 
@@ -295,6 +295,7 @@ inline Atomic<G1CardSetHowl::ContainerPtr> const* G1CardSetHowl::buckets() const
 
 inline G1CardSetHowl::G1CardSetHowl(EntryCountType card_in_region, G1CardSetConfiguration* config) :
   G1CardSetContainer(),
+  DEBUG_ONLY(_num_buckets(config->num_buckets_in_howl()) COMMA)
   _num_entries((config->max_cards_in_array() + 1)) /* Card Transfer will not increment _num_entries */ {
   EntryCountType num_buckets = config->num_buckets_in_howl();
   EntryCountType bucket = config->howl_bucket_index(card_in_region);
@@ -335,7 +336,7 @@ inline bool G1CardSetHowl::contains(uint card_idx, G1CardSetConfiguration* confi
 template <class CardOrRangeVisitor>
 inline void G1CardSetHowl::iterate(CardOrRangeVisitor& found, G1CardSetConfiguration* config) {
   for (uint i = 0; i < config->num_buckets_in_howl(); ++i) {
-    iterate_cardset(at(i), i, found, config);
+    iterate_card_set(at(i), i, found, config);
   }
 }
 
@@ -347,7 +348,7 @@ inline void G1CardSetHowl::iterate(ContainerPtrVisitor& found, uint num_card_set
 }
 
 template <class CardOrRangeVisitor>
-inline void G1CardSetHowl::iterate_cardset(ContainerPtr const container, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config) {
+inline void G1CardSetHowl::iterate_card_set(ContainerPtr const container, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config) {
   switch (G1CardSet::container_type(container)) {
     case G1CardSet::ContainerInlinePtr: {
       if (found.start_iterate(G1GCPhaseTimes::MergeRSHowlInline)) {

@@ -64,7 +64,7 @@ class    ciWrapper;
 class    ciReturnAddress;
 class    ciKlass;
 class     ciInstanceKlass;
-class       ciInlineKlass;
+class       ciValueKlass;
 class     ciArrayKlass;
 class       ciObjArrayKlass;
 class         ciFlatArrayKlass;
@@ -117,10 +117,10 @@ friend class ciReplay;                 \
 friend class ciTypeArray;              \
 friend class ciType;                   \
 friend class ciReturnAddress;          \
-friend class  ciWrapper;               \
+friend class ciWrapper;                \
 friend class ciKlass;                  \
 friend class ciInstanceKlass;          \
-friend class ciInlineKlass;            \
+friend class ciValueKlass;             \
 friend class ciArrayKlass;             \
 friend class ciFlatArrayKlass;         \
 friend class ciObjArrayKlass;          \

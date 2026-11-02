@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 7200264
+ * @bug 7200264 8390044
  * @summary 7192963 changes disabled shift vectors
  * @library /test/lib /
  * @run driver compiler.c2.cr7200264.TestIntVect
@@ -555,16 +555,16 @@ public class TestIntVect {
         }
     }
 
-    // Not vectorized: On AArch64 SVE, vectorization for this example results in
-    // DivVI nodes.
+    // Vectorization for this example results in DivVI nodes on AArch64 SVE and
+    // RISC-V RVV.
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_I, "> 0",
                    IRNode.STORE_VECTOR,  "> 0",
                    IRNode.DIV_VI,        "> 0" },
-        applyIfCPUFeature = {"sve", "true"})
+        applyIfCPUFeatureOr = {"sve", "true", "rvv", "true"})
     @IR(counts = { IRNode.LOAD_VECTOR_I, "= 0",
                    IRNode.STORE_VECTOR,  "= 0" },
-        applyIfCPUFeature = {"sve", "false"})
+        applyIfCPUFeatureAnd = {"sve", "false", "rvv", "false"})
     void test_divv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/b);

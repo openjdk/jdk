@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ package gc;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -62,8 +63,11 @@ public class TestUseGCOverheadLimit {
 
     String[] selectedArgs = args[0].equals("G1") ? g1Args : parallelArgs;
 
+    final String[] vm64bitArgs = {
+      "-XX:-UseCompactObjectHeaders"  // Object sizes are calculated such that the heap is tight.
+    };
+
     final String[] commonArgs = {
-      "-XX:-UseCompactObjectHeaders", // Object sizes are calculated such that the heap is tight.
       "-XX:ParallelGCThreads=1",      // Make GCs take longer.
       "-XX:+UseGCOverheadLimit",
       "-Xlog:gc=debug",
@@ -72,7 +76,9 @@ public class TestUseGCOverheadLimit {
       Allocating.class.getName()
     };
 
-    String[] vmArgs = Stream.concat(Arrays.stream(selectedArgs), Arrays.stream(commonArgs)).toArray(String[]::new);
+    String[] vmArgs = Stream.of(selectedArgs, Platform.is64bit() ? vm64bitArgs : new String[0], commonArgs)
+        .flatMap(Arrays::stream)
+        .toArray(String[]::new);
     OutputAnalyzer output = ProcessTools.executeLimitedTestJava(vmArgs);
     output.shouldNotHaveExitValue(0);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
-#ifndef CPU_ZERO_VM_FOREIGN_GLOBALS_ZERO_HPP
-#define CPU_ZERO_VM_FOREIGN_GLOBALS_ZERO_HPP
+#ifndef CPU_ZERO_FOREIGNGLOBALS_ZERO_HPP
+#define CPU_ZERO_FOREIGNGLOBALS_ZERO_HPP
 
 class ABIDescriptor {};
 
-#endif // CPU_ZERO_VM_FOREIGN_GLOBALS_ZERO_HPP
+#endif // CPU_ZERO_FOREIGNGLOBALS_ZERO_HPP

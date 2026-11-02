@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,58 +21,76 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8237858
- * @summary SocketImpl.socketAccept() handles EINTR incorrectly
+ * @summary Verify that when an application is blocked in InputStream.read() on a Socket's
+ *          input stream and the native thread doing the read() on the socket's file descriptor
+ *          receives a EINTR, then it won't result in the application receiving an exception
+ *          from InputStream.read().
  * @requires (os.family != "windows")
  * @compile NativeThread.java
- * @run main/othervm/native SocketReadInterruptTest 2000 3000
+ *
+ * @comment the second argument to the SocketReadInterruptTest application is a
+ *          reasonably large socket read timeout to exercise a timed wait for the
+ *          InputStream.read() call
+ * @run main/othervm/native SocketReadInterruptTest 2000 1800000
+ *
+ * @comment the second argument, "0", to the SocketReadInterruptTest application is
+ *          to exercise the InputStream.read() without a timeout
  * @run main/othervm/native SocketReadInterruptTest 2000 0
  */
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-
-import java.net.*;
+import java.net.Socket;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class SocketReadInterruptTest {
 
     public static void main(String[] args) throws Exception {
         System.loadLibrary("NativeThread");
-        ExecutorService executor = Executors.newFixedThreadPool(2);
         InetAddress loopback = InetAddress.getLoopbackAddress();
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try (ServerSocket ss = new ServerSocket(0, 0, loopback);
+             Socket s1 = new Socket(loopback, ss.getLocalPort())) {
 
-        try ( ServerSocket ss = new ServerSocket(0, 50, loopback);
-            Socket s1 = new Socket(loopback, ss.getLocalPort());) {
-            Server server = new Server(ss, Integer.parseInt(args[0]));
-            Future<Result> f1 = executor.submit(server);
+            // amount of time to wait before writing a response on the
+            // socket's output stream
+            int delayBeforeWrite = Integer.parseInt(args[0]);
+            Server server = new Server(ss, (InetSocketAddress) s1.getLocalSocketAddress(),
+                    delayBeforeWrite);
+            Future<Void> f1 = executor.submit(server);
 
-            Client client = new Client(s1, Integer.parseInt(args[1]));
-            Future<Result> f2 = executor.submit(client);
-            long threadId = client.getID();
-
+            // read timeout to be configured on the socket before doing a InputStream.read()
+            int readTimeout = Integer.parseInt(args[1]);
+            Client client = new Client(s1, readTimeout);
+            Future<Void> f2 = executor.submit(client);
+            // wait for the client thread to reach a point where it is going to call
+            // the socket input stream's read()
+            client.ready.join();
+            // wait just some more for the client thread to block on InputStream.read(), before
+            // we send a signal to interrupt that thread
             sleep(200);
-            System.out.println("Sending SIGPIPE to client thread.");
-            if (NativeThread.signal(threadId, NativeThread.SIGPIPE) != 0) {
-                throw new RuntimeException("Failed to interrupt the thread.");
+            long nativeTheadId = client.getThreadId();
+            System.out.println("Sending SIGPIPE to client thread " + nativeTheadId);
+            if (NativeThread.signal(nativeTheadId, NativeThread.SIGPIPE) != 0) {
+                throw new RuntimeException("Failed to interrupt the thread");
             }
-
-            Result r1 = f1.get();
-            if (r1.status == Result.FAIL) {
-                throw r1.exception;
-            }
-
-            Result r2 = f2.get();
-            if (r2.status == Result.FAIL) {
-                throw r2.exception;
-            }
+            // wait for the client to complete
+            f2.get();
+            // wait for the server to complete
+            f1.get();
             System.out.println("OK!");
         } finally {
             executor.shutdown();
@@ -87,93 +105,140 @@ public class SocketReadInterruptTest {
         }
     }
 
-    static class Client implements Callable<Result> {
+    static class Client implements Callable<Void> {
 
-        private volatile long threadId;
-        private final Socket client;
-        private final int timeout;
+        // completes right before the Client is about to initiate
+        // a blocking read() call on the socket's InputStream
+        private final CompletableFuture<Void> ready = new CompletableFuture<>();
+        private final Socket socket;
+        private final int readTimeout;
+        private volatile long nativeThreadId = -1;
 
-        public Client(Socket s, int timeout) {
-            client = s;
-            this.timeout = timeout;
+        public Client(Socket s, int readTimeout) {
+            this.socket = s;
+            this.readTimeout = readTimeout;
         }
 
         @Override
-        public Result call() {
-            threadId = NativeThread.getID();
-            byte[] arr = new byte[64];
-            try ( InputStream in = client.getInputStream();) {
-                client.setSoTimeout(timeout);
-                in.read(arr);
-                return new Result(Result.SUCCESS, null);
-            } catch (IOException ex) {
-                close();
-                return new Result(Result.FAIL, ex);
-            }
-        }
-
-        long getID() {
-            while (threadId == 0) {
-                sleep(5);
-            }
-            return threadId;
-        }
-
-        void close() {
-            if (!client.isClosed()) {
-                try {
-                    client.close();
-                } catch (IOException ex) {
-                    // ignore the exception.
-                }
-            }
-        }
-    }
-
-    static class Server implements Callable<Result> {
-
-        private final ServerSocket serverSocket;
-        private final int timeout;
-
-        public Server(ServerSocket ss, int timeout) {
-            serverSocket = ss;
-            this.timeout = timeout;
-        }
-
-        @Override
-        public Result call() {
+        public Void call() throws Exception {
             try {
-                try ( Socket client = serverSocket.accept();  OutputStream outputStream = client.getOutputStream();) {
-                    sleep(timeout);
-                    outputStream.write("This is just a test string.".getBytes());
-                    return new Result(Result.SUCCESS, null);
+                doCall();
+                return null;
+            } catch (Throwable t) {
+                if (!ready.isDone()) {
+                    ready.completeExceptionally(t);
                 }
-            } catch (IOException e) {
-                close();
-                return new Result(Result.FAIL, e);
+                System.err.println("Exception in client: " + t);
+                t.printStackTrace();
+                throw t;
             }
         }
 
-        public void close() {
-            if (!serverSocket.isClosed()) {
-                try {
-                    serverSocket.close();
-                } catch (IOException ex) {
+        private void doCall() throws Exception {
+            // capture the native thread id of the current thread
+            nativeThreadId = NativeThread.getID();
+            // set a timeout and then read from the socket's input stream
+            try (InputStream in = socket.getInputStream()) {
+                socket.setSoTimeout(readTimeout);
+                int totalRead = 0;
+                int n = 0;
+                // let the main thread know that we are about to do a
+                // InputStream.read() on the socket
+                ready.complete(null);
+                while ((n = in.read(new byte[100])) != -1) {
+                    totalRead += n;
+                }
+                System.out.println("read() completed with " + totalRead + " bytes");
+                // just the byte count check is OK
+                if (totalRead != Server.RESPONSE.length) {
+                    throw new AssertionError("unexpected number of bytes read: "
+                            + totalRead + ", expected: " + Server.RESPONSE.length);
                 }
             }
+        }
+
+        /**
+         * Returns the id of thread which is executing the {@link #call()} method.
+         * Must only be called after {@link #ready} has completed normally.
+         */
+        private long getThreadId() {
+            if (!ready.isDone()) {
+                throw new IllegalStateException("Client thread is not yet ready");
+            }
+            if (ready.isCompletedExceptionally()) {
+                throw new IllegalStateException("Client's native thread id unavailable",
+                        ready.exceptionNow());
+            }
+            return nativeThreadId;
         }
     }
 
-    static class Result {
+    static class Server implements Callable<Void> {
+        private static final byte[] RESPONSE = "This is just a test string.".getBytes(US_ASCII);
+        private final ServerSocket serverSocket;
+        private final InetSocketAddress expectedClientAddr;
+        private final int delayBeforeWrite;
 
-        static final int SUCCESS = 0;
-        static final int FAIL = 1;
-        final int status;
-        final Exception exception;
+        /**
+         * Constructs a server
+         *
+         * @param ss                 The ServerSocket
+         * @param expectedClientAddr The InetSocketAddress of the socket, constructed in this
+         *                           test, from which a connect() is expected
+         * @param delayBeforeWrite   delay in milliseconds before the response is written by the
+         *                           server on the accepted socket
+         */
+        public Server(ServerSocket ss, InetSocketAddress expectedClientAddr, int delayBeforeWrite) {
+            serverSocket = ss;
+            this.expectedClientAddr = expectedClientAddr;
+            this.delayBeforeWrite = delayBeforeWrite;
+        }
 
-        public Result(int status, Exception ex) {
-            this.status = status;
-            exception = ex;
+        @Override
+        public Void call() throws Exception {
+            try {
+                doCall();
+                return null;
+            } catch (Throwable t) {
+                System.err.println("Exception in server: " + t);
+                t.printStackTrace();
+                throw t;
+            }
+        }
+
+        private void doCall() throws Exception {
+            System.out.println("server listening at " + serverSocket);
+            while (true) {
+                System.out.println("waiting for connection from " + this.expectedClientAddr);
+                Socket client = this.serverSocket.accept();
+                System.out.println("accepted connection from " + client);
+                // if the connection is from some unexpected client, then close
+                // it and wait for a connection from this test's client
+                if (!this.expectedClientAddr.equals(client.getRemoteSocketAddress())) {
+                    System.out.println("closing unexpected connection from " + client);
+                    closeQuietly(client);
+                    continue;
+                }
+                sendResponse(client);
+                // we don't expect any more connection from this test
+                return;
+            }
+        }
+
+        private static void closeQuietly(Socket socket) {
+            try {
+                socket.close();
+            } catch (IOException ioe) {
+                // ignore
+            }
+        }
+
+        private void sendResponse(final Socket client) throws IOException {
+            try (OutputStream outputStream = client.getOutputStream()) {
+                sleep(delayBeforeWrite);
+                System.out.println("Sending " + RESPONSE.length + " bytes of response to " + client);
+                outputStream.write(RESPONSE);
+            }
         }
     }
 }

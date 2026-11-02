@@ -51,14 +51,13 @@ const char* ShenandoahGCSession::cycle_end_message(ShenandoahGenerationType type
   }
 }
 
-ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation,
-                                         bool is_degenerated, bool is_out_of_cycle) :
+ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation) :
   _heap(ShenandoahHeap::heap()),
   _generation(generation),
   _timer(_heap->gc_timer()),
   _tracer(_heap->tracer()) {
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
-  _heap->on_cycle_start(cause, _generation, is_degenerated, is_out_of_cycle);
+  _heap->on_cycle_start(cause, _generation);
   _timer->register_gc_start();
   _tracer->report_gc_start(cause, _timer->gc_start());
   _heap->trace_heap_before_gc(_tracer);
@@ -98,6 +97,28 @@ ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, const char* notificatio
           /* recordGCEndTime = */         true,
           /* countCollection = */         true
   );
+}
+
+ShenandoahPauseSubphase::ShenandoahPauseSubphase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage) :
+  ShenandoahTimingsTracker(phase),
+  _tracer(title, nullptr, GCCause::_no_gc, log_heap_usage),
+  _timer(ShenandoahHeap::heap()->gc_timer()) {
+  _timer->register_gc_phase_start(title, Ticks::now());
+}
+
+ShenandoahPauseSubphase::~ShenandoahPauseSubphase() {
+  _timer->register_gc_phase_end(Ticks::now());
+}
+
+ShenandoahConcurrentSubphase::ShenandoahConcurrentSubphase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage) :
+  ShenandoahTimingsTracker(phase),
+  _tracer(title, nullptr, GCCause::_no_gc, log_heap_usage),
+  _timer(ShenandoahHeap::heap()->gc_timer()) {
+  _timer->register_gc_phase_start(title, Ticks::now());
+}
+
+ShenandoahConcurrentSubphase::~ShenandoahConcurrentSubphase() {
+  _timer->register_gc_phase_end(Ticks::now());
 }
 
 ShenandoahPausePhase::ShenandoahPausePhase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage) :
@@ -169,4 +190,21 @@ ShenandoahConcurrentWorkerSession::~ShenandoahConcurrentWorkerSession() {
 
 ShenandoahParallelWorkerSession::~ShenandoahParallelWorkerSession() {
   _event.commit(GCId::current(), WorkerThread::worker_id(), ShenandoahPhaseTimings::phase_desc(ShenandoahGCPhase::current_phase()));
+}
+
+ShenandoahAllocationStallLogger::ShenandoahAllocationStallLogger()
+  : _stall_start_seconds(os::elapsedTime()) {
+  if (log_is_enabled(Info, gc, start)) {
+    ResourceMark rm; // for Thread::name()
+    log_info(gc, start)("Allocation Stall (%s)", Thread::current()->name());
+  }
+}
+
+ShenandoahAllocationStallLogger::~ShenandoahAllocationStallLogger() {
+  if (log_is_enabled(Info, gc)) {
+    ResourceMark rm;
+    log_info(gc)("Allocation Stall (%s) %.3fms",
+                 Thread::current()->name(),
+                 (os::elapsedTime() - _stall_start_seconds) * MILLIUNITS);
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,10 @@
  * @summary Test primitive box caches integrity in various scenarios (IntegerCache etc)
  * @requires vm.cds.write.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @compile --add-exports java.base/jdk.internal.misc=ALL-UNNAMED CheckIntegerCacheApp.java ArchivedIntegerHolder.java
+ * @compile --add-exports java.base/jdk.internal.misc=ALL-UNNAMED CheckIntegerCacheApp.java
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boxCache.jar CheckIntegerCacheApp
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boxCache-boot.jar ArchivedIntegerHolder
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar ArchivedIntegerCacheTest
  */
 
@@ -47,15 +46,10 @@ public class ArchivedIntegerCacheTest {
     private static WhiteBox WB = WhiteBox.getWhiteBox();
 
     public static String[] mixArgs(String... args) {
-        String bootJar = ClassFileInstaller.getJarPath("boxCache-boot.jar");
-
-        String[] newArgs = new String[args.length + 5];
+        String[] newArgs = new String[args.length + 2];
         newArgs[0] = "--add-exports";
         newArgs[1] = "java.base/jdk.internal.misc=ALL-UNNAMED";
-        newArgs[2] = "-Xbootclasspath/a:" + bootJar;
-        newArgs[3] = "-XX:+IgnoreUnrecognizedVMOptions";
-        newArgs[4] = "-XX:ArchiveHeapTestClass=ArchivedIntegerHolder";
-        System.arraycopy(args, 0, newArgs, 5, args.length);
+        System.arraycopy(args, 0, newArgs, 2, args.length);
         return newArgs;
     }
 

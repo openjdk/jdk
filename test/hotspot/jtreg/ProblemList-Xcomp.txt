@@ -44,7 +44,6 @@ vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 829
 vmTestbase/nsk/stress/thread/thread006.java 8321476 linux-all
 
 gc/arguments/TestNewSizeFlags.java 8299116 macosx-aarch64
-gc/g1/TestCodeCacheUnloadDuringConcurrentMark.java 8388169 generic-all
 
 #############################################################################
 
@@ -63,5 +62,3 @@ gc/g1/TestCodeCacheUnloadDuringConcurrentMark.java 8388169 generic-all
 #############################################################################
 
 # Value Objects failures start here:
-runtime/cds/appcds/aotCache/AOTMapTest.java#valhalla 8388438 generic-all
-runtime/cds/appcds/cacheObject/ArchivedFlatArrayTest.java 8388438 generic-all

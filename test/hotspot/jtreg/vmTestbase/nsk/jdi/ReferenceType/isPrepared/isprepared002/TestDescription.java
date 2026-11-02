@@ -62,7 +62,6 @@
  *
  * @run driver
  *      nsk.jdi.ReferenceType.isPrepared.isprepared002
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

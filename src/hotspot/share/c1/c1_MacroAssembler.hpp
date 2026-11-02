@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ class CodeEmitInfo;
 class CompiledEntrySignature;
 class C1_MacroAssembler: public MacroAssembler {
  private:
-  int scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry);
-  void build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, int sp_inc, bool reset_orig_pc, bool needs_stack_repair);
+  int scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_value_entry_label, bool is_value_ro_entry);
+  void build_frame_helper(int frame_size_in_bytes, int sp_offset_for_orig_pc, bool reset_orig_pc);
  public:
   // creation
   C1_MacroAssembler(CodeBuffer* code) : MacroAssembler(code) { pd_init(); }
@@ -41,13 +41,13 @@ class C1_MacroAssembler: public MacroAssembler {
   //----------------------------------------------------
   void explicit_null_check(Register base);
 
-  void build_frame(int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc = 0, bool needs_stack_repair = false, bool has_scalarized_args = false, Label* verified_inline_entry_label = nullptr);
+  void build_frame(int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc = 0, bool has_scalarized_args = false, Label* verified_value_entry_label = nullptr);
 
-  int verified_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label) {
-    return scalarized_entry(ces, frame_size_in_bytes, bang_size_in_bytes, sp_offset_for_orig_pc, verified_inline_entry_label, false);
+  int verified_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_value_entry_label) {
+    return scalarized_entry(ces, frame_size_in_bytes, bang_size_in_bytes, sp_offset_for_orig_pc, verified_value_entry_label, false);
   }
-  int verified_inline_ro_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label) {
-    return scalarized_entry(ces, frame_size_in_bytes, bang_size_in_bytes, sp_offset_for_orig_pc, verified_inline_entry_label, true);
+  int verified_value_ro_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_value_entry_label) {
+    return scalarized_entry(ces, frame_size_in_bytes, bang_size_in_bytes, sp_offset_for_orig_pc, verified_value_entry_label, true);
   }
   void verified_entry(bool breakAtEntry);
   void verify_stack_oop(int offset) PRODUCT_RETURN;

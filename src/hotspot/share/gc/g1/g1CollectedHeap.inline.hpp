@@ -296,12 +296,11 @@ inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
 }
 
 inline bool G1CollectedHeap::is_collection_set_candidate(const G1HeapRegion* r) const {
-  const G1CollectionSetCandidates* candidates = collection_set()->candidates();
-  return candidates->contains(r);
+  return collection_set_candidates()->contains(r);
 }
 
 inline uint G1CollectedHeap::target_num_eden_regions() const {
-  return _policy->target_num_young_regions() - survivor_regions_count();
+  return _policy->target_num_young_regions() - num_survivor_regions();
 }
 
 #endif // SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP

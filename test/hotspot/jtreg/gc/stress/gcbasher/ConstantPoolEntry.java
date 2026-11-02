@@ -26,7 +26,9 @@ package gc.stress.gcbasher;
 
 import java.util.Optional;
 
-@jdk.test.lib.valueclass.AsValueClass
+import jdk.test.lib.valueclass.AsValueClass;
+
+@AsValueClass
 class ConstantPoolEntry {
     private Optional<Integer> index;
     private Optional<String> value;

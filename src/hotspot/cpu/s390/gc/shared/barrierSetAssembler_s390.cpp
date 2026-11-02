@@ -24,6 +24,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -86,6 +87,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   case T_OBJECT: {
     if (UseCompressedOops && in_heap) {
       if (val == noreg) {
+        assert(!not_null, "inconsistent access");
         __ clear_mem(addr, 4);
       } else if (CompressedOops::mode() == CompressedOops::UnscaledNarrowOop) {
         __ z_st(val, addr);
@@ -96,6 +98,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
       }
     } else {
       if (val == noreg) {
+        assert(!not_null, "inconsistent access");
         __ clear_mem(addr, 8);
       } else {
         __ z_stg(val, addr);
@@ -195,6 +198,43 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
 
     // Fall through to method body.
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
+}
+
+void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1, Register tmp2, Register tmp3) {
+  assert_different_registers(tmp1, tmp2, tmp3);
+
+  __ block_comment("c2i_entry_barrier {");
+
+  Register tmp1_class_loader_data = tmp1;
+
+  Label bad_call, skip_barrier;
+
+  // Fast path: If no method is given, the call is definitely bad.
+  __ compareU64_and_branch(Z_method, (intptr_t)0, Assembler::bcondEqual, bad_call);
+
+  // Load class loader data to determine whether the method's holder is concurrently unloading.
+  __ load_method_holder_cld(tmp1_class_loader_data, Z_method);
+
+  // Fast path: If class loader is strong, the holder cannot be unloaded.
+  __ load_and_test_int2long(tmp2, Address(tmp1_class_loader_data, ClassLoaderData::keep_alive_ref_count_offset()));
+  __ branch_optimized(Assembler::bcondNotZero, skip_barrier);
+
+  // Class loader is weak. Determine whether the holder is still alive.
+  // On s390 neither ZGC nor Shenandoah are supported, so resolve_oop_handle
+  // with IN_NATIVE (without ON_PHANTOM_OOP_REF) is sufficient; the additional
+  // GC barrier required by those collectors is not needed here.
+  __ z_lg(tmp2, Address(tmp1_class_loader_data, ClassLoaderData::holder_offset()));
+  __ resolve_oop_handle(tmp2, tmp1, tmp3);
+  __ compareU64_and_branch(tmp2, (intptr_t)0, Assembler::bcondNotEqual, skip_barrier);
+
+  __ bind(bad_call);
+
+  __ load_const_optimized(tmp1, SharedRuntime::get_handle_wrong_method_stub());
+  __ z_br(tmp1);
+
+  __ bind(skip_barrier);
+
+  __ block_comment("} c2i_entry_barrier");
 }
 
 void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register oop, const char* msg) {

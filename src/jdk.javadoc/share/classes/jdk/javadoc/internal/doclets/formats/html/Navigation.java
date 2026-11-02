@@ -48,6 +48,7 @@ import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Script;
 import jdk.javadoc.internal.html.Text;
 
 /**
@@ -139,7 +140,6 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
-                addThemeSwitcher(target);
                 break;
             case MODULE:
                 addOverviewLink(target);
@@ -151,7 +151,6 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
-                addThemeSwitcher(target);
                 break;
             case PACKAGE:
                 addOverviewLink(target);
@@ -170,7 +169,6 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
-                addThemeSwitcher(target);
                 break;
             case CLASS:
                 addOverviewLink(target);
@@ -189,7 +187,6 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
-                addThemeSwitcher(target);
                 break;
             case USE:
                 addOverviewLink(target);
@@ -214,7 +211,6 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
-                addThemeSwitcher(target);
                 break;
             case TREE:
                 addOverviewLink(target);
@@ -233,7 +229,6 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
-                addThemeSwitcher(target);
                 break;
             case DEPRECATED:
             case INDEX:
@@ -276,7 +271,6 @@ public class Navigation {
                 } else {
                     addHelpLink(target);
                 }
-                addThemeSwitcher(target);
                 break;
             case ALL_CLASSES:
             case ALL_PACKAGES:
@@ -294,7 +288,6 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
-                addThemeSwitcher(target);
                 break;
             case DOC_FILE:
                 addOverviewLink(target);
@@ -321,7 +314,6 @@ public class Navigation {
                 addIndexLink(target);
                 addSearchLink(target);
                 addHelpLink(target);
-                addThemeSwitcher(target);
                 break;
             default:
                 break;
@@ -523,31 +515,6 @@ public class Navigation {
         }
     }
 
-    private void addThemeSwitcher(Content target) {
-        var selectTheme = contents.getContent("doclet.theme.select_theme");
-        target.add(HtmlTree.LI(HtmlTree.BUTTON(HtmlIds.THEME_BUTTON)
-                .put(HtmlAttr.ARIA_LABEL, selectTheme.toString())
-                .put(HtmlAttr.TITLE, selectTheme.toString())));
-    }
-
-    private void addThemePanel(Content target) {
-        var selectTheme = contents.getContent("doclet.theme.select_theme");
-        target.add(HtmlTree.DIV(HtmlIds.THEME_PANEL)
-                .add(HtmlTree.DIV(selectTheme))
-                .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.THEME_LIGHT.name(), Text.EMPTY)
-                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_LIGHT)
-                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_LIGHT.name()))
-                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.light"))))
-                        .add(HtmlTree.LABEL(HtmlIds.THEME_DARK.name(), Text.EMPTY)
-                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_DARK)
-                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_DARK.name()))
-                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.dark"))))
-                        .add(HtmlTree.LABEL(HtmlIds.THEME_OS.name(), Text.EMPTY)
-                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_OS)
-                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_OS.name()))
-                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.system"))))));
-    }
-
     private void addSearch(Content target) {
         var resources = configuration.getDocResources();
         var placeholder = resources.getText("doclet.search_placeholder");
@@ -635,7 +602,7 @@ public class Navigation {
                 .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
         navContent.add(navList);
-        addThemePanel(navContent);
+        navList.add(new Script().append("initTheme();").asContent());
         var aboutDiv = HtmlTree.DIV(HtmlStyles.aboutLanguage, aboutContent);
         navContent.add(aboutDiv);
         navigationBar.add(HtmlTree.DIV(HtmlStyles.topNav, navContent).setId(HtmlIds.NAVBAR_TOP));

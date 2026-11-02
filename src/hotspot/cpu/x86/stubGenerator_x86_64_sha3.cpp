@@ -628,7 +628,7 @@ static address generate_sha3_implCompress_avx512(StubId stub_id,
 //  (2) - a lot of shuffles are inevitable, since there are not enough registers.
 //        To save some shuffles, column1-column3 and column2-4 are placed into
 //        the same 128-bit register. Column 0 is also grouped (by rows).
-// This means the SHA3 state fits into 12.5 regisers, leaving 3 registers as
+// This means the SHA3 state fits into 12.5 registers, leaving 3 registers as
 // temporaries. This is mostly sufficient, except for the Theta step, where we
 // have to buy two slots on the stack
 static address generate_sha3_implCompress_avx2(StubId stub_id,
@@ -693,7 +693,7 @@ static address generate_sha3_implCompress_avx2(StubId stub_id,
   __ subptr(rsp, reg_size*2);
 
   // Registers for memory load
-  // Notice the careful 'missalignment' of pairs.
+  // Notice the careful 'misalignment' of pairs.
   // This helps XOR for all blocksizes
   XMMRegister    a0a1,   _a2,   a3a4;
   XMMRegister   a5a6,   a7a8,    _a9;
