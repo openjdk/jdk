@@ -1418,7 +1418,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
     // Grab the def
     n1 = defs.at(insidx);
     // Set new lidx for DEF & handle 2-addr instructions
-    if ((twoidx = n1->two_adr()) != 0) {
+    if (n1->is_Mach() && ((twoidx = n1->as_Mach()->two_adr()) != 0)) {
       assert(_lrg_map.find(n1->in(twoidx)) < maxlrg,"Assigning bad live range index");
       // Union the input and output live ranges
       uint lr1 = _lrg_map.find(n1);

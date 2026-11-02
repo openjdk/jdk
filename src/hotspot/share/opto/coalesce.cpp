@@ -319,7 +319,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
 
         // Now check for 2-address instructions
         uint idx;
-        if ((idx = n->two_adr())) {
+        if( n->is_Mach() && (idx=n->as_Mach()->two_adr()) ) {
           // Get the chosen name for the Node
           uint name = _phc._lrg_map.find(n);
           assert (name, "no 2-address specials");
@@ -473,8 +473,9 @@ void PhaseAggressiveCoalesce::coalesce( Block *b ) {
     uint idx;
     // 2-address instructions have a virtual Copy matching their input
     // to their output
-    if ((idx = n->two_adr())) {
-      combine_these_two(n, n->in(idx));
+    if (n->is_Mach() && (idx = n->as_Mach()->two_adr())) {
+      MachNode *mach = n->as_Mach();
+      combine_these_two(mach, mach->in(idx));
     }
   } // End of for all instructions in block
 }

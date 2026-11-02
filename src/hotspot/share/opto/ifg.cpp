@@ -377,28 +377,26 @@ void PhaseChaitin::build_ifg_virtual( ) {
       // In other words, for 2-address instructions the defined value
       // interferes with all inputs.
       uint idx;
-      if ((idx = n->two_adr())) {
-        if (n->is_Mach()) {
-          const MachNode *mach = n->as_Mach();
-          // Sometimes my 2-address ADDs are commuted in a bad way.
-          // We generally want the USE-DEF register to refer to the
-          // loop-varying quantity, to avoid a copy.
-          uint op = mach->ideal_Opcode();
-          // Check that mach->num_opnds() == 3 to ensure instruction is
-          // not subsuming constants, effectively excludes addI_cin_imm
-          // Can NOT swap for instructions like addI_cin_imm since it
-          // is adding zero to yhi + carry and the second ideal-input
-          // points to the result of adding low-halves.
-          // Checking req() and num_opnds() does NOT distinguish addI_cout from addI_cout_imm
-          if( (op == Op_AddI && mach->req() == 3 && mach->num_opnds() == 3) &&
-              n->in(1)->bottom_type()->base() == Type::Int &&
-              // See if the ADD is involved in a tight data loop the wrong way
-              n->in(2)->is_Phi() &&
-              n->in(2)->in(2) == n ) {
-            Node *tmp = n->in(1);
-            n->set_req( 1, n->in(2) );
-            n->set_req( 2, tmp );
-              }
+      if( n->is_Mach() && (idx = n->as_Mach()->two_adr()) ) {
+        const MachNode *mach = n->as_Mach();
+        // Sometimes my 2-address ADDs are commuted in a bad way.
+        // We generally want the USE-DEF register to refer to the
+        // loop-varying quantity, to avoid a copy.
+        uint op = mach->ideal_Opcode();
+        // Check that mach->num_opnds() == 3 to ensure instruction is
+        // not subsuming constants, effectively excludes addI_cin_imm
+        // Can NOT swap for instructions like addI_cin_imm since it
+        // is adding zero to yhi + carry and the second ideal-input
+        // points to the result of adding low-halves.
+        // Checking req() and num_opnds() does NOT distinguish addI_cout from addI_cout_imm
+        if( (op == Op_AddI && mach->req() == 3 && mach->num_opnds() == 3) &&
+            n->in(1)->bottom_type()->base() == Type::Int &&
+            // See if the ADD is involved in a tight data loop the wrong way
+            n->in(2)->is_Phi() &&
+            n->in(2)->in(2) == n ) {
+          Node *tmp = n->in(1);
+          n->set_req( 1, n->in(2) );
+          n->set_req( 2, tmp );
         }
         // Defined value interferes with all inputs
         uint lidx = _lrg_map.live_range_id(n->in(idx));

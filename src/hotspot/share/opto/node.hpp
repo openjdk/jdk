@@ -749,6 +749,7 @@ public:
       DEFINE_CLASS_ID(MachMemBar,       Mach, 7)
       DEFINE_CLASS_ID(MachProlog,       Mach, 8)
       DEFINE_CLASS_ID(MachVEP,          Mach, 9)
+      DEFINE_CLASS_ID(MachKill,         Mach, 10)
 
     DEFINE_CLASS_ID(Type,  Node, 2)
       DEFINE_CLASS_ID(Phi,   Type, 0)
@@ -852,7 +853,6 @@ public:
     DEFINE_CLASS_ID(Neg,      Node, 22)
     DEFINE_CLASS_ID(ReachabilityFence, Node, 23)
     DEFINE_CLASS_ID(DivModInteger, Node, 24)
-    DEFINE_CLASS_ID(MachKill, Node, 25)
 
     _max_classes  = ClassMask_DivModInteger
   };
@@ -1563,14 +1563,6 @@ public:
   uint        _del_tick;               // Bumped when a deletion happens..
   #endif
 #endif
-
-  // If this instruction is a 2-address instruction, then return the
-  // index of the input which must match the output.  Not necessary
-  // for instructions which bind the input and output register to the
-  // same singleton register (e.g., Intel IDIV which binds AX to be
-  // both an input and an output).  It is necessary when the input and
-  // output have choices - but they must use the same choice.
-  virtual uint two_adr( ) const { return 0; }
   void make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str);
 
   static void create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str);

@@ -289,6 +289,13 @@ public:
     return false;
   }
 
+  // If this instruction is a 2-address instruction, then return the
+  // index of the input which must match the output.  Not necessary
+  // for instructions which bind the input and output register to the
+  // same singleton register (e.g., Intel IDIV which binds AX to be
+  // both an input and an output).  It is necessary when the input and
+  // output have choices - but they must use the same choice.
+  virtual uint two_adr( ) const { return 0; }
   // Capture the type of the matched ideal node
   const Type* _bottom_type;
 
@@ -833,17 +840,21 @@ public:
 #endif
 };
 
-class MachKillNode : public Node {
+class MachKillNode : public MachNode {
 private:
   const uint  _ideal_reg;
+
 public:
-  MachKillNode(Node* in, const RegMask &mask, uint ideal_reg) : Node(nullptr, in), _ideal_reg(ideal_reg), _mask(mask) {
+  MachKillNode(Node* in, const RegMask &mask, uint ideal_reg) : _ideal_reg(ideal_reg), _mask(mask) {
+    add_req(nullptr);
+    add_req(in);
     init_class_id(Class_MachKill);
   }
 
   RegMask _mask;
+  virtual uint rule() const { return 9999999; }
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {}
 
-  virtual int   Opcode() const;
   virtual const Type *bottom_type() const {
     return in(1)->bottom_type();
   }
@@ -859,6 +870,10 @@ public:
     return 1;
   }
   virtual uint  size_of() const { return sizeof(MachKillNode); }
+
+#ifndef PRODUCT
+  virtual const char *Name() const { return "MachKill";}
+#endif
 };
 
 //------------------------------MachIfNode-------------------------------------
