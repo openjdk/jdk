@@ -1439,9 +1439,9 @@ public abstract class TIFFDecompressor {
      * @param byteCount the number of bytes of compressed data.
      */
     public void setByteCount(int byteCount) throws IOException{
-        if (byteCount <= 0) {
-            throw new IIOException("Strip byte count should be"
-                + " positive: " + byteCount);
+        if (byteCount < 0) {
+            throw new IIOException("Strip byte count can't be"
+                + " negative: " + byteCount);
         }
         this.byteCount = byteCount;
     }
