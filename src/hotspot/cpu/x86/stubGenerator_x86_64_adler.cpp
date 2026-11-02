@@ -90,6 +90,14 @@ address StubGenerator::generate_updateBytesAdler32() {
   const int CHUNKSIZE = 16;
   const int CHUNKSIZE_M1 = CHUNKSIZE - 1;
 
+  auto reduce_mod_base = [&](const Register reg) {
+    __ movl(rax, reg);
+    __ imulq(rax, rcx);
+    __ shrq(rax, DIV_BASE_MAGIC_SHIFT); // q = x / BASE
+    __ imull(rdx, rax, BASE);
+    __ subl(reg, rdx); // r = x - q * BASE
+  };
+
   const Register init_d = c_rarg0;
   const Register data = r9;
   const Register size = r10;
@@ -105,7 +113,6 @@ address StubGenerator::generate_updateBytesAdler32() {
   const XMMRegister yb = xmm1;
   const XMMRegister yb_0 = xmm2;
   const XMMRegister ysa = xmm2;
-  const XMMRegister yprev_a = xmm3;
   const XMMRegister ysum_a = xmm4;
   const XMMRegister yzero = xmm5;
   const XMMRegister yones = xmm6;
@@ -277,14 +284,13 @@ address StubGenerator::generate_updateBytesAdler32() {
 
   __ movdl(ya, a_d);
   __ movdl(yb, b_d);
-  __ vmovdqu(yprev_a, ya);
   __ vpxor(yb_0, yb_0, yb_0, Assembler::AVX_256bit);
   __ vpxor(ysum_a, ysum_a, ysum_a, Assembler::AVX_256bit);
 
-  __ align32();
-  __ bind(SLOOP1A_AVX2);
   __ cmpl(s, 64);
   __ jcc(Assembler::below, SLOOP1A_AVX2_TAIL);
+  __ align32();
+  __ bind(SLOOP1A_AVX2);
 
   __ vmovdqu(ydata0, Address(data, 0));
   __ vmovdqu(ydata1, Address(data, 32));
@@ -293,8 +299,8 @@ address StubGenerator::generate_updateBytesAdler32() {
 
   __ vpsadbw(ytmp0, ydata0, yzero, Assembler::AVX_256bit);
   __ vpsadbw(ytmp1, ydata1, yzero, Assembler::AVX_256bit);
+  __ vpaddd(ysum_a, ysum_a, ya, Assembler::AVX_256bit);
   __ vpaddd(ya, ya, ytmp0, Assembler::AVX_256bit);
-  __ vpaddd(ysum_a, ysum_a, yprev_a, Assembler::AVX_256bit);
   __ vpmaddubsw(ydata0, ydata0, ydot2v, Assembler::AVX_256bit);
   __ vpmaddubsw(ydata1, ydata1, ydot2v_0, Assembler::AVX_256bit);
   __ vpmaddwd(ydata0, ydata0, yones, Assembler::AVX_256bit);
@@ -302,8 +308,8 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ vpaddd(ya, ya, ytmp1, Assembler::AVX_256bit);
   __ vpaddd(yb, yb, ydata0, Assembler::AVX_256bit);
   __ vpaddd(yb_0, yb_0, ydata1, Assembler::AVX_256bit);
-  __ vmovdqu(yprev_a, ya);
-  __ jmp(SLOOP1A_AVX2);
+  __ cmpl(s, 64);
+  __ jcc(Assembler::aboveEqual, SLOOP1A_AVX2);
 
   __ bind(SLOOP1A_AVX2_TAIL);
   __ vpaddd(yb, yb, yb_0, Assembler::AVX_256bit);
@@ -319,12 +325,11 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ subl(s, 32);
 
   __ vpsadbw(ytmp0, ydata0, yzero, Assembler::AVX_256bit);
+  __ vpaddd(ysum_a, ysum_a, ya, Assembler::AVX_256bit);
   __ vpaddd(ya, ya, ytmp0, Assembler::AVX_256bit);
-  __ vpaddd(ysum_a, ysum_a, yprev_a, Assembler::AVX_256bit);
   __ vpmaddubsw(ydata0, ydata0, ydot2v_0, Assembler::AVX_256bit);
   __ vpmaddwd(ydata0, ydata0, yones, Assembler::AVX_256bit);
   __ vpaddd(yb, yb, ydata0, Assembler::AVX_256bit);
-  __ vmovdqu(yprev_a, ya);
 
   __ bind(SKIP_LOOP_1A);
   __ vpslld(ysum_a, ysum_a, 5, Assembler::AVX_256bit);
@@ -347,17 +352,8 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ movdl(a_d, xa);
   __ movdl(b_d, xb);
 
-  __ movl(rax, a_d);
-  __ imulq(rax, rcx);
-  __ shrq(rax, DIV_BASE_MAGIC_SHIFT); // q = x / BASE
-  __ imull(rdx, rax, BASE);
-  __ subl(a_d, rdx); // r = x - q * BASE
-
-  __ movl(rax, b_d);
-  __ imulq(rax, rcx);
-  __ shrq(rax, DIV_BASE_MAGIC_SHIFT); // q = x / BASE
-  __ imull(rdx, rax, BASE);
-  __ subl(b_d, rdx); // r = x - q * BASE
+  reduce_mod_base(a_d);
+  reduce_mod_base(b_d);
 
   __ cmpl(size, 32);
   __ jcc(Assembler::aboveEqual, SLOOP1);
@@ -406,17 +402,8 @@ address StubGenerator::generate_updateBytesAdler32() {
 
   __ bind(ZERO_SIZE);
   __ movl(rcx, DIV_BASE_MAGIC);
-  __ movl(rax, a_d);
-  __ imulq(rax, rcx);
-  __ shrq(rax, DIV_BASE_MAGIC_SHIFT); // q = x / BASE
-  __ imull(rdx, rax, BASE);
-  __ subl(a_d, rdx); // r = x - q * BASE
-
-  __ movl(rax, b_d);
-  __ imulq(rax, rcx);
-  __ shrq(rax, DIV_BASE_MAGIC_SHIFT); // q = x / BASE
-  __ imull(rdx, rax, BASE);
-  __ subl(b_d, rdx); // r = x - q * BASE
+  reduce_mod_base(a_d);
+  reduce_mod_base(b_d);
 
   __ bind(FINISH);
   __ movl(rax, b_d);
