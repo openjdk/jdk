@@ -3021,6 +3021,7 @@ void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArray
   ciMethodData* md = op->md();
 
   Label done;
+  Register mdo = tmp2;
   if (UseArrayFlattening) {
     Label not_flat;
     __ test_non_flat_array_oop(array, tmp1, not_flat);
@@ -3028,7 +3029,6 @@ void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArray
     Register klass = tmp1;
     __ load_klass(klass, array, tmp2);
 
-    Register mdo = tmp2;
     __ mov_metadata(mdo, md->constant_encoding());
 
     int mdp_offset = md->byte_offset_of_slot(op->load(), in_ByteSize(0));
