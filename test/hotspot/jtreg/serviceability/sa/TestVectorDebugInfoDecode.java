@@ -77,19 +77,29 @@ public class TestVectorDebugInfoDecode {
                     if (frame instanceof CompiledVFrame compiled &&
                             compiled.getMethod().getName().asString().equals("test")) {
                         ScopeDesc scope = compiled.getScope();
+                        System.out.println("### ScopeDesc:");
+                        scope.printValueOn(System.out);
+                        System.out.println();
 
                         List<ObjectValue> objects = scope.getObjects();
 
                         if (objects == null) continue;
 
                         for (ObjectValue object : objects) {
+                            System.out.println("## ObjectValue:");
+                            object.print();
+                            System.out.println();
+
                             for (ScopeValue value : object.getFieldsValue()) {
+                                System.out.println("# ScopeValue:");
+                                value.printOn(System.out);
+                                System.out.println();
+
                                 if (value instanceof LocationValue lv) {
                                     Location loc = lv.getLocation();
                                     if (loc.getType() == Location.Type.VECTOR) {
                                         vectorFound = true;
-                                        loc.printOn(System.out);
-                                        System.out.println();
+                                        System.out.println("Found a Location of type vector");
                                     }
                                 }
                             }
