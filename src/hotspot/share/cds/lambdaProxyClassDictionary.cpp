@@ -24,11 +24,11 @@
 
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -45,11 +45,11 @@ DumpTimeLambdaProxyClassInfo::~DumpTimeLambdaProxyClassInfo() {
 }
 
 unsigned int LambdaProxyClassKey::hash() const {
-  return SystemDictionaryShared::hash_for_shared_dictionary((address)_caller_ik) +
-         SystemDictionaryShared::hash_for_shared_dictionary((address)_invoked_name) +
-         SystemDictionaryShared::hash_for_shared_dictionary((address)_invoked_type) +
-         SystemDictionaryShared::hash_for_shared_dictionary((address)_method_type) +
-         SystemDictionaryShared::hash_for_shared_dictionary((address)_instantiated_method_type);
+  return AOTSystemDictionary::hash_for_shared_dictionary((address)_caller_ik) +
+         AOTSystemDictionary::hash_for_shared_dictionary((address)_invoked_name) +
+         AOTSystemDictionary::hash_for_shared_dictionary((address)_invoked_type) +
+         AOTSystemDictionary::hash_for_shared_dictionary((address)_method_type) +
+         AOTSystemDictionary::hash_for_shared_dictionary((address)_instantiated_method_type);
 }
 
 unsigned int RunTimeLambdaProxyClassKey::hash() const {
@@ -179,10 +179,10 @@ void LambdaProxyClassDictionary::add_lambda_proxy_class(InstanceKlass* caller_ik
   InstanceKlass* nest_host = caller_ik->nest_host(CHECK);
   assert(nest_host != nullptr, "unexpected nullptr nest_host");
 
-  DumpTimeClassInfo* info = SystemDictionaryShared::get_info_locked(lambda_ik);
+  DumpTimeClassInfo* info = AOTSystemDictionary::get_info_locked(lambda_ik);
   if (info != nullptr && !lambda_ik->is_non_strong_hidden() &&
-      SystemDictionaryShared::is_builtin(lambda_ik) &&
-      SystemDictionaryShared::is_builtin(caller_ik)
+      AOTSystemDictionary::is_builtin(lambda_ik) &&
+      AOTSystemDictionary::is_builtin(caller_ik)
       // Don't include the lambda proxy if its nest host is not in the "linked" state.
       && nest_host->is_linked()) {
     // Set _is_registered_lambda_proxy in DumpTimeClassInfo so that the lambda_ik
@@ -201,7 +201,7 @@ void LambdaProxyClassDictionary::add_lambda_proxy_class(InstanceKlass* caller_ik
 }
 
 bool LambdaProxyClassDictionary::is_registered_lambda_proxy_class(InstanceKlass* ik) {
-  DumpTimeClassInfo* info = SystemDictionaryShared::get_info_locked(ik);
+  DumpTimeClassInfo* info = AOTSystemDictionary::get_info_locked(ik);
   bool result = (info != nullptr) ? info->_is_registered_lambda_proxy : false;
   if (result) {
     assert(CDSConfig::is_dumping_lambdas_in_legacy_mode(), "only used in legacy lambda proxy support");
@@ -210,7 +210,7 @@ bool LambdaProxyClassDictionary::is_registered_lambda_proxy_class(InstanceKlass*
 }
 
 void LambdaProxyClassDictionary::reset_registered_lambda_proxy_class(InstanceKlass* ik) {
-  DumpTimeClassInfo* info = SystemDictionaryShared::get_info_locked(ik);
+  DumpTimeClassInfo* info = AOTSystemDictionary::get_info_locked(ik);
   if (info != nullptr) {
     info->_is_registered_lambda_proxy = false;
     info->set_excluded();
@@ -480,12 +480,12 @@ class LambdaProxyClassDictionary::CleanupDumpTimeLambdaProxyClassTable: StackObj
 
     // If the caller class and/or nest_host are excluded, the associated lambda proxy
     // must also be excluded.
-    bool always_exclude = SystemDictionaryShared::should_be_excluded(caller_ik) ||
-                          SystemDictionaryShared::should_be_excluded(nest_host);
+    bool always_exclude = AOTSystemDictionary::should_be_excluded(caller_ik) ||
+                          AOTSystemDictionary::should_be_excluded(nest_host);
 
     for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
       InstanceKlass* ik = info._proxy_klasses->at(i);
-      if (always_exclude || SystemDictionaryShared::should_be_excluded(ik)) {
+      if (always_exclude || AOTSystemDictionary::should_be_excluded(ik)) {
         LambdaProxyClassDictionary::reset_registered_lambda_proxy_class(ik);
         info._proxy_klasses->remove_at(i);
       }
@@ -512,7 +512,7 @@ public:
       Klass* k = record->proxy_klass_head();
       while (k != nullptr) {
         _st->print_cr("%4d: %s %s", _index++, k->external_name(),
-                      SystemDictionaryShared::loader_type_for_shared_class(k));
+                      AOTSystemDictionary::loader_type_for_shared_class(k));
         k = k->next_link();
       }
     }

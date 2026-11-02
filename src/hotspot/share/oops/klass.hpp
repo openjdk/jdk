@@ -379,6 +379,9 @@ protected:
   void set_has_aot_initialized_mirror() {
     CDS_ONLY(_aot_class_flags |= _has_aot_initialized_mirror;)
   }
+  void clear_has_aot_initialized_mirror() {
+    CDS_ONLY(_aot_class_flags &= ~_has_aot_initialized_mirror;)
+  }
   bool has_aot_initialized_mirror() const {
     CDS_ONLY(return (_aot_class_flags & _has_aot_initialized_mirror) != 0;)
     NOT_CDS(return false;)
@@ -813,6 +816,11 @@ public:
 
   // for error reporting
   static bool is_valid(Klass* k);
+
+#if INCLUDE_CDS
+  // For klass in AOT cache
+  static bool is_valid_aot_klass(const Klass* k);
+#endif
 
   static void on_secondary_supers_verification_failure(Klass* super, Klass* sub, bool linear_result, bool table_result, const char* msg);
 };

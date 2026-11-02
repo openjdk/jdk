@@ -568,7 +568,6 @@ public:
   NONCOPYABLE(VLoopTypes);
 
   void compute_vector_element_type();
-  NOT_PRODUCT( void print() const; )
 
   const Type* velt_type(const Node* n) const {
     assert(_vloop.in_bb(n), "only call on nodes in loop");
@@ -741,7 +740,7 @@ public:
 
   void construct();
   bool independent(Node* s1, Node* s2) const;
-  bool mutually_independent(const Node_List* nodes) const;
+  bool mutually_independent(const Node_List<Node>* nodes) const;
 
 private:
   void add_node(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges);
@@ -757,12 +756,11 @@ private:
 
   class DependencyNode : public ArenaObj {
   private:
-    MemNode* _node; // Corresponding ideal node
     const uint _num_strong_memory_edges;
     const uint _num_weak_memory_edges;
     int* _memory_edges; // memory pred-edges, mapping to bb_idx
   public:
-    DependencyNode(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges, Arena* arena);
+    DependencyNode(GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges, Arena* arena);
     NONCOPYABLE(DependencyNode);
     uint num_strong_memory_edges() const { return _num_strong_memory_edges; }
     uint num_weak_memory_edges() const { return _num_weak_memory_edges; }

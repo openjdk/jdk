@@ -44,6 +44,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1203,19 +1204,23 @@ template <class ArrayData> void InterpreterMacroAssembler::profile_array_type(Re
     mv(tmp, array);
     profile_obj_type(tmp, Address(mdp, in_bytes(ArrayData::array_offset())), t1);
 
-    Label not_flat;
-    test_non_flat_array_oop(array, tmp, not_flat);
+    if (Arguments::is_valhalla_enabled()) {
+      if (UseArrayFlattening) {
+        Label not_flat;
+        test_non_flat_array_oop(array, tmp, not_flat);
 
-    set_mdp_flag_at(mdp, ArrayData::flat_array_byte_constant());
+        set_mdp_flag_at(mdp, ArrayData::flat_array_byte_constant());
 
-    bind(not_flat);
+        bind(not_flat);
+      }
 
-    Label not_null_free;
-    test_non_null_free_array_oop(array, tmp, not_null_free);
+      Label not_null_free;
+      test_non_null_free_array_oop(array, tmp, not_null_free);
 
-    set_mdp_flag_at(mdp, ArrayData::null_free_array_byte_constant());
+      set_mdp_flag_at(mdp, ArrayData::null_free_array_byte_constant());
 
-    bind(not_null_free);
+      bind(not_null_free);
+    }
 
     bind(profile_continue);
   }
@@ -1278,6 +1283,7 @@ void InterpreterMacroAssembler::profile_acmp(Register mdp,
                                              Register left,
                                              Register right,
                                              Register tmp) {
+  assert(Arguments::is_valhalla_enabled(), "Profiling acmp makes sense only for value types");
   if (ProfileInterpreter) {
     Label profile_continue;
 
@@ -1867,13 +1873,14 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
 }
 
 void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
+  assert(UseFieldFlattening, "Should be used only if field flattening is enabled");
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field), obj, entry);
 }
 
-void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_offset,
-                                                 Register tmp1, Register tmp2,
-                                                 Register obj) {
-  assert_different_registers(entry, field_offset, tmp1, tmp2, obj);
+void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1,
+                                                 Register tmp2, Register obj) {
+  assert(UseFieldFlattening, "Should be used only if field flattening is enabled");
+  assert_different_registers(entry, tmp1, tmp2, obj);
   Label slow_path, done;
 
   load_unsigned_byte(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::flags_offset())));
@@ -1881,17 +1888,8 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_
 
   null_check(x10); // FIXME JDK-8341120
 
-  add(obj, obj, field_offset);
-
-  load_klass(tmp1, x10);
-  payload_address(x10, x10, tmp1);
-
-  Register layout_info = field_offset;
-  load_unsigned_short(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::field_index_offset())));
-  ld(tmp2, Address(entry, in_bytes(ResolvedFieldEntry::field_holder_offset())));
-  value_field_layout_info(tmp2, tmp1, layout_info);
-
-  flat_field_copy(IN_HEAP, x10, obj, layout_info);
+  mv(tmp1, x10);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::write_null_free_flat_field), obj, tmp1, entry);
   j(done);
 
   bind(slow_path);

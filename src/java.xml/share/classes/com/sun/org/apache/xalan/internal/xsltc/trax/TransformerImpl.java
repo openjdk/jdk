@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -100,7 +100,7 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
- * @LastModified: Jan 2025
+ * @LastModified: July 2026
  */
 public final class TransformerImpl extends Transformer
     implements DOMCache
@@ -1357,21 +1357,13 @@ public final class TransformerImpl extends Transformer
                  */
                 AbstractTranslet t = (AbstractTranslet)translet;
                 String systemId = SystemIDResolver.getAbsoluteURI(href, baseURI);
-                String errMsg = null;
-                try {
-                    String accessError = SecuritySupport.checkAccess(systemId,
-                            t.getAllowedProtocols(),
-                            JdkConstants.ACCESS_EXTERNAL_ALL);
-                    if (accessError != null) {
-                        ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
-                                SecuritySupport.sanitizePath(href), accessError);
-                        errMsg = msg.toString();
-                    }
-                } catch (IOException ioe) {
-                    errMsg = ioe.getMessage();
-                }
-                if (errMsg != null) {
-                    t.setAccessError(errMsg);
+                String accessError = SecuritySupport.checkAccess(systemId,
+                    t.getXMLSecurityManager(), XMLConstants.ACCESS_EXTERNAL_STYLESHEET,
+                    t.getAllowedProtocols());
+                if (accessError != null) {
+                    ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
+                            SecuritySupport.sanitizePath(href), accessError);
+                    t.setAccessError(msg.toString());
                     return null;
                 }
 
