@@ -142,6 +142,28 @@ public class TestFoldLongCompares {
     }
 
     @Test
+    @IR(counts = {"CmpL\\b", "= 1", IRNode.CMP_UL, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = {IRNode.CMP_I, IRNode.CMP_L, IRNode.CMP_UL})
+    @Arguments(values = {Argument.BOOLEAN_TOGGLE_FIRST_FALSE})
+    public static void test_ne_lower_bound(boolean b) {
+        long x = b ? LO : HI;
+        if (x != LO && x <= LO) {
+            throw new RuntimeException("should not be reached");
+        }
+    }
+
+    @Test
+    @IR(counts = {"CmpL\\b", "= 1", IRNode.CMP_UL, "= 0"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = {IRNode.CMP_I, IRNode.CMP_L, IRNode.CMP_UL})
+    @Arguments(values = {Argument.BOOLEAN_TOGGLE_FIRST_FALSE})
+    public static void test_ne_upper_bound(boolean b) {
+        long x = b ? LO : HI;
+        if (x != HI && x >= HI) {
+            throw new RuntimeException("should not be reached");
+        }
+    }
+
+    @Test
     @IR(failOn = {IRNode.CMP_L, IRNode.CMP_UL})
     @Arguments(values = {Argument.NUMBER_42})
     @Warmup(0)

@@ -1157,9 +1157,9 @@ bool IfNode::fold_compares_helper(IfProjNode* middle, IfProjNode* fail2, IfProjN
   //
   //     a >= min_value
   //     b <= max_value
-  //     -> a - b >= min_value - max_value = 2^N-1
+  //     -> a - b >= min_value - max_value = -(2^N-1)
   //
-  //     2^N-1 <= a - b < 0
+  //     -(2^N-1) <= a - b < 0
   //     -> cast to unsigned leads to exactly one overflow
   //     -> U(a - b) = a - b + 2^N
   //
