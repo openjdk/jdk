@@ -26,7 +26,7 @@
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
-#include "gc/g1/g1CardSetGroup.hpp"
+#include "gc/g1/g1CardSetGroup.inline.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CardTableClaimTable.inline.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
@@ -1071,7 +1071,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
                 "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
 
       if (!r->rem_set()->is_empty()) {
-        r->rem_set()->iterate_for_merge(_cl);
+        r->rem_set()->card_set_group()->iterate_for_merge(_cl);
         // We should only clear the card based remembered set here as we will not
         // implicitly rebuild anything else during eager reclaim. Note that at the moment
         // (and probably never) we do not enter this path if there are other kind of

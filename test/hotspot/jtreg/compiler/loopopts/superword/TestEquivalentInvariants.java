@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.lang.foreign.*;
  *          i.e. where the invariants have the same summands, but in a different order.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver/timeout=4800 compiler.loopopts.superword.TestEquivalentInvariants
+ * @run driver/timeout=4800 ${test.main.class}
  */
 
 public class TestEquivalentInvariants {
@@ -226,7 +226,7 @@ public class TestEquivalentInvariants {
         }
     }
 
-    @Warmup(100)
+    @Warmup(10)
     @Run(test = {"testArrayBB",
                  "testArrayBBInvar3",
                  "testMemorySegmentB",

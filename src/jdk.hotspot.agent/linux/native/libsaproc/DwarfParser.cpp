@@ -82,7 +82,7 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_linux_DwarfParser_createDw
   (JNIEnv *env, jclass this_cls, jlong lib) {
   DwarfParser *parser = new DwarfParser(reinterpret_cast<lib_info *>(lib));
   if (!parser->is_parseable()) {
-    jclass ex_cls = env->FindClass("sun/jvm/hotspot/debugger/DebuggerException");
+    jclass ex_cls = env->FindClass("sun/jvm/hotspot/debugger/linux/DwarfException");
     if (!env->ExceptionCheck()) {
         env->ThrowNew(ex_cls, "DWARF not found");
     }
@@ -127,9 +127,11 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_DwarfParser_processDw
   (JNIEnv *env, jobject this_obj, jlong pc) {
   DwarfParser *parser = reinterpret_cast<DwarfParser *>(get_dwarf_context(env, this_obj));
   if (!parser->process_dwarf(pc)) {
-    jclass ex_cls = env->FindClass("sun/jvm/hotspot/debugger/DebuggerException");
+    jclass ex_cls = env->FindClass("sun/jvm/hotspot/debugger/linux/DwarfException");
     if (!env->ExceptionCheck()) {
-        env->ThrowNew(ex_cls, "Could not find PC in DWARF");
+      char buf[100];
+      snprintf(buf, sizeof(buf), "Could not find PC in DWARF: 0x%lx", pc);
+      env->ThrowNew(ex_cls, buf);
     }
     return;
   }
