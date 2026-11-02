@@ -894,6 +894,20 @@ static void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_p
   }
 }
 
+void PhaseCFG::push_node_or_killed_use(Node_List<Node> &worklist, GrowableArray<int> &ready_cnt, Node* m, int m_cnt) {
+  if (m->is_MachKill()) {
+    // MachKill nodes are scheduled right before their use so they're not live at a safepoint: a MachKill is never
+    // enqueued but its use is and right before its use is added to a block, its MachKill inputs are first added to the
+    // block.
+    m = m->unique_out();
+    assert(!m->is_MachKill(), "no chain of MachKill nodes");
+    m_cnt = ready_cnt.at(m->_idx) - 1;
+    ready_cnt.at_put(m->_idx, m_cnt);
+  }
+  if (m_cnt == 0) {
+    worklist.push(m);
+  }
+}
 
 //------------------------------sched_call-------------------------------------
 uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List<Node>& worklist, GrowableArray<int>& ready_cnt, MachCallNode* mcall, VectorSet& next_call) {
@@ -927,15 +941,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List<Node>& worklist
       if( m->is_Phi() ) continue;
       int m_cnt = ready_cnt.at(m->_idx) - 1;
       ready_cnt.at_put(m->_idx, m_cnt);
-      if (m->is_MachKill()) {
-        m = m->unique_out();
-        m_cnt = ready_cnt.at(m->_idx) - 1;
-        ready_cnt.at_put(m->_idx, m_cnt);
-      }
-      if (m_cnt == 0) {
-        assert(!m->is_MachKill(), "");
-        worklist.push(m);
-      }
+      push_node_or_killed_use(worklist, ready_cnt, m, m_cnt);
     }
 
   }
@@ -1112,16 +1118,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
         // worklist so they are selected first and scheduled at the block start.
         worklist.insert(0, m);
       } else {
-        if (m->is_MachKill()) {
-          m = m->unique_out();
-          int m_cnt = ready_cnt.at(m->_idx) - 1;
-          ready_cnt.at_put(m->_idx, m_cnt);
-          if (m_cnt > 0) {
-            continue;
-          }
-        }
-        assert(!m->is_MachKill(), "");
-        worklist.push(m);         // Then on to worklist!
+        push_node_or_killed_use(worklist, ready_cnt, m, 0);
       }
     }
   }
@@ -1173,7 +1170,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
 
     // Select and pop a ready guy from worklist
     Node* n = select(block, worklist, ready_cnt, next_call, phi_cnt, recalc_pressure_nodes);
-    assert(!n->is_MachKill(), "");
+    assert(!n->is_MachKill(), "MachKill node only scheduled when its use is scheduled");
     for (uint i = 1; i < n->req(); ++i) {
       Node* in = n->in(i);
       if (in->is_MachKill()) {
@@ -1238,15 +1235,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       }
       int m_cnt = ready_cnt.at(m->_idx) - 1;
       ready_cnt.at_put(m->_idx, m_cnt);
-      if (m->is_MachKill()) {
-        m = m->unique_out();
-        m_cnt = ready_cnt.at(m->_idx) - 1;
-        ready_cnt.at_put(m->_idx, m_cnt);
-      }
-      if (m_cnt == 0) {
-        assert(!m->is_MachKill(), "");
-        worklist.push(m);
-      }
+      push_node_or_killed_use(worklist, ready_cnt, m, m_cnt);
     }
   }
 

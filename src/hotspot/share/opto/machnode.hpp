@@ -298,6 +298,7 @@ public:
   // both an input and an output).  It is necessary when the input and
   // output have choices - but they must use the same choice.
   virtual uint two_adr( ) const { return 0; }
+
   // Capture the type of the matched ideal node
   const Type* _bottom_type;
 
@@ -842,6 +843,9 @@ public:
 #endif
 };
 
+// When a MachNode "mach" kills its "i"th input "in" and that input is not bound to a fixed register, during matching,
+// input "i" of "mach" is set to a MachKill that takes "in" as unique input. MachKill nodes behaves so register
+// allocation properly adds a spill when needed before the MachNode that kills one of its inputs.
 class MachKillNode : public MachNode {
 private:
   const uint  _ideal_reg;
