@@ -309,7 +309,7 @@ jlong LIRItem::get_jlong_constant() const {
 }
 
 // This method should be executed when this allocation might be done internally by VM.
-void LIRGenerator::deoptimize_vmalloc_for_jvmti(bool is_allocated_by_vm,CodeEmitInfo* info) {
+void LIRGenerator::deoptimize_vmalloc_for_jvmti(bool is_allocated_by_vm, CodeEmitInfo* info) {
   if (is_allocated_by_vm) {
     LIR_Opr addr = new_pointer_register();
     LIR_Opr should_post_vm_object_alloc = new_register(T_INT);
