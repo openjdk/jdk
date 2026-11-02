@@ -80,13 +80,13 @@ address StubGenerator::generate_updateBytesAdler32() {
   StubCodeMark mark(this, stub_id);
   start = __ pc();
 
-  // Choose an appropriate LIMIT for inner loop based on the granularity
-  // of intermediate results. For int, LIMIT of 5552 will ensure intermediate
-  // results does not overflow Integer.MAX_VALUE before modulo operations.
+  // Choose an appropriate LIMIT for the inner loop based on the granularity
+  // of intermediate results. For unsigned 32-bit values, LIMIT of 5552
+  // ensures intermediate results do not overflow 2^32 before modulo operations.
   const int LIMIT = 5552;
   const int BASE = 65521;
   const int DIV_BASE_MAGIC_SHIFT = 47;
-  const int DIV_BASE_MAGIC = 2147975281U; // gcc magic for unsigned divide by 65521
+  const juint DIV_BASE_MAGIC = 2147975281U; // gcc magic for unsigned divide by 65521
   const int CHUNKSIZE = 16;
   const int CHUNKSIZE_M1 = CHUNKSIZE - 1;
 
