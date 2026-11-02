@@ -859,7 +859,9 @@ public:
 
   RegMask _mask;
   virtual uint rule() const { return 9999999; }
-  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {}
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
+    assert(req() == 2, "only one input");
+  }
 
   virtual const Type *bottom_type() const {
     return in(1)->bottom_type();
