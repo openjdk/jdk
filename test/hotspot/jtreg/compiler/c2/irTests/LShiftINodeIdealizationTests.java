@@ -65,6 +65,7 @@ public class LShiftINodeIdealizationTests {
             "testLShiftOfAndOfRShift",
             "testLShiftOfAndOfURShift",
             "testLShiftOfAndOfCon",
+            "testLShiftOfMaskedInt",
             "testShiftOfSubConstant",
     })
     public void runMethod() {
@@ -123,6 +124,8 @@ public class LShiftINodeIdealizationTests {
         Asserts.assertEQ((a + a) << 31, testLargeShiftOfAddSameInput(a));
         Asserts.assertEQ(((a + 1) << 1) + 1, testShiftOfAddConstant(a));
         Asserts.assertEQ((a & ((1 << (32 - 10)) -1)) << 10, testLShiftOfAndOfCon(a));
+        Asserts.assertEQ((a & 0x7fffffff) << 2,
+                         testLShiftOfMaskedInt(a));
         Asserts.assertEQ(((1 - a) << 1) + 1, testShiftOfSubConstant(a));
 
         assertDoubleShiftResult(a);
@@ -438,6 +441,13 @@ public class LShiftINodeIdealizationTests {
     @IR(counts = { IRNode.LSHIFT_I, "1" } , failOn = { IRNode.AND_I } )
     public int testLShiftOfAndOfCon(int x) {
         return (x & ((1 << (32 - 10)) -1)) << 10;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT_I, "1" }, failOn = { IRNode.AND_I })
+    // Checks (x & 0x7fffffff) << 2 => x << 2
+    public int testLShiftOfMaskedInt(int x) {
+        return (x & 0x7fffffff) << 2;
     }
 
     @Test
