@@ -361,6 +361,9 @@ public class ThreadDumper {
         jsonWriter.writeProperty("name", snapshot.threadName());
         jsonWriter.writeProperty("threadObj", Objects.toIdentityString(thread));
         jsonWriter.writeProperty("state", state);
+        if (snapshot.cpuTime() != -1L) {
+            jsonWriter.writeLongProperty("cpuTime", snapshot.cpuTime());
+        }
 
         // park blocker
         Object parkBlocker = snapshot.parkBlocker();

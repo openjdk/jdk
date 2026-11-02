@@ -750,14 +750,49 @@ class DumpThreads {
     void testThreadName(String threadName) throws Exception {
         var thread = Thread.ofPlatform().name(threadName).start(LockSupport::park);
         try {
-            ThreadDump threadDump = dumpThreadsToJson();
-
             long tid = thread.threadId();
+            ThreadDump threadDump = dumpThreadsToJson();
             ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
                     .findThread(tid)
                     .orElse(null);
             assertNotNull(ti, "thread not found");
             assertEquals(threadName, ti.name());
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test thread CPU time.
+     */
+    @ParameterizedTest
+    @MethodSource("threadFactories")
+    void testCpuTime(ThreadFactory factory) throws Exception {
+        var started = new CountDownLatch(1);
+        Thread thread = factory.newThread(() -> {
+            started.countDown();
+            LockSupport.park();
+        });
+        try {
+            // start thread and wait for it to start executing
+            thread.start();
+            started.await();
+            long tid = thread.threadId();
+
+            ThreadDump threadDump = dumpThreadsToJson();
+            ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
+                    .findThread(tid)
+                    .orElse(null);
+            assertNotNull(ti, "thread not found");
+
+            boolean cpuTimeSupported = ManagementFactory.getThreadMXBean().isThreadCpuTimeSupported();
+            if (thread.isVirtual() || !cpuTimeSupported) {
+                assertFalse(ti.cpuTime().isPresent());
+            } else {
+                long cpuTime = ti.cpuTime().orElseThrow();
+                assertTrue(cpuTime != -1L);
+            }
         } finally {
             LockSupport.unpark(thread);
             thread.join();
