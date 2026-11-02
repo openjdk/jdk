@@ -980,8 +980,6 @@ public:
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
-  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_layout_info);
-
   // value type data payload offsets...
   void payload_offset(Register value_klass, Register offset);
   void payload_address(Register oop, Register data, Register value_klass);
@@ -1054,8 +1052,6 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   void verify_tlab();
-
-  void value_field_layout_info(Register holder_klass, Register index, Register layout_info);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,

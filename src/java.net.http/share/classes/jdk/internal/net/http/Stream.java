@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ class Stream<T> extends ExchangeImpl<T> {
     final HeadersConsumer rspHeadersConsumer;
     final HttpHeadersBuilder responseHeadersBuilder;
     final HttpHeaders requestPseudoHeaders;
-    volatile HttpResponse.BodySubscriber<T> responseSubscriber;
+    volatile BodySubscriber<T> responseSubscriber;
     final HttpRequest.BodyPublisher requestPublisher;
     volatile RequestSubscriber requestSubscriber;
     volatile int responseCode;
@@ -139,7 +139,7 @@ class Stream<T> extends ExchangeImpl<T> {
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
     final CompletableFuture<Void> requestBodyCF = new MinimalFuture<>();
     volatile CompletableFuture<T> responseBodyCF;
-    volatile HttpResponse.BodySubscriber<T> pendingResponseSubscriber;
+    volatile BodySubscriber<T> pendingResponseSubscriber;
     volatile boolean stopRequested;
 
     /** True if END_STREAM has been seen in a frame received on this stream. */
@@ -182,13 +182,18 @@ class Stream<T> extends ExchangeImpl<T> {
         return connection.connection;
     }
 
+    private CompletableFuture<T> getBody(BodySubscriber<T> subscriber) {
+        var bodyCf = ResponseSubscribers.getBodyAsync(exchange.parentExecutor, subscriber);
+        return bodyCf == null ? null : bodyCf.toCompletableFuture();
+    }
+
     /**
      * Invoked either from incoming() -> {receiveDataFrame() or receiveResetFrame() }
      * of after user subscription window has re-opened, from SubscriptionBase.request()
      */
     private void schedule() {
         boolean onCompleteCalled = false;
-        HttpResponse.BodySubscriber<T> subscriber = responseSubscriber;
+        BodySubscriber<T> subscriber = responseSubscriber;
         // prevents drainInputQueue() from running concurrently
         inputQLock.lock();
         try {
@@ -203,7 +208,22 @@ class Stream<T> extends ExchangeImpl<T> {
                 if (debug.on()) debug.log("subscribing user subscriber");
                 subscriber.onSubscribe(userSubscription);
             }
-            while (!inputQ.isEmpty() && errorRef.get() == null) {
+
+            CompletableFuture<T> bodyCf = null;
+            while (!inputQ.isEmpty()) {
+                if (errorRef.get() != null) {
+                    if (bodyCf == null) bodyCf = getBody(subscriber);
+
+                    // if the bodyCf is completed exceptionally, or cancelled,
+                    // there is no point in pulling the data.
+                    // if bodyCf is null just stop here; this is not expected.
+                    if (bodyCf == null || bodyCf.isCompletedExceptionally()) break;
+
+                    // otherwise, we just ignore the error for now to give a chance
+                    // to the caller to pull the buffered data. The error will
+                    // eventually be reported when the buffered data has been pulled,
+                    // unless the entire response was successfully decoded and completed.
+                }
                 Http2Frame frame = inputQ.peek();
                 if (frame instanceof ResetFrame rf) {
                     inputQ.remove();

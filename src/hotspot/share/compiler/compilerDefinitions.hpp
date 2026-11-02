@@ -61,6 +61,9 @@ enum CompLevel : s1 {
   CompLevel_full_optimization = 4,         // C2
   CompLevel_count             = 5
 };
+// The next CompLevel constant, defined for AOT only, is not part of the enum.
+// TODO: consider moving it into the enum (but must refactor many uses)
+const int CompLevel_preload_optimization = CompLevel_full_optimization + 1;  // AP4 tier
 
 class CompilationModeFlag : AllStatic {
   enum class Mode {

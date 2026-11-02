@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1REGIONS_HPP
-#define SHARE_VM_GC_G1_G1REGIONS_HPP
+#ifndef SHARE_GC_G1_G1REGIONSONNODES_HPP
+#define SHARE_GC_G1_G1REGIONSONNODES_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
@@ -49,4 +49,4 @@ public:
   uint num_regions_on_node(uint node_index) const;
 };
 
-#endif // SHARE_VM_GC_G1_G1REGIONS_HPP
+#endif // SHARE_GC_G1_G1REGIONSONNODES_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2896,6 +2896,10 @@ enum Nf {
   INSN(andn,      0b0110011, 0b111, 0b0100000);
   INSN(orn,       0b0110011, 0b110, 0b0100000);
   INSN(xnor,      0b0110011, 0b100, 0b0100000);
+  INSN(bset,      0b0110011, 0b001, 0b0010100);
+  INSN(bclr,      0b0110011, 0b001, 0b0100100);
+  INSN(binv,      0b0110011, 0b001, 0b0110100);
+  INSN(bext,      0b0110011, 0b101, 0b0100100);
   INSN(max,       0b0110011, 0b110, 0b0000101);
   INSN(maxu,      0b0110011, 0b111, 0b0000101);
   INSN(min,       0b0110011, 0b100, 0b0000101);
@@ -2946,6 +2950,9 @@ enum Nf {
 
   INSN(rori,    0b0010011, 0b101, 0b011000);
   INSN(slli_uw, 0b0011011, 0b001, 0b000010);
+  INSN(bseti,   0b0010011, 0b001, 0b001010);
+  INSN(bclri,   0b0010011, 0b001, 0b010010);
+  INSN(binvi,   0b0010011, 0b001, 0b011010);
   INSN(bexti,   0b0010011, 0b101, 0b010010);
 
 #undef INSN
@@ -3905,37 +3912,6 @@ public:
     _lui(Rd, imm);
   }
 
-
-// Cache Management Operations
-// These instruction may be turned off for user space.
- private:
-  enum CBO_FUNCT : unsigned int {
-    CBO_INVAL = 0b0000000000000,
-    CBO_CLEAN = 0b0000000000001,
-    CBO_FLUSH = 0b0000000000010,
-    CBO_ZERO  = 0b0000000000100
-  };
-
-  template <CBO_FUNCT FUNCT>
-  void cbo_base(Register Rs1) {
-    assert((UseZicbom && FUNCT != CBO_ZERO) || UseZicboz, "sanity");
-    unsigned insn = 0;
-    patch((address)&insn, 6,  0, 0b0001111);
-    patch((address)&insn, 14, 12, 0b010);
-    patch_reg((address)&insn, 15, Rs1);
-    patch((address)&insn, 31, 20, FUNCT);
-    emit(insn);
-  }
-
-  // This instruction have some security implication.
-  // At this time it's not likely to be enabled for user mode.
-  void cbo_inval(Register Rs1) { cbo_base<CBO_INVAL>(Rs1); }
- public:
-  // Zicbom
-  void cbo_clean(Register Rs1) { cbo_base<CBO_CLEAN>(Rs1); }
-  void cbo_flush(Register Rs1) { cbo_base<CBO_FLUSH>(Rs1); }
-  // Zicboz
-  void cbo_zero(Register Rs1)  { cbo_base<CBO_ZERO>(Rs1); }
 
  private:
   enum PREFETCH_FUNCT : unsigned int {

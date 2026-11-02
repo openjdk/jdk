@@ -29,6 +29,7 @@
 #include "classfile/javaThreadStatus.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
@@ -191,7 +192,8 @@
   nonstatic_field(ResolvedMethodEntry,         _cpool_index,                                  u2)                                    \
   nonstatic_field(ConstantPoolCache,           _resolved_indy_entries,                        Array<ResolvedIndyEntry>*)             \
   nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
-  nonstatic_field(ValueFieldLayoutInfo,        _klass,                                        ValueKlass*)                           \
+  nonstatic_field(ValueFieldInfo,              _klass,                                        ValueKlass*)                           \
+  nonstatic_field(ValueFieldInfo,              _kind,                                         LayoutKind)                            \
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                ObjArrayKlass*)                        \
   nonstatic_field(InstanceKlass,               _methods,                                      Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
@@ -221,7 +223,7 @@
   nonstatic_field(InstanceKlass,               _method_ordering,                              Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _default_vtable_indices,                       Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
-  nonstatic_field(InstanceKlass,               _value_field_layout_info_array,                Array<ValueFieldLayoutInfo>*)          \
+  nonstatic_field(InstanceKlass,               _value_field_info_array,                       Array<ValueFieldInfo>*)                \
   nonstatic_field(InstanceKlass,               _adr_value_klass_members,                      address)                               \
   nonstatic_field(ValueKlass::Members,         _payload_offset,                               int)                                   \
   nonstatic_field(ValueKlass::Members,         _null_marker_offset,                           int)                                   \
@@ -272,6 +274,7 @@
   nonstatic_field(ConstMethod,                 _num_stack_arg_slots,                          u2)                                    \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
   nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
+  nonstatic_field(FlatArrayKlass,              _layout_kind,                                  LayoutKind)                            \
   volatile_nonstatic_field(Symbol,             _hash_and_refcount,                            unsigned int)                          \
   nonstatic_field(Symbol,                      _length,                                       u2)                                    \
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(u1)) /* NOTE: no type */        \
@@ -544,7 +547,10 @@
   nonstatic_field(nmethod,                     _immutable_data_size,                          int)                                   \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
+  nonstatic_field(nmethod,                     _aot_code_entry,                               AOTCodeEntry*)                         \
   volatile_nonstatic_field(nmethod,            _exception_cache,                              ExceptionCache*)                       \
+                                                                                                                                     \
+  nonstatic_field(AOTCodeEntry,                _for_preload,                                  bool)                                  \
                                                                                                                                      \
   nonstatic_field(Deoptimization::UnrollBlock, _size_of_deoptimized_frame,                    int)                                   \
   nonstatic_field(Deoptimization::UnrollBlock, _caller_adjustment,                            int)                                   \
@@ -734,7 +740,7 @@
   unchecked_nonstatic_field(Array<ResolvedMethodEntry>,_data,                                 sizeof(ResolvedMethodEntry))           \
   unchecked_nonstatic_field(Array<ResolvedIndyEntry>,  _data,                                 sizeof(ResolvedIndyEntry))             \
   unchecked_nonstatic_field(Array<Array<u1>*>,         _data,                                 sizeof(Array<u1>*))                    \
-  unchecked_nonstatic_field(Array<ValueFieldLayoutInfo>,_data,                                sizeof(ValueFieldLayoutInfo))          \
+  unchecked_nonstatic_field(Array<ValueFieldInfo>,     _data,                                 sizeof(ValueFieldInfo))                \
                                                                                                                                      \
   /*********************************/                                                                                                \
   /* java_lang_Class fields        */                                                                                                \
@@ -953,7 +959,7 @@
     declare_type(MethodCounters, MetaspaceObj)                            \
     declare_type(ConstMethod, MetaspaceObj)                               \
     declare_type(Annotations, MetaspaceObj)                               \
-    declare_type(ValueFieldLayoutInfo, MetaspaceObj)                      \
+    declare_type(ValueFieldInfo, MetaspaceObj)                            \
                                                                           \
   declare_toplevel_type(ValueKlass::Members)                              \
                                                                           \
@@ -1107,6 +1113,7 @@
   declare_toplevel_type(CompileTask)                                      \
   declare_toplevel_type(Deoptimization)                                   \
   declare_toplevel_type(Deoptimization::UnrollBlock)                      \
+  declare_toplevel_type(AOTCodeEntry)                                     \
                                                                           \
   /************************/                                              \
   /* ImmutableOopMap      */                                              \
@@ -1198,6 +1205,7 @@
                                                                           \
    declare_integer_type(AOTCompressedPointers::narrowPtr)                 \
    declare_integer_type(Bytecodes::Code)                                  \
+   declare_integer_type(LayoutKind)                                       \
    declare_integer_type(InstanceKlass::ClassState)                        \
    declare_integer_type(Klass::KlassKind)                                 \
    declare_integer_type(JavaThreadState)                                  \
@@ -1216,7 +1224,7 @@
             declare_type(Array<ResolvedMethodEntry>, MetaspaceObj)        \
             declare_type(Array<ResolvedIndyEntry>, MetaspaceObj)          \
             declare_type(Array<Array<u1>*>, MetaspaceObj)                 \
-            declare_type(Array<ValueFieldLayoutInfo>, MetaspaceObj)       \
+            declare_type(Array<ValueFieldInfo>, MetaspaceObj)             \
                                                                           \
    declare_toplevel_type(BitMap)                                          \
             declare_type(BitMapView, BitMap)                              \
@@ -1480,6 +1488,18 @@
   /*****************************************************/                 \
                                                                           \
   declare_constant(InstanceKlass::enclosing_method_attribute_size)        \
+                                                                          \
+  /*******************/                                                   \
+  /* LayoutKind enum */                                                   \
+  /*******************/                                                   \
+                                                                          \
+  declare_constant(LayoutKind::REFERENCE)                                 \
+  declare_constant(LayoutKind::BUFFERED)                                  \
+  declare_constant(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT)                 \
+  declare_constant(LayoutKind::NULL_FREE_ATOMIC_FLAT)                     \
+  declare_constant(LayoutKind::NULLABLE_ATOMIC_FLAT)                      \
+  declare_constant(LayoutKind::NULLABLE_NON_ATOMIC_FLAT)                  \
+  declare_constant(LayoutKind::UNKNOWN)                                   \
                                                                           \
   /*********************************/                                     \
   /* InstanceKlass ClassState enum */                                     \

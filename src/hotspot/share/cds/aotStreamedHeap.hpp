@@ -58,7 +58,7 @@ public:
 class AOTStreamedHeapInfo {
   MemRegion _buffer_region;             // Contains the archived objects to be written into the CDS archive.
   CHeapBitMap _oopmap;
-  size_t _roots_offset;                 // Offset of the HeapShared::roots() object, from the bottom
+  size_t _roots_offset;                 // Offset of the AOTHeap::roots() object, from the bottom
                                         // of the archived heap objects, in bytes.
   size_t _num_roots;
 

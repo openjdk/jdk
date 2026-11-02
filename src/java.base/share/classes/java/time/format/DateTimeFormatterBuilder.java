@@ -4514,9 +4514,9 @@ public final class DateTimeFormatterBuilder {
                 if (!isGeneric) {
                     if (dt.isSupported(INSTANT_SECONDS)) {
                         // Check if an explicit metazone DST offset exists
-                        String dstOffset = TimeZoneNameUtility.explicitDstOffset(zname);
+                        ZoneOffset dstOffset = TimeZoneNameUtility.explicitDstOffset(zname);
                         if (dt.isSupported(OFFSET_SECONDS) && dstOffset != null) {
-                            type = ZoneOffset.from(dt).equals(ZoneOffset.of(dstOffset)) ? DST : STD;
+                            type = ZoneOffset.from(dt).equals(dstOffset) ? DST : STD;
                         } else {
                             type = zone.getRules().isDaylightSavings(Instant.from(dt)) ? DST : STD;
                         }

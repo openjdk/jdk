@@ -47,6 +47,7 @@
 #include "logging/log.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
@@ -585,7 +586,7 @@ void G1Policy::record_full_collection_start() {
   record_pause_start_time();
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_full_gc();
-  _collection_set->abandon_all_candidates();
+  candidates()->clear();
 }
 
 void G1Policy::record_full_collection_end(size_t allocation_word_size) {
@@ -720,7 +721,7 @@ void G1Policy::record_concurrent_mark_remark_end() {
 }
 
 G1CollectionSetCandidates* G1Policy::candidates() const {
-  return _collection_set->candidates();
+  return _g1h->collection_set_candidates();
 }
 
 double G1Policy::average_time_ms(G1GCPhaseTimes::GCParPhases phase) const {
@@ -1375,7 +1376,7 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
 }
 
 void G1Policy::abandon_collection_set_candidates() {
-  _collection_set->abandon_all_candidates();
+  candidates()->clear();
 }
 
 void G1Policy::update_gc_pause_time_ratios(Pause gc_type, double start_time_sec, double end_time_sec) {
@@ -1431,7 +1432,7 @@ bool G1Policy::next_gc_should_be_mixed() const {
 }
 
 size_t G1Policy::allowed_waste_in_collection_set() const {
-  return G1HeapWastePercent * _g1h->capacity() / 100;
+  return checked_cast<size_t>(static_cast<uint64_t>(_g1h->capacity()) * G1HeapWastePercent / 100);
 }
 
 bool G1Policy::try_get_available_bytes_estimate(size_t& available_bytes) const {
@@ -1518,7 +1519,7 @@ uint G1Policy::calc_max_num_old_cset_regions() const {
   // as a percentage of the heap size. I.e., it should bound the
   // number of old regions added to the CSet irrespective of how many
   // of them are available.
-  double result = (double)_g1h->num_committed_regions() * G1OldCSetRegionThresholdPercent / 100;
+  double result = (double)_g1h->num_active_regions() * G1OldCSetRegionThresholdPercent / 100;
   // Round up to be conservative.
   return (uint)ceil(result);
 }

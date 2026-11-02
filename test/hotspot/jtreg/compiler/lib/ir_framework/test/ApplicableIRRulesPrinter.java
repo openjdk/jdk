@@ -122,6 +122,7 @@ public class ApplicableIRRulesPrinter {
         "asimdhp",
         // RISCV64
         "rvv",
+        "zbb",
         "zbkb",
         "zfh",
         "zvbb",

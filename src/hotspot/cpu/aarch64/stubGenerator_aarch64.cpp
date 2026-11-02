@@ -2621,10 +2621,12 @@ class StubGenerator: public StubCodeGenerator {
     __ eor(rscratch2, rscratch2, scratch_src_klass);
     __ cbnz(rscratch2, L_failed);
 
-    if (Arguments::is_valhalla_enabled()) {
+    if (UseArrayFlattening) {
       // Check for flat value type array -> return -1
       __ test_flat_array_oop(src, rscratch2, L_failed);
+    }
 
+    if (Arguments::is_valhalla_enabled()) {
       // Check for null-free (non-flat) value type array -> handle as object array
       __ test_null_free_array_oop(src, rscratch2, L_objArray);
     }
@@ -5122,12 +5124,14 @@ class StubGenerator: public StubCodeGenerator {
     Register state0 = c_rarg0;
     Register state1 = c_rarg1;
 
-    // use r3.r17,r19..r28 to keep a0..a24.
+    // use r3..r17,r19..r28 to keep a0..a24.
+    RegSetIterator<Register> regs = (RegSet::range(r0, r28) - r18_tls).begin();
     // a0..a24 are respective locals from SHA3.java
-    const Register a[25] = {
-        r25, r26, r27, r3, r4, r5, r6, r7, rscratch1, rscratch2, r10, r11, r12,
-        r13, r14, r15, r16, r17, r28, r19, r20, r21, r22, r23, r24 };
-    Register tmp0 = r0, tmp1 = r1, tmp2 = r2;
+    Register a[25];
+    Register tmp0 = *regs, tmp1 = *++regs, tmp2 = *++regs;
+    for (int i = 0; i < 25; i++) {
+      a[i] = *++regs;
+    }
 
     Label rounds24_loop_0, rounds24_loop_1;
 
@@ -8464,21 +8468,21 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_intpoly_assign() {
     // KNOWN Lengths:
-    //   MontgomeryIntPolynP256:  5 = 4 + 1
-    //   IntegerPolynomial1305:   5 = 4 + 1
-    //   IntegerPolynomial25519: 10 = 8 + 2
+    //   MontgomeryIntPolynP256:  5 = 0 + 5
+    //   IntegerPolynomial1305:   5 = 0 + 5
+    //   IntegerPolynomial25519:  5 = 0 + 5
+    //   IntegerPolynomialP384:   7 = 6 + 1
     //   IntegerPolynomialP256:  10 = 8 + 2
     //   Curve25519OrderField:   10 = 8 + 2
     //   Curve25519OrderField:   10 = 8 + 2
     //   P256OrderField:         10 = 8 + 2
-    //   IntegerPolynomialP384:  14 = 8 + 4 + 2
-    //   P384OrderField:         14 = 8 + 4 + 2
-    //   IntegerPolynomial448:   16 = 8 + 8
-    //   Curve448OrderField:     16 = 8 + 8
-    //   Curve448OrderField:     16 = 8 + 8
-    //   IntegerPolynomialP521:  19 = 8 + 8 + 2 + 1
-    //   P521OrderField:         19 = 8 + 8 + 2 + 1
-    // Special Cases 5, 10, 14, 16, 19
+    //   P384OrderField:         14 = 10 + 4
+    //   IntegerPolynomial448:   16 = 16 + 0
+    //   Curve448OrderField:     16 = 16 + 0
+    //   Curve448OrderField:     16 = 16 + 0
+    //   IntegerPolynomialP521:  19 = 16 + 3
+    //   P521OrderField:         19 = 16 + 3
+    // Special Cases 5, 7, 10, 14, 16, 19
     assert(UseIntPolyIntrinsics, "what are we doing here?");
     StubId stub_id = StubId::stubgen_intpoly_assign_id;
     int entry_count = StubInfo::entry_count(stub_id);
@@ -8499,7 +8503,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register bLimbs = c_rarg2;
     const Register length = c_rarg3;
 
-    Label L_Length5, L_Length10, L_Length14, L_Length16, L_Length19, L_Default, L_Done;
+    Label L_Length5, L_Length7, L_Length10, L_Length14, L_Length16, L_Length19, L_Default, L_Done;
 
     /*
     int maskValue = -set;
@@ -8516,6 +8520,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ cmp(length, (u1)5);
     __ br(Assembler::EQ, L_Length5);
+    __ cmp(length, (u1)7);
+    __ br(Assembler::EQ, L_Length7);
     __ cmp(length, (u1)10);
     __ br(Assembler::EQ, L_Length10);
     __ cmp(length, (u1)14);
@@ -8581,6 +8587,47 @@ class StubGenerator: public StubCodeGenerator {
       __ str(a4, Address(aLimbs, 4 * BytesPerLong));
 
       __ pop(r19, sp);
+      __ b(L_Done);
+    }
+
+    // Length = 7
+    // Split into 3 neon regs and 1 GPR
+    __ BIND(L_Length7);
+    {
+      Register a7 = r10;
+      Register b7 = r11;
+
+      VSeq<3> a_vec(16);
+      VSeq<3> b_vec(20);
+
+      int offsets[1] = { 0 };
+
+      __ ldr(a7, Address(aLimbs, 6 * BytesPerLong));
+      __ ldr(b7, Address(bLimbs, 6 * BytesPerLong));
+
+      __ ld1(a_vec[0], __ T2D, aLimbs);
+      vs_ldpq_indexed(vs_tail(a_vec), aLimbs, 16, offsets);
+
+      __ eor(b7, b7, a7);
+
+      __ ld1(b_vec[0], __ T2D, bLimbs);
+      vs_ldpq_indexed(vs_tail(b_vec), bLimbs, 16, offsets);
+
+      __ andr(b7, b7, mask_scalar);
+
+      vs_eor(b_vec, b_vec, a_vec);
+
+      __ eor(a7, a7, b7);
+
+      vs_andr(b_vec, b_vec, mask_vec);
+
+      __ str(a7, Address(aLimbs, 6 * BytesPerLong));
+
+      vs_eor(a_vec, a_vec, b_vec);
+
+      __ st1(a_vec[0], __ T2D, aLimbs);
+      vs_stpq_indexed(vs_tail(a_vec), aLimbs, 16, offsets);
+
       __ b(L_Done);
     }
 
@@ -8936,7 +8983,7 @@ class StubGenerator: public StubCodeGenerator {
   // used to store this data.
 
   // When `r18` is not reserved and frame pointers need not be preserved then
-  // `rfp` and `r18` are aliased to temporaries `tmp3` and `tmp4`, respectively.
+  // `r18` and `rfp` are aliased to temporaries `tmp3` and `tmp4`, respectively.
   // All other register mappings are determined by the emitter.
 
   // If `r18` or `rfp` cannot be used then 2 of the 31 live register values are
@@ -8957,7 +9004,7 @@ class StubGenerator: public StubCodeGenerator {
   // When `r18` and `rfp` are available then `saved_regs` will be empty.  In
   // this case push/pop will not emit any instructions, introducing no spills.
   void keccak_round_gpr(bool can_use_fp, bool can_use_r18, Register rc,
-                        const Register a[], Register tmp0, Register tmp1,
+                        Register a[], Register tmp0, Register tmp1,
                         Register tmp2) {
     __ eor3(tmp1, a[4], a[9], a[14]);
     __ eor3(tmp0, tmp1, a[19], a[24]); // tmp0 = a4^a9^a14^a19^a24 = c4
@@ -8965,19 +9012,22 @@ class StubGenerator: public StubCodeGenerator {
     __ eor3(tmp1, tmp2, a[16], a[21]); // tmp1 = a1^a6^a11^a16^a21 = c1
     __ rax1(tmp2, tmp0, tmp1); // d0
     {
-
-      Register tmp3, tmp4;
-      RegSet saved_regs;
+      Register tmp3, tmp4, a4 = a[4], a9 = a[9];
+      RegSet saved_regs, tmp_regs;
 
       if (can_use_fp && can_use_r18) {
-        tmp3 = rfp;
-        tmp4 = r18_tls;
+        tmp_regs = RegSet::of(r18_tls, rfp);
       } else {
-        tmp3 = a[4];
-        tmp4 = a[9];
-        saved_regs = RegSet::of(tmp3, tmp4);
+        tmp_regs = RegSet::of(a4, a9);
+        a[4] = a[9] = noreg;
+        saved_regs = tmp_regs;
       }
       __ push(saved_regs, sp);
+
+      RegSetIterator<Register> regs = tmp_regs.begin();
+
+      tmp3 = *regs;
+      tmp4 = *++regs;
 
       __ eor3(tmp3, a[0], a[5], a[10]);
       __ eor3(tmp4, tmp3, a[15], a[20]); // tmp4 = a0^a5^a10^a15^a20 = c0
@@ -9008,6 +9058,8 @@ class StubGenerator: public StubCodeGenerator {
       __ eor(a[12], a[12], tmp2);
       __ rax1(tmp0, tmp0, tmp4); // d4
       __ pop(saved_regs, sp);
+      a[4] = a4;
+      a[9] = a9;
 
       __ eor(a[17], a[17], tmp2);
       __ eor(a[22], a[22], tmp2);
@@ -9091,12 +9143,14 @@ class StubGenerator: public StubCodeGenerator {
     Register ofs           = c_rarg3;
     Register limit         = c_rarg4;
 
-    // use r3.r17,r19..r28 to keep a0..a24.
+    // use r3..r17,r19..r28 to keep a0..a24.
+    RegSetIterator<Register> regs = (RegSet::range(r0, r28) - r18_tls).begin();
     // a0..a24 are respective locals from SHA3.java
-    const Register a[25] = {
-        r25, r26, r27, r3, r4, r5, r6, r7, rscratch1, rscratch2, r10, r11, r12,
-        r13, r14, r15, r16, r17, r28, r19, r20, r21, r22, r23, r24 };
-    Register tmp0 = block_size, tmp1 = buf, tmp2 = state, tmp3 = lr;
+    Register a[25];
+    Register tmp1 = *regs, tmp2 = *++regs, tmp0 = *++regs, tmp3 = lr;
+    for (int i = 0; i < 25; i++) {
+      a[i] = *++regs;
+    }
 
     Label sha3_loop, rounds24_preloop, loop_body;
     Label sha3_512_or_sha3_384, shake128;
