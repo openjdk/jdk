@@ -891,6 +891,12 @@ public final class HSS extends SignatureSpi {
     static class HSSPublicKey extends X509Key implements Serializable {
         @Serial
         private static final long serialVersionUID = 21;
+        private static void checkLevels(int levels) throws InvalidKeyException {
+            if (levels < 1 || levels > 8) {
+                throw new InvalidKeyException("HSS levels must be between 1 and 8");
+            }
+        }
+
         private transient int L;
         private transient LMSPublicKey lmsPublicKey;
 
@@ -908,6 +914,7 @@ public final class HSS extends SignatureSpi {
                     throw new InvalidKeyException("HSS public key too short");
                 }
                 L = LMSUtils.fourBytesToInt(keyArray, 0);
+                checkLevels(L);
                 lmsPublicKey =
                         new LMSPublicKey(
                                 Arrays.copyOfRange(keyArray, 4, keyArray.length),
@@ -945,6 +952,7 @@ public final class HSS extends SignatureSpi {
                 setKey(new BitArray(keyArray.length * 8, keyArray));
             }
             L = LMSUtils.fourBytesToInt(keyArray, 0);
+            checkLevels(L);
             lmsPublicKey = new LMSPublicKey(keyArray, 4, true);
         }
 
@@ -975,7 +983,7 @@ public final class HSS extends SignatureSpi {
                 throw new SignatureException("HSS signature is too short");
             }
             Nspk = LMSUtils.fourBytesToInt(sigArr, 0);
-            if (Nspk + 1 != pubKey.L) {
+            if (Nspk < 0 || Nspk > 7 || Nspk + 1 != pubKey.L) {
                 throw new SignatureException(
                         "HSS signature and public key have different tree heights");
             }
