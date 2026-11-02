@@ -41,6 +41,7 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
 public class TIFFTruncatedLZWTest {
+    static boolean testFailed = true;
     public static void main(String[] args) throws Exception {
         var b = ByteBuffer.allocate(75).order(ByteOrder.LITTLE_ENDIAN);
         b.putShort((short) 0x4949).putShort((short) 42).putInt(8)
@@ -67,12 +68,17 @@ public class TIFFTruncatedLZWTest {
             reader.setInput(input);
             reader.read(0); // first image in the TIFF
         } catch (IIOException e) {
-            if (!Objects.equals(e.getMessage(), "Invalid LZW" +
+            if (Objects.equals(e.getMessage(), "Invalid LZW" +
                 " compressed strip/tile data")) {
-                throw e;
+                testFailed = false;
             }
         } finally {
             reader.dispose();
+        }
+
+        if (testFailed) {
+            throw new RuntimeException("Test didn't" +
+                " throw expected IIOException");
         }
     }
 }
