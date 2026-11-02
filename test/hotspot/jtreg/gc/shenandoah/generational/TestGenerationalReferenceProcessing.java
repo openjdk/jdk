@@ -231,11 +231,6 @@ public class TestGenerationalReferenceProcessing {
         int referencesShown = 0;
         boolean allClear = true;
         for (var reference : references) {
-            if (!WEAK_REFS.contains(reference)) {
-                // We picked up a references on the heap that is not part of the test, so skip it
-                continue;
-            }
-
             if (reference.get() != null) {
                 if (referencesShown >= MaxReferences) {
                     break;
