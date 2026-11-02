@@ -1810,6 +1810,7 @@ public:
   virtual const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
   virtual bool can_be_value_array() const;
+  bool maybe_incompatible_arraycopy_layout(const TypeAryPtr* other) const;
 
   // Convenience common pre-built types.
   static const TypeAryPtr* BOTTOM;

@@ -417,6 +417,48 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
   return true;
 }
 
+// Check whether the fast path arraycopy can be used:
+// - Return false: We could not prove that the fast path is safe
+// - Return true:  We might use the fast path
+bool ArrayCopyNode::can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const TypeAryPtr* dest_ary) const {
+  assert(src_ary != nullptr && dest_ary != nullptr, "must be array pointers");
+
+  if (src_ary->maybe_incompatible_arraycopy_layout(dest_ary)) {
+    // We don't know whether src and dest have the same layout.
+    return false;
+  }
+
+  if (!src_ary->is_flat()) {
+    return true;
+  }
+
+  // Additional checks for flat arrays.
+  assert(src_ary->exact_klass() == dest_ary->exact_klass(), "same layout");
+  assert(dest_ary->is_flat(), "same flatness");
+  assert(src_ary->is_null_free() == dest_ary->is_null_free(), "same nullness");
+  assert(src_ary->is_atomic() == dest_ary->is_atomic(), "same atomicity");
+
+  BasicType dest_elem_bt = dest_ary->elem()->array_element_basic_type();
+  if (is_reference_type(dest_elem_bt, true)) {
+    dest_elem_bt = T_OBJECT;
+  }
+
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bool needs_barriers = bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), dest_elem_bt, false, false,
+                                                            BarrierSetC2::Optimization);
+
+  if (src_ary->is_atomic()) {
+    // The arraycopy stub can only copy non-atomic flat arrays.
+    return false;
+  }
+
+  if (src_ary->elem()->value_klass()->contains_oops() && needs_barriers) {
+    // The flat array could contain oops which require barriers which we cannot handle.
+    return false;
+  }
+  return true;
+}
+
 const TypeAryPtr* ArrayCopyNode::get_address_type(PhaseGVN* phase, const TypePtr* atp, Node* n) {
   if (atp == TypeOopPtr::BOTTOM) {
     atp = phase->type(n)->isa_ptr();

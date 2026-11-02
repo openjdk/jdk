@@ -7105,7 +7105,7 @@ bool LibraryCallKit::inline_arraycopy() {
     }
 
     if (Arguments::is_valhalla_enabled()) {
-      // TODO 8251971 Improve this. What about atomicity? Make sure this is always folded for type arrays.
+      // TODO 8251971: Add speculative layout checks for src and dest array to enable more optimization opportunities.
       // If destination is null-restricted, source must be null-restricted as well: src_null_restricted || !dst_null_restricted
       Node* src_klass = load_object_klass(src);
       Node* adr_prop_src = basic_plus_adr(top(), src_klass, in_bytes(ArrayKlass::properties_offset()));
@@ -7128,7 +7128,7 @@ bool LibraryCallKit::inline_arraycopy() {
       Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
       generate_fair_guard(tst, slow_region);
 
-      // TODO 8251971 This is too strong
+      // TODO 8397038: This is too strong
       if (UseArrayFlattening) {
         generate_fair_guard(flat_array_test(src), slow_region);
         generate_fair_guard(flat_array_test(dest), slow_region);

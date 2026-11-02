@@ -5989,6 +5989,37 @@ bool TypeAryPtr::can_be_value_array() const {
   return elem()->make_ptr() && elem()->make_ptr()->isa_instptr() && elem()->make_ptr()->is_instptr()->_klass->can_be_value_klass();
 }
 
+// Could this array and 'other' have incompatible layouts for applying arraycopy?
+// - Return false: We know that the layouts are compatible
+// - Return true:  We either don't know or have shown that they are not compatible.
+bool TypeAryPtr::maybe_incompatible_arraycopy_layout(const TypeAryPtr* other) const {
+  BasicType src_elem_bt = elem()->array_element_basic_type();
+  BasicType dest_elem_bt = other->elem()->array_element_basic_type();
+  if (::is_reference_type(src_elem_bt, true)) { src_elem_bt = T_OBJECT; }
+  if (::is_reference_type(dest_elem_bt, true)) { dest_elem_bt = T_OBJECT; }
+  if (src_elem_bt != dest_elem_bt) {
+    // Different element types and thus not the same array -> incompatible
+    return true;
+  }
+  if (!is_java_primitive(src_elem_bt) && src_elem_bt != T_OBJECT) {
+    // Unsupported or unknown element type -> we don't know if they have compatible layouts
+    return true;
+  }
+
+  if (is_not_flat() && other->is_not_flat()) {
+    // Both are type arrays or have reference layouts -> compatible
+    return false;
+  }
+
+  // At least one array might be flat.
+  if (klass_is_exact() && other->klass_is_exact() && exact_klass() == other->exact_klass()) {
+    // Same refined layout -> compatible
+    return false;
+  }
+  // Otherwise, we don't have more information and must assume incompatibility.
+  return true;
+}
+
 const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, const Type* elem, ciKlass* k, Offset offset, bool not_flat, bool not_null_free, bool flat, bool null_free, bool atomic, bool refined_type) {
   if (ptr == TypePtr::Constant && elem->isa_klassptr() != nullptr) {
     // If an array klass ptr is a constant, its element is also a constant
