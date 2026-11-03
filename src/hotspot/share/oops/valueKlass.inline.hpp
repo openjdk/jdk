@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_OOPS_VALUEKLASS_INLINE_HPP
-#define SHARE_VM_OOPS_VALUEKLASS_INLINE_HPP
+
+#ifndef SHARE_OOPS_VALUEKLASS_INLINE_HPP
+#define SHARE_OOPS_VALUEKLASS_INLINE_HPP
 
 #include "oops/valueKlass.hpp"
 
@@ -121,8 +122,8 @@ void ValueKlass::oop_iterate_value_payload_f(address payload, Function function)
   OopMapBlock* const end_map = map + nonstatic_oop_map_count();
 
   // OopMap offsets are relative to an object header, but we are iterating over
-  // inlined value payloads, which often don't have an object header. Set up a
-  // synthetic object base that can be used by the oop map offset calculations.
+  // flattened value payloads, which often don't have an object header. Use a
+  // synthetic object base for the oop map offset calculations.
   const address synthetic_object_base = payload - payload_offset();
 
   for (; map < end_map; map++) {
@@ -150,8 +151,8 @@ inline void ValueKlass::oop_iterate_value_payload_bounded(address payload, OopCl
   T* const h   = (T*) hi;
 
   // OopMap offsets are relative to an object header, but we are iterating over
-  // inlined value payloads, which often don't have an object header. Set up a
-  // synthetic object base that can be used by the oop map offset calculations.
+  // flattened value payloads, which often don't have an object header. Use a
+  // synthetic object base for the oop map offset calculations.
   const address synthetic_object_base = payload - payload_offset();
 
   for (; map < end_map; map++) {
@@ -169,4 +170,4 @@ inline void ValueKlass::oop_iterate_value_payload_bounded(address payload, OopCl
   }
 }
 
-#endif // SHARE_VM_OOPS_VALUEKLASS_INLINE_HPP
+#endif // SHARE_OOPS_VALUEKLASS_INLINE_HPP

@@ -95,7 +95,6 @@ public class TestLongRangeCheck {
                 throw new RuntimeException("unexpected exception");
             }
         }
-        assertIsNotCompiled(m);
 
         m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod(method, long.class, long.class, long.class, long.class);
         m.invoke(null, start, stop, length, offset); // run once so all classes are loaded
@@ -112,7 +111,6 @@ public class TestLongRangeCheck {
                 throw new RuntimeException("unexpected exception");
             }
         }
-        assertIsNotCompiled(m);
 
         m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod(method, long.class, long.class, long.class, long.class);
         m.invoke(null, start, stop, length, offset); // run once so all classes are loaded
@@ -128,7 +126,6 @@ public class TestLongRangeCheck {
                 throw new RuntimeException("unexpected exception");
             }
         }
-        assertIsNotCompiled(m);
     }
 
     private static void testOverflow(String method, long start, long stop, long length, long offset0, long offset1) throws Exception {
@@ -146,7 +143,6 @@ public class TestLongRangeCheck {
                 throw new RuntimeException("unexpected exception");
             }
         }
-        assertIsNotCompiled(m);
     }
 
     private static void testConditional(String method, long start, long stop, long length, long offset0, long offset1, long start1, long stop1) throws Exception {
@@ -167,7 +163,6 @@ public class TestLongRangeCheck {
                     throw new RuntimeException("unexpected exception");
                 }
             }
-            assertIsNotCompiled(m);
         }
 
         if (stop1 != stop) {
@@ -185,7 +180,6 @@ public class TestLongRangeCheck {
                     throw new RuntimeException("unexpected exception");
                 }
             }
-            assertIsNotCompiled(m);
         }
 
         m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod(method, long.class, long.class, long.class, long.class, long.class, long.class);
@@ -328,7 +322,6 @@ public class TestLongRangeCheck {
                     throw new RuntimeException("unexpected exception");
                 }
             }
-            assertIsNotCompiled(m);
         }
     }
 

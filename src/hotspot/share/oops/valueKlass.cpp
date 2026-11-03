@@ -518,19 +518,17 @@ void ValueKlass::remove_unshareable_info() {
 
 #endif // CDS
 
-#define BULLET  " - "
-
 void ValueKlass::print_on(outputStream* st) const {
   InstanceKlass::print_on(st);
   members().print_on(st);
-  st->print_cr(BULLET"---- LayoutKinds:");
+  st->print_cr(" - ---- LayoutKinds:");
   auto print_layout_kind = [&](LayoutKind lk) {
     if (is_layout_supported(lk)) {
-      st->print_cr(BULLET"%s layout: %d/%d",
+      st->print_cr(" - %s layout: %d/%d",
                    LayoutKindHelper::layout_kind_as_string(lk),
                    layout_size_in_bytes(lk), layout_alignment(lk));
     } else {
-      st->print_cr(BULLET"%s layout: -/-",
+      st->print_cr(" - %s layout: -/-",
                    LayoutKindHelper::layout_kind_as_string(lk));
     }
   };
@@ -554,32 +552,30 @@ void ValueKlass::oop_verify_on(oop obj, outputStream* st) {
 }
 
 void ValueKlass::Members::print_on(outputStream* st) const {
-  st->print_cr(BULLET"---- value type members:");
-  st->print(BULLET"extended signature registers:      ");
+  st->print_cr(" - ---- value type members:");
+  st->print(" - extended signature registers:      ");
   InstanceKlass::print_array_on(st, _extended_sig, [](outputStream* ost, SigEntry pair){
     pair.print_on(ost);
   });
-  st->print(BULLET"return registers:                  ");
+  st->print(" - return registers:                  ");
   InstanceKlass::print_array_on(st, _return_regs, [](outputStream* ost, VMRegPair pair) {
     pair.print_on(ost);
   });
-  st->print_cr(BULLET"pack handler:                      " PTR_FORMAT, p2i(_pack_handler));
-  st->print_cr(BULLET"pack handler (jobject):            " PTR_FORMAT, p2i(_pack_handler_jobject));
-  st->print_cr(BULLET"unpack handler:                    " PTR_FORMAT, p2i(_unpack_handler));
-  st->print_cr(BULLET"null reset offset:                 %d", _null_reset_value_offset);
-  st->print_cr(BULLET"payload offset:                    %d", _payload_offset);
-  st->print_cr(BULLET"payload size (bytes):              %d", _payload_size_in_bytes);
-  st->print_cr(BULLET"payload alignment:                 %d", _payload_alignment);
-  st->print_cr(BULLET"null-free non-atomic size (bytes): %d", _null_free_non_atomic_size_in_bytes);
-  st->print_cr(BULLET"null-free non-atomic alignment:    %d", _null_free_non_atomic_alignment);
-  st->print_cr(BULLET"null-free atomic size (bytes):     %d", _null_free_atomic_size_in_bytes);
-  st->print_cr(BULLET"nullable atomic size (bytes):      %d", _nullable_atomic_size_in_bytes);
-  st->print_cr(BULLET"nullable non-atomic size (bytes):  %d", _nullable_non_atomic_size_in_bytes);
-  st->print_cr(BULLET"null marker offset:                %d", _null_marker_offset);
-  st->print_cr(BULLET"fast acmp offset:                  %d", _fast_acmp_offset);
-  st->print_cr(BULLET"fast acmp mask:                    " INT64_FORMAT_X_0, _fast_acmp_mask);
-  st->print_cr(BULLET"fast hashcode offset:              %d", _fast_hashcode_offset);
-  st->print_cr(BULLET"fast hashcode shift:               %d", _fast_hashcode_shift);
+  st->print_cr(" - pack handler:                      " PTR_FORMAT, p2i(_pack_handler));
+  st->print_cr(" - pack handler (jobject):            " PTR_FORMAT, p2i(_pack_handler_jobject));
+  st->print_cr(" - unpack handler:                    " PTR_FORMAT, p2i(_unpack_handler));
+  st->print_cr(" - null reset offset:                 %d", _null_reset_value_offset);
+  st->print_cr(" - payload offset:                    %d", _payload_offset);
+  st->print_cr(" - payload size (bytes):              %d", _payload_size_in_bytes);
+  st->print_cr(" - payload alignment:                 %d", _payload_alignment);
+  st->print_cr(" - null-free non-atomic size (bytes): %d", _null_free_non_atomic_size_in_bytes);
+  st->print_cr(" - null-free non-atomic alignment:    %d", _null_free_non_atomic_alignment);
+  st->print_cr(" - null-free atomic size (bytes):     %d", _null_free_atomic_size_in_bytes);
+  st->print_cr(" - nullable atomic size (bytes):      %d", _nullable_atomic_size_in_bytes);
+  st->print_cr(" - nullable non-atomic size (bytes):  %d", _nullable_non_atomic_size_in_bytes);
+  st->print_cr(" - null marker offset:                %d", _null_marker_offset);
+  st->print_cr(" - fast acmp offset:                  %d", _fast_acmp_offset);
+  st->print_cr(" - fast acmp mask:                    " INT64_FORMAT_X_0, _fast_acmp_mask);
+  st->print_cr(" - fast hashcode offset:              %d", _fast_hashcode_offset);
+  st->print_cr(" - fast hashcode shift:               %d", _fast_hashcode_shift);
 }
-
-#undef BULLET

@@ -211,7 +211,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 
   // Addresses of the two jump tables used for small needle processing
   address *big_jump_table = StubRoutines::x86::big_jump_table_base(ae);
-  address *small_jump_table = StubRoutines::x86::big_jump_table_base(ae);
+  address *small_jump_table = StubRoutines::x86::small_jump_table_base(ae);
 
   // If the stub has been cached we can retrieve the stub entry.  The
   // target addresses we need to install into the jump tables will

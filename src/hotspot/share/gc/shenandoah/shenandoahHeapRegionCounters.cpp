@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,9 +191,10 @@ jlong ShenandoahHeapRegionCounters::encode_heap_status(ShenandoahHeap* heap) {
                           generation->name(), phase, BOOL_TO_STR(heap->is_concurrent_old_mark_in_progress()), status);
   }
 
-  if (heap->is_degenerated_gc_in_progress()) {
+  if (heap->has_self_forwarded_objects()) {
     status |= (1 << 6);
   }
+
   if (heap->is_full_gc_in_progress()) {
     status |= (1 << 7);
   }

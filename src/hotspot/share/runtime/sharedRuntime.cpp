@@ -1201,13 +1201,8 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     bc = Bytecodes::_invokestatic;
     methodHandle attached_method(THREAD, extract_attached_method(vfst));
     assert(attached_method.not_null(), "must have attached method");
-    vmClasses::ValueObjectMethods_klass()->initialize(CHECK_NH);
     LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, false, CHECK_NH);
-#ifdef ASSERT
-    Symbol* subst_method_name = vmSymbols::isSubstitutable_name();
-    Method* is_subst = vmClasses::ValueObjectMethods_klass()->find_method(subst_method_name, vmSymbols::object_object_boolean_signature());
-    assert(callinfo.selected_method() == is_subst, "must be isSubstitutable method");
-#endif
+    assert(callinfo.selected_method() == Universe::is_substitutable_method(), "must be isSubstitutable method");
     return receiver;
   }
 
@@ -1368,9 +1363,31 @@ methodHandle SharedRuntime::find_callee_method(bool& caller_does_not_scalarize, 
     Bytecodes::Code bc;
     CallInfo callinfo;
     find_callee_info_helper(vfst, bc, callinfo, CHECK_(methodHandle()));
-    // Calls via mismatching methods are always non-scalarized
-    if (callinfo.resolved_method()->mismatch()) {
-      caller_does_not_scalarize = true;
+
+    if (!caller_does_not_scalarize) {
+      // check if the call is an optimized virtual call
+      RegisterMap reg_map(current,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::include,
+                    RegisterMap::WalkContinuation::skip);
+      frame stub_frame = current->last_frame();
+      assert(stub_frame.is_runtime_frame(), "must be a runtimeStub");
+      frame caller = stub_frame.sender(&reg_map);
+      nmethod* caller_nm = CodeCache::find_nmethod(caller.pc());
+      assert(caller_nm != nullptr, "did not find caller nmethod");
+
+      address call_addr = caller_nm->call_instruction_address(caller.pc());
+
+      bool is_optimized = false;
+      if (call_addr != nullptr) {
+        RelocIterator iter(caller_nm, call_addr, call_addr+1);
+        bool ret = iter.next(); // Get item
+        if (ret && iter.type() == relocInfo::opt_virtual_call_type) {
+          is_optimized = true;
+        }
+      }
+      // Calls via mismatching methods are always non-scalarized
+      caller_does_not_scalarize = is_optimized ? callinfo.selected_method()->mismatch() : callinfo.resolved_method()->mismatch();
     }
     callee_method = methodHandle(current, callinfo.selected_method());
   }
@@ -2800,6 +2817,10 @@ CodeOffsets::Entries CompiledEntrySignature::c1_value_ro_entry_type() const {
   }
 }
 
+int CompiledEntrySignature::max_stack_slots_cc() {
+  return UseShenandoahGC ? 64 : 128;
+}
+
 // Returns all super methods (transitive) in classes and interfaces that are overridden by the current method.
 GrowableArray<Method*>* CompiledEntrySignature::get_supers() {
   if (_supers != nullptr) {
@@ -2846,7 +2867,7 @@ bool CompiledEntrySignature::check_supers_and_deoptimize(int arg_num) {
   assert(JavaThread::current()->thread_state() == _thread_in_vm, "must be in vm state");
 
   bool scalar_super = false;
-  bool non_scalar_super = false;
+  bool non_scalar = _method->is_native();
 
   GrowableArray<Method*>* supers = get_supers();
   for (int i = 0; i < supers->length(); ++i) {
@@ -2854,20 +2875,20 @@ bool CompiledEntrySignature::check_supers_and_deoptimize(int arg_num) {
     if (super_method->is_scalarized_arg(arg_num)) {
       scalar_super = true;
     } else {
-      non_scalar_super = true;
+      non_scalar = true;
     }
   }
 #ifdef ASSERT
   // Randomly enable below code paths for stress testing
   bool stress = StressCallingConvention;
   if (stress && (os::random() & 1) == 1) {
-    non_scalar_super = true;
+    non_scalar = true;
     if ((os::random() & 1) == 1) {
       scalar_super = true;
     }
   }
 #endif
-  if (non_scalar_super) {
+  if (non_scalar) {
     // Found a super method with a non-scalarized argument. Fall back to the non-scalarized calling convention.
     if (scalar_super) {
       // Found non-scalar *and* scalar super methods. We can't handle both.
@@ -2892,7 +2913,7 @@ bool CompiledEntrySignature::check_supers_and_deoptimize(int arg_num) {
     }
   }
 
-  return non_scalar_super;
+  return non_scalar;
 }
 
 // Iterate over arguments and compute scalarized and non-scalarized signatures
@@ -2975,8 +2996,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
 
     // Limit the scalarized stack argument area to ensure that generated entry
     // points fit into nmethod's uint16_t *_entry_offset fields.
-    const int max_stack_slots = UseShenandoahGC ? 64 : 128;
-    if (MAX2(_args_on_stack_cc, _args_on_stack_cc_ro) <= max_stack_slots) {
+    if (MAX2(_args_on_stack_cc, _args_on_stack_cc_ro) <= max_stack_slots_cc()) {
       return; // Success
     }
 
@@ -2984,7 +3004,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
     // receiver would help. If so, use the receiver-as-oop convention for the
     // method body but keep scalarizing the other arguments. This also preserves
     // the convention used by calls through super methods.
-    if (_has_value_recv && _args_on_stack_cc_ro <= max_stack_slots && _num_value_args > 1) {
+    if (_has_value_recv && _args_on_stack_cc_ro <= max_stack_slots_cc() && _num_value_args > 1) {
       _sig_cc = _sig_cc_ro;
       _args_on_stack_cc = SharedRuntime::java_calling_convention(_sig_cc, _regs_cc);
       assert(_args_on_stack_cc == _args_on_stack_cc_ro, "calling conventions must match");
@@ -3024,7 +3044,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
   bool has_scalarized_arguments = false;
   bool long_prev = false;
   int long_prev_offset = -1;
-  bool skipping_inline_recv = false;
+  bool skipping_value_recv = false;
   bool receiver_handled = false;
 
   fingerprint->iterate_args([&] (const AdapterFingerPrint::Element& arg) {
@@ -3044,7 +3064,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
       }
       assert(long_prev_offset != 0, "no buffer argument here");
       SigEntry::add_entry(_sig_cc, bt_to_add, nullptr, long_prev_offset);
-      if (!skipping_inline_recv) {
+      if (!skipping_value_recv) {
         SigEntry::add_entry(_sig_cc_ro, bt_to_add, nullptr, long_prev_offset);
       }
     }
@@ -3055,10 +3075,10 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
           assert(ValueTypePassFieldsAsArgs, "unexpected end of value type");
           value_object_count--;
           SigEntry::add_entry(_sig_cc, T_VOID, nullptr, offset);
-          if (!skipping_inline_recv) {
+          if (!skipping_value_recv) {
             SigEntry::add_entry(_sig_cc_ro, T_VOID, nullptr, offset);
           } else if (value_object_count == 0) {
-            skipping_inline_recv = false;
+            skipping_value_recv = false;
           }
           assert(value_object_count >= 0, "invalid value object count");
         } else {
@@ -3072,7 +3092,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
           SigEntry::add_entry(_sig, bt);
         }
         SigEntry::add_entry(_sig_cc, bt, nullptr, offset);
-        if (!skipping_inline_recv) {
+        if (!skipping_value_recv) {
           SigEntry::add_entry(_sig_cc_ro, bt, nullptr, offset);
         }
         break;
@@ -3089,7 +3109,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
         assert(value_object_count > 0, "must be value object field");
         assert(offset != 0 || (bt == T_OBJECT && prev_bt == T_METADATA), "buffer input expected here");
         SigEntry::add_entry(_sig_cc, bt, nullptr, offset, offset == -1, offset == 0);
-        if (!skipping_inline_recv) {
+        if (!skipping_value_recv) {
           SigEntry::add_entry(_sig_cc_ro, bt, nullptr, offset, offset == -1, offset == 0);
         }
         break;
@@ -3099,10 +3119,10 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
           SigEntry::add_entry(_sig, T_OBJECT);
         }
         SigEntry::add_entry(_sig_cc, T_METADATA, nullptr, offset);
-        if (!skipping_inline_recv) {
+        if (!skipping_value_recv) {
           if (!receiver_handled && _has_value_recv && value_object_count == 0) {
             SigEntry::add_entry(_sig_cc_ro, T_OBJECT);
-            skipping_inline_recv = true;
+            skipping_value_recv = true;
             receiver_handled = true;
           } else {
             SigEntry::add_entry(_sig_cc_ro, T_METADATA, nullptr, offset);
@@ -3128,10 +3148,10 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
 
 #ifdef ASSERT
   if (_has_value_recv) {
-    // In RO signatures, inline receivers must be represented as a single T_OBJECT
+    // In RO signatures, value receivers must be represented as a single T_OBJECT
     assert(_sig_cc_ro->length() >= 1, "sig_cc_ro must include receiver");
     assert(_sig_cc_ro->at(0)._bt == T_OBJECT,
-           "sig_cc_ro must represent inline receiver as T_OBJECT");
+           "sig_cc_ro must represent value receiver as T_OBJECT");
     assert(_sig_cc_ro->length() <= _sig_cc->length(),
            "sig_cc_ro must not be longer than sig_cc");
   }
@@ -3249,7 +3269,7 @@ void AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handler) {
   const char* name = AdapterHandlerLibrary::name(handler);
   const uint32_t id = AdapterHandlerLibrary::id(handler);
 
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name);
+  CodeBlob* blob = AOTCodeCache::load_adapter(id, name);
   if (blob != nullptr) {
     handler->set_adapter_blob(blob->as_adapter_blob());
   }
@@ -3363,7 +3383,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
     // try to save generated code
     const char* name = AdapterHandlerLibrary::name(handler);
     const uint32_t id = AdapterHandlerLibrary::id(handler);
-    bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name);
+    bool success = AOTCodeCache::store_adapter(*adapter_blob, id, name);
     assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
 #endif // ZERO
@@ -3452,6 +3472,11 @@ void AdapterHandlerLibrary::dump_aot_adapter_table() {
 }
 
 void AdapterHandlerLibrary::serialize_shared_table_header(SerializeClosure* soc) {
+  // This table is used for loading cached adapters in a retraining JVM. However,
+  // this table should not be written into the AOT configuration file (which
+  // doesn't store AOT adapters).
+  AOTWriteClosureDisabler disable_if(CDSConfig::is_redumping_aot_configuration());
+
   _aot_adapter_handler_table.serialize_header(soc);
 }
 

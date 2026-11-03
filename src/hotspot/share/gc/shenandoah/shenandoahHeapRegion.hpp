@@ -29,7 +29,6 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
-#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -176,6 +175,7 @@ public:
 
   // Allowed transitions from the outside code:
   void make_regular_allocation(ShenandoahAffiliation affiliation);
+  void make_regular_for_partial_recycling();
   void make_affiliated_maybe();
   void make_regular_bypass();
   void make_humongous_start();
@@ -220,6 +220,7 @@ public:
   // Macro-properties:
   bool is_alloc_allowed()          const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _regular || cur_state == _pinned; }
   bool is_stw_move_allowed()       const { auto cur_state = state(); return cur_state == _regular || cur_state == _cset || (ShenandoahHumongousMoves && cur_state == _humongous_start); }
+  bool is_update_required()        const { return is_active() && (!is_cset() || has_self_forwards()); }
 
   RegionState state()              const { return _state.load_acquire(); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
@@ -271,13 +272,11 @@ private:
 
   uint _age;
   bool _promoted_in_place;
-  CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
   // Set when an evacuation failure self-forwarded at least one object in this
-  // region. The drain at degen/full GC entry scans flagged regions and CAS-
-  // clears the self_fwd bits. Safety-net reset on region recycle.
+  // region. The flag is cleared when the region is partially recycled during final-update-refs.
   ShenandoahSharedFlag _has_self_forwards;
 
   // This is only read/written by a gc worker to avoid unnecessary bitmap resets
@@ -505,9 +504,8 @@ public:
 
   void set_affiliation(ShenandoahAffiliation new_affiliation);
 
-  // Region ageing and rejuvenation
+  // Region ageing
   uint age() const { return _age; }
-  CENSUS_NOISE(uint youth() const { return _youth; })
 
   void increment_age() {
     const uint max_age = markWord::max_age;
@@ -519,11 +517,10 @@ public:
 
   void reset_age() {
     assert(get_top_before_promote() == nullptr, "Cannot reset age on region (%zu) scheduled for promotion", index());
-    CENSUS_NOISE(_youth += _age;)
     _age = 0;
   }
 
-  CENSUS_NOISE(void clear_youth() { _youth = 0; })
+  void partially_recycle();
 
   inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;
@@ -539,9 +536,9 @@ public:
 
   // Self-forward accounting: set by an evacuating thread after it successfully
   // installs a self-forward mark on an object in this region. Tested and cleared
-  // at the drain phase (degen/full GC entry) and again on region recycle.
+  // when the region is partially recycled in final-update-refs.
   bool has_self_forwards() const { return _has_self_forwards.is_set(); }
-  void set_has_self_forwards()   { _has_self_forwards.set(); }
+  void set_has_self_forwards()   { _has_self_forwards.try_set(); }
   void clear_has_self_forwards() { _has_self_forwards.unset(); }
 
 private:

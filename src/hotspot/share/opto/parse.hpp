@@ -363,7 +363,9 @@ class Parse : public GraphKit {
   Block*            _block;     // block currently getting parsed
   ciBytecodeStream  _iter;      // stream of this method's bytecodes
 
-  const FastLockNode* _synch_lock; // FastLockNode for synchronized method
+  // Lock info for synchronized method
+  BoxLockNode* _sync_lock_box;
+  Node*        _sync_lock_obj;
 
 #ifndef PRODUCT
   int _max_switch_depth;        // Debugging SwitchRanges.
@@ -606,6 +608,9 @@ private:
   // helper function for call statistics
   void count_compiled_calls(bool at_method_entry, bool is_inline) PRODUCT_RETURN;
 
+  // AOT compiled code invocations count
+  void count_aot_code_calls() NOT_CDS_RETURN;
+
   Node_Notes* make_node_notes(Node_Notes* caller_nn);
 
   // Helper functions for handling normal and abnormal exits.
@@ -636,8 +641,12 @@ private:
   void stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store);
   // Increment counter used by StressUnstableIfTraps
   void increment_trap_stress_counter(Node*& counter, Node*& incr_store);
+  static volatile int _trap_stress_counter;
 
  public:
+  // Needed for AOT external address recording
+  static address trap_stress_counter_address() { return (address)&_trap_stress_counter; }
+
 #ifndef PRODUCT
   // Handle PrintOpto, etc.
   void show_parse_info();

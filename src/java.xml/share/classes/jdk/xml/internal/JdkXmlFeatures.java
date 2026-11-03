@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,10 @@ package jdk.xml.internal;
 import javax.xml.XMLConstants;
 import jdk.xml.internal.JdkProperty.ImplPropMap;
 import jdk.xml.internal.JdkProperty.State;
+
+import static jdk.xml.internal.JdkConstants.XPATH_ALLOW_NON_XSLT_SYS_PROPS;
 import static jdk.xml.internal.JdkXmlUtils.SP_USE_CATALOG;
+import static jdk.xml.internal.JdkConstants.SP_ENABLE_TEMPLATESIMPL_DESERIALIZATION;
 
 /**
  * This class manages JDK's XML Features. Previously added features and properties
@@ -72,7 +75,25 @@ public class JdkXmlFeatures implements Cloneable {
          * FSP: not enforced by FSP.
          */
         JDK_OVERRIDE_PARSER(ImplPropMap.OVERRIDEPARSER, null, null, false,
-                null, null, false, false, true, false);
+                null, null, false, false, true, false),
+
+        /**
+         * Feature allowNonXSLTSysProps: controls whether XPath's system-property()
+         * function is permitted to access non-XSLT-defined JVM system properties.
+         * FSP: when FSP is on, accessing non-XSLT-defined JVM system properties is disabled
+         */
+        JDK_XPATH_SYSTEM_PROPERTY(null, XPATH_ALLOW_NON_XSLT_SYS_PROPS,
+                XPATH_ALLOW_NON_XSLT_SYS_PROPS, false,
+                null, null, false, false, true, true),
+
+        /*
+         * Feature TemplatesImplDeserialization
+         * FSP: TemplatesImpl deserialization is enforced by FSP. When FSP is on,
+         * TemplatesImpl deserialization is disabled.
+         */
+        ENABLE_TEMPLATESIMPL_DESERIALIZATION(null,
+                SP_ENABLE_TEMPLATESIMPL_DESERIALIZATION, SP_ENABLE_TEMPLATESIMPL_DESERIALIZATION,
+                false, null, null, false, false, true, true);
 
         private final ImplPropMap implMap;
         private final String name;
@@ -92,16 +113,18 @@ public class JdkXmlFeatures implements Cloneable {
          * parameters.
          * @param name the name of the feature
          * @param nameSP the name of the System Property
+         * @param differ
          * @param nameOld the name of the corresponding legacy property
          * @param nameOldSP the system property of the legacy property
-         * @param value the value of the feature
-         * @param hasSystem a flag to indicate whether the feature is supported
+         * @param valueDefault the default value of the feature
+         * @param valueEnforced the FSP-enforced value of the feature
+         * @param hasSystem a flag indicating whether a system property is supported for the feature
          * @param enforced a flag indicating whether the feature is
          * FSP (Feature_Secure_Processing) enforced
          * with a System property
          */
         XmlFeature(ImplPropMap implMap, String name, String nameSP, boolean differ,
-                String nameOld, String nameOldSP, boolean value, boolean valueEnforced,
+                String nameOld, String nameOldSP, boolean valueDefault, boolean valueEnforced,
                 boolean hasSystem, boolean enforced) {
             this.implMap = implMap;
             if (implMap != null) {
@@ -116,7 +139,7 @@ public class JdkXmlFeatures implements Cloneable {
                 this.nameOldSP = nameOldSP;
             }
             this.differ = differ;
-            this.valueDefault = value;
+            this.valueDefault = valueDefault;
             this.valueEnforced = valueEnforced;
             this.hasSystem = hasSystem;
             this.enforced = enforced;

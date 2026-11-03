@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_CONTINUATION_S390_INLINE_HPP
-#define CPU_S390_CONTINUATION_S390_INLINE_HPP
+#ifndef CPU_S390_CONTINUATIONFREEZETHAW_S390_INLINE_HPP
+#define CPU_S390_CONTINUATIONFREEZETHAW_S390_INLINE_HPP
 
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/frame.hpp"
@@ -331,7 +331,7 @@ inline void Thaw<ConfigT>::patch_caller_links(intptr_t* sp, intptr_t* bottom) {
       callers_sp = _cont.entryFP();
     } else {
       assert(!Interpreter::contains(pc), "sp:" PTR_FORMAT " pc:" PTR_FORMAT, p2i(sp), p2i(pc));
-      CodeBlob* cb = CodeCache::find_blob(pc);
+      CodeBlob* cb = CodeCache::find_blob_fast(pc);
       callers_sp = sp + cb->frame_size();
     }
     // set the back link
@@ -343,4 +343,4 @@ inline void ThawBase::prefetch_chunk_pd(void* start, int size) {
   // TODO: implement in future;
 }
 
-#endif // CPU_S390_CONTINUATION_S390_INLINE_HPP
+#endif // CPU_S390_CONTINUATIONFREEZETHAW_S390_INLINE_HPP

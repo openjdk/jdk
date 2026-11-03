@@ -477,8 +477,8 @@ class Address {
   // Verify the value is trivially destructible regardless of mode, so our
   // destructor can also be trivial, and so our assignment operator doesn't
   // need to destruct the old value before copying over it.
-  static_assert(std::is_trivially_destructible<Literal>::value, "must be");
-  static_assert(std::is_trivially_destructible<Nonliteral>::value, "must be");
+  static_assert(std::is_trivially_destructible<Literal>::value);
+  static_assert(std::is_trivially_destructible<Nonliteral>::value);
 
   Address& operator=(const Address& a) {
     _mode = a._mode;
@@ -1339,7 +1339,7 @@ public:
 
   // 8.1 Compare and swap extensions
   void lse_cas(Register Rs, Register Rt, Register Rn,
-                        enum operand_size sz, bool a, bool r, bool not_pair) {
+               enum operand_size sz, bool a, bool r, bool not_pair) {
     starti;
     if (! not_pair) { // Pair
       assert(sz == word || sz == xword, "invalid size");

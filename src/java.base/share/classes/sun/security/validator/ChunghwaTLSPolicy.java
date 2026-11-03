@@ -29,8 +29,6 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneOffset;
 import java.util.Date;
-import java.util.Map;
-import java.util.Set;
 
 import sun.security.util.Debug;
 import sun.security.x509.X509CertImpl;
@@ -55,6 +53,12 @@ final class ChunghwaTLSPolicy {
     private static final LocalDate MARCH_17_2026 =
         LocalDate.of(2026, Month.MARCH, 17);
 
+    // Any TLS Server certificate that is anchored by the Chunghwa
+    // root above is distrusted after APRIL_19_2027.
+    // APRIL_19_2027 is MARCH_17_2026 plus 398 days.
+    private static final LocalDate APRIL_19_2027 =
+        LocalDate.of(2027, Month.APRIL, 19);
+
     /**
      * This method assumes the eeCert is a TLS Server Cert and chains back to
      * the anchor.
@@ -72,6 +76,13 @@ final class ChunghwaTLSPolicy {
                 + "trust anchor of TLS server certificate");
         }
         if (FINGERPRINT.equalsIgnoreCase(fp)) {
+            if (LocalDate.now().isAfter(APRIL_19_2027)) {
+                throw new ValidatorException
+                    ("TLS Server certificate anchored by a distrusted legacy " +
+                     "Chunghwa root CA: " + anchor.getSubjectX500Principal(),
+                     ValidatorException.T_UNTRUSTED_CERT, anchor);
+            }
+
             Date notBefore = chain[0].getNotBefore();
             LocalDate ldNotBefore = LocalDate.ofInstant(notBefore.toInstant(),
                                                         ZoneOffset.UTC);

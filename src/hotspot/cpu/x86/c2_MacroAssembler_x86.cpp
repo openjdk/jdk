@@ -54,7 +54,7 @@
 // Beware! This sp_inc is NOT the same as the one mentioned in MacroAssembler::remove_frame but only the size
 // of the extension space + the additional copy of the return address. That means, it doesn't contain the
 // frame size (where the local and sp_inc are) and the saved RBP.
-void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc) {
+void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc, bool do_stack_bang) {
   if (C->clinit_barrier_on_entry()) {
     assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
@@ -87,7 +87,7 @@ void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc) {
   // some VM calls (such as call site linkage) can use several kilobytes of
   // stack.  But the stack safety zone should account for that.
   // See bugs 4446381, 4468289, 4497237.
-  if (stack_bang_size > 0) {
+  if (do_stack_bang && stack_bang_size > 0) {
     generate_stack_overflow_check(stack_bang_size);
 
     // We always push rbp, so that on return to interpreter rbp, will be
@@ -136,25 +136,6 @@ void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc) {
     assert((sp_inc & (StackAlignmentInBytes-1)) == 0, "stack increment not aligned");
     movptr(Address(rsp, framesize - wordSize), sp_inc + framesize);
   }
-
-  if (VerifyStackAtCalls) { // Majik cookie to verify stack depth
-    framesize -= wordSize;
-    movptr(Address(rsp, framesize), (int32_t)0xbadb100d);
-  }
-
-#ifdef ASSERT
-  if (VerifyStackAtCalls) {
-    Label L;
-    push(rax);
-    mov(rax, rsp);
-    andptr(rax, StackAlignmentInBytes-1);
-    cmpptr(rax, StackAlignmentInBytes-wordSize);
-    pop(rax);
-    jcc(Assembler::equal, L);
-    STOP("Stack is not properly aligned!");
-    bind(L);
-  }
-#endif
 }
 
 void C2_MacroAssembler::entry_barrier() {
@@ -479,7 +460,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
   C2FastUnlockStub* stub = nullptr;
 
   if (!Compile::current()->output()->in_scratch_emit_size()) {
-    stub = new (Compile::current()->comp_arena()) C2FastUnlockStub(obj, mark, reg_rax, thread);
+    stub = new (Compile::current()->comp_arena()) C2FastUnlockStub(obj, reg_rax, thread);
     Compile::current()->output()->add_stub(stub);
   }
 
@@ -607,7 +588,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
   // C2 uses the value of ZF to determine the continuation.
 }
 
-static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
+void C2_MacroAssembler::abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
   fatal("Invalid CastII, idx: %u, val: %d, lo: %d, hi: %d", idx, val, lo, hi);
 }
 
@@ -670,7 +651,7 @@ void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register
   BLOCK_COMMENT("} // CastII");
 }
 
-static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
+void C2_MacroAssembler::abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
   fatal("Invalid CastLL, idx: %u, val: " JLONG_FORMAT ", lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, val, lo, hi);
 }
 
@@ -1447,112 +1428,6 @@ void C2_MacroAssembler::vinsert(BasicType typ, XMMRegister dst, XMMRegister src,
       assert(false,"Should not reach here.");
       break;
   }
-}
-
-void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst,
-                                         Register base, Register idx_base,
-                                         Register mask, Register mask_idx,
-                                         Register rtmp, int vlen_enc) {
-  vpxor(dst, dst, dst, vlen_enc);
-  if (elem_bt == T_SHORT) {
-    for (int i = 0; i < 4; i++) {
-      // dst[i] = mask[i] ? src[idx_base[i]] : 0
-      Label skip_load;
-      btq(mask, mask_idx);
-      jccb(Assembler::carryClear, skip_load);
-      movl(rtmp, Address(idx_base, i * 4));
-      pinsrw(dst, Address(base, rtmp, Address::times_2), i);
-      bind(skip_load);
-      incq(mask_idx);
-    }
-  } else {
-    assert(elem_bt == T_BYTE, "");
-    for (int i = 0; i < 8; i++) {
-      // dst[i] = mask[i] ? src[idx_base[i]] : 0
-      Label skip_load;
-      btq(mask, mask_idx);
-      jccb(Assembler::carryClear, skip_load);
-      movl(rtmp, Address(idx_base, i * 4));
-      pinsrb(dst, Address(base, rtmp), i);
-      bind(skip_load);
-      incq(mask_idx);
-    }
-  }
-}
-
-void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst,
-                                  Register base, Register idx_base,
-                                  Register rtmp, int vlen_enc) {
-  vpxor(dst, dst, dst, vlen_enc);
-  if (elem_bt == T_SHORT) {
-    for (int i = 0; i < 4; i++) {
-      // dst[i] = src[idx_base[i]]
-      movl(rtmp, Address(idx_base, i * 4));
-      pinsrw(dst, Address(base, rtmp, Address::times_2), i);
-    }
-  } else {
-    assert(elem_bt == T_BYTE, "");
-    for (int i = 0; i < 8; i++) {
-      // dst[i] = src[idx_base[i]]
-      movl(rtmp, Address(idx_base, i * 4));
-      pinsrb(dst, Address(base, rtmp), i);
-    }
-  }
-}
-
-/*
- * Gather using hybrid algorithm, first partially unroll scalar loop
- * to accumulate values from gather indices into a quad-word(64bit) slice.
- * A slice may hold 8 bytes or 4 short values. This is followed by a vector
- * permutation to place the slice into appropriate vector lane
- * locations in destination vector. Following pseudo code describes the
- * algorithm in detail:
- *
- * DST_VEC = ZERO_VEC
- * PERM_INDEX = {0, 1, 2, 3, 4, 5, 6, 7, 8..}
- * TWO_VEC    = {2, 2, 2, 2, 2, 2, 2, 2, 2..}
- * FOREACH_ITER:
- *     TMP_VEC_64 = PICK_SUB_WORDS_FROM_GATHER_INDICES
- *     TEMP_PERM_VEC = PERMUTE TMP_VEC_64 PERM_INDEX
- *     DST_VEC = DST_VEC OR TEMP_PERM_VEC
- *     PERM_INDEX = PERM_INDEX - TWO_VEC
- *
- * With each iteration, doubleword permute indices (0,1) corresponding
- * to gathered quadword gets right shifted by two lane positions.
- *
- */
-void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
-                                        Register base, Register idx_base,
-                                        Register mask, XMMRegister xtmp1,
-                                        XMMRegister xtmp2, XMMRegister temp_dst,
-                                        Register rtmp, Register mask_idx,
-                                        Register length, int vector_len, int vlen_enc) {
-  Label GATHER8_LOOP;
-  assert(is_subword_type(elem_ty), "");
-  movl(length, vector_len);
-  vpxor(xtmp1, xtmp1, xtmp1, vlen_enc); // xtmp1 = {0, ...}
-  vpxor(dst, dst, dst, vlen_enc); // dst = {0, ...}
-  vallones(xtmp2, vlen_enc);
-  vpsubd(xtmp2, xtmp1, xtmp2, vlen_enc);
-  vpslld(xtmp2, xtmp2, 1, vlen_enc); // xtmp2 = {2, 2, ...}
-  load_iota_indices(xtmp1, vector_len * type2aelembytes(elem_ty), T_INT); // xtmp1 = {0, 1, 2, ...}
-
-  bind(GATHER8_LOOP);
-    // TMP_VEC_64(temp_dst) = PICK_SUB_WORDS_FROM_GATHER_INDICES
-    if (mask == noreg) {
-      vgather8b(elem_ty, temp_dst, base, idx_base, rtmp, vlen_enc);
-    } else {
-      vgather8b_masked(elem_ty, temp_dst, base, idx_base, mask, mask_idx, rtmp, vlen_enc);
-    }
-    // TEMP_PERM_VEC(temp_dst) = PERMUTE TMP_VEC_64(temp_dst) PERM_INDEX(xtmp1)
-    vpermd(temp_dst, xtmp1, temp_dst, vlen_enc == Assembler::AVX_512bit ? vlen_enc : Assembler::AVX_256bit);
-    // PERM_INDEX(xtmp1) = PERM_INDEX(xtmp1) - TWO_VEC(xtmp2)
-    vpsubd(xtmp1, xtmp1, xtmp2, vlen_enc);
-    // DST_VEC = DST_VEC OR TEMP_PERM_VEC
-    vpor(dst, dst, temp_dst, vlen_enc);
-    addptr(idx_base,  32 >> (type2aelembytes(elem_ty) - 1));
-    subl(length, 8 >> (type2aelembytes(elem_ty) - 1));
-    jcc(Assembler::notEqual, GATHER8_LOOP);
 }
 
 void C2_MacroAssembler::vgather(BasicType typ, XMMRegister dst, Register base, XMMRegister idx, XMMRegister mask, int vector_len) {
@@ -2532,7 +2407,7 @@ void C2_MacroAssembler::get_elem(BasicType typ, Register dst, XMMRegister src, i
   int esize =  type2aelembytes(typ);
   int elem_per_lane = 16/esize;
   int eindex = elemindex % elem_per_lane;
-  assert(is_integral_type(typ),"required");
+  assert(is_signed_subword_type(typ) || is_non_subword_integral_type(typ), "only handles signed integral types");
 
   if (eindex == 0) {
     if (typ == T_LONG) {
@@ -3591,9 +3466,9 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   // release bound
 
   // vresult *= IntVector.fromArray(I256, power_of_31_backwards, 1);
+  lea(tmp2, ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + (0 * sizeof(jint))));
   for (int idx = 0; idx < 4; idx++) {
-    lea(tmp2, ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + ((8 * idx + 1) * sizeof(jint))));
-    arrays_hashcode_elvload(vcoef[idx], Address(tmp2, 0), T_INT);
+    arrays_hashcode_elvload(vcoef[idx], Address(tmp2, (int)((8 * idx + 1) * sizeof(jint))), T_INT);
     vpmulld(vresult[idx], vresult[idx], vcoef[idx], Assembler::AVX_256bit);
   }
   // result += vresult.reduceLanes(ADD);
@@ -7107,6 +6982,138 @@ void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, X
     vector_saturating_op(ideal_opc, elem_bt, dst, src1, src2, vlen_enc);
   }
 }
+
+void C2_MacroAssembler::vector_slice_avx(XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                         int origin, int vlen_enc) {
+   assert(vlen_enc == Assembler::AVX_256bit, "");
+   if (origin < 16) {
+     // ALIGNR instruction concatenates the corresponding 128 bit
+     // lanes of two source vectors and then performs the right
+     // shift operation over intermediate value. Thus source vectors
+     // lanes needs to shuffled to a format consumable by ALIGNR.
+     // i.e.
+     // Initial source vectors
+     //         0...256            0...256
+     // src1 = [v1 v2]   and src2= [v3  v4]
+     // Formatted source vectors when SHIFT < 16 bytes
+     //         0...256            0...256
+     // src1 = [v1  v2] and src2 = [v2  v3]
+     // Higher 128bit lane of src2 will not impact result, which will be
+     // sliced from lower and higher 128 bit lane of src1 and lower 128 bit
+     // lane of src2.
+     // i.e.
+     // Result lanes
+     // res[127:0]   = {src1[255:128] , src1[127:0]}    >> SHIFT
+     // res[255:128] = {src2[127:0]   , src1[255:128]}  >> SHIFT
+     vperm2f128(dst, src1, src2, 0x21);
+     // origin == 8 is a 64-bit rotate of each 128-bit lane after the
+     // VPERM2F128. VSHUFPS imm8=0x4E (selectors 2,3,0,1) produces that
+     // rotate in the FP domain and avoids a VPALIGNR domain-crossing.
+     if (origin == 8) {
+       vshufps(dst, src1, dst, 0x4E, vlen_enc);
+     } else {
+       vpalignr(dst, dst, src1, origin, Assembler::AVX_256bit);
+     }
+   } else {
+     assert(origin > 16 && origin < 32, "");
+     // Similarly, when SHIFT >= 16 bytes, lower 128bit lane of
+     // src1 will not impact result, which will be sliced from
+     // higher 128 bit lane of src1 and lower and upper 128 bit
+     // lanes of src2.
+     // Thus, two source vector should have following format
+     //         0...256            0...256
+     // src1 = [v2  v3] and src2 = [v3  v4]
+     // Result lanes
+     // res[127:0]   = {src2[127:0]   , src1[255:127]}  >> (SHIFT - 16)
+     // res[255:128] = {src2[255:128] , src2[127:0]}    >> (SHIFT - 16)
+     vperm2f128(dst, src1, src2, 0x21);
+     // origin == 24 is the same 8-byte-per-lane rotate on the
+     // origin > 16 shuffle inputs; reuse VSHUFPS as for origin == 8.
+     if (origin == 24) {
+       vshufps(dst, dst, src2, 0x4E, vlen_enc);
+     } else {
+       vpalignr(dst, src2, dst, origin - 16, Assembler::AVX_256bit);
+     }
+   }
+}
+
+
+void C2_MacroAssembler::vector_slice_evex(XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                          XMMRegister xtmp, int origin, int vlen_enc) {
+  assert(VM_Version::supports_avx512vlbw(), "");
+  if (origin < 16) {
+    // Initial source vectors
+    //        0.........512            0.........512
+    // src1 = [v1 v2 v3 v4] and src2 = [v5 v6 v7 v8]
+    // where v* represents 128 bit wide vector lanes.
+    // When SHIFT < 16 result will be sliced out from src1 and
+    // lowest 128 bit vector lane
+    // of src2.
+    // ALIGNR will consider following source vector lanes pairs
+    // spread across two source vectors in order to compute 128 bit
+    // lanes of result vector.
+    // res[127:0]   = {src1[255:128], src1[127:0]}
+    // res[255:128] = {src1[383:256], src1[255:128]}
+    // res[383:256] = {src1[511:384], src1[383:256]}
+    // res[511:384] = {src2[127:0],   src1[511:384]}
+    //
+    // ALIGNR concatenates corresponding lanes across source vectors
+    // before right shifting the intermediate result. Therefore, source
+    // vector lanes should be shuffled to have following format
+    // src1 = {v1, v2, v3, v4} and src2 = {v2, v3, v4, v5}
+    //
+    //                       |-------------|
+    //                 |-----|--------|    |
+    // alignr ->  [v1 v2 v3 v4] [v2 v3 v4 v5]
+    //            |_____|________|    |
+    //                  |_____________|
+     evalignd(dst, src2, src1, 4, vlen_enc);
+     vpalignr(dst, dst, src1, origin, vlen_enc);
+   } else if (origin > 16 && origin < 32) {
+    // Similarly, for SHIFT between 16 and 32 bytes
+    // result will be sliced out of src1 and lower
+    // two 128 bit lanes of src2.
+    // i.e.
+    // res[127:0]   = {src1[383:256], src1[255:128]}
+    // res[255:128] = {src1[511:384], src1[383:256]}
+    // res[383:256] = {src2[127:0],   src1[511:384]}
+    // res[511:384] = {src2[255:128], src2[127:0]}
+    // Thus, source vector lanes should have following format.
+    // src1 = {v2, v3, v4, v5} and src2 = {v3, v4, v5, v6}
+     evalignd(xtmp, src2, src1, 4, vlen_enc);
+     evalignd(dst, src2, src1, 8, vlen_enc);
+     vpalignr(dst, dst, xtmp, origin - 16, vlen_enc);
+   } else if (origin > 32 && origin < 48) {
+    // For SHIFT between 32 and 48 bytes
+    // result will be sliced out of src1 and lower
+    // four 128 bit lanes of src2.
+    // i.e.
+    // res[127:0]   = {src1[511:384], src1[383:255]}
+    // res[255:128] = {src2[127:0],   src1[511:384]}
+    // res[383:256] = {src2[255:128], src2[127:0]}
+    // res[511:384] = {src2[383:256], src2[255:128]}
+    // Thus, source vector lanes should have following format.
+    // src1 = {v3, v4, v5, v6} and src2 = {v4, v5, v6, v7}
+     evalignd(xtmp, src2, src1, 8, vlen_enc);
+     evalignd(dst, src2, src1, 12, vlen_enc);
+     vpalignr(dst, dst, xtmp, origin - 32, vlen_enc);
+   } else {
+    // Finally, for SHIFT greater than 48 bytes
+    // result will be sliced out of upper 128 bit lane of src1 and
+    // src2.
+    // i.e.
+    // res[127:0]   = {src2[127:0],   src1[511:383]}
+    // res[255:128] = {src2[255:127], src2[127:0]}
+    // res[383:256] = {src2[383:256], src2[255:128]}
+    // res[511:384] = {src2[511:384], src2[383:256]}
+    // Thus, source vector lanes should have following format.
+    // src1 = {v4, v5, v6, v7} and src2 = {v5, v6, v7, v8}
+     assert(origin > 48 && origin < 64, "");
+     evalignd(dst, src2, src1, 12, vlen_enc);
+     vpalignr(dst, src2, dst, origin - 48, vlen_enc);
+   }
+}
+
 
 void C2_MacroAssembler::evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
   switch(opcode) {

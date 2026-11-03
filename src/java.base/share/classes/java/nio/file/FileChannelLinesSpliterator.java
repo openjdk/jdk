@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -114,6 +115,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
     @Override
     public boolean tryAdvance(Consumer<? super String> action) {
+        Objects.requireNonNull(action);
         String line = readLine();
         if (line != null) {
             action.accept(line);
@@ -125,6 +127,7 @@ final class FileChannelLinesSpliterator implements Spliterator<String> {
 
     @Override
     public void forEachRemaining(Consumer<? super String> action) {
+        Objects.requireNonNull(action);
         String line;
         while ((line = readLine()) != null) {
             action.accept(line);
