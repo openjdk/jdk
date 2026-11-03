@@ -1164,6 +1164,13 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
 }
 
 
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  assert(UseCompressedOops, "should only be used with compressed oops");
+  Register dst = dest->as_pointer_register();
+  __ mr_if_needed(dst, src->as_pointer_register());
+  __ decode_heap_oop(dst);
+}
+
 void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info,
                             bool wide) {
