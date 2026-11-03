@@ -300,12 +300,16 @@ struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
       // the result back to T discards the extra bits, so both signed and
       // unsigned T end up with the value the caller expects.
       return (T)zalasr_load_acquire<byte_size>((const void*)p);
-    } else {
-      T data;
-      __atomic_load(const_cast<T*>(p), &data, __ATOMIC_RELAXED);
-      OrderAccess::acquire();
-      return data;
     }
+
+    T data;
+    if (UseZtso) {
+      __atomic_load(const_cast<T*>(p), &data, __ATOMIC_RELAXED);
+      compiler_barrier();
+    } else {
+      __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE);
+    }
+    return data;
   }
 };
 
@@ -320,9 +324,14 @@ struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X>
       // s{b|h|w|d}.rl stores the low byte_size bytes of the register, so
       // widening v here is value-preserving for both signed and unsigned T.
       zalasr_store_release<byte_size>((void*)p, (uint64_t)v);
-    } else {
-      OrderAccess::release();
+      return;
+    }
+
+    if (UseZtso) {
+      compiler_barrier();
       __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELAXED);
+    } else {
+      __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE);
     }
   }
 };
