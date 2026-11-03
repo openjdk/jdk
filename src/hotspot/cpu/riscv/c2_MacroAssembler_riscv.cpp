@@ -2869,7 +2869,7 @@ void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister s
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
-                                        bool islatin, Label &DONE, bool use_vcpop) {
+                                        bool islatin, Label &DONE) {
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
 
   Label loop, medium2, medium4, wide, same;
@@ -2925,13 +2925,8 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   vlex_v(va, a1, sew);
   vlex_v(vb, a2, sew);
   vmsne_vv(va, va, vb);
-  if (use_vcpop) {
-    vcpop_m(tmp2, va);
-    bnez(tmp2, DONE);
-  } else {
-    vfirst_m(tmp2, va);
-    bgez(tmp2, DONE);
-  }
+  vfirst_m(tmp2, va);
+  bgez(tmp2, DONE);
   sub(cnt, cnt, tmp1);
   addi(a1, a1, bytes_m4);
   addi(a2, a2, bytes_m4);
@@ -3019,7 +3014,7 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
   la(a1, Address(a1, base_offset));
   la(a2, Address(a2, base_offset));
 
-  element_compare(a1, a2, result, cnt1, tmp1, tmp2, elem_size == 1, DONE, true);
+  element_compare(a1, a2, result, cnt1, tmp1, tmp2, elem_size == 1, DONE);
 
   bind(DONE);
 

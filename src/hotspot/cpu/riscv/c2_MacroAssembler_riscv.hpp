@@ -35,8 +35,7 @@
   void element_compare(Register r1, Register r2,
                        Register result, Register cnt,
                        Register tmp1, Register tmp2,
-                       bool is_latin, Label& DONE,
-                       bool use_vcpop = false);
+                       bool is_latin, Label& DONE);
 
   void string_compare_long_same_encoding(Register result, Register str1, Register str2,
                                   const bool isLL, Register cnt1, Register cnt2,
