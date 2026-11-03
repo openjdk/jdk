@@ -138,7 +138,7 @@ class Stream<T> extends ExchangeImpl<T> {
     // The exception with which this stream was canceled.
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
     final CompletableFuture<Void> requestBodyCF = new MinimalFuture<>();
-    volatile CompletableFuture<T> responseBodyCF;
+    final CompletableFuture<T> responseBodyCF = new MinimalFuture<>();
     volatile BodySubscriber<T> pendingResponseSubscriber;
     volatile boolean stopRequested;
 
@@ -521,6 +521,30 @@ class Stream<T> extends ExchangeImpl<T> {
          }
     }
 
+    // Check whether we have an error, and if we have no pending data
+    // and FIN was not processed, complete the given cf exceptionally
+    // This avoids cancelling the response too early.
+    private void completeCfIfErrorAndNoPendingData(CompletableFuture<?> cf) {
+        Throwable error = null;
+        inputQLock.lock();
+        try {
+            // if the exchange is cancelled, and the scheduler is stopped,
+            // or we have no pending data, and we haven't reached the end of
+            // the stream, we need to cancel the cf.
+            // Otherwise, we will continue processing buffered data, even if
+            // we have an error. We will later report the error after the data
+            // has been processed if needed.
+            if (isCanceled() && (sched.isStopped() || (inputQ.isEmpty() && !endStreamReceived()))) {
+                error = getCancelCause();
+            }
+        } finally {
+            inputQLock.unlock();
+        }
+        if (error != null) {
+            cf.completeExceptionally(error);
+        }
+    }
+
     // pushes entire response body into response subscriber
     // blocking when required by local or remote flow control
     CompletableFuture<T> receiveData(BodySubscriber<T> bodySubscriber, Executor executor) {
@@ -530,13 +554,11 @@ class Stream<T> extends ExchangeImpl<T> {
 
         // We want to allow the subscriber's getBody() method to block so it
         // can work with InputStreams. So, we offload execution.
-        responseBodyCF = ResponseSubscribers.getBodyAsync(executor, bodySubscriber,
-                new MinimalFuture<>(), this::cancelImpl);
+        var cf = ResponseSubscribers.getBodyAsync(executor, bodySubscriber,
+                responseBodyCF, this::cancelImpl);
+        assert responseBodyCF == cf;
 
-        if (isCanceled()) {
-            Throwable t = getCancelCause();
-            responseBodyCF.completeExceptionally(t);
-        }
+        completeCfIfErrorAndNoPendingData(cf);
 
         sched.runOrSchedule(); // in case data waiting already to be processed, or error
 
@@ -1357,6 +1379,7 @@ class Stream<T> extends ExchangeImpl<T> {
      * uncompleted CF then creates one (completes it) and adds to list
      */
     void completeResponse(Response resp) {
+        CompletableFuture<Response> toComplete = null;
         response_cfs_lock.lock();
         try {
             CompletableFuture<Response> cf;
@@ -1369,7 +1392,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     if (debug.on())
                         debug.log("Completing responseCF(%d) with response headers", i);
                     response_cfs.remove(cf);
-                    cf.complete(resp);
+                    toComplete = cf;
                     return;
                 } else if (expectTimeoutRaised()) {
                     Log.logTrace("Completing response (streamid={0}): {1}",
@@ -1377,7 +1400,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     if (debug.on())
                         debug.log("Completing responseCF(%d) with response headers", i);
                     // The Request will be removed in getResponseAsync()
-                    cf.complete(resp);
+                    toComplete = cf;
                     return;
                 } // else we found the previous response: just leave it alone.
             }
@@ -1389,6 +1412,7 @@ class Stream<T> extends ExchangeImpl<T> {
             response_cfs.add(cf);
         } finally {
             response_cfs_lock.unlock();
+            if (toComplete != null) toComplete.complete(resp);
         }
     }
 
@@ -1432,6 +1456,7 @@ class Stream<T> extends ExchangeImpl<T> {
      * same as above but for errors
      */
     void completeResponseExceptionally(Throwable t) {
+        CompletableFuture<Response> toComplete = null;
         response_cfs_lock.lock();
         try {
             // use index to avoid ConcurrentModificationException
@@ -1440,13 +1465,14 @@ class Stream<T> extends ExchangeImpl<T> {
                 CompletableFuture<Response> cf = response_cfs.get(i);
                 if (!cf.isDone()) {
                     response_cfs.remove(i);
-                    cf.completeExceptionally(t);
+                    toComplete = cf;
                     return;
                 }
             }
             response_cfs.add(MinimalFuture.failedFuture(t));
         } finally {
             response_cfs_lock.unlock();
+            if (toComplete != null) toComplete.completeExceptionally(t);
         }
     }
 
@@ -1459,6 +1485,15 @@ class Stream<T> extends ExchangeImpl<T> {
             } else {
                 // there is no request body, therefore the request is complete,
                 // END_STREAM has already sent with outgoing headers
+//                // Comment the line with requestBodyCF.complete(null);
+//                // and uncomment the 5 lines below, then set
+//                // test.sleep.delay=1000 to reproduce the failure in
+//                // H2GoAwayPromptConnectionClose.java reliably
+//                requestBodyCF.completeAsync(() -> {  try {
+//                    Thread.sleep(Integer.getInteger("test.sleep.delay", 10));
+//                } catch (InterruptedException x) {
+//                    Thread.currentThread().interrupt();
+//                } return null;});
                 requestBodyCF.complete(null);
             }
         } catch (Throwable t) {
@@ -1511,13 +1546,29 @@ class Stream<T> extends ExchangeImpl<T> {
         cancelImpl(cause, code);
     }
 
+    private boolean requestBodySuccessfullySent() {
+        if (requestPublisher == null) return true;
+        return requestBodyCF.isDone() && !requestBodyCF.isCompletedExceptionally();
+    }
+
     void connectionClosing(Throwable cause) {
-        Flow.Subscriber<?> subscriber =
-                responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
-        errorRef.compareAndSet(null, cause);
-        if (subscriber != null && !sched.isStopped() && !inputQ.isEmpty()) {
+        boolean runScheduler = false;
+        inputQLock.lock();
+        try {
+            errorRef.compareAndSet(null, cause);
+            if (requestBodySuccessfullySent() && !sched.isStopped() && !inputQ.isEmpty()) {
+                // avoid cancelling if there was no body, or the body was successfully sent,
+                // and we have buffered data.
+                runScheduler = true;
+            }
+        } finally {
+            inputQLock.unlock();
+        }
+        if (runScheduler) {
             sched.runOrSchedule();
-        } else cancelImpl(cause);
+        } else {
+            cancelImpl(cause);
+        }
     }
 
     // This method sends an RST_STREAM frame

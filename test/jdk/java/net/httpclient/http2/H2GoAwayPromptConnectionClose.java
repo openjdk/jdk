@@ -70,8 +70,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @bug 8385131 8394607
- * @summary Verifies that if the HttpClient receives a GOAWAY frame on a HTTP/2 connection,
+ * @bug 8385131 8394607 8396058
+ * @summary Verifies that if the HttpClient receives a GOAWAY frame on an HTTP/2 connection,
  *          then the HttpClient terminates the connection as promptly as appropriate instead
  *          of relying on the idle connection management to do so. Also verifies that if
  *          the server closes the connection first, the client can still receive the response
@@ -82,6 +82,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *          connection management from closing the HTTP/2 connection
  * @run junit/othervm -Djdk.httpclient.keepalive.timeout.h2=36000
  *                    -Djdk.internal.httpclient.debug=true
+ *                    -Dtest.sleep.delay=2000
  *                    ${test.main.class}
  */
 class H2GoAwayPromptConnectionClose {
