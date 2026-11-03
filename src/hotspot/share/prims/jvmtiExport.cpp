@@ -44,7 +44,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
-#include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiAgentSet.hpp"
 #include "prims/jvmtiCodeBlobEvents.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -751,47 +751,46 @@ void JvmtiExport::initialize_oop_storage() {
   _weak_tag_storage->register_num_dead_callback(&JvmtiTagMap::gc_notification);
 }
 
-// Lookup an agent from an JvmtiEnv. Return agent only if it is not yet initialized.
-// An agent can create multiple JvmtiEnvs, but for agent initialization, we are only interested in the initial one.
-static JvmtiAgent* lookup_uninitialized_agent(JvmtiEnv* env, void* callback) {
-  JvmtiAgent* const agent = JvmtiAgentList::lookup(env, callback);
-  return agent == nullptr || agent->is_initialized() ? nullptr : agent;
-}
-
 void JvmtiExport::post_vm_initialized() {
   EVT_TRIG_TRACE(JVMTI_EVENT_VM_INIT, ("Trg VM init event triggered" ));
 
   // can now enable events
   JvmtiEventController::vm_init();
 
+  JavaThread* const thread = JavaThread::current();
+  assert(thread != nullptr, "invariant");
+  assert(thread->thread_state() == _thread_in_vm, "invariant");
+
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
     if (env->is_enabled(JVMTI_EVENT_VM_INIT)) {
-      EVT_TRACE(JVMTI_EVENT_VM_INIT, ("Evt VM init event sent" ));
-
-      JavaThread *thread  = JavaThread::current();
-      JvmtiThreadEventMark jem(thread);
-      JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventVMInit callback = env->callbacks()->VMInit;
-      if (callback != nullptr) {
-        // We map the JvmtiEnv to its Agent to measure when and for how long
-        // it took to initialize so that JFR can report this information.
-        JvmtiAgent* const agent = lookup_uninitialized_agent(env, reinterpret_cast<void*>(callback));
-        if (agent != nullptr) {
-          agent->initialization_begin();
-        }
-        (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
-        if (agent != nullptr) {
-          agent->initialization_end();
-        }
+      if (callback == nullptr) {
+        continue;
       }
+
+      // We map the JvmtiEnv to its JvmtiAgent to measure when and for how long
+      // it took to initialize so that JFR can report this information.
+      JvmtiAgent* const agent = JvmtiAgentSet::initialization_begin(env->jvmti_external());
+      JvmtiThreadEventMark jem(thread);
+
+      // Transition to native and invoke callback.
+      {
+        JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
+        assert(thread->thread_state() == _thread_in_native, "invariant");
+        (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
+      }
+
+      assert(thread->thread_state() == _thread_in_vm, "invariant");
+      JvmtiAgentSet::initialization_end(agent);
+      EVT_TRACE(JVMTI_EVENT_VM_INIT, ("Evt VM init event sent"));
     }
   }
 
   // Agents are initialized as part of posting the VMInit event above.
   // For -Xrun agents and agents with no VMInit callback, we explicitly ensure they are also initialized.
   // JVM_OnLoad and Agent_OnLoad callouts are performed too early for the proper timestamp logic.
-  JvmtiAgentList::initialize();
+  JvmtiAgentSet::initialization_begin();
 }
 
 void JvmtiExport::post_vm_death() {

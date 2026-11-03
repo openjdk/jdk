@@ -48,7 +48,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiAgentSet.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -1932,7 +1932,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
           return JNI_ERR;
         }
 #endif // !INCLUDE_JVMTI
-        JvmtiAgentList::add_xrun(name, options, false);
+        JvmtiAgentSet::on_argument_parse(name, options, false /* absolute path */, true /* xrun */);
         FREE_C_HEAP_ARRAY(name);
         FREE_C_HEAP_ARRAY(options);
       }
@@ -2034,7 +2034,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
           _has_jdwp_agent = true;
         }
 #endif // !INCLUDE_JVMTI
-        JvmtiAgentList::add(name, options, is_absolute_path);
+        JvmtiAgentSet::on_argument_parse(name, options, is_absolute_path);
         os::free(name);
         os::free(options);
       }
@@ -2049,7 +2049,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         size_t length = strlen(tail) + 1;
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
-        JvmtiAgentList::add("instrument", options, false);
+        JvmtiAgentSet::on_argument_parse("instrument", options, false /* absolute path */);
         FREE_C_HEAP_ARRAY(options);
 
         // java agents need module java.instrument

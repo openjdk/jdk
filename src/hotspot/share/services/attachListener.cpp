@@ -31,7 +31,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiAgentSet.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -304,7 +304,7 @@ static jint load_agent(AttachOperation* op, attachStream* out) {
 
   // The abs parameter should be "true" or "false".
   const bool is_absolute_path = (absParam != nullptr) && (strcmp(absParam, "true") == 0);
-  JvmtiAgentList::load_agent(agent, is_absolute_path, options, out);
+  JvmtiAgentSet::startup_agent(agent, is_absolute_path, options, out);
 
   // Agent_OnAttach result or error message is written to 'out'.
   return JNI_OK;

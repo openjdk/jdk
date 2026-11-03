@@ -37,6 +37,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/jfrCompilerQueueUtilization.hpp"
 #include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
+#include "jfr/periodic/jfrJvmtiAgentEvent.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"
 #include "jfr/periodic/jfrNativeMemoryEvent.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
@@ -53,7 +54,7 @@
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiAgentSet.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -271,45 +272,12 @@ TRACE_REQUEST_FUNC(SystemProcess) {
 }
 
 #if INCLUDE_JVMTI
-template <typename AgentEvent>
-static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent, Ticks& timestamp) {
-  event.set_starttime(timestamp);
-  event.set_endtime(timestamp);
-  event.set_name(agent->name());
-  event.set_options(agent->options());
-  event.set_dynamic(agent->is_dynamic());
-  event.set_initializationTime(agent->initialization_time());
-  event.set_initializationDuration(agent->initialization_duration());
-  event.commit();
-}
-
 TRACE_REQUEST_FUNC(JavaAgent) {
-  JvmtiAgentList::Iterator it = JvmtiAgentList::java_agents();
-  Ticks ticks = timestamp();
-  while (it.has_next()) {
-    const JvmtiAgent* agent = it.next();
-    assert(agent->is_jplis(), "invariant");
-    EventJavaAgent event;
-    send_agent_event(event, agent, ticks);
-  }
-}
-
-static void send_native_agent_events(JvmtiAgentList::Iterator& it, Ticks& timestamp) {
-  while (it.has_next()) {
-    const JvmtiAgent* agent = it.next();
-    assert(!agent->is_jplis(), "invariant");
-    EventNativeAgent event;
-    event.set_path(agent->os_lib_path());
-    send_agent_event(event, agent, timestamp);
-  }
+  JfrJvmtiAgentEvent::generate_java_agent_events(timestamp());
 }
 
 TRACE_REQUEST_FUNC(NativeAgent) {
-  Ticks ticks = timestamp();
-  JvmtiAgentList::Iterator native_agents_it = JvmtiAgentList::native_agents();
-  send_native_agent_events(native_agents_it, ticks);
-  JvmtiAgentList::Iterator xrun_agents_it = JvmtiAgentList::xrun_agents();
-  send_native_agent_events(xrun_agents_it, ticks);
+  JfrJvmtiAgentEvent::generate_native_agent_events(timestamp());
 }
 #else  // INCLUDE_JVMTI
 TRACE_REQUEST_FUNC(JavaAgent)   {}

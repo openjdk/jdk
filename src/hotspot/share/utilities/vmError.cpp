@@ -73,6 +73,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+#if INCLUDE_JVMTI
+#include "prims/jvmtiAgentSet.hpp"
+#endif
 
 #ifndef PRODUCT
 #include <signal.h>
@@ -1252,7 +1255,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
 #if INCLUDE_JVMTI
   STEP_IF("printing jvmti agent info", _verbose)
-    os::print_jvmti_agent_info(st);
+    JvmtiAgentSet::print(st);
     st->cr();
 #endif
 
@@ -1481,7 +1484,7 @@ void VMError::print_vm_info(outputStream* st) {
   st->cr();
 
 #if INCLUDE_JVMTI
-  os::print_jvmti_agent_info(st);
+  JvmtiAgentSet::print(st);
   st->cr();
 #endif
 
