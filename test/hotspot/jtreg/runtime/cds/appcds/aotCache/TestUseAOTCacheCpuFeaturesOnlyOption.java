@@ -24,7 +24,11 @@
 /*
  * @test
  * @summary Test UseAOTCacheCpuFeaturesOnly option works correctly
- * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*sse3.*") | (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*crc32.*")
+ * @requires vm.cds.supports.aot.code.caching
+ * @requires vm.compMode != "Xcomp" & vm.compMode != "Xint"
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*sse3.*") |
+             (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*crc32.*") |
+             (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*zba.*")
  * @library /test/lib /test/setup_aot
  * @build HelloWorld
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloWorld
@@ -35,6 +39,9 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TestUseAOTCacheCpuFeaturesOnlyOption {
     static int testNum = 0;
@@ -101,16 +108,28 @@ public class TestUseAOTCacheCpuFeaturesOnlyOption {
                     return new String[] {"-XX:UseSSE=2"};
                 } else if (Platform.isAArch64()) {
                     return new String[] {"-XX:-UseCRC32"};
+                } else if (Platform.isRISCV64()) {
+                    return new String[] {"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseZba"};
                 }
             } else if (runMode == RunMode.PRODUCTION) {
+                List<String> vmOptions = new ArrayList<>();
+                if (Platform.isRISCV64()) {
+                    vmOptions.add("-XX:+UnlockDiagnosticVMOptions");
+                    vmOptions.add("-XX:+UseZba");
+                }
+                vmOptions.add("-Xlog:aot");
+                vmOptions.add("-Xlog:os+cpu");
                 switch(useAOTCacheCpuFeaturesOnlyValue) {
                 case OptionValue.TRUE:
-                    return new String[] {"-XX:+UseAOTCacheCpuFeaturesOnly", "-Xlog:aot", "-Xlog:os+cpu"};
+                    vmOptions.add("-XX:+UseAOTCacheCpuFeaturesOnly");
+                    break;
                 case OptionValue.FALSE:
-                    return new String[] {"-XX:-UseAOTCacheCpuFeaturesOnly", "-Xlog:aot", "-Xlog:os+cpu"};
+                    vmOptions.add("-XX:-UseAOTCacheCpuFeaturesOnly");
+                    break;
                 case OptionValue.DEFAULT:
-                    return new String[] {"-Xlog:aot", "-Xlog:os+cpu"};
+                    break;
                 }
+                return vmOptions.toArray(new String[0]);
             }
             return new String[0];
         }
