@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2026, IBM Inc. All rights reserved.
  * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -12366,7 +12367,7 @@ class StubGenerator: public StubCodeGenerator {
       return;
     }
 
-    static aarch64_atomic_stub_t *const atomic_stubs[] = {
+    static aarch64_atomic_stub_t* const atomic_stubs[] = {
       &aarch64_atomic_fetch_add_4_impl,
       &aarch64_atomic_fetch_add_8_impl,
       &aarch64_atomic_fetch_add_4_relaxed_impl,

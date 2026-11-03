@@ -1,4 +1,5 @@
 // Copyright (c) 2021, Red Hat Inc. All rights reserved.
+// Copyright (c) 2026, IBM Inc. All rights reserved.
 // Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -24,275 +25,136 @@
 
         .text
 
-        .align 5
-DECLARE_FUNC(aarch64_atomic_fetch_add_8_default_impl):
-        hint    #0x22 // bti c
 #ifdef __ARM_FEATURE_ATOMICS
-        ldaddal x1, x2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldaxr   x2, [x0]
-        add     x8, x2, x1
-        stlxr   w9, x8, [x0]
-        cbnz    w9, 0b
-#endif
-        dmb     ish
-        mov     x0, x2
+#define ATOMIC_OP(LOAD, OP, STORE, SZ, MEMBAR, LSEOP)    \
+        hint    #0x22 /* bti c */               ;\
+        LSEOP SZ ## 1, SZ ## 2, [x0]            ;\
+        MEMBAR                                  ;\
+        mov     SZ ## 0, SZ ## 2                ;\
         ret
+#else
+#define ATOMIC_OP(LOAD, OP, STORE, SZ, MEMBAR, LSEOP)    \
+        hint    #0x22 /* bti c */               ;\
+        prfm    pstl1strm, [x0]                 ;\
+0:      LOAD    SZ ## 2, [x0]                   ;\
+        OP      SZ ## 8, SZ ## 2, SZ ## 1       ;\
+        STORE   w9, SZ ## 8, [x0]               ;\
+        cbnz    w9, 0b                          ;\
+        MEMBAR                                  ;\
+        mov     SZ ## 0, SZ ## 2                ;\
+        ret
+#endif
+
+#define DMB                              ;\
+        dmb ish                          ;
 
         .align 5
+DECLARE_FUNC(aarch64_atomic_fetch_add_8_default_impl):
+        ATOMIC_OP(ldaxr, add, stlxr, x, DMB, ldaddal)
+        .align 5
 DECLARE_FUNC(aarch64_atomic_fetch_add_4_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        ldaddal w1, w2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldaxr   w2, [x0]
-        add     w8, w2, w1
-        stlxr   w9, w8, [x0]
-        cbnz    w9, 0b
-#endif
-        dmb     ish
-        mov     w0, w2
-        ret
+        ATOMIC_OP(ldaxr, add, stlxr, w, DMB, ldaddal)
 
         .align 5
 DECLARE_FUNC(aarch64_atomic_fetch_add_8_relaxed_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        ldadd   x1, x2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldxr    x2, [x0]
-        add     x8, x2, x1
-        stxr    w9, x8, [x0]
-        cbnz    w9, 0b
-#endif
-        mov     x0, x2
-        ret
-
+        ATOMIC_OP(ldxr, add, stxr, x, , ldadd)
         .align 5
 DECLARE_FUNC(aarch64_atomic_fetch_add_4_relaxed_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        ldadd   w1, w2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldxr    w2, [x0]
-        add     w8, w2, w1
-        stxr    w9, w8, [x0]
-        cbnz    w9, 0b
-#endif
-        mov     w0, w2
-        ret
+        ATOMIC_OP(ldxr, add, stxr, w, , ldadd)
 
-        .align 5
-DECLARE_FUNC(aarch64_atomic_xchg_4_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        swpal   w1, w2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldaxr   w2, [x0]
-        stlxr   w8, w1, [x0]
-        cbnz    w8, 0b
-#endif
-        dmb     ish
-        mov     w0, w2
-        ret
+#undef ATOMIC_OP
 
-        .align 5
+#ifdef __ARM_FEATURE_ATOMICS
+#define ATOMIC_OP(LOAD, STORE, SZ, LSEOP)        \
+        hint    #0x22 /* bti c */               ;\
+        LSEOP SZ ## 1, SZ ## 2, [x0]            ;\
+        dmb     ish                             ;\
+        mov     SZ ## 0, SZ ## 2                ;\
+        ret
+#else
+#define ATOMIC_OP(LOAD, STORE, SZ, LSEOP)        \
+        hint    #0x22 /* bti c */               ;\
+        prfm    pstl1strm, [x0]                 ;\
+0:      LOAD    SZ ## 2, [x0]                   ;\
+        STORE   w8, SZ ## 1, [x0]               ;\
+        cbnz    w8, 0b                          ;\
+        dmb     ish                             ;\
+        mov     SZ ## 0, SZ ## 2                ;\
+        ret
+#endif
+
 DECLARE_FUNC(aarch64_atomic_xchg_8_default_impl):
-        hint    #0x22 // bti c
+        ATOMIC_OP(ldaxr, stlxr, x, swpal)
+DECLARE_FUNC(aarch64_atomic_xchg_4_default_impl):
+        ATOMIC_OP(ldaxr, stlxr, w, swpal)
+
+#undef ATOMIC_OP
 #ifdef __ARM_FEATURE_ATOMICS
-        swpal   x1, x2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldaxr   x2, [x0]
-        stlxr   w8, x1, [x0]
-        cbnz    w8, 0b
-#endif
-        dmb     ish
-        mov     x0, x2
+#define ATOMIC_OP(LOAD, STORE, SZ, CMP, MEMBAR, LSEOP) \
+        hint    #0x22 /* bti c */               ;\
+        mov     SZ ## 3, SZ ## 1                ;\
+        LSEOP   SZ ## 3, SZ ## 2, [x0]          ;\
+        MEMBAR                                  ;\
+        mov     SZ ## 0, SZ ## 3                ;\
         ret
+#else
+#define ATOMIC_OP(LOAD, STORE, SZ, CMP, MEMBAR, LSEOP) \
+        hint    #0x22 /* bti c */               ;\
+        MEMBAR                                  ;\
+        prfm    pstl1strm, [x0]                 ;\
+0:      LOAD    SZ ## 3, [x0]                   ;\
+        CMP                                     ;\
+        STORE   w8, SZ ## 2, [x0]               ;\
+        cbnz    w8, 0b                          ;\
+1:      MEMBAR                                  ;\
+        mov     SZ ## 0, SZ ## 3                ;\
+        ret
+#endif
+
+#define CMPB                              \
+        eor     w8, w3, w1               ;\
+        tst     x8, #0xff                ;\
+        b.ne    1f                       ;
+#define CMPW                             ;\
+        cmp     w3, w1                   ;\
+        b.ne    1f                       ;
+#define CMPX                             ;\
+        cmp     x3, x1                   ;\
+        b.ne    1f
 
         .align 5
 DECLARE_FUNC(aarch64_atomic_cmpxchg_1_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        mov     x3, x1
-        casalb  w3, w2, [x0]
-#else
-        dmb     ish
-        prfm    pstl1strm, [x0]
-0:      ldxrb   w3, [x0]
-        eor     w8, w3, w1
-        tst     x8, #0xff
-        b.ne    1f
-        stxrb   w8, w2, [x0]
-        cbnz    w8, 0b
-#endif
-1:      dmb     ish
-        mov     w0, w3
-        ret
-
+        ATOMIC_OP(ldxrb, stxrb, w, CMPB, DMB, casalb)
         .align 5
 DECLARE_FUNC(aarch64_atomic_cmpxchg_4_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        mov     x3, x1
-        casal   w3, w2, [x0]
-#else
-        dmb     ish
-        prfm    pstl1strm, [x0]
-0:      ldxr    w3, [x0]
-        cmp     w3, w1
-        b.ne    1f
-        stxr    w8, w2, [x0]
-        cbnz    w8, 0b
-#endif
-1:      dmb     ish
-        mov     w0, w3
-        ret
-
+        ATOMIC_OP(ldxr, stxr, w, CMPW, DMB, casal)
         .align 5
 DECLARE_FUNC(aarch64_atomic_cmpxchg_8_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        mov     x3, x1
-        casal   x3, x2, [x0]
-#else
-        dmb     ish
-        prfm    pstl1strm, [x0]
-0:      ldxr    x3, [x0]
-        cmp     x3, x1
-        b.ne    1f
-        stxr    w8, x2, [x0]
-        cbnz    w8, 0b
-#endif
-1:      dmb     ish
-        mov     x0, x3
-        ret
+        ATOMIC_OP(ldxr, stxr, x, CMPX, DMB, casal)
 
         .align 5
 DECLARE_FUNC(aarch64_atomic_cmpxchg_4_release_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        mov     x3, x1
-        casl    w3, w2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldxr    w3, [x0]
-        cmp     w3, w1
-        b.ne    1f
-        stlxr   w8, w2, [x0]
-        cbnz    w8, 0b
-#endif
-1:      mov     w0, w3
-        ret
-
+        ATOMIC_OP(ldxr, stlxr, w, CMPW, , casl)
         .align 5
 DECLARE_FUNC(aarch64_atomic_cmpxchg_8_release_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        mov     x3, x1
-        casl    x3, x2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldxr    x3, [x0]
-        cmp     x3, x1
-        b.ne    1f
-        stlxr   w8, x2, [x0]
-        cbnz    w8, 0b
-#endif
-1:      mov     x0, x3
-        ret
+        ATOMIC_OP(ldxr, stlxr, x, CMPX, , casl)
 
-        .align 5
+       .align 5
 DECLARE_FUNC(aarch64_atomic_cmpxchg_4_seq_cst_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        mov     x3, x1
-        casal   w3, w2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldaxr   w3, [x0]
-        cmp     w3, w1
-        b.ne    1f
-        stlxr   w8, w2, [x0]
-        cbnz    w8, 0b
-#endif
-1:      mov     w0, w3
-        ret
-
+        ATOMIC_OP(ldaxr, stlxr, w, CMPW, , casl)
         .align 5
 DECLARE_FUNC(aarch64_atomic_cmpxchg_8_seq_cst_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        mov     x3, x1
-        casal   x3, x2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldaxr   x3, [x0]
-        cmp     x3, x1
-        b.ne    1f
-        stlxr   w8, x2, [x0]
-        cbnz    w8, 0b
-#endif
-1:      mov     x0, x3
-        ret
+        ATOMIC_OP(ldaxr, stlxr, x, CMPX, , casl)
 
         .align 5
 DECLARE_FUNC(aarch64_atomic_cmpxchg_1_relaxed_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        mov     x3, x1
-        casb    w3, w2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldxrb   w3, [x0]
-        eor     w8, w3, w1
-        tst     x8, #0xff
-        b.ne    1f
-        stxrb   w8, w2, [x0]
-        cbnz    w8, 0b
-#endif
-1:      mov     w0, w3
-        ret
-
+        ATOMIC_OP(ldxrb, stxrb, w, CMPB, , casb)
         .align 5
 DECLARE_FUNC(aarch64_atomic_cmpxchg_4_relaxed_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        mov     x3, x1
-        cas     w3, w2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldxr    w3, [x0]
-        cmp     w3, w1
-        b.ne    1f
-        stxr    w8, w2, [x0]
-        cbnz    w8, 0b
-#endif
-1:      mov     w0, w3
-        ret
-
+        ATOMIC_OP(ldxr, stxr, w, CMPW, , casl)
         .align 5
 DECLARE_FUNC(aarch64_atomic_cmpxchg_8_relaxed_default_impl):
-        hint    #0x22 // bti c
-#ifdef __ARM_FEATURE_ATOMICS
-        mov     x3, x1
-        cas     x3, x2, [x0]
-#else
-        prfm    pstl1strm, [x0]
-0:      ldxr    x3, [x0]
-        cmp     x3, x1
-        b.ne    1f
-        stxr    w8, x2, [x0]
-        cbnz    w8, 0b
-#endif
-1:      mov     x0, x3
-        ret
+        ATOMIC_OP(ldxr, stxr, x, CMPX, , casl)
 
 /* Emit .note.gnu.property section in case of PAC or BTI being enabled.
  * For more details see "ELF for the Arm(R) 64-bit Architecture (AArch64)".
