@@ -300,6 +300,7 @@ void ShenandoahHeuristics::assert_humongous_mark_consistency(ShenandoahHeapRegio
          "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
          BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
 }
+#endif
 
 bool ShenandoahHeuristics::trigger_allocation_threshold(const size_t used, const size_t capacity) {
   if (ShenandoahAllocationThreshold == 0) {
@@ -335,5 +336,3 @@ bool ShenandoahHeuristics::trigger_min_free_threshold(const size_t available, co
   }
   return false;
 }
-
-#endif
