@@ -40,7 +40,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 @BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.SECONDS)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
 @Warmup(iterations = 3, time = 1)
 @Measurement(iterations = 5, time = 1)
@@ -64,6 +64,22 @@ public class ByteShiftBenchmark {
         dst = new byte[BYTES];
         for (int i = 0; i < src.length; i++) {
             src[i] = (byte) i;
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(BYTES)
+    public void autoVecLshl() {
+        for (int i = 0; i < BYTES; i++) {
+            dst[i] = (byte) (src[i] << shift);
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(BYTES)
+    public void autoVecAshr() {
+        for (int i = 0; i < BYTES; i++) {
+            dst[i] = (byte) (src[i] >> shift);
         }
     }
 

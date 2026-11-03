@@ -46,6 +46,9 @@ import jdk.incubator.vector.VectorSpecies;
  * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @run driver ${test.main.class}
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=0 ${test.main.class}
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=1 ${test.main.class}
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=2 ${test.main.class}
  */
 
 public class TestGFNIUniformByteShift {
@@ -61,8 +64,11 @@ public class TestGFNIUniformByteShift {
 
     // Auto-vectorized Java shifts mask the count to 0..31.
     static final int SHIFT = 32;
+    static final int[] OUT_OF_RANGE = {-1, 32, 40, 63};
     static final byte[] DST_L = new byte[SHIFT * LENGTH];
     static final byte[] DST_A = new byte[SHIFT * LENGTH];
+    static final byte[][] DST_L_OOR = new byte[OUT_OF_RANGE.length][LENGTH];
+    static final byte[][] DST_A_OOR = new byte[OUT_OF_RANGE.length][LENGTH];
 
     static final Generators RD = Generators.G;
 
@@ -172,11 +178,17 @@ public class TestGFNIUniformByteShift {
                 DST_L[base + i] = (byte) (SRC[i] << s);
             }
         }
+        for (int k = 0; k < OUT_OF_RANGE.length; k++) {
+            int s = OUT_OF_RANGE[k];
+            for (int i = 0; i < LENGTH; i++) {
+                DST_L_OOR[k][i] = (byte) (SRC[i] << s);
+            }
+        }
     }
 
     @Check(test = "testAutoVecLogicalLeftShift", when = CheckAt.COMPILED)
     public static void checkAutoVecLogicalLeftShift() {
-        checkVariableShiftForAllCounts(DST_L, true);
+        checkVariableShiftForAllCounts(DST_L, DST_L_OOR, true);
     }
 
     @Test
@@ -191,14 +203,20 @@ public class TestGFNIUniformByteShift {
                 DST_A[base + i] = (byte) (SRC[i] >> s);
             }
         }
+        for (int k = 0; k < OUT_OF_RANGE.length; k++) {
+            int s = OUT_OF_RANGE[k];
+            for (int i = 0; i < LENGTH; i++) {
+                DST_A_OOR[k][i] = (byte) (SRC[i] >> s);
+            }
+        }
     }
 
     @Check(test = "testAutoVecArithmeticRightShift", when = CheckAt.COMPILED)
     public static void checkAutoVecArithmeticRightShift() {
-        checkVariableShiftForAllCounts(DST_A, false);
+        checkVariableShiftForAllCounts(DST_A, DST_A_OOR, false);
     }
 
-    static void checkVariableShiftForAllCounts(byte[] actual, boolean leftShift) {
+    static void checkVariableShiftForAllCounts(byte[] actual, byte[][] actualOutOfRange, boolean leftShift) {
         for (int s = 0; s < SHIFT; s++) {
             int base = s * LENGTH;
             byte[] ref = new byte[LENGTH];
@@ -209,6 +227,15 @@ public class TestGFNIUniformByteShift {
                 slice[i] = actual[base + i];
             }
             Verify.checkEQ(slice, ref);
+        }
+        for (int k = 0; k < OUT_OF_RANGE.length; k++) {
+            int s = OUT_OF_RANGE[k];
+            byte[] ref = new byte[LENGTH];
+            for (int i = 0; i < LENGTH; i++) {
+                int x = SRC[i];
+                ref[i] = leftShift ? (byte) (x << s) : (byte) (x >> s);
+            }
+            Verify.checkEQ(actualOutOfRange[k], ref);
         }
     }
 }
