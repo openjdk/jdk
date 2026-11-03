@@ -12349,7 +12349,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
   }
 
-  void gen_swpal_entry(Assembler::operand_size size) {
+  void gen_swpal_entry(Assembler::operand_size size, atomic_memory_order) {
     Register prev = r2, addr = c_rarg0, incr = c_rarg1;
     __ swpal(size, incr, prev, addr);
     __ membar(Assembler::StoreStore|Assembler::StoreLoad);
@@ -12402,29 +12402,29 @@ class StubGenerator: public StubCodeGenerator {
     }
 
 #define ATOMIC_STUB(NAME, KIND, SIZE, MEM_ORDER)                \
-    AtomicStubMark mark_ ## NAME(_masm, & NAME ## _impl);       \
-    gen_ ## KIND ## _entry(SIZE, MEM_ORDER);
+    AtomicStubMark mark_ ## NAME(_masm, & aarch64_atomic_ ## NAME ## _impl);       \
+    gen_ ## KIND ## _entry(SIZE, memory_order_ ## MEM_ORDER);
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     start = __ pc();
     address end;
     {
-      ATOMIC_STUB(aarch64_atomic_fetch_add_4,         ldadd, Assembler::word,  memory_order_conservative);
-      ATOMIC_STUB(aarch64_atomic_fetch_add_8,         ldadd, Assembler::xword, memory_order_conservative);
-      ATOMIC_STUB(aarch64_atomic_fetch_add_4_relaxed, ldadd, Assembler::word,  memory_order_relaxed);
-      ATOMIC_STUB(aarch64_atomic_fetch_add_8_relaxed, ldadd, Assembler::xword, memory_order_relaxed);
-      ATOMIC_STUB(aarch64_atomic_xchg_4,              swpal, Assembler::word,  memory_order_conservative);
-      ATOMIC_STUB(aarch64_atomic_xchg_8,              swpal, Assembler::xword, memory_order_conservative);
-      ATOMIC_STUB(aarch64_atomic_cmpxchg_1,           cas,   Assembler::byte,  memory_order_conservative);
-      ATOMIC_STUB(aarch64_atomic_cmpxchg_4,           cas,   Assembler::word,  memory_order_conservative);
-      ATOMIC_STUB(aarch64_atomic_cmpxchg_8,           cas,   Assembler::xword, memory_order_conservative);
-      ATOMIC_STUB(aarch64_atomic_cmpxchg_4_relaxed,   cas,   Assembler::word,  memory_order_relaxed);
-      ATOMIC_STUB(aarch64_atomic_cmpxchg_8_relaxed,   cas,   Assembler::xword, memory_order_relaxed);
-      ATOMIC_STUB(aarch64_atomic_cmpxchg_4_release,   cas,   Assembler::word,  memory_order_release);
-      ATOMIC_STUB(aarch64_atomic_cmpxchg_8_release,   cas,   Assembler::xword, memory_order_release);
-      ATOMIC_STUB(aarch64_atomic_cmpxchg_4_seq_cst,   cas,   Assembler::word,  memory_order_seq_cst);
-      ATOMIC_STUB(aarch64_atomic_cmpxchg_8_seq_cst,   cas,   Assembler::xword, memory_order_seq_cst);
+      ATOMIC_STUB(fetch_add_4,         ldadd, Assembler::word,  conservative);
+      ATOMIC_STUB(fetch_add_8,         ldadd, Assembler::xword, conservative);
+      ATOMIC_STUB(fetch_add_4_relaxed, ldadd, Assembler::word,  relaxed);
+      ATOMIC_STUB(fetch_add_8_relaxed, ldadd, Assembler::xword, relaxed);
+      ATOMIC_STUB(xchg_4,              swpal, Assembler::word,  conservative);
+      ATOMIC_STUB(xchg_8,              swpal, Assembler::xword, conservative);
+      ATOMIC_STUB(cmpxchg_1,           cas,   Assembler::byte,  conservative);
+      ATOMIC_STUB(cmpxchg_4,           cas,   Assembler::word,  conservative);
+      ATOMIC_STUB(cmpxchg_8,           cas,   Assembler::xword, conservative);
+      ATOMIC_STUB(cmpxchg_4_relaxed,   cas,   Assembler::word,  relaxed);
+      ATOMIC_STUB(cmpxchg_8_relaxed,   cas,   Assembler::xword, relaxed);
+      ATOMIC_STUB(cmpxchg_4_release,   cas,   Assembler::word,  release);
+      ATOMIC_STUB(cmpxchg_8_release,   cas,   Assembler::xword, release);
+      ATOMIC_STUB(cmpxchg_4_seq_cst,   cas,   Assembler::word,  seq_cst);
+      ATOMIC_STUB(cmpxchg_8_seq_cst,   cas,   Assembler::xword, seq_cst);
 
       end = __ pc();
 
