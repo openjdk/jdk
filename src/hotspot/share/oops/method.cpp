@@ -1313,6 +1313,7 @@ void Method::remove_unshareable_flags() {
   // the current VM. Recompute it when the method is linked and
   // its adapter is selected.
   set_has_scalarized_args(false);
+  set_scalarized_return(false);
   if (CDSConfig::is_dumping_preimage_static_archive()) {
     // These flags may reflect class linking state during training run.
     // Recompute them during assembly phase and preserve the results

@@ -897,9 +897,6 @@ public:
   GrowableArray<Method*>* get_supers();
   bool check_arg_supers_and_deoptimize(int arg_num);
   bool check_ret_supers_and_deoptimize();
-
-  bool scalarized_return() const { return constMethod()->scalarized_return(); }
-  void set_scalarized_return() { constMethod()->set_scalarized_return(); }
 };
 
 
