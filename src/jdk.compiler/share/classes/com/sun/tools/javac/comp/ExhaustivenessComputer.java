@@ -135,7 +135,7 @@ public class ExhaustivenessComputer {
                     }
                 } else if (l instanceof JCConstantCaseLabel constantLabel) {
                     if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN)) {
-                        Object value = ((JCLiteral) constantLabel.expr).value;
+                        Object value = constantLabel.expr.type.constValue();
                         booleanLiterals.remove(value);
                     } else {
                         Symbol s = TreeInfo.symbol(constantLabel.expr);

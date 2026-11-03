@@ -416,28 +416,6 @@
  */
 
 /*
- * @test id=emsignrootcag1
- * @bug 8319187
- * @summary Interoperability tests with eMudhra Root CA G1
- * @library /test/lib
- * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop emsignrootcag1 OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop emsignrootcag1 OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath CAInterop emsignrootcag1 CRL
- */
-
-/*
- * @test id=emsigneccrootcag3
- * @bug 8319187
- * @summary Interoperability tests with eMudhra ECC Root CA G3
- * @library /test/lib
- * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop emsigneccrootcag3 OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop emsigneccrootcag3 OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath CAInterop emsigneccrootcag3 CRL
- */
-
-/*
  * @test id=certainlyrootr1
  * @bug 8321408
  * @summary Interoperability tests with Certainly Root R1
@@ -557,6 +535,34 @@
  * -Dcom.sun.security.ocsp.useget=false CAInterop wisekeyglobalrootgcca OCSP
  * @run main/othervm/manual -Djava.security.debug=certpath CAInterop
  * wisekeyglobalrootgcca CRL
+ */
+
+/*
+ * @test id=certumtrustedrootca
+ * @bug 8392771
+ * @summary Interoperability tests with Certum Trusted Root CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop
+ * certumtrustedrootca OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp
+ * -Dcom.sun.security.ocsp.useget=false CAInterop certumtrustedrootca OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop
+ * certumtrustedrootca CRL
+ */
+
+/*
+ * @test id=certumec384ca
+ * @bug 8392771
+ * @summary Interoperability tests with Certum EC-384 CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop
+ * certumec384ca OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp
+ * -Dcom.sun.security.ocsp.useget=false CAInterop certumec384ca OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop
+ * certumec384ca CRL
  */
 
 /**
@@ -699,13 +705,6 @@ public class CAInterop {
                     new CATestURLs("https://juolukka.cover.telia.fi:10600",
                             "https://juolukka.cover.telia.fi:10601");
 
-            case "emsignrootcag1" ->
-                    new CATestURLs("https://testovg1.emsign.com/RootOVG1.html",
-                            "https://testovg1r.emsign.com/RootOVG1MR.html");
-            case "emsigneccrootcag3" ->
-                    new CATestURLs("https://testovg3.emsign.com/RootOVG3.html",
-                            "https://testovg3r.emsign.com/RootOVG3MR.html");
-
             case "certainlyrootr1" ->
                     new CATestURLs("https://valid.root-r1.certainly.com",
                             "https://revoked.root-r1.certainly.com");
@@ -740,6 +739,13 @@ public class CAInterop {
             case "wisekeyglobalrootgcca" ->
                     new CATestURLs("https://gcvalidssl.hightrusted.com",
                             "https://gcrevokedssl.hightrusted.com");
+
+            case "certumtrustedrootca" ->
+                    new CATestURLs("https://valid-ctrca.certificates.certum.pl",
+                            "https://revoked-ctrca.certificates.certum.pl");
+            case "certumec384ca" ->
+                    new CATestURLs("https://valid-cec384ca.certificates.certum.pl",
+                            "https://revoked-cec384ca.certificates.certum.pl");
 
             default -> throw new RuntimeException("No test setup found for: " + alias);
         };

@@ -23,10 +23,10 @@
  */
 
 #include "cds/aotCacheAccess.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/stringTable.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "logging/log.hpp"
@@ -99,11 +99,11 @@ Metadata* AOTCacheAccess::try_narrow_ptr_to_metadata(narrowPtr narrowp, size_t s
 
 #if INCLUDE_CDS_JAVA_HEAP
 int AOTCacheAccess::get_archived_object_permanent_index(oop obj) {
-  return HeapShared::get_root_index(obj); // -1 if obj is not a root.
+  return AOTHeap::get_root_index(obj); // -1 if obj is not a root.
 }
 
 oop AOTCacheAccess::get_archived_object(int permanent_index) {
-  oop o = HeapShared::get_root(permanent_index);
+  oop o = AOTHeap::get_root(permanent_index);
   assert(oopDesc::is_oop_or_null(o), "sanity");
   return o;
 }
@@ -128,14 +128,14 @@ void AOTCacheAccess::set_aot_code_region_size(size_t sz) {
 }
 
 bool AOTCacheAccess::map_aot_code_region(ReservedSpace rs) {
-  FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+  FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive();
   assert(UseSharedSpaces && static_mapinfo != nullptr, "must be");
   verify_narrow_ptr = VerifyAOTCode;
   return static_mapinfo->map_aot_code_region(rs);
 }
 
 void AOTCacheAccess::unmap_aot_code_region() {
-  FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+  FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive();
   assert(UseSharedSpaces && static_mapinfo != nullptr, "must be");
   return static_mapinfo->unmap_aot_code_region();
 }

@@ -498,6 +498,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       Label not_null;
       __ cbnz(r0, not_null);
       // Returned value is null, zero all return registers because they may belong to oop fields
+      __ mov(j_rarg0, zr);
       __ mov(j_rarg1, zr);
       __ mov(j_rarg2, zr);
       __ mov(j_rarg3, zr);
@@ -751,6 +752,11 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   } else {
     ShouldNotReachHere();
   }
+}
+
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  assert(UseCompressedOops, "should only be used with compressed oops");
+  __ decode_heap_oop(dest->as_pointer_register(), src->as_pointer_register());
 }
 
 void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
@@ -2379,13 +2385,14 @@ void LIR_Assembler::store_parameter(jobject o,  int offset_from_rsp_in_words) {
 }
 
 void LIR_Assembler::arraycopy_valuetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check) {
+  assert(Arguments::is_valhalla_enabled(), "Value types must be enabled");
   if (null_check) {
     __ cbz(obj, *slow_path->entry());
   }
   if (is_dest) {
     __ test_null_free_array_oop(obj, tmp, *slow_path->entry());
-    __ test_flat_array_oop(obj, tmp, *slow_path->entry());
-  } else {
+  }
+  if (UseArrayFlattening) {
     __ test_flat_array_oop(obj, tmp, *slow_path->entry());
   }
 }
@@ -2414,7 +2421,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   // if we don't know anything, just go through the generic arraycopy
-  if (default_type == nullptr // || basic_type == T_OBJECT
+  if (default_type == nullptr || !default_type->is_loaded() // || basic_type == T_OBJECT
       ) {
     Label done;
     assert(src == r1 && src_pos == r2, "mismatch in calling convention");
@@ -2467,11 +2474,13 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   // Handle value type arrays
-  if (flags & LIR_OpArrayCopy::src_valuetype_check) {
-    arraycopy_valuetype_check(src, tmp, stub, false, (flags & LIR_OpArrayCopy::src_null_check));
-  }
-  if (flags & LIR_OpArrayCopy::dst_valuetype_check) {
-    arraycopy_valuetype_check(dst, tmp, stub, true, (flags & LIR_OpArrayCopy::dst_null_check));
+  if (Arguments::is_valhalla_enabled()) {
+    if (flags & LIR_OpArrayCopy::src_valuetype_check) {
+      arraycopy_valuetype_check(src, tmp, stub, false, (flags & LIR_OpArrayCopy::src_null_check));
+    }
+    if (flags & LIR_OpArrayCopy::dst_valuetype_check) {
+      arraycopy_valuetype_check(dst, tmp, stub, true, (flags & LIR_OpArrayCopy::dst_null_check));
+    }
   }
 
   assert(default_type != nullptr && default_type->is_array_klass() && default_type->is_loaded(), "must be true at this point");
@@ -2989,6 +2998,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 }
 
 void LIR_Assembler::emit_profile_value_type(LIR_OpProfileValueType* op) {
+  assert(Arguments::is_valhalla_enabled(), "Should not be called without value types enabled");
   Register obj = op->obj()->as_register();
   Register tmp = op->tmp()->as_pointer_register();
   bool not_null = op->not_null();

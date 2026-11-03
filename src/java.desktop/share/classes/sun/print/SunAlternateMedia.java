@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,14 +54,17 @@ public class SunAlternateMedia implements PrintRequestAttribute {
         return media;
     }
 
+    @Override
     public final Class<? extends Attribute> getCategory() {
         return SunAlternateMedia.class;
     }
 
+    @Override
     public final String getName() {
         return "sun-alternate-media";
     }
 
+    @Override
     public String toString() {
        return "alternate-media: " + media.toString();
     }
@@ -70,6 +73,7 @@ public class SunAlternateMedia implements PrintRequestAttribute {
      * Returns a hash code value for this enumeration value. The hash code is
      * just this enumeration value's integer value.
      */
+    @Override
     public int hashCode() {
         return media.hashCode();
     }

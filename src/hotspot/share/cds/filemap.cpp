@@ -23,24 +23,24 @@
  */
 
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/aotMappedHeapWriter.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -134,7 +134,7 @@ bool CDSMustMatchFlags::runtime_check() const {
     ss.print(") and runtime ("); \
     do_print(&ss, n); \
     ss.print(")"); \
-    log_info(cds)("%s", ss.as_string()); \
+    aot_log_info(aot)("%s", ss.as_string()); \
     return false; \
   }
   CDS_MUST_MATCH_FLAGS_DO(CHECK_CDS_MUST_MATCH_FLAG);
@@ -199,23 +199,18 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
 
 FileMapInfo::FileMapInfo(const char* full_path, bool is_static) :
   _is_static(is_static), _file_open(false), _is_mapped(false), _fd(-1), _file_offset(0),
-  _full_path(full_path), _base_archive_name(nullptr), _header(nullptr) {
-  if (_is_static) {
-    assert(_current_info == nullptr, "must be singleton"); // not thread safe
-    _current_info = this;
-  } else {
-    assert(_dynamic_archive_info == nullptr, "must be singleton"); // not thread safe
-    _dynamic_archive_info = this;
-  }
-}
+  _full_path(full_path), _base_archive_name(nullptr), _header(nullptr) {}
+
 
 FileMapInfo::~FileMapInfo() {
-  if (_is_static) {
-    assert(_current_info == this, "must be singleton"); // not thread safe
-    _current_info = nullptr;
+  if (_output_archive == this) {
+    _output_archive = nullptr;
+  } else if (_is_static) {
+    assert(_static_input_archive == this, "must be singleton"); // not thread safe
+    _static_input_archive = nullptr;
   } else {
-    assert(_dynamic_archive_info == this, "must be singleton"); // not thread safe
-    _dynamic_archive_info = nullptr;
+    assert(_dynamic_input_archive == this, "must be singleton"); // not thread safe
+    _dynamic_input_archive = nullptr;
   }
 
   if (_header != nullptr) {
@@ -227,11 +222,22 @@ FileMapInfo::~FileMapInfo() {
   }
 }
 
-void FileMapInfo::free_current_info() {
-  assert(CDSConfig::is_dumping_final_static_archive(), "only supported in this mode");
-  assert(_current_info != nullptr, "sanity");
-  delete _current_info;
-  assert(_current_info == nullptr, "sanity"); // Side effect expected from the above "delete" operator.
+FileMapInfo* FileMapInfo::allocate_static_input_archive(const char* filename) {
+  precond(_static_input_archive == nullptr);
+  _static_input_archive = new FileMapInfo(filename, /*is_static=*/true);
+  return _static_input_archive;
+}
+
+FileMapInfo* FileMapInfo::allocate_dynamic_input_archive(const char* filename) {
+  precond(_dynamic_input_archive == nullptr);
+  _dynamic_input_archive = new FileMapInfo(filename, /*is_static=*/false);
+  return _dynamic_input_archive;
+}
+
+FileMapInfo* FileMapInfo::allocate_output_archive(const char* filename, bool is_static) {
+  precond(_output_archive == nullptr);
+  _output_archive = new FileMapInfo(filename, is_static);
+  return _output_archive;
 }
 
 void FileMapInfo::populate_header(size_t core_region_alignment) {
@@ -303,7 +309,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _compact_headers = UseCompactObjectHeaders;
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    _object_streaming_mode = HeapShared::is_writing_streaming_mode();
+    _object_streaming_mode = AOTHeap::is_writing_streaming_mode();
     _narrow_oop_mode = AOTMappedHeapWriter::narrow_oop_mode();
     _narrow_oop_base = AOTMappedHeapWriter::narrow_oop_base();
     _narrow_oop_shift = AOTMappedHeapWriter::narrow_oop_shift();
@@ -907,7 +913,7 @@ size_t FileMapRegion::used_aligned() const {
 
 void FileMapRegion::init(int region_index, size_t mapping_offset, size_t size, bool read_only,
                          bool allow_exec, int crc) {
-  _is_heap_region = HeapShared::is_heap_region(region_index);
+  _is_heap_region = AOTHeap::is_heap_region(region_index);
   _is_bitmap_region = (region_index == AOTMetaspace::bm);
   _mapping_offset = mapping_offset;
   _used = size;
@@ -959,7 +965,7 @@ static const char* region_name(int region_index) {
 
 BitMapView FileMapInfo::bitmap_view(int region_index, bool is_oopmap) {
   FileMapRegion* r = region_at(region_index);
-  char* bitmap_base = is_static() ? FileMapInfo::current_info()->map_bitmap_region() : FileMapInfo::dynamic_info()->map_bitmap_region();
+  char* bitmap_base = is_static() ? FileMapInfo::static_input_archive()->map_bitmap_region() : FileMapInfo::dynamic_input_archive()->map_bitmap_region();
   bitmap_base += is_oopmap ? r->oopmap_offset() : r->ptrmap_offset();
   size_t size_in_bits = is_oopmap ? r->oopmap_size_in_bits() : r->ptrmap_size_in_bits();
 
@@ -1009,11 +1015,11 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   } else if (size == 0) {
     // This is an unused region (e.g., a heap region when !INCLUDE_CDS_JAVA_HEAP)
     requested_base = nullptr;
-  } else if (HeapShared::is_heap_region(region)) {
+  } else if (AOTHeap::is_heap_region(region)) {
     assert(CDSConfig::is_dumping_heap(), "sanity");
 #if INCLUDE_CDS_JAVA_HEAP
     assert(!CDSConfig::is_dumping_dynamic_archive(), "must be");
-    if (HeapShared::is_writing_mapping_mode()) {
+    if (AOTHeap::is_writing_mapping_mode()) {
       requested_base = (char*)AOTMappedHeapWriter::requested_address();
       if (UseCompressedOops) {
         mapping_offset = (size_t)((address)requested_base - AOTMappedHeapWriter::narrow_oop_base());
@@ -1087,7 +1093,7 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
 
   if (mapped_heap_info != nullptr && mapped_heap_info->is_used()) {
     // Remove leading and trailing zeros
-    assert(HeapShared::is_writing_mapping_mode(), "unexpected dumping mode");
+    assert(AOTHeap::is_writing_mapping_mode(), "unexpected dumping mode");
     size_t removed_oop_leading_zeros = remove_bitmap_zeros(mapped_heap_info->oopmap());
     size_t removed_ptr_leading_zeros = remove_bitmap_zeros(mapped_heap_info->ptrmap());
     mapped_heap_info->set_oopmap_start_pos(removed_oop_leading_zeros);
@@ -1096,7 +1102,7 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
     size_in_bytes += mapped_heap_info->oopmap()->size_in_bytes();
     size_in_bytes += mapped_heap_info->ptrmap()->size_in_bytes();
   } else if (streamed_heap_info != nullptr && streamed_heap_info->is_used()) {
-    assert(HeapShared::is_writing_streaming_mode(), "unexpected dumping mode");
+    assert(AOTHeap::is_writing_streaming_mode(), "unexpected dumping mode");
 
     size_in_bytes += streamed_heap_info->oopmap()->size_in_bytes();
   }
@@ -1122,7 +1128,7 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
   }
 
   if (mapped_heap_info != nullptr && mapped_heap_info->is_used()) {
-    assert(HeapShared::is_writing_mapping_mode(), "unexpected dumping mode");
+    assert(AOTHeap::is_writing_mapping_mode(), "unexpected dumping mode");
     FileMapRegion* r = region_at(AOTMetaspace::hp);
 
     r->init_oopmap(written, mapped_heap_info->oopmap()->size());
@@ -1131,7 +1137,7 @@ char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap,
     r->init_ptrmap(written, mapped_heap_info->ptrmap()->size());
     written = write_bitmap(mapped_heap_info->ptrmap(), buffer, written);
   } else if (streamed_heap_info != nullptr && streamed_heap_info->is_used()) {
-    assert(HeapShared::is_writing_streaming_mode(), "unexpected dumping mode");
+    assert(AOTHeap::is_writing_streaming_mode(), "unexpected dumping mode");
     FileMapRegion* r = region_at(AOTMetaspace::hp);
 
     r->init_oopmap(written, streamed_heap_info->oopmap()->size());
@@ -1352,7 +1358,7 @@ bool FileMapInfo::read_region(int i, char* base, size_t size, bool do_commit) {
 }
 
 MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs) {
-  assert(!HeapShared::is_heap_region(i), "sanity");
+  assert(!AOTHeap::is_heap_region(i), "sanity");
   FileMapRegion* r = region_at(i);
   size_t size = r->used_aligned();
   char *requested_addr = mapped_base_address + r->mapping_offset();
@@ -1656,12 +1662,12 @@ size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
 // Get the total size in bytes of all mapped read only region
 size_t FileMapInfo::readonly_total() {
   size_t total = 0;
-  if (current_info() != nullptr && current_info()->is_mapped()) {
-    FileMapRegion* r = FileMapInfo::current_info()->region_at(AOTMetaspace::ro);
+  if (static_input_archive() != nullptr && static_input_archive()->is_mapped()) {
+    FileMapRegion* r = static_input_archive()->region_at(AOTMetaspace::ro);
     if (r->read_only()) total += r->used();
   }
-  if (dynamic_info() != nullptr && current_info()->is_mapped()) {
-    FileMapRegion* r = FileMapInfo::dynamic_info()->region_at(AOTMetaspace::ro);
+  if (dynamic_input_archive() != nullptr && dynamic_input_archive()->is_mapped()) {
+    FileMapRegion* r = dynamic_input_archive()->region_at(AOTMetaspace::ro);
     if (r->read_only()) total += r->used();
   }
   return total;
@@ -1692,7 +1698,7 @@ void FileMapInfo::stream_heap_region() {
   assert(object_streaming_mode(), "This should only be done for the streaming approach");
 
   if (map_auxiliary_region(AOTMetaspace::hp, /*readonly=*/true) != nullptr) {
-    HeapShared::initialize_streaming();
+    AOTHeap::initialize_streaming();
   } else {
     on_heap_region_loading_error();
   }
@@ -1755,11 +1761,11 @@ bool FileMapInfo::can_use_heap_region() {
     // If JvmtiExport::has_early_class_hook_env() is false, the classes of some objects
     // in the archived subgraphs may be replaced by the ClassFileLoadHook. But that's OK
     // because we won't install an archived object subgraph if the klass of any of the
-    // referenced objects are replaced. See HeapShared::initialize_from_archived_subgraph().
+    // referenced objects are replaced. See AOTHeap::initialize_from_archived_subgraph().
   }
 
   // We pre-compute narrow Klass IDs with the runtime mapping start intended to be the base, and a shift of
-  // HeapShared::precomputed_narrow_klass_shift. We enforce this encoding at runtime (see
+  // AOTHeap::precomputed_narrow_klass_shift. We enforce this encoding at runtime (see
   // CompressedKlassPointers::initialize_for_given_encoding()). Therefore, the following assertions must
   // hold:
   address archive_narrow_klass_base = (address)header()->mapped_base_address();
@@ -1877,8 +1883,9 @@ void FileMapInfo::assert_mark(bool check) {
   }
 }
 
-FileMapInfo* FileMapInfo::_current_info = nullptr;
-FileMapInfo* FileMapInfo::_dynamic_archive_info = nullptr;
+FileMapInfo* FileMapInfo::_static_input_archive = nullptr;
+FileMapInfo* FileMapInfo::_dynamic_input_archive = nullptr;
+FileMapInfo* FileMapInfo::_output_archive = nullptr;
 bool FileMapInfo::_memory_mapping_failed = false;
 
 // Open the shared archive file, read and validate the header
@@ -1905,7 +1912,11 @@ bool FileMapInfo::open_as_input() {
 
   if (!open_for_read() || !init_from_file(_fd) || !validate_header()) {
     if (_is_static) {
-      AOTMetaspace::report_loading_error("Loading static archive failed.");
+      if (CDSConfig::new_aot_flags_used()) {
+        AOTMetaspace::report_loading_error("Loading %s failed.", CDSConfig::type_of_archive_being_loaded());
+      } else {
+        AOTMetaspace::report_loading_error("Loading static archive failed.");
+      }
       return false;
     } else {
       AOTMetaspace::report_loading_error("Loading dynamic archive failed.");
@@ -2021,9 +2032,9 @@ bool FileMapHeader::validate() {
       return false;
     }
     if (_type_profile_parms_limit != TypeProfileParmsLimit) {
-      AOTMetaspace::report_loading_error("The %s's TypeProfileParamsLimit setting (%d)"
-                                            " does not equal the current TypeProfileParamsLimit setting (%d).", file_type,
-                                            _type_profile_args_limit, TypeProfileArgsLimit);
+      AOTMetaspace::report_loading_error("The %s's TypeProfileParmsLimit setting (%d)"
+                                            " does not equal the current TypeProfileParmsLimit setting (%d).", file_type,
+                                            _type_profile_parms_limit, TypeProfileParmsLimit);
       return false;
 
     }
@@ -2108,7 +2119,7 @@ bool FileMapHeader::validate() {
     aot_log_info(aot)("The %s was created with less restrictive "
                                "verification setting than the current setting.", file_type);
     // Pretend that we didn't have any archived platform/app classes, so they won't be loaded
-    // by SystemDictionaryShared.
+    // by AOTSystemDictionary.
     _has_platform_or_app_classes = false;
   }
 
@@ -2151,6 +2162,22 @@ bool FileMapHeader::validate() {
     // Only the static archive can contain the full module graph.
     if (!_has_full_module_graph) {
       CDSConfig::stop_using_full_module_graph("archive was created without full module graph");
+    }
+  }
+
+  if (CDSConfig::is_redumping_aot_configuration() || CDSConfig::is_dumping_aot_cache()) {
+    if (_aot_class_linking_value && !AOTClassLinking) {
+      AOTMetaspace::report_loading_error("%s was created with AOTClassLinking enabled. It cannot be used when "
+                                            "AOTClassLinking is disabled.",
+                                            CDSConfig::type_of_archive_being_loaded());
+      return false;
+    }
+
+    if (!_aot_class_linking_value && AOTClassLinking) {
+      AOTMetaspace::report_loading_error("%s was created with AOTClassLinking disabled. It cannot be used when "
+                                            "AOTClassLinking is enabled.",
+                                            CDSConfig::type_of_archive_being_loaded());
+      return false;
     }
   }
 

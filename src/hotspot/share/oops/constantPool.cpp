@@ -23,9 +23,10 @@
  */
 
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotHeap.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -33,7 +34,6 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -59,7 +59,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/refArrayOop.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -232,7 +231,7 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
     // Create a "scratch" copy of the resolved references array to archive
     if (CDSConfig::is_dumping_heap()) {
       refArrayOop scratch_references = oopFactory::new_refArray(vmClasses::Object_klass(), map_length, CHECK);
-      HeapShared::add_scratch_resolved_references(this, scratch_references);
+      AOTHeap::add_scratch_resolved_references(this, scratch_references);
     }
   }
 }
@@ -334,7 +333,7 @@ refArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   }
 
   InstanceKlass *ik = pool_holder();
-  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
+  if (!AOTSystemDictionary::is_builtin_loader(ik->class_loader_data())) {
     // Archiving resolved references for classes from non-builtin loaders
     // is not yet supported.
     return nullptr;
@@ -350,7 +349,7 @@ refArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
       keep_resolved_refs.at_put(rr_index, true);
     });
 
-    refArrayOop scratch_rr = HeapShared::scratch_resolved_references(this);
+    refArrayOop scratch_rr = AOTHeap::scratch_resolved_references(this);
     Array<u2>* ref_map = reference_map();
     int ref_map_len = ref_map == nullptr ? 0 : ref_map->length();
     for (int i = 0; i < rr_len; i++) {
@@ -361,7 +360,7 @@ refArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
           int index = object_to_cp_index(i);
           if (tag_at(index).is_string()) {
             assert(java_lang_String::is_instance(obj), "must be");
-            if (!HeapShared::is_string_too_large_to_archive(obj)) {
+            if (!AOTHeap::is_string_too_large_to_archive(obj)) {
               scratch_rr->obj_at_put(i, obj);
             }
             continue;
@@ -401,7 +400,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   if (vmClasses::Object_klass_is_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (HeapShared::is_archived_heap_in_use() &&
+    if (AOTHeap::is_archived_heap_in_use() &&
         _cache->archived_references() != nullptr) {
       oop archived = _cache->archived_references();
       // Create handle for the archived resolved reference array object
@@ -424,9 +423,9 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
     }
   }
 
-  if (CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_heap() && resolved_references() != nullptr) {
+  if (CDSConfig::is_dumping_heap() && CDSConfig::can_allocate_scratch_oops() && resolved_references() != nullptr) {
     objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), resolved_references()->length(), CHECK);
-    HeapShared::add_scratch_resolved_references(this, scratch_references);
+    AOTHeap::add_scratch_resolved_references(this, scratch_references);
   }
 }
 
@@ -445,23 +444,21 @@ void ConstantPool::remove_unshareable_info() {
     return;
   }
 
-  bool update_resolved_reference = true;
-  if (CDSConfig::is_dumping_final_static_archive()) {
-    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
-    InstanceKlass* src_holder = src_cp->pool_holder();
-    if (src_holder->defined_by_other_loaders()) {
-      // Unregistered classes are not loaded in the AOT assembly phase. The resolved reference length
-      // is already saved during the training run.
-      precond(!src_holder->is_loaded());
-      precond(resolved_reference_length() >= 0);
-      precond(resolved_references() == nullptr);
-      update_resolved_reference = false;
-    }
-  }
-
-  // resolved_references(): remember its length. If it cannot be restored
-  // from the archived heap objects at run time, we need to dynamically allocate it.
-  if (update_resolved_reference && cache() != nullptr) {
+  ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
+  InstanceKlass* src_holder = src_cp->pool_holder();
+  if (!src_cp->pool_holder()->is_loaded()) {
+    precond(src_holder->in_aot_cache());
+    precond(src_holder->defined_by_other_loaders());
+    precond(CDSConfig::is_dumping_with_input_archive());
+    // <src_cp> is a cached unregistered class that has been entered into
+    // AOTSystemDictionary::_dumptime_table, but it has not been actually
+    // loaded in this JVM lifetime. The resolved reference length should have already
+    // been saved when <src_cp> was written into the AOT cache (or AOT config) file.
+    precond(resolved_reference_length() >= 0);
+    precond(resolved_references() == nullptr);
+  } else if (cache() != nullptr) {
+    // resolved_references(): remember its length. If it cannot be restored
+    // from the archived heap objects at run time, we need to dynamically allocate it.
     set_resolved_reference_length(
         resolved_references() != nullptr ? resolved_references()->length() : 0);
     set_resolved_references(OopHandle());
@@ -551,7 +548,7 @@ void ConstantPool::remove_resolved_klass_if_non_archivable(int cp_index) {
     k = resolved_klass_at(cp_index);
     if (k == nullptr) {
       // We'd come here if the referenced class has been excluded via
-      // SystemDictionaryShared::is_excluded_class(). As a result, ArchiveBuilder
+      // AOTSystemDictionary::is_excluded_class(). As a result, ArchiveBuilder
       // has cleared the resolved_klasses()->at(...) pointer to null. Thus, we
       // need to revert the tag to JVM_CONSTANT_UnresolvedClass.
       can_archive = false;
