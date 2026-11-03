@@ -28,7 +28,8 @@
 #include <stdbool.h>
 #include <stdalign.h>
 
-#define IS_SIGNED(T) ((T)0 > (T)-1)
+// Inverted test to avoid compiler warnings
+#define IS_SIGNED(T) (!((T)0 < (T)-1))
 
 // Expose some basic information about the type, such as size, align, and signedness
 #define CHECKS_ALL(T, NAME) \
