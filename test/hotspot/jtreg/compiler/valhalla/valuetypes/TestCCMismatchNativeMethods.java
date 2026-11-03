@@ -28,8 +28,7 @@ package compiler.valhalla.valuetypes;
  * @bug 8395610
  * @summary native method calls are not scalarized and cause mismatches
  * @enablePreview
- * @run main/othervm -XX:-TieredCompilation ${test.main.class}
- * @run main ${test.main.class}
+ * @run main/othervm -Xbatch ${test.main.class}
  */
 
 
@@ -38,56 +37,22 @@ public class TestCCMismatchNativeMethods {
         System.loadLibrary("TestCCMismatchNativeMethods");
     }
 
-    value record V1(int x) { }
-
-    static class A1 {
-        static V1 fieldV1 = new V1(42);
-
-        int m1(V1 v1, V1 v2) {
-            return v1.x;
-        }
-
-        V1 m2() {
-            return fieldV1;
-        }
-    }
-
-    static class B1 extends A1 {
-        native int m1(V1 v1, V1 v2);
-        native V1 m2();
-    }
-
-    static class C1 extends A1 {
-    }
-
-    static class A2 {
-        int m1(V1 v1, V1 v2) {
-            return v1.x;
-        }
-    }
-
-    static class B2 extends A2 {
-    }
-
-    static class C2 extends A2 {
-    }
-
-    static class D2 extends A2 {
-        native int m1(V1 v1, V1 v2);
-    }
-
-    static int test1(A1 a, V1 v) {
+    static public int test1(A1 a, V1 v) {
         return a.m1(v, v);
     }
 
-    static int test2(A2 a, V1 v) {
+    static public int test2(A2 a, V1 v) {
         return a.m1(v, v);
     }
 
-    static int test3(A1 a) {
-        return a.m2().x;
+    static public int test3(A1 a) {
+        return a.m2().x();
     }
     
+    static public int test4(A2 a) {
+        return a.m2().x();
+    }
+
     public static void main(String[] args) {
         A1 a1 = new A1();
         B1 b1 = new B1();
@@ -123,21 +88,102 @@ public class TestCCMismatchNativeMethods {
             if (test3(c1) != 42) {
                 throw new RuntimeException("incorrect result");
             }
+            if (test4(a2) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test4(b2) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (test4(c2) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
         }
+        UnloadedClass.loadClassAndRerun();
+    }
+}
+
+class UnloadedClass {
+    public static void loadClassAndRerun() {
+        A1 a1 = new A1();
+        B1 b1 = new B1();
+        C1 c1 = new C1();
+        A2 a2 = new A2();
+        B2 b2 = new B2();
+        C2 c2 = new C2();
         D2 d2 = new D2();
         for (int i = 0; i < 20_000; i++) {
-            if (test2(a2, new V1(42)) != 42) {
+            if (TestCCMismatchNativeMethods.test2(a2, new V1(42)) != 42) {
                 throw new RuntimeException("incorrect result");
             }
-            if (test2(b2, new V1(42)) != 42) {
+            if (TestCCMismatchNativeMethods.test2(b2, new V1(42)) != 42) {
                 throw new RuntimeException("incorrect result");
             }
-            if (test2(c2, new V1(42)) != 42) {
+            if (TestCCMismatchNativeMethods.test2(c2, new V1(42)) != 42) {
                 throw new RuntimeException("incorrect result");
             }
-            if (test2(d2, new V1(42)) != 42) {
+            if (TestCCMismatchNativeMethods.test2(d2, new V1(42)) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (TestCCMismatchNativeMethods.test4(a2) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (TestCCMismatchNativeMethods.test4(b2) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (TestCCMismatchNativeMethods.test4(c2) != 42) {
+                throw new RuntimeException("incorrect result");
+            }
+            if (TestCCMismatchNativeMethods.test4(d2) != 42) {
                 throw new RuntimeException("incorrect result");
             }
         }
     }
 }
+
+
+value record V1(int x) { }
+
+class A1 {
+    static V1 fieldV1 = new V1(42);
+    
+    int m1(V1 v1, V1 v2) {
+        return v1.x();
+    }
+    
+    V1 m2() {
+        return fieldV1;
+    }
+}
+
+class B1 extends A1 {
+    native int m1(V1 v1, V1 v2);
+    native V1 m2();
+}
+
+class C1 extends A1 {
+}
+
+class A2 {
+    static V1 fieldV1 = new V1(42);
+    
+    int m1(V1 v1, V1 v2) {
+        return v1.x();
+    }
+    
+    V1 m2() {
+        return fieldV1;
+    }
+}
+
+class B2 extends A2 {
+}
+
+class C2 extends A2 {
+}
+
+class D2 extends A2 {
+    native int m1(V1 v1, V1 v2);
+    native V1 m2();
+}
+
+    
