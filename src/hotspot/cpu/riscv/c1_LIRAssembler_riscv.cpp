@@ -452,7 +452,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
         }
 #if INCLUDE_JVMTI
          if (b == (address)&JvmtiExport::_should_notify_object_alloc) {
-           __ lea(dest->as_register_lo(), ExternalAddress(b));
+           __ la(dest->as_register_lo(), ExternalAddress(b));
            break;
          }
 #endif
