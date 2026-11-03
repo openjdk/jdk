@@ -28,12 +28,13 @@
  *
  * @requires vm.jvmti
  *
- * @run main/othervm/native -agentlib:VMObjectAllocClone VMObjectAllocCloneTest
+ * @run main/othervm/native -agentlib:VMObjectAllocClone -Xbatch VMObjectAllocCloneTest
  */
 
 import java.lang.ref.Reference;
 public class VMObjectAllocCloneTest {
     private static final String AGENT_LIB = "VMObjectAllocClone";
+    private static final int LOOP_CNT = 100_000;
 
     private static native void init(Class<?> payloadClass);
     private static native int eventsCount();
@@ -45,7 +46,7 @@ public class VMObjectAllocCloneTest {
         Payload object = createPayload();
         init(Payload.class);
         Payload cloneObject = cloneObject(object);
-        if (eventsCount() != 1) {
+        if (eventsCount() != LOOP_CNT + 1) {
             throw new RuntimeException("No expected VMObjectAlloc event for object clone().");
         }
         Reference.reachabilityFence(cloneObject);
@@ -53,7 +54,7 @@ public class VMObjectAllocCloneTest {
         int[] array = new int[10];
         init(int[].class);
         int[] cloneArray = cloneArray(array);
-        if (eventsCount() != 1) {
+        if (eventsCount() != LOOP_CNT + 1) {
             throw new RuntimeException("No expected VMObjectAlloc event for array clone().");
         }
 
@@ -67,12 +68,28 @@ public class VMObjectAllocCloneTest {
 
     // Use separate method because main() might be deoptimized.
     private static Payload cloneObject(Payload object) {
-        return object.clone();
+        for (int i = 0; i < LOOP_CNT; i++) {
+            cloneObjectInner(object);
+        }
+
+        return cloneObjectInner(object);
     }
 
     private static int[] cloneArray(int[] array) {
+        for (int i = 0; i < LOOP_CNT; i++) {
+            cloneArrayInner(array);
+        }
+
+        return cloneArrayInner(array);
+    }
+    private static Payload cloneObjectInner(Payload object) {
+        return object.clone();
+    }
+
+    private static int[] cloneArrayInner(int[] array) {
         return array.clone();
     }
+
 
     record Payload(int value) implements Cloneable {
 
