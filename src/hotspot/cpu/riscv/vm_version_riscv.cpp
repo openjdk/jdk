@@ -76,7 +76,6 @@ RV_NON_EXT_FEATURE_FLAGS(DEF_RV_NON_EXT_FEATURE)
 #undef ADD_RV_EXT_FEATURE_IN_LIST
 
 VM_Version::RVExtFeatures* VM_Version::_rv_ext_features = new VM_Version::RVExtFeatures();
-VM_Version::RVExtFeatures VM_Version::_rv_raw_ext_features;
 VM_Version::RVExtFeatures VM_Version::_rv_ext_features_disabled_by_aot_cache;
 
 void VM_Version::useRVA20U64Profile() {

@@ -125,14 +125,14 @@ void VM_Version::apply_aot_cache_cpu_features() {
   RVExtFeatures* archived_cpu_features = (RVExtFeatures*)get_aot_cache_cpu_features();
   if (archived_cpu_features != nullptr) {
     assert(UseAOTCacheCpuFeaturesOnly, "UseAOTCacheCpuFeaturesOnly must be true");
-    RVExtFeatures* rt_features = RVExtFeatures::current();
-    if (!rt_features->super_set_of(archived_cpu_features)) {
+    RVExtFeatures* runtime_cpu_features = RVExtFeatures::current();
+    if (!runtime_cpu_features->super_set_of(archived_cpu_features)) {
       if (!FLAG_IS_DEFAULT(UseAOTCacheCpuFeaturesOnly)) {
         warning("UseAOTCacheCpuFeaturesOnly is ignored: one or more cpu features recorded in AOT cache are not supported by this CPU");
       }
       FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
     }
-    _rv_ext_features_disabled_by_aot_cache = rt_features->features_not_in(archived_cpu_features);
+    _rv_ext_features_disabled_by_aot_cache = runtime_cpu_features->features_not_in(archived_cpu_features);
     rt_features->clear_features(&_rv_ext_features_disabled_by_aot_cache);
     LogTarget(Info, os, cpu) os_cpu_log;
     if (os_cpu_log.is_enabled()) {
@@ -164,7 +164,12 @@ void VM_Version::setup_cpu_available_features() {
 
   char* uarch = os_uarch_additional_features();
   vendor_features();
-  save_raw_cpu_features();
+
+  // Linux kernel require Zifencei
+  if (!ext_Zifencei.enabled()) {
+    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
+    ext_Zifencei.enable_feature();
+  }
 
   apply_aot_cache_cpu_features();
 
@@ -218,12 +223,6 @@ void VM_Version::setup_cpu_available_features() {
       }
     }
     i++;
-  }
-
-  // Linux kernel require Zifencei
-  if (!ext_Zifencei.enabled()) {
-    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
-    ext_Zifencei.enable_feature();
   }
 
   if (UseCtxFencei) {
