@@ -1030,38 +1030,14 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
 
     public final String readLine() throws IOException {
-        if (jfrTracing && FileReadEvent.enabled()) {
-            return traceReadLine();
-        }
-        StringBuilder input = new StringBuilder();
-        int c = -1;
-        boolean eol = false;
-        while (!eol) {
-            switch (c = read0()) {
-                case -1, '\n' -> eol = true;
-                case '\r'     -> {
-                    eol = true;
-                    long cur = getFilePointer();
-                    if ((read0()) != '\n') {
-                        seek(cur);
-                    }
-                }
-                default -> input.append((char) c);
-            }
-        }
-
-        if ((c == -1) && (input.length() == 0)) {
-            return null;
-        }
-        return input.toString();
-    }
-
-    private String traceReadLine() throws IOException {
         StringBuilder input = new StringBuilder();
         int c = -1;
         boolean eol = false;
         long bytesRead = 0;
-        long start = FileReadEvent.timestamp();
+        long start = 0;
+        if (jfrTracing && FileReadEvent.enabled()) {
+            start = FileReadEvent.timestamp();
+        }
         boolean endOfFile = false;
         try {
             while (!eol) {
@@ -1094,7 +1070,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
             }
             return input.toString();
         } finally {
-            FileReadEvent.offer(start, path, bytesRead, endOfFile);
+            if (start != 0) {
+                FileReadEvent.offer(start, path, bytesRead, endOfFile);
+            }
         }
     }
 
