@@ -613,7 +613,7 @@ class MacroAssembler: public Assembler {
     if (do_compress_zcb(Rd, Rs) && (Rd == Rs)) {
       c_zext_w(Rd);
     } else {
-      _add_uw(Rd, Rs, zr);
+      add_uw(Rd, Rs, zr);
     }
   }
 
@@ -1537,9 +1537,6 @@ INSN(sd_release, sd, sd_rl);
   void zero_memory(Register addr, Register len, Register tmp);
   void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt);
   void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt, Register tmp);
-
-  // zext add
-  void add_uw(Register Rd, Register Rs1, Register Rs2, Register tmp = t0);
 
   void shadd(Register Rd, Register Rs1, Register Rs2, int shamt);
 

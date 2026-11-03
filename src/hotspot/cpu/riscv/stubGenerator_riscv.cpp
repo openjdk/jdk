@@ -6587,8 +6587,7 @@ class StubGenerator: public StubCodeGenerator {
   // W't =
   //    M't,                                      0 <=  t <= 15
   //    ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
-  void sha1_prepare_w(Register cur_w, Register ws[], Register buf, Register cur_k,
-                      Register rmask, int round) {
+  void sha1_prepare_w(Register cur_w, Register ws[], Register buf, int round) {
     assert(round >= 0 && round < 80, "must be");
 
     if (round < 16) {
@@ -6603,9 +6602,8 @@ class StubGenerator: public StubCodeGenerator {
         // reverse bytes, as SHA-1 is defined in big-endian.
         __ revb(ws[round/2], ws[round/2]);
         __ srli(cur_w, ws[round/2], 32);
-        __ addw(cur_w, cur_w, cur_k);
       } else {
-        __ addw(cur_w, ws[round/2], cur_k);
+        __ mv(cur_w, ws[round/2]);
       }
 
       return;
@@ -6613,45 +6611,40 @@ class StubGenerator: public StubCodeGenerator {
 
     if ((round % 2) == 0) {
       int idx = 16;
-      // SWAR: compute both W[idx] and W[idx+1] together
-      // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16)
-      //
-      // Aligned operands (directly usable as packed pairs):
-      //   t-16: ws[(idx-16)/2] = (W[idx-16] : W[idx-15])
-      //   t-14: ws[(idx-14)/2] = (W[idx-14] : W[idx-13])
-      //   t-8:  ws[(idx-8)/2]  = (W[idx-8]  : W[idx-7])
-      //
-      // Misaligned t-3 operand: need (W[idx-3] : W[idx-2])
-      //   W[idx-3] is odd,  resides in low  32 bits of ws[(idx-4)/2]
-      //   W[idx-2] is even, resides in high 32 bits of ws[(idx-2)/2]
+      // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
+      __ srli(t1, ws[(idx-8)/2], 32);
+      __ xorr(t0, ws[(idx-3)/2], t1);
 
-      __ slli(t0, ws[(idx-4)/2], 32);   // t0.hi = W[idx-3]
-      __ xorr(t2, ws[(idx-16)/2], ws[(idx-14)/2]);  // t2 = (W[idx-16] : W[idx-15]) ^ (W[idx-14] : W[idx-13])
-      __ srli(t1, ws[(idx-2)/2], 32);   // t1.lo = W[idx-2]
-      __ xorr(t2, t2, ws[(idx-8)/2]);   // t2 ^= (W[idx-8] : W[idx-7])
-      __ orr(t0, t0, t1);               // t0 = (W[idx-3] : W[idx-2])
-      __ xorr(t0, t0, t2);              // t0 = pre-rotate for (W[idx] : W[idx+1])
+      __ srli(t1, ws[(idx-14)/2], 32);
+      __ srli(cur_w, ws[(idx-16)/2], 32);
+      __ xorr(cur_w, cur_w, t1);
 
-      // SWAR ROTL1: ((t0 << 1) & ~rmask) | ((t0 >> 31) & rmask)
-      // This rotates both 32-bit halves independently without cross-contamination.
-      // rmask = 0x0000000100000001 marks bit 32 and bit 0 (cross-leak positions)
-      __ srli(t1, t0, 31);              // t1 = wrap bit candidates at bit 32 and bit 0
-      __ slli(cur_w, t0, 1);            // cur_w = t0 << 1 (ILP with above)
-      __ andr(t1, t1, rmask);           // t1 = wrap bits isolated
-      __ andn(t0, cur_w, rmask);        // t0 = (t0<<1) & ~rmask (clear cross-leak bits)
-                                        // Note: rd(t0) != rs1(cur_w), satisfies andn constraint
-      __ orr(ws[idx/2], t0, t1);        // ws[8] = (W[idx] : W[idx+1])
+      __ xorr(cur_w, cur_w, t0);
+      __ rolw(cur_w, cur_w, 1, t0);
 
-      // Extract W[idx] (high 32 bits) for current round
-      __ srli(cur_w, ws[idx/2], 32);
-      __ addw(cur_w, cur_w, cur_k);
+      // copy the cur_w value to ws[8].
+      // now, valid w't values are at:
+      //  w0:       ws[0]'s lower 32 bits
+      //  w1 ~ w14: ws[1] ~ ws[7]
+      //  w15:      ws[8]'s higher 32 bits
+      __ slli(ws[idx/2], cur_w, 32);
 
       return;
     }
 
-    // Odd round: W[idx] was already computed in the previous even round
     int idx = 17;
-    __ addw(cur_w, ws[(idx-1)/2], cur_k);        // cur_w = ws[8].lo = W[idx]
+    // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
+    __ srli(t1, ws[(idx-3)/2], 32);
+    __ xorr(t0, t1, ws[(idx-8)/2]);
+
+    __ xorr(cur_w, ws[(idx-16)/2], ws[(idx-14)/2]);
+
+    __ xorr(cur_w, cur_w, t0);
+    __ rolw(cur_w, cur_w, 1, t0);
+
+    // copy the cur_w value to ws[8]
+    __ zext(cur_w, cur_w, 32);
+    __ orr(ws[idx/2], ws[idx/2], cur_w);
 
     // shift the w't registers, so they start from ws[0] again.
     // now, valid w't values are at:
@@ -6698,16 +6691,16 @@ class StubGenerator: public StubCodeGenerator {
   //   d <- c
   //   e <- d
   void sha1_process_round(Register a, Register b, Register c, Register d, Register e,
-                          Register cur_w, Register tmp, int round) {
+                          Register cur_k, Register cur_w, Register tmp, int round) {
     assert(round >= 0 && round < 80, "must be");
-    assert_different_registers(a, b, c, d, e, cur_w, tmp, t0);
+    assert_different_registers(a, b, c, d, e, cur_w, cur_k, tmp, t0);
 
     // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
 
-    // Accumulate T directly into 'e' (prev e), physical register becomes next-round 'a'.
     __ add(e, e, cur_w);
+    __ add(e, e, cur_k);
 
-    // cur_w is dead after W contribution above; reuse it for f(b,c,d).
+    // cur_w is dead after its contribution above; reuse it for f(b,c,d).
     sha1_f(cur_w, b, c, d, round);
 
     // b becomes next-round 'c'.
@@ -6740,13 +6733,15 @@ class StubGenerator: public StubCodeGenerator {
 
   void sha1_preserve_prev_abcde(Register a, Register b, Register c, Register d, Register e,
                                 Register prev_ab, Register prev_cd, Register prev_e) {
-    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e, t0, t1);
+    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e, t0);
 
     __ slli(t0, b, 32);
-    __ add_uw(prev_ab, a, t0, prev_ab);
+    __ zext(prev_ab, a, 32);
+    __ orr(prev_ab, prev_ab, t0);
 
-    __ slli(t1, d, 32);
-    __ add_uw(prev_cd, c, t1, prev_cd);
+    __ slli(t0, d, 32);
+    __ zext(prev_cd, c, 32);
+    __ orr(prev_cd, prev_cd, t0);
 
     __ mv(prev_e, e);
   }
@@ -6797,7 +6792,6 @@ class StubGenerator: public StubCodeGenerator {
       // use x9 as src below.
       saved_regs += RegSet::of(x9);
     }
-    saved_regs += RegSet::of(x8);
     __ push_reg(saved_regs, sp);
 
     // c_rarg0 - c_rarg3: x10 - x13
@@ -6816,7 +6810,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // [args-reg]:  x14 - x17
     // [temp-reg]:  x28 - x31
-    // [saved-reg]: x8, x18 - x27
+    // [saved-reg]: x18 - x27
 
     // h0/1/2/3/4
     const Register a0 = x14, b0 = x15, c0 = x16, d0 = x17, e0 = x28;
@@ -6838,8 +6832,6 @@ class StubGenerator: public StubCodeGenerator {
     Register ws[9] = {x29, x30, x31, x18,
                       x19, x20, x21, x22,
                       x23}; // auxiliary register for calculating w's value
-    // mask register used for SWAR rotation
-    const Register rmask = x8;
     // current k't's value
     const Register cur_k = x24;
     // current w't's value
@@ -6866,8 +6858,6 @@ class StubGenerator: public StubCodeGenerator {
     __ srli(d0, c0, 32);
     __ lw(e0, Address(state, 16));
 
-    __ li(rmask, 0x0000000100000001ul);
-
     Label L_sha1_loop;
     if (multi_block) {
       __ BIND(L_sha1_loop);
@@ -6882,10 +6872,10 @@ class StubGenerator: public StubCodeGenerator {
       sha1_prepare_k(cur_k, round);
 
       // prepare W't value
-      sha1_prepare_w(cur_w, ws, buf, cur_k, rmask, round);
+      sha1_prepare_w(cur_w, ws, buf, round);
 
       // one round process
-      sha1_process_round(a, b, c, d, e, cur_w, t2, round);
+      sha1_process_round(a, b, c, d, e, cur_k, cur_w, t2, round);
 
       // Software register renaming for next round:
       //   a' = e, b' = a, c' = b, d' = c, e' = d
@@ -6904,11 +6894,13 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // store back the state.
+    __ zext(a, a, 32);
     __ slli(b, b, 32);
-    __ add_uw(a, a, b, a);
+    __ orr(a, a, b);
     __ sd(a, Address(state, 0));
+    __ zext(c, c, 32);
     __ slli(d, d, 32);
-    __ add_uw(c, c, d, c);
+    __ orr(c, c, d);
     __ sd(c, Address(state, 8));
     __ sw(e, Address(state, 16));
 
