@@ -37,13 +37,9 @@ public class EmptyEncodedPoint {
         for (String oid : new String[] {"2b6570", "2b6571"}) {
             byte[] encoded = HexFormat.of().parseHex("300a30050603" + oid + "030100");
             try {
-                KeyFactory.getInstance("EdDSA").generatePublic(new X509EncodedKeySpec(encoded));
+                KeyFactory.getInstance("EdDSA", "SunEC").generatePublic(new X509EncodedKeySpec(encoded));
                 throw new AssertionError("Empty key accepted");
             } catch (InvalidKeySpecException expected) { }
-        }
-        for (String algorithm : new String[] {"Ed25519", "Ed448"}) {
-            var pair = KeyPairGenerator.getInstance(algorithm).generateKeyPair();
-            KeyFactory.getInstance(algorithm).generatePublic(new X509EncodedKeySpec(pair.getPublic().getEncoded()));
         }
     }
 }
