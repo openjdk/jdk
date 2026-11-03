@@ -2927,8 +2927,14 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (VectorNode::is_associative_and_commutative_vector_operation(use_op) &&
       !use->as_Vector()->is_predicated_vector()) {
     add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
-      return u->Opcode() == use_op && !u->as_Vector()->is_predicated_vector() &&
-             (u->in(1)->Opcode() == Op_Replicate || u->in(2)->Opcode() == Op_Replicate);
+      if (u->Opcode() != use_op || u->as_Vector()->is_predicated_vector()) {
+        return false;
+      }
+      // The inputs are null while 'u' is being disconnected from the graph.
+      Node* in1 = u->in(1);
+      Node* in2 = u->in(2);
+      return (in1 != nullptr && in1->Opcode() == Op_Replicate) ||
+             (in2 != nullptr && in2->Opcode() == Op_Replicate);
     });
   }
 
