@@ -86,13 +86,24 @@ public:
     _length(_malloc_sites == nullptr ? 0 : entry_count), _index(0) {
   }
 
-  MallocSite* malloc_sites(int* len) {
+  ~MallocAllocationSiteWalker() {
+    os::free(_malloc_sites);
+  }
+
+  NONCOPYABLE(MallocAllocationSiteWalker);
+
+  MallocSite* release(int* len) {
     *len = _index;
     MallocSite* r = REALLOC_C_HEAP_ARRAY_RETURN_NULL(_malloc_sites, _index, mtNMT);
-    if (r == nullptr) {
-      return _malloc_sites;
+    if (r != nullptr) {
+      _malloc_sites = r;
     }
-    return r;
+
+    MallocSite* result = _malloc_sites;
+    _malloc_sites = nullptr;
+    _length = 0;
+    _index = 0;
+    return result;
   }
 
   bool do_malloc_site(const MallocSite* site) override {
@@ -107,7 +118,7 @@ public:
         int new_len = int(float(_length) * 1.2) + 1;
         MallocSite* r = REALLOC_C_HEAP_ARRAY_RETURN_NULL(_malloc_sites, new_len, mtNMT);
         if (r == nullptr) {
-          // Failed, we can bail and let the report continue with an incomplete one.
+          // Abort detail collection so the caller can fall back to summary data.
           return false;
         }
         _malloc_sites = r;
@@ -142,8 +153,12 @@ bool MemBaseline::baseline_allocation_sites() {
   if (malloc_walker.allocation_failed()) {
     return false;
   }
-  MallocSiteTable::walk_malloc_site(&malloc_walker);
-  _malloc_sites = malloc_walker.malloc_sites(&_malloc_sites_length);
+
+  if (!MallocSiteTable::walk_malloc_site(&malloc_walker)) {
+    return false;
+  }
+
+  _malloc_sites = malloc_walker.release(&_malloc_sites_length);
   sort_malloc_sites(by_size);
 
   assert(_vma_allocations == nullptr, "must");
@@ -162,7 +177,7 @@ bool MemBaseline::baseline_allocation_sites() {
   return true;
 }
 
-void MemBaseline::baseline(bool summaryOnly) {
+bool MemBaseline::baseline(bool summaryOnly) {
   reset();
 
   _instance_class_count = ClassLoaderDataGraph::num_instance_classes();
@@ -173,11 +188,15 @@ void MemBaseline::baseline(bool summaryOnly) {
   _baseline_type = Summary_baselined;
 
   // baseline details
-  if (!summaryOnly &&
-      MemTracker::tracking_level() == NMT_detail) {
-    baseline_allocation_sites();
+  if (!summaryOnly && MemTracker::tracking_level() == NMT_detail) {
+    if (!baseline_allocation_sites()) {
+      reset_detail();
+      return false;
+    }
     _baseline_type = Detail_baselined;
   }
+
+  return true;
 }
 
 bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
