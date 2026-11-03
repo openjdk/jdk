@@ -22,11 +22,13 @@
  */
 
 import sun.jvm.hotspot.HotSpotAgent;
-import sun.jvm.hotspot.code.ScopeDesc;
+import sun.jvm.hotspot.code.ConstantOopReadValue;
 import sun.jvm.hotspot.code.Location;
 import sun.jvm.hotspot.code.LocationValue;
 import sun.jvm.hotspot.code.ObjectValue;
+import sun.jvm.hotspot.code.ScopeDesc;
 import sun.jvm.hotspot.code.ScopeValue;
+import sun.jvm.hotspot.oops.java_lang_Class;
 import sun.jvm.hotspot.runtime.CompiledVFrame;
 import sun.jvm.hotspot.runtime.VM;
 
@@ -35,7 +37,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.SA.SATestUtils;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @test
@@ -57,11 +61,24 @@ import java.util.List;
 
 public class TestVectorDebugInfoDecode {
 
+    private static final Set<String> EXPECTED_EXTERNAL_NAME_SET = Set.of(
+            "jdk/incubator/vector/ByteVector128",
+            "jdk/incubator/vector/ShortVector128",
+            "jdk/incubator/vector/IntVector128",
+            "jdk/incubator/vector/LongVector128",
+            "jdk/incubator/vector/FloatVector128",
+            "jdk/incubator/vector/DoubleVector128",
+            "jdk/incubator/vector/ByteVector64",
+            "jdk/incubator/vector/ShortVector64",
+            "jdk/incubator/vector/IntVector64",
+            "jdk/incubator/vector/FloatVector64"
+    );
+
     private static LingeredAppWithVector theApp = null;
 
     private static void checkDecode(String pid) throws Exception {
         HotSpotAgent agent = new HotSpotAgent();
-        boolean vectorFound = false;
+        Set<String> externalNameSet = new HashSet<>();
 
         try {
             agent.attach(Integer.parseInt(pid));
@@ -90,6 +107,12 @@ public class TestVectorDebugInfoDecode {
                             object.print();
                             System.out.println();
 
+                            System.out.println("## -> ExternalName:");
+                            var mirror = (ConstantOopReadValue) object.getKlass();
+                            var objectClass = VM.getVM().getObjectHeap().newOop(mirror.getValue());
+                            var externalName = java_lang_Class.asExternalName(objectClass);
+                            System.out.println(externalName);
+
                             for (ScopeValue value : object.getFieldsValue()) {
                                 System.out.println("# ScopeValue:");
                                 value.printOn(System.out);
@@ -98,8 +121,7 @@ public class TestVectorDebugInfoDecode {
                                 if (value instanceof LocationValue lv) {
                                     Location loc = lv.getLocation();
                                     if (loc.getType() == Location.Type.VECTOR) {
-                                        vectorFound = true;
-                                        System.out.println("Found a Location of type vector");
+                                        externalNameSet.add(externalName);
                                     }
                                 }
                             }
@@ -111,8 +133,13 @@ public class TestVectorDebugInfoDecode {
             agent.detach();
         }
 
-        if (!vectorFound) {
-            throw new RuntimeException("Could not find a Location of type vector in the compiled test frame.");
+        if (!externalNameSet.equals(EXPECTED_EXTERNAL_NAME_SET)) {
+            Set<String> missing = new HashSet<>(EXPECTED_EXTERNAL_NAME_SET);
+            missing.removeAll(externalNameSet);
+            Set<String> unexpected = new HashSet<>(externalNameSet);
+            unexpected.removeAll(EXPECTED_EXTERNAL_NAME_SET);
+
+            throw new RuntimeException("missing: " + missing + ", unexpected: " + unexpected);
         }
     }
 
