@@ -121,12 +121,25 @@ public class InconsistentFragmentLength {
 
         Asserts.assertEquals(result.getHandshakeStatus(),
                 SSLEngineResult.HandshakeStatus.NEED_TASK);
+
         Runnable task;
         while ((task = engine.getDelegatedTask()) != null) {
             task.run();
         }
+
         Asserts.assertEquals(engine.getHandshakeStatus(),
                 SSLEngineResult.HandshakeStatus.NEED_WRAP);
+
+        ByteBuffer output = ByteBuffer.allocate(
+                engine.getSession().getPacketBufferSize());
+        SSLEngineResult wrapResult =
+                engine.wrap(ByteBuffer.allocate(0), output);
+
+        Asserts.assertEquals(wrapResult.getStatus(),
+                SSLEngineResult.Status.OK);
+        Asserts.assertTrue(wrapResult.bytesProduced() > 13);
+        Asserts.assertEquals(output.get(0) & 0xff, 22);
+        Asserts.assertEquals(output.get(13) & 0xff, 1);
     }
 
     public static void main(String[] args) throws Exception {
