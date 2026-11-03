@@ -5811,12 +5811,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
   // it's official
   set_klass(ik);
-  // {
-  //   ResourceMark rm;
-  //   if (!strcmp(ik->external_name(), "compiler.valhalla.valuetypes.TestCCMismatchNativeMethods$D2")) {
-  //     tty->print_cr("XXX %s", ik->external_name());
-  //   }
-  // }
 
   DEBUG_ONLY(ik->verify();)
 }
