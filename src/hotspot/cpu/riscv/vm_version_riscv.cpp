@@ -215,7 +215,7 @@ void VM_Version::common_initialize() {
   // UseZtso adjustment above has settled. See the comment on
   // _atomic_access_mode in vm_version_riscv.hpp.
   if (UseZalasr) {
-    _atomic_access_mode = AtomicAccessMode::ZALASR;
+    _atomic_access_mode = AtomicAccessMode::RVWMO_ZALASR;
   } else if (UseZtso) {
     _atomic_access_mode = AtomicAccessMode::ZTSO;
   } else {
