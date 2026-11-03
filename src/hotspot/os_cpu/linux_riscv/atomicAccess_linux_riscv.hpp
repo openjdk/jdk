@@ -154,7 +154,8 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribu
                                                       atomic_memory_order order) const {
   static_assert(1 == sizeof(T));
 
-  if (VM_Version::use_zacas_atomics() && VM_Version::use_zabha_atomics()) {
+  const VM_Version::AtomicCasMode cas_mode = VM_Version::atomic_cas_mode();
+  if (cas_mode == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
     return riscv_amocas<1>(dest, compare_value, exchange_value, order);
   }
 
@@ -209,7 +210,8 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribu
                                                       atomic_memory_order order) const {
   static_assert(4 == sizeof(T));
 
-  if (VM_Version::use_zacas_atomics()) {
+  const VM_Version::AtomicCasMode cas_mode = VM_Version::atomic_cas_mode();
+  if (cas_mode != VM_Version::AtomicCasMode::BASELINE) {
     return riscv_amocas<4>(dest, compare_value, exchange_value, order);
   }
 
@@ -281,11 +283,13 @@ inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest _
 
   static_assert(byte_size == sizeof(T));
   if constexpr (byte_size == 1) {
-    if (VM_Version::use_zacas_atomics() && VM_Version::use_zabha_atomics()) {
+    const VM_Version::AtomicCasMode cas_mode = VM_Version::atomic_cas_mode();
+    if (cas_mode == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
       return riscv_amocas<1>(dest, compare_value, exchange_value, order);
     }
   } else if constexpr (byte_size == 4 || byte_size == 8) {
-    if (VM_Version::use_zacas_atomics()) {
+    const VM_Version::AtomicCasMode cas_mode = VM_Version::atomic_cas_mode();
+    if (cas_mode != VM_Version::AtomicCasMode::BASELINE) {
       return riscv_amocas<byte_size>(dest, compare_value, exchange_value, order);
     }
   }

@@ -40,6 +40,14 @@ class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend RiscvHwprobe;
+
+ public:
+  enum class AtomicCasMode : uint8_t {
+    BASELINE,
+    ZACAS,
+    ZACAS_ZABHA
+  };
+
  private:
 
   // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
@@ -533,9 +541,9 @@ private:
   // atomics mapping. This flag is false by default and is latched to the final
   // UseZalasr value after all validation completes.
   static bool _use_zalasr_atomics;
-  // Keep native CAS on the baseline ISA until CPU feature initialization completes.
-  static bool _use_zacas_atomics;
-  static bool _use_zabha_atomics;
+  // Keep native CAS on the baseline ISA until CPU feature initialization
+  // completes, then latch the final Zacas/Zabha configuration.
+  static AtomicCasMode _atomic_cas_mode;
 
   static void common_initialize();
 
@@ -549,8 +557,7 @@ private:
   static void initialize_cpu_information();
 
   static bool use_zalasr_atomics() { return _use_zalasr_atomics; }
-  static bool use_zacas_atomics() { return _use_zacas_atomics; }
-  static bool use_zabha_atomics() { return _use_zabha_atomics; }
+  static AtomicCasMode atomic_cas_mode() { return _atomic_cas_mode; }
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
