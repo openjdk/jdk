@@ -72,7 +72,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /*
  * @test id=five-frames-loop5
- * @bug 8316165
+ * @bug 8396534
  * @key headful
  * @summary Five-frame GIF with 5 repeats stops animating after
  *          repeating animation 5 times
