@@ -47,6 +47,36 @@ source %{
     }
   }
 
+  // test_predicate selects the mask reduction; cmpcode selects the outer eq/ne condition.
+  static void vectorTestCMove(C2_MacroAssembler* masm, int cmpcode, Register dst, Register src,
+                              VectorRegister mask, BasicType bt, uint vector_length, BoolTest::mask test_predicate) {
+    assert(test_predicate == BoolTest::ne || test_predicate == BoolTest::overflow, "unsupported predicate");
+    assert(cmpcode == BoolTest::eq || cmpcode == BoolTest::ne, "unsupported condition");
+    __ vsetvli_helper(bt, vector_length);
+    __ vcpop_m(t0, mask);
+    if (test_predicate == BoolTest::overflow) {
+      // Subtract vector_length so we can compare against zr without
+      // materializing vector_length in another register.
+      __ sub(t0, t0, vector_length);
+    }
+    __ enc_cmove(cmpcode, t0, zr, dst, src);
+  }
+
+  static void vectorTestCMove(C2_MacroAssembler* masm, int cmpcode, FloatRegister dst, FloatRegister src,
+                              VectorRegister mask, BasicType bt, uint vector_length,
+                              BoolTest::mask test_predicate, bool is_single) {
+    assert(test_predicate == BoolTest::ne || test_predicate == BoolTest::overflow, "unsupported predicate");
+    assert(cmpcode == BoolTest::eq || cmpcode == BoolTest::ne, "unsupported condition");
+    __ vsetvli_helper(bt, vector_length);
+    __ vcpop_m(t0, mask);
+    if (test_predicate == BoolTest::overflow) {
+      // Subtract vector_length so we can compare against zr without
+      // materializing vector_length in another register.
+      __ sub(t0, t0, vector_length);
+    }
+    __ enc_cmove_fp_cmp(cmpcode, t0, zr, dst, src, is_single);
+  }
+
   bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
     if (opcode == Op_MulReductionVF || opcode == Op_MulReductionVD) {
       return false;
@@ -90,20 +120,14 @@ source %{
           return false;
         }
         return UseZvbb;
+      case Op_CompressBitsV:
+      case Op_ExpandBitsV:
+        return bt == T_INT || bt == T_LONG;
       case Op_LoadVectorGather:
       case Op_LoadVectorGatherMasked:
       case Op_StoreVectorScatter:
       case Op_StoreVectorScatterMasked:
         if (is_subword_type(bt)) {
-          return false;
-        }
-        break;
-      case Op_VectorLoadShuffle:
-      case Op_VectorRearrange:
-        // vlen >= 4 is required, because min vector size for byte is 4 on riscv,
-        // VectorLoadShuffle is from byte to X, so it requires vlen >= 4.
-        // VectorRearrange depends on VectorLoadShuffle, so it also requires vlen >= 4.
-        if (vlen < 4) {
           return false;
         }
         break;
@@ -476,7 +500,7 @@ instruct vadd_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate add (unpredicated)
 
-instruct vadd_vi(vReg dst, vReg src1, immI5 con) %{
+instruct vadd_vi(vReg dst, vReg src1, immI_simm5 con) %{
   match(Set dst (AddVB src1 (Replicate con)));
   match(Set dst (AddVS src1 (Replicate con)));
   match(Set dst (AddVI src1 (Replicate con)));
@@ -491,7 +515,7 @@ instruct vadd_vi(vReg dst, vReg src1, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddL_vi(vReg dst, vReg src1, immL5 con) %{
+instruct vaddL_vi(vReg dst, vReg src1, immL_simm5 con) %{
   match(Set dst (AddVL src1 (Replicate con)));
   format %{ "vaddL_vi $dst, $src1, $con" %}
   ins_encode %{
@@ -534,7 +558,7 @@ instruct vaddL_vx(vReg dst, vReg src1, iRegL src2) %{
 
 // vector-immediate add (predicated)
 
-instruct vadd_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+instruct vadd_vi_masked(vReg dst_src, immI_simm5 con, vRegMask_V0 v0) %{
   match(Set dst_src (AddVB (Binary dst_src (Replicate con)) v0));
   match(Set dst_src (AddVS (Binary dst_src (Replicate con)) v0));
   match(Set dst_src (AddVI (Binary dst_src (Replicate con)) v0));
@@ -549,7 +573,7 @@ instruct vadd_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddL_vi_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+instruct vaddL_vi_masked(vReg dst_src, immL_simm5 con, vRegMask_V0 v0) %{
   match(Set dst_src (AddVL (Binary dst_src (Replicate con)) v0));
   format %{ "vaddL_vi_masked $dst_src, $dst_src, $con, $v0" %}
   ins_encode %{
@@ -883,7 +907,7 @@ instruct vand_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate and (unpredicated)
 
-instruct vand_vi(vReg dst, vReg src1, immI5 con) %{
+instruct vand_vi(vReg dst, vReg src1, immI_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -899,7 +923,7 @@ instruct vand_vi(vReg dst, vReg src1, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vandL_vi(vReg dst, vReg src1, immL5 con) %{
+instruct vandL_vi(vReg dst, vReg src1, immL_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (AndV src1 (Replicate con)));
   format %{ "vandL_vi $dst, $src1, $con" %}
@@ -945,7 +969,7 @@ instruct vandL_vx(vReg dst, vReg src1, iRegL src2) %{
 
 // vector-immediate and (predicated)
 
-instruct vand_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+instruct vand_vi_masked(vReg dst_src, immI_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -961,7 +985,7 @@ instruct vand_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vandL_vi_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+instruct vandL_vi_masked(vReg dst_src, immL_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (AndV (Binary dst_src (Replicate con)) v0));
   format %{ "vandL_vi_masked $dst_src, $dst_src, $con, $v0" %}
@@ -1037,7 +1061,7 @@ instruct vor_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate or (unpredicated)
 
-instruct vor_vi(vReg dst, vReg src1, immI5 con) %{
+instruct vor_vi(vReg dst, vReg src1, immI_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -1053,7 +1077,7 @@ instruct vor_vi(vReg dst, vReg src1, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vorL_vi(vReg dst, vReg src1, immL5 con) %{
+instruct vorL_vi(vReg dst, vReg src1, immL_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (OrV src1 (Replicate con)));
   format %{ "vorL_vi $dst, $src1, $con" %}
@@ -1099,7 +1123,7 @@ instruct vorL_vx(vReg dst, vReg src1, iRegL src2) %{
 
 // vector-immediate or (predicated)
 
-instruct vor_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+instruct vor_vi_masked(vReg dst_src, immI_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -1115,7 +1139,7 @@ instruct vor_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vorL_vi_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+instruct vorL_vi_masked(vReg dst_src, immL_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (OrV (Binary dst_src (Replicate con)) v0));
   format %{ "vorL_vi_masked $dst_src, $dst_src, $con, $v0" %}
@@ -1191,7 +1215,7 @@ instruct vxor_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector-immediate xor (unpredicated)
 
-instruct vxor_vi(vReg dst, vReg src1, immI5 con) %{
+instruct vxor_vi(vReg dst, vReg src1, immI_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -1207,7 +1231,7 @@ instruct vxor_vi(vReg dst, vReg src1, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vxorL_vi(vReg dst, vReg src1, immL5 con) %{
+instruct vxorL_vi(vReg dst, vReg src1, immL_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (XorV src1 (Replicate con)));
   format %{ "vxorL_vi $dst, $src1, $con" %}
@@ -1253,7 +1277,7 @@ instruct vxorL_vx(vReg dst, vReg src1, iRegL src2) %{
 
 // vector-immediate xor (predicated)
 
-instruct vxor_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
+instruct vxor_vi_masked(vReg dst_src, immI_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -1269,7 +1293,7 @@ instruct vxor_vi_masked(vReg dst_src, immI5 con, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vxorL_vi_masked(vReg dst_src, immL5 con, vRegMask_V0 v0) %{
+instruct vxorL_vi_masked(vReg dst_src, immL_simm5 con, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst_src (XorV (Binary dst_src (Replicate con)) v0));
   format %{ "vxorL_vi_masked $dst_src, $dst_src, $con, $v0" %}
@@ -1629,6 +1653,115 @@ instruct vdiv_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
     __ vdiv_vv(as_VectorRegister($dst_src1$$reg),
                as_VectorRegister($dst_src1$$reg),
                as_VectorRegister($src2$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector bit compress
+
+instruct vcompressBits(vReg dst, vReg src, vReg bit_mask,
+                       vReg tmp1, vReg tmp2, vReg tmp3, vReg tmp4) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (CompressBitsV src bit_mask));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
+  format %{ "vcompressBits $dst, $src, $bit_mask\t# KILL $tmp1, $tmp2, $tmp3, $tmp4" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ compress_bits_v(as_VectorRegister($dst$$reg),
+                       as_VectorRegister($src$$reg),
+                       as_VectorRegister($bit_mask$$reg),
+                       as_VectorRegister($tmp1$$reg),
+                       as_VectorRegister($tmp2$$reg),
+                       as_VectorRegister($tmp3$$reg),
+                       as_VectorRegister($tmp4$$reg),
+                       bt, Matcher::vector_length(this));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vcompressBits_masked(vReg dst_src, vReg bit_mask,
+                              vReg tmp1, vReg tmp2, vReg tmp3, vReg tmp4,
+                              vRegMask_V0 v0) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst_src (CompressBitsV (Binary dst_src bit_mask) v0));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
+  format %{ "vcompressBits_masked $dst_src, $dst_src, $bit_mask, $v0\t# KILL $tmp1, $tmp2, $tmp3, $tmp4" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ compress_bits_v(as_VectorRegister($dst_src$$reg),
+                       as_VectorRegister($dst_src$$reg),
+                       as_VectorRegister($bit_mask$$reg),
+                       as_VectorRegister($tmp1$$reg),
+                       as_VectorRegister($tmp2$$reg),
+                       as_VectorRegister($tmp3$$reg),
+                       as_VectorRegister($tmp4$$reg),
+                       bt, Matcher::vector_length(this), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector bit expand
+
+instruct vexpandBits(vReg dst, vReg src, vReg bit_mask,
+                     vReg tmp1, vReg tmp2, vReg tmp3, vReg tmp4,
+                     vReg tmp5, vReg tmp6, vReg tmp7, vReg tmp8,
+                     vReg tmp9, vReg tmp10) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (ExpandBitsV src bit_mask));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4,
+         TEMP tmp5, TEMP tmp6, TEMP tmp7, TEMP tmp8,
+         TEMP tmp9, TEMP tmp10);
+  format %{ "vexpandBits $dst, $src, $bit_mask\t# KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $tmp6, $tmp7, $tmp8, $tmp9, $tmp10" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ expand_bits_v(as_VectorRegister($dst$$reg),
+                     as_VectorRegister($src$$reg),
+                     as_VectorRegister($bit_mask$$reg),
+                     as_VectorRegister($tmp1$$reg),
+                     as_VectorRegister($tmp2$$reg),
+                     as_VectorRegister($tmp3$$reg),
+                     as_VectorRegister($tmp4$$reg),
+                     as_VectorRegister($tmp5$$reg),
+                     as_VectorRegister($tmp6$$reg),
+                     as_VectorRegister($tmp7$$reg),
+                     as_VectorRegister($tmp8$$reg),
+                     as_VectorRegister($tmp9$$reg),
+                     as_VectorRegister($tmp10$$reg),
+                     bt, Matcher::vector_length(this));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vexpandBits_masked(vReg dst_src, vReg bit_mask,
+                            vReg tmp1, vReg tmp2, vReg tmp3, vReg tmp4,
+                            vReg tmp5, vReg tmp6, vReg tmp7, vReg tmp8,
+                            vReg tmp9, vReg tmp10, vRegMask_V0 v0) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst_src (ExpandBitsV (Binary dst_src bit_mask) v0));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4,
+         TEMP tmp5, TEMP tmp6, TEMP tmp7, TEMP tmp8,
+         TEMP tmp9, TEMP tmp10);
+  format %{ "vexpandBits_masked $dst_src, $dst_src, $bit_mask, $v0\t# KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $tmp6, $tmp7, $tmp8, $tmp9, $tmp10" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ expand_bits_v(as_VectorRegister($dst_src$$reg),
+                     as_VectorRegister($dst_src$$reg),
+                     as_VectorRegister($bit_mask$$reg),
+                     as_VectorRegister($tmp1$$reg),
+                     as_VectorRegister($tmp2$$reg),
+                     as_VectorRegister($tmp3$$reg),
+                     as_VectorRegister($tmp4$$reg),
+                     as_VectorRegister($tmp5$$reg),
+                     as_VectorRegister($tmp6$$reg),
+                     as_VectorRegister($tmp7$$reg),
+                     as_VectorRegister($tmp8$$reg),
+                     as_VectorRegister($tmp9$$reg),
+                     as_VectorRegister($tmp10$$reg),
+                     bt, Matcher::vector_length(this), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3078,7 +3211,7 @@ instruct replicateL(vReg dst, iRegL src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicate_imm5(vReg dst, immI5 con) %{
+instruct replicate_imm5(vReg dst, immI_simm5 con) %{
   predicate(Matcher::is_non_long_integral_vector(n));
   match(Set dst (Replicate con));
   format %{ "replicate_imm5 $dst, $con" %}
@@ -3090,7 +3223,7 @@ instruct replicate_imm5(vReg dst, immI5 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicateL_imm5(vReg dst, immL5 con) %{
+instruct replicateL_imm5(vReg dst, immL_simm5 con) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (Replicate con));
   format %{ "replicateL_imm5 $dst, $con" %}
@@ -4436,11 +4569,11 @@ instruct vstringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 %}
 
 // clearing of an array
-instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, immL0 zero,
+instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, immL_0 zero,
                              vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
                              Universe dummy)
 %{
-  predicate(!UseBlockZeroing && UseRVV);
+  predicate(UseRVV);
   match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, TEMP v4, TEMP v5, TEMP v6, TEMP v7);
 
@@ -4454,7 +4587,7 @@ instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, immL0 zero,
 %}
 
 // Vector Load Const
-instruct vloadcon(vReg dst, immI0 src) %{
+instruct vloadcon(vReg dst, immI_0 src) %{
   match(Set dst (VectorLoadConst src));
   format %{ "vloadcon $dst\t# generate iota indices" %}
   ins_encode %{
@@ -5977,7 +6110,7 @@ instruct vmask_fromlong(vRegMask dst, iRegL src) %{
 
 // Not matched. Condition is negated and value zero is moved to the right side in CMoveINode::Ideal.
 
-// instruct cmovI_vtest_anytrue(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI0 zero, immI_1 one) %{
+// instruct cmovI_vtest_anytrue(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI_0 zero, immI_1 one) %{
 //   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne &&
 //             static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
 //   match(Set dst (CMoveI (Binary cop (VectorTest op1 op2)) (Binary zero one)));
@@ -5992,7 +6125,7 @@ instruct vmask_fromlong(vRegMask dst, iRegL src) %{
 //   ins_pipe(pipe_slow);
 // %}
 
-instruct cmovI_vtest_anytrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI0 zero, immI_1 one) %{
+instruct cmovI_vtest_anytrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI_0 zero, immI_1 one) %{
   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq &&
             static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
   match(Set dst (CMoveI (Binary cop (VectorTest op1 op2)) (Binary one zero)));
@@ -6011,7 +6144,7 @@ instruct cmovI_vtest_anytrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vReg
 
 // Not matched. Condition is negated and value zero is moved to the right side in CMoveINode::Ideal.
 
-// instruct cmovI_vtest_alltrue(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI0 zero, immI_1 one) %{
+// instruct cmovI_vtest_alltrue(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI_0 zero, immI_1 one) %{
 //   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq &&
 //             static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::overflow);
 //   match(Set dst (CMoveI (Binary cop (VectorTest op1 op2)) (Binary zero one)));
@@ -6027,7 +6160,7 @@ instruct cmovI_vtest_anytrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vReg
 //   ins_pipe(pipe_slow);
 // %}
 
-instruct cmovI_vtest_alltrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI0 zero, immI_1 one) %{
+instruct cmovI_vtest_alltrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vRegMask op2, immI_0 zero, immI_1 one) %{
   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne &&
             static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::overflow);
   match(Set dst (CMoveI (Binary cop (VectorTest op1 op2)) (Binary one zero)));
@@ -6039,6 +6172,163 @@ instruct cmovI_vtest_alltrue_negate(iRegINoSp dst, cmpOp cop, vRegMask op1, vReg
     __ vcpop_m($dst$$Register, as_VectorRegister($op1$$reg));
     __ sub($dst$$Register, $dst$$Register, vector_length);
     __ seqz($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// CMove with register values and a condition produced by VectorTest.
+//
+// The two rules above directly materialize a boolean (0 or 1) from anyTrue()/allTrue().
+// The rules below select between arbitrary register values, using the population
+// count to form the condition passed to the corresponding cmove encoder:
+//
+//   anytrue: vcpop.m t0, op1                  // t0 != 0 iff some element is set
+//   alltrue: vcpop.m t0, op1; sub t0, t0, vl  // t0 == 0 iff every element is set
+//
+// The outer Bool condition ($cop) is restricted to eq/ne by cmpOpEqNe.
+// Separate rules distinguish the VectorTest predicates: ne for anyTrue,
+// overflow for allTrue.
+
+instruct cmovI_vtest_anytrue(iRegINoSp dst, iRegI src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
+  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
+  match(Set dst (CMoveI (Binary cop (VectorTest op1 op2)) (Binary dst src)));
+  format %{ "CMoveI $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovI_vtest_anytrue" %}
+  ins_encode %{
+    vectorTestCMove(masm, $cop$$cmpcode, $dst$$Register, $src$$Register,
+                    as_VectorRegister($op1$$reg), Matcher::vector_element_basic_type(this, $op1),
+                    Matcher::vector_length(this, $op1), BoolTest::ne);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmovI_vtest_alltrue(iRegINoSp dst, iRegI src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
+  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::overflow);
+  match(Set dst (CMoveI (Binary cop (VectorTest op1 op2)) (Binary dst src)));
+  format %{ "CMoveI $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovI_vtest_alltrue" %}
+  ins_encode %{
+    vectorTestCMove(masm, $cop$$cmpcode, $dst$$Register, $src$$Register,
+                    as_VectorRegister($op1$$reg), Matcher::vector_element_basic_type(this, $op1),
+                    Matcher::vector_length(this, $op1), BoolTest::overflow);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmovL_vtest_anytrue(iRegLNoSp dst, iRegL src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
+  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
+  match(Set dst (CMoveL (Binary cop (VectorTest op1 op2)) (Binary dst src)));
+  format %{ "CMoveL $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovL_vtest_anytrue" %}
+  ins_encode %{
+    vectorTestCMove(masm, $cop$$cmpcode, $dst$$Register, $src$$Register,
+                    as_VectorRegister($op1$$reg), Matcher::vector_element_basic_type(this, $op1),
+                    Matcher::vector_length(this, $op1), BoolTest::ne);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmovL_vtest_alltrue(iRegLNoSp dst, iRegL src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
+  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::overflow);
+  match(Set dst (CMoveL (Binary cop (VectorTest op1 op2)) (Binary dst src)));
+  format %{ "CMoveL $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovL_vtest_alltrue" %}
+  ins_encode %{
+    vectorTestCMove(masm, $cop$$cmpcode, $dst$$Register, $src$$Register,
+                    as_VectorRegister($op1$$reg), Matcher::vector_element_basic_type(this, $op1),
+                    Matcher::vector_length(this, $op1), BoolTest::overflow);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmovF_vtest_anytrue(fRegF dst, fRegF src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
+  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
+  match(Set dst (CMoveF (Binary cop (VectorTest op1 op2)) (Binary dst src)));
+  format %{ "CMoveF $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovF_vtest_anytrue" %}
+  ins_encode %{
+    vectorTestCMove(masm, $cop$$cmpcode, $dst$$FloatRegister, $src$$FloatRegister,
+                    as_VectorRegister($op1$$reg), Matcher::vector_element_basic_type(this, $op1),
+                    Matcher::vector_length(this, $op1), BoolTest::ne, /* is_single */ true);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmovF_vtest_alltrue(fRegF dst, fRegF src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
+  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::overflow);
+  match(Set dst (CMoveF (Binary cop (VectorTest op1 op2)) (Binary dst src)));
+  format %{ "CMoveF $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovF_vtest_alltrue" %}
+  ins_encode %{
+    vectorTestCMove(masm, $cop$$cmpcode, $dst$$FloatRegister, $src$$FloatRegister,
+                    as_VectorRegister($op1$$reg), Matcher::vector_element_basic_type(this, $op1),
+                    Matcher::vector_length(this, $op1), BoolTest::overflow, /* is_single */ true);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmovD_vtest_anytrue(fRegD dst, fRegD src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
+  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
+  match(Set dst (CMoveD (Binary cop (VectorTest op1 op2)) (Binary dst src)));
+  format %{ "CMoveD $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovD_vtest_anytrue" %}
+  ins_encode %{
+    vectorTestCMove(masm, $cop$$cmpcode, $dst$$FloatRegister, $src$$FloatRegister,
+                    as_VectorRegister($op1$$reg), Matcher::vector_element_basic_type(this, $op1),
+                    Matcher::vector_length(this, $op1), BoolTest::ne, /* is_single */ false);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmovD_vtest_alltrue(fRegD dst, fRegD src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
+  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::overflow);
+  match(Set dst (CMoveD (Binary cop (VectorTest op1 op2)) (Binary dst src)));
+  format %{ "CMoveD $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovD_vtest_alltrue" %}
+  ins_encode %{
+    vectorTestCMove(masm, $cop$$cmpcode, $dst$$FloatRegister, $src$$FloatRegister,
+                    as_VectorRegister($op1$$reg), Matcher::vector_element_basic_type(this, $op1),
+                    Matcher::vector_length(this, $op1), BoolTest::overflow, /* is_single */ false);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmovP_vtest_anytrue(iRegPNoSp dst, iRegP src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
+  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
+  match(Set dst (CMoveP (Binary cop (VectorTest op1 op2)) (Binary dst src)));
+  format %{ "CMoveP $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovP_vtest_anytrue" %}
+  ins_encode %{
+    vectorTestCMove(masm, $cop$$cmpcode, $dst$$Register, $src$$Register,
+                    as_VectorRegister($op1$$reg), Matcher::vector_element_basic_type(this, $op1),
+                    Matcher::vector_length(this, $op1), BoolTest::ne);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmovP_vtest_alltrue(iRegPNoSp dst, iRegP src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
+  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::overflow);
+  match(Set dst (CMoveP (Binary cop (VectorTest op1 op2)) (Binary dst src)));
+  format %{ "CMoveP $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovP_vtest_alltrue" %}
+  ins_encode %{
+    vectorTestCMove(masm, $cop$$cmpcode, $dst$$Register, $src$$Register,
+                    as_VectorRegister($op1$$reg), Matcher::vector_element_basic_type(this, $op1),
+                    Matcher::vector_length(this, $op1), BoolTest::overflow);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmovN_vtest_anytrue(iRegNNoSp dst, iRegN src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
+  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::ne);
+  match(Set dst (CMoveN (Binary cop (VectorTest op1 op2)) (Binary dst src)));
+  format %{ "CMoveN $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovN_vtest_anytrue" %}
+  ins_encode %{
+    vectorTestCMove(masm, $cop$$cmpcode, $dst$$Register, $src$$Register,
+                    as_VectorRegister($op1$$reg), Matcher::vector_element_basic_type(this, $op1),
+                    Matcher::vector_length(this, $op1), BoolTest::ne);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmovN_vtest_alltrue(iRegNNoSp dst, iRegN src, cmpOpEqNe cop, vRegMask op1, vRegMask op2) %{
+  predicate(static_cast<const VectorTestNode*>(n->in(1)->in(2))->get_predicate() == BoolTest::overflow);
+  match(Set dst (CMoveN (Binary cop (VectorTest op1 op2)) (Binary dst src)));
+  format %{ "CMoveN $dst, (vectortest $cop $op1 $op2), $dst, $src\t#@cmovN_vtest_alltrue" %}
+  ins_encode %{
+    vectorTestCMove(masm, $cop$$cmpcode, $dst$$Register, $src$$Register,
+                    as_VectorRegister($op1$$reg), Matcher::vector_element_basic_type(this, $op1),
+                    Matcher::vector_length(this, $op1), BoolTest::overflow);
   %}
   ins_pipe(pipe_slow);
 %}

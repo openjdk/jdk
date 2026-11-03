@@ -468,7 +468,6 @@ inline void Assembler::mtvrsave(Register s1)      { emit_int32(MTVRSAVE_OPCODE |
 inline void Assembler::mfvrsave(Register d )      { emit_int32(MFVRSAVE_OPCODE | rt(d)); }
 // Timebase
 inline void Assembler::mftb(Register d )          { emit_int32(MFTB_OPCODE  | rt(d)); }
-// Introduced with Power 8:
 // Data Stream Control Register
 inline void Assembler::mtdscr(Register s1)        { emit_int32(MTDSCR_OPCODE | rs(s1)); }
 inline void Assembler::mfdscr(Register d )        { emit_int32(MFDSCR_OPCODE | rt(d)); }
@@ -1098,24 +1097,24 @@ inline void Assembler::mfvscr(  VectorRegister d)                               
 // Vector Negate Word (introduced with Power 9)
 inline void Assembler::vnegw(   VectorRegister d, VectorRegister b)                   { emit_int32( VNEGW_OPCODE    | vrt(d) | vrb(b)); }
 
-// AES (introduced with Power 8)
+// AES
 inline void Assembler::vcipher(     VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VCIPHER_OPCODE      | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vcipherlast( VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VCIPHERLAST_OPCODE  | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vncipher(    VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VNCIPHER_OPCODE     | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vncipherlast(VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VNCIPHERLAST_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vsbox(       VectorRegister d, VectorRegister a)                   { emit_int32( VSBOX_OPCODE        | vrt(d) | vra(a)         ); }
 
-// SHA (introduced with Power 8)
+// SHA
 inline void Assembler::vshasigmad(VectorRegister d, VectorRegister a, bool st, int six) { emit_int32( VSHASIGMAD_OPCODE | vrt(d) | vra(a) | vst(st) | vsix(six)); }
 inline void Assembler::vshasigmaw(VectorRegister d, VectorRegister a, bool st, int six) { emit_int32( VSHASIGMAW_OPCODE | vrt(d) | vra(a) | vst(st) | vsix(six)); }
 
-// Vector Binary Polynomial Multiplication (introduced with Power 8)
+// Vector Binary Polynomial Multiplication
 inline void Assembler::vpmsumb(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPMSUMB_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vpmsumd(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPMSUMD_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vpmsumh(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPMSUMH_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vpmsumw(  VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPMSUMW_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 
-// Vector Permute and Xor (introduced with Power 8)
+// Vector Permute and Xor
 inline void Assembler::vpermxor( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VPERMXOR_OPCODE | vrt(d) | vra(a) | vrb(b) | vrc(c)); }
 
 // Deliver A Random Number (introduced with POWER9)

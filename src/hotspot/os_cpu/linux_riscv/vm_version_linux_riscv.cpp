@@ -320,8 +320,6 @@ void VM_Version::vendor_features() {
 
 void VM_Version::rivos_features() {
   // Enable common features not dependent on marchid/mimpid.
-  ext_Zicbom.enable_feature();
-  ext_Zicboz.enable_feature();
   ext_Zicbop.enable_feature();
 
   // If we running on a pre-6.5 kernel
@@ -366,6 +364,8 @@ void VM_Version::xuantie_features() {
   ext_v.enable_feature();
   ext_Zabha.enable_feature();
   ext_Zacas.enable_feature();
+  // Zalasr will always be available. Note that hwprobe won't report Ztso on C925-C950 CPUs.
+  ext_Zalasr.enable_feature();
   ext_Zawrs.enable_feature();
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
@@ -375,9 +375,7 @@ void VM_Version::xuantie_features() {
   ext_Zfa.enable_feature();
   ext_Zfh.enable_feature();
   ext_Zfhmin.enable_feature();
-  ext_Zicbom.enable_feature();
   ext_Zicbop.enable_feature();
-  ext_Zicboz.enable_feature();
   ext_Ziccid.enable_feature();
   ext_Zicond.enable_feature();
   ext_Zicntr.enable_feature();

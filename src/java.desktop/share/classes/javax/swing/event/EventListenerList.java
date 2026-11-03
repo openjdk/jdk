@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,9 +301,12 @@ public class EventListenerList implements Serializable {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
             EventListener l = (EventListener)s.readObject();
             String name = (String) listenerTypeOrNull;
-            @SuppressWarnings("unchecked")
-            Class<EventListener> tmp = (Class<EventListener>)Class.forName(name, true, cl);
-            add(tmp, l);
+            Class<?> c = Class.forName(name, false, cl);
+            if (EventListener.class.isAssignableFrom(c)) {
+                @SuppressWarnings("unchecked")
+                Class<EventListener> tmp = (Class<EventListener>) c;
+                add(tmp, l);
+            }
         }
     }
 

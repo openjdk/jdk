@@ -647,8 +647,9 @@ public class JMXServiceURL implements Serializable {
     public String toString() {
         /* We don't bother synchronizing the access to toString.  At worst,
            n threads will independently compute and store the same value.  */
-        if (toString != null)
-            return toString;
+        String value = toString;
+        if (value != null)
+            return value;
         StringBuilder buf = new StringBuilder("service:jmx:");
         buf.append(getProtocol()).append("://");
         final String getHost = getHost();
@@ -660,8 +661,9 @@ public class JMXServiceURL implements Serializable {
         if (getPort != 0)
             buf.append(':').append(getPort);
         buf.append(getURLPath());
-        toString = buf.toString();
-        return toString;
+        value = buf.toString();
+        toString = value;
+        return value;
     }
 
     /**

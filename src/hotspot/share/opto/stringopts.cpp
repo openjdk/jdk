@@ -49,13 +49,13 @@ class StringConcat : public ResourceObj {
   Node*               _arguments;      // The list of arguments to be concatenated
   GrowableArray<int>  _mode;           // into a String along with a mode flag
                                        // indicating how to treat the value.
-  Node_List           _constructors;   // List of constructors (many in case of stacked concat)
-  Node_List           _control;        // List of control nodes that will be deleted
-  Node_List           _uncommon_traps; // Uncommon traps that needs to be rewritten
-                                       // to restart at the initial JVMState.
-  Unique_Node_List    _allowed_compares; // validate_control_flow() needs to know which compare nodes are
-                                         // accepted users of call results. In case of stacked concats,
-                                         // these need to be persisted across merges for validation.
+  Node_List<const Node> _constructors; // List of constructors (many in case of stacked concat)
+  Node_List<Node>     _control;        // List of control nodes that will be deleted
+  Node_List<CallStaticJavaNode> _uncommon_traps;  // Uncommon traps that needs to be rewritten
+                                                  // to restart at the initial JVMState.
+  Unique_Node_List<const Node> _allowed_compares; // validate_control_flow() needs to know which compare nodes are
+                                                  // accepted users of call results. In case of stacked concats,
+                                                  // these need to be persisted across merges for validation.
 
   static constexpr uint STACKED_CONCAT_UPPER_BOUND = 256; // argument limit for a merged concat.
                                                           // The value 256 was derived by measuring
@@ -182,7 +182,7 @@ class StringConcat : public ResourceObj {
     assert(!_control.contains(ctrl), "only push once");
     _control.push(ctrl);
   }
-  void add_constructor(Node* init) {
+  void add_constructor(const Node* init) {
     assert(!_constructors.contains(init), "only push once");
     _constructors.push(init);
   }
@@ -216,7 +216,7 @@ class StringConcat : public ResourceObj {
       const TypePtr* no_memory_effects = nullptr;
       Compile* C = _stringopts->C;
       CallStaticJavaNode* call = new CallStaticJavaNode(call_type, call_addr, "uncommon_trap",
-                                                        no_memory_effects);
+                                                        no_memory_effects, TypePtr::BOTTOM);
       for (int e = 0; e < TypeFunc::Parms; e++) {
         call->init_req(e, uct->in(e));
       }
@@ -291,8 +291,8 @@ void StringConcat::eliminate_unneeded_control() {
 StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   StringConcat* result = new StringConcat(_stringopts, _end);
 
-  Unique_Node_List null_check_ifs;
-  Unique_Node_List skipped_phis;
+  Unique_Node_List<const Node> null_check_ifs;
+  Unique_Node_List<const Node> skipped_phis;
 
   for (uint x = 0; x < _control.size(); x++) {
     Node* n = _control.at(x);
@@ -350,7 +350,7 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   // Verify that the diamond region isn't shared with non-null check phis;
   // and that the associated bool doesn't have external uses.
   for (uint i = 0; i < skipped_phis.size(); i++) {
-    Node* n = skipped_phis.at(i);
+    const Node* n = skipped_phis.at(i);
     Node* r = n->in(0);
     for (SimpleDUIterator j(r); j.has_next(); j.next()) {
       Node* n2 = j.get();
@@ -452,9 +452,9 @@ void StringConcat::eliminate_initialize(InitializeNode* init) {
   init->disconnect_inputs(C);
 }
 
-Node_List PhaseStringOpts::collect_toString_calls() {
-  Node_List string_calls;
-  Node_List worklist;
+Node_List<CallStaticJavaNode> PhaseStringOpts::collect_toString_calls() {
+  Node_List<CallStaticJavaNode> string_calls;
+  Node_List<Node> worklist;
 
   _visited.clear();
 
@@ -730,9 +730,9 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   // if it's possible to fuse the usage of the SB into a single String
   // construction.
   GrowableArray<StringConcat*> concats;
-  Node_List toStrings = collect_toString_calls();
+  Node_List<CallStaticJavaNode> toStrings = collect_toString_calls();
   while (toStrings.size() > 0) {
-    StringConcat* sc = build_candidate(toStrings.pop()->as_CallStaticJava());
+    StringConcat* sc = build_candidate(toStrings.pop());
     if (sc != nullptr) {
       concats.push(sc);
     }
@@ -854,7 +854,7 @@ bool StringConcat::validate_mem_flow() {
 
   for (uint i = 0; i < _control.size(); i++) {
 #ifndef PRODUCT
-    Node_List path;
+    Node_List<const Node> path;
 #endif
     Node* curr = _control.at(i);
     if (curr->is_Call() && curr != _begin) { // For all calls except the first allocation
@@ -998,11 +998,11 @@ bool StringConcat::validate_control_flow() {
   // trap.
 
   int null_check_count = 0;
-  Unique_Node_List ctrl_path;
+  Unique_Node_List<const Node> ctrl_path;
 
   // Local version of _allowed_compares that stores allowed comparisons discovered during traversal
   // but that we won't persist across merges.
-  Unique_Node_List local_allowed_compares;
+  Unique_Node_List<const Node> local_allowed_compares;
 
   assert(_control.contains(_begin), "missing");
   assert(_control.contains(_end), "missing");
@@ -1212,7 +1212,7 @@ bool StringConcat::validate_control_flow() {
   // this cluster of objects.  First collect all the results produced
   // by calls in the region.
   _stringopts->_visited.clear();
-  Node_List worklist;
+  Node_List<Node> worklist;
   Node* final_result = _end->proj_out_or_null(TypeFunc::Parms);
   for (uint i = 0; i < _control.size(); i++) {
     CallNode* cnode = _control.at(i)->isa_Call();

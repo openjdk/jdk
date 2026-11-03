@@ -151,27 +151,6 @@ const Type *ProjNode::bottom_type() const {
   return proj_type(in(0)->bottom_type());
 }
 
-const TypePtr* ProjNode::adr_type() const {
-  if (bottom_type() != Type::MEMORY) {
-    assert(bottom_type()->base() != Type::Memory, "no other memories?");
-    return nullptr;
-  }
-
-  Node* ctrl = in(0);
-  // node is dead or we are in the process of removing a dead subgraph
-  if (ctrl == nullptr || ctrl->is_top()) {
-    return nullptr;
-  }
-
-  const TypePtr* adr_type = ctrl->adr_type();
-#ifdef ASSERT
-  if (!VMError::is_error_reported() && !Node::in_dump()) {
-    assert(adr_type != nullptr, "source must have adr_type");
-  }
-#endif // ASSERT
-  return adr_type;
-}
-
 bool ProjNode::pinned() const { return in(0)->pinned(); }
 #ifndef PRODUCT
 void ProjNode::dump_spec(outputStream *st) const { st->print("#%d",_con); if(_is_io_use) st->print(" (i_o_use)");}
@@ -299,6 +278,27 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_if_pattern(Deoptimization::DeoptR
     return nullptr;
   }
   return as_IfProj()->other_if_proj()->is_uncommon_trap_proj(reason);
+}
+
+const TypePtr* ProjNode::out_adr_type_impl() const {
+  if (bottom_type() != Type::MEMORY) {
+    assert(bottom_type()->base() != Type::Memory, "no other memories?");
+    return nullptr;
+  }
+
+  Node* ctrl = in(0);
+  // node is dead or we are in the process of removing a dead subgraph
+  if (ctrl == nullptr || ctrl->is_top()) {
+    return nullptr;
+  }
+
+  const TypePtr* adr_type = ctrl->out_adr_type();
+#ifdef ASSERT
+  if (!VMError::is_error_reported() && !Node::in_dump()) {
+    assert(adr_type != nullptr, "source must have adr_type");
+  }
+#endif // ASSERT
+  return adr_type;
 }
 
 NarrowMemProjNode::NarrowMemProjNode(InitializeNode* src, const TypePtr* adr_type)
