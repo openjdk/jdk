@@ -74,6 +74,7 @@ final class LibFallback {
     static boolean charIsUnsigned() {return NativeConstants.CHAR_IS_UNSIGNED; }
     static int longLongAlign() { return NativeConstants.ALIGNOF_LONG_LONG; }
     static int doubleAlign() { return NativeConstants.ALIGNOF_DOUBLE; }
+    static int int64Align() { return NativeConstants.ALIGNOF_INT64; }
 
     static short structTag() { return NativeConstants.STRUCT_TAG; }
 
@@ -248,6 +249,7 @@ final class LibFallback {
 
     private static native int alignof_long_long();
     private static native int alignof_double();
+    private static native int alignof_int64();
 
     // put these in a separate class to avoid an UnsatisfiedLinkError
     // when LibFallback is initialized but the library is not present
@@ -276,6 +278,7 @@ final class LibFallback {
 
         static final int ALIGNOF_LONG_LONG = alignof_long_long();
         static final int ALIGNOF_DOUBLE = alignof_double();
+        static final int ALIGNOF_INT64 = alignof_int64();
 
         static final MemorySegment VOID_TYPE = MemorySegment.ofAddress(ffi_type_void());
         static final short STRUCT_TAG = ffi_type_struct();

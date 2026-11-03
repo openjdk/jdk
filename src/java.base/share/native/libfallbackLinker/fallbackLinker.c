@@ -322,6 +322,11 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_alignof_1double(JNIEnv* env, 
   return alignof(double);
 }
 
+JNIEXPORT jint JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_alignof_1int64(JNIEnv* env, jclass cls) {
+  return alignof(int64_t);
+}
+
 #define IS_UNSIGNED(T) ((T)0 < (T)-1)
 
 JNIEXPORT jboolean JNICALL

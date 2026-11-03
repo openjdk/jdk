@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.invoke.MethodHandles.foldArguments;
 
 public final class FallbackLinker extends AbstractLinker {
@@ -249,14 +250,14 @@ public final class FallbackLinker extends AbstractLinker {
     // where
     private static void writeValue(Object arg, MemoryLayout layout, MemorySegment argSeg) {
         switch (layout) {
-            case ValueLayout.OfBoolean bl -> argSeg.set(bl, 0, (Boolean) arg);
-            case ValueLayout.OfByte    bl -> argSeg.set(bl, 0, (Byte) arg);
-            case ValueLayout.OfShort   sl -> argSeg.set(sl, 0, (Short) arg);
-            case ValueLayout.OfChar    cl -> argSeg.set(cl, 0, (Character) arg);
-            case ValueLayout.OfInt     il -> argSeg.set(il, 0, (Integer) arg);
-            case ValueLayout.OfLong    ll -> argSeg.set(ll, 0, (Long) arg);
-            case ValueLayout.OfFloat   fl -> argSeg.set(fl, 0, (Float) arg);
-            case ValueLayout.OfDouble  dl -> argSeg.set(dl, 0, (Double) arg);
+            case OfBoolean bl -> argSeg.set(bl, 0, (Boolean) arg);
+            case OfByte    bl -> argSeg.set(bl, 0, (Byte) arg);
+            case OfShort   sl -> argSeg.set(sl, 0, (Short) arg);
+            case OfChar    cl -> argSeg.set(cl, 0, (Character) arg);
+            case OfInt     il -> argSeg.set(il, 0, (Integer) arg);
+            case OfLong    ll -> argSeg.set(ll, 0, (Long) arg);
+            case OfFloat   fl -> argSeg.set(fl, 0, (Float) arg);
+            case OfDouble  dl -> argSeg.set(dl, 0, (Double) arg);
             case AddressLayout         al -> argSeg.set(al, 0, (MemorySegment) arg);
             case GroupLayout            _ ->
                     MemorySegment.copy((MemorySegment) arg, 0, argSeg, 0, argSeg.byteSize()); // by-value struct
@@ -267,21 +268,21 @@ public final class FallbackLinker extends AbstractLinker {
     }
 
     private static Object readValue(MemorySegment seg, MemoryLayout layout) {
-        if (layout instanceof ValueLayout.OfBoolean bl) {
+        if (layout instanceof OfBoolean bl) {
             return seg.get(bl, 0);
-        } else if (layout instanceof ValueLayout.OfByte bl) {
+        } else if (layout instanceof OfByte bl) {
             return seg.get(bl, 0);
-        } else if (layout instanceof ValueLayout.OfShort sl) {
+        } else if (layout instanceof OfShort sl) {
             return seg.get(sl, 0);
-        } else if (layout instanceof ValueLayout.OfChar cl) {
+        } else if (layout instanceof OfChar cl) {
             return seg.get(cl, 0);
-        } else if (layout instanceof ValueLayout.OfInt il) {
+        } else if (layout instanceof OfInt il) {
             return seg.get(il, 0);
-        } else if (layout instanceof ValueLayout.OfLong ll) {
+        } else if (layout instanceof OfLong ll) {
             return seg.get(ll, 0);
-        } else if (layout instanceof ValueLayout.OfFloat fl) {
+        } else if (layout instanceof OfFloat fl) {
             return seg.get(fl, 0);
-        } else if (layout instanceof ValueLayout.OfDouble dl) {
+        } else if (layout instanceof OfDouble dl) {
             return seg.get(dl, 0);
         } else if (layout instanceof AddressLayout al) {
             return seg.get(al, 0);
@@ -302,17 +303,17 @@ public final class FallbackLinker extends AbstractLinker {
                 int wchar_size = LibFallback.wcharSize();
                 ValueLayout wchartLayout = switch(wchar_size) {
                     case 2 -> JAVA_CHAR; // prefer JAVA_CHAR
-                    default -> FFIType.layoutFor(wchar_size).withSignedness(LibFallback.wcharIsUnsigned());
+                    default -> FFIType.layoutFor(wchar_size).withSignedness(!LibFallback.wcharIsUnsigned());
                 };
 
                 CANONICAL_LAYOUTS = Map.ofEntries(
                     // specified canonical layouts
                     Map.entry("bool", JAVA_BOOLEAN),
-                    Map.entry("char", JAVA_BYTE.withSignedness(LibFallback.charIsUnsigned())),
+                    Map.entry("char", JAVA_BYTE.withSignedness(!LibFallback.charIsUnsigned())),
                     Map.entry("unsigned char", JAVA_BYTE.withSignedness(false)),
                     Map.entry("float", JAVA_FLOAT),
                     Map.entry("long long", JAVA_LONG.withByteAlignment(LibFallback.longLongAlign())),
-                    Map.entry("unsigned long long", JAVA_LONG.withByteAlignment(LibFallback.longLongAlign())),
+                    Map.entry("unsigned long long", JAVA_LONG.withByteAlignment(LibFallback.longLongAlign()).withSignedness(false)),
                     Map.entry("double", JAVA_DOUBLE.withByteAlignment(LibFallback.doubleAlign())),
                     Map.entry("void*", ADDRESS),
                     // platform-dependent sizes
@@ -325,14 +326,14 @@ public final class FallbackLinker extends AbstractLinker {
                     Map.entry("unsigned long", FFIType.layoutFor(LibFallback.longSize()).withSignedness(false)),
                     Map.entry("wchar_t", wchartLayout),
                     // size/sign-dependent layouts
-                    Map.entry("int8_t", ValueLayout.JAVA_BYTE),
-                    Map.entry("int16_t", ValueLayout.JAVA_SHORT),
-                    Map.entry("int32_t", ValueLayout.JAVA_INT),
-                    Map.entry("int64_t", ValueLayout.JAVA_LONG),
-                    Map.entry("uint8_t", ValueLayout.JAVA_BYTE.withSignedness(false)),
-                    Map.entry("uint16_t", ValueLayout.JAVA_SHORT.withSignedness(false)),
-                    Map.entry("uint32_t", ValueLayout.JAVA_INT.withSignedness(false)),
-                    Map.entry("uint64_t", ValueLayout.JAVA_LONG.withSignedness(false)),
+                    Map.entry("int8_t", JAVA_BYTE),
+                    Map.entry("int16_t", JAVA_SHORT),
+                    Map.entry("int32_t", JAVA_INT),
+                    Map.entry("int64_t", JAVA_LONG.withByteAlignment(LibFallback.int64Align())),
+                    Map.entry("uint8_t", JAVA_BYTE.withSignedness(false)),
+                    Map.entry("uint16_t", JAVA_SHORT.withSignedness(false)),
+                    Map.entry("uint32_t", JAVA_INT.withSignedness(false)),
+                    Map.entry("uint64_t", JAVA_LONG.withByteAlignment(LibFallback.int64Align()).withSignedness(false)),
                     // JNI types
                     Map.entry("jboolean", JAVA_BOOLEAN),
                     Map.entry("jchar", JAVA_CHAR),

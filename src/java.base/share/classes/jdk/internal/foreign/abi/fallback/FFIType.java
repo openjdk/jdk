@@ -114,6 +114,7 @@ class FFIType {
             case ValueLayout.OfDouble _ -> LibFallback.doubleType();
             case AddressLayout _ -> LibFallback.pointerType();
             case ValueLayout.OfBoolean _ -> LibFallback.uint8Type();
+            case ValueLayout.OfChar _ -> LibFallback.uint16Type();
             case ValueLayout.OfIntegral integral ->
                 (integral.isSigned() ? SIGNED_INTEGRAL_TYPES : UNSIGNED_INTEGRAL_TYPES).get(layout.byteSize());
             case null, default -> throw new IllegalArgumentException("Unsupported value layout type: " + layout);

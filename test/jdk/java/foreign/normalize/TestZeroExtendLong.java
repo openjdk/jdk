@@ -28,7 +28,7 @@
  * @requires os.arch == "ppc64" | os.arch == "ppc64le" | os.arch == "s390x"
  * @run junit/othervm/native
  *   --enable-native-access=ALL-UNNAMED
- *   TestZeroExtendInt
+ *   TestZeroExtendLong
  */
 
 import org.junit.jupiter.api.TestInstance;
