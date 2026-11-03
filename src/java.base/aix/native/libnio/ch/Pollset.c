@@ -146,6 +146,7 @@ Java_sun_nio_ch_Pollset_pollsetBulkCtl(JNIEnv *env, jclass this,
      */
 
     int res = 0;
+    int failedErrno = 0;
     bool failed = false;
     while (count > 0) {
         res = _pollset_ctl((pollset_t)pollsetFD, (struct poll_ctl *)(intptr_t) address, count);
@@ -153,16 +154,19 @@ Java_sun_nio_ch_Pollset_pollsetBulkCtl(JNIEnv *env, jclass this,
             break;
         } else if (res == -1) {
             // element 0 is the problem; skip it and continue with the remainder
+            failedErrno = errno;
             failed = true;
             address += POLLCTL_SIZE;
             count--;
         } else {
+            failedErrno = errno;
             failed = true;
             address += (res + 1) * POLLCTL_SIZE;
             count -= (res + 1);
         }
     }
-    if (failed && errno != EINVAL && errno != EINTR) {
+    if (failed && failedErrno != EINVAL && failedErrno != EINTR) {
+        errno = failedErrno;
         JNU_ThrowIOExceptionWithLastError(env, "pollset_ctl failed");
     }
 }
