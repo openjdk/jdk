@@ -309,6 +309,7 @@ public:
       MacroAssembler::vpunpcklqdq(dst, nds, src, vector_len);
     } else {
       if (dst != nds) {
+        assert_different_registers(dst, src);
         movdqu(dst, nds);
       }
       punpcklqdq(dst, src);
@@ -321,6 +322,7 @@ public:
       MacroAssembler::vpunpckhqdq(dst, nds, src, vector_len);
     } else {
       if (dst != nds) {
+        assert_different_registers(dst, src);
         movdqu(dst, nds);
       }
       punpckhqdq(dst, src);
@@ -333,6 +335,7 @@ public:
       MacroAssembler::vpshufb(dst, nds, src, vector_len);
     } else {
       if (dst != nds) {
+        assert_different_registers(dst, src);
         movdqu(dst, nds);
       }
       pshufb(dst, src);
@@ -360,6 +363,7 @@ public:
       MacroAssembler::vpxor(dst, nds, src, vector_len);
     } else {
       if (dst != nds) {
+        assert_different_registers(dst, src);
         movdqu(dst, nds);
       }
       pxor(dst, src);
@@ -384,7 +388,7 @@ public:
 //   - dst         - encrypted payload
 //
 // Pseudocode:
-//   if (len <=>= 0) return len
+//   if (len <= 0) return len
 //   while (used < 16 && len-- > 0) {
 //     out[pos++] = in[pos] ^ encryptedCounter[used++];
 //   }
@@ -952,7 +956,7 @@ void StubGenerator::generate_aes_stubs() {
     } else if (VM_Version::supports_vaes()) {
       vector_len = Assembler::AVX_256bit;
     } else {
-      assert(VM_Version::supports_vaes() || (VM_Version::supports_aes() && VM_Version::supports_sse4_1()), "AESNI intrinsic unsupported");
+      assert(VM_Version::supports_aes() && VM_Version::supports_sse4_1(), "AESNI intrinsic unsupported");
     }
 
     int parallel = 4; // experimentally best. Needs to be even, tested 2&4&6
