@@ -43,10 +43,16 @@ import javax.management.openmbean.CompositeData;
 
 import com.sun.management.GarbageCollectionNotificationInfo;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+
 public class TestCycleEndMessage {
 
     public static void main(String[] args) throws Exception {
         final AtomicBoolean foundGenerationInCycle = new AtomicBoolean(false);
+        final AtomicBoolean oneCycleCompleted = new AtomicBoolean(false);
+
+        final Object lock = new Object();
 
         NotificationListener listener = new NotificationListener() {
             @Override
@@ -59,9 +65,15 @@ public class TestCycleEndMessage {
 
                     System.out.println("Received: " + name + " / " + action);
 
-                    if (name.equals("Shenandoah Cycles") &&
-                        (action.contains("Global") || action.contains("Young") || action.contains("Old"))) {
-                        foundGenerationInCycle.set(true);
+                    if (name.equals("Shenandoah Cycles")) {
+                        oneCycleCompleted.set(true);
+
+                        if ((action.contains("Global") || action.contains("Young") || action.contains("Old"))) {
+                            foundGenerationInCycle.set(true);
+                        }
+                        synchronized (lock) {
+                            lock.notifyAll();
+                        }
                     }
                 }
             }
@@ -71,8 +83,21 @@ public class TestCycleEndMessage {
             ((NotificationEmitter) bean).addNotificationListener(listener, null, null);
         }
 
-        System.gc();
-        Thread.sleep(2000);
+        synchronized (lock) {
+            System.gc();
+            long deadline = System.nanoTime() + SECONDS.toNanos(5);
+            while (!oneCycleCompleted.get()) {
+                long remaining = NANOSECONDS.toMillis(deadline - System.nanoTime());
+                if (remaining <= 0) {
+                    break;
+                }
+                lock.wait(remaining);
+            }
+        }
+
+        if (!oneCycleCompleted.get()) {
+            throw new IllegalStateException("Test did not complete at least one GC cycle");
+        }
 
         if (!foundGenerationInCycle.get()) {
             throw new IllegalStateException("Expected to find generation name (Global/Young/Old) in Shenandoah Cycles action message");

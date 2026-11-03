@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,11 @@
  *
  * @bug 6720721
  * @summary CRL check with circular depency support needed
- * @enablePreview
  * @run main/othervm CircularCRLTwoLevel
  * @author Xuelei Fan
  */
 
-import java.security.DEREncodable;
+import java.security.BinaryEncodable;
 import java.security.PEMDecoder;
 import java.security.Security;
 import java.security.cert.CertPath;
@@ -198,11 +197,11 @@ public class CircularCRLTwoLevel {
     }
 
     private static CertStore generateCertificateStore() throws Exception {
-        Collection<DEREncodable> entries = new HashSet<>();
+        Collection<BinaryEncodable> entries = new HashSet<>();
 
         // generate CRL from CRL string
 
-        DEREncodable mixes = pemDecoder.decode(topCrlStr, X509CRL.class);
+        BinaryEncodable mixes = pemDecoder.decode(topCrlStr, X509CRL.class);
         entries.add(mixes);
 
         mixes = pemDecoder.decode(subCrlStr, X509CRL.class);

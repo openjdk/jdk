@@ -45,7 +45,7 @@ import java.lang.ref.WeakReference;
  *
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+WhiteBoxAPI -Xbootclasspath/a:. -Xms200m -Xmx200m -Xlog:gc,gc+humongous=debug
- *                   -XX:InitiatingHeapOccupancyPercent=100 -XX:G1HeapRegionSize=1M -Xlog:gc,gc+humongous=debug:file=TestObjectCollected.gc.log
+ *                   -XX:G1IHOP=100 -XX:G1HeapRegionSize=1M -Xlog:gc,gc+humongous=debug:file=TestObjectCollected.gc.log
  *                    gc.g1.humongousObjects.TestObjectCollected
  */
 

@@ -4,7 +4,7 @@
  *
  *   Objects manager (body).
  *
- * Copyright (C) 1996-2025 by
+ * Copyright (C) 1996-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -21,6 +21,7 @@
 #include <freetype/tttags.h>
 #include <freetype/internal/sfnt.h>
 #include <freetype/ftdriver.h>
+#include <freetype/ftgasp.h>
 
 #include "ttgload.h"
 #include "ttpload.h"
@@ -734,6 +735,10 @@
         /* a `loca' table is not valid              */
         if ( face->glyf_len && FT_ERR_EQ( error, Table_Missing ) )
           goto Exit;
+        /* if both `glyf' and `loca' tables are missing, */
+        /* we don't have a valid font file either        */
+        if ( face->glyf_len == 0 && FT_ERR_EQ( error, Locations_Missing ) )
+          goto Bad_Format;
         if ( error )
           goto Exit;
       }
@@ -848,9 +853,72 @@
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
     tt_done_blend( ttface );
-    face->blend = NULL;
 #endif
   }
+
+
+#ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
+
+  FT_LOCAL_DEF( void )
+  tt_face_get_cleartype_policy( TT_Face   face,
+                                FT_UInt   ppem,
+                                FT_Bool*  symmetric_smoothing,
+                                FT_Bool*  grid_fit )
+  {
+    FT_Bool    symmetric;
+    FT_Bool    fit;
+    FT_Bool    found = FALSE;
+    FT_UShort  flags = 0;
+    FT_UInt    i;
+
+
+    /*
+     * DirectWrite fallback for hinted fonts without an applicable
+     * version-1 ClearType 'gasp' range:
+     *
+     *   <= 20 ppem  NATURAL
+     *   >  20 ppem  NATURAL_SYMMETRIC
+     *
+     * Fonts without glyph bytecode use symmetric rendering.
+     *
+     * `maxSizeOfInstructions` is also what Skia uses to determine
+     * whether a TrueType face is hinted for this DirectWrite policy.
+     */
+    fit = FT_BOOL( face->max_profile.maxSizeOfInstructions != 0 );
+
+    symmetric = FT_BOOL( !fit || ppem > 20 );
+
+    /*
+     * A valid version-1 `gasp' range explicitly controls the two
+     * independent ClearType properties.
+     */
+    if ( face->gasp.version >= 1 )
+    {
+      for ( i = 0; i < face->gasp.numRanges; i++ )
+      {
+        if ( ppem <= face->gasp.gaspRanges[i].maxPPEM )
+        {
+          flags = face->gasp.gaspRanges[i].gaspFlag;
+          found = TRUE;
+          break;
+        }
+      }
+
+      if ( found )
+      {
+        symmetric = FT_BOOL( flags & FT_GASP_SYMMETRIC_SMOOTHING );
+        fit       = FT_BOOL( flags & FT_GASP_SYMMETRIC_GRIDFIT );
+      }
+    }
+
+    if ( symmetric_smoothing )
+      *symmetric_smoothing = symmetric;
+
+    if ( grid_fit )
+      *grid_fit = fit;
+  }
+
+#endif
 
 
   /**************************************************************************
@@ -905,14 +973,14 @@
       error = TT_Run_Context( exec, size );
       FT_TRACE4(( error ? "  failed (error code 0x%x)\n" : "",
                   error ));
+
+      if ( !error )
+        TT_Save_Context( exec, size );
     }
     else
       error = FT_Err_Ok;
 
     size->bytecode_ready = error;
-
-    if ( !error )
-      TT_Save_Context( exec, size );
 
     return error;
   }
@@ -986,14 +1054,14 @@
       error = TT_Run_Context( exec, size );
       FT_TRACE4(( error ? "  failed (error code 0x%x)\n" : "",
                   error ));
+
+      if ( !error )
+        TT_Save_Context( exec, size );
     }
     else
       error = FT_Err_Ok;
 
     size->cvt_ready = error;
-
-    if ( !error )
-      TT_Save_Context( exec, size );
 
     return error;
   }
@@ -1057,9 +1125,23 @@
     exec->maxFunc = 0;
     exec->maxIns  = 0;
 
-    /* XXX: We reserve a little more elements on the stack to deal */
-    /*      with broken fonts like arialbs, courbs, timesbs, etc.  */
-    exec->stackSize = maxp->maxStackElements + 32;
+    /* We reserve extra elements on the stack to deal with broken fonts. */
+    /*                                                                   */
+    /* Some fonts (e.g., `Rubik-Italic.ttf`) have buggy hinting bytecode */
+    /* that pushes more values than `maxStackElements` declared in the   */
+    /* 'maxp' table.  For example, `Rubik-Italic.ttf`'s 'prep' program   */
+    /* pushes 255 values but `maxStackElements` is only set to 153.      */
+    /*                                                                   */
+    /* To alleviate this situation we increase the value of              */
+    /* `maxStackElements` based on a percentage of `maxStackElements`,   */
+    /* with a minimum of 128 extra slots.  This allows most broken fonts */
+    /* to work without completely disabling hinting, while adding only a */
+    /* small overhead for correctly authored fonts.                      */
+
+    /* Use 50% more than declared, with minimum safety margin of 128. */
+    exec->stackSize = maxp->maxStackElements +
+                      FT_MAX( maxp->maxStackElements / 2, 128 );
+
     exec->storeSize = maxp->maxStorage;
     exec->cvtSize   = face->cvt_size;
 

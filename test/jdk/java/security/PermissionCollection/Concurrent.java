@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.*;
 public class Concurrent {
     private static final int LIMIT1 = 2000;
     private static final int LIMIT2 = 1000;
-    private static final boolean debug = false;
+    private static final boolean debug = Boolean.getBoolean("test.debug");
     private static final Map errors =
         Collections.synchronizedMap(new HashMap());
 

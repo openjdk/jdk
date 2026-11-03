@@ -25,7 +25,7 @@
  * @test
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
- * @requires vm.bits == 64 & !vm.graal.enabled
+ * @requires vm.bits == 64
  * @requires vm.flagless
  * @comment Testing compressed class pointers without compressed oops is not possible
  *          on MacOS because the heap is given an arbitrary address that occasionally

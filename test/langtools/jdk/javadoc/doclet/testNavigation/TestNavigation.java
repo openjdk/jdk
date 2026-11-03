@@ -25,7 +25,7 @@
  * @test
  * @bug      7025314 8023700 7198273 8025633 8026567 8081854 8196027 8182765
  *           8196200 8196202 8223378 8258659 8261976 8320458 8329537 8350638
- *           8342705 8371021 8373526
+ *           8342705 8371021 8373526 8384065 8376208 8377548
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @library  /tools/lib ../../lib
@@ -71,7 +71,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#overview">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""");
 
         checkOutput("pkg/package-summary.html", true,
@@ -83,7 +83,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#package">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""",
                 """
                     <nav role="navigation" class="toc" aria-label="Table of contents">
@@ -99,7 +99,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""",
                 """
                     <nav role="navigation" class="toc" aria-label="Table of contents">
@@ -121,7 +121,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""",
                 """
                     <nav role="navigation" class="toc" aria-label="Table of contents">
@@ -143,7 +143,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""",
                 """
                     <nav role="navigation" class="toc" aria-label="Table of contents">
@@ -172,6 +172,36 @@ public class TestNavigation extends JavadocTester {
         tb.writeJavaFiles(src,
                 """
                     package pkg1; public class A {
+                        /**
+                         * Empty ctor
+                         */
+                        public A() {}
+
+                        /**
+                         * Single param ctor
+                         */
+                        public A(int i) {}
+
+                        /**
+                         * A ctor with many params
+                         */
+                        public A(int i, int j, int x, int y, String s, boolean b) {}
+
+                        /**
+                         * A method without parameters
+                         */
+                        public void noParams() {}
+
+                        /**
+                         * A method with a single parameter
+                         */
+                        public void oneParam(String s) {}
+
+                        /**
+                         * A method with lots of parameters
+                         */
+                        public void manyParams(String s, int i, int j, boolean b, double d, double e) {}
+
                         /**
                          * Class with members.
                          */
@@ -216,6 +246,29 @@ public class TestNavigation extends JavadocTester {
                 "-sourcepath", src.toString(),
                 "pkg1");
         checkExit(Exit.OK);
+
+        checkOrder("pkg1/A.html",
+                """
+                    <ol class="toc-list" tabindex="-1">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
+                    <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
+                    <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
+                    <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#%3Cinit%3E()" tabindex="0">A()</a></li>
+                    <li><a href="#%3Cinit%3E(int)" tabindex="0">A(<wbr>int)</a></li>
+                    <li><a href="#%3Cinit%3E(int,int,int,int,java.lang.String,boolean)" tabindex="0">A(<wbr>int, int, int, int, String, boolean)</a></li>
+                    </ol>
+                    </li>
+                    <li><a href="#method-detail" tabindex="0">Method Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#noParams()" tabindex="0">noParams()</a></li>
+                    <li><a href="#oneParam(java.lang.String)" tabindex="0">oneParam(<wbr>String)</a></li>
+                    <li><a href="#manyParams(java.lang.String,int,int,boolean,double,double)" tabindex="0">manyParams(<wbr>String, int, int, boolean, double, double)</a></li>
+                    </ol>
+                    </li>
+                    </ol>""");
 
         checkOrder("pkg1/A.X.html",
                 """
@@ -409,7 +462,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#package">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""");
 
         checkOutput("pkg/A.html", true,
@@ -421,7 +474,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""");
 
         checkOutput("pkg/C.html", true,
@@ -433,7 +486,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""");
 
         checkOutput("pkg/E.html", true,
@@ -445,7 +498,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""");
 
         checkOutput("pkg/I.html", true,
@@ -485,7 +538,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#package">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""",
                 """
                     <ol class="sub-nav-list">
@@ -501,7 +554,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""",
                 """
                     <ol class="sub-nav-list">

@@ -706,11 +706,22 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         return (int) length;
     }
 
+    // Direct instances of ObjArrayKlass represent the Java types that Java code can see.
+    // RefArrayKlass/FlatArrayKlass describe different implementations of the arrays,
+    // filter them out to avoid duplicates.
+    private boolean filterOutKlass(Klass k) {
+        return (k instanceof ObjArrayKlass) &&
+               !k.getKind().equals(Klass.KlassKind.ObjArrayKlassKind);
+    }
+
     private void writeClassDumpRecords() throws IOException {
         ClassLoaderDataGraph cldGraph = VM.getVM().getClassLoaderDataGraph();
         try {
              cldGraph.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                             public void visit(Klass k) {
+                                if (filterOutKlass(k)) {
+                                    return;
+                                }
                                 try {
                                     writeHeapRecordPrologue(calculateClassDumpRecordSize(k));
                                     writeClassDumpRecord(k);
@@ -1203,7 +1214,11 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             break;
         case JVM_SIGNATURE_CLASS:
         case JVM_SIGNATURE_ARRAY: {
-            if (VM.getVM().isCompressedOopsEnabled()) {
+            if (field.isFlat()) {
+              // FIXME - we don't handle flattened fields yet. Just treat them
+              // as a null reference. See JDK-8381370.
+              writeObjectID(null);
+            } else if (VM.getVM().isCompressedOopsEnabled()) {
               OopHandle handle = ((NarrowOopField)field).getValueAsOopHandle(oop);
               writeObjectID(getAddressValue(handle));
             } else {
@@ -1281,6 +1296,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         try {
             cldGraph.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                 public void visit(Klass k) {
+                    if (filterOutKlass(k)) {
+                        return;
+                    }
                     try {
                         Instance clazz = k.getJavaMirror();
                         writeHeader(HPROF_LOAD_CLASS, 2 * (OBJ_ID_SIZE + 4));

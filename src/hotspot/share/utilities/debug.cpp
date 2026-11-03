@@ -240,10 +240,6 @@ void report_vm_out_of_memory(const char* file, int line, size_t size,
 
   VMError::report_and_die(Thread::current_or_null(), file, line, size, vm_err_type, detail_fmt, detail_args);
   va_end(detail_args);
-
-  // The UseOSErrorReporting option in report_and_die() may allow a return
-  // to here. If so then we'll have to figure out how to handle it.
-  guarantee(false, "report_and_die() should not return here");
 }
 
 void report_should_not_call(const char* file, int line) {
@@ -463,7 +459,7 @@ extern "C" NOINLINE void ps() { // print stack
     // can call the standard stack_trace function.
     p->print_stack();
 #ifndef PRODUCT
-    if (Verbose) p->trace_stack();
+    if (Verbose) p->trace_stack_on(tty);
   } else {
     frame f = os::current_frame();
     RegisterMap reg_map(p,
@@ -472,7 +468,7 @@ extern "C" NOINLINE void ps() { // print stack
                         RegisterMap::WalkContinuation::skip);
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
-    p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
+    p->trace_stack_from(tty, vframe::new_vframe(&f, &reg_map, p));
 #endif
   }
 }
@@ -506,7 +502,7 @@ extern "C" NOINLINE void psf() { // print stack frames
   p->print();
   tty->cr();
   if (p->has_last_Java_frame()) {
-    p->trace_frames();
+    p->trace_frames_on(tty);
   }
 }
 
@@ -782,34 +778,6 @@ extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue) {
 extern "C" bool dbg_is_good_oop(oopDesc* o) {
   return dbg_is_safe(o, -1) && dbg_is_safe(o->klass(), -1) && oopDesc::is_oop(o) && o->klass()->is_klass();
 }
-
-//////////////////////////////////////////////////////////////////////////////
-// Test multiple STATIC_ASSERT forms in various scopes.
-
-#ifndef PRODUCT
-
-// namespace scope
-STATIC_ASSERT(true);
-STATIC_ASSERT(true);
-STATIC_ASSERT(1 == 1);
-STATIC_ASSERT(0 == 0);
-
-void test_multiple_static_assert_forms_in_function_scope() {
-  STATIC_ASSERT(true);
-  STATIC_ASSERT(true);
-  STATIC_ASSERT(0 == 0);
-  STATIC_ASSERT(1 == 1);
-}
-
-// class scope
-struct TestMultipleStaticAssertFormsInClassScope {
-  STATIC_ASSERT(true);
-  STATIC_ASSERT(true);
-  STATIC_ASSERT(0 == 0);
-  STATIC_ASSERT(1 == 1);
-};
-
-#endif // !PRODUCT
 
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT

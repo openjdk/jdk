@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,11 @@
 
 #include "gc/g1/g1HeapRegion.inline.hpp"
 
-#define assert_alloc_region(p, message)                                  \
-  do {                                                                   \
-    assert((p), "[%s] %s c: %u r: " PTR_FORMAT,                          \
-           _name, (message), _count, p2i(_alloc_region.load_relaxed())   \
-          );                                                             \
+#define assert_alloc_region(p, message)                                           \
+  do {                                                                            \
+    assert((p), "[%s] %s num regions used: %u r: " PTR_FORMAT,                    \
+           _name, (message), _num_regions_used, p2i(_alloc_region.load_relaxed()) \
+          );                                                                      \
   } while (0)
 
 

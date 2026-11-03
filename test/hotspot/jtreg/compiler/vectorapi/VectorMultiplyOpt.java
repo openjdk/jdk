@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@ import java.lang.reflect.Array;
 
 /**
  * @test
- * @bug 8341137
+ * @bug 8341137 8383905
  * @key randomness
- * @summary Optimize long vector multiplication using x86 VPMUL[U]DQ instruction.
+ * @summary Optimize long vector multiplication.
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @run driver compiler.vectorapi.VectorMultiplyOpt
@@ -80,7 +80,7 @@ public class VectorMultiplyOpt {
 
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
-        testFramework.setDefaultWarmup(5000)
+        testFramework.setDefaultWarmup(10000)
                      .addFlags("--add-modules=jdk.incubator.vector")
                      .start();
         System.out.println("PASSED");
@@ -107,9 +107,15 @@ public class VectorMultiplyOpt {
     }
 
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuludq", " >0 "}, phase = CompilePhase.FINAL_CODE, applyIfCPUFeature = {"avx", "true"})
-    @Warmup(value = 10000)
+    @IR(counts = {"vmulL_uint_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"sve2", "true"})
+    @IR(counts = {"vmulL_sve", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"sve", "true", "sve2", "false"})
+    @IR(counts = {"vmulL_uint_neon", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void test_pattern1() {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
@@ -130,9 +136,15 @@ public class VectorMultiplyOpt {
     }
 
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuludq", " >0 "}, phase = CompilePhase.FINAL_CODE, applyIfCPUFeature = {"avx", "true"})
-    @Warmup(value = 10000)
+    @IR(counts = {"vmulL_uint_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"sve2", "true"})
+    @IR(counts = {"vmulL_sve", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"sve", "true", "sve2", "false"})
+    @IR(counts = {"vmulL_uint_neon", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void test_pattern2() {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
@@ -153,9 +165,15 @@ public class VectorMultiplyOpt {
     }
 
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuludq", " >0 "}, phase = CompilePhase.FINAL_CODE, applyIfCPUFeature = {"avx", "true"})
-    @Warmup(value = 10000)
+    @IR(counts = {"vmulL_uint_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"sve2", "true"})
+    @IR(counts = {"vmulL_sve", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"sve", "true", "sve2", "false"})
+    @IR(counts = {"vmulL_uint_neon", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void test_pattern3() {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
@@ -176,9 +194,15 @@ public class VectorMultiplyOpt {
     }
 
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuludq", " >0 "}, applyIfCPUFeature = {"avx", "true"}, phase = CompilePhase.FINAL_CODE)
-    @Warmup(value = 10000)
+    @IR(counts = {"vmulL_uint_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"sve2", "true"})
+    @IR(counts = {"vmulL_sve", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"sve", "true", "sve2", "false"})
+    @IR(counts = {"vmulL_uint_neon", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void test_pattern4() {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
@@ -199,9 +223,15 @@ public class VectorMultiplyOpt {
     }
 
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.VECTOR_CAST_I2L, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.VECTOR_CAST_I2L, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuldq", " >0 "}, applyIfCPUFeature = {"avx", "true"}, phase = CompilePhase.FINAL_CODE)
-    @Warmup(value = 10000)
+    @IR(counts = {"vmulL_int_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"sve2", "true"})
+    @IR(counts = {"vmulL_sve", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"sve", "true", "sve2", "false"})
+    @IR(counts = {"vmulL_int_neon", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void test_pattern5() {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
@@ -225,9 +255,15 @@ public class VectorMultiplyOpt {
 
 
     @Test
-    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.RSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.RSHIFT_VL, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     @IR(counts = {"vmuldq", " >0 "}, applyIfCPUFeature = {"avx", "true"}, phase = CompilePhase.FINAL_CODE)
-    @Warmup(value = 10000)
+    @IR(counts = {"vmulL_int_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"sve2", "true"})
+    @IR(counts = {"vmulL_sve", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"sve", "true", "sve2", "false"})
+    @IR(counts = {"vmulL_int_neon", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void test_pattern6() {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
@@ -247,4 +283,63 @@ public class VectorMultiplyOpt {
         validate("pattern6 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >> shift5) * (l2 >> shift5));
     }
 
+    // Same-operand multiplication (v * v) where v has zero-extended high bits.
+    // On NEON this should map to the dedicated rule that emits a single xtn.
+    @Test
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
+    @IR(counts = {"vmuludq", " >0 "}, phase = CompilePhase.FINAL_CODE, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {"vmulL_uint_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"sve2", "true"})
+    @IR(counts = {"vmulL_sve", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"sve", "true", "sve2", "false"})
+    @IR(counts = {"vmulL_uint_neon_same", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    public static void test_pattern7() {
+        int i = 0;
+        for (; i < LSP.loopBound(res.length); i += LSP.length()) {
+            LongVector vsrc = LongVector.fromArray(LSP, lsrc1, i)
+                                        .lanewise(VectorOperators.AND, mask1);
+            vsrc.lanewise(VectorOperators.MUL, vsrc).intoArray(res, i);
+        }
+        for (; i < res.length; i++) {
+            long x = lsrc1[i] & mask1;
+            res[i] = x * x;
+        }
+    }
+
+    @Check(test = "test_pattern7")
+    public void test_pattern7_validate() {
+        validate("pattern7 ", res, lsrc1, lsrc1, (l1, l2) -> { long x = l1 & mask1; return x * x; });
+    }
+
+    // Same-operand multiplication (v * v) where v has sign-extended high bits.
+    // On NEON this should map to the dedicated rule that emits a single xtn.
+    @Test
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.VECTOR_CAST_I2L, " >0 "},
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
+    @IR(counts = {"vmuldq", " >0 "}, applyIfCPUFeature = {"avx", "true"}, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = {"vmulL_int_sve2", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeature = {"sve2", "true"})
+    @IR(counts = {"vmulL_sve", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"sve", "true", "sve2", "false"})
+    @IR(counts = {"vmulL_int_neon_same", " >0 "}, phase = CompilePhase.FINAL_CODE,
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    public static void test_pattern8() {
+        int i = 0;
+        for (; i < LSP.loopBound(res.length); i += LSP.length()) {
+            LongVector vsrc = IntVector.fromArray(ISP, isrc1, i)
+                                       .convert(VectorOperators.I2L, 0)
+                                       .reinterpretAsLongs();
+            vsrc.lanewise(VectorOperators.MUL, vsrc).intoArray(res, i);
+        }
+        for (; i < res.length; i++) {
+            res[i] = Math.multiplyFull(isrc1[i], isrc1[i]);
+        }
+    }
+
+    @Check(test = "test_pattern8")
+    public void test_pattern8_validate() {
+        validate("pattern8 ", res, isrc1, isrc1, (i1, i2) -> Math.multiplyFull((int)i1, (int)i1));
+    }
 }

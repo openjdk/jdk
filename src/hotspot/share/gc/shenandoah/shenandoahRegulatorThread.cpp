@@ -66,27 +66,21 @@ void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
         if (request_concurrent_gc(_heap->global_generation())) {
           // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
           _global_heuristics->log_trigger("%s", GCCause::to_string(GCCause::_metadata_GC_threshold));
-          _global_heuristics->cancel_trigger_request();
         }
       } else {
         if (_old_heuristics->should_resume_old_cycle()) {
           if (request_concurrent_gc(_heap->old_generation())) {
-            _old_heuristics->cancel_trigger_request();
-            log_debug(gc)("Heuristics request to resume old collection accepted");
+            log_debug(gc, thread)("Heuristics request to resume old collection accepted");
           }
         } else if (start_old_cycle()) {
-          log_debug(gc)("Heuristics request for old collection accepted");
-          _young_heuristics->cancel_trigger_request();
-          _old_heuristics->cancel_trigger_request();
+          log_debug(gc, thread)("Heuristics request for old collection accepted");
         } else if (start_young_cycle()) {
-          log_debug(gc)("Heuristics request for young collection accepted");
-          _young_heuristics->cancel_trigger_request();
+          log_debug(gc, thread)("Heuristics request for young collection accepted");
         }
       }
     } else if (mode == ShenandoahGenerationalControlThread::servicing_old) {
       if (start_young_cycle()) {
-        log_debug(gc)("Heuristics request to interrupt old for young collection accepted");
-        _young_heuristics->cancel_trigger_request();
+        log_debug(gc, thread)("Heuristics request to interrupt old for young collection accepted");
       }
     }
 
@@ -99,12 +93,13 @@ void ShenandoahRegulatorThread::regulate_young_and_global_cycles() {
   while (!should_terminate()) {
     SuspendibleThreadSetJoiner joiner;
     if (_control_thread->gc_mode() == ShenandoahGenerationalControlThread::none) {
-      if (start_global_cycle()) {
-        log_debug(gc)("Heuristics request for global collection accepted.");
-        _global_heuristics->cancel_trigger_request();
+      if (should_start_metaspace_gc() && request_concurrent_gc(_heap->global_generation())) {
+        // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
+        _global_heuristics->log_trigger("%s", GCCause::to_string(GCCause::_metadata_GC_threshold));
+      } else if (_old_heuristics->should_start_gc() && request_concurrent_gc(_heap->global_generation())) {
+        log_debug(gc, thread)("Heuristics request for global collection accepted.");
       } else if (start_young_cycle()) {
-        log_debug(gc)("Heuristics request for young collection accepted.");
-        _young_heuristics->cancel_trigger_request();
+        log_debug(gc, thread)("Heuristics request for young collection accepted.");
       }
     }
 
@@ -116,23 +111,21 @@ void ShenandoahRegulatorThread::regulator_sleep() {
   // Wait before performing the next action. If allocation happened during this wait,
   // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
   // back off exponentially.
-  double before_sleep_time = _most_recent_wake_time;
   if (ShenandoahHeap::heap()->has_changed()) {
     _sleep = ShenandoahControlIntervalMin;
-  } else if ((before_sleep_time - _last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
+  } else if ((_most_recent_wake_time - _last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
     _sleep = MIN2<uint>(ShenandoahControlIntervalMax, MAX2(1u, _sleep * 2));
-    _last_sleep_adjust_time = before_sleep_time;
+    _last_sleep_adjust_time = _most_recent_wake_time;
   }
 
   SuspendibleThreadSetLeaver leaver;
+  const double before_sleep_time = os::elapsedTime();
   os::naked_short_sleep(_sleep);
-  double wake_time = os::elapsedTime();
-  _most_recent_period = wake_time - _most_recent_wake_time;
-  _most_recent_wake_time = wake_time;
+  _most_recent_wake_time = os::elapsedTime();
   _young_heuristics->update_should_start_query_times(_most_recent_wake_time, double(_sleep) / 1000.0);
   if (LogTarget(Debug, gc, thread)::is_enabled()) {
     double elapsed = _most_recent_wake_time - before_sleep_time;
-    double hiccup = elapsed - double(_sleep);
+    double hiccup = elapsed - double(_sleep) / 1000.0;
     if (hiccup > 0.001) {
       log_debug(gc, thread)("Regulator hiccup time: %.3fs", hiccup);
     }
@@ -145,10 +138,6 @@ bool ShenandoahRegulatorThread::start_old_cycle() const {
 
 bool ShenandoahRegulatorThread::start_young_cycle() const {
   return _young_heuristics->should_start_gc() && request_concurrent_gc(_heap->young_generation());
-}
-
-bool ShenandoahRegulatorThread::start_global_cycle() const {
-  return _global_heuristics->should_start_gc() && request_concurrent_gc(_heap->global_generation());
 }
 
 bool ShenandoahRegulatorThread::request_concurrent_gc(ShenandoahGeneration* generation) const {

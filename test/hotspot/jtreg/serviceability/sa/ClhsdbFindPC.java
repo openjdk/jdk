@@ -50,6 +50,8 @@ import jtreg.SkippedException;
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on core file
  * @requires vm.hasSA
+ * @requires !vm.ubsan
+ * @requires !vm.asan
  * @requires vm.gc != "Z"
  * @requires vm.compMode != "Xcomp"
  * @requires vm.compiler1.enabled
@@ -75,6 +77,8 @@ import jtreg.SkippedException;
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on core file
  * @requires vm.hasSA
+ * @requires !vm.ubsan
+ * @requires !vm.asan
  * @requires vm.gc != "Z"
  * @requires vm.compiler1.enabled
  * @library /test/lib

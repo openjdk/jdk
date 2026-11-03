@@ -49,7 +49,6 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getPid", (char*)"()Ljava/lang/String;", (void*)jfr_get_pid,
       (char*)"getStackTraceId", (char*)"(IJ)J", (void*)jfr_stacktrace_id,
       (char*)"getThreadId", (char*)"(Ljava/lang/Thread;)J", (void*)jfr_id_for_thread,
-      (char*)"getTicksFrequency", (char*)"()J", (void*)jfr_elapsed_frequency,
       (char*)"subscribeLogLevel", (char*)"(Ljdk/jfr/internal/LogTag;I)V", (void*)jfr_subscribe_log_level,
       (char*)"log", (char*)"(IILjava/lang/String;)V", (void*)jfr_log,
       (char*)"logEvent", (char*)"(I[Ljava/lang/String;Z)V", (void*)jfr_log_event,
@@ -108,7 +107,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"nanosNow", (char*)"()J", (void*)jfr_nanos_now,
       (char*)"isProduct", (char*)"()Z", (void*)jfr_is_product,
       (char*)"setMethodTraceFilters", (char*)"([Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;[I)[J", (void*)jfr_set_method_trace_filters,
-      (char*)"drainStaleMethodTracerIds", (char*)"()[J", (void*)jfr_drain_stale_method_tracer_ids
+      (char*)"drainStaleMethodTracerIds", (char*)"()[J", (void*)jfr_drain_stale_method_tracer_ids,
+      (char*)"tryUpdateEpoch", (char*)"(Ljava/lang/reflect/Field;)Z", (void*)jfr_try_update_epoch
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,6 +205,18 @@ public class thread001 {
 
                     log.display("Disabling event request");
                     checkedRequest.disable();
+
+                    // Make sure we drain the event queue after disabling the request.
+                    try {
+                        while ((eventSet = vm.eventQueue().remove(1000)) != null) {
+                            eventSet.resume();
+                        }
+                    } catch (InterruptedException ie) {
+                        log.complain("FAILURE: draining event queue failed");
+                        testFailed = true;
+                    }
+                    // And do a vm.resume() for good measure.
+                    vm.resume();
 
                     log.display("eventHandler completed");
 

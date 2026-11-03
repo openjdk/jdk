@@ -31,7 +31,10 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/timerTrace.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
+#include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/tableStatistics.hpp"
 
@@ -239,10 +242,24 @@ void Dictionary::verify() {
 }
 
 void Dictionary::print_table_statistics(outputStream* st, const char* table_name) {
-  static TableStatistics ts;
+  TableStatistics stats;
   auto sz = [&] (InstanceKlass** val) {
     return sizeof(**val);
   };
-  ts = _table->statistics_get(Thread::current(), sz, ts);
-  ts.print(st, table_name);
+  Thread* thread = Thread::current();
+  ConcurrentTable::StatisticsTask sts(_table);
+  if (!sts.prepare(thread)) {
+    st->print_cr("Failed to take statistics");
+    return;
+  }
+  TraceTime timer("GetStatistics", TRACETIME_LOG(Debug, perf));
+  while (sts.do_task(thread, sz)) {
+    sts.pause(thread);
+    if (thread->is_Java_thread()) {
+      ThreadBlockInVM tbivm(JavaThread::cast(thread));
+    }
+    sts.cont(thread);
+  }
+  stats = sts.done(thread);
+  stats.print(st, table_name);
 }

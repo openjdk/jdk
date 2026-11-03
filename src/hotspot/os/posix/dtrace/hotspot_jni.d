@@ -360,6 +360,8 @@ provider hotspot_jni {
   probe GetSuperclass__return(void*);
   probe GetVersion__entry(void*);
   probe GetVersion__return(uint32_t);
+  probe HasIdentity__entry(void*, void*);
+  probe HasIdentity__return(uintptr_t);
   probe IsAssignableFrom__entry(void*, void*, void*);
   probe IsAssignableFrom__return(uintptr_t);
   probe IsInstanceOf__entry(void*, void*, void*);

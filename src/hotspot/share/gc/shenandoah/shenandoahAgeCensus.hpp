@@ -27,55 +27,6 @@
 
 #include "gc/shared/ageTable.hpp"
 
-#ifndef PRODUCT
-// Enable noise instrumentation
-#define SHENANDOAH_CENSUS_NOISE 1
-#endif  // PRODUCT
-
-#ifdef SHENANDOAH_CENSUS_NOISE
-
-#define CENSUS_NOISE(x) x
-#define NO_CENSUS_NOISE(x)
-
-class LogStream;
-
-struct ShenandoahNoiseStats {
-  size_t skipped;   // Volume of objects skipped
-  size_t aged;      // Volume of objects from aged regions
-  size_t clamped;   // Volume of objects whose ages were clamped
-  size_t young;     // Volume of (rejuvenated) objects of retrograde age
-
-  ShenandoahNoiseStats() {
-    clear();
-  }
-
-  void clear() {
-    skipped = 0;
-    aged = 0;
-    clamped = 0;
-    young = 0;
-  }
-
-#ifndef PRODUCT
-  bool is_clear() {
-    return (skipped + aged + clamped + young) == 0;
-  }
-#endif // !PRODUCT
-
-  void merge(ShenandoahNoiseStats& other) {
-    skipped += other.skipped;
-    aged    += other.aged;
-    clamped += other.clamped;
-    young   += other.young;
-  }
-
-  void print(LogStream& ls, size_t total);
-};
-#else  // SHENANDOAH_CENSUS_NOISE
-#define CENSUS_NOISE(x)
-#define NO_CENSUS_NOISE(x) x
-#endif // SHENANDOAH_CENSUS_NOISE
-
 // A class for tracking a sequence of cohort population vectors (or,
 // interchangeably, age tables) for up to C=MAX_COHORTS age cohorts, where a cohort
 // represents the set of objects allocated during a specific inter-GC epoch.
@@ -102,24 +53,13 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   AgeTable** _global_age_tables;      // Global age tables used for adapting tenuring threshold, one per snapshot
   AgeTable** _local_age_tables;       // Local scratch age tables to track object ages, one per worker
 
-#ifdef SHENANDOAH_CENSUS_NOISE
-  ShenandoahNoiseStats* _global_noise; // Noise stats, one per snapshot
-  ShenandoahNoiseStats* _local_noise;  // Local scratch table for noise stats, one per worker
-
-  size_t _skipped;                   // net size of objects encountered, but skipped during census,
-                                     // because their age was indeterminate
-#endif // SHENANDOAH_CENSUS_NOISE
-
-#ifndef PRODUCT
-  size_t _counted;                   // net size of objects counted in census
-  size_t _total;                     // net size of objects encountered (counted or skipped) in census
-#endif
-
   uint  _epoch;                      // Current epoch (modulo max age)
   uint* _tenuring_threshold;         // An array of the last N tenuring threshold values we
                                      // computed.
 
   uint _max_workers;                 // Maximum number of workers for parallel tasks
+
+  bool _always_tenure;               // When true, every age is tenurable.
 
   // Mortality rate of a cohort, given its population in
   // previous and current epochs
@@ -150,23 +90,9 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
     return _tenuring_threshold[prev];
   }
 
-  // Override the tenuring threshold for the current epoch. This is used to
-  // cause everything to be promoted for a whitebox full gc request.
-  void set_tenuring_threshold(uint threshold) { _tenuring_threshold[_epoch] = threshold; }
-
-#ifndef PRODUCT
-  // Return the sum of size of objects of all ages recorded in the
-  // census at snapshot indexed by snap.
-  size_t get_all_ages(uint snap);
-
-  // Return the size of all objects that were encountered, but skipped,
-  // during the census, because their age was indeterminate.
-  size_t get_skipped(uint snap);
-
-  // Update the total size of objects counted or skipped at the census for
-  // the most recent epoch.
-  void update_total();
-#endif // !PRODUCT
+  // Set always tenure mode. Currently only used by ShenandoahTenuringOverride
+  // to force is_tenurable() to be true for every age during WB.fullGC tests.
+  void set_always_tenure(bool always_tenure) { _always_tenure = always_tenure; }
 
  public:
   enum {
@@ -187,26 +113,23 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // Visible for testing. Use is_tenurable for consistent tenuring comparisons.
   uint tenuring_threshold() const { return _tenuring_threshold[_epoch]; }
 
-  // Return true if this age is at or above the tenuring threshold.
-  bool is_tenurable(uint age) const {
-    return age >= tenuring_threshold();
+  // Returns zero when always_tenure is true (which is only true when the gc
+  // is triggered by WB.fullGC()). Note that zero itself is the floor, so do
+  // not subtract from it to get the younger cohort.
+  uint effective_threshold() const {
+    return is_always_tenure() ? 0 : tenuring_threshold();
   }
 
-  // Update the local age table for worker_id by size for
-  // given obj_age, region_age, and region_youth
-  CENSUS_NOISE(void add(uint obj_age, uint region_age, uint region_youth, size_t size, uint worker_id);)
-  NO_CENSUS_NOISE(void add(uint obj_age, uint region_age, size_t size, uint worker_id);)
+  // Return true if this age is at or above the tenuring threshold, or if always tenure is enabled.
+  bool is_tenurable(uint age) const {
+    return age >= tenuring_threshold() || _always_tenure;
+  }
 
-#ifdef SHENANDOAH_CENSUS_NOISE
-  // Update the local skip table for worker_id by size
-  void add_skipped(size_t size, uint worker_id);
-  // Update the local aged region volume table for worker_id by size
-  void add_aged(size_t size, uint worker_id);
-  // Update the local clamped object volume table for worker_id by size
-  void add_clamped(size_t size, uint worker_id);
-  // Update the local (rejuvenated) object volume (retrograde age) for worker_id by size
-  void add_young(size_t size, uint worker_id);
-#endif // SHENANDOAH_CENSUS_NOISE
+  bool is_always_tenure() const { return _always_tenure; }
+
+  // Update the local age table for worker_id by size for
+  // given obj_age and region_age
+  inline void add(uint obj_age, uint region_age, size_t size, uint worker_id);
 
   // Update the census data, and compute the new tenuring threshold.
   // This method should be called at the end of each marking cycle to update
@@ -234,34 +157,28 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // Check whether census information is clear
   bool is_clear_global();
   bool is_clear_local();
-
-  // Return the net size of objects encountered (counted or skipped) in census
-  // at most recent epoch.
-  size_t get_total() const { return _total; }
 #endif // !PRODUCT
 
   // Print the age census information
   void print();
 };
 
-// RAII object that temporarily overrides the tenuring threshold for the
-// duration of a scope, restoring the original value on destruction.
-// Used to force promotion of all young objects during whitebox full GCs.
+// RAII object that enables ShenandoahAgeCensus always tenure mode for the
+// duration of a scope and disables it on destruction. Used to force promotion
+// of all young objects during whitebox full GCs.
 class ShenandoahTenuringOverride : public StackObj {
   ShenandoahAgeCensus* _census;
-  uint _saved_threshold;
   bool _active;
 public:
   ShenandoahTenuringOverride(bool active, ShenandoahAgeCensus* census) :
-    _census(census), _saved_threshold(0), _active(active) {
+    _census(census), _active(active) {
     if (_active) {
-      _saved_threshold = _census->tenuring_threshold();
-      _census->set_tenuring_threshold(0);
+      _census->set_always_tenure(true);
     }
   }
   ~ShenandoahTenuringOverride() {
     if (_active) {
-      _census->set_tenuring_threshold(_saved_threshold);
+      _census->set_always_tenure(false);
     }
   }
 };

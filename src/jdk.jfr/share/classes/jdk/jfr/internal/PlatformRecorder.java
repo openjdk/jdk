@@ -37,6 +37,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -332,7 +333,6 @@ public final class PlatformRecorder {
             }
         }
         OldObjectSample.emit(recording);
-        recording.setFinalStartnanos(JVMSupport.getChunkStartNanos());
 
         if (endPhysical) {
             PeriodicEvents.doChunkEnd();
@@ -585,7 +585,7 @@ public final class PlatformRecorder {
         boolean register = !isDestroyed() && r.getState() != RecordingState.CLOSED;
         Recording newRec = access.newRecording(register);
         PlatformRecording copy = access.getPlatformRecording(newRec);
-        copy.setSettings(r.getSettings());
+        copy.setSettings(r.getSettingsCopy());
         copy.setMaxAge(r.getMaxAge());
         copy.setMaxSize(r.getMaxSize());
         copy.setDumpOnExit(r.getDumpOnExit());
@@ -614,8 +614,9 @@ public final class PlatformRecorder {
             } else {
                 if (r.getStopTime() != null) {
                     TimerTask stopTask = copy.createStopTask();
-                    copy.setStopTask(copy.createStopTask());
-                    getTimer().schedule(stopTask, r.getStopTime().toEpochMilli());
+                    copy.setStopTask(stopTask);
+                    long epochMilli = r.getStopTime().toEpochMilli();
+                    getTimer().schedule(stopTask, new Date(epochMilli));
                 }
             }
         }

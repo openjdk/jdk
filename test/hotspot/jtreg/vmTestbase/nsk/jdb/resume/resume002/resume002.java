@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@ public class resume002 extends JdbTest {
     static final String DEBUGGEE_CLASS   = TEST_CLASS + "a";
     static final String FIRST_BREAK      = DEBUGGEE_CLASS + ".main";
     static final String LAST_BREAK       = DEBUGGEE_CLASS + ".lastBreak";
+    static final String THREAD_STARTED_BREAK = PACKAGE_NAME + ".MyThread.threadStarted";
 
     static final String THREAD_NAME      = "MyThread";
 
@@ -95,9 +96,9 @@ public class resume002 extends JdbTest {
         String found;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        jdb.receiveReplyFor(JdbCommand.cont);
+        waitForTestedThreadStarts(THREAD_STARTED_BREAK, resume002a.numThreads);
 
-        String[] threadIds = jdb.getThreadIds(PACKAGE_NAME + "." + THREAD_NAME);
+        String[] threadIds = jdb.getThreadIdsByName(THREAD_NAME);
 
         reply = jdb.receiveReplyFor(JdbCommand.suspend);
         grep = new Paragrep(reply);

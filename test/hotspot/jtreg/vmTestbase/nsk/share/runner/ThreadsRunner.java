@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,15 +119,18 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
                     test.run();
                     LockSupport.parkNanos(1);
                 }
-            } catch (OutOfMemoryError oom) {
-                if (test instanceof OOMStress) {
-                    // Test stressing OOM, not a failure.
-                    log.info("Caught OutOfMemoryError in OOM stress test, omitting exception.");
-                } else {
-                    failWithException(oom);
-                }
             } catch (Throwable t) {
-                failWithException(t);
+                if (test instanceof OOMStress && isCausedByOOM(t)) {
+                    // Test stressing OOM, not a failure. The OOME may arrive
+                    // wrapped in another exception.
+                    try {
+                        log.info("Caught " + t + " in OOM stress test, omitting exception.");
+                    } catch (OutOfMemoryError oom) {
+                        // no memory left to log, still not a failure
+                    }
+                } else {
+                    failWithException(t);
+                }
             } finally {
                 waitForOtherThreads();
                 stresser.finish();
@@ -147,6 +150,16 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
             } else {
                 throw new TestBug("Waiting a second time is not premitted");
             }
+        }
+
+        private static boolean isCausedByOOM(Throwable t) {
+            while (t != null) {
+                if (t instanceof OutOfMemoryError) {
+                    return true;
+                }
+                t = t.getCause();
+            }
+            return false;
         }
 
         private void failWithException(Throwable t) {

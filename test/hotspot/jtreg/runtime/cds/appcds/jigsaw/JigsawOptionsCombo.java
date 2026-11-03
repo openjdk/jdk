@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @summary Test combinations of jigsaw options that affect the use of AppCDS
  *
- * @requires vm.cds & !vm.graal.enabled
+ * @requires vm.cds
  * @library /test/lib ..
  * @compile ../test-classes/Hello.java ../test-classes/HelloMore.java
  * @run driver JigsawOptionsCombo

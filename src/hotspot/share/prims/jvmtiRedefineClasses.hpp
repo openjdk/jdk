@@ -477,6 +477,7 @@ class VM_RedefineClasses: public VM_Operation {
   bool rewrite_cp_refs_in_nest_attributes(InstanceKlass* scratch_class);
   bool rewrite_cp_refs_in_record_attribute(InstanceKlass* scratch_class);
   bool rewrite_cp_refs_in_permitted_subclasses_attribute(InstanceKlass* scratch_class);
+  bool rewrite_cp_refs_in_loadable_descriptors_attribute(InstanceKlass* scratch_class);
 
   void rewrite_cp_refs_in_method(methodHandle method,
     methodHandle * new_method_p, TRAPS);
@@ -493,6 +494,10 @@ class VM_RedefineClasses: public VM_Operation {
   void rewrite_cp_refs_in_verification_type_info(
          address& stackmap_addr_ref, address stackmap_end, u2 frame_i,
          u1 frame_size);
+  void rewrite_cp_refs_in_early_larval_stackmaps(
+         address& stackmap_p_ref, address stackmap_end, u2 frame_i,
+         u1 frame_type);
+
   void set_new_constant_pool(ClassLoaderData* loader_data,
          InstanceKlass* scratch_class,
          constantPoolHandle scratch_cp, int scratch_cp_length, TRAPS);

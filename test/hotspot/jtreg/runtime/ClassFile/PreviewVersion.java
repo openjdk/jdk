@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class PreviewVersion {
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("--enable-preview", "-Xlog:class+preview",
             "-cp", "." + File.pathSeparator + System.getProperty("test.classes"), "PVTest");
         oa = new OutputAnalyzer(pb.start());
-        oa.shouldContain("[info][class,preview] Loading class PVTest that depends on preview features");
+        oa.shouldMatch("\\[info *\\]\\[class,preview *\\] Loading class PVTest that depends on preview features");
         oa.shouldHaveExitValue(0);
 
         // Subtract 1 from class's major version.  The class should fail to load
@@ -84,6 +84,21 @@ public class PreviewVersion {
             throw new RuntimeException("UnsupportedClassVersionError exception not thrown");
         } catch (java.lang.UnsupportedClassVersionError e) {
             if (!e.getMessage().contains("compiled with preview features that are unsupported")) {
+              throw new RuntimeException(
+                  "Wrong UnsupportedClassVersionError exception: " + e.getMessage());
+            }
+        }
+
+        // Add 1 to class's major version.  The class should fail to load
+        // because it's major version is too new for this VM.
+        int next_major_version = prev_major_version + 2;
+        klassbuf[6] = (byte)((next_major_version >> 8) & 0xff);
+        klassbuf[7] = (byte)(next_major_version & 0xff);
+        try {
+            ByteCodeLoader.load("PVTest", klassbuf);
+            throw new RuntimeException("UnsupportedClassVersionError exception not thrown");
+        } catch (java.lang.UnsupportedClassVersionError e) {
+            if (!e.getMessage().contains("requires a newer Java runtime")) {
               throw new RuntimeException(
                   "Wrong UnsupportedClassVersionError exception: " + e.getMessage());
             }

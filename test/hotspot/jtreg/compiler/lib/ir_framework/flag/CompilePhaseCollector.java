@@ -49,7 +49,7 @@ class CompilePhaseCollector {
         List<Method> irAnnotatedMethods = getIRAnnotatedMethods(testClass);
         try {
             for (Method method : irAnnotatedMethods) {
-                methodNameToCompilePhasesMap.put(testClass.getCanonicalName() + "::" + method.getName(),
+                methodNameToCompilePhasesMap.put(testClass.getName() + "::" + method.getName(),
                                                  collectCompilePhases(method));
             }
         } catch (TestFormatException e) {
@@ -75,7 +75,7 @@ class CompilePhaseCollector {
         HashSet<CompilePhase> defaultSet = new HashSet<>();
         defaultSet.add(CompilePhase.PRINT_IDEAL);
         defaultSet.add(CompilePhase.PRINT_OPTO_ASSEMBLY);
-        defaultMap.put(testClass.getCanonicalName() + "::*", defaultSet);
+        defaultMap.put(testClass.getName() + "::*", defaultSet);
         return defaultMap;
     }
 }

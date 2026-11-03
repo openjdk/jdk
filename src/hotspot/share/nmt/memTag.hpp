@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_NMT_MEM_TAG_HPP
-#define SHARE_NMT_MEM_TAG_HPP
+#ifndef SHARE_NMT_MEMTAG_HPP
+#define SHARE_NMT_MEMTAG_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -37,7 +37,6 @@
   f(mtGC,             "GC")                                                          \
   f(mtGCCardSet,      "GCCardSet")   /* G1 card set remembered set                */ \
   f(mtCompiler,       "Compiler")                                                    \
-  f(mtJVMCI,          "JVMCI")                                                       \
   f(mtInternal,       "Internal")    /* memory used by VM, but does not belong to */ \
                                      /* any of above categories, and not used by  */ \
                                      /* NMT                                       */ \
@@ -80,4 +79,4 @@ MEMORY_TAG_DO(MEMORY_TAG_SHORTNAME)
 // Make an int version of the sentinel end value.
 constexpr int mt_number_of_tags = static_cast<int>(MemTag::mt_number_of_tags);
 
-#endif // SHARE_NMT_MEM_TAG_HPP
+#endif // SHARE_NMT_MEMTAG_HPP

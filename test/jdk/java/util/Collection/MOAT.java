@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@
  * @bug     6207984 6272521 6192552 6269713 6197726 6260652 5073546 4137464
  *          4155650 4216399 4294891 6282555 6318622 6355327 6383475 6420753
  *          6431845 4802633 6570566 6570575 6570631 6570924 6691185 6691215
- *          4802647 7123424 8024709 8193128 8327858 8368178 8371164
+ *          4802647 7123424 8024709 8193128 8327858 8368178 8346307 8371164
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  * @modules java.base/java.util:open
  * @enablePreview
  * @run main MOAT
+ * @run main MOAT --enable-preview
  * @key randomness
  */
 
@@ -325,8 +326,11 @@ public class MOAT {
 
         // Immutable Set
         testEmptySet(Set.of());
+        testEmptySet(Set.ofLazy(Set.of(), _ -> true));
         testCollMutatorsAlwaysThrow(Set.of());
+        testCollMutatorsAlwaysThrow(Set.ofLazy(Set.of(1), _ -> true));
         testEmptyCollMutatorsAlwaysThrow(Set.of());
+        testEmptyCollMutatorsAlwaysThrow(Set.ofLazy(Set.of(), _ -> false));
         for (Set<Integer> set : Arrays.asList(
                 Set.<Integer>of(),
                 Set.of(1),
@@ -339,7 +343,10 @@ public class MOAT {
                 Set.of(1, 2, 3, 4, 5, 6, 7, 8),
                 Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9),
                 Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-                Set.of(integerArray))) {
+                Set.of(integerArray),
+                Set.ofLazy(Set.<Integer>of(), _ -> true),
+                Set.ofLazy(Set.of(1), _ -> true),
+                Set.ofLazy(Set.of(1, 2, 3), _ -> true))) {
             testCollection(set);
             testImmutableSet(set, 99);
             testCollMutatorsAlwaysThrow(set);

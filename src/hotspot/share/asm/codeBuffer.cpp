@@ -937,8 +937,8 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   // Move all the code and relocations to the new blob:
   relocate_code_to(&cb);
 
-  // some internal addresses, _last_insn _last_label, are used during code emission,
-  // adjust them in expansion
+  // some internal addresses, _last_merge_candidate and _last_label, are used during
+  // code emission, adjust them in expansion
   adjust_internal_address(insts_begin(), cb.insts_begin());
 
   // Copy the temporary code buffer into the current code buffer.
@@ -966,8 +966,8 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 }
 
 void CodeBuffer::adjust_internal_address(address from, address to) {
-  if (_last_insn != nullptr) {
-    _last_insn += to - from;
+  if (_last_merge_candidate != nullptr) {
+    _last_merge_candidate += to - from;
   }
   if (_last_label != nullptr) {
     _last_label += to - from;
@@ -1013,8 +1013,8 @@ void CodeBuffer::verify_section_allocation() {
       }
       guarantee(other->disjoint(sect), "sanity");
     }
-    guarantee(sect->end() <= tend, "sanity");
-    guarantee(sect->end() <= sect->limit(), "sanity");
+    guarantee(sect->end() <= tend, "sanity, sect_end: " PTR_FORMAT " tend: " PTR_FORMAT " size: %d", p2i(sect->end()), p2i(tend), (int)_total_size);
+    guarantee(sect->end() <= sect->limit(), "sanity, sect_end: " PTR_FORMAT " sect_limit: " PTR_FORMAT, p2i(sect->end()), p2i(sect->limit()));
   }
 }
 
@@ -1115,7 +1115,10 @@ AsmRemarks::AsmRemarks() {
 }
 
 AsmRemarks::~AsmRemarks() {
-  assert(_remarks == nullptr, "Must 'clear()' before deleting!");
+  if (_remarks != nullptr) {
+    clear();
+  }
+  postcond(_remarks == nullptr);
 }
 
 void AsmRemarks::init() {
@@ -1172,7 +1175,10 @@ DbgStrings::DbgStrings() {
 }
 
 DbgStrings::~DbgStrings() {
-  assert(_strings == nullptr, "Must 'clear()' before deleting!");
+  if (_strings != nullptr) {
+    clear();
+  }
+  postcond(_strings == nullptr);
 }
 
 void DbgStrings::init() {
@@ -1213,6 +1219,7 @@ const char* AsmRemarkCollection::insert(uint offset, const char* remstr) {
   } else {
     _remarks->push_back(cell);
   }
+  log_trace(codestrings)("AsmRemark::insert: offset=%u '%s'.", offset, remstr);
   return cell->string();
 }
 

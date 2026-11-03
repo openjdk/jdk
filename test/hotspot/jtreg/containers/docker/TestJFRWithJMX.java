@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public class TestJFRWithJMX {
     static ProcessBuilder buildDockerJavaProcess(String containerName) throws Exception {
         DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "EventProducer")
             .addDockerOpts("--name", containerName)
-            .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+            .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
             .addDockerOpts("--hostname", "jmx-jfr-test")
             .addDockerOpts("-p", "" + PORT + ":" + PORT)
             .addJavaOpts("-cp", "/test-classes/")

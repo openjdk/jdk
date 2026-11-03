@@ -73,6 +73,7 @@ public final class InOutPathTest {
                 }, "--dest and --temp in --input")},
             }));
             data.addAll(additionalContentInput(packageTypeAlias, "--app-content"));
+            data.addAll(additionalContentInput(packageTypeAlias, "--app-resources"));
         }
 
         return data;

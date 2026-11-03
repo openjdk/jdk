@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.io.*;
  * for ClassType, InterfaceType
  */
 
-public class modifiers001 extends Log {
+public class modifiers001 {
     static java.io.PrintStream out_stream;
     static boolean verbose_mode = false;
 
@@ -125,11 +125,7 @@ public class modifiers001 extends Log {
         Binder binder   = new Binder(argsHandler, logHandler);
 
 
-        if (argsHandler.verbose()) {
-            debugee = binder.bindToDebugee(debugeeName + " -vbs");
-        } else {
-            debugee = binder.bindToDebugee(debugeeName);
-        }
+        debugee = binder.bindToDebugee(debugeeName);
 
         IOPipe pipe     = new IOPipe(debugee);
 
@@ -188,9 +184,16 @@ public class modifiers001 extends Log {
             String s_type = classes_for_check[i][2];
             String s_modifiers = classes_for_check[i][1];
             int got_modifiers = refType.modifiers();
-            // Class.getModifiers() will never return ACC_SUPER
-            // but Accessible.modifers() can, so ignore this bit
-            got_modifiers &= ~0x20; // 0x20 == ACC_SUPER
+            boolean previewEnabled =
+                System.getProperty("test.java.opts", "").contains("--enable-preview") ||
+                System.getProperty("test.vm.opts", "").contains("--enable-preview");
+            if (!previewEnabled) {
+                // With preview enabled 0x20 is ACC_IDENTITY.
+                // When not enabled 0x20 is ACC_SUPER.
+                // Class.getModifiers() will never return ACC_SUPER
+                // but Accessible.modifers() can, so ignore this bit.
+                got_modifiers &= ~0x20; // 0x20 == ACC_SUPER
+            }
             logHandler.display("");
             if ( got_modifiers != expected_modifiers ) {
                 logHandler.complain("##> modifiers001: UNEXPECTED modifiers() method result ("

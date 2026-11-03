@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,9 @@ The list of JVMs produced by the `jps` command can be limited by the
 permissions granted to the principal running the command. The command lists
 only the JVMs for which the principal has access rights as determined by
 operating system-specific access control mechanisms.
+
+The list of JVMs is also limited to those that use the same temporary file location as the `jps`
+command.  That is normally the case but see the [`-XX:AltTempDir`](./java.html#-XX_AltTempDir) option.
 
 ## Host Identifier
 

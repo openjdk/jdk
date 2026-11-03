@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 import jdk.test.lib.Asserts;
+import jdk.test.lib.util.FileUtils;
 import sun.security.tools.keytool.CertAndKeyGen;
 import sun.security.x509.X500Name;
 
@@ -83,7 +84,7 @@ public class DupAlias {
     }
 
     static void ps(String f) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder("powershell", "-Command", f);
+        ProcessBuilder pb = new ProcessBuilder(FileUtils.powerShellPath(), "-Command", f);
         pb.inheritIO();
         if (pb.start().waitFor() != 0) {
             throw new RuntimeException("Failed");

@@ -87,10 +87,6 @@ NO_TRANSITION(jstring, jfr_get_pid(JNIEnv* env, jclass jvm))
   return pid_string; // exception pending if null
 NO_TRANSITION_END
 
-NO_TRANSITION(jlong, jfr_elapsed_frequency(JNIEnv* env, jclass jvm))
-  return JfrTime::frequency();
-NO_TRANSITION_END
-
 NO_TRANSITION(jlong, jfr_elapsed_counter(JNIEnv* env, jclass jvm))
   return JfrTicks::now();
 NO_TRANSITION_END
@@ -449,4 +445,9 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(jlongArray, jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass jvm))
   return JfrMethodTracer::drain_stale_class_ids(thread);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jboolean, jfr_try_update_epoch(JNIEnv * env, jclass jvm, jobject obj))
+  oop oop = JfrJavaSupport::resolve_non_null(obj);
+  return JfrTraceIdEpoch::try_update(oop) ? JNI_TRUE : JNI_FALSE;
 JVM_END

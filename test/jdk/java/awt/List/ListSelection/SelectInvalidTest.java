@@ -32,7 +32,7 @@ import static jdk.test.lib.Asserts.assertTrue;
 
 /**
  * @test
- * @bug 8369327
+ * @bug 8369327 8369455
  * @summary Test awt list selection of invalid indexes
  * @key headful
  * @library /test/lib

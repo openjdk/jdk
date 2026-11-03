@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,9 +112,9 @@ public class hs104t002 extends RedefineAgent {
             pass=false;
         }
         if ( pass ) {
-            log.println(" Testcase hs104t002 :: Passed.");
+            log.display(" Testcase hs104t002 :: Passed.");
         } else {
-            log.println(" Testcase hs104t002 :: Failed.");
+            log.display(" Testcase hs104t002 :: Failed.");
         }
         return pass;
     }
@@ -133,7 +133,7 @@ public class hs104t002 extends RedefineAgent {
             //notify all the threads to start their jobs.
             wicket.unlock();
             started=true;
-            log.println(" startAllThreads :: All threads are running.");
+            log.display(" startAllThreads :: All threads are running.");
         } catch (IllegalStateException ise) {
             log.complain(" startAllThreads :: Error occured while"
                         +" waiting for threads.");
@@ -176,7 +176,7 @@ public class hs104t002 extends RedefineAgent {
                 thread.join();
             }
             allExited= true;
-            log.println(" All threads terminated without "
+            log.display(" All threads terminated without "
                 +"java.lang.InterruptedException.");
         } catch(java.lang.InterruptedException ie ) {
             log.complain(" waitForAllThreads ::"

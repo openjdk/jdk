@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
+import jdk.internal.value.ValueClass;
 
 import static java.lang.invoke.MethodType.genericMethodType;
 import static java.lang.invoke.MethodType.methodType;
@@ -117,11 +118,13 @@ final class MethodHandleAccessorFactory {
      * @param decl the class to instantiate
      * @param ctor the constructor to call
      * @return an accessible constructor
+     * @throws UnsupportedOperationException if the constructor is not from
+     *         a superclass, if the instantiated class is a value class, or if
+     *         any superclass between the declaring class of the constructor and
+     *         the instantiated class declares a strict instance field
      */
     static ConstructorAccessorImpl newSerializableConstructorAccessor(Class<?> decl, Constructor<?> ctor) {
-        if (!constructorInSuperclass(decl, ctor)) {
-            throw new UnsupportedOperationException(ctor + " not a superclass of " + decl.getName());
-        }
+        validateSerializableConstructor(decl, ctor);
 
         // ExceptionInInitializerError may be thrown during class initialization
         // Ensure class initialized outside the invocation of method handle
@@ -135,17 +138,28 @@ final class MethodHandleAccessorFactory {
         }
     }
 
-    private static boolean constructorInSuperclass(Class<?> decl, Constructor<?> ctor) {
+    /// Ensures a constructor is a valid super constructor to call for the serializable class {@code decl}
+    /// according to the serialization specification.
+    /// 1. The initialized class must not be a concrete value class (the superclasses may be abstract value)
+    /// 2. There should be no strict field initialization skipped by the constructor
+    private static void validateSerializableConstructor(Class<?> decl, Constructor<?> ctor) {
         if (decl == ctor.getDeclaringClass())
-            return true;
+            throw new UnsupportedOperationException("Attempt to duplicate " + ctor);
+        if (decl.isValue())
+            throw new UnsupportedOperationException("Cannot generate serialization constructor for value class " + decl.getTypeName());
 
         Class<?> cl = decl;
-        while ((cl = cl.getSuperclass()) != null) {
-            if (cl == ctor.getDeclaringClass()) {
-                return true;
+        do {
+            if (ValueClass.hasStrictInstanceField(cl)) {
+                throw new UnsupportedOperationException("Class " + cl.getTypeName() + " between " + ctor + " and "
+                        + decl.getTypeName() + " declares a strictly-initialized instance field");
             }
-        }
-        return false;
+            cl = cl.getSuperclass();
+            if (cl == ctor.getDeclaringClass()) {
+                return;
+            }
+        } while (cl != null);
+        throw new UnsupportedOperationException(ctor + " not a superclass of " + decl.getName());
     }
 
     private static MethodHandle makeConstructorHandle(MethodHandle ctor) {

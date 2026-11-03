@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
 
 class InvocationCounter {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class ciReplay;
  private:              // bit no: |31  1|  0  |
   uint _counter;       // format: [count|carry|

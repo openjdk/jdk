@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,8 +146,20 @@ class JfrTraceId : public AllStatic {
   static void set_sticky_bit(const Method* method);
   static void clear_sticky_bit(const Klass* k);
   static void clear_sticky_bit(const Method* method);
-  static bool has_timing_bit(const InstanceKlass* scratch_klass);
-  static void set_timing_bit(const InstanceKlass* scratch_klass);
+  static bool has_timing_bit(const InstanceKlass* ik);
+  static void set_timing_bit(const InstanceKlass* ik);
+  static void clear_timing_bit(const InstanceKlass* ik);
+
+  // Preload tag bits (only valid during class loading, before a klass is defined)
+  static bool has_preload_sticky_bit(const Klass* k);
+  static void set_preload_sticky_bit(const Klass* k);
+  static void clear_preload_sticky_bit(const Klass* k);
+
+  static bool has_preload_bootloader_bit(const Klass* k);
+  static void set_preload_bootloader_bit(const Klass* k);
+  static void clear_preload_bootloader_bit(const Klass* k);
+
+  DEBUG_ONLY(static traceid preload_bits(const Klass* k);)
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP

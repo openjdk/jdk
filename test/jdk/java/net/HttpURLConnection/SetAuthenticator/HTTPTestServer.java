@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -60,6 +61,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
 import sun.net.www.HeaderParser;
+import sun.net.www.MessageHeader;
 
 /**
  * A simple HTTP server that supports Digest authentication.
@@ -344,10 +346,11 @@ public class HTTPTestServer extends HTTPTest {
         Objects.requireNonNull(auth);
 
         HttpServer impl = createHttpServer(protocol);
+        AuthResponder authResponder = createAuthResponder(schemeType, auth, authType, algorithm);
         final HTTPTestServer server = new HTTPTestServer(impl, null, delegate);
         final HttpHandler hh = server.createHandler(schemeType, auth, authType);
         HttpContext ctxt = impl.createContext(path, hh);
-        server.configureAuthentication(ctxt, schemeType, auth, authType, algorithm);
+        server.configureAuthentication(ctxt, schemeType, authResponder, authType);
         impl.start();
         return server;
     }
@@ -363,12 +366,19 @@ public class HTTPTestServer extends HTTPTest {
         Objects.requireNonNull(auth);
 
         HttpServer impl = createHttpServer(protocol);
+        AuthResponder authResponder = createAuthResponder(schemeType, auth, authType, null);
         final HTTPTestServer server = protocol == HttpProtocolType.HTTPS
-                ? new HttpsProxyTunnel(impl, null, delegate)
+                ? new HttpsProxyTunnel(impl, null, delegate, authResponder)
                 : new HTTPTestServer(impl, null, delegate);
         final HttpHandler hh = server.createHandler(schemeType, auth, authType);
         HttpContext ctxt = impl.createContext(path, hh);
-        server.configureAuthentication(ctxt, schemeType, auth, authType, null);
+        if (protocol == HttpProtocolType.HTTPS) {
+            server.configureAuthentication(ctxt, HttpSchemeType.NONE,
+                    new NoAuthResponder(auth, HttpAuthType.SERVER),
+                    HttpAuthType.SERVER);
+        } else {
+            server.configureAuthentication(ctxt, schemeType, authResponder, authType);
+        }
         impl.start();
 
         return server;
@@ -441,16 +451,16 @@ public class HTTPTestServer extends HTTPTest {
 
     private void configureAuthentication(HttpContext ctxt,
                             HttpSchemeType schemeType,
-                            HttpTestAuthenticator auth,
-                            HttpAuthType authType, String algorithm) {
+                            AuthResponder authResponder,
+                            HttpAuthType authType) {
         switch(schemeType) {
             case DIGEST:
                 // DIGEST authentication is handled by the handler.
-                ctxt.getFilters().add(new HttpDigestFilter(auth, authType, algorithm));
+                ctxt.getFilters().add(new HttpDigestFilter(authResponder));
                 break;
             case BASIC:
                 // BASIC authentication is handled by the filter.
-                ctxt.getFilters().add(new HttpBasicFilter(auth, authType));
+                ctxt.getFilters().add(new HttpBasicFilter(authResponder));
                 break;
             case BASICSERVER:
                 switch(authType) {
@@ -458,14 +468,14 @@ public class HTTPTestServer extends HTTPTest {
                         // HttpServer can't support Proxy-type authentication
                         // => we do as if BASIC had been specified, and we will
                         //    handle authentication in the handler.
-                        ctxt.getFilters().add(new HttpBasicFilter(auth, authType));
+                        ctxt.getFilters().add(new HttpBasicFilter(authResponder));
                         break;
                     case SERVER: case SERVER307:
                         // Basic authentication is handled by HttpServer
                         // directly => the filter should not perform
                         // authentication again.
-                        setContextAuthenticator(ctxt, auth);
-                        ctxt.getFilters().add(new HttpNoAuthFilter(authType));
+                        setContextAuthenticator(ctxt, authResponder.authenticator);
+                        ctxt.getFilters().add(new HttpNoAuthFilter(authResponder));
                         break;
                     default:
                         throw new InternalError("Invalid combination scheme="
@@ -473,7 +483,7 @@ public class HTTPTestServer extends HTTPTest {
                 }
             case NONE:
                 // No authentication at all.
-                ctxt.getFilters().add(new HttpNoAuthFilter(authType));
+                ctxt.getFilters().add(new HttpNoAuthFilter(authResponder));
                 break;
             default:
                 throw new InternalError("No such scheme: " + schemeType);
@@ -485,38 +495,230 @@ public class HTTPTestServer extends HTTPTest {
         return new Http3xxHandler(proxyURL, type, code300);
     }
 
-    // Abstract HTTP filter class.
-    private abstract static class AbstractHttpFilter extends Filter {
-
+    private static abstract class AuthResponder {
         final HttpAuthType authType;
+        final HttpTestAuthenticator authenticator;
         final String type;
-        public AbstractHttpFilter(HttpAuthType authType, String type) {
+
+        AuthResponder(HttpTestAuthenticator authenticator,
+                      HttpAuthType authType,
+                      String scheme) {
+            this.authenticator = authenticator;
             this.authType = authType;
-            this.type = type;
+            this.type = authType == HttpAuthType.PROXY
+                    ? scheme + " Proxy"
+                    : scheme + " Server";
         }
 
-        String getLocation() {
-            return "Location";
-        }
-        String getAuthenticate() {
+        final String authenticateHeader() {
             return authType == HttpAuthType.PROXY
-                    ? "Proxy-Authenticate" : "WWW-Authenticate";
+                    ? "Proxy-Authenticate"
+                    : "WWW-Authenticate";
         }
-        String getAuthorization() {
+        final String authorizationHeader() {
             return authType == HttpAuthType.PROXY
-                    ? "Proxy-Authorization" : "Authorization";
+                    ? "Proxy-Authorization"
+                    : "Authorization";
         }
-        int getUnauthorizedCode() {
+        int unauthorizedCode() {
             return authType == HttpAuthType.PROXY
                     ? HttpURLConnection.HTTP_PROXY_AUTH
                     : HttpURLConnection.HTTP_UNAUTHORIZED;
         }
-        String getKeepAlive() {
-            return "keep-alive";
-        }
-        String getConnection() {
+        String unauthorizedString() {
             return authType == HttpAuthType.PROXY
-                    ? "Proxy-Connection" : "Connection";
+                    ? "Proxy Authentication Required"
+                    : "Unauthorized";
+        }
+        String type() { return type;}
+        abstract String generateAuthenticateChallenge();
+        abstract boolean isAuthentified(String method, Iterator<String> authValues);
+    }
+
+    private static final class BasicAuthResponder extends AuthResponder {
+        BasicAuthResponder(HttpTestAuthenticator authenticator, HttpAuthType authType) {
+            super(authenticator, authType, "Basic");
+        }
+
+        @Override
+        String generateAuthenticateChallenge() {
+            return "Basic realm=\"" + authenticator.getRealm() + "\"";
+        }
+
+        @Override
+        boolean isAuthentified(String method, Iterator<String> authValues) {
+            while(authValues.hasNext()) {
+                String a = authValues.next();
+                System.out.println(type + ": processing " + a);
+                int sp = a.indexOf(' ');
+                if (sp < 0) return false;
+                String scheme = a.substring(0, sp);
+                if (!"Basic".equalsIgnoreCase(scheme)) {
+                    System.out.println(type + ": Unsupported scheme '"
+                            + scheme +"'");
+                    return false;
+                }
+                if (a.length() <= sp+1) {
+                    System.out.println(type + ": value too short for '"
+                            + scheme +"'");
+                    return false;
+                }
+                a = a.substring(sp+1);
+                return validate(a);
+            }
+            return false;
+        }
+
+        boolean validate(String a) {
+            byte[] b = Base64.getDecoder().decode(a);
+            String userpass = new String (b);
+            int colon = userpass.indexOf (':');
+            String uname = userpass.substring (0, colon);
+            String pass = userpass.substring (colon+1);
+            return authenticator.getUserName().equals(uname) &&
+                    new String(authenticator.getPassword(uname)).equals(pass);
+        }
+
+    }
+
+    private static final class DigestAuthResponder extends AuthResponder {
+        // This is a very basic DIGEST - used only for the purpose of testing
+        // the client implementation. Therefore we can get away with never
+        // updating the server nonce as it makes the implementation of the
+        // server side digest simpler.
+        private final byte[] nonce;
+        private final String ns;
+        private final String algorithm;
+        DigestAuthResponder(HttpTestAuthenticator authenticator, HttpAuthType authType, String algorithm) {
+            super(authenticator, authType, "Digest");
+            nonce = new byte[16];
+            new Random(Instant.now().toEpochMilli()).nextBytes(nonce);
+            ns = new BigInteger(1, nonce).toString(16);
+            this.algorithm = (algorithm == null) ? "MD5" : algorithm;
+        }
+
+        @Override
+        String generateAuthenticateChallenge() {
+            return "Digest realm=\"" + authenticator.getRealm() + "\","
+                    + "\r\n    qop=\"auth\", " + "algorithm=\"" + algorithm + "\", "
+                    + "\r\n    nonce=\"" + ns +"\"";
+        }
+
+        @Override
+        boolean isAuthentified(String method, Iterator<String> authValues) {
+            while(authValues.hasNext()) {
+                String a = authValues.next();
+                System.out.println(type + ": processing " + a);
+                int sp = a.indexOf(' ');
+                if (sp < 0) return false;
+                String scheme = a.substring(0, sp);
+                if (!"Digest".equalsIgnoreCase(scheme)) {
+                    System.out.println(type + ": Unsupported scheme '" + scheme +"'");
+                    return false;
+                }
+                if (a.length() <= sp+1) {
+                    System.out.println(type + ": value too short for '" + scheme +"'");
+                    return false;
+                }
+                a = a.substring(sp+1);
+                DigestResponse dgr = DigestResponse.create(a);
+                return validate(method, dgr);
+            }
+            return false;
+        }
+
+        boolean validate(String reqMethod, DigestResponse dg) {
+            if (!this.algorithm.equalsIgnoreCase(dg.getAlgorithm("MD5"))) {
+                System.out.println(type + ": Unsupported algorithm "
+                        + dg.algorithm);
+                return false;
+            }
+            if (!"auth".equalsIgnoreCase(dg.getQoP("auth"))) {
+                System.out.println(type + ": Unsupported qop "
+                        + dg.qop);
+                return false;
+            }
+            try {
+                if (!dg.nonce.equals(ns)) {
+                    System.out.println(type + ": bad nonce returned by client: "
+                            + nonce + " expected " + ns);
+                    return false;
+                }
+                if (dg.response == null) {
+                    System.out.println(type + ": missing digest response.");
+                    return false;
+                }
+                char[] pa = authenticator.getPassword(dg.username);
+                return verify(reqMethod, dg, pa);
+            } catch(IllegalArgumentException | SecurityException
+                    | NoSuchAlgorithmException e) {
+                System.out.println(type + ": " + e.getMessage());
+                return false;
+            }
+        }
+
+        boolean verify(String reqMethod, DigestResponse dg, char[] pw)
+                throws NoSuchAlgorithmException {
+            String response = DigestResponse.computeDigest(true, reqMethod, pw, algorithm, dg);
+            if (!dg.response.equals(response)) {
+                System.out.println(type + ": bad response returned by client: "
+                        + dg.response + " expected " + response);
+                return false;
+            } else {
+                System.out.println(type + ": verified response " + response);
+            }
+            return true;
+        }
+
+    }
+
+    private static final class NoAuthResponder extends AuthResponder {
+        NoAuthResponder(HttpTestAuthenticator authenticator, HttpAuthType authType) {
+            super(authenticator, authType, "NoAuth");
+        }
+
+        @Override
+        String generateAuthenticateChallenge() {
+            throw new InternalError("Should not reach here");
+        }
+
+        @Override
+        boolean isAuthentified(String method, Iterator<String> authValues) {
+            return true;
+        }
+    }
+
+    private static AuthResponder createAuthResponder(HttpSchemeType schemeType,
+                                                     HttpTestAuthenticator authenticator,
+                                                     HttpAuthType authType,
+                                                     String algorithm) {
+        switch (schemeType) {
+            case BASIC, BASICSERVER: return new BasicAuthResponder(authenticator, authType);
+            case DIGEST: return new DigestAuthResponder(authenticator, authType, algorithm);
+            case NONE: return new NoAuthResponder(authenticator, authType);
+            default: throw new IllegalArgumentException(
+                    "Unknown authentication scheme: " + schemeType);
+        }
+    }
+
+    // Abstract HTTP filter class.
+    private abstract static class AbstractHttpFilter extends Filter {
+
+        final AuthResponder authResponder;
+        final String type;
+        public AbstractHttpFilter(AuthResponder authResponder) {
+            this.authResponder = authResponder;
+            this.type = authResponder.type();
+        }
+
+        final String getAuthenticate() {
+            return authResponder.authenticateHeader();
+        }
+        final String getAuthorization() {
+            return authResponder.authorizationHeader();
+        }
+        final int getUnauthorizedCode() {
+            return authResponder.unauthorizedCode();
         }
         protected abstract boolean isAuthentified(HttpExchange he) throws IOException;
         protected abstract void requestAuthentication(HttpExchange he) throws IOException;
@@ -694,11 +896,10 @@ public class HTTPTestServer extends HTTPTest {
 
     }
 
-    private class HttpNoAuthFilter extends AbstractHttpFilter {
+    private static final class HttpNoAuthFilter extends AbstractHttpFilter {
 
-        public HttpNoAuthFilter(HttpAuthType authType) {
-            super(authType, authType == HttpAuthType.SERVER
-                            ? "NoAuth Server" : "NoAuth Proxy");
+        public HttpNoAuthFilter(AuthResponder authResponder) {
+            super(authResponder);
         }
 
         @Override
@@ -720,19 +921,15 @@ public class HTTPTestServer extends HTTPTest {
 
     // An HTTP Filter that performs Basic authentication
     private class HttpBasicFilter extends AbstractHttpFilter {
-
-        private final HttpTestAuthenticator auth;
-        public HttpBasicFilter(HttpTestAuthenticator auth, HttpAuthType authType) {
-            super(authType, authType == HttpAuthType.SERVER
-                            ? "Basic Server" : "Basic Proxy");
-            this.auth = auth;
+        public HttpBasicFilter(AuthResponder authResponder) {
+            super(authResponder);
         }
 
         @Override
         protected void requestAuthentication(HttpExchange he)
             throws IOException {
-            he.getResponseHeaders().add(getAuthenticate(),
-                 "Basic realm=\"" + auth.getRealm() + "\"");
+            String challenge = authResponder.generateAuthenticateChallenge();
+            he.getResponseHeaders().add(getAuthenticate(), challenge);
             System.out.println(type + ": Requesting Basic Authentication "
                  + he.getResponseHeaders().getFirst(getAuthenticate()));
         }
@@ -742,37 +939,10 @@ public class HTTPTestServer extends HTTPTest {
             if (he.getRequestHeaders().containsKey(getAuthorization())) {
                 List<String> authorization =
                     he.getRequestHeaders().get(getAuthorization());
-                for (String a : authorization) {
-                    System.out.println(type + ": processing " + a);
-                    int sp = a.indexOf(' ');
-                    if (sp < 0) return false;
-                    String scheme = a.substring(0, sp);
-                    if (!"Basic".equalsIgnoreCase(scheme)) {
-                        System.out.println(type + ": Unsupported scheme '"
-                                           + scheme +"'");
-                        return false;
-                    }
-                    if (a.length() <= sp+1) {
-                        System.out.println(type + ": value too short for '"
-                                            + scheme +"'");
-                        return false;
-                    }
-                    a = a.substring(sp+1);
-                    return validate(a);
-                }
-                return false;
+                return authResponder.isAuthentified(he.getRequestMethod(),
+                        authorization.iterator());
             }
             return false;
-        }
-
-        boolean validate(String a) {
-            byte[] b = Base64.getDecoder().decode(a);
-            String userpass = new String (b);
-            int colon = userpass.indexOf (':');
-            String uname = userpass.substring (0, colon);
-            String pass = userpass.substring (colon+1);
-            return auth.getUserName().equals(uname) &&
-                   new String(auth.getPassword(uname)).equals(pass);
         }
 
         @Override
@@ -786,31 +956,14 @@ public class HTTPTestServer extends HTTPTest {
     // An HTTP Filter that performs Digest authentication
     private class HttpDigestFilter extends AbstractHttpFilter {
 
-        // This is a very basic DIGEST - used only for the purpose of testing
-        // the client implementation. Therefore we can get away with never
-        // updating the server nonce as it makes the implementation of the
-        // server side digest simpler.
-        private final HttpTestAuthenticator auth;
-        private final byte[] nonce;
-        private final String ns;
-        private final String algorithm;
-        public HttpDigestFilter(HttpTestAuthenticator auth, HttpAuthType authType, String algorithm) {
-            super(authType, authType == HttpAuthType.SERVER
-                            ? "Digest Server" : "Digest Proxy");
-            this.auth = auth;
-            nonce = new byte[16];
-            new Random(Instant.now().toEpochMilli()).nextBytes(nonce);
-            ns = new BigInteger(1, nonce).toString(16);
-            this.algorithm = (algorithm == null) ? "MD5" : algorithm;
+        public HttpDigestFilter(AuthResponder authResponder) {
+            super(authResponder);
         }
 
         @Override
         protected void requestAuthentication(HttpExchange he)
             throws IOException {
-            he.getResponseHeaders().add(getAuthenticate(),
-                 "Digest realm=\"" + auth.getRealm() + "\","
-                 + "\r\n    qop=\"auth\", " + "algorithm=\"" + algorithm + "\", "
-                 + "\r\n    nonce=\"" + ns +"\"");
+            he.getResponseHeaders().add(getAuthenticate(), authResponder.generateAuthenticateChallenge());
             System.out.println(type + ": Requesting Digest Authentication "
                  + he.getResponseHeaders().getFirst(getAuthenticate()));
         }
@@ -819,69 +972,9 @@ public class HTTPTestServer extends HTTPTest {
         protected boolean isAuthentified(HttpExchange he) {
             if (he.getRequestHeaders().containsKey(getAuthorization())) {
                 List<String> authorization = he.getRequestHeaders().get(getAuthorization());
-                for (String a : authorization) {
-                    System.out.println(type + ": processing " + a);
-                    int sp = a.indexOf(' ');
-                    if (sp < 0) return false;
-                    String scheme = a.substring(0, sp);
-                    if (!"Digest".equalsIgnoreCase(scheme)) {
-                        System.out.println(type + ": Unsupported scheme '" + scheme +"'");
-                        return false;
-                    }
-                    if (a.length() <= sp+1) {
-                        System.out.println(type + ": value too short for '" + scheme +"'");
-                        return false;
-                    }
-                    a = a.substring(sp+1);
-                    DigestResponse dgr = DigestResponse.create(a);
-                    return validate(he.getRequestMethod(), dgr);
-                }
-                return false;
+                return authResponder.isAuthentified(he.getRequestMethod(), authorization.iterator());
             }
             return false;
-        }
-
-        boolean validate(String reqMethod, DigestResponse dg) {
-            if (!this.algorithm.equalsIgnoreCase(dg.getAlgorithm("MD5"))) {
-                System.out.println(type + ": Unsupported algorithm "
-                                   + dg.algorithm);
-                return false;
-            }
-            if (!"auth".equalsIgnoreCase(dg.getQoP("auth"))) {
-                System.out.println(type + ": Unsupported qop "
-                                   + dg.qop);
-                return false;
-            }
-            try {
-                if (!dg.nonce.equals(ns)) {
-                    System.out.println(type + ": bad nonce returned by client: "
-                                    + nonce + " expected " + ns);
-                    return false;
-                }
-                if (dg.response == null) {
-                    System.out.println(type + ": missing digest response.");
-                    return false;
-                }
-                char[] pa = auth.getPassword(dg.username);
-                return verify(reqMethod, dg, pa);
-            } catch(IllegalArgumentException | SecurityException
-                    | NoSuchAlgorithmException e) {
-                System.out.println(type + ": " + e.getMessage());
-                return false;
-            }
-        }
-
-        boolean verify(String reqMethod, DigestResponse dg, char[] pw)
-            throws NoSuchAlgorithmException {
-            String response = DigestResponse.computeDigest(true, reqMethod, pw, algorithm, dg);
-            if (!dg.response.equals(response)) {
-                System.out.println(type + ": bad response returned by client: "
-                                    + dg.response + " expected " + response);
-                return false;
-            } else {
-                System.out.println(type + ": verified response " + response);
-            }
-            return true;
         }
 
         @Override
@@ -979,22 +1072,23 @@ public class HTTPTestServer extends HTTPTest {
         }
     }
 
-    // This is a bit hacky: HttpsProxyTunnel is an HTTPTestServer hidden
-    // behind a fake proxy that only understands CONNECT requests.
-    // The fake proxy is just a server socket that intercept the
-    // CONNECT and then redirect streams to the real server.
+    // The HttpsProxyTunnel is a proxy that only understands
+    // CONNECT requests. It is only used for tunnelling, but
+    // supports Proxy Authentication with the help of an
+    // AuthResponder
     static class HttpsProxyTunnel extends HTTPTestServer
             implements Runnable {
 
         final ServerSocket ss;
+        final AuthResponder authResponder;
         private volatile boolean stop;
 
         public HttpsProxyTunnel(HttpServer server, HTTPTestServer target,
-                               HttpHandler delegate)
+                               HttpHandler delegate, AuthResponder authResponder)
                 throws IOException {
             super(server, target, delegate);
             System.out.flush();
-            System.err.println("WARNING: HttpsProxyTunnel is an experimental test class");
+            this.authResponder = authResponder;
             ss = ServerSocketFactory.create();
             start();
         }
@@ -1046,28 +1140,6 @@ public class HTTPTestServer extends HTTPTest {
         @Override
         public InetSocketAddress getProxyAddress() {
             return new InetSocketAddress(ss.getInetAddress(), ss.getLocalPort());
-        }
-
-        // This is a bit shaky. It doesn't handle continuation
-        // lines, but our client shouldn't send any.
-        // Read a line from the input stream, swallowing the final
-        // \r\n sequence. Stops at the first \n, doesn't complain
-        // if it wasn't preceded by '\r'.
-        //
-        String readLine(InputStream r) throws IOException {
-            StringBuilder b = new StringBuilder();
-            int c;
-            while ((c = r.read()) != -1) {
-                if (c == '\n') break;
-                b.appendCodePoint(c);
-            }
-            if (b.length() == 0) {
-                return "";
-            }
-            if (b.codePointAt(b.length() -1) == '\r') {
-                b.delete(b.length() -1, b.length());
-            }
-            return b.toString();
         }
 
         @Override
@@ -1137,6 +1209,37 @@ public class HTTPTestServer extends HTTPTest {
             }
         }
 
+        private boolean isAuthentified(MessageHeader request) {
+            String requestLine = request.getValue(0);
+            String method = requestLine.substring(0, requestLine.indexOf(' '));
+            assert "CONNECT".equals(method);
+            return authResponder.isAuthentified(method,
+                    request.multiValueIterator(authResponder.authorizationHeader()));
+        }
+
+        private String challengeResponse() {
+            return "HTTP/1.1 " + authResponder.unauthorizedCode() + " "
+                    + authResponder.unauthorizedString()
+                    + "\r\nContent-Length: 0\r\n"
+                    + authResponder.authenticateHeader() + ": "
+                    + authResponder.generateAuthenticateChallenge()
+                    + "\r\n\r\n";
+        }
+
+        private String okResponse() {
+            return "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
+        }
+
+        private String badGatewayResponse() {
+            return "HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\n\r\n";
+        }
+
+        private void sendResponse(PrintWriter pw, String response) {
+            System.out.println("Tunnel: Sending " + response);
+            pw.print(response);
+            pw.flush();
+        }
+
         private void processRequestAndWaitToComplete(final Socket clientConnection)
                 throws IOException, InterruptedException {
             final Socket targetConnection;
@@ -1146,32 +1249,24 @@ public class HTTPTestServer extends HTTPTest {
                     clientConnection.getOutputStream(), "UTF-8");
             PrintWriter pw = new PrintWriter(w);
             System.out.println("Tunnel: Reading request line");
-            String requestLine = readLine(ccis);
+            MessageHeader request = new MessageHeader(ccis);
+            String requestLine = request.getValue(0);
             System.out.println("Tunnel: Request line: " + requestLine);
-            if (requestLine.startsWith("CONNECT ")) {
-                // We should probably check that the next word following
-                // CONNECT is the host:port of our HTTPS serverImpl.
-                // Some improvement for a followup!
-
-                // Read all headers until we find the empty line that
-                // signals the end of all headers.
-                while(!requestLine.equals("")) {
-                    System.out.println("Tunnel: Reading header: "
-                            + (requestLine = readLine(ccis)));
+            if (requestLine != null && requestLine.startsWith("CONNECT ")) {
+                if (!isAuthentified(request)) {
+                    sendResponse(pw, challengeResponse());
+                    return;
                 }
-
                 targetConnection = new Socket(
                         serverImpl.getAddress().getAddress(),
                         serverImpl.getAddress().getPort());
 
                 // Then send the 200 OK response to the client
-                System.out.println("Tunnel: Sending "
-                        + "HTTP/1.1 200 OK\r\n\r\n");
-                pw.print("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
-                pw.flush();
+                sendResponse(pw, okResponse());
             } else {
                 // This should not happen. If it does then consider it a
                 // client error and throw an IOException
+                sendResponse(pw, badGatewayResponse());
                 System.out.println("Tunnel: Throwing an IOException due to unexpected" +
                         " request line: " + requestLine);
                 throw new IOException("Client request error - Unexpected request line");

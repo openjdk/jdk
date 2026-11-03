@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,8 @@ public class PixelInterleavedSampleModel extends ComponentSampleModel
      *         less than any offset between bands
      * @throws IllegalArgumentException if {@code dataType} is not
      *         one of the supported data types
+     * @throws NullPointerException if {@code bandOffsets} is {@code null}
+     * @throws IllegalArgumentException if {@code bandOffsets.length} is 0
      */
     public PixelInterleavedSampleModel(int dataType,
                                        int w, int h,
@@ -153,8 +155,18 @@ public class PixelInterleavedSampleModel extends ComponentSampleModel
      * PixelInterleavedSampleModel/DataBuffer combination will represent
      * an image with a subset of the bands of the original
      * PixelInterleavedSampleModel/DataBuffer combination.
+     * @throws NullPointerException if {@code bands} is {@code null}
+     * @throws IllegalArgumentException if the number of bands is not greater than 0
+     * @throws RasterFormatException if the number of bands is greater than
+     *                               the number of bands in this sample model.
+     * @throws ArrayIndexOutOfBoundsException if any of the band indices is out of bounds
      */
     public SampleModel createSubsetSampleModel(int[] bands) {
+       if (bands.length > bandOffsets.length) {
+            throw new RasterFormatException("There are only " +
+                                            bandOffsets.length +
+                                            " bands");
+        }
         int[] newBandOffsets = new int[bands.length];
         for (int i=0; i<bands.length; i++) {
             newBandOffsets[i] = bandOffsets[bands[i]];

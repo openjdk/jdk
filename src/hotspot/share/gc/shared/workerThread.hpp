@@ -38,7 +38,7 @@ class WorkerTaskDispatcher;
 class WorkerThread;
 
 // An task to be worked on by worker threads
-class WorkerTask : public CHeapObj<mtInternal> {
+class WorkerTask : public CHeapObj<mtGC> {
 private:
   const char* _name;
   const uint _gc_id;
@@ -83,12 +83,16 @@ public:
 };
 
 // A set of worker threads to execute tasks
-class WorkerThreads : public CHeapObj<mtInternal> {
+class WorkerThreads : public CHeapObj<mtGC> {
 private:
   const char* const    _name;
   WorkerThread**       _workers;
   const uint           _max_workers;
-  uint                 _created_workers;
+  // _created_workers publishes the initialized prefix of _workers.
+  // Writers release-store to it after initializing an entry. Readers
+  // load-acquire before accessing _workers to not access uninitalized
+  // data.
+  Atomic<uint>         _created_workers;
   uint                 _active_workers;
   WorkerTaskDispatcher _dispatcher;
 
@@ -107,7 +111,7 @@ public:
   bool allow_inject_creation_failure() const;
 
   uint max_workers() const     { return _max_workers; }
-  uint created_workers() const { return _created_workers; }
+  uint created_workers() const { return _created_workers.load_acquire(); }
   uint active_workers() const  { return _active_workers; }
 
   uint set_active_workers(uint num_workers);

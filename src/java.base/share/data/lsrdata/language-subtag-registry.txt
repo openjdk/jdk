@@ -1,4 +1,4 @@
-File-Date: 2025-08-25
+File-Date: 2026-05-05
 %%
 Type: language
 Subtag: aa
@@ -387,6 +387,7 @@ Added: 2005-10-16
 %%
 Type: language
 Subtag: ia
+Description: Interlingua (IALA)
 Description: Interlingua (International Auxiliary Language
   Association)
 Added: 2005-10-16
@@ -769,9 +770,9 @@ Added: 2005-10-16
 %%
 Type: language
 Subtag: ny
-Description: Nyanja
-Description: Chewa
 Description: Chichewa
+Description: Chewa
+Description: Nyanja
 Added: 2005-10-16
 Suppress-Script: Latn
 %%
@@ -803,6 +804,9 @@ Scope: macrolanguage
 %%
 Type: language
 Subtag: os
+Description: Iron Ossetic
+Description: Iron
+Description: Iron Ossetian
 Description: Ossetian
 Description: Ossetic
 Added: 2005-10-16
@@ -5669,7 +5673,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: boe
-Description: Mundabli
+Description: Mundabli-Mufu
 Added: 2009-07-29
 %%
 Type: language
@@ -9312,7 +9316,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: den
-Description: Slave (Athapascan)
+Description: Slavey
 Added: 2005-10-16
 Scope: macrolanguage
 %%
@@ -10513,6 +10517,11 @@ Type: language
 Subtag: dyi
 Description: Djimini Senoufo
 Added: 2009-07-29
+%%
+Type: language
+Subtag: dyl
+Description: Bhutanese Sign Language
+Added: 2026-04-09
 %%
 Type: language
 Subtag: dym
@@ -15266,6 +15275,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: isu
+Description: Isu
 Description: Isu (Menchum Division)
 Added: 2009-07-29
 %%
@@ -17367,7 +17377,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: kjo
-Description: Harijan Kinnauri
+Description: Kinnauri Pahari
 Added: 2009-07-29
 %%
 Type: language
@@ -18804,6 +18814,8 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: kut
+Description: Ktunaxa
+Description: Ksanka
 Description: Kutenai
 Added: 2005-10-16
 %%
@@ -20008,6 +20020,11 @@ Description: Lefa
 Added: 2009-07-29
 %%
 Type: language
+Subtag: lfb
+Description: Buu (Cameroon)
+Added: 2026-04-09
+%%
+Type: language
 Subtag: lfn
 Description: Lingua Franca Nova
 Added: 2009-07-29
@@ -21104,7 +21121,7 @@ Macrolanguage: zh
 %%
 Type: language
 Subtag: lui
-Description: Luiseno
+Description: Luiseño
 Added: 2005-10-16
 %%
 Type: language
@@ -21692,6 +21709,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: mdc
+Description: Soq
 Description: Male (Papua New Guinea)
 Added: 2009-07-29
 %%
@@ -21797,6 +21815,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: mdy
+Description: Male
 Description: Male (Ethiopia)
 Added: 2009-07-29
 %%
@@ -23129,6 +23148,7 @@ Added: 2009-07-29
 Type: language
 Subtag: moh
 Description: Mohawk
+Description: Kanien'kéha
 Added: 2005-10-16
 %%
 Type: language
@@ -26262,6 +26282,7 @@ Added: 2010-03-11
 Type: language
 Subtag: nok
 Description: Nooksack
+Description: Lhéchelesem
 Added: 2009-07-29
 %%
 Type: language
@@ -27531,6 +27552,11 @@ Description: Walungge
 Added: 2009-07-29
 %%
 Type: language
+Subtag: olb
+Description: Oli-Bodiman
+Added: 2026-04-09
+%%
+Type: language
 Subtag: old
 Description: Mochi
 Added: 2009-07-29
@@ -27897,6 +27923,13 @@ Type: language
 Subtag: osc
 Description: Oscan
 Added: 2009-07-29
+%%
+Type: language
+Subtag: osd
+Description: Digor Ossetic
+Description: Digor
+Description: Digor Ossetian
+Added: 2026-04-09
 %%
 Type: language
 Subtag: osi
@@ -31532,6 +31565,11 @@ Description: Sicel
 Added: 2009-07-29
 %%
 Type: language
+Subtag: scz
+Description: Shaetlan
+Added: 2026-04-09
+%%
+Type: language
 Subtag: sda
 Description: Toraja-Sa'dan
 Added: 2009-07-29
@@ -33108,6 +33146,7 @@ Added: 2005-10-16
 %%
 Type: language
 Subtag: srs
+Description: Tsuut'ina
 Description: Sarsi
 Added: 2009-07-29
 %%
@@ -33852,6 +33891,7 @@ Added: 2017-02-23
 %%
 Type: language
 Subtag: szv
+Description: Isubu
 Description: Isu (Fako Division)
 Added: 2009-07-29
 %%
@@ -36217,6 +36257,13 @@ Description: Te'un
 Added: 2009-07-29
 %%
 Type: language
+Subtag: tvg
+Description: Tugunese
+Description: Batavian Portuguese Creole
+Description: Mardijker Creole
+Added: 2026-05-05
+%%
+Type: language
 Subtag: tvi
 Description: Tulai
 Added: 2023-03-17
@@ -37766,6 +37813,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: wab
+Description: Yote
 Description: Wab
 Added: 2009-07-29
 %%
@@ -41152,6 +41200,7 @@ Added: 2012-08-12
 %%
 Type: language
 Subtag: yko
+Description: Iyasa
 Description: Yasa
 Added: 2009-07-29
 %%
@@ -41431,6 +41480,8 @@ Type: language
 Subtag: yol
 Description: Yola
 Added: 2009-07-29
+Deprecated: 2026-04-09
+Preferred-Value: enm
 %%
 Type: language
 Subtag: yom
@@ -42162,6 +42213,11 @@ Type: language
 Subtag: zhi
 Description: Zhire
 Added: 2009-07-29
+%%
+Type: language
+Subtag: zhk
+Description: Kurdish Sign Language
+Added: 2026-05-05
 %%
 Type: language
 Subtag: zhn
@@ -43491,6 +43547,13 @@ Prefix: ms
 Macrolanguage: ms
 %%
 Type: extlang
+Subtag: dyl
+Description: Bhutanese Sign Language
+Added: 2026-04-09
+Preferred-Value: dyl
+Prefix: sgn
+%%
+Type: extlang
 Subtag: ecs
 Description: Ecuadorian Sign Language
 Added: 2009-07-29
@@ -44806,6 +44869,13 @@ Added: 2009-07-29
 Preferred-Value: yue
 Prefix: zh
 Macrolanguage: zh
+%%
+Type: extlang
+Subtag: zhk
+Description: Kurdish Sign Language
+Added: 2026-05-05
+Preferred-Value: zhk
+Prefix: sgn
 %%
 Type: extlang
 Subtag: zib
@@ -48229,6 +48299,13 @@ Comments: The subtag represents the alphabet codified by Franc Serafin
   Metelko and used from 1825 to 1833.
 %%
 Type: variant
+Subtag: moderat
+Description: The moderate (conservative, i.e. Danish-like) spelling
+  variant of Bokmål
+Added: 2026-04-21
+Prefix: nb
+%%
+Type: variant
 Subtag: monoton
 Description: Monotonic Greek
 Added: 2006-12-11
@@ -48384,6 +48461,12 @@ Comments: Puter is one of the five traditional written standards or
   "idioms" of the Romansh language.
 %%
 Type: variant
+Subtag: radikalt
+Description: Radical (i.e. Nynorsk-like) spelling variant of Bokmål
+Added: 2026-04-21
+Prefix: nb
+%%
+Type: variant
 Subtag: rigik
 Description: Volapük rigik
 Description: Schleyer's Volapük
@@ -48438,6 +48521,13 @@ Description: Simplified form
 Added: 2015-12-29
 %%
 Type: variant
+Subtag: slepe
+Description: Sorbian dialect of Schleife
+Added: 2026-04-09
+Prefix: dsb
+Comments: Spoken in the Free State of Saxony in Germany
+%%
+Type: variant
 Subtag: solba
 Description: The Stolvizza dialect of Resian
 Description: The Solbica dialect of Resian
@@ -48461,6 +48551,13 @@ Added: 2017-02-23
 Prefix: en
 Prefix: es
 Comments: A variety of contact dialects of English and Spanish
+%%
+Type: variant
+Subtag: stadi
+Description: The "Stadin slangi" dialect of Finnish
+Added: 2026-04-09
+Prefix: fi
+Comments: "Stadi" means the city of Helsinki in the dialect.
 %%
 Type: variant
 Subtag: surmiran
@@ -48492,6 +48589,16 @@ Description: Synnejysk
 Description: South Jutish
 Added: 2021-07-17
 Prefix: da
+%%
+Type: variant
+Subtag: taglish
+Description: Tagalog-English code-switching
+Added: 2026-04-09
+Prefix: en
+Prefix: tl
+Prefix: fil
+Comments: This subtag represents Taglish, wherever it is different from
+  straight Tagalog or straight English.
 %%
 Type: variant
 Subtag: tailo

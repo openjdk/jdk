@@ -30,12 +30,12 @@
 
 void G1BarrierSetRuntime::write_ref_array_pre_oop_entry(oop* dst, size_t length) {
   G1BarrierSet *bs = G1BarrierSet::g1_barrier_set();
-  bs->write_ref_array_pre(dst, length, false);
+  bs->write_ref_array_pre(dst, length);
 }
 
 void G1BarrierSetRuntime::write_ref_array_pre_narrow_oop_entry(narrowOop* dst, size_t length) {
   G1BarrierSet *bs = G1BarrierSet::g1_barrier_set();
-  bs->write_ref_array_pre(dst, length, false);
+  bs->write_ref_array_pre(dst, length);
 }
 
 void G1BarrierSetRuntime::write_ref_array_post_entry(HeapWord* dst, size_t length) {

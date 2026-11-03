@@ -25,6 +25,7 @@ package jdk.test.lib.cds;
 
 import java.io.File;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.StringArrayUtils;
@@ -36,10 +37,23 @@ import jtreg.SkippedException;
  * You can define the application by overridding the vmArgs(), classpath() and appCommandLine()
  * methods. Application-specific validation checks can be implemented with checkExecution().
  *
- * The AOT workflow runs with one-step training by default. For debugging purposes, run
- * jtreg with -vmoption:-DCDSAppTester.two.step.training=true. This will run -XX:AOTMode=record
- * and -XX:AOTMode=record in two separate processes that you can rerun easily inside a debugger.
- * Also, the log files are easier to read.
+ * See test/hotspot/jtreg/runtime/cds/appcds/applications/JavacBench.java for an example.
+ *
+ * This class supports 5 kinds of workflows:
+ *
+ *    - STATIC:          Use the classic CDS static archive workflow (i.e., -Xshare:dump)
+ *    - DYNAMIC:         Use the classic CDS dynamic archive workflow (i.e., -XX:ArchiveClassesAtExit=...)
+ *    - AOT:             Use the AOT workflow defines in JEP 483/514.
+ *    - AOT-Iterative1:  Same as AOT, except that we iteratively train the application ONCE --
+ *                       the training run uses an AOTCache created with
+ *                       "java -XX:AOTCacheOutput=... --version"
+ *    - AOT-Iterative2:  Same as AOT, except that we iteratively train the application TWICE -
+ *                       - we first train the application using the AOT workflow
+ *                       - we then train the application again, using the AOT cache created
+ *                         in the last step.
+ *
+ * The AOT workflows run with two-step training by default. If you want to test with one-step training,
+ * start jtreg with -vmoption:-DCDSAppTester.one.step.training=true.
  */
 abstract public class CDSAppTester {
     private final String name;
@@ -56,9 +70,14 @@ abstract public class CDSAppTester {
     private final String tempBaseArchiveFile;
     private int numProductionRuns = 0;
     private String whiteBoxJar = null;
-    private boolean inOneStepTraining = false;
+    private boolean isAOTRetraining = false;
     private boolean generateBaseArchive = false;
     private String[] baseArchiveOptions = new String[0];
+
+    private final String aotConfigurationFileForRetraining;
+    private final String aotConfigurationFileForRetrainingLog;
+    private final String aotCacheFileForRetraining;
+    private final String aotCacheFileForRetrainingLog;
 
     public String aotCacheFile() {
         return this.aotCacheFile;
@@ -88,6 +107,12 @@ abstract public class CDSAppTester {
         dynamicArchiveFile = name() + ".dynamic.jsa";
         dynamicArchiveFileLog = logFileName(dynamicArchiveFile);
         tempBaseArchiveFile = name() + ".temp-base.jsa";
+
+        // The following are used in AOT-Iterative1 -- load this AOTCache when training the app.
+        aotConfigurationFileForRetraining = name() + ".base.aotconfig";
+        aotConfigurationFileForRetrainingLog = logFileName(aotConfigurationFileForRetraining);;
+        aotCacheFileForRetraining = name() + ".base.aot";
+        aotCacheFileForRetrainingLog = logFileName(aotCacheFileForRetraining);;
     }
 
     private String productionRunLog() {
@@ -131,6 +156,10 @@ abstract public class CDSAppTester {
         }
     }
 
+    public class TerminateWorkflowException extends RuntimeException {
+        private static final long serialVersionUID = 1L; // Value is not important.
+    }
+
     public boolean isDumping(RunMode runMode) {
         if (isStaticWorkflow()) {
             return runMode == RunMode.DUMP_STATIC;
@@ -167,7 +196,9 @@ abstract public class CDSAppTester {
     abstract public String[] appCommandLine(RunMode runMode);
 
     // optional
-    public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {}
+    // @throws TerminateWorkflowException if the AOT workflow should be terminated (any remaining AOT
+    // steps in the AOT workflow will be skipped).
+    public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception, TerminateWorkflowException {}
 
     private Workflow workflow;
     private boolean checkExitValue = true;
@@ -212,25 +243,44 @@ abstract public class CDSAppTester {
         }
     }
 
-    private OutputAnalyzer executeAndCheck(String[] cmdLine, RunMode runMode, String... logFiles) throws Exception {
+    private OutputAnalyzer execute(String[] cmdLine, RunMode runMode, String... logFiles) throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
         Process process = pb.start();
         OutputAnalyzer output = CDSTestUtils.executeAndLog(process, runMode.toString());
         for (String logFile : logFiles) {
             listOutputFile(logFile);
         }
-        if (checkExitValue) {
-            output.shouldHaveExitValue(0);
-        }
         output.shouldNotContain(CDSTestUtils.MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE);
         CDSTestUtils.checkCommonExecExceptions(output);
-        checkExecution(output, runMode);
         return output;
     }
 
-    private String[] addCommonVMArgs(RunMode runMode, String[] cmdLine) {
+    private OutputAnalyzer executeAndCheck(String[] cmdLine, RunMode runMode, String... logFiles) throws Exception {
+        OutputAnalyzer output = execute(cmdLine, runMode, logFiles);
+        checkExecution(output, runMode);
+        if (checkExitValue) {
+            output.shouldHaveExitValue(0);
+        }
+        return output;
+    }
+
+    // This method should be called before `vmArgs()`, so that subclasses of CDSAppTester
+    // can have a chance to override the flags set here.
+    private String[] addCommonVMArgs(RunMode runMode) {
+        String[] cmdLine = new String[0];
         cmdLine = addClassOrModulePath(runMode, cmdLine);
         cmdLine = addWhiteBox(cmdLine);
+        // In one-step workflow ASSEMBLY phase is not executed separately.
+        // Therefore AOTCompatibleOopCompression needs to be passed to the TRAINING phase,
+        // so that it can be propagated to the ASSEMBLY phase.
+        if (isAOTWorkflow() && isDumping(runMode)) {
+          cmdLine = StringArrayUtils.concat(cmdLine, "-XX:+UnlockDiagnosticVMOptions", "-XX:+AOTCompatibleOopCompression");
+          if (Platform.isDebugBuild()) {
+            // Always assert when AOT test code references new unknown external address.
+            // AOTAssertOnUnknownExternalAddress is debug flag not available in product VM.
+            cmdLine = StringArrayUtils.concat(cmdLine, "-XX:+AOTAssertOnUnknownExternalAddress");
+          }
+        }
         return cmdLine;
     }
 
@@ -259,86 +309,181 @@ abstract public class CDSAppTester {
         return cmdLine;
     }
 
-    private OutputAnalyzer recordAOTConfiguration() throws Exception {
-        RunMode runMode = RunMode.TRAINING;
-        String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
-                                                   "-XX:AOTMode=record",
-                                                   "-XX:AOTConfiguration=" + aotConfigurationFile,
-                                                   logToFile(aotConfigurationFileLog,
-                                                             "class+load=debug",
-                                                             "aot=debug",
-                                                             "cds=debug",
-                                                             "aot+class=debug"));
-        cmdLine = addCommonVMArgs(runMode, cmdLine);
-        cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
-        return executeAndCheck(cmdLine, runMode, aotConfigurationFile, aotConfigurationFileLog);
+    private void createAOTCacheFileForRetraining(String args[], boolean runAppInBaseCache) throws Exception {
+        boolean oneStep = isOneStepTraining(args);
+        String mode = runAppInBaseCache ? "(run the app once)" : "(--version only)";
+        String steps = oneStep ? " in one step" : " in two steps";
+        System.out.println("\n============== Creating " + aotCacheFileForRetraining + " "
+                           + mode + steps + ", to be used for re-training");
+
+        if (oneStep) {
+            createAOTCacheFileForRetrainingOneStep(runAppInBaseCache);
+        } else {
+            createAOTCacheFileForRetrainingTwoStep(runAppInBaseCache);
+        }
     }
 
-    private OutputAnalyzer createAOTCacheOneStep() throws Exception {
+    private void createAOTCacheFileForRetrainingOneStep(boolean runAppInBaseCache) throws Exception {
         RunMode runMode = RunMode.TRAINING;
-        String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
-                                                   "-XX:AOTMode=record",
-                                                   "-XX:AOTCacheOutput=" + aotCacheFile,
-                                                   logToFile(aotCacheFileLog,
+        String[] cmdLine = addCommonVMArgs(runMode);
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+        cmdLine = StringArrayUtils.concat(cmdLine, "-XX:AOTMode=record",
+                                                   "-XX:AOTCacheOutput=" + aotCacheFileForRetraining,
+                                                   logToFile(aotCacheFileForRetrainingLog,
                                                              "class+load=debug",
                                                              "aot=debug",
                                                              "aot+class=debug",
                                                              "cds=debug"));
-        cmdLine = addCommonVMArgs(runMode, cmdLine);
+        OutputAnalyzer out;
+        if (runAppInBaseCache) {
+            cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
+            out =  executeAndCheck(cmdLine, runMode, aotCacheFileForRetraining, aotCacheFileForRetrainingLog);
+        } else {
+            cmdLine = StringArrayUtils.concat(cmdLine, "--version");
+            out =  execute(cmdLine, runMode, aotCacheFileForRetraining, aotCacheFileForRetrainingLog);
+        }
+        listOutputFile(aotCacheFileForRetrainingLog + ".0"); // the log file for the training run
+    }
+
+    private void createAOTCacheFileForRetrainingTwoStep(boolean runAppInBaseCache) throws Exception {
+        // Training step
+        RunMode runMode = RunMode.TRAINING;
+        String[] cmdLine = addCommonVMArgs(runMode);
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+        cmdLine = StringArrayUtils.concat(cmdLine, "-XX:AOTMode=record",
+                                                   "-XX:AOTConfiguration=" + aotConfigurationFileForRetraining,
+                                                   logToFile(aotConfigurationFileForRetrainingLog,
+                                                             "class+load=debug",
+                                                             "aot=debug",
+                                                             "cds=debug",
+                                                             "aot+class=debug"));
+        OutputAnalyzer out;
+        if (runAppInBaseCache) {
+            cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
+            out =  executeAndCheck(cmdLine, runMode, aotConfigurationFileForRetraining, aotConfigurationFileForRetrainingLog);
+        } else {
+            cmdLine = StringArrayUtils.concat(cmdLine, "--version");
+            out =  execute(cmdLine, runMode, aotConfigurationFileForRetraining, aotConfigurationFileForRetrainingLog);
+        }
+
+        // Assembly step
+        runMode = RunMode.ASSEMBLY;
+        cmdLine = addCommonVMArgs(runMode);
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+        cmdLine = StringArrayUtils.concat(cmdLine, "-Xlog:aot",
+                                                   "-Xlog:aot+heap=error",
+                                                   "-Xlog:cds",
+                                                   "-XX:AOTMode=create",
+                                                   "-XX:AOTConfiguration=" + aotConfigurationFileForRetraining,
+                                                   "-XX:AOTCache=" + aotCacheFileForRetraining,
+                                                   logToFile(aotCacheFileForRetrainingLog,
+                                                             "cds=debug",
+                                                             "aot=debug",
+                                                             "aot+class=debug",
+                                                             "aot+heap=warning",
+                                                             "aot+resolve=debug"));
+        cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
+        executeAndCheck(cmdLine, runMode, aotCacheFileForRetraining, aotCacheFileForRetrainingLog);
+    }
+
+    private OutputAnalyzer recordAOTConfiguration() throws Exception {
+        RunMode runMode = RunMode.TRAINING;
+        String[] cmdLine = addCommonVMArgs(runMode);
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+        cmdLine = StringArrayUtils.concat(cmdLine,
+                                          "-XX:AOTMode=record",
+                                          "-XX:AOTConfiguration=" + aotConfigurationFile,
+                                          logToFile(aotConfigurationFileLog,
+                                                    "class+load=debug",
+                                                    "aot=debug",
+                                                    "cds=debug",
+                                                    "aot+class=debug"));
+        if (isAOTRetraining) {
+            cmdLine = StringArrayUtils.concat(cmdLine, "-XX:AOTCache=" + aotCacheFileForRetraining, "-Xlog:aot");
+        }
+        cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
+        OutputAnalyzer out = executeAndCheck(cmdLine, runMode, aotConfigurationFile, aotConfigurationFileLog);
+        if (isAOTRetraining) {
+            out.shouldContain("re-training: loading AOTCache=" + aotCacheFileForRetraining);
+        }
+        return out;
+    }
+
+    private OutputAnalyzer createAOTCacheOneStep() throws Exception {
+        RunMode runMode = RunMode.TRAINING;
+        String[] cmdLine = addCommonVMArgs(runMode);
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+        cmdLine = StringArrayUtils.concat(cmdLine,
+                                          "-XX:AOTMode=record",
+                                          "-XX:AOTCacheOutput=" + aotCacheFile,
+                                          logToFile(aotCacheFileLog,
+                                                    "class+load=debug",
+                                                    "aot=debug",
+                                                    "aot+class=debug",
+                                                    "cds=debug"));
+        if (isAOTRetraining) {
+            cmdLine = StringArrayUtils.concat(cmdLine, "-XX:AOTCache=" + aotCacheFileForRetraining, "-Xlog:aot");
+        }
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         OutputAnalyzer out =  executeAndCheck(cmdLine, runMode, aotCacheFile, aotCacheFileLog);
         listOutputFile(aotCacheFileLog + ".0"); // the log file for the training run
+        if (isAOTRetraining) {
+            out.shouldContain("re-training: loading AOTCache=" + aotCacheFileForRetraining);
+        }
         return out;
     }
 
     private OutputAnalyzer createClassList() throws Exception {
         RunMode runMode = RunMode.TRAINING;
-        String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
-                                                   "-Xshare:off",
-                                                   "-XX:DumpLoadedClassList=" + classListFile,
-                                                   logToFile(classListFileLog,
-                                                             "class+load=debug"));
-        cmdLine = addCommonVMArgs(runMode, cmdLine);
+        String[] cmdLine = addCommonVMArgs(runMode);
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+        cmdLine = StringArrayUtils.concat(cmdLine,
+                                          "-Xshare:off",
+                                          "-XX:DumpLoadedClassList=" + classListFile,
+                                          logToFile(classListFileLog,
+                                                    "class+load=debug"));
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, classListFile, classListFileLog);
     }
 
     private OutputAnalyzer dumpStaticArchive() throws Exception {
         RunMode runMode = RunMode.DUMP_STATIC;
-        String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
-                                                   "-Xlog:aot",
-                                                   "-Xlog:aot+heap=error",
-                                                   "-Xlog:cds",
-                                                   "-Xshare:dump",
-                                                   "-XX:SharedArchiveFile=" + staticArchiveFile,
-                                                   "-XX:SharedClassListFile=" + classListFile,
-                                                   logToFile(staticArchiveFileLog,
-                                                             "aot=debug",
-                                                             "cds=debug",
-                                                             "cds+class=debug",
-                                                             "aot+heap=warning",
-                                                             "aot+resolve=debug"));
-        cmdLine = addCommonVMArgs(runMode, cmdLine);
+        String[] cmdLine = addCommonVMArgs(runMode);
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+        cmdLine = StringArrayUtils.concat(cmdLine,
+                                          "-Xlog:aot",
+                                          "-Xlog:aot+heap=error",
+                                          "-Xlog:cds",
+                                          "-Xshare:dump",
+                                          "-XX:SharedArchiveFile=" + staticArchiveFile,
+                                          "-XX:SharedClassListFile=" + classListFile,
+                                          logToFile(staticArchiveFileLog,
+                                                    "aot=debug",
+                                                    "cds=debug",
+                                                    "cds+class=debug",
+                                                    "aot+heap=warning",
+                                                    "aot+resolve=debug"));
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, staticArchiveFile, staticArchiveFileLog);
     }
 
     private OutputAnalyzer createAOTCache() throws Exception {
         RunMode runMode = RunMode.ASSEMBLY;
-        String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
-                                                   "-Xlog:aot",
-                                                   "-Xlog:aot+heap=error",
-                                                   "-Xlog:cds",
-                                                   "-XX:AOTMode=create",
-                                                   "-XX:AOTConfiguration=" + aotConfigurationFile,
-                                                   "-XX:AOTCache=" + aotCacheFile,
-                                                   logToFile(aotCacheFileLog,
-                                                             "cds=debug",
-                                                             "aot=debug",
-                                                             "aot+class=debug",
-                                                             "aot+heap=warning",
-                                                             "aot+resolve=debug"));
-        cmdLine = addCommonVMArgs(runMode, cmdLine);
+        String[] cmdLine = addCommonVMArgs(runMode);
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+        cmdLine = StringArrayUtils.concat(cmdLine,
+                                          "-Xlog:aot",
+                                          "-Xlog:aot+heap=error",
+                                          "-Xlog:cds",
+                                          "-XX:AOTMode=create",
+                                          "-XX:AOTConfiguration=" + aotConfigurationFile,
+                                          "-XX:AOTCache=" + aotCacheFile,
+                                          logToFile(aotCacheFileLog,
+                                                    "cds=debug",
+                                                    "aot=debug",
+                                                    "aot+class=debug",
+                                                    "aot+heap=warning",
+                                                    "aot+resolve=debug"));
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, aotCacheFile, aotCacheFileLog);
     }
@@ -387,7 +532,9 @@ abstract public class CDSAppTester {
         String baseArchive = getBaseArchiveForDynamicArchive();
         if (isDynamicWorkflow()) {
           // "classic" dynamic archive
-          cmdLine = StringArrayUtils.concat(vmArgs(runMode),
+          cmdLine = addCommonVMArgs(runMode);
+          cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+          cmdLine = StringArrayUtils.concat(cmdLine,
                                             "-Xlog:aot",
                                             "-Xlog:cds",
                                             "-XX:ArchiveClassesAtExit=" + dynamicArchiveFile,
@@ -397,7 +544,6 @@ abstract public class CDSAppTester {
                                                       "cds+class=debug",
                                                       "aot+resolve=debug",
                                                       "class+load=debug"));
-          cmdLine = addCommonVMArgs(runMode, cmdLine);
         }
         if (baseArchive != null) {
             cmdLine = StringArrayUtils.concat(cmdLine, "-XX:SharedArchiveFile=" + baseArchive);
@@ -418,16 +564,17 @@ abstract public class CDSAppTester {
     // using different args to the VM and application.
     public OutputAnalyzer productionRun(String[] extraVmArgs, String[] extraAppArgs) throws Exception {
         RunMode runMode = RunMode.PRODUCTION;
-        String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
-                                                   logToFile(productionRunLog(), "aot", "cds"));
-        cmdLine = addCommonVMArgs(runMode, cmdLine);
+        String[] cmdLine = addCommonVMArgs(runMode);
+        cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
+        cmdLine = StringArrayUtils.concat(cmdLine,
+                                          logToFile(productionRunLog(), "aot", "cds"));
 
         if (isStaticWorkflow()) {
             cmdLine = StringArrayUtils.concat(cmdLine, "-Xshare:on", "-XX:SharedArchiveFile=" + staticArchiveFile);
         } else if (isDynamicWorkflow()) {
             cmdLine = StringArrayUtils.concat(cmdLine, "-Xshare:on", "-XX:SharedArchiveFile=" + dynamicArchiveFile);
        } else if (isAOTWorkflow()) {
-            cmdLine = StringArrayUtils.concat(cmdLine, "-XX:AOTMode=on", "-XX:AOTCache=" + aotCacheFile);
+            cmdLine = StringArrayUtils.concat(cmdLine, "-XX:AOTMode=required", "-XX:AOTCache=" + aotCacheFile);
         }
 
         if (extraVmArgs != null) {
@@ -462,6 +609,10 @@ abstract public class CDSAppTester {
                 runDynamicWorkflow();
             } else if (args[0].equals("AOT")) {
                 runAOTWorkflow(args);
+            } else if (args[0].equals("AOT-Iterative1")) {
+                runAOTRetrainWorkflow(false, args);
+            } else if (args[0].equals("AOT-Iterative2")) {
+                runAOTRetrainWorkflow(true, args);
             } else {
                 throw new RuntimeException(err);
             }
@@ -481,21 +632,16 @@ abstract public class CDSAppTester {
         productionRun();
     }
 
-    // See JEP 483
-    public void runAOTWorkflow(String... args) throws Exception {
-        this.workflow = Workflow.AOT;
-
-        // By default use twostep training -- tests are much easier to write this way, as
-        // the stdout/stderr of the training run is clearly separated from the assembly phase.
-        //
-        // Many older test cases written before JEP 514 were not aware of one step treaining
-        // and may not check the stdout/stderr correctly.
+    // By default use twostep training -- tests are much easier to write this way, as
+    // the stdout/stderr of the training run is clearly separated from the assembly phase.
+    //
+    // Many older test cases written before JEP 514 were not aware of one step treaining
+    // and may not check the stdout/stderr correctly.
+    private static boolean isOneStepTraining(String[] args) {
         boolean oneStepTraining = false;
 
-        if (System.getProperty("CDSAppTester.two.step.training") != null) {
-            oneStepTraining = false;
-        }
-        if (System.getProperty("CDSAppTester.one.step.training") != null) {
+        if (System.getProperty("CDSAppTester.two.step.training") == null &&
+            System.getProperty("CDSAppTester.one.step.training") != null) {
             oneStepTraining = true;
         }
 
@@ -511,22 +657,46 @@ abstract public class CDSAppTester {
             }
         }
 
-        if (oneStepTraining) {
-            try {
-                inOneStepTraining = true;
+        return oneStepTraining;
+    }
+
+    // See JEP 483
+    public void runAOTWorkflow(String... args) throws Exception {
+        this.workflow = Workflow.AOT;
+
+        try {
+            if (isOneStepTraining(args)) {
                 createAOTCacheOneStep();
-            } finally {
-                inOneStepTraining = false;
+            } else {
+                recordAOTConfiguration();
+                createAOTCache();
             }
-        } else {
-            recordAOTConfiguration();
-            createAOTCache();
+            productionRun();
+        } catch (TerminateWorkflowException e) {
+            System.out.println("AOT workflow is terminated by tester's checkExecution() method");
+            e.printStackTrace(System.out);
         }
-        productionRun();
+    }
+
+    public void runAOTRetrainWorkflow(boolean runAppInBaseCache, String... args) throws Exception {
+        this.workflow = Workflow.AOT;
+
+        createAOTCacheFileForRetraining(args, runAppInBaseCache);
+
+        try {
+            isAOTRetraining = true;
+            runAOTWorkflow(args);
+        } finally {
+            isAOTRetraining = false;
+        }
+    }
+
+    public boolean isAOTRetraining() {
+        return this.isAOTRetraining;
     }
 
     // See JEP 483; stop at the assembly run; do not execute production run
-    public void runAOTAssemblyWorkflow() throws Exception {
+    public void runAOTTrainingAndAssemblyWorkflow() throws Exception {
         this.workflow = Workflow.AOT;
         recordAOTConfiguration();
         createAOTCache();

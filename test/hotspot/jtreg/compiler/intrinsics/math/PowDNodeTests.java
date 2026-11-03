@@ -45,6 +45,14 @@ public class PowDNodeTests {
     public static final double B = UNIFORMS.next() * 1000.0d;
     public static final double E = UNIFORMS.next() * 1000.0d + 3.0d; // e >= 3 to avoid strength reduction code
 
+    private static final double REG1_B = 0x1.000002c5e2e99p+0;
+    private static final double REG1_E = 0x1.c9eee35374af6p+31;
+    private static final double REG1_R = 0x1.ffffe0bc9e399p+915;
+
+    private static final double REG2_B = 0x1.fffff4e900013p-1;
+    private static final double REG2_E = 0x1.0000100000001p+31;
+    private static final double REG2_R = 0x0.421378008b246p-1022;
+
     public static void main(String[] args) {
         TestFramework.run();
 
@@ -164,6 +172,20 @@ public class PowDNodeTests {
         return Math.pow(base, exp);
     }
 
+    // Test 12: pow(REG1_B, REG1_E) -> REG1_R
+    @Test
+    @IR(failOn = {IRNode.POW_D})
+    public static double regressionHugeExpAboveOne() {
+        return Math.pow(REG1_B, REG1_E);
+    }
+
+    // Test 13: pow(REG2_B, REG2_E) -> REG2_R
+    @Test
+    @IR(failOn = {IRNode.POW_D})
+    public static double regressionHugeExpBelowOne() {
+        return Math.pow(REG2_B, REG2_E);
+    }
+
     private static void assertEQWithinOneUlp(double expected, double observed) {
         if (Double.isNaN(expected) && Double.isNaN(observed)) return;
 
@@ -214,5 +236,8 @@ public class PowDNodeTests {
                 assertEQWithinOneUlp(StrictMath.pow(b, e), nonConstant(b, e));
             }
         }
+
+        assertEQWithinOneUlp(REG1_R, regressionHugeExpAboveOne());
+        assertEQWithinOneUlp(REG2_R, regressionHugeExpBelowOne());
     }
 }

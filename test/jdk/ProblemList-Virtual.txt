@@ -21,7 +21,7 @@
 # questions.
 #
 
-com/sun/jdi/EATests.java#id0                                    8264699 generic-all
+com/sun/jdi/EATests.java 8264699 generic-all
 
 ##########
 ## Tests failing when main() is executed in additional vthread or in vthread instead of thread
@@ -33,6 +33,9 @@ com/sun/jdi/RedefineCrossStart.java 8278470 generic-all
 java/lang/ScopedValue/StressStackOverflow.java#default 8309646 generic-all
 java/lang/ScopedValue/StressStackOverflow.java#no-TieredCompilation 8309646 generic-all
 java/lang/ScopedValue/StressStackOverflow.java#TieredStopAtLevel1 8309646 generic-all
+
+java/net/URLPermission/OpenURL.java 8387805 windows-x64
+tools/launcher/MiscTests.java 8394341 generic-all
 
 #############################################################################
 
@@ -50,3 +53,4 @@ java/lang/ScopedValue/StressStackOverflow.java#TieredStopAtLevel1 8309646 generi
 
 #############################################################################
 
+# Value Objects failures start here:

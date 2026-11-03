@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.source.tree.AnnotatedTypeTree;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.source.tree.NewClassTree;
 import com.sun.tools.javac.code.*;
@@ -62,6 +63,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import com.sun.source.tree.MemberReferenceTree;
+import com.sun.source.tree.ModifiersTree;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference.OverloadKind;
 
@@ -190,6 +192,19 @@ public class DeferredAttr extends JCTree.Visitor {
                     };
                     result.pos = t.pos;
                     return result;
+                }
+
+                @Override
+                public JCTree visitAnnotatedType(AnnotatedTypeTree node, Void p) {
+                    return copy(((JCAnnotatedType) node).underlyingType, p);
+                }
+
+                @Override
+                public JCTree visitModifiers(ModifiersTree node, Void p) {
+                    JCModifiers mods = (JCModifiers) super.visitModifiers(node, p);
+
+                    mods.annotations = List.nil();
+                    return mods;
                 }
             };
         deferredCopier = new TypeMapping<Void> () {

@@ -66,8 +66,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * </ul>
  *
  * <p>The Java math library is defined with respect to
- * {@code fdlibm} version 5.3. Where {@code fdlibm} provides
- * more than one definition for a function (such as
+ * {@code fdlibm} version 5.3 with a fix to {@code pow} so that its error bounds
+ * conform to the quality of implementation criteria for {@code pow}.
+ * Where {@code fdlibm} provides more than one definition for a function (such as
  * {@code acos}), use the "IEEE 754 core function" version
  * (residing in a file whose name begins with the letter
  * {@code e}).  The methods which require {@code fdlibm}

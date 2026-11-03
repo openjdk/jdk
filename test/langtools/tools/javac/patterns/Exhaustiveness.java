@@ -38,7 +38,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -63,6 +62,7 @@ public class Exhaustiveness extends TestRunner {
         tb = new ToolBox();
     }
 
+    @Override
     public void runTests() throws Exception {
         runTests(m -> new Object[] { Paths.get(m.getName()) });
     }
@@ -1546,7 +1546,7 @@ public class Exhaustiveness extends TestRunner {
         variants.add("C _");
         variants.add("R(I _, I _, I _)");
         for (int n = 0; n < NESTING_CONSTANT; n++) {
-            Set<String> newVariants = new HashSet<>();
+            Set<String> newVariants = new LinkedHashSet<>();
             for (String variant : variants) {
                 if (variant.contains(", I _")) {
                     newVariants.add(variant.replaceFirst(", I _", ", C _"));
@@ -1558,7 +1558,7 @@ public class Exhaustiveness extends TestRunner {
             variants = newVariants;
         }
         for (int n = 0; n < NESTING_CONSTANT; n++) {
-            Set<String> newVariants = new HashSet<>();
+            Set<String> newVariants = new LinkedHashSet<>();
             for (String variant : variants) {
                 if (variant.contains("I _")) {
                     newVariants.add(variant.replaceFirst("I _", "C _"));

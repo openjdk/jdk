@@ -53,7 +53,7 @@
 #define SEGV_BNDERR_value 3
 
 #if defined(SEGV_BNDERR)
-STATIC_ASSERT(SEGV_BNDERR == SEGV_BNDERR_value);
+static_assert(SEGV_BNDERR == SEGV_BNDERR_value);
 #else
 #define SEGV_BNDERR SEGV_BNDERR_value
 #endif
@@ -1881,6 +1881,12 @@ void PosixSignals::do_resume(OSThread* osthread) {
 }
 
 void SuspendedThreadTask::internal_do_task() {
+#if INCLUDE_JFR
+  assert(NOT_COMPILER2(true) COMPILER2_PRESENT(!HotCodeHeap) ||
+         SuspendedThreadTask_lock->owned_by_self(),
+         "suspend/resume must be serialized when HotCodeHeap is enabled");
+#endif
+
   if (PosixSignals::do_suspend(_thread->osthread())) {
     SuspendedThreadTaskContext context(_thread, _thread->osthread()->ucontext());
     do_task(context);

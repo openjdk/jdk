@@ -38,7 +38,6 @@ class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
 protected:
   static int _cpu;
@@ -70,9 +69,9 @@ protected:
   // Read additional info using OS-specific interfaces
   static void get_os_cpu_info();
 
-  // Sets the SVE length and returns a new actual value or negative on error.
-  // If the len is larger than the system largest supported SVE vector length,
-  // the function sets the largest supported value.
+  // Set the SVE vector length to len. If the vector length cannot be
+  // changed to len, set the length to the largest possible value.
+  // Return the length that will be used, or -ve if an error occurred.
   static int set_and_get_current_sve_vector_length(int len);
   static int get_current_sve_vector_length();
 
@@ -175,7 +174,7 @@ public:
     MAX_CPU_FEATURES
   };
 
-  STATIC_ASSERT(sizeof(_features) * BitsPerByte >= MAX_CPU_FEATURES);
+  static_assert(sizeof(_features) * BitsPerByte >= MAX_CPU_FEATURES);
 
   static const char* _features_names[];
 

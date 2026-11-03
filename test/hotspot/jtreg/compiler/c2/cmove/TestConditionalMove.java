@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2025, Arm Limited. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,7 @@
  * questions.
  */
 
-package compiler.c2.irTests;
+package compiler.c2.cmove;
 
 import compiler.lib.ir_framework.*;
 import java.util.Random;

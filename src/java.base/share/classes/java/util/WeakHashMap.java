@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,18 @@ import java.util.function.Consumer;
  * When a key has been discarded its entry is effectively removed from the map,
  * so this class behaves somewhat differently from other {@code Map}
  * implementations.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          {@linkplain java.util.Objects#hasIdentity Value objects} can not be used as
+ *          keys in a {@code WeakHashMap}. The {@link #put(Object, Object) put(K, V)}
+ *          method, and all methods that associate a value with a key, throw {@link
+ *          IdentityException} if the key is a value object.
+ *          The {@link WeakHashMap#WeakHashMap(Map)} constructor and the {@link
+ *          #putAll(Map)} method also throw {@code IdentityException} if invoked with
+ *          a {@code Map} containing a key that is a value object.
+ *      </div>
+ * </div>
  *
  * <p> Both null values and the null key are supported. This class has
  * performance characteristics similar to those of the {@code HashMap}
@@ -87,14 +99,14 @@ import java.util.function.Consumer;
  * removed only after the weak references to it, both inside and outside of the
  * map, have been cleared by the garbage collector.
  *
- * <p> <strong>Implementation note:</strong> The value objects in a
+ * <p> <strong>Implementation note:</strong> The values in a
  * {@code WeakHashMap} are held by ordinary strong references.  Thus care
- * should be taken to ensure that value objects do not strongly refer to their
+ * should be taken to ensure that values do not strongly refer to their
  * own keys, either directly or indirectly, since that will prevent the keys
- * from being discarded.  Note that a value object may refer indirectly to its
- * key via the {@code WeakHashMap} itself; that is, a value object may
- * strongly refer to some other key object whose associated value object, in
- * turn, strongly refers to the key of the first value object.  If the values
+ * from being discarded.  Note that a value may refer indirectly to its
+ * key via the {@code WeakHashMap} itself; that is, a value may
+ * strongly refer to some other key object whose associated value, in
+ * turn, strongly refers to the key of the first value.  If the values
  * in the map do not rely on the map holding strong references to them, one way
  * to deal with this is to wrap values themselves within
  * {@code WeakReferences} before
@@ -254,6 +266,8 @@ public class WeakHashMap<@jdk.internal.RequiresIdentity K,V>
      *
      * @param   m the map whose mappings are to be placed in this map
      * @throws  NullPointerException if the specified map is null
+     * @throws  IdentityException if any of the keys in the specified map
+     *          is a value object
      * @since   1.3
      */
     @SuppressWarnings("this-escape")
@@ -288,6 +302,8 @@ public class WeakHashMap<@jdk.internal.RequiresIdentity K,V>
     /**
      * Checks for equality of non-null reference x and possibly-null y.  By
      * default uses Object.equals.
+     * The key may be a value object, but it will never be equal to the referent
+     * so does not need a separate Objects.hasIdentity check.
      */
     private boolean matchesKey(Entry<K,V> e, Object key) {
         // check if the given entry refers to the given key without
@@ -456,9 +472,12 @@ public class WeakHashMap<@jdk.internal.RequiresIdentity K,V>
      *         {@code null} if there was no mapping for {@code key}.
      *         (A {@code null} return can also indicate that the map
      *         previously associated {@code null} with {@code key}.)
+     * @throws IdentityException if {@code key} is a {@link
+     *         java.util.Objects#hasIdentity(Object) value object}
      */
     public V put(@jdk.internal.RequiresIdentity K key, V value) {
         Object k = maskNull(key);
+        Objects.requireIdentity(k);
         int h = hash(k);
         Entry<K,V>[] tab = getTable();
         int i = indexFor(h, tab.length);
@@ -546,8 +565,15 @@ public class WeakHashMap<@jdk.internal.RequiresIdentity K,V>
      * These mappings will replace any mappings that this map had for any
      * of the keys currently in the specified map.
      *
+     * @apiNote If the specified map contains keys that are
+     * {@linkplain java.util.Objects#hasIdentity value objects},
+     * an {@linkplain IdentityException} is thrown when the first value object
+     * key is encountered. Zero or more mappings may have already been copied to
+     * this map.
+     *
      * @param m mappings to be stored in this map.
      * @throws  NullPointerException if the specified map is null.
+     * @throws  IdentityException if any of the {@code keys} is a value object
      */
     public void putAll(Map<? extends K, ? extends V> m) {
         int numKeysToBeAdded = m.size();

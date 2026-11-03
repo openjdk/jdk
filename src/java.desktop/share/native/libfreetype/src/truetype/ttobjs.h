@@ -4,7 +4,7 @@
  *
  *   Objects manager (specification).
  *
- * Copyright (C) 1996-2025 by
+ * Copyright (C) 1996-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -323,6 +323,22 @@ FT_BEGIN_HEADER
    */
   FT_LOCAL( FT_Error )
   tt_slot_init( FT_GlyphSlot  slot );
+
+
+#ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
+
+  /*
+   * Return the DirectWrite-style ClearType policy for a face and PPEM.
+   *
+   * Either output pointer may be NULL.
+   */
+  FT_LOCAL( void )
+  tt_face_get_cleartype_policy( TT_Face   face,
+                                FT_UInt   ppem,
+                                FT_Bool*  symmetric_smoothing,
+                                FT_Bool*  grid_fit );
+
+#endif
 
 
   /* auxiliary */

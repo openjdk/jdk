@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -717,13 +717,31 @@ address TemplateInterpreterGenerator::generate_safept_entry_for (TosState state,
                                                                 address runtime_entry) {
   address entry = __ pc();
   __ push(state);
+  __ push_cont_fastpath();
   __ call_VM(noreg, runtime_entry);
+  __ pop_cont_fastpath();
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for (vtos));
   return entry;
 }
 
 address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
-  return nullptr;
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+  __ z_lg(Z_fp, _z_common_abi(callers_sp), Z_SP);
+  {
+    Register top_frame_sp = Z_R1_scratch; // anyway going to load it with correct value
+    __ z_lg(top_frame_sp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+    __ z_slag(top_frame_sp, top_frame_sp, Interpreter::logStackElementSize);
+    __ z_agr(top_frame_sp, Z_fp);
+
+    __ resize_frame_absolute(top_frame_sp, /* temp = */ Z_R0, /* load_fp = */ true);
+  }
+  __ restore_bcp();
+  __ restore_locals();
+  __ restore_esp();
+
+  __ z_br(Z_R14);
+  return start;
 }
 
 
@@ -1195,7 +1213,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // Get mirror and store it in the frame as GC root for this Method*.
   __ mem2reg_opt(Z_R1_scratch, Address(constants_addr, ConstantPool::pool_holder_offset()));
   __ mem2reg_opt(Z_R1_scratch, Address(Z_R1_scratch, Klass::java_mirror_offset()));
-  __ resolve_oop_handle(Z_R1_scratch, Z_R0_scratch, Z_R1_scratch);
+  Register mirror_tmp = Z_R4;
+  __ resolve_oop_handle(Z_R1_scratch, mirror_tmp, Z_R0_scratch);
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(mirror), fp);
 
   BLOCK_COMMENT("} generate_fixed_frame: initialize interpreter state");
@@ -1468,8 +1487,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   __ bind(call_signature_handler);
 
+  bool support_vthread_preemption = Continuations::enabled();
+
   // We have a TOP_IJAVA_FRAME here, which belongs to us.
-  __ set_top_ijava_frame_at_SP_as_last_Java_frame(Z_SP, Z_R1/*tmp*/);
+  Label last_java_pc;
+  Label *resume_pc = support_vthread_preemption ? &last_java_pc : nullptr;
+
+  __ set_top_ijava_frame_at_SP_as_last_Java_frame(Z_SP, Z_R1/*tmp*/, resume_pc);
 
   // Call signature handler and pass locals address in Z_ARG1.
   __ z_lgr(Z_ARG1, Z_locals);
@@ -1526,7 +1550,18 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // overwritten since "__ call_stub(signature_handler);" (except for
   // ARG1 and ARG2 for static methods).
 
+  if (support_vthread_preemption) {
+    // Rresult_handler is a nonvolatile register. Its value will be preserved across
+    // the native call but only if the call isn't preempted. To preserve its value even
+    // in the case of preemption we save it in the lresult slot. It is restored at
+    // resume_pc if, and only if the call was preempted. This works because only
+    // j.l.Object::wait calls are preempted which don't return a result.
+
+    __ z_stg(Rresult_handler, _z_ijava_state_neg(lresult), Z_fp);
+  }
+  __ push_cont_fastpath();
   __ call_c(Z_R1/*native_method_entry*/);
+  __ pop_cont_fastpath();
 
   // NOTE: frame::interpreter_frame_result() depends on these stores.
   __ z_stg(Z_RET, _z_ijava_state_neg(lresult), Z_fp);
@@ -1541,46 +1576,31 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // In order for GC to work, don't clear the last_Java_sp until after
   // blocking.
 
-  //=============================================================================
-  // Switch thread to "native transition" state before reading the
-  // synchronization state. This additional state is necessary
-  // because reading and testing the synchronization state is not
-  // atomic w.r.t. GC, as this scenario demonstrates: Java thread A,
-  // in _thread_in_native state, loads _not_synchronized and is
-  // preempted. VM thread changes sync state to synchronizing and
-  // suspends threads for GC. Thread A is resumed to finish this
-  // native method, but doesn't block here since it didn't see any
-  // synchronization is progress, and escapes.
-
-  __ set_thread_state(_thread_in_native_trans);
+  // Transition from _thread_in_native to _thread_in_Java.
+  // Force this write out before the read below;
+  __ set_thread_state(_thread_in_Java);
   if (!UseSystemMemoryBarrier) {
     __ z_fence();
   }
 
-  // Now before we return to java we must look for a current safepoint
-  // (a new safepoint can not start since we entered native_trans).
-  // We must check here because a current safepoint could be modifying
-  // the callers registers right this moment.
+  // Now before we return to java we must look for a current safepoint.
+  // We must check here because a current safepoint could be in progress.
 
   // Check for safepoint operation in progress and/or pending suspend requests.
   {
     Label Continue, do_safepoint;
-    __ safepoint_poll(do_safepoint, Z_R1);
+    __ safepoint_poll(do_safepoint, Z_R1, true /* at_return */, false /* in_nmethod */);
     // Check for suspend.
     __ load_and_test_int(Z_R0/*suspend_flags*/, thread_(suspend_flags));
     __ z_bre(Continue); // 0 -> no flag set -> not suspended
     __ bind(do_safepoint);
     __ z_lgr(Z_ARG1, Z_thread);
-    __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ call_c(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
     __ bind(Continue);
   }
 
   //=============================================================================
   // Back in Interpreter Frame.
-
-  // We are in thread_in_native_trans here and back in the normal
-  // interpreter frame. We don't have to do anything special about
-  // safepoints and we can switch to Java mode anytime we are ready.
 
   // Note: frame::interpreter_frame_result has a dependency on how the
   // method result is saved across the call to post_method_exit. For
@@ -1591,10 +1611,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   //=============================================================================
   // Back in Java.
-
-  // Memory ordering: Z does not reorder store/load with subsequent
-  // load. That's strong enough.
-  __ set_thread_state(_thread_in_Java);
 
   __ reset_last_Java_frame();
 
@@ -1609,6 +1625,32 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // i.e., bci == 0 <=> Z_bcp == code_base().
   __ z_lg(Z_bcp, Address(Rmethod, Method::const_offset())); // get constMethod
   __ add2reg(Z_bcp, in_bytes(ConstMethod::codes_offset())); // get codebase
+
+  if (support_vthread_preemption) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ z_ltg(Z_R1_scratch, Address(Z_thread, JavaThread::preempt_alternate_return_offset()));
+    __ z_brz(not_preempted); // if 0, jump to not_preempted
+    __ z_mvghi(Address(Z_thread, JavaThread::preempt_alternate_return_offset()), 0);
+    __ z_br(Z_R1_scratch);
+
+    // Execution will be resumed here when the vthread becomes runnable again.
+    __ bind(*resume_pc);
+    __ restore_after_resume();
+    // We saved the result handler before the call
+    __ z_lg(Rresult_handler, _z_ijava_state_neg(lresult), Z_fp);
+#ifdef ASSERT
+    // Clobber result slots. Only native methods returning void can be preemted currently.
+    __ load_const(Z_RET, UCONST64(0xbad01001));
+    __ z_stg(Z_RET, _z_ijava_state_neg(lresult), Z_fp);
+    __ z_stg(Z_RET, _z_ijava_state_neg(fresult), Z_fp);
+    // reset_last_Java_frame() below asserts that a last java sp is set
+    __ asm_assert_mem8_is_zero(in_bytes(JavaThread::last_Java_sp_offset()),
+         Z_thread, FILE_AND_LINE ": Last java sp should not be set when resuming", 69);
+    __ z_stg(Z_RET, in_bytes(JavaThread::last_Java_sp_offset()), Z_thread);
+#endif
+    __ bind(not_preempted);
+  }
 
   if (CheckJNICalls) {
     // clear_pending_jni_exception_check
@@ -1684,7 +1726,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 // Generic interpreted method entry to template interpreter.
 //
-address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, bool object_init) {
   address entry_point = __ pc();
 
   bool inc_counter = UseCompiler || CountCompiledCalls;
@@ -1805,6 +1847,12 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #endif // ASSERT
   }
 
+  // If object_init == true, we should insert a StoreStore barrier here to
+  // prevent strict fields initial default values from being observable.
+  // However, s390 is a TSO platform, so if `this` escapes, strict fields
+  // initialized values are guaranteed to be the ones observed, so the
+  // barrier can be elided.
+
   // start execution
 
 #ifdef ASSERT
@@ -1842,7 +1890,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   Label    slow_path;
 
   // If we need a safepoint check, generate full interpreter entry.
-  __ safepoint_poll(slow_path, Z_R1);
+  __ safepoint_poll(slow_path, Z_R1, false /* at_return */, false /* in_nmethod */);
 
   BLOCK_COMMENT("CRC32_update {");
 
@@ -1891,7 +1939,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   Label    slow_path;
 
   // If we need a safepoint check, generate full interpreter entry.
-  __ safepoint_poll(slow_path, Z_R1);
+  __ safepoint_poll(slow_path, Z_R1, false /* at_return */, false /* in_nmethod */);
 
   // We don't generate local frame and don't align stack because
   // we call stub code and there is no safepoint on this path.
@@ -2030,8 +2078,8 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
 address TemplateInterpreterGenerator::generate_currentThread() {
   uint64_t entry_off = __ offset();
 
-  __ z_lg(Z_RET, Address(Z_thread, JavaThread::threadObj_offset()));
-  __ resolve_oop_handle(Z_RET, Z_R0_scratch, Z_R1_scratch);
+  __ z_lg(Z_RET, Address(Z_thread, JavaThread::vthread_offset()));
+  __ resolve_oop_handle(Z_RET, Z_R1_scratch, Z_R0_scratch);
 
   // Restore caller sp for c2i case.
   __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
@@ -2176,6 +2224,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                    JavaThread::popframe_force_deopt_reexecution_bit,
                    Z_tmp_1, false);
 
+    __ pop_cont_fastpath();
     // Continue in deoptimization handler.
     __ z_br(Z_R14);
 
@@ -2191,6 +2240,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                        false,  // install_monitor_exception
                        false); // notify_jvmdi
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
+  __ pop_cont_fastpath();
   {
     Register top_frame_sp = Z_R1_scratch;
     __ z_lg(top_frame_sp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
@@ -2264,6 +2314,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // Remove the activation (without doing throws on illegalMonitorExceptions).
   __ remove_activation(vtos, noreg/*ret.pc already loaded*/, false/*throw exc*/, true/*install exc*/, false/*notify jvmti*/);
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
+  __ pop_cont_fastpath();
 
   __ get_vm_result_oop(Z_ARG1);     // Restore exception.
   __ verify_oop(Z_ARG1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /* @test
  * @bug 4640544 8044773 8233435
  * @summary Unit test for setOption/getOption/options methods
- * @requires !vm.graal.enabled
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
  *        jdk.test.lib.NetworkConfiguration

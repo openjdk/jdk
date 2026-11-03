@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,12 @@ public class SignatureFileVerifier {
     /* Are we debugging ? */
     private static final Debug debug = Debug.getInstance("jar");
 
-    private final ArrayList<CodeSigner[]> signerCache;
+    private final List<CodeSigner[]> signerCache;
+
+    // The maximum size of the signerCache. This is for debug only
+    // and not intended to be adjusted by users.
+    private static int SIGNER_CACHE_SIZE
+            = Integer.getInteger("sun.security.util.jar.signer.cache.size", 5);
 
     private static final String ATTR_DIGEST =
         "-DIGEST-" + ManifestDigester.MF_MAIN_ATTRS.toUpperCase(Locale.ENGLISH);
@@ -97,7 +102,7 @@ public class SignatureFileVerifier {
      *
      * @param rawBytes the raw bytes of the signature block file
      */
-    public SignatureFileVerifier(ArrayList<CodeSigner[]> signerCache,
+    public SignatureFileVerifier(List<CodeSigner[]> signerCache,
                                  ManifestDigester md,
                                  String name,
                                  byte[] rawBytes)
@@ -282,7 +287,6 @@ public class SignatureFileVerifier {
         } finally {
             Providers.stopJarVerification(obj);
         }
-
     }
 
     private void processImpl(Hashtable<String, CodeSigner[]> signers,
@@ -850,6 +854,9 @@ public class SignatureFileVerifier {
                 newSigners.length);
         }
         signerCache.add(cachedSigners);
+        if (signerCache.size() > SIGNER_CACHE_SIZE) {
+            signerCache.remove(0);
+        }
         signers.put(name, cachedSigners);
     }
 

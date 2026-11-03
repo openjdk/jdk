@@ -36,7 +36,6 @@
  * @requires vm.opt.TieredStopAtLevel == null & vm.opt.TieredCompilation == null
  * @requires vm.simpleArch == "x86" | vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "riscv64"
  * @requires vm.debug
- * @requires !vm.graal.enabled
  * @run driver compiler.sharedstubs.SharedStubToInterpTest -XX:-TieredCompilation
  *
  */

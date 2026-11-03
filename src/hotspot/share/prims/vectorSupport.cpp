@@ -206,9 +206,10 @@ const char* VectorSupport::lanetype2name(LaneType lane_type) {
     "byte",
     "short",
     "int",
-    "long"
+    "long",
+    "float16",
   };
-  if (lane_type >= LT_FLOAT && lane_type <= LT_LONG) {
+  if (lane_type >= LT_FLOAT && lane_type <= LT_FLOAT16) {
     return lanetype2name[lane_type];
   }
   assert(false, "unknown lane type: %d", (int)lane_type);
@@ -224,6 +225,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    return Op_AddI;
         case LT_LONG:   return Op_AddL;
+        case LT_FLOAT16:  return Op_AddHF;
         case LT_FLOAT:  return Op_AddF;
         case LT_DOUBLE: return Op_AddD;
         default: return 0;
@@ -236,6 +238,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    return Op_SubI;
         case LT_LONG:   return Op_SubL;
+        case LT_FLOAT16: return Op_SubHF;
         case LT_FLOAT:  return Op_SubF;
         case LT_DOUBLE: return Op_SubD;
         default: return 0;
@@ -248,6 +251,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    return Op_MulI;
         case LT_LONG:   return Op_MulL;
+        case LT_FLOAT16: return Op_MulHF;
         case LT_FLOAT:  return Op_MulF;
         case LT_DOUBLE: return Op_MulD;
         default: return 0;
@@ -260,6 +264,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    return Op_DivI;
         case LT_LONG:   return Op_DivL;
+        case LT_FLOAT16: return Op_DivHF;
         case LT_FLOAT:  return Op_DivF;
         case LT_DOUBLE: return Op_DivD;
         default: return 0;
@@ -272,6 +277,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:
         case LT_INT:    return Op_MinI;
         case LT_LONG:   return Op_MinL;
+        case LT_FLOAT16: return Op_MinHF;
         case LT_FLOAT:  return Op_MinF;
         case LT_DOUBLE: return Op_MinD;
         default: return 0;
@@ -284,6 +290,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:
         case LT_INT:    return Op_MaxI;
         case LT_LONG:   return Op_MaxL;
+        case LT_FLOAT16: return Op_MaxHF;
         case LT_FLOAT:  return Op_MaxF;
         case LT_DOUBLE: return Op_MaxD;
         default: return 0;
@@ -316,6 +323,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    return Op_AbsI;
         case LT_LONG:   return Op_AbsL;
+        case LT_FLOAT16: return 0;
         case LT_FLOAT:  return Op_AbsF;
         case LT_DOUBLE: return Op_AbsD;
         default: return 0;
@@ -328,6 +336,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    return Op_NegI;
         case LT_LONG:   return Op_NegL;
+        case LT_FLOAT16: return 0;
         case LT_FLOAT:  return Op_NegF;
         case LT_DOUBLE: return Op_NegD;
         default: return 0;
@@ -366,6 +375,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
     }
     case VECTOR_OP_SQRT: {
       switch (lt) {
+        case LT_FLOAT16:  return Op_SqrtHF;
         case LT_FLOAT:  return Op_SqrtF;
         case LT_DOUBLE: return Op_SqrtD;
         default: return 0;
@@ -374,6 +384,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
     }
     case VECTOR_OP_FMA: {
       switch (lt) {
+        case LT_FLOAT16:  return Op_FmaHF;
         case LT_FLOAT:  return Op_FmaF;
         case LT_DOUBLE: return Op_FmaD;
         default: return 0;
@@ -436,6 +447,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    // fall-through
         case LT_LONG:   // fall-through
+        case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_VectorMaskLastTrue;
         default: return 0;
@@ -448,6 +460,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    // fall-through
         case LT_LONG:   // fall-through
+        case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_VectorMaskFirstTrue;
         default: return 0;
@@ -460,6 +473,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    // fall-through
         case LT_LONG:   // fall-through
+        case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_VectorMaskTrueCount;
         default: return 0;
@@ -472,6 +486,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    // fall-through
         case LT_LONG:   // fall-through
+        case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_VectorMaskToLong;
         default: return 0;
@@ -484,6 +499,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    // fall-through
         case LT_LONG:   // fall-through
+        case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_ExpandV;
         default: return 0;
@@ -496,6 +512,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    // fall-through
         case LT_LONG:   // fall-through
+        case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_CompressV;
         default: return 0;
@@ -508,6 +525,7 @@ int VectorSupport::vop2ideal(jint id, LaneType lt) {
         case LT_SHORT:  // fall-through
         case LT_INT:    // fall-through
         case LT_LONG:   // fall-through
+        case LT_FLOAT16: // fall-through
         case LT_FLOAT:  // fall-through
         case LT_DOUBLE: return Op_CompressM;
         default: return 0;

@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,10 +79,14 @@ public class StableRefPlainTest {
 
     @Test
     @IR(counts = { IRNode.LOAD, ">0" })
-    @IR(failOn = { IRNode.MEMBAR })
+    @IR(applyIf = {"enable-valhalla", "false"}, failOn = { IRNode.MEMBAR })
+    // We have barriers with valhalla from the atomic expansion of the LoadFlatNode
+    // Indeed, since the field is not initialized, it is not known to be constant yet,
+    // and so, the LoadFlat cannot be expanded non-atomically. We need barriers to synchronize
+    // the LoadFlat and potential updates to sub-field of the flatten field.
+    @IR(applyIfAnd = {"UseFieldFlattening", "true", "enable-valhalla", "true"}, counts = { IRNode.MEMBAR, ">0" })
     static int testNoFold() {
         // Access should not be folded.
-        // No barriers expected for plain fields.
         Integer i = BLANK_CARRIER.field;
         return i != null ? i : 0;
     }
@@ -109,9 +114,11 @@ public class StableRefPlainTest {
     }
 
     @Test
-    @IR(failOn = { IRNode.MEMBAR })
+    @IR(applyIf = {"enable-valhalla", "false"}, failOn = { IRNode.MEMBAR })
+    // We have barriers from the atomic expansion of the StoreFlatNode. Store is not eliminated with
+    // or without Valhalla, but Valhalla's StoreFlat require barriers.
+    @IR(applyIfAnd = {"UseFieldFlattening", "true", "enable-valhalla", "true"}, counts = { IRNode.MEMBAR, ">0" })
     static void testMethodInit() {
-        // Reference inits do not have membars.
         INIT_CARRIER.init();
     }
 

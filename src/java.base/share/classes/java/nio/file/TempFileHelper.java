@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ class TempFileHelper {
         String s = prefix + Long.toUnsignedString(n) + suffix;
         Path name = dir.getFileSystem().getPath(s);
         // the generated name should be a simple file name
-        if (name.getParent() != null)
+        if (name.getParent() != null || name.getRoot() != null)
             throw new IllegalArgumentException("Invalid prefix or suffix");
         return dir.resolve(name);
     }

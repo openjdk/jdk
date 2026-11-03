@@ -43,7 +43,7 @@ public class GenerateOopMapTest {
 
     static String infoPattern = "[generateoopmap]";
     static String debugPattern = "[generateoopmap] Basicblock#0 begins at:";
-    static String tracePattern = "[trace][generateoopmap]        5  vars = 'r'      stack = 'v'   monitors = ''  \tifne";
+    static String tracePattern = "\\[trace *\\]\\[generateoopmap\\]        5  vars = 'r'      stack = 'v'   monitors = ''  \tifne";
     static String traceDetailPattern = "[generateoopmap]         0 vars     = ( r  |slot0)    invokestatic()V";
 
     static void test() throws Exception {
@@ -63,7 +63,7 @@ public class GenerateOopMapTest {
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:generateoopmap=trace",
                                                               "GenerateOopMapTest", "test");
         o = new OutputAnalyzer(pb.start());
-        o.shouldContain(tracePattern).shouldHaveExitValue(0);
+        o.shouldMatch(tracePattern).shouldHaveExitValue(0);
 
         // Prints extra stuff with detailed. Not sure how useful this is but keep it for now.
         if (Platform.isDebugBuild()) {

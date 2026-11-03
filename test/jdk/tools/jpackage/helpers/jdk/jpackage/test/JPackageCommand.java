@@ -48,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -1011,6 +1012,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return setEnabledMessageCategories(Set.of(categories));
     }
 
+    public JPackageCommand enableMessageCategories(Set<MessageCategory> categories) {
+        return setEnabledMessageCategories(SetBuilder.build(logConfig.add()).add(categories).emptyAllowed(true).create());
+    }
+
+    public JPackageCommand enableMessageCategories(MessageCategory... categories) {
+        return enableMessageCategories(Set.of(categories));
+    }
+
     public JPackageCommand setDisabledMessageCategories(Set<MessageCategory> categories) {
         verifyMutable();
         logConfig = new LogConfig(
@@ -1021,6 +1030,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand setDisabledMessageCategories(MessageCategory... categories) {
         return setDisabledMessageCategories(Set.of(categories));
+    }
+
+    public JPackageCommand disableMessageCategories(Set<MessageCategory> categories) {
+        return setDisabledMessageCategories(SetBuilder.build(logConfig.remove()).add(categories).emptyAllowed(true).create());
+    }
+
+    public JPackageCommand disableMessageCategories(MessageCategory... categories) {
+        return disableMessageCategories(Set.of(categories));
     }
 
     public static Set<MessageCategory> messageCategoriesConsoleAll() {
@@ -1507,6 +1524,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             return !(TKit.isOSX() && MacHelper.signPredefinedAppImage(cmd));
         }).create()),
         APP_CONTENT(new Builder("--app-content").multiple().create()),
+        APP_RESOURCES(new Builder("--app-resources").multiple().create()),
         RESOURCE_DIR(new Builder("--resource-dir").create()),
         MAC_DMG_CONTENT(new Builder("--mac-dmg-content").multiple().create()),
         RUNTIME_IMAGE(new Builder("--runtime-image").create());
@@ -2012,7 +2030,63 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }
 
+        addNoOpDMGScriptIfNeeded();
+
         return this;
+    }
+
+    private void addNoOpDMGScriptIfNeeded() {
+        if (!checkIfNoOpDMGScriptIsNeeded()) {
+            return;
+        }
+
+        Path resourceDir = getArgumentValue("--resource-dir", () -> null, Path::of);
+        if (resourceDir == null) {
+            resourceDir = TKit.createTempDirectory("resources-dir-noop-dmg-script")
+                    .toAbsolutePath();
+            setArgumentValue("--resource-dir", resourceDir);
+        } else if (!Files.isDirectory(resourceDir)) {
+            // If we have invalid resource dir, just keep it in case if test
+            // wants it.
+            return;
+        }
+
+        final String baseName;
+        try {
+            baseName = installerName();
+        } catch (RuntimeException _) {
+            return;
+        }
+
+        final String scriptName = baseName + "-dmg-setup.scpt";
+        if (Files.exists(resourceDir.resolve(scriptName))) {
+            // We already have script provided. Do not overwrite it.
+            return;
+        }
+
+        // Create no-op DMG script
+        try {
+            Files.writeString(resourceDir.resolve(scriptName), "return\n",
+                    StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private boolean checkIfNoOpDMGScriptIsNeeded() {
+        if (!TKit.isOSX()) {
+            return false;
+        }
+
+        if (!hasArgument("--type")) {
+            return false;
+        }
+
+        if (packageType() != PackageType.MAC_DMG) {
+            return false;
+        }
+
+        return !ENABLE_DEFAULT_DMG_OSASCRIPT;
     }
 
     public String getPrintableCommandLine() {
@@ -2293,6 +2367,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     );
 
     public static final String DEFAULT_VERSION = "1.0";
+
+    private final static boolean ENABLE_DEFAULT_DMG_OSASCRIPT = TKit.getConfigBooleanProperty("enable-default-dmg-osascript").orElseGet(() -> {
+        return TKit.getConfigBooleanProperty("SQETest").orElse(false);
+    });
 
     // [HH:mm:ss.SSS]
     private static final Pattern TIMESTAMP_REGEXP = Pattern.compile(

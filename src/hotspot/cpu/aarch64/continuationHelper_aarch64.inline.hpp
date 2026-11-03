@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ static inline void patch_return_pc_with_preempt_stub(frame& f) {
     // Instead, we will patch the return from the runtime stub back to the
     // compiled method so that the target returns to the preempt cleanup stub.
     intptr_t* caller_sp = f.sp() + f.cb()->frame_size();
-    caller_sp[-1] = (intptr_t)StubRoutines::cont_preempt_stub();
+    ContinuationHelper::patch_return_address_at(&caller_sp[-1],
+                                                StubRoutines::cont_preempt_stub());
   } else {
     // The target will check for preemption once it returns to the interpreter
     // or the native wrapper code and will manually jump to the preempt stub.
@@ -124,7 +125,8 @@ inline intptr_t** ContinuationHelper::Frame::callee_link_address(const frame& f)
 }
 
 inline address* ContinuationHelper::Frame::return_pc_address(const frame& f) {
-  return (address*)(f.real_fp() - 1);
+  frame::CompiledFramePointers cfp = f.compiled_frame_details();
+  return cfp.sender_pc_addr;
 }
 
 inline address* ContinuationHelper::InterpretedFrame::return_pc_address(const frame& f) {

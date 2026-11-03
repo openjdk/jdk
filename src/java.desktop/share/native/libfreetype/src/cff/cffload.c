@@ -4,7 +4,7 @@
  *
  *   OpenType and CFF data/program tables loader (body).
  *
- * Copyright (C) 1996-2025 by
+ * Copyright (C) 1996-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -633,6 +633,12 @@
     error = cff_index_access_element( idx, element, &bytes, &byte_len );
     if ( error )
       goto Exit;
+
+    if ( !bytes )
+    {
+      error = FT_THROW( Invalid_Table );
+      goto Exit;
+    }
 
     if ( !FT_QALLOC( name, byte_len + 1 ) )
     {

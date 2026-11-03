@@ -46,7 +46,6 @@
  *        nsk.jdi.ReferenceType.methods.methods004a
  * @run driver
  *      nsk.jdi.ReferenceType.methods.methods004
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

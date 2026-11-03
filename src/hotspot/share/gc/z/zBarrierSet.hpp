@@ -28,6 +28,7 @@
 #include "gc/z/zAddress.hpp"
 
 class ZBarrierSetAssembler;
+class ValuePayload;
 
 class ZBarrierSet : public BarrierSet {
 private:
@@ -48,7 +49,8 @@ private:
 
   static zaddress load_barrier_on_oop_field(volatile zpointer* p);
 
-  static void clone_obj_array(objArrayOop src, objArrayOop dst);
+  class ZClonerOopClosure;
+  static void clone_obj(zaddress src, zaddress dst, size_t size);
 
 public:
   ZBarrierSet();
@@ -101,6 +103,7 @@ public:
     static zaddress oop_copy_one_barriers(zpointer* dst, zpointer* src);
     static OopCopyResult oop_copy_one_check_cast(zpointer* dst, zpointer* src, Klass* dst_klass);
     static OopCopyResult oop_copy_one(zpointer* dst, zpointer* src);
+    static OopCopyResult oop_clear_one(zpointer* dst);
 
     static OopCopyResult oop_arraycopy_in_heap_check_cast(zpointer* dst, zpointer* src, size_t length, Klass* dst_klass);
     static OopCopyResult oop_arraycopy_in_heap_no_check_cast(zpointer* dst, zpointer* src, size_t length);
@@ -150,6 +153,9 @@ public:
                                                size_t length) { unsupported(); }
 
     static void clone_in_heap(oop src, oop dst, size_t size);
+
+    static void value_copy_in_heap(const ValuePayload& src, const ValuePayload& dst);
+    static void value_store_null_in_heap(const ValuePayload& dst);
 
     //
     // Not in heap

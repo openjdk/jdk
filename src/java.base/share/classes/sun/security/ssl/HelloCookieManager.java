@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.ssl;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -121,6 +122,7 @@ abstract class HelloCookieManager {
     private static final
             class D10HelloCookieManager extends HelloCookieManager {
 
+        private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
         final SecureRandom secureRandom;
         private int               cookieVersion;  // allow to wrap, version + sequence
         private final byte[]      cookieSecret;
@@ -170,6 +172,7 @@ abstract class HelloCookieManager {
             }
             byte[] helloBytes = clientHello.getHelloCookieBytes();
             md.update(helloBytes);
+            md.update(getHostPortBytes(context));
             byte[] cookie = md.digest(secret);      // 32 bytes
             cookie[0] = (byte)((version >> 24) & 0xFF);
 
@@ -205,10 +208,29 @@ abstract class HelloCookieManager {
             }
             byte[] helloBytes = clientHello.getHelloCookieBytes();
             md.update(helloBytes);
+            md.update(getHostPortBytes(context));
             byte[] target = md.digest(secret);      // 32 bytes
             target[0] = cookie[0];
 
             return MessageDigest.isEqual(target, cookie);
+        }
+
+        /**
+         * Returns host and port bytes if those are set.
+         * Using ASCII unit separator character to separate host and port so we
+         * can differentiate between otherwise identical host and port string
+         * concatenations, for example host 172.0.0.1 with port 25 and host
+         * 172.0.0.12 with port 5.
+         */
+        private static byte[] getHostPortBytes(ServerHandshakeContext context) {
+            final String host = context.conContext.transport.getPeerHost();
+            final int port = context.conContext.transport.getPeerPort();
+            final String hostStr = host != null ? host : "";
+            final String portStr = port > -1 ? Integer.toString(port) : "";
+            return hostStr.isEmpty() && portStr.isEmpty() ?
+                    EMPTY_BYTE_ARRAY :
+                    (hostStr + '\u001F' + portStr).getBytes(
+                            StandardCharsets.UTF_8);
         }
     }
 

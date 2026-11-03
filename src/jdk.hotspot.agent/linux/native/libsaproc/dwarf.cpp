@@ -23,15 +23,20 @@
  *
  */
 
+#include <cstdlib>
 #include <cstring>
 #include <stack>
 
 #include "dwarf.hpp"
+#include "salibelf.h"
 #include "libproc_impl.h"
 
 DwarfParser::DwarfParser(lib_info *lib) : _lib(lib),
                                           _buf(NULL),
-                                          _encoding(0),
+                                          _dwarf_version(0),
+                                          _is_64bit_dwarf(false),
+                                          _has_augmentation(false),
+                                          _fde_ptr_encoding(0),
                                           _code_factor(0),
                                           _data_factor(0),
                                           _current_pc(0L) {
@@ -73,18 +78,24 @@ uintptr_t DwarfParser::read_leb(bool sign) {
 }
 
 uint64_t DwarfParser::get_entry_length() {
+  _is_64bit_dwarf = false;
   uint64_t length = *(reinterpret_cast<uint32_t *>(_buf));
   _buf += 4;
   if (length == 0xffffffff) {
     length = *(reinterpret_cast<uint64_t *>(_buf));
     _buf += 8;
+    _is_64bit_dwarf = true;
   }
   return length;
 }
 
-bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
+bool DwarfParser::process_cie(unsigned char *start_of_entry, uint64_t id) {
   unsigned char *orig_pos = _buf;
-  _buf = start_of_entry - id;
+
+  // CIE pointer means the offset from FDE in .eh_frame.
+  // In .debug_frame, CIE pointer means the offset from start of .debug_frame .
+  _buf = _lib->frame.is_debug_frame ? _lib->frame.data + id
+                                    : start_of_entry - id;
 
   uint64_t length = get_entry_length();
   if (length == 0L) {
@@ -92,8 +103,13 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
   }
   unsigned char *end = _buf + length;
 
-  _buf += 4; // Skip ID (This value of CIE would be always 0)
-  _buf++;    // Skip version (assume to be "1")
+  // Skip ID
+  // Linux LSB Core defines 4byte unsigned value for CIE ID,
+  // thus need to check whether it is .debug_frame or not.
+  _buf += _is_64bit_dwarf && _lib->frame.is_debug_frame ? 8 : 4;
+
+  _dwarf_version = *_buf;
+  _buf++; // Skip version
 
   char *augmentation_string = reinterpret_cast<char *>(_buf);
   bool has_ehdata = (strcmp("eh", augmentation_string) == 0);
@@ -102,21 +118,42 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
     _buf += sizeof(void *); // Skip EH data
   }
 
+  // address_size and segment_size are located in DWARF 4 or later,
+  // but they are not available in .eh_frame defined by Linux LSB Core Generic 5.0.
+  if (_lib->frame.is_debug_frame && _dwarf_version >= 4) {
+    if (*_buf != sizeof(void*)) {
+      print_warning("DWARF: address size in CIE does not match pointer size (%u).\n", *_buf);
+      return false;
+    }
+    _buf++; // Skip address size
+    if (*_buf != 0) {
+      print_warning("DWARF: segmented addressing is not supported.\n");
+      return false;
+    }
+    _buf++; // Skip segment size
+  }
+
   _code_factor = read_leb(false);
   _data_factor = static_cast<int>(read_leb(true));
   enum DWARF_Register initial_ra = static_cast<enum DWARF_Register>(*_buf++);
 
-  if (strpbrk(augmentation_string, "LP") != NULL) {
-    // Language personality routine (P) and Language Specific Data Area (LSDA:L)
-    // are not supported because we need compliant Unwind Library Interface,
-    // but we want to unwind without it.
-    //
-    //   Unwind Library Interface (SysV ABI AMD64 6.2)
-    //     https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf
-    return false;
-  } else if (strchr(augmentation_string, 'R') != NULL) {
-    read_leb(false); // augmentation length
-    _encoding = *_buf++;
+  if (*augmentation_string == 'z') {
+    _has_augmentation = true;
+    read_leb(false); // Skip augmentation length
+    augmentation_string++; // Skip first char ('z')
+    while (*augmentation_string != '\0') {
+      if (*augmentation_string == 'R') {
+        _fde_ptr_encoding = *_buf++;
+      } else if (*augmentation_string == 'P') {
+        print_warning("DWARF: Ignore augmentation: P\n");
+        unsigned char enc = *_buf++; // first argument (encoding)
+        get_decoded_value(enc); // skip second argument (personality routine handler)
+      } else if (*augmentation_string == 'L') {
+        print_warning("DWARF: Ignore augmentation: L\n");
+        _buf++; // skip 1 arguments
+      }
+      augmentation_string++;
+    }
   }
 
   // Clear state
@@ -124,19 +161,19 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
   init_state(_state);
   _state.return_address_reg = initial_ra;
 
-  parse_dwarf_instructions(0L, static_cast<uintptr_t>(-1L), end);
+  bool result = parse_dwarf_instructions(0L, static_cast<uintptr_t>(-1L), end);
 
   _initial_state = _state;
   _buf = orig_pos;
-  return true;
+  return result;
 }
 
-void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const unsigned char *end) {
+bool DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const unsigned char *end) {
   uintptr_t operand1;
   _current_pc = begin;
   std::stack<struct DwarfState> remember_state;
 
-  while ((_buf < end) && (_current_pc < pc)) {
+  while ((_buf < end) && (_current_pc <= pc)) {
     unsigned char op = *_buf++;
     unsigned char opa = op & 0x3f;
     if (op & 0xc0) {
@@ -145,9 +182,9 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
 
     switch (op) {
       case 0x0:  // DW_CFA_nop
-        return;
+        break;
       case 0x01: // DW_CFA_set_loc
-        operand1 = get_decoded_value();
+        operand1 = get_decoded_value(_fde_ptr_encoding);
         if (_current_pc != 0L) {
           _current_pc = operand1;
         }
@@ -193,6 +230,17 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         }
         break;
       }
+      case 0x05: { // DW_CFA_offset_extended
+        enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
+        uintptr_t operand2 = read_leb(false);
+        _state.offset_from_cfa[reg] = operand2 * _data_factor;
+        break;
+      }
+      case 0x06: { // DW_CFA_restore_extended
+        enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
+        _state.offset_from_cfa[reg] = _initial_state.offset_from_cfa[reg];
+        break;
+      }
       case 0x07: { // DW_CFA_undefined
         enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
         _state.offset_from_cfa[reg] = INT_MAX;
@@ -203,47 +251,42 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         break;
       case 0x0a: // DW_CFA_remember_state
         remember_state.push(_state);
+        remember_arch_specific_state();
         break;
       case 0x0b: // DW_CFA_restore_state
         if (remember_state.empty()) {
-          print_debug("DWARF Error: DW_CFA_restore_state with empty stack.\n");
-          return;
+          print_warning("DWARF: DW_CFA_restore_state with empty stack.\n");
+          return false;
         }
         _state = remember_state.top();
         remember_state.pop();
+        restore_arch_specific_state();
         break;
+      case 0x0f: // DW_CFA_def_cfa_expression
+        print_warning("DWARF: DW_CFA_def_cfa_expression is not yet supported.\n");
+        return false;
       case 0xc0: {// DW_CFA_restore
         enum DWARF_Register reg = static_cast<enum DWARF_Register>(opa);
         _state.offset_from_cfa[reg] = _initial_state.offset_from_cfa[reg];
         break;
       }
-#ifdef __aarch64__
-      // SA hasn't yet supported Pointer Authetication Code (PAC), so following
-      // instructions would be ignored with warning message.
-      //   https://github.com/ARM-software/abi-aa/blob/2025Q4/aadwarf64/aadwarf64.rst
-      case 0x2d: // DW_CFA_AARCH64_negate_ra_state
-        print_debug("DWARF: DW_CFA_AARCH64_negate_ra_state is unimplemented.\n", op);
-        break;
-      case 0x2c: // DW_CFA_AARCH64_negate_ra_state_with_pc
-        print_debug("DWARF: DW_CFA_AARCH64_negate_ra_state_with_pc is unimplemented.\n", op);
-        break;
-      case 0x2b: // DW_CFA_AARCH64_set_ra_state
-        print_debug("DWARF: DW_CFA_AARCH64_set_ra_state is unimplemented.\n", op);
-        break;
-#endif
       default:
-        print_debug("DWARF: Unknown opcode: 0x%x\n", op);
-        return;
+        if (!process_arch_specific_dwarf_instructions(op)) {
+          print_warning("DWARF: Unknown opcode: 0x%x\n", op);
+          return false;
+        }
     }
   }
+
+  return true;
 }
 
 /* from dwarf.c in binutils */
-uint32_t DwarfParser::get_decoded_value() {
+uint32_t DwarfParser::get_decoded_value(unsigned char enc) {
   int size;
   uintptr_t result;
 
-  switch (_encoding & 0x7) {
+  switch (enc & 0x7) {
     case 0:  // DW_EH_PE_absptr
       size = sizeof(void *);
       result = *(reinterpret_cast<uintptr_t *>(_buf));
@@ -268,14 +311,14 @@ uint32_t DwarfParser::get_decoded_value() {
   //   https://gcc.gnu.org/ml/gcc-help/2010-09/msg00166.html
 #if defined(_LP64)
   if (size == 8) {
-    result += _lib->eh_frame.v_addr + static_cast<uintptr_t>(_buf - _lib->eh_frame.data);
+    result += _lib->frame.v_addr + static_cast<uintptr_t>(_buf - _lib->frame.data);
     size = 4;
   } else
 #endif
-  if ((_encoding & 0x70) == 0x10) { // 0x10 = DW_EH_PE_pcrel
-    result += _lib->eh_frame.v_addr + static_cast<uintptr_t>(_buf - _lib->eh_frame.data);
+  if ((enc & 0x70) == 0x10) { // 0x10 = DW_EH_PE_pcrel
+    result += _lib->frame.v_addr + static_cast<uintptr_t>(_buf - _lib->frame.data);
   } else  if (size == 2) {
-    result = static_cast<int>(result) + _lib->eh_frame.v_addr + static_cast<uintptr_t>(_buf - _lib->eh_frame.data);
+    result = static_cast<int>(result) + _lib->frame.v_addr + static_cast<uintptr_t>(_buf - _lib->frame.data);
     size = 4;
   }
 
@@ -287,7 +330,7 @@ unsigned int DwarfParser::get_pc_range() {
   int size;
   uintptr_t result;
 
-  switch (_encoding & 0x7) {
+  switch (_fde_ptr_encoding & 0x7) {
     case 0:  // DW_EH_PE_absptr
       size = sizeof(void *);
       result = *(reinterpret_cast<uintptr_t *>(_buf));
@@ -322,20 +365,48 @@ unsigned int DwarfParser::get_pc_range() {
 
 bool DwarfParser::process_dwarf(const uintptr_t pc) {
   // https://refspecs.linuxfoundation.org/LSB_3.0.0/LSB-PDA/LSB-PDA/ehframechpt.html
-  _buf = _lib->eh_frame.data;
-  unsigned char *end = _lib->eh_frame.data + _lib->eh_frame.size;
-  while (_buf <= end) {
+  _buf = _lib->frame.data;
+  unsigned char *end = _lib->frame.data + _lib->frame.size;
+  while (_buf < end) {
     uint64_t length = get_entry_length();
     if (length == 0L) {
+      break; // it means "terminator" in .eh_frame, so go through to .debug_frame
+    } else if (_buf + length > end) {
+      // unexpected: DWARF is broken?
+      print_warning("DWARF: reached end of buffer even though DwarfParser did not find the pc (0x%lx).\n", pc);
       return false;
     }
     unsigned char *next_entry = _buf + length;
     unsigned char *start_of_entry = _buf;
-    uint32_t id = *(reinterpret_cast<uint32_t *>(_buf));
-    _buf += 4;
-    if (id != 0) { // FDE
-      uintptr_t pc_begin = get_decoded_value() + _lib->eh_frame.library_base_addr;
-      uintptr_t pc_end = pc_begin + get_pc_range();
+
+    // Linux LSB Core defines 4byte unsigned value for CIE ID,
+    // thus need to check whether it is .debug_frame or not.
+    uint64_t id;
+    bool is_fde;
+    if (_is_64bit_dwarf && _lib->frame.is_debug_frame) {
+      id = *(reinterpret_cast<uint64_t *>(_buf));
+      _buf += 8;
+      is_fde = id != 0xffffffffffffffff;
+    } else {
+      id = *(reinterpret_cast<uint32_t *>(_buf));
+      _buf += 4;
+      is_fde = (_lib->frame.is_debug_frame ? 0xffffffff : 0) != id;
+    }
+
+    if (is_fde) {
+      uintptr_t begin_ofs = 0L;
+      uintptr_t inst_sz = 0L;
+      if (_lib->frame.is_debug_frame) {
+        begin_ofs = *(reinterpret_cast<uintptr_t *>(_buf));
+        _buf += sizeof(void*);
+        inst_sz = *(reinterpret_cast<uintptr_t *>(_buf));
+        _buf += sizeof(void*);
+      } else {
+        begin_ofs = get_decoded_value(_fde_ptr_encoding);
+        inst_sz = get_pc_range();
+      }
+      uintptr_t pc_begin = begin_ofs + _lib->base;
+      uintptr_t pc_end = pc_begin + inst_sz;
 
       if ((pc >= pc_begin) && (pc < pc_end)) {
         // Process CIE
@@ -344,17 +415,44 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
         }
 
         // Skip Augumenation
-        uintptr_t augmentation_length = read_leb(false);
-        _buf += augmentation_length; // skip
+        if (_has_augmentation) {
+          uintptr_t augmentation_length = read_leb(false);
+          _buf += augmentation_length;
+        }
 
         // Process FDE
-        parse_dwarf_instructions(pc_begin, pc, next_entry);
-        return true;
+        return parse_dwarf_instructions(pc_begin, pc, next_entry);
       }
     }
 
     _buf = next_entry;
   }
 
-  return false;
+  bool result = false;
+  // try again with .debug_frame section if it hasn't been tried yet.
+  if (!_lib->frame.tried_debug_frame && _lib->fd != -1) {
+    // attempts to load .debug_frame from executables.
+    frame_info frame = {};
+    if (!read_frame(".debug_frame", _lib->fd, &frame)) {
+      // attempts again to load .debug_frame from debuginfo if it could not be loaded from executables.
+      int debug_fd = open_debuginfo(_lib->name, _lib->fd);
+      if (debug_fd != -1) {
+        read_frame(".debug_frame", debug_fd, &frame);
+        close(debug_fd);
+      }
+    }
+    frame.tried_debug_frame = true;
+    _lib->frame.tried_debug_frame = true;
+
+    // try process_dwarf() again with .debug_frame.
+    if (frame.data != NULL) {
+      if (_lib->frame.data != NULL) {
+        free(_lib->frame.data);
+      }
+      memcpy(&_lib->frame, &frame, sizeof(frame_info));
+      result = process_dwarf(pc);
+    }
+  }
+
+  return result;
 }

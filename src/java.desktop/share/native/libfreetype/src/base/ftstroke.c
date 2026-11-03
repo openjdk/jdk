@@ -4,7 +4,7 @@
  *
  *   FreeType path stroker (body).
  *
- * Copyright (C) 2002-2025 by
+ * Copyright (C) 2002-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -656,12 +656,11 @@
     FT_UInt   num_contours = 0;
 
     FT_UInt     count      = border->num_points;
-    FT_Vector*  point      = border->points;
     FT_Byte*    tags       = border->tags;
     FT_Int      in_contour = 0;
 
 
-    for ( ; count > 0; count--, num_points++, point++, tags++ )
+    for ( ; count > 0; count--, num_points++, tags++ )
     {
       if ( tags[0] & FT_STROKE_TAG_BEGIN )
       {
@@ -693,6 +692,7 @@
   Fail:
     num_points   = 0;
     num_contours = 0;
+    error        = FT_THROW( Invalid_Outline );
     goto Exit;
   }
 
@@ -1874,6 +1874,10 @@
       goto Exit;
     }
 
+    /* don't try to end the path if no segments have been generated */
+    if ( stroker->first_point )
+      goto Exit;
+
     if ( stroker->subpath_open )
     {
       FT_StrokeBorder  right = stroker->borders;
@@ -2094,15 +2098,14 @@
       tags  = outline->tags   + first;
       tag   = FT_CURVE_TAG( tags[0] );
 
-      /* A contour cannot start with a cubic control point! */
-      if ( tag == FT_CURVE_TAG_CUBIC )
-        goto Invalid_Outline;
-
       /* check first point to determine origin */
-      if ( tag == FT_CURVE_TAG_CONIC )
+      if ( tag != FT_CURVE_TAG_ON )
       {
-        /* First point is conic control.  Yes, this happens. */
-        if ( FT_CURVE_TAG( outline->tags[last] ) == FT_CURVE_TAG_ON )
+        FT_Int  last_tag = FT_CURVE_TAG( outline->tags[last] );
+
+
+        /* First point is a control point.  Yes, this happens. */
+        if ( last_tag == FT_CURVE_TAG_ON )
         {
           /* start at last point if it is on the curve */
           v_start = v_last;
@@ -2110,8 +2113,11 @@
         }
         else
         {
-          /* if both first and last points are conic, */
-          /* start at their middle                    */
+          if ( last_tag != tag )
+            goto Invalid_Outline;
+
+          /* if both first and last points are controls, */
+          /* start at their middle                       */
           v_start.x = ( v_start.x + v_last.x ) / 2;
           v_start.y = ( v_start.y + v_last.y ) / 2;
         }
@@ -2205,13 +2211,31 @@
             if ( point <= limit )
             {
               FT_Vector  vec;
+              FT_Vector  v_middle;
 
 
+              tag = FT_CURVE_TAG( tags[0] );
               vec = point[0];
+
+              if ( tag == FT_CURVE_TAG_CUBIC )
+              {
+                v_middle.x = ( vec2.x + vec.x ) / 2;
+                v_middle.y = ( vec2.y + vec.y ) / 2;
+
+                vec = v_middle;
+              }
+              else if ( tag != FT_CURVE_TAG_ON )
+                goto Invalid_Outline;
 
               error = FT_Stroker_CubicTo( stroker, &vec1, &vec2, &vec );
               if ( error )
                 goto Exit;
+
+              if ( tag == FT_CURVE_TAG_CUBIC )
+              {
+                point--;
+                tags--;
+              }
               continue;
             }
 
@@ -2225,13 +2249,9 @@
       if ( error )
         goto Exit;
 
-      /* don't try to end the path if no segments have been generated */
-      if ( !stroker->first_point )
-      {
-        error = FT_Stroker_EndSubPath( stroker );
-        if ( error )
-          goto Exit;
-      }
+      error = FT_Stroker_EndSubPath( stroker );
+      if ( error )
+        goto Exit;
     }
 
     return FT_Err_Ok;
@@ -2251,7 +2271,7 @@
                    FT_Stroker   stroker,
                    FT_Bool      destroy )
   {
-    FT_Error  error = FT_ERR( Invalid_Argument );
+    FT_Error  error = FT_THROW( Invalid_Argument );
     FT_Glyph  glyph = NULL;
 
 
@@ -2283,7 +2303,9 @@
       if ( error )
         goto Fail;
 
-      FT_Stroker_GetCounts( stroker, &num_points, &num_contours );
+      error = FT_Stroker_GetCounts( stroker, &num_points, &num_contours );
+      if ( error )
+        goto Fail;
 
       FT_Outline_Done( glyph->library, outline );
 
@@ -2326,7 +2348,7 @@
                          FT_Bool      inside,
                          FT_Bool      destroy )
   {
-    FT_Error  error = FT_ERR( Invalid_Argument );
+    FT_Error  error = FT_THROW( Invalid_Argument );
     FT_Glyph  glyph = NULL;
 
 

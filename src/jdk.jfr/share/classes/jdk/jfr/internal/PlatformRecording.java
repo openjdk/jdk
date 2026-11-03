@@ -53,7 +53,6 @@ import java.util.StringJoiner;
 import java.util.TimerTask;
 import java.util.TreeMap;
 
-import jdk.jfr.Configuration;
 import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
@@ -91,7 +90,6 @@ public final class PlatformRecording implements AutoCloseable {
     private TimerTask startTask;
     private boolean shouldWriteActiveRecordingEvent = true;
     private Duration flushInterval = Duration.ofSeconds(1);
-    private long finalStartChunkNanos = Long.MIN_VALUE;
     private long startNanos = -1;
 
     PlatformRecording(PlatformRecorder recorder, long id) {
@@ -249,13 +247,19 @@ public final class PlatformRecording implements AutoCloseable {
             this.startTime = startTime;
             setState(RecordingState.DELAYED);
             startTask = createStartTask();
-            recorder.getTimer().schedule(startTask, startTime.toEpochMilli());
+            long epochMilli = startTime.toEpochMilli();
+            recorder.getTimer().schedule(startTask, new Date(epochMilli));
         }
     }
 
-    public Map<String, String> getSettings() {
+    Map<String, String> getSettings() {
+        assert Thread.holdsLock(recorder) : "Must have recorder lock when accessing recorder.settings";
+        return settings;
+    }
+
+    public Map<String, String> getSettingsCopy() {
         synchronized (recorder) {
-            return settings;
+            return new LinkedHashMap<>(settings);
         }
     }
 
@@ -371,7 +375,7 @@ public final class PlatformRecording implements AutoCloseable {
             clone.setStartTime(getStartTime());
         }
         if (pathToGcRoots == null) {
-            clone.setSettings(getSettings()); // needed for old object sample
+            clone.setSettings(getSettingsCopy()); // needed for old object sample
             clone.stop(reason); // dumps to destination path here
         } else {
             // Risk of violating lock order here, since
@@ -543,10 +547,6 @@ public final class PlatformRecording implements AutoCloseable {
     @Override
     public String toString() {
         return getName() + " (id=" + getId() + ") " + getState();
-    }
-
-    public void setConfiguration(Configuration c) {
-        setSettings(c.getSettings());
     }
 
     public void setMaxAge(Duration maxAge) {
@@ -876,14 +876,6 @@ public final class PlatformRecording implements AutoCloseable {
 
     public long getStartNanos() {
         return startNanos;
-    }
-
-    public long getFinalChunkStartNanos() {
-        return finalStartChunkNanos;
-    }
-
-    public void setFinalStartnanos(long chunkStartNanos) {
-       this.finalStartChunkNanos = chunkStartNanos;
     }
 
     public void removeBefore(Instant timestamp) {

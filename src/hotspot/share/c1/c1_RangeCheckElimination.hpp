@@ -159,6 +159,7 @@ public:
     void do_UnsafeGetAndSet(UnsafeGetAndSet* x) { /* nothing to do */ };
     void do_ProfileCall    (ProfileCall*     x) { /* nothing to do */ };
     void do_ProfileReturnType (ProfileReturnType*  x) { /* nothing to do */ };
+    void do_ProfileACmpTypes(ProfileACmpTypes*  x) { /* nothing to do */ };
     void do_ProfileInvoke  (ProfileInvoke*   x) { /* nothing to do */ };
     void do_RuntimeCall    (RuntimeCall*     x) { /* nothing to do */ };
     void do_MemBar         (MemBar*          x) { /* nothing to do */ };

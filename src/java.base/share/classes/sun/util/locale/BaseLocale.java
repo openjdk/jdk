@@ -275,4 +275,10 @@ public final class BaseLocale {
         }
         return h;
     }
+
+    // This is called from C code, at the very end of Java code execution
+    // during the AOT cache assembly phase.
+    private static void assemblySetup() {
+        CACHE.get().prepareForAOTCache();
+    }
 }

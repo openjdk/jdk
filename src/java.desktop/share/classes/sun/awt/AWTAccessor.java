@@ -128,16 +128,6 @@ public final class AWTAccessor {
         void setRequestFocusController(RequestFocusController requestController);
 
         /**
-         * Returns the appContext of the component.
-         */
-        AppContext getAppContext(Component comp);
-
-        /**
-         * Sets the appContext of the component.
-         */
-        void setAppContext(Component comp, AppContext appContext);
-
-        /**
          * Returns the parent of the component.
          */
         Container getParent(Component comp);

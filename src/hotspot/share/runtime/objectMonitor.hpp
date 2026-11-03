@@ -27,7 +27,6 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
-#include "oops/markWord.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
 #include "runtime/javaThread.hpp"
@@ -97,16 +96,8 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //
 // ObjectMonitor Layout Overview/Highlights/Restrictions:
 //
-// - For performance reasons we ensure the _metadata field is located at offset 0,
-//   which in turn means that ObjectMonitor can't inherit from any other class nor use
-//   any virtual member functions.
-// - The _metadata and _owner fields should be separated by enough space
-//   to avoid false sharing due to parallel access by different threads.
-//   This is an advisory recommendation.
 // - The general layout of the fields in ObjectMonitor is:
-//     _metadata
-//     <lightly_used_fields>
-//     <optional padding>
+//     _object
 //     _owner
 //     <optional padding>
 //     <remaining_fields>
@@ -146,7 +137,6 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   friend class VMStructs;
-  JVMCI_ONLY(friend class JVMCIVMStructs;)
 
   static OopStorage* _oop_storage;
 
@@ -155,20 +145,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // ParkEvent of unblocker thread.
   static ParkEvent* _vthread_unparker_ParkEvent;
 
-  // Because of frequent access, the metadata field is at offset zero (0).
-  // Enforced by the assert() in metadata_addr().
-  // * Locking with UseObjectMonitorTable:
-  //   Contains the _object's hashCode.
-  // * Locking without UseObjectMonitorTable:
-  //   Contains the displaced object header word - mark
-  volatile uintptr_t _metadata;     // metadata
   WeakHandle _object;               // backward object pointer
-  // Separate _metadata and _owner on different cache lines since both can
-  // have busy multi-threaded access. _metadata and _object are set at initial
-  // inflation. The _object does not change, so it is a good choice to share
-  // its cache line with _metadata.
-  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(_metadata) +
-                        sizeof(WeakHandle));
 
   static const int64_t NO_OWNER = 0;
   static const int64_t ANONYMOUS_OWNER = 1;
@@ -180,7 +157,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // both can have busy multi-threaded access. _previous_owner_tid is only
   // changed by ObjectMonitor::exit() so it is a good choice to share the
   // cache line with _owner.
-  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
+  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(int64_t volatile) +
                         sizeof(volatile uint64_t));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
@@ -216,35 +193,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static int Knob_SpinLimit;
 
   static ByteSize object_offset()      { return byte_offset_of(ObjectMonitor, _object); }
-  static ByteSize metadata_offset()    { return byte_offset_of(ObjectMonitor, _metadata); }
   static ByteSize owner_offset()       { return byte_offset_of(ObjectMonitor, _owner); }
   static ByteSize recursions_offset()  { return byte_offset_of(ObjectMonitor, _recursions); }
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
   static ByteSize entry_list_offset()  { return byte_offset_of(ObjectMonitor, _entry_list); }
-
-  // ObjectMonitor references can be ORed with markWord::monitor_value
-  // as part of the ObjectMonitor tagging mechanism. When we combine an
-  // ObjectMonitor reference with an offset, we need to remove the tag
-  // value in order to generate the proper address.
-  //
-  // We can either adjust the ObjectMonitor reference and then add the
-  // offset or we can adjust the offset that is added to the ObjectMonitor
-  // reference. The latter avoids an AGI (Address Generation Interlock)
-  // stall so the helper macro adjusts the offset value that is returned
-  // to the ObjectMonitor reference manipulation code:
-  //
-  #define OM_OFFSET_NO_MONITOR_VALUE_TAG(f) \
-    ((in_bytes(ObjectMonitor::f ## _offset())) - checked_cast<int>(markWord::monitor_value))
-
-  uintptr_t           metadata() const;
-  void                set_metadata(uintptr_t value);
-  volatile uintptr_t* metadata_addr();
-
-  markWord            header() const;
-  void                set_header(markWord hdr);
-
-  intptr_t            hash() const;
-  void                set_hash(intptr_t hash);
 
   bool is_busy() const {
     // TODO-FIXME: assert _owner == NO_OWNER implies _recursions = 0
@@ -416,7 +368,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
  public:
   // Deflation support
   bool      deflate_monitor(Thread* current);
-  void      install_displaced_markword_in_object(const oop obj);
 
   // JFR support
   static bool is_jfr_excluded(const Klass* monitor_klass);

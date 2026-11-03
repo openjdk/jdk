@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -2092,12 +2092,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">자정</dayPeriod>
+							<dayPeriod type="am">오전</dayPeriod>
 							<dayPeriod type="noon">정오</dayPeriod>
+							<dayPeriod type="pm">오후</dayPeriod>
 							<dayPeriod type="morning1">아침</dayPeriod>
 							<dayPeriod type="morning2">오전</dayPeriod>
 							<dayPeriod type="afternoon1">오후</dayPeriod>
 							<dayPeriod type="evening1">저녁</dayPeriod>
 							<dayPeriod type="night1">밤</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">오전</dayPeriod>
+							<dayPeriod type="pm">오후</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">오전</dayPeriod>
@@ -2105,6 +2111,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">오전</dayPeriod>
+							<dayPeriod type="pm">오후</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">오전</dayPeriod>
+							<dayPeriod type="pm">오후</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">오전</dayPeriod>
 							<dayPeriod type="pm">오후</dayPeriod>
