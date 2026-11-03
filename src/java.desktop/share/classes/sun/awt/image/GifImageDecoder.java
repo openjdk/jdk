@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,7 +242,12 @@ public class GifImageDecoder extends ImageDecoder {
                     // Fall through
 
                   case TERMINATOR:
-                    if (nloops == 0 || nloops-- >= 0) {
+                    if (isAnimation && totalframes == 1) {
+                        isAnimation = false;
+                        ImageFetcher.stoppingAnimation();
+                    }
+
+                    if (isAnimation && (nloops == 0 || nloops-- >= 0)) {
                         try {
                             if (curframe != null) {
                                 curframe.dispose();
@@ -257,7 +262,7 @@ public class GifImageDecoder extends ImageDecoder {
                             return; // Unable to reset input buffer
                         }
                     }
-                    if (verbose && frameno != 1) {
+                    if (verbose) {
                         System.out.println("processing GIF terminator,"
                                            + " frames: " + frameno
                                            + " total: " + totalframes);
