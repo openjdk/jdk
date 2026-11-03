@@ -29,6 +29,7 @@
 
 $(eval $(call SetupTextFileProcessing, JDK_VECTOR_VALUE_CLASS_TARGETS, \
     SOURCE_DIRS := $(TOPDIR)/src/jdk.incubator.vector/share/classes/, \
+    SOURCE_BASE_DIR := $(TOPDIR)/src/jdk.incubator.vector/share/classes, \
     OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc-valueclasses/jdk.incubator.vector/, \
     REPLACEMENTS := \
         /\*value\*/ class => value class ; \

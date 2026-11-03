@@ -267,8 +267,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) const {
         }
       } else if (use->is_ConstraintCast()) {
         casts.push(use); // reversed version of uncast()
-      } else if (use->is_ValueType()) {
-        assert(use->as_ValueType()->get_oop() == n, "unrelated");
+      } else if (use->is_ValueType() && use->as_ValueType()->get_oop() == n) {
         casts.push(use);
       }
     }
