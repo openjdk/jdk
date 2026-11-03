@@ -907,8 +907,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ asr(rscratch2, rscratch2, Interpreter::logStackElementSize);
     // Store extended SP and mirror
     __ stp(r10, rscratch2, Address(sp, 4 * wordSize));
-    // Move SP out of the way
-    __ mov(sp, rscratch1);
   } else {
     // Make sure there is room for the exception oop pushed in case method throws
     // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
@@ -916,8 +914,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ sub(rscratch2, rscratch1, rfp);
     __ asr(rscratch2, rscratch2, Interpreter::logStackElementSize);
     __ stp(r10, rscratch2, Address(sp, 4 * wordSize));
-    __ mov(sp, rscratch1);
   }
+  // Leave SP at the header until `bang_stack_shadow_pages()` probes the shadow space.
 }
 
 // End of helpers
@@ -1148,24 +1146,68 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 
   Label L_done;
 
-  __ ldr(rscratch1, Address(rthread, JavaThread::shadow_zone_growth_watermark()));
-  __ cmp(sp, rscratch1);
+  // Reconstruct the prospective SP.
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ add(rscratch1, rfp, rscratch1, Assembler::LSL, Interpreter::logStackElementSize);
+
+  // Compare the prospective SP with the already-probed watermark.
+  __ ldr(rscratch2, Address(rthread, JavaThread::shadow_zone_growth_watermark()));
+  __ cmp(rscratch1, rscratch2);
+
+  // If prospective SP is above the watermark, then skip probing.
   __ br(Assembler::HI, L_done);
 
-  for (int p = 1; p <= n_shadow_pages; p++) {
-    __ sub(rscratch2, sp, p*page_size);
+  if (native_call && n_shadow_pages <= 8) {
+    // Just below the header, `generate_fixed_frame()` for a native call
+    // reserves 2 * wordSize, which, on AArch64, equates to 16 bytes.  We first
+    // touch that address (which may access the same or the immediately adjacent
+    // page), after which we probe the shadow zone with an unrolled sequence.
+    __ str(zr, Address(rscratch1));
+    for (int p = 1; p <= n_shadow_pages; p++) {
+      __ sub(rscratch2, rscratch1, p*page_size);
+      __ str(zr, Address(rscratch2));
+    }
+  } else {
+    Label L_loop, L_start_selected;
+
+    // Start at the lower of the stack pointer and the watermark, so that we
+    // skip the space already covered by the watermark.
+    __ cmp(sp, rscratch2);
+    __ br(Assembler::HS, L_start_selected);
+    __ mov(rscratch2, sp);
+    __ bind(L_start_selected);
+
+    // Set rscratch1 to the lowest probe address (prospective_sp - shadow_size).
+    __ sub(rscratch1, rscratch1, shadow_zone_size);
+
+    // Align the pointer in `rscratch2` so we have an integral number of pages
+    // between `rscratch2` and `rscratch1`.
+    __ sub(rscratch2, rscratch2, rscratch1);        // rscratch2 = start - end
+    __ add(rscratch2, rscratch2, page_size - 1);    // rscratch2 += page_size-1
+    __ andr(rscratch2, rscratch2, -page_size);      // rscratch2 &= -page_size
+    __ add(rscratch2, rscratch1, rscratch2);        // rscratch2 = end + rscratch2
+
+    __ bind(L_loop);
+    __ sub(rscratch2, rscratch2, page_size);
     __ str(zr, Address(rscratch2));
+    __ cmp(rscratch2, rscratch1);
+    __ br(Assembler::HI, L_loop);
+
+    // Restore the prospective SP into `rscratch1`.
+    __ add(rscratch1, rscratch1, shadow_zone_size);
   }
 
   // Record the new watermark, but only if the update is above the safe limit.
   // Otherwise, the next time around the check above would pass the safe limit.
-  __ ldr(rscratch1, Address(rthread, JavaThread::shadow_zone_safe_limit()));
-  __ cmp(sp, rscratch1);
+  __ ldr(rscratch2, Address(rthread, JavaThread::shadow_zone_safe_limit()));
+  __ cmp(rscratch1, rscratch2);
   __ br(Assembler::LS, L_done);
-  __ mov(rscratch1, sp);
   __ str(rscratch1, Address(rthread, JavaThread::shadow_zone_growth_watermark()));
 
   __ bind(L_done);
+
+  // Commit the prospective SP, now that we have validated the stack headroom.
+  __ mov(sp, rscratch1);
 }
 
 // Interpreter stub for calling a native method. (asm interpreter)
