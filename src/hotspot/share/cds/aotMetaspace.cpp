@@ -1662,7 +1662,7 @@ void AOTMetaspace::get_aot_code_region_size() {
 
 char* AOTMetaspace::get_archived_cpu_features() {
   char* cpu_features = nullptr;
-  FileMapInfo* static_mapinfo = FileMapInfo::current_info();
+  FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive();
   // may have been opened by get_aot_code_region_size()
   if (static_mapinfo == nullptr) {
     static_mapinfo = open_static_archive();
