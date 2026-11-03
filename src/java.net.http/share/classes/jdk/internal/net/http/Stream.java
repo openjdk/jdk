@@ -1485,16 +1485,7 @@ class Stream<T> extends ExchangeImpl<T> {
             } else {
                 // there is no request body, therefore the request is complete,
                 // END_STREAM has already sent with outgoing headers
-                // Comment the line with requestBodyCF.complete(null);
-                // and uncomment the 5 lines below, then set
-                // test.sleep.delay=1000 to reproduce the failure in
-                // H2GoAwayPromptConnectionClose.java reliably
-                requestBodyCF.completeAsync(() -> {  try {
-                    Thread.sleep(Integer.getInteger("test.sleep.delay", 10));
-                } catch (InterruptedException x) {
-                    Thread.currentThread().interrupt();
-                } return null;});
-//                requestBodyCF.complete(null);
+                requestBodyCF.complete(null);
             }
         } catch (Throwable t) {
             cancelImpl(t);

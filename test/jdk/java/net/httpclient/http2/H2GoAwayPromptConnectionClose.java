@@ -82,7 +82,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *          connection management from closing the HTTP/2 connection
  * @run junit/othervm -Djdk.httpclient.keepalive.timeout.h2=36000
  *                    -Djdk.internal.httpclient.debug=true
- *                    -Dtest.sleep.delay=2000
  *                    ${test.main.class}
  */
 class H2GoAwayPromptConnectionClose {
