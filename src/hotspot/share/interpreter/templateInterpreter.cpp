@@ -220,7 +220,7 @@ EntryPoint TemplateInterpreter::_return_entry[TemplateInterpreter::number_of_ret
 EntryPoint TemplateInterpreter::_earlyret_entry;
 EntryPoint TemplateInterpreter::_deopt_entry [TemplateInterpreter::number_of_deopt_entries ];
 address    TemplateInterpreter::_deopt_reexecute_return_entry;
-address    TemplateInterpreter::_popframe_reexecute_entry;
+address    TemplateInterpreter::_cont_popframe_reexecute_entry;
 EntryPoint TemplateInterpreter::_safept_entry;
 
 address TemplateInterpreter::_invoke_return_entry[TemplateInterpreter::number_of_return_addrs];

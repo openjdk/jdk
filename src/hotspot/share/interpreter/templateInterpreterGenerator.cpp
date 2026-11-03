@@ -261,7 +261,10 @@ void TemplateInterpreterGenerator::generate_all() {
     address return_continuation = Interpreter::_normal_table.entry(Bytecodes::_return).entry(vtos);
     vmassert(return_continuation != nullptr, "return entry not generated yet");
     Interpreter::_deopt_reexecute_return_entry = generate_deopt_entry_for(vtos, 0, return_continuation);
-    Interpreter::_popframe_reexecute_entry = generate_popframe_reexecute_entry();
+  }
+
+  { CodeletMark cm(_masm, "continuation popframe reexecute entry");
+    Interpreter::_cont_popframe_reexecute_entry = generate_cont_popframe_reexecute_entry();
   }
 
 }

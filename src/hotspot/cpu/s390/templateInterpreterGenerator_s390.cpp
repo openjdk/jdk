@@ -713,10 +713,10 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   return entry;
 }
 
-// Entry for the caller of a frame popped by JVMTI PopFrame when that caller was
-// thawed for the return. Only jumps to the deopt entry, the resize to top_frame_sp
-// the return entry does is not done here.
-address TemplateInterpreterGenerator::generate_popframe_reexecute_entry() {
+// Continuation entry for an interpreted frame thawed after its callee was
+// popped by JVMTI PopFrame. Only jumps to the deopt entry, the resize to
+// top_frame_sp the return entry does is not done here.
+address TemplateInterpreterGenerator::generate_cont_popframe_reexecute_entry() {
   address entry = __ pc();
   __ jump_to_entry(Interpreter::deopt_entry(vtos, 0), Z_R1_scratch);
   return entry;
@@ -2192,14 +2192,12 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ z_sty(Z_tmp_1, thread_(popframe_condition));
 
   {
-    // Check to see whether we are returning to a deoptimized frame or into
-    // the continuation return barrier, the caller of a popped frame on a
-    // virtual thread can still be frozen. (The PopFrame call ensures that
+    // Check to see whether we are returning to a deoptimized frame or
+    // into the continuation return barrier (the PopFrame call ensures that
     // the caller of the popped frame is either interpreted or compiled and
-    // deoptimizes it if compiled.) In both cases, we can't call
-    // dispatch_next() after the frame is popped, but instead must save the
-    // incoming arguments and restore them after deoptimization or thaw has
-    // occurred.
+    // deoptimizes it if compiled). In both cases, we can't call dispatch_next()
+    // after the frame is popped, but instead must save the incoming arguments
+    // and restore them after deoptimization or thaw has occurred.
     //
     // Note that we don't compare the return PC against the
     // deoptimization blob's unpack entry because of the presence of

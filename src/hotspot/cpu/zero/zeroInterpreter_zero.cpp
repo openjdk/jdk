@@ -871,7 +871,7 @@ address ZeroInterpreter::deopt_entry(TosState state, int length) {
   return nullptr;
 }
 
-address ZeroInterpreter::popframe_reexecute_entry() {
+address ZeroInterpreter::cont_popframe_reexecute_entry() {
   return nullptr;
 }
 

@@ -425,13 +425,8 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   return entry;
 }
 
-// Entry for the caller of a frame popped by JVMTI PopFrame when that caller was
-// thawed for the return. Only jumps to the deopt entry, this port has no
-// continuation support.
-address TemplateInterpreterGenerator::generate_popframe_reexecute_entry() {
-  address entry = __ pc();
-  __ jump_to_entry(Interpreter::deopt_entry(vtos, 0));
-  return entry;
+address TemplateInterpreterGenerator::generate_cont_popframe_reexecute_entry() {
+  return nullptr;
 }
 
 address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type) {

@@ -55,7 +55,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_return_entry_for(TosState state, int step, size_t index_size);
   address generate_earlyret_entry_for(TosState state);
   address generate_deopt_entry_for(TosState state, int step, address continuation = nullptr);
-  address generate_popframe_reexecute_entry();
+  address generate_cont_popframe_reexecute_entry();
   address generate_safept_entry_for(TosState state, address runtime_entry);
   address generate_cont_resume_interpreter_adapter();
   void    generate_throw_exception();

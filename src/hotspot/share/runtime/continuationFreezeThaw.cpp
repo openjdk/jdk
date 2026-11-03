@@ -1720,14 +1720,6 @@ static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, fram
   JRT_BLOCK_END
 }
 
-// A frame popped by JVMTI PopFrame returned into the continuation return
-// barrier. The interpreter's popframe entry preserved the arguments and
-// set the deopt reexecution bit as for a deoptimized caller. If the caller
-// is compiled, UpdateForPopTopFrameClosure already marked it for deoptimization,
-// so we just return and let the deoptimization code handle the pop frame
-// as usual. If the caller is interpreted, we need to copy the arguments
-// back in the expression stack and patch the return address so that the
-// invoke is reexecuted.
 static bool popframe_reexecutes_interpreted_caller(JavaThread* thread, const frame& f) {
   if (!JvmtiExport::can_pop_frame() || !thread->popframe_forcing_deopt_reexecution()) {
     return false;
@@ -1775,13 +1767,17 @@ static void popframe_restore_args(JavaThread* thread, frame& f) {
   thread->clear_popframe_condition();
 }
 
-// Reexecute the invoke in the thawed caller of a frame popped by JVMTI PopFrame
-// instead of returning after it.
+// Check if the callee frame was popped by JVMTI PopFrame. If so, the interpreter's
+// popframe entry has preserved the arguments and set the deopt reexecution bit as for a
+// deoptimized caller. If the top frame is compiled, UpdateForPopTopFrameClosure already
+// marked it for deoptimization, so we just return and let the deoptimization code handle
+// the pop frame as usual. If the top frame is interpreted, we need to copy the arguments
+// back in the expression stack and patch the return address so that the invoke is reexecuted.
 static void popframe_reexecute_invoke(JavaThread* thread, frame& f) {
   if (!popframe_reexecutes_interpreted_caller(thread, f)) {
     return;
   }
-  ContinuationHelper::Frame::patch_pc(f, Interpreter::popframe_reexecute_entry());
+  ContinuationHelper::Frame::patch_pc(f, Interpreter::cont_popframe_reexecute_entry());
   popframe_restore_args(thread, f);
 }
 #endif // INCLUDE_JVMTI
