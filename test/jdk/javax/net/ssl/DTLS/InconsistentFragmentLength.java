@@ -26,7 +26,6 @@
  * @bug 8396112
  * @summary Reject inconsistent metadata in DTLS handshake fragments
  * @library /test/lib
- * @run main InconsistentFragmentLength
  */
 
 import java.nio.ByteBuffer;
