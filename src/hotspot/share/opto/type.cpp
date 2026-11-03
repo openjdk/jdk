@@ -6563,7 +6563,7 @@ const TypeFunc* TypeFunc::make(ciMethod* method, bool is_call, bool is_osr_compi
     has_scalar_args = false;
   }
   ciSignature* sig = method->signature();
-  bool has_scalar_ret = !method->is_native() && sig->return_type()->is_value_klass() && sig->return_type()->as_value_klass()->can_be_returned_as_fields();
+  bool has_scalar_ret = method->scalarized_return() && !method->mismatch();
   // Don't cache on scalarized return because the range depends on 'is_call'
   if (!is_osr_compilation && !has_scalar_ret) {
     tf = C->last_tf(method); // check cache

@@ -377,7 +377,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
     // Pre allocate a buffered value type in case the result is returned
     // flattened by compiled code
     ValueKlass* vk = method->returns_value_type();
-    if (vk != nullptr && vk->can_be_returned_as_fields()) {
+    if (vk != nullptr && !method->is_native() && vk->can_be_returned_as_fields()) {
       oop instance = vk->allocate_instance(CHECK);
       value_buffer = JNIHandles::make_local(thread, instance);
       result->set_jobject(value_buffer);

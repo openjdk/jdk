@@ -489,7 +489,7 @@ ValueKlass* ValueKlass::returned_value_klass(const RegisterMap& map, bool* retur
     // Check if value type is also returned in scalarized form
     ValueKlass* vk_val = ValueKlass::cast(o->klass());
     ValueKlass* vk_sig = method->returns_value_type();
-    if (vk_val->can_be_returned_as_fields() && vk_sig != nullptr) {
+    if (vk_val->can_be_returned_as_fields() && !method->is_native() && vk_sig != nullptr) {
       assert(vk_val == vk_sig, "Unexpected return value");
       return vk_val;
     }

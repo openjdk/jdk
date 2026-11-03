@@ -63,6 +63,7 @@ class ConstMethodFlags {
    flag(needs_stack_repair        , 1 << 22) \
    flag(mismatch                  , 1 << 23) \
    flag(jvmti_hide_events         , 1 << 24) \
+   flag(scalarized_return         , 1 << 25) \
    /* end of list */
 
 #define CM_FLAGS_ENUM_NAME(name, value)    _misc_##name = value,

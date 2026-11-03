@@ -976,10 +976,6 @@ private:
 
   bool _needs_stack_repair;
 
-  GrowableArray<Method*>* _supers;
-  GrowableArray<Method*>* get_supers();
-  bool check_supers_and_deoptimize(int arg_num);
-
 public:
   Method* method()                     const { return _method; }
 

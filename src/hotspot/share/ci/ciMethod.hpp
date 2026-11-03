@@ -399,6 +399,7 @@ class ciMethod : public ciMetadata {
   const GrowableArray<SigEntry>* get_sig_cc() const;
   bool mismatch() const;
   bool needs_stack_repair() const;
+  bool scalarized_return() const;
 
   // Generally, a method cannot return a larval object or receive a larval argument. There are some
   // exceptions.
