@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,27 +179,23 @@ public class WebRowSetImpl extends CachedRowSetImpl implements WebRowSet {
         // This will change to a XmlReader, which over-rides the default
         // Xml that is used when a WRS is instantiated.
         //WebRowSetXmlReader xmlReader = getXmlReader();
-        try {
-             if (reader != null) {
-                xmlReader.readXML(this, reader);
+         if (reader != null) {
+            xmlReader.readXML(this, reader);
 
-                // Position is before the first row
-                // The cursor position is to be stored while serializng
-                // and deserializing the WebRowSet Object.
-                if(curPosBfrWrite == 0) {
-                   this.beforeFirst();
-                }
-
-                // Return the position back to place prior to callin writeXml
-                else {
-                   this.absolute(curPosBfrWrite);
-                }
-
-            } else {
-                throw new SQLException(resBundle.handleGetObject("webrowsetimpl.invalidrd").toString());
+            // Position is before the first row
+            // The cursor position is to be stored while serializing
+            // and deserializing the WebRowSet Object.
+            if(curPosBfrWrite == 0) {
+               this.beforeFirst();
             }
-        } catch (Exception e) {
-            throw new SQLException(e.getMessage());
+
+            // Return the position back to place prior to callin writeXml
+            else {
+               this.absolute(curPosBfrWrite);
+            }
+
+        } else {
+            throw new SQLException(resBundle.handleGetObject("webrowsetimpl.invalidrd").toString());
         }
     }
 

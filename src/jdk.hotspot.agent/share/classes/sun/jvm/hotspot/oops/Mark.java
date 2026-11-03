@@ -118,10 +118,6 @@ public class Mark extends VMObject {
     return markField.getValue(addr);
   }
 
-  public Address valueAsAddress() {
-    return addr.getAddressAt(markField.getOffset());
-  }
-
   // lock accessors (note that these assume lock_shift == 0)
   public boolean isNonNeutral() {
     return (Bits.maskBitsLong(value(), lockMaskInPlace) != neutralValue);
@@ -131,12 +127,6 @@ public class Mark extends VMObject {
   }
   public boolean isMarked() {
     return (Bits.maskBitsLong(value(), lockMaskInPlace) == markedValue);
-  }
-
-  // Special temporary state of the markWord while being inflated.
-  // Code that looks at mark outside a lock need to take this into account.
-  public boolean isBeingInflated() {
-    return (value() == 0);
   }
 
   // Should this header be preserved during GC?
@@ -152,7 +142,7 @@ public class Mark extends VMObject {
     return ((value() & lockMaskInPlace) == fastLockedValue);
   }
   public boolean hasMonitor() {
-    return ((value() & monitorValue) != 0);
+    return (value() & lockMaskInPlace) == monitorValue;
   }
   public ObjectMonitor monitor() {
     if (Assert.ASSERTS_ENABLED) {
@@ -166,16 +156,6 @@ public class Mark extends VMObject {
       }
     }
     return null;
-  }
-  public boolean hasDisplacedMarkHelper() {
-    return ((value() & neutralValue) == 0);
-  }
-  public Mark displacedMarkHelper() {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(hasDisplacedMarkHelper(), "check");
-    }
-    Address addr = valueAsAddress().andWithMask(~monitorValue);
-    return new Mark(addr.getAddressAt(0));
   }
   public int age() { return (int) Bits.maskBitsLong(value() >> ageShift, ageMask); }
 
@@ -195,18 +175,27 @@ public class Mark extends VMObject {
 
   // Debugging
   public void printOn(PrintStream tty) {
-    if (isNonNeutral()) {
-      tty.print("locked(0x" +
-                Long.toHexString(value()) + ")->");
-      displacedMarkHelper().printOn(tty);
+    if (isMarked()) {
+      tty.print("marked(" + Long.toHexString(value()) + ")");
+      return;
+    }
+    tty.print("mark(");
+    if (hasMonitor()) {
+      tty.print("has_monitor");
+    } else if (isNeutral()) {
+      tty.print("is_lock_neutral");
     } else {
       if (Assert.ASSERTS_ENABLED) {
-        Assert.that(isNeutral(), "just checking");
+        Assert.that(isFastLocked(), "should be");
       }
-      tty.print("mark(");
-      tty.print("hash " + Long.toHexString(hash()) + ",");
-      tty.print("age " + age() + ")");
+      tty.print("is_fast_locked");
     }
+    if (hasNoHash()) {
+      tty.print(" no_hash");
+    } else {
+      tty.print(" hash=" + Long.toHexString(hash()));
+    }
+    tty.print(" age=" + age() + ")");
   }
 
   public long getSize() { return (long)value(); }

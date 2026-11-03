@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 /**
  * Tests for the Umm alQura chronology and data.
  * Note: The dates used for testing are just a sample of calendar data.
- * @bug 8067800
+ * @bug 8067800 8392606
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestUmmAlQuraChronology {
@@ -121,7 +121,7 @@ public class TestUmmAlQuraChronology {
         assertEquals(ld.toEpochDay(), hd.toEpochDay(), "Umm alQura date and ISO date should have same epochDay");
     }
 
-    // UmmAlQura chronology ranges for year, month and days for the HijrahChronology
+    // UmmAlQura chronology ranges for year, month, day, and day of year for the HijrahChronology
     @Test
     public void Test_UmmAlQuraChronoRange() {
         HijrahChronology chrono = HijrahChronology.INSTANCE;
@@ -142,6 +142,12 @@ public class TestUmmAlQuraChronology {
         assertEquals(1, day.getLargestMinimum(), "Largest minimum day");
         assertEquals(30, day.getMaximum(), "Largest day");
         assertEquals(29, day.getSmallestMaximum(), "Smallest Maximum day");
+
+        ValueRange dayOfYear = chrono.range(DAY_OF_YEAR);
+        assertEquals(1, dayOfYear.getMinimum(), "Minimum day of year");
+        assertEquals(1, dayOfYear.getLargestMinimum(), "Largest minimum day of year");
+        assertEquals(355, dayOfYear.getMaximum(), "Largest day of year");
+        assertEquals(354, dayOfYear.getSmallestMaximum(), "Smallest Maximum day of year");
     }
 
     //-----------------------------------------------------------------------

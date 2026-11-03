@@ -1703,7 +1703,7 @@ public final class URI
                 return c;
             if ((c = compareIgnoringCase(this.host, that.host)) != 0)
                 return c;
-            if ((c = this.port - that.port) != 0)
+            if ((c = Integer.compare(this.port, that.port)) != 0)
                 return c;
         } else {
             // If one or both authorities are registry-based then we simply

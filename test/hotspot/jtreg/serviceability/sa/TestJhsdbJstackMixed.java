@@ -38,7 +38,7 @@ import jtreg.SkippedException;
 /**
  * @test
  * @key randomness
- * @bug 8208091 8374469 8377710
+ * @bug 8208091 8374469 8377710 8390621
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires (os.family == "linux" | os.family == "windows")
@@ -177,7 +177,14 @@ public class TestJhsdbJstackMixed {
 
     public static void main(String... args) throws Exception {
         if (Platform.isMusl()) {
-            throw new SkippedException("This test does not work on musl libc.");
+            if (!Platform.isX64()) {
+                throw new SkippedException("This platform is not supported.");
+            }
+
+            var libc = SATestUtils.getLibCPath();
+            if (SATestUtils.getDebugInfo(libc) == null) {
+                throw new SkippedException("libc debug info is not available.");
+            }
         }
 
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.

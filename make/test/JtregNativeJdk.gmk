@@ -75,6 +75,7 @@ else
   # java.lang.foreign tests
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncStackWalk := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncInvokers := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libDetachAfterExit := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerUnnamed := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerModule := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLoaderLookupInvoker := -pthread

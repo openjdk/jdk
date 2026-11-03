@@ -245,11 +245,18 @@ Java_sun_awt_windows_WClipboard_publishClipboardData(JNIEnv *env,
         }
 
         LPMETAFILEPICT lpMfp = (LPMETAFILEPICT)::GlobalLock(hmfp);
-        lpMfp->mm = lpMfpOld->mm;
-        lpMfp->xExt = lpMfpOld->xExt;
-        lpMfp->yExt = lpMfpOld->yExt;
-        lpMfp->hMF = hmf;
-        ::GlobalUnlock(hmfp);
+        if (lpMfp != NULL) {
+            lpMfp->mm = lpMfpOld->mm;
+            lpMfp->xExt = lpMfpOld->xExt;
+            lpMfp->yExt = lpMfpOld->yExt;
+            lpMfp->hMF = hmf;
+            ::GlobalUnlock(hmfp);
+        } else {
+            env->ReleasePrimitiveArrayCritical(bytes, (LPVOID)lpbMfpBuffer, JNI_ABORT);
+            env->PopLocalFrame(NULL);
+            ::GlobalFree(hmfp);
+            return;
+        }
 
         env->ReleasePrimitiveArrayCritical(bytes, (LPVOID)lpbMfpBuffer, JNI_ABORT);
 
@@ -267,6 +274,10 @@ Java_sun_awt_windows_WClipboard_publishClipboardData(JNIEnv *env,
         throw std::bad_alloc();
     }
     char *dataout = (char *)::GlobalLock(hglobal);
+    if (dataout == NULL) {
+        ::GlobalFree(hglobal);
+        return;
+    }
 
     if (format == CF_HDROP) {
         DROPFILES *dropfiles = (DROPFILES *)dataout;
@@ -351,8 +362,12 @@ Java_sun_awt_windows_WClipboard_getClipboardData
 
         if (format == CF_METAFILEPICT) {
             HMETAFILEPICT hMetaFilePict = (HMETAFILEPICT)handle;
-            LPMETAFILEPICT lpMetaFilePict =
-                (LPMETAFILEPICT)::GlobalLock(hMetaFilePict);
+            LPMETAFILEPICT lpMetaFilePict = (LPMETAFILEPICT)::GlobalLock(hMetaFilePict);
+            if (lpMetaFilePict == NULL) {
+                JNU_ThrowIOException(env, "failed to get system clipboard data");
+                return NULL;
+            }
+
             UINT uSize = ::GetMetaFileBitsEx(lpMetaFilePict->hMF, 0, NULL);
             DASSERT(uSize != 0);
 
@@ -435,8 +450,13 @@ Java_sun_awt_windows_WClipboard_getClipboardData
 
         if (size != 0) {
             LPVOID data = ::GlobalLock(handle);
-            env->SetByteArrayRegion(bytes, 0, size, (jbyte *)data);
-            ::GlobalUnlock(handle);
+            if (data != NULL) {
+                env->SetByteArrayRegion(bytes, 0, size, (jbyte *)data);
+                ::GlobalUnlock(handle);
+            } else {
+                JNU_ThrowIOException(env, "GlobalLock failed");
+                return NULL;
+            }
         }
         break;
     }

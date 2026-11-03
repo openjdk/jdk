@@ -190,17 +190,17 @@ void G1UpdateRegionLivenessAndSelectForRebuildTask::prune(GrowableArrayCHeap<G1H
 
   uint num_candidates = (uint)old_regions->length();
 
-  uint min_old_cset_length = p->calc_min_old_cset_length(num_candidates);
+  uint min_num_old_cset_regions = p->calc_min_num_old_cset_regions(num_candidates);
   uint num_pruned = 0;
   size_t wasted_bytes = 0;
 
-  if (min_old_cset_length >= num_candidates) {
+  if (min_num_old_cset_regions >= num_candidates) {
     // We take all of the candidate regions to provide some forward progress.
     return;
   }
 
   size_t allowed_waste = p->allowed_waste_in_collection_set();
-  uint max_to_prune = num_candidates - min_old_cset_length;
+  uint max_to_prune = num_candidates - min_num_old_cset_regions;
 
   while (true) {
     G1HeapRegion* r = old_regions->at(num_candidates - num_pruned - 1);

@@ -27,7 +27,7 @@ package jdk.jpackage.internal.model;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Optional;
-import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.ExplodedPath;
 
 public interface MacDmgPackageMixin {
 
@@ -40,8 +40,8 @@ public interface MacDmgPackageMixin {
      *
      * @return the source paths of additional top-level content for DMG package
      */
-    Collection<RootedPath> dmgRootDirSources();
+    Collection<ExplodedPath> dmgRootDirSources();
 
-    record Stub(Optional<Path> icon, Collection<RootedPath> dmgRootDirSources) implements MacDmgPackageMixin {
+    record Stub(Optional<Path> icon, Collection<ExplodedPath> dmgRootDirSources) implements MacDmgPackageMixin {
     }
 }

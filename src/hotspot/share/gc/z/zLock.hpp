@@ -77,4 +77,14 @@ public:
   ~ZLocker();
 };
 
+template <typename T>
+class ZUnlocker : public StackObj {
+private:
+  T* const _lock;
+
+public:
+  ZUnlocker(T* lock);
+  ~ZUnlocker();
+};
+
 #endif // SHARE_GC_Z_ZLOCK_HPP

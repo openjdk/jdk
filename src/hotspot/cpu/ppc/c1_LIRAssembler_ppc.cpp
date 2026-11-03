@@ -664,7 +664,7 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType 
           if (UseCompressedOops && !wide) {
             // Encoding done in caller
             __ stw(from_reg->as_register(), offset, base);
-            __ verify_coop(from_reg->as_register(), FILE_AND_LINE);
+            __ verify_oop(from_reg->as_register(), FILE_AND_LINE, /*compressed*/ true); // kills R0
           } else {
             __ std(from_reg->as_register(), offset, base);
             if (VerifyOops) {
@@ -708,7 +708,7 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, Register disp, BasicTy
         if (UseCompressedOops && !wide) {
           // Encoding done in caller.
           __ stwx(from_reg->as_register(), base, disp);
-          __ verify_coop(from_reg->as_register(), FILE_AND_LINE); // kills R0
+          __ verify_oop(from_reg->as_register(), FILE_AND_LINE, /*compressed*/ true); // kills R0
         } else {
           __ stdx(from_reg->as_register(), base, disp);
           if (VerifyOops) {
@@ -1164,6 +1164,13 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
 }
 
 
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  assert(UseCompressedOops, "should only be used with compressed oops");
+  Register dst = dest->as_pointer_register();
+  __ mr_if_needed(dst, src->as_pointer_register());
+  __ decode_heap_oop(dst);
+}
+
 void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info,
                             bool wide) {
@@ -1246,7 +1253,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   const Register return_pc = R31;  // Must survive C-call to enable_stack_reserved_zone().
   const Register temp      = R12;
 
-  assert(!InlineTypeReturnedAsFields, "unimplemented");
+  assert(!ValueTypeReturnedAsFields, "unimplemented");
 
   // Pop the stack before the safepoint code.
   int frame_size = initial_frame_size_in_bytes();
@@ -1777,15 +1784,16 @@ void LIR_Assembler::unwind_op(LIR_Opr exceptionOop) {
 }
 
 
-void LIR_Assembler::arraycopy_inlinetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check) {
+void LIR_Assembler::arraycopy_valuetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check) {
+  assert(Arguments::is_valhalla_enabled(), "Value types must be enabled");
   if (null_check) {
     __ cmpdi(CR0, obj, 0);
     __ bc_far_optimized(Assembler::bcondCRbiIs1, __ bi0(CR0, Assembler::equal), *slow_path->entry());
   }
   if (is_dest) {
     __ test_null_free_array_oop(obj, tmp, *slow_path->entry(), true);
-    __ test_flat_array_oop(obj, tmp, *slow_path->entry(), true);
-  } else {
+  }
+  if (UseArrayFlattening) {
     __ test_flat_array_oop(obj, tmp, *slow_path->entry(), true);
   }
 }
@@ -1818,7 +1826,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   // the known type isn't loaded since the code sanity checks
   // in debug mode and the type isn't required when we know the exact type
   // also check that the type is an array type.
-  if (default_type == nullptr) {
+  if (default_type == nullptr || !default_type->is_loaded()) {
     assert(src->is_nonvolatile() && src_pos->is_nonvolatile() && dst->is_nonvolatile() && dst_pos->is_nonvolatile() &&
            length->is_nonvolatile(), "must preserve");
     address copyfunc_addr = StubRoutines::generic_arraycopy();
@@ -1853,12 +1861,14 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     return;
   }
 
-  // Handle inline type arrays
-  if (flags & LIR_OpArrayCopy::src_inlinetype_check) {
-    arraycopy_inlinetype_check(src, tmp, stub, false, (flags & LIR_OpArrayCopy::src_null_check));
-  }
-  if (flags & LIR_OpArrayCopy::dst_inlinetype_check) {
-    arraycopy_inlinetype_check(dst, tmp, stub, true, (flags & LIR_OpArrayCopy::dst_null_check));
+  if (Arguments::is_valhalla_enabled()) {
+    // Handle value type arrays
+    if (flags & LIR_OpArrayCopy::src_valuetype_check) {
+      arraycopy_valuetype_check(src, tmp, stub, false, (flags & LIR_OpArrayCopy::src_null_check));
+    }
+    if (flags & LIR_OpArrayCopy::dst_valuetype_check) {
+      arraycopy_valuetype_check(dst, tmp, stub, true, (flags & LIR_OpArrayCopy::dst_null_check));
+    }
   }
 
   assert(default_type != nullptr && default_type->is_array_klass() && default_type->is_loaded(), "must be true at this point");
@@ -2194,7 +2204,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
 #endif
 
   if (dest->is_single_cpu()) {
-    count = count & 0x1F; // Java spec
+    count &= right_n_bits(LogBitsPerInt); // Java spec
     if (count == 0) { __ mr_if_needed(dest->as_register(), left->as_register()); }
     else {
       switch (code) {
@@ -2205,7 +2215,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
       }
     }
   } else if (dest->is_double_cpu()) {
-    count = count & 63; // Java spec
+    count &= right_n_bits(LogBitsPerLong); // Java spec
     if (count == 0) { __ mr_if_needed(dest->as_pointer_register(), left->as_pointer_register()); }
     else {
       switch (code) {
@@ -3074,7 +3084,8 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   __ bind(Ldone);
 }
 
-void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
+void LIR_Assembler::emit_profile_value_type(LIR_OpProfileValueType* op) {
+  assert(Arguments::is_valhalla_enabled(), "Should not be called without value types enabled");
   Register obj = op->obj()->as_register();
   //Register tmp = op->tmp()->as_pointer_register(); not needed!
   LIR_Address* mdo_addr = op->mdp()->as_address_ptr();
@@ -3084,14 +3095,14 @@ void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
   bool not_null = op->not_null();
   int flag = op->flag();
 
-  Label not_inline_type;
-  __ test_oop_is_not_inline_type(obj, not_inline_type, !not_null);
+  Label not_value_type;
+  __ test_oop_is_not_value_type(obj, not_value_type, !not_null);
 
   __ lbz(R0, mdo_offs, mdo_base);
   __ ori(R0, R0, flag);
   __ stb(R0, mdo_offs, mdo_base);
 
-  __ bind(not_inline_type);
+  __ bind(not_value_type);
 }
 
 void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
@@ -3117,8 +3128,8 @@ void LIR_Assembler::check_orig_pc() {
   __ cmpdi(BOOL_RESULT, R0, (u1)NULL_WORD);
 }
 
-int LIR_Assembler::store_inline_type_fields_to_buf(ciInlineKlass* vk) {
-  return (__ store_inline_type_fields_to_buf(vk, false));
+int LIR_Assembler::store_value_type_fields_to_buf(ciValueKlass* vk) {
+  return (__ store_value_type_fields_to_buf(vk, false));
 }
 
 void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
@@ -3158,23 +3169,23 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   ciKlass* left_klass = op->left_klass();
   ciKlass* right_klass = op->right_klass();
 
-  // (2) Inline type check -- if either of the operands is not an inline type,
+  // (2) Value type check -- if either of the operands is not a value type,
   //     they are not substitutable. We do this only if we are not sure that the
-  //     operands are inline type
+  //     operands are value type
   if ((left_klass == nullptr || right_klass == nullptr) ||// The klass is still unloaded, or came from a Phi node.
-      !left_klass->is_inlinetype() || !right_klass->is_inlinetype()) {
+      !left_klass->is_value_klass() || !right_klass->is_value_klass()) {
     Register tmp = op->tmp1()->as_register();
     __ ld(tmp, oopDesc::mark_offset_in_bytes(), left);
     __ ld(R0, oopDesc::mark_offset_in_bytes(), right);
-    __ andi(tmp, tmp, (intptr_t)markWord::inline_type_pattern);
+    __ andi(tmp, tmp, (intptr_t)markWord::value_type_pattern);
     __ andr(tmp, tmp, R0);
-    __ cmpdi(CR0, tmp, (intptr_t)markWord::inline_type_pattern);
+    __ cmpdi(CR0, tmp, (intptr_t)markWord::value_type_pattern);
     __ bne(CR0, L_oops_not_equal);
   }
 
   // (3) Same klass check: if the operands are of different klasses, they are not substitutable.
-  if (left_klass != nullptr && left_klass->is_inlinetype() && left_klass == right_klass) {
-    // No need to load klass -- the operands are statically known to be the same inline klass.
+  if (left_klass != nullptr && left_klass->is_value_klass() && left_klass == right_klass) {
+    // No need to load klass -- the operands are statically known to be the same value klass.
     __ b(*op->stub()->entry());
   } else {
     Register tmp1 = op->tmp1()->as_register();
@@ -3189,7 +3200,7 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   load_to_reg(this, op->not_equal_result(), op->result_opr());
   __ b(L_end);
 
-  // We've returned from the stub. R3_RET (stub's _scratch_reg) contains 0x0 IFF the two
+  // We've returned from the stub. R3_RET (stub's _stub_return_reg) contains 0x0 IFF the two
   // operands are not substitutable. (Don't compare against 0x1 in case the
   // C compiler is naughty)
   __ bind(*op->stub()->continuation());

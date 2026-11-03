@@ -215,14 +215,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
                          bool notify_jvmdi = true);
   void get_method_counters(Register method, Register mcs, Label& skip);
 
-  // Allocate instance in "obj" and read in the content of the inline field
+  // Allocate instance in "obj" and read in the content of the value field
   // NOTES:
   //   - input holder object via "obj", which must be rax,
   //     will return new instance via the same reg
   void read_flat_field(Register entry, Register obj);
-  void write_flat_field(Register entry,
-                        Register tmp1, Register tmp2,
-                        Register obj, Register off, Register value);
+  void write_flat_field(Register entry, Register tmp1, Register tmp2,
+                        Register obj, Register value);
 
   // Object locking
   void lock_object  (Register lock_reg);

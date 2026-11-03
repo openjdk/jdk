@@ -182,6 +182,10 @@ public class ObjectHeap {
       if (klass instanceof TypeArrayKlass) return new TypeArray(handle, this);
       if (klass instanceof FlatArrayKlass) return new FlatArray(handle, this);
       if (klass instanceof ObjArrayKlass) return new ObjArray(handle, this);
+
+      // ValueKlass should be evaluated before InstanceKlass
+      // because ValueKlass inherits InstanceKlass.
+      if (klass instanceof ValueKlass)    return new Value(handle, this);
       if (klass instanceof InstanceKlass) return new Instance(handle, this);
     }
 
@@ -191,6 +195,29 @@ public class ObjectHeap {
     }
 
     throw new UnknownOopException(handle.toString());
+  }
+
+  // This method is used to instantiate a holder object that contains
+  // the flattened field payload.
+  public Oop newFlattenedOop(Oop obj, OopField field) {
+    ValueKlass vk;
+    boolean needNullCheck = false;
+    if (obj.isArray() && ((Array)obj).isFlatArray()) {
+      FlatArrayKlass k = (FlatArrayKlass)obj.getKlass();
+      vk = (ValueKlass)k.getElementKlass();
+      needNullCheck = LayoutKindHelper.isNullableFlat(k.getLayoutKind());
+    } else {
+      var layout = ((InstanceKlass)obj.getKlass()).getValueFieldInfoArray().at(field.getFieldIndex());
+      vk = layout.getKlass();
+      needNullCheck = field.hasNullMarker();
+    }
+
+    // OopHandle does not allow to call addOffsetTo() due to prevent interior
+    // object pointers. So addOffsetToAsOopHandle() is required here.
+    Address payload = obj.getHandle().addOffsetToAsOopHandle(field.getOffset());
+    return needNullCheck && vk.isPayloadMarkedAsNull(payload)
+               ? null
+               : new FlattenedValue(payload, this, vk);
   }
 
   // Print all objects in the object heap
