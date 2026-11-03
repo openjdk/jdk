@@ -285,9 +285,10 @@ public class TestArrayCopyEliminationUncRematerialization {
             var testCaseClone = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCount, TestTemplates templates) -> scope(
                 let("typeAbbrev", pty.abbrev().equals("C") ? "US" : pty.abbrev()),
                 runTestConst.asToken(testName),
+                let("loadCountAdjusted", loadCount + (pty.abbrev().equals("I") ? 1 : 0)),
                 """
                 @Test
-                @IR(counts = { IRNode.LOAD_#{typeAbbrev}, "=#{loadCount}" },
+                @IR(counts = { IRNode.LOAD_#{typeAbbrev}, "=#{loadCountAdjusted}" },
                     applyIf = { "TieredCompilation", "true"})
                 """,
                 testMethodClone.asToken(testName, templates)
