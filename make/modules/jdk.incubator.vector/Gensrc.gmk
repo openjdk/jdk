@@ -26,8 +26,6 @@
 ################################################################################
 
 include GensrcCommon.gmk
-include GensrcProperties.gmk
-include GensrcStreamPreProcessing.gmk
 
 include gensrc/GensrcValueClasses.gmk
 
