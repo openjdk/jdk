@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018, 2024, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,6 +207,8 @@ void ShenandoahBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value)
             keepalive_barrier(gen, /* obj = */ tmp, /* addr = */ LIR_OprFact::illegalOpr, nullptr, decorators);
           }
           if (ShenandoahCardBarrier) {
+            // Card barriers are usually *post*-barriers, but in current Shenandoah we can perform
+            // this barrier before the actual store to simplify this code.
             card_barrier(gen, post_addr, decorators);
           }
         }

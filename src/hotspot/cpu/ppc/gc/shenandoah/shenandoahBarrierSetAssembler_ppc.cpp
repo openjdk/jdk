@@ -894,6 +894,8 @@ void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler
 void ShenandoahBarrierSetAssembler::load_c2_special(const MachNode* node, MacroAssembler* masm,
                                                     Register dst, Register addr, int offset,
                                                     Register tmp1, Register tmp2, Register tmp3) {
+  BIG_ENDIAN_ONLY(fatal("This code assumes little-endian machine"));
+
   bool first_oop = offset == 0 || offset == -1;
   bool second_oop = offset == 4 || offset == -1;
 

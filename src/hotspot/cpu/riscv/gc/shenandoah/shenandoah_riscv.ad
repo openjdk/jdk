@@ -237,7 +237,7 @@ instruct storeLSpecial_both_shenandoah(iRegLNoSp src, indirect mem, iRegPNoSp tm
   match(Set mem (StoreLSpecial mem src));
   predicate(UseShenandoahGC);
   effect(TEMP tmp, KILL cr);
-  format %{ "sw  $src, $mem\t# compressed ptr, shenandoah late-barrier, #@storeN_shenandoah" %}
+  format %{ "sd  $src, $mem\t# shenandoah late-barrier, both oops #@storeLSpecial_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->store_c2_special(this, masm,
         Address(as_Register($mem$$base), $mem$$disp),
@@ -256,7 +256,7 @@ instruct storeLSpecial_single_shenandoah(iRegLNoSp src, immI off, indirect mem, 
   match(Set mem (StoreLSpecial mem (Binary src off)));
   predicate(UseShenandoahGC);
   effect(TEMP tmp, KILL cr);
-  format %{ "sw  $src, $mem\t# compressed ptr, shenandoah late-barrier, #@storeN_shenandoah" %}
+  format %{ "sd  $src, $mem\t# shenandoah late-barrier, single oop #@storeLSpecial_shenandoah" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->store_c2_special(this, masm,
         Address(as_Register($mem$$base), $mem$$disp),
