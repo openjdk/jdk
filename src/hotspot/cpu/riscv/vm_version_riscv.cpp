@@ -52,7 +52,7 @@ static constexpr bool toolchain_uses_psabi_atomics() {
 }
 
 uint32_t VM_Version::_initial_vector_length = 0;
-bool VM_Version::_use_zalasr_atomics = false;
+VM_Version::AtomicAccessMode VM_Version::_atomic_access_mode = AtomicAccessMode::RVWMO;
 
 #define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
 VM_Version::ext_##PRETTY##RVExtFeatureValue VM_Version::ext_##PRETTY;
@@ -211,10 +211,16 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseZalasr, false);
   }
 
-  // Latch the native AtomicAccess dispatch flag only after every UseZalasr
-  // adjustment above has settled. See the comment on _use_zalasr_atomics in
-  // vm_version_riscv.hpp.
-  _use_zalasr_atomics = UseZalasr;
+  // Latch the native AtomicAccess dispatch mode only after every UseZalasr and
+  // UseZtso adjustment above has settled. See the comment on
+  // _atomic_access_mode in vm_version_riscv.hpp.
+  if (UseZalasr) {
+    _atomic_access_mode = AtomicAccessMode::ZALASR;
+  } else if (UseZtso) {
+    _atomic_access_mode = AtomicAccessMode::ZTSO;
+  } else {
+    _atomic_access_mode = AtomicAccessMode::RVWMO;
+  }
 
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {

@@ -295,7 +295,8 @@ struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
   T operator()(const volatile T* p) const {
     static_assert(byte_size == sizeof(T));
     static_assert(byte_size == 1 || byte_size == 2 || byte_size == 4 || byte_size == 8);
-    if (VM_Version::use_zalasr_atomics()) {
+    const VM_Version::AtomicAccessMode mode = VM_Version::atomic_access_mode();
+    if (mode == VM_Version::AtomicAccessMode::ZALASR) {
       // Zalasr has no zero-extending form; l{b|h|w}.aq sign-extend. Narrowing
       // the result back to T discards the extra bits, so both signed and
       // unsigned T end up with the value the caller expects.
@@ -303,12 +304,13 @@ struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
     }
 
     T data;
-    if (UseZtso) {
+    if (mode == VM_Version::AtomicAccessMode::ZTSO) {
       __atomic_load(const_cast<T*>(p), &data, __ATOMIC_RELAXED);
       compiler_barrier();
-    } else {
-      __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE);
+      return data;
     }
+
+    __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE);
     return data;
   }
 };
@@ -320,19 +322,21 @@ struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X>
   void operator()(volatile T* p, T v) const {
     static_assert(byte_size == sizeof(T));
     static_assert(byte_size == 1 || byte_size == 2 || byte_size == 4 || byte_size == 8);
-    if (VM_Version::use_zalasr_atomics()) {
+    const VM_Version::AtomicAccessMode mode = VM_Version::atomic_access_mode();
+    if (mode == VM_Version::AtomicAccessMode::ZALASR) {
       // s{b|h|w|d}.rl stores the low byte_size bytes of the register, so
       // widening v here is value-preserving for both signed and unsigned T.
       zalasr_store_release<byte_size>((void*)p, (uint64_t)v);
       return;
     }
 
-    if (UseZtso) {
+    if (mode == VM_Version::AtomicAccessMode::ZTSO) {
       compiler_barrier();
       __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELAXED);
-    } else {
-      __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE);
+      return;
     }
+
+    __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE);
   }
 };
 

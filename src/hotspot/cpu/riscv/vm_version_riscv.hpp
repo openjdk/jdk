@@ -40,6 +40,14 @@ class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend RiscvHwprobe;
+
+ public:
+  enum class AtomicAccessMode : uint8_t {
+    RVWMO,
+    ZTSO,
+    ZALASR
+  };
+
  private:
 
   // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
@@ -521,18 +529,19 @@ private:
   static uint32_t cpu_vector_length();
   static uint32_t _initial_vector_length;
 
-  // Native AtomicAccess dispatches on this instead of UseZalasr. UseZalasr is
-  // set from command-line and extension detection before VM_Version::initialize()
-  // runs the toolchain-psABI and UseZtso mutual-exclusion checks, so during
-  // startup UseZalasr may be transiently true even on configurations where those
-  // checks would later disable it. AtomicAccess is invoked from os::init_2,
-  // vm_init_globals, ObjectSynchronizer::initialize and other subsystems that
-  // run before init_globals() calls VM_Version_init(), so dispatching on
-  // UseZalasr directly can either SIGILL (CPU lacks the extension) or emit
-  // Zalasr sequences that later get paired with the incompatible pre-psABI
-  // atomics mapping. This flag is false by default and is latched to the final
-  // UseZalasr value after all validation completes.
-  static bool _use_zalasr_atomics;
+  // Native AtomicAccess dispatches on this instead of reading UseZalasr and
+  // UseZtso separately. UseZalasr is set from command-line and extension
+  // detection before VM_Version::initialize() runs the toolchain-psABI and
+  // UseZtso mutual-exclusion checks, so during startup it may be transiently
+  // true even on configurations where those checks would later disable it.
+  // AtomicAccess is invoked from os::init_2, vm_init_globals,
+  // ObjectSynchronizer::initialize and other subsystems that run before
+  // init_globals() calls VM_Version_init(), so dispatching on UseZalasr
+  // directly can either SIGILL (CPU lacks the extension) or emit Zalasr
+  // sequences that later get paired with the incompatible pre-psABI atomics
+  // mapping. This mode is RVWMO by default and is latched to the final flag
+  // values after all validation completes.
+  static AtomicAccessMode _atomic_access_mode;
 
   static void common_initialize();
 
@@ -545,7 +554,7 @@ private:
   static void initialize();
   static void initialize_cpu_information();
 
-  static bool use_zalasr_atomics() { return _use_zalasr_atomics; }
+  static AtomicAccessMode atomic_access_mode() { return _atomic_access_mode; }
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
