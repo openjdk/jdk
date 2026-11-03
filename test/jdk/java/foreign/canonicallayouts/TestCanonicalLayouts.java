@@ -33,40 +33,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.ValueLayout;
-import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestCanonicalLayouts extends NativeTestHelper {
-
-    // As defined by the Linker javadoc
-    static final List<String> CANONICAL_LAYOUT_NAMES = List.of(
-        "bool",
-        "char",
-        "unsigned char",
-        "short",
-        "unsigned short",
-        "int",
-        "unsigned int",
-        "long",
-        "unsigned long",
-        "long long",
-        "unsigned long long",
-        "float",
-        "double",
-        "size_t",
-        "wchar_t",
-        "void*",
-        "int8_t",
-        "int16_t",
-        "int32_t",
-        "int64_t",
-        "uint8_t",
-        "uint16_t",
-        "uint32_t",
-        "uint64_t"
-    );
 
     static {
         System.loadLibrary("CanonicalLayouts");
@@ -122,7 +93,33 @@ public class TestCanonicalLayouts extends NativeTestHelper {
     }
 
     public static Stream<String> cases() {
-        return CANONICAL_LAYOUT_NAMES.stream();
+        // As defined by the Linker javadoc
+        return Stream.of(
+                "bool",
+                "char",
+                "unsigned char",
+                "short",
+                "unsigned short",
+                "int",
+                "unsigned int",
+                "long",
+                "unsigned long",
+                "long long",
+                "unsigned long long",
+                "float",
+                "double",
+                "size_t",
+                "wchar_t",
+                "void*",
+                "int8_t",
+                "int16_t",
+                "int32_t",
+                "int64_t",
+                "uint8_t",
+                "uint16_t",
+                "uint32_t",
+                "uint64_t"
+        );
     }
 }
 
