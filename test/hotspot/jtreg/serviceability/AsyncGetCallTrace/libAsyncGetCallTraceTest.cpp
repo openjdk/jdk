@@ -204,7 +204,7 @@ typedef struct {
 typedef void (*ASGCTType)(ASGCT_CallTrace *, jint, void *);
 
 JNIEXPORT jboolean JNICALL
-Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls, jboolean is_virtual) {
+Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls) {
   ASGCTType agct = reinterpret_cast<ASGCTType>(dlsym(RTLD_DEFAULT, "AsyncGetCallTrace"));
 
   const int MAX_DEPTH = 16;
@@ -267,7 +267,7 @@ Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls,
 
   // On a virtual thread AsyncGetCallTrace walks on into the carrier where GetStackTrace
   // stops at the continuation entry, without continuations both end at the thread's run.
-  bool carrier_frames = is_virtual && trace.num_frames > gstCount;
+  bool carrier_frames = trace.num_frames > gstCount;
   if (!carrier_frames && gstCount != trace.num_frames) {
     fprintf(stderr, "GetStackTrace and AsyncGetCallTrace return different number of frames: %d vs %d)", gstCount, trace.num_frames);
     return false;

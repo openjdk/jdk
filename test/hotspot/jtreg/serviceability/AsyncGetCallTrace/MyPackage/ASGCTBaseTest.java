@@ -45,12 +45,12 @@ public class ASGCTBaseTest {
     }
   }
 
-  private static native boolean checkAsyncGetCallTraceCall(boolean virtual);
+  private static native boolean checkAsyncGetCallTraceCall();
 
   private static boolean check(boolean virtual) throws InterruptedException {
     boolean[] result = new boolean[1];
     Thread.Builder builder = virtual ? Thread.ofVirtual() : Thread.ofPlatform();
-    Thread thread = builder.start(() -> result[0] = checkAsyncGetCallTraceCall(virtual));
+    Thread thread = builder.start(() -> result[0] = checkAsyncGetCallTraceCall());
     thread.join();
     return result[0];
   }
