@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
  *                   -XX:CompileOnly=sun.security.provider.SHA2::* -XX:-UseSHA
  *                   -Dalgorithm=SHA-224
  *                   compiler.intrinsics.sha.sanity.TestSHA256MultiBlockIntrinsics
@@ -81,6 +82,7 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
  *                   -XX:CompileOnly=sun.security.provider.SHA::* -XX:-UseSHA
  *                   -Dalgorithm=SHA-256
  *                   compiler.intrinsics.sha.sanity.TestSHA256MultiBlockIntrinsics
@@ -91,11 +93,12 @@
  */
 
 package compiler.intrinsics.sha.sanity;
+
 import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 public class TestSHA256MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
-        new DigestSanityTestBase(IntrinsicPredicates.isSHA256IntrinsicAvailable(),
+        new DigestSanityTestBase(IntrinsicPredicates.isSHA256MultiBlockIntrinsicAvailable(),
                 DigestSanityTestBase.MB_INTRINSIC_ID).test();
     }
 }

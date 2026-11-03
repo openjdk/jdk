@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,6 +58,7 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
  *                   -XX:CompileOnly=sun.security.provider.SHA3::* -XX:-UseSHA
  *                   -Dalgorithm=SHA3-224
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
@@ -87,6 +88,7 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
  *                   -XX:CompileOnly=sun.security.provider.SHA3::* -XX:-UseSHA
  *                   -Dalgorithm=SHA3-256
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
@@ -116,6 +118,7 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_384.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
  *                   -XX:CompileOnly=sun.security.provider.SHA3::* -XX:-UseSHA
  *                   -Dalgorithm=SHA3-384
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
@@ -145,6 +148,7 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_512.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
  *                   -XX:CompileOnly=sun.security.provider.SHA3::* -XX:-UseSHA
  *                   -Dalgorithm=SHA3-512
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
@@ -381,7 +385,7 @@ import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 public class TestSHA3MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
-        new DigestSanityTestBase(IntrinsicPredicates.isSHA3IntrinsicAvailable(),
+        new DigestSanityTestBase(IntrinsicPredicates.isSHA3MultiBlockIntrinsicAvailable(),
                 DigestSanityTestBase.MB_INTRINSIC_ID).test();
     }
 }

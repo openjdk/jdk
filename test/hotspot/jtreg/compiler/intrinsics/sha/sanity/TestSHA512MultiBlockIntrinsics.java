@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_384.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
  *                   -XX:CompileOnly=sun.security.provider.SHA5::* -XX:-UseSHA
  *                   -Dalgorithm=SHA-384
  *                   compiler.intrinsics.sha.sanity.TestSHA1Intrinsics
@@ -81,6 +82,7 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_512.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
  *                   -XX:CompileOnly=sun.security.provider.SHA5::* -XX:-UseSHA
  *                   -Dalgorithm=SHA-512
  *                   compiler.intrinsics.sha.sanity.TestSHA512MultiBlockIntrinsics
@@ -96,7 +98,7 @@ import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 public class TestSHA512MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
-        new DigestSanityTestBase(IntrinsicPredicates.isSHA512IntrinsicAvailable(),
+        new DigestSanityTestBase(IntrinsicPredicates.isSHA512MultiBlockIntrinsicAvailable(),
                 DigestSanityTestBase.MB_INTRINSIC_ID).test();
     }
 }
