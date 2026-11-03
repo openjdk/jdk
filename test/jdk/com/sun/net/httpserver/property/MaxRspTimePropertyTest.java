@@ -30,6 +30,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -39,6 +40,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -163,30 +165,40 @@ class MaxRspTimePropertyTest {
 
             // Read the response body
             LOGGER.info("Reading the response body");
-            var actualBodyBytes = inputStream.readNBytes(expectedBodyBytes.length);
-            assertEquals(new String(expectedBodyBytes, CHARSET), new String(actualBodyBytes, CHARSET));
+            var actualBodyBuffer = new StringBuilder();
+            readUntil(
+                    inputStream, actualBodyBuffer,
+                    () -> actualBodyBuffer.length() == expectedBodyBytes.length);
+            assertEquals(new String(expectedBodyBytes, CHARSET), actualBodyBuffer.toString());
 
         }
     }
 
     private static String readUntilCrLf(InputStream inputStream) throws IOException {
         var buffer = new StringBuilder();
-        var prevChar = -1;
-        while (true) {
-            int nextChar = inputStream.read();
-            if (nextChar < 0) {
-                // `SocketException` is caught to detect the peer disconnect
-                throw new SocketException("EOF after reading: " + Format.asLiteral(buffer));
-            }
-            buffer.append((char) nextChar);
-            if (prevChar == '\r' && nextChar == '\n') {
-                break;
-            }
-            prevChar = nextChar;
-        }
+        readUntil(inputStream, buffer, () -> {
+            int l = buffer.length();
+            return l > 1 && buffer.charAt(l - 2) == '\r' && buffer.charAt(l - 1) == '\n';
+        });
         // Drop CRLF
         buffer.setLength(buffer.length() - 2);
         return buffer.toString();
+    }
+
+    private static void readUntil(
+            InputStream inputStream, StringBuilder buffer, BooleanSupplier predicate)
+            throws IOException {
+        do {
+            int nextChar = inputStream.read();
+            if (nextChar < 0) {
+                // `SocketException` is caught to detect the peer disconnect
+                var message = String.format(
+                        "EOF after reading: \"%s\" (length: %s)",
+                        Format.asLiteral(buffer), buffer.length());
+                throw new SocketException(message);
+            }
+            buffer.append((char) nextChar);
+        } while (!predicate.getAsBoolean());
     }
 
     private static final class PausingHandler implements HttpHandler {
@@ -212,28 +224,42 @@ class MaxRspTimePropertyTest {
         }
 
         @Override
-        public void handle(HttpExchange exchange) throws IOException {
+        public void handle(HttpExchange exchange) {
             LOGGER.info("Received request");
+            Exception failure = null;
             try (exchange) {
                 HEADERS.forEach(exchange.getResponseHeaders()::add);
-                pauseIfLocationMatches(PauseLocation.BEFORE_SENDING_HEADERS);
-                exchange.sendResponseHeaders(200, BODY_BYTES.length);
-                pauseIfLocationMatches(PauseLocation.AFTER_SENDING_HEADERS);
                 var responseBody = exchange.getResponseBody();
+                flushAndPauseIfLocationMatches(
+                        // Flush throws if called before sending headers, skip it
+                        null,
+                        PauseLocation.BEFORE_SENDING_HEADERS);
+                exchange.sendResponseHeaders(200, BODY_BYTES.length);
+                flushAndPauseIfLocationMatches(responseBody, PauseLocation.AFTER_SENDING_HEADERS);
                 int pauseIndex = BODY_BYTES.length / 2;
                 assertTrue(pauseIndex > 0 && pauseIndex < BODY_BYTES.length);
                 for (int bodyByteIndex = 0; bodyByteIndex < BODY_BYTES.length; bodyByteIndex++) {
                     responseBody.write(BODY_BYTES[bodyByteIndex] & 0xFF);
                     if (bodyByteIndex == pauseIndex) {
-                        pauseIfLocationMatches(PauseLocation.WHILE_SENDING_BODY);
+                        flushAndPauseIfLocationMatches(responseBody, PauseLocation.WHILE_SENDING_BODY);
                     }
                 }
+            } catch (Exception exception) {
+                failure = exception;
             }
-            LOGGER.info("Served request");
+            if (failure != null) {
+                LOGGER.log(Level.SEVERE, "Failed to serve the request", failure);
+            } else {
+                LOGGER.info("Served request");
+            }
         }
 
-        private void pauseIfLocationMatches(PauseLocation location) {
+        private void flushAndPauseIfLocationMatches(OutputStream responseBody, PauseLocation location) throws IOException {
             if (pauseLocation.equals(location)) {
+                LOGGER.info("Flushing and pausing at " + pauseLocation);
+                if (responseBody != null) {
+                    responseBody.flush();
+                }
                 try {
                     Thread.sleep(pauseDuration);
                 } catch (InterruptedException ie) {
