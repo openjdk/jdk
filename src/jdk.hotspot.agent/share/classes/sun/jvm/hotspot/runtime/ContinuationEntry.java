@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All Rights Reserved.
  * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -45,7 +46,7 @@ public abstract class ContinuationEntry extends VMObject {
 
     private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
         Type type = db.lookupType("ContinuationEntry");
-        size = type.getSize();
+        size = VM.getVM().alignUp(type.getSize(), 2 * VM.getVM().getAddressSize());
         parentField = type.getAddressField("_parent");
         returnPC = type.getAddressField("_return_pc").getValue();
     }
