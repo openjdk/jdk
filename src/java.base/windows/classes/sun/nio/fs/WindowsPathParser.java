@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,7 @@ class WindowsPathParser {
         if (requireToNormalize) {
             return new Result(type, root, normalize(root, input, off));
         } else if (type == WindowsPathType.UNC && off == len) {
-            // A UNC path to the root of a share, such as an administrative share
-            // (\\host\C$), may lack a trailing slash and need to be normalized.
+            // Windows may return a UNC share root without its trailing separator.
             return new Result(type, root, root);
         } else {
             return new Result(type, root, input);
