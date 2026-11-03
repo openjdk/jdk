@@ -31,9 +31,8 @@ import jdk.incubator.vector.VectorSpecies;
  * @test
  * @bug 8393465
  * @summary C2 should not crash when SuperWord inspects a Vector API UMIN loop
- * @requires vm.compiler2.enabled
  * @modules jdk.incubator.vector
- * @run driver ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 public class TestUMinLanewiseLoop {

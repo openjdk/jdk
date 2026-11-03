@@ -308,13 +308,10 @@ class ReductionNode : public Node {
   }
 
   // Make a new reduction node for a vector reduction opcode.
-  static ReductionNode* make(int vopc, Node* ctrl, Node* in1, Node* in2, BasicType bt,
+  static ReductionNode* make(int vopc, Node* ctrl, Node* in1, Node* in2,
                              // This only effects floating-point add and mul reductions.
                              bool requires_strict_order = true);
   static int  opcode(int opc, BasicType bt);
-  // Map a vector opcode that has no scalar ideal node, such as Op_UMinV,
-  // to its vector reduction opcode.
-  static int  opcode_from_vector(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
   // Make an identity scalar (zero for add, one for mul, etc) for a vector
   // reduction opcode.

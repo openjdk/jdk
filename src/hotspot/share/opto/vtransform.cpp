@@ -1449,7 +1449,7 @@ VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState&
   Node* vec  = apply_state.transformed_node(in_req(2));
 
   int vopc = vector_reduction_opcode();
-  ReductionNode* vn = ReductionNode::make(vopc, nullptr, init, vec, element_basic_type());
+  ReductionNode* vn = ReductionNode::make(vopc, nullptr, init, vec);
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vn->vect_type());
 }

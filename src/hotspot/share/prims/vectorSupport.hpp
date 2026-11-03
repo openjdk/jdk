@@ -154,6 +154,10 @@ class VectorSupport : AllStatic {
   };
 
   static int vop2ideal(jint vop, LaneType lt);
+  // Map a Vector API reduction operation to the corresponding ideal reduction
+  // opcode. Returns 0 for a valid reduction that C2 does not implement yet,
+  // and asserts on any other input without a mapping.
+  static int vop2reduction(jint vop, LaneType lt);
   static const char* lanetype2name(LaneType lane_type);
   static bool has_scalar_op(jint id);
   static bool is_unsigned_op(jint id);
