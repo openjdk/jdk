@@ -1282,63 +1282,52 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     }
 
     void updateResolvedConflictToDB(CachedRowSet crs, Connection con) throws SQLException {
-          //String updateExe = ;
-          PreparedStatement pStmt  ;
-          String strExec =" ";
-          String strUpdate = "UPDATE ";
-          int icolCount = crs.getMetaData().getColumnCount();
-          String strSet="";
+        int icolCount = crs.getMetaData().getColumnCount();
+        StringBuilder strSet = new StringBuilder();
+        String strUpdate = "UPDATE " + buildTableName(con.getMetaData(),
+                crs.getMetaData().getCatalogName(1),
+                crs.getMetaData().getSchemaName(1),
+                crs.getTableName());
 
-          strUpdate = "UPDATE " + buildTableName(con.getMetaData(),
-                            crs.getMetaData().getCatalogName(1),
-                           crs.getMetaData().getSchemaName(1),
-                           crs.getTableName());
-
-          // changed or updated values will become part of
-          // set clause here
+        // changed or updated values will become part of set clause here
         strUpdate += "SET ";
-
         boolean first = true;
 
-        for (int i=1; i<=icolCount;i++) {
-           if (crs.columnUpdated(i)) {
-                  if (first == false) {
-                    strSet += ", ";
-                  }
-                 strSet += crs.getMetaData().getColumnName(i);
-                 strSet += " = ? ";
-                 first = false;
-         } //end if
-      } //end for
+        for (int i = 1; i <= icolCount; i++) {
+            if (crs.columnUpdated(i)) {
+                strSet.append(first ? "" : ", ");
+                strSet.append(crs.getMetaData().getColumnName(i));
+                strSet.append(" = ? ");
+                first = false;
+            }
+        }
 
-         // keycols will become part of where clause
-         strUpdate += strSet;
+        // keycols will become part of where clause
+        strUpdate += strSet.toString();
+        strUpdate += buildWhereClause(crs);
+        try (PreparedStatement pStmt = con.prepareStatement(strUpdate)) {
+            int idx = 0;
+            for (int i = 0; i < icolCount; i++) {
+                if (crs.columnUpdated(i + 1)) {
+                    Object obj = crs.getObject(i + 1);
+                    if (obj != null) {
+                        pStmt.setObject(++idx, obj);
+                    } else {
+                        pStmt.setNull(i + 1, crs.getMetaData().getColumnType(i + 1));
+                    }
+                }
+            }
 
-          strUpdate += buildWhereClause(crs);
+            // Set the key cols for after WHERE =? clause
+            for (int i = 0; i < keyCols.length; i++) {
+                if (params[i] != null) {
+                    pStmt.setObject(++idx, params[i]);
+                }
+            }
 
-        pStmt = con.prepareStatement(strUpdate);
-
-        int idx =0;
-          for (int i = 0; i < icolCount; i++) {
-             if(crs.columnUpdated(i+1)) {
-              Object obj = crs.getObject(i+1);
-              if (obj != null) {
-                  pStmt.setObject(++idx, obj);
-              } else {
-                  pStmt.setNull(i + 1,crs.getMetaData().getColumnType(i + 1));
-             } //end if ..else
-           } //end if crs.column...
-        } //end for
-
-          // Set the key cols for after WHERE =? clause
-          for (int i = 0; i < keyCols.length; i++) {
-              if (params[i] != null) {
-                  pStmt.setObject(++idx, params[i]);
-              }
-          }
-
-        int id = pStmt.executeUpdate();
-      }
+            pStmt.executeUpdate();
+        }
+    }
 
 
     /**
