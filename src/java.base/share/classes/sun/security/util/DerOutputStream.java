@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.nio.charset.Charset;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Comparator;
 import java.util.Arrays;
@@ -494,9 +495,9 @@ public final class DerOutputStream
     private static final Instant utcHigh = Instant.ofEpochSecond(2524607999L);
 
     /**
-     * 1/1/0000 00:00:00 is the lowest date representable by GeneralizedTime
+     * 1/1/0001 00:00:00 is the lowest date representable by GeneralizedTime
      */
-    private static final Instant generalizedLow = Instant.ofEpochSecond(-62167219200L);
+    private static final Instant generalizedLow = Instant.ofEpochSecond(-62135596800L);
 
     /**
      * 12/31/9999 23:59:59 is the highest date representable by GeneralizedTime
@@ -507,6 +508,7 @@ public final class DerOutputStream
      * Takes an instant and chooses UTC or GeneralizedTime as per RFC 2630.
      */
     public DerOutputStream putTime(Instant d) {
+        d = d.truncatedTo(ChronoUnit.SECONDS);
         return (d.isBefore(utcLow) || d.isAfter(utcHigh)) ? putGeneralizedTime(d) : putUTCInstant(d);
     }
 
@@ -563,6 +565,8 @@ public final class DerOutputStream
          * Format the date.
          */
         String pattern;
+
+        d = d.truncatedTo(ChronoUnit.SECONDS);
 
         if (tag == DerValue.tag_UtcTime) {
             pattern = "yyMMddHHmmss'Z'";
