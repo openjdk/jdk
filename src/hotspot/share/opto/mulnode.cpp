@@ -1143,15 +1143,27 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
-  // Check for (x & mask) << c0 where mask contains all bits that survive
-  // the shift. Any additional bits in mask are shifted away.
+  // (x & mask) << c0 => x << c0, where mask is known to have all bits that
+  // survive the shift set; additional bits are shifted away.
   const jlong bits_mask = max_unsigned_integer(bt) >> con;
   assert(bt != T_INT || bits_mask == right_n_bits(num_bits - con), "inconsistent");
   if (add1_op == Op_And(bt)) {
-    const TypeInteger* mask_t = phase->type(add1->in(2))->is_integer(bt);
-    if (mask_t->is_con() &&
-        (mask_t->get_con_as_long(bt) & bits_mask) == bits_mask) {
-      return LShiftNode::make(add1->in(1), in(2), bt);
+    // Either operand of the commutative And can be the mask.
+    for (uint i = 1; i <= 2; i++) {
+      // Can be TOP while this node is still on the IGVN worklist.
+      const TypeInteger* mask_t = phase->type(add1->in(i))->isa_integer(bt);
+      if (mask_t == nullptr) {
+        continue;
+      }
+      uint64_t known_ones;
+      if (bt == T_INT) {
+        known_ones = mask_t->is_int()->_bits._ones;
+      } else {
+        known_ones = mask_t->is_long()->_bits._ones;
+      }
+      if ((known_ones & (uint64_t)bits_mask) == (uint64_t)bits_mask) {
+        return LShiftNode::make(add1->in(3 - i), in(2), bt);
+      }
     }
   }
 

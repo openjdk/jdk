@@ -64,6 +64,9 @@ public class LShiftLNodeIdealizationTests {
             "testLShiftOfAndOfURShift",
             "testLShiftOfAndOfCon",
             "testLShiftOfMaskedLong",
+            "testLShiftOfMaskedLongVar",
+            "testLShiftOfMaskedLongVarMaskFirst",
+            "testLShiftOfPartialMaskedLongVarHighShift",
             "testShiftOfSubConstant",
     })
     public void runMethod() {
@@ -105,6 +108,12 @@ public class LShiftLNodeIdealizationTests {
         Asserts.assertEQ(((a >>> 4) & b) << 4, testLShiftOfAndOfURShiftSameCon(a));
         Asserts.assertEQ(((a >> 4) & b) << 8, testLShiftOfAndOfRShift(a));
         Asserts.assertEQ(((a >>> 4) & b) << 8, testLShiftOfAndOfURShift(a));
+        Asserts.assertEQ((a & (b | 0x3fffffffffffffffL)) << 2,
+                         testLShiftOfMaskedLongVar(a));
+        Asserts.assertEQ(((b | 0x3fffffffffffffffL) & (a + 1L)) << 2,
+                         testLShiftOfMaskedLongVarMaskFirst(a));
+        Asserts.assertEQ((a & (b | 1L)) << 62,
+                         testLShiftOfPartialMaskedLongVarHighShift(a));
     }
 
     @DontCompile
@@ -369,6 +378,32 @@ public class LShiftLNodeIdealizationTests {
     // Checks (x & 0xfedb871fL) << 63 => x << 63
     public long testLShiftOfMaskedLong(long x) {
         return (x & 0xfedb871fL) << 63;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT_L, "1" }, failOn = { IRNode.AND_L })
+    // Checks (x & (y | 0x3fffffffffffffffL)) << 2 => x << 2, the mask is not
+    // constant but its type guarantees that the 62 surviving bits are set
+    public long testLShiftOfMaskedLongVar(long x) {
+        long y = otherInput;
+        return (x & (y | 0x3fffffffffffffffL)) << 2;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT_L, "1" }, failOn = { IRNode.AND_L })
+    // The mask can be either operand of the And:
+    // ((y | 0x3fffffffffffffffL) & (x + 1L)) << 2 => (x + 1L) << 2
+    public long testLShiftOfMaskedLongVarMaskFirst(long x) {
+        long y = otherInput;
+        return ((y | 0x3fffffffffffffffL) & (x + 1L)) << 2;
+    }
+
+    @Test
+    @IR(counts = { IRNode.AND_L, "1", IRNode.LSHIFT_L, "1" })
+    // << 62 needs bits 0 and 1, but only bit 0 is known to be set
+    public long testLShiftOfPartialMaskedLongVarHighShift(long x) {
+        long y = otherInput;
+        return (x & (y | 1L)) << 62;
     }
 
     @Test

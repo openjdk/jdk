@@ -66,6 +66,9 @@ public class LShiftINodeIdealizationTests {
             "testLShiftOfAndOfURShift",
             "testLShiftOfAndOfCon",
             "testLShiftOfMaskedInt",
+            "testLShiftOfMaskedIntVar",
+            "testLShiftOfMaskedIntVarMaskFirst",
+            "testLShiftOfPartialMaskedIntVarHighShift",
             "testShiftOfSubConstant",
     })
     public void runMethod() {
@@ -107,6 +110,11 @@ public class LShiftINodeIdealizationTests {
         Asserts.assertEQ(((a >>> 4) & b) << 4, testLShiftOfAndOfURShiftSameCon(a));
         Asserts.assertEQ(((a >> 4) & b) << 8, testLShiftOfAndOfRShift(a));
         Asserts.assertEQ(((a >>> 4) & b) << 8, testLShiftOfAndOfURShift(a));
+        Asserts.assertEQ((a & (b | 0x3fffffff)) << 2, testLShiftOfMaskedIntVar(a));
+        Asserts.assertEQ(((b | 0x3fffffff) & (a + 1)) << 2,
+                         testLShiftOfMaskedIntVarMaskFirst(a));
+        Asserts.assertEQ((a & (b | 1)) << 30,
+                         testLShiftOfPartialMaskedIntVarHighShift(a));
     }
 
     @DontCompile
@@ -448,6 +456,32 @@ public class LShiftINodeIdealizationTests {
     // Checks (x & 0x7fffffff) << 2 => x << 2
     public int testLShiftOfMaskedInt(int x) {
         return (x & 0x7fffffff) << 2;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT_I, "1" }, failOn = { IRNode.AND_I })
+    // Checks (x & (y | 0x3fffffff)) << 2 => x << 2, the mask is not constant
+    // but its type guarantees that the 30 surviving bits are set
+    public int testLShiftOfMaskedIntVar(int x) {
+        int y = otherInput;
+        return (x & (y | 0x3fffffff)) << 2;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT_I, "1" }, failOn = { IRNode.AND_I })
+    // The mask can be either operand of the And:
+    // ((y | 0x3fffffff) & (x + 1)) << 2 => (x + 1) << 2
+    public int testLShiftOfMaskedIntVarMaskFirst(int x) {
+        int y = otherInput;
+        return ((y | 0x3fffffff) & (x + 1)) << 2;
+    }
+
+    @Test
+    @IR(counts = { IRNode.AND_I, "1", IRNode.LSHIFT_I, "1" })
+    // << 30 needs bits 0 and 1, but only bit 0 is known to be set
+    public int testLShiftOfPartialMaskedIntVarHighShift(int x) {
+        int y = otherInput;
+        return (x & (y | 1)) << 30;
     }
 
     @Test
