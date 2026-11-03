@@ -152,7 +152,7 @@
 
 #define DECLARE_FIELD(dst_var, cls, name, signature) \
      DECLARE_FIELD_ONLY(dst_var); \
-     GET_FIELD_ONLY(dst_var, cls, name, signature);
+     GET_FIELD(dst_var, cls, name, signature);
 
 #define DECLARE_FIELD_RETURN(dst_var, cls, name, signature, ret) \
      DECLARE_FIELD_ONLY(dst_var); \
