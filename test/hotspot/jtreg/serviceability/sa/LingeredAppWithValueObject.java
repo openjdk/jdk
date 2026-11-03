@@ -88,10 +88,12 @@ public class LingeredAppWithValueObject extends LingeredApp {
 
     public static class NonNullValueThreadObj extends Thread {
 
-        public final Rec  rec;
+        @NullRestricted
+        public final Rec rec;
 
         public NonNullValueThreadObj(byte recA, byte recB) {
             this.rec = new Rec(recA, recB);
+            super();
         }
     }
 
@@ -108,7 +110,6 @@ public class LingeredAppWithValueObject extends LingeredApp {
 
     private static ValueThreadObj valThreadObj;
 
-    @NullRestricted
     private static NonNullValueThreadObj nonNullValThreadObj;
 
     static {
