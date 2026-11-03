@@ -1265,18 +1265,12 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
      * @throws SQLException if a database access error occurs
      */
     private String buildWhereClause(ResultSet rs) throws SQLException {
-        return buildWhereClause(rs, callerMd, params, keyCols);
-    }
-
-    // Allows `updateResolvedConflictToDB` to provide its own metadata, key cols, and populate its params
-    private String buildWhereClause(ResultSet rs, ResultSetMetaData metaData, Object[] params, int[] keyCols)
-            throws SQLException {
         StringBuilder whereClause = new StringBuilder("WHERE ");
         for (int i = 0; i < keyCols.length; i++) {
             if (i > 0) {
                 whereClause.append("AND ");
             }
-            whereClause.append(metaData.getColumnName(keyCols[i]));
+            whereClause.append(callerMd.getColumnName(keyCols[i]));
             params[i] = rs.getObject(keyCols[i]);
             if (rs.wasNull()) {
                 whereClause.append(" IS NULL ");
@@ -1293,26 +1287,16 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
           String strExec =" ";
           String strUpdate = "UPDATE ";
           int icolCount = crs.getMetaData().getColumnCount();
-          int keyColumns[] = crs.getKeyColumns();
-          Object param[];
           String strSet="";
 
-        if (keyColumns == null || keyColumns.length == 0) {
-            keyColumns = new int[icolCount];
-            for (int i = 0; i < keyColumns.length; ) {
-                keyColumns[i] = ++i;
-            }
-          }
-          param = new Object[keyColumns.length];
-
-         strUpdate = "UPDATE " + buildTableName(con.getMetaData(),
+          strUpdate = "UPDATE " + buildTableName(con.getMetaData(),
                             crs.getMetaData().getCatalogName(1),
                            crs.getMetaData().getSchemaName(1),
                            crs.getTableName());
 
-         // changed or updated values will become part of
-         // set clause here
-         strUpdate += "SET ";
+          // changed or updated values will become part of
+          // set clause here
+        strUpdate += "SET ";
 
         boolean first = true;
 
@@ -1330,7 +1314,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
          // keycols will become part of where clause
          strUpdate += strSet;
 
-          strUpdate += buildWhereClause(crs, crs.getMetaData(), param, keyColumns);
+          strUpdate += buildWhereClause(crs);
 
         pStmt = con.prepareStatement(strUpdate);
 
@@ -1347,9 +1331,9 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         } //end for
 
           // Set the key cols for after WHERE =? clause
-          for (int i = 0; i < keyColumns.length; i++) {
-              if (param[i] != null) {
-                  pStmt.setObject(++idx, param[i]);
+          for (int i = 0; i < keyCols.length; i++) {
+              if (params[i] != null) {
+                  pStmt.setObject(++idx, params[i]);
               }
           }
 
