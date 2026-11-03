@@ -2550,10 +2550,11 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
     is_interpreted[frame_count] = vfs.is_interpreted_frame();
     if (!is_interpreted[frame_count]) {
       javaVFrame* jvf = vfs.asJavaVFrame();
+      // The frame is frozen in a stack chunk on the heap, not on the thread stack.
       if (vfs.reg_map()->in_cont()) {
         assert(_state->is_virtual(), "invariant");
         if (frame_count == 0) {
-          // If the top frame is in the heap, PopFrame is not supported.
+          // If the top frame is compiled and in the heap, PopFrame is not supported.
           _result = JVMTI_ERROR_OPAQUE_FRAME;
           return;
         }
@@ -2587,6 +2588,8 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
   // If any of the top 2 frames is a compiled one, need to deoptimize it
   for (int i = 0; i < 2; i++) {
     if (!is_interpreted[i]) {
+      // deoptimize_frame only walks the thread stack, a frozen frame is patched
+      // in its stack chunk instead.
       if (heap_jvf[i] != nullptr) {
         frame fr = heap_jvf[i]->fr();
         fr.deoptimize(nullptr, heap_jvf[i]->stack_chunk());
