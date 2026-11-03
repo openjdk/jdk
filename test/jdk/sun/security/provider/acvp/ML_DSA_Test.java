@@ -26,11 +26,16 @@ import jdk.test.lib.security.FixedSecureRandom;
 import sun.security.provider.ML_DSA_Impls;
 import sun.security.util.DerOutputStream;
 import sun.security.util.InternalSignatureParameterSpec;
+import sun.security.util.KnownOIDs;
+import sun.security.util.ObjectIdentifier;
 
 import java.security.*;
 import java.security.spec.EncodedKeySpec;
+import java.security.spec.MLDSAParameterSpec;
 import java.security.spec.NamedParameterSpec;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
 
 import static jdk.test.lib.Utils.toByteArray;
 
@@ -38,8 +43,7 @@ import static jdk.test.lib.Utils.toByteArray;
 public class ML_DSA_Test {
 
     public static void run(JSONValue kat, Provider provider) throws Exception {
-
-        var mode = kat.get("mode").asString();
+        String mode = kat.get("mode").asString();
         switch (mode) {
             case "keyGen" -> keyGenTest(kat, provider);
             case "sigGen" -> sigGenTest(kat, provider);
@@ -54,27 +58,26 @@ public class ML_DSA_Test {
             case "ML-DSA-65" -> NamedParameterSpec.ML_DSA_65;
             case "ML-DSA-87" -> NamedParameterSpec.ML_DSA_87;
             default -> throw new RuntimeException("Unknown params: " + pname);
-
         };
     }
 
     static void keyGenTest(JSONValue kat, Provider p) throws Exception {
-        var g = p == null
+        KeyPairGenerator g = p == null
                 ? KeyPairGenerator.getInstance("ML-DSA")
                 : KeyPairGenerator.getInstance("ML-DSA", p);
-        var f = p == null
+        KeyFactory f = p == null
                 ? KeyFactory.getInstance("ML-DSA")
                 : KeyFactory.getInstance("ML-DSA", p);
-        for (var t : kat.get("testGroups").elements()) {
-            var pname = t.get("parameterSet").asString();
-            var np = genParams(pname);
+        for (JSONValue t : kat.get("testGroups").elements()) {
+            String pname = t.get("parameterSet").asString();
+            NamedParameterSpec np = genParams(pname);
             System.out.println(">> " + pname);
-            for (var c : t.get("tests").elements()) {
+            for (JSONValue c : t.get("tests").elements()) {
                 System.out.print(c.get("tcId").asInt() + " ");
-                var seed = toByteArray(c.get("seed").asString());
+                byte[] seed = toByteArray(c.get("seed").asString());
                 g.initialize(np, new FixedSecureRandom(seed));
-                var kp = g.generateKeyPair();
-                var pk = f.getKeySpec(kp.getPublic(), EncodedKeySpec.class).getEncoded();
+                KeyPair kp = g.generateKeyPair();
+                byte[] pk = f.getKeySpec(kp.getPublic(), EncodedKeySpec.class).getEncoded();
                 Asserts.assertEqualsByteArray(toByteArray(c.get("pk").asString()), pk);
                 Asserts.assertEqualsByteArray(toByteArray(c.get("sk").asString()),
                         ML_DSA_Impls.seedToExpanded(pname, seed));
@@ -98,43 +101,75 @@ public class ML_DSA_Test {
     }
 
     static void sigGenTest(JSONValue kat, Provider p) throws Exception {
-        var s = p == null
+        Signature s = p == null
                 ? Signature.getInstance("ML-DSA")
                 : Signature.getInstance("ML-DSA", p);
-        for (var t : kat.get("testGroups").elements()) {
-            var pname = t.get("parameterSet").asString();
+        for (JSONValue t : kat.get("testGroups").elements()) {
+            String pname = t.get("parameterSet").asString();
             System.out.println(">> " + pname + " sign");
-            var features = new HashSet<String>();
-            if (t.get("deterministic").asBoolean()) {
-                features.add("deterministic");
-            }
-            if (t.get("signatureInterface").asString().equals("internal")) {
-                features.add("internal");
-            }
-            if (t.get("externalMu").asBoolean()) {
-                features.add("externalMu");
-            }
-            for (var c : t.get("tests").elements()) {
-                var ctxt =  c.getOrAbsent("context")
+            boolean deterministic = t.get("deterministic").asBoolean();
+            boolean internal = t.get("signatureInterface").asString().equals("internal");
+            boolean externalMu = t.get("externalMu").asBoolean();
+            for (JSONValue c : t.get("tests").elements()) {
+                System.out.print(c.get("tcId").asInt() + " ");
+                byte[] ctxt =  c.getOrAbsent("context")
                         .map(v -> toByteArray(v.asString()))
                         .orElse(new byte[0]);
-                var hashAlg = c.get("hashAlg").asString();
-                var preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
-                System.out.print(c.get("tcId").asInt() + " ");
-                var sps = new InternalSignatureParameterSpec(preHash, ctxt, features.toArray(new String[0]));
-                var sk = new PrivateKey() {
+                String hashAlg = c.get("hashAlg").asString();
+                String preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
+                byte[] rawSk = toByteArray(c.get("sk").asString());
+                PrivateKey sk = new PrivateKey() {
                     public String getAlgorithm() { return pname; }
                     public String getFormat() { return "RAW"; }
-                    public byte[] getEncoded() { return oct(toByteArray(c.get("sk").asString())); }
+                    public byte[] getEncoded() { return oct(rawSk); }
                 };
-                var sr = sps.hasFeature("deterministic")
+                byte[] input = toByteArray(externalMu
+                        ? c.get("mu").asString()
+                        : c.get("message").asString());
+                byte[] sigExpected = toByteArray(c.get("signature").asString());
+
+                // Use InternalSignatureParameterSpec
+                Set<String> features = new HashSet<>();
+                if (deterministic) {
+                    features.add("deterministic");
+                }
+                if (internal) {
+                    features.add("internal");
+                }
+                if (externalMu) {
+                    features.add("externalMu");
+                }
+
+                s.setParameter(new InternalSignatureParameterSpec(
+                        preHash, ctxt, features.toArray(new String[0])));
+                s.initSign(sk, deterministic
                         ? null
+                        : new FixedSecureRandom(toByteArray(c.get("rnd").asString())));
+                s.update(input);
+                byte[] sigUsingInternal = s.sign();
+
+                // Use MLDSAParameterSpec
+                SecureRandom sr = deterministic
+                        ? new FixedSecureRandom(new byte[32])
                         : new FixedSecureRandom(toByteArray(c.get("rnd").asString()));
-                s.setParameter(sps);
-                s.initSign(sk, sr);
-                s.update(toByteArray(sps.hasFeature("externalMu") ? c.get("mu").asString() : c.get("message").asString()));
-                var sig = s.sign();
-                Asserts.assertEqualsByteArray(toByteArray(c.get("signature").asString()), sig);
+                if (!internal && preHash == null) {
+                    s.setParameter(MLDSAParameterSpec.ofContext(ctxt));
+                    s.initSign(sk, sr);
+                    s.update(input);
+                } else {
+                    byte[] mu = externalMu
+                            ? input
+                            : (internal
+                               ? mu(input, sk2tr(rawSk))
+                               : mu(mprime(preHash, ctxt, input), sk2tr(rawSk)));
+                    s.setParameter(MLDSAParameterSpec.ofExternalMu());
+                    s.initSign(sk, sr);
+                    s.update(mu);
+                }
+                byte[] sigUsingPublic = s.sign();
+
+                Asserts.assertEqualsByteArray(sigExpected, sigUsingInternal);
+                Asserts.assertEqualsByteArray(sigExpected, sigUsingPublic);
             }
             System.out.println();
         }
@@ -145,46 +180,118 @@ public class ML_DSA_Test {
     }
 
     static void sigVerTest(JSONValue kat, Provider p) throws Exception {
-        var s = p == null
+        Signature s = p == null
                 ? Signature.getInstance("ML-DSA")
                 : Signature.getInstance("ML-DSA", p);
-        for (var t : kat.get("testGroups").elements()) {
-            var pname = t.get("parameterSet").asString();
+        for (JSONValue t : kat.get("testGroups").elements()) {
+            String pname = t.get("parameterSet").asString();
             System.out.println(">> " + pname + " verify");
-            var features = new HashSet<String>();
-            if (t.get("signatureInterface").asString().equals("internal")) {
-                features.add("internal");
-            }
-            if (t.get("externalMu").asBoolean()) {
-                features.add("externalMu");
-            }
-            for (var c : t.get("tests").elements()) {
+            boolean internal = t.get("signatureInterface").asString().equals("internal");
+            boolean externalMu = t.get("externalMu").asBoolean();
+            for (JSONValue c : t.get("tests").elements()) {
                 System.out.print(c.get("tcId").asInt() + " ");
-                var ctxt =  c.getOrAbsent("context")
+                byte[] ctxt =  c.getOrAbsent("context")
                         .map(v -> toByteArray(v.asString()))
                         .orElse(new byte[0]);
-                var hashAlg = c.get("hashAlg").asString();
-                var preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
-                var sps = new InternalSignatureParameterSpec(preHash, ctxt, features.toArray(new String[0]));
-                var pk = new PublicKey() {
+                String hashAlg = c.get("hashAlg").asString();
+                String preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
+                byte[] rawpk = toByteArray(c.get("pk").asString());
+                PublicKey pk = new PublicKey() {
                     public String getAlgorithm() { return pname; }
                     public String getFormat() { return "RAW"; }
-                    public byte[] getEncoded() { return toByteArray(c.get("pk").asString()); }
+                    public byte[] getEncoded() { return rawpk; }
                 };
-                // Only ML-DSA sigVer has negative tests
-                var expected = c.get("testPassed").asBoolean();
-                var actual = true;
-                s.setParameter(sps);
+                byte[] input = toByteArray(externalMu
+                        ? c.get("mu").asString()
+                        : c.get("message").asString());
+                byte[] signature = toByteArray(c.get("signature").asString());
+                boolean expected = c.get("testPassed").asBoolean();
+
+                // Use InternalSignatureParameterSpec
+                boolean actualUsingInternal = true;
+                Set<String> features = new HashSet<>();
+                if (t.get("signatureInterface").asString().equals("internal")) {
+                    features.add("internal");
+                }
+                if (t.get("externalMu").asBoolean()) {
+                    features.add("externalMu");
+                }
+
+                s.setParameter(new InternalSignatureParameterSpec(
+                        preHash, ctxt, features.toArray(new String[0])));
                 try {
                     s.initVerify(pk);
-                    s.update(toByteArray(sps.hasFeature("externalMu") ? c.get("mu").asString() : c.get("message").asString()));
-                    actual = s.verify(toByteArray(c.get("signature").asString()));
+                    s.update(input);
+                    actualUsingInternal = s.verify(signature);
                 } catch (InvalidKeyException | SignatureException e) {
-                    actual = false;
+                    actualUsingInternal = false;
                 }
-                Asserts.assertEQ(expected, actual);
+
+                // Use MLDSAParameterSpec
+                boolean actualUsingPublic = true;
+                try {
+                    if (!internal && preHash == null) {
+                        s.setParameter(MLDSAParameterSpec.ofContext(ctxt));
+                        s.initVerify(pk);
+                        s.update(input);
+                    } else {
+                        byte[] mu = externalMu
+                                ? input
+                                : internal
+                                  ? mu(input, pk2tr(rawpk))
+                                  : mu(mprime(preHash, ctxt, input), pk2tr(rawpk));
+                        s.setParameter(MLDSAParameterSpec.ofExternalMu());
+                        s.initVerify(pk);
+                        s.update(mu);
+                    }
+                    actualUsingPublic = s.verify(signature);
+                } catch (InvalidKeyException | SignatureException e) {
+                    actualUsingPublic = false;
+                }
+
+                Asserts.assertEQ(expected, actualUsingInternal);
+                Asserts.assertEQ(expected, actualUsingPublic);
             }
             System.out.println();
         }
+    }
+
+    // Helper methods for the MLDSAParameterSpec approach
+
+    static byte[] sk2tr(byte[] sk) {
+        return Arrays.copyOfRange(sk, 64, 128);
+    }
+
+    static byte[] pk2tr(byte[] pk) throws Exception {
+        return MessageDigest.getInstance("SHAKE256-512").digest(pk);
+    }
+
+    static byte[] mprime(String preHash, byte[] context, byte[] msg)
+            throws Exception {
+        int ctxLen = context != null ? context.length : 0;
+        byte[] oid = new byte[0];
+        if (preHash != null) {
+            oid = new DerOutputStream().putOID(ObjectIdentifier.of(
+                    KnownOIDs.findMatch(preHash))).toByteArray();
+            msg = MessageDigest.getInstance(preHash).digest(msg);
+        }
+        byte[] mprime = new byte[msg.length + 2 + ctxLen + oid.length];
+        mprime[0] = preHash != null ? (byte)1 : (byte)0;
+        mprime[1] = (byte) ctxLen;
+        if (ctxLen > 0) {
+            System.arraycopy(context, 0, mprime, 2, ctxLen);
+        }
+        if (oid.length > 0) {
+            System.arraycopy(oid, 0, mprime, ctxLen + 2, oid.length);
+        }
+        System.arraycopy(msg, 0, mprime, ctxLen + 2 + oid.length, msg.length);
+        return mprime;
+    }
+
+    static byte[] mu(byte[] mprime, byte[] tr) throws Exception {
+        MessageDigest shake = MessageDigest.getInstance("SHAKE256-512");
+        shake.update(tr);
+        shake.update(mprime);
+        return shake.digest();
     }
 }

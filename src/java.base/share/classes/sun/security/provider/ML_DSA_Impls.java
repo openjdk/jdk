@@ -28,6 +28,7 @@ package sun.security.provider;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.util.DerOutputStream;
+import sun.security.util.InternalSignatureParameterSpec;
 import sun.security.util.KeyChoices;
 import sun.security.util.KnownOIDs;
 import sun.security.util.ObjectIdentifier;
@@ -36,6 +37,7 @@ import sun.security.x509.NamedX509Key;
 import java.security.*;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.MLDSAParameterSpec;
 import java.util.Arrays;
 
 public class ML_DSA_Impls {
@@ -203,6 +205,11 @@ public class ML_DSA_Impls {
         @Override
         protected void engineSetParameter(AlgorithmParameterSpec params)
                 throws InvalidAlgorithmParameterException {
+            if (params instanceof MLDSAParameterSpec.Context ctxt) {
+                params = new InternalSignatureParameterSpec(null, ctxt.context());
+            } else if (params instanceof MLDSAParameterSpec.ExternalMu) {
+                params = new InternalSignatureParameterSpec(null, null, "internal", "externalMu");
+            }
             super.engineSetParameter(params);
             isInternal = isDeterministic = useExternalMu = false;
             for (var f : sps.features()) {
