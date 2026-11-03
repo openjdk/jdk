@@ -1246,7 +1246,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     private long generateIDForFlatObj() {
         // to avoid conflicts with oop addresses skip aligned values.
-        // FlatObjectDumper::get_id() returns -1 (ULONG_MAX) if it reaches max value, not rouded.
+        // FlatObjectDumper::get_id() returns -1 (ULONG_MAX) if it reaches max value, not rounded.
         while (true) {
             long id = idForFlatObj.getAndUpdate(v -> v == -1 ? -1 : ++v);
             if ((id & VM.getVM().getMinObjAlignmentInBytesMask()) != 0) {
