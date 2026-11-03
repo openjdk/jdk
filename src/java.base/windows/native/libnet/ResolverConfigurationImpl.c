@@ -38,14 +38,6 @@
 #define BUFF_SIZE           15360
 #define MAX_TRIES           3
 
-#define STS_NO_CONFIG       0x0             /* no configuration found */
-#define STS_SL_FOUND        0x1             /* search list found */
-#define STS_NS_FOUND        0x2             /* name servers found */
-#define STS_ERROR           -1              /* error return  lodConfig failed memory allccation failure*/
-
-#define IS_SL_FOUND(sts)    (sts & STS_SL_FOUND)
-#define IS_NS_FOUND(sts)    (sts & STS_NS_FOUND)
-
 /* JNI ids */
 static jfieldID searchlistID;
 static jfieldID nameserversID;
@@ -150,7 +142,7 @@ void strappend(char *s1, char *s2) {
  * Use DNS server addresses returned by GetAdaptersAddresses for currently
  * active interfaces.
  */
-static int loadConfig(JNIEnv *env, char *sl, char *ns) {
+static BOOL loadConfig(JNIEnv *env, char *sl, char *ns) {
     IP_ADAPTER_ADDRESSES *adapters, *adapter;
     IP_ADAPTER_DNS_SERVER_ADDRESS *dnsServer;
     WCHAR *suffix;
@@ -181,7 +173,7 @@ static int loadConfig(JNIEnv *env, char *sl, char *ns) {
     ret = getAdapters(env, flags, &adapters);
 
     if (ret != ERROR_SUCCESS) {
-        return STS_ERROR;
+        return FALSE;
     }
 
     adapter = adapters;
@@ -229,7 +221,7 @@ static int loadConfig(JNIEnv *env, char *sl, char *ns) {
 
     free(adapters);
 
-    return STS_SL_FOUND & STS_NS_FOUND;
+    return TRUE;
 }
 
 
@@ -244,6 +236,7 @@ Java_sun_net_dns_ResolverConfigurationImpl_init0(JNIEnv *env, jclass cls)
     CHECK_NULL(searchlistID);
     nameserversID = (*env)->GetStaticFieldID(env, cls, "os_nameservers",
                                       "Ljava/lang/String;");
+    CHECK_NULL(nameserversID);
 }
 
 /*
@@ -261,7 +254,7 @@ Java_sun_net_dns_ResolverConfigurationImpl_loadDNSconfig0(JNIEnv *env, jclass cl
     searchlist[0] = '\0';
     nameservers[0] = '\0';
 
-    if (loadConfig(env, searchlist, nameservers) != STS_ERROR) {
+    if (loadConfig(env, searchlist, nameservers) == TRUE) {
 
         /*
          * Populate static fields in sun.net.DefaultResolverConfiguration

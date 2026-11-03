@@ -2116,9 +2116,9 @@ void TemplateTable::if_acmp(Condition cc) {
   Label taken, not_taken;
   __ pop_ptr(Z_ARG5);
 
-  __ profile_acmp(Z_tmp_1, Z_ARG5, Z_tos, Z_tmp_2);
-
   if (Arguments::is_valhalla_enabled()) {
+    __ profile_acmp(Z_tmp_1, Z_ARG5, Z_tos, Z_tmp_2);
+
     __ compareU64_and_branch(Z_tos, Z_ARG5, Assembler::bcondEqual, (cc == equal) ? taken : not_taken);
 
     // Use z_ltgr for efficient null checks
@@ -2961,7 +2961,9 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
         // still holds the ResolvedFieldEntry* for read_flat_field below.
         __ load_sized_value(atos_flags, Address(atos_entry, in_bytes(ResolvedFieldEntry::flags_offset())), sizeof(u1), false);
         Label is_flat;
-        __ test_field_is_flat(atos_flags, is_flat);
+        if (UseFieldFlattening) {
+          __ test_field_is_flat(atos_flags, is_flat);
+        }
         __ load_heap_oop(Z_tos, field, oopLoad_tmp1, oopLoad_tmp2);
         __ push(atos);
         if (do_rewrite) {
@@ -2969,14 +2971,17 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
         }
         __ z_bru(Done);
         __ bind(is_flat);
-        // field is flat (null-free or nullable with a null-marker).
-        // atos_entry (Z_ARG5) still holds the ResolvedFieldEntry* here.
-        __ z_lgr(Z_tos, obj);
-        __ read_flat_field(atos_entry, Z_tos);
-        __ verify_oop(Z_tos);
-        __ push(atos);
-        if (do_rewrite) {
-          patch_bytecode(Bytecodes::_fast_vgetfield, bc_reg, patch_tmp);
+        if (UseFieldFlattening) {
+          // field is flat (null-free or nullable with a null-marker).
+          // atos_entry (Z_ARG5) still holds the ResolvedFieldEntry* here.
+          __ z_lgr(Z_tos, obj);
+          __ read_flat_field(atos_entry, Z_tos);
+          __ verify_oop(Z_tos);
+          __ push(atos);
+          if (do_rewrite) {
+            patch_bytecode(Bytecodes::_fast_vgetfield, bc_reg, patch_tmp);
+          }
+          __ z_bru(Done);
         }
       }
     }
@@ -3351,8 +3356,10 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
                      oopStore_tmp1, oopStore_tmp2, oopStore_tmp3, IN_HEAP);
       } else {
         Label null_free_reference, is_flat, rewrite_value, done_valhalla;
-        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_flat_shift);
-        __ branch_optimized(Assembler::bcondAllOne, is_flat);
+        if (UseFieldFlattening) {
+          __ z_tmll(flags, 1 << ResolvedFieldEntry::is_flat_shift);
+          __ branch_optimized(Assembler::bcondAllOne, is_flat);
+        }
         __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_value_type_shift);
         __ branch_optimized(Assembler::bcondAllOne, null_free_reference);
         pop_and_check_object(obj);
@@ -3374,19 +3381,22 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
                      oopStore_tmp1, oopStore_tmp2, oopStore_tmp3, IN_HEAP);
         __ z_bru(rewrite_value);
         __ bind(is_flat);
-        pop_and_check_object(oopStore_tmp1);
-        {
-          // cache (Z_ARG5) is dead here — overwritten by load_resolved_field_entry.
-          // tos_state (Z_ARG4) is dead here — its life ended after branch-table dispatch.
-          // Reload the ResolvedFieldEntry pointer into tos_state (Z_ARG4); use
-          // oopStore_tmp2 (Z_R1_scratch) as the index scratch.
-          // Pass oopStore_tmp3 (Z_ARG2) as tmp2 so that flags (Z_tmp_1) is not
-          // clobbered; flags must survive to the volatility check after Done.
-          Register flat_entry = tos_state;
-          Register flat_index = oopStore_tmp2; // Z_R1_scratch (index scratch, discarded after load)
-          __ load_field_entry(flat_entry, flat_index);
-          __ write_flat_field(flat_entry, flat_index, oopStore_tmp3, oopStore_tmp1);
-        }__ bind(rewrite_value);
+        if (UseFieldFlattening) {
+          pop_and_check_object(oopStore_tmp1);
+          {
+            // cache (Z_ARG5) is dead here — overwritten by load_resolved_field_entry.
+            // tos_state (Z_ARG4) is dead here — its life ended after branch-table dispatch.
+            // Reload the ResolvedFieldEntry pointer into tos_state (Z_ARG4); use
+            // oopStore_tmp2 (Z_R1_scratch) as the index scratch.
+            // Pass oopStore_tmp3 (Z_ARG2) as tmp2 so that flags (Z_tmp_1) is not
+            // clobbered; flags must survive to the volatility check after Done.
+            Register flat_entry = tos_state;
+            Register flat_index = oopStore_tmp2; // Z_R1_scratch (index scratch, discarded after load)
+            __ load_field_entry(flat_entry, flat_index);
+            __ write_flat_field(flat_entry, flat_index, oopStore_tmp3, oopStore_tmp1);
+          }
+        }
+        __ bind(rewrite_value);
         if (do_rewrite) {
           patch_bytecode(Bytecodes::_fast_vputfield, bc_reg, patch_tmp, true, byte_no);
         }
@@ -3550,34 +3560,40 @@ void TemplateTable::fast_storefield(TosState state) {
   switch (bytecode()) {
     case Bytecodes::_fast_vputfield:
       {
-        // Register state at this point:
-        //   obj/cache = Z_tmp_1 (R10) = target object  (pop_and_check_object wrote obj here,
-        //                               overwriting the entry pointer that cache held earlier)
-        //   off       = Z_tmp_2 (R11) = field offset
-        //   flags     = Z_ARG5  (R6)  = field flags
-        //   Z_tos     = Z_ARG1  (R2)  = value oop being stored
-        //
-        // For write_flat_field we need the ResolvedFieldEntry pointer.
-        // Re-load it into Z_ARG3 (R4) using Z_ARG4 (R5) as the index scratch;
-        // both are volatile and not carrying live values at this point.
-        Label is_flat, done;
-        __ test_field_is_flat(flags, is_flat);
-        __ null_check(Z_tos);  // Value being stored must not be null for null-free flat field.
-        do_oop_store(_masm, field, Z_tos,
-                     Z_ARG2, Z_ARG3, Z_ARG4, IN_HEAP);
-        __ branch_optimized(Assembler::bcondAlways, done);
-        __ bind(is_flat);
-        {
-          // Reload the ResolvedFieldEntry pointer.  pop_and_check_object above
-          // overwrote cache/Z_tmp_1 with the object.
-          Register flat_entry = Z_ARG4;  // R5  — safe for call_VM arg_3 slot
-          Register flat_index = Z_ARG3;  // R4  — discarded after load_field_entry
-          __ load_field_entry(flat_entry, flat_index);
-          // entry=R5, tmp1=Z_ARG2=R3, tmp2=flat_index=Z_ARG3=R4, obj=Z_tmp_1=R10
-          // All four are distinct; obj(R10) != Z_tos(R2) so implementation is safe.
-          __ write_flat_field(flat_entry, Z_ARG2, flat_index, obj);
+        if (Arguments::is_valhalla_enabled()) {
+          // Register state at this point:
+          //   obj/cache = Z_tmp_1 (R10) = target object  (pop_and_check_object wrote obj here,
+          //                               overwriting the entry pointer that cache held earlier)
+          //   off       = Z_tmp_2 (R11) = field offset
+          //   flags     = Z_ARG5  (R6)  = field flags
+          //   Z_tos     = Z_ARG1  (R2)  = value oop being stored
+          //
+          // For write_flat_field we need the ResolvedFieldEntry pointer.
+          // Re-load it into Z_ARG3 (R4) using Z_ARG4 (R5) as the index scratch;
+          // both are volatile and not carrying live values at this point.
+          Label is_flat, done;
+          if (UseFieldFlattening) {
+            __ test_field_is_flat(flags, is_flat);
+          }
+          __ null_check(Z_tos);  // Value being stored must not be null for null-free flat field.
+          do_oop_store(_masm, field, Z_tos,
+                       Z_ARG2, Z_ARG3, Z_ARG4, IN_HEAP);
+          __ branch_optimized(Assembler::bcondAlways, done);
+          __ bind(is_flat);
+          if (UseFieldFlattening) {
+            // Reload the ResolvedFieldEntry pointer.  pop_and_check_object above
+            // overwrote cache/Z_tmp_1 with the object.
+            Register flat_entry = Z_ARG4;  // R5  — safe for call_VM arg_3 slot
+            Register flat_index = Z_ARG3;  // R4  — discarded after load_field_entry
+            __ load_field_entry(flat_entry, flat_index);
+            // entry=R5, tmp1=Z_ARG2=R3, tmp2=flat_index=Z_ARG3=R4, obj=Z_tmp_1=R10
+            // All four are distinct; obj(R10) != Z_tos(R2) so implementation is safe.
+            __ write_flat_field(flat_entry, Z_ARG2, flat_index, obj);
+          }
+          __ bind(done);
+        } else {
+          __ should_not_reach_here();
         }
-        __ bind(done);
       }
     break;
     case Bytecodes::_fast_aputfield:
@@ -3675,9 +3691,13 @@ void TemplateTable::fast_accessfield(TosState state) {
   // access field
   switch (bytecode()) {
     case Bytecodes::_fast_vgetfield:
-      // field is flat; cache (Z_tmp_1) holds ResolvedFieldEntry*, obj (Z_tos) is receiver/result
-      __ read_flat_field(cache, obj);
-      __ verify_oop(Z_tos);
+      if (UseFieldFlattening) {
+        // field is flat; cache (Z_tmp_1) holds ResolvedFieldEntry*, obj (Z_tos) is receiver/result
+        __ read_flat_field(cache, obj);
+        __ verify_oop(Z_tos);
+      } else {
+        __ stop("ShouldNotReachHere");
+      }
       return;
     case Bytecodes::_fast_agetfield:
       do_oop_load(_masm, field, Z_tos, Z_tmp_1, Z_tmp_2, IN_HEAP);
@@ -4511,8 +4531,10 @@ void TemplateTable::monitorenter() {
 
   // Check for value type (Valhalla feature)
   NearLabel is_value_type;
-  __ z_lg(Z_R1_scratch, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
-  __ test_markword_is_value_type(Z_R1_scratch, is_value_type);
+  if (Arguments::is_valhalla_enabled()) {
+    __ z_lg(Z_R1_scratch, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
+    __ test_markword_is_value_type(Z_R1_scratch, is_value_type);
+  }
   const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
   NearLabel allocated;
   // Initialize entry pointer.
@@ -4592,10 +4614,12 @@ void TemplateTable::monitorenter() {
   __ dispatch_next(vtos);
 
   // Handle value type exception (Valhalla feature)
-  __ bind(is_value_type);
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                    InterpreterRuntime::throw_identity_exception), Z_tos);
-  __ should_not_reach_here();
+  if (Arguments::is_valhalla_enabled()) {
+    __ bind(is_value_type);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                      InterpreterRuntime::throw_identity_exception), Z_tos);
+    __ should_not_reach_here();
+  }
 
   BLOCK_COMMENT("} monitorenter");
 }
@@ -4611,14 +4635,16 @@ void TemplateTable::monitorexit() {
 
   // Check for value type (Valhalla feature)
   NearLabel is_value_type, has_identity;
-  __ z_lg(Z_R1_scratch, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
-  __ test_markword_is_value_type(Z_R1_scratch, is_value_type);
-  __ z_bru(has_identity);
-  __ bind(is_value_type);
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                     InterpreterRuntime::throw_illegal_monitor_state_exception));
-  __ should_not_reach_here();
-  __ bind(has_identity);
+  if (Arguments::is_valhalla_enabled()) {
+    __ z_lg(Z_R1_scratch, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
+    __ test_markword_is_value_type(Z_R1_scratch, is_value_type);
+    __ z_bru(has_identity);
+    __ bind(is_value_type);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                       InterpreterRuntime::throw_illegal_monitor_state_exception));
+    __ should_not_reach_here();
+    __ bind(has_identity);
+  }
 
   NearLabel found, not_found;
   const Register Rcurr_monitor = Z_ARG2;

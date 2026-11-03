@@ -22,12 +22,12 @@
  *
  */
 
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotModules.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/aotStreamedHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/stringTable.hpp"
@@ -105,7 +105,7 @@ public:
 private:
   template <class T> void do_oop_work(T *p) {
     size_t field_offset = pointer_delta(p, _src_obj, sizeof(char));
-    oop obj = HeapShared::maybe_remap_referent(_is_java_lang_ref, field_offset, HeapAccess<>::oop_load(p));
+    oop obj = AOTHeap::maybe_remap_referent(_is_java_lang_ref, field_offset, HeapAccess<>::oop_load(p));
     if (obj != nullptr) {
       _dfs_stack->push(obj);
     }
@@ -127,7 +127,6 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
   for (int i = 0; i < _source_objs->length(); ++i) {
     oop obj = _source_objs->at(i);
     _dfs_order_table->put(cast_from_oop<void*>(obj), -1);
-    _dfs_order_table->maybe_grow();
   }
 
   int dfs_order = 0;
@@ -152,7 +151,6 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
         continue;
       }
       _dfs_order_table->put(cast_from_oop<void*>(obj), ++dfs_order);
-      _dfs_order_table->maybe_grow();
 
       FollowOopIterateClosure cl(&dfs_stack, obj, AOTReferenceObjSupport::check_if_ref_obj(obj));
       obj->oop_iterate(&cl);
@@ -255,14 +253,13 @@ static BitMap::idx_t bit_idx_for_buffer_offset(size_t buffer_offset) {
 void AOTStreamedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
   for (int i = 0; i < _source_objs->length(); i++) {
     oop src_obj = _source_objs->at(i);
-    HeapShared::CachedOopInfo* info = HeapShared::get_cached_oop_info(src_obj);
+    AOTHeap::CachedOopInfo* info = AOTHeap::get_cached_oop_info(src_obj);
     assert(info != nullptr, "must be");
     size_t buffer_offset = copy_one_source_obj_to_buffer(src_obj);
     info->set_buffer_offset(buffer_offset);
 
     OopHandle handle(Universe::vm_global(), src_obj);
     _buffer_offset_to_source_obj_table->put_when_absent(buffer_offset, handle);
-    _buffer_offset_to_source_obj_table->maybe_grow();
 
     int dfs_order = i + 1;
     _dfs_to_archive_object_table[dfs_order] = buffer_offset;
@@ -309,7 +306,7 @@ size_t AOTStreamedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
 
   ensure_buffer_space(new_used);
 
-  if (HeapShared::is_interned_string(src_obj)) {
+  if (AOTHeap::is_interned_string(src_obj)) {
     java_lang_String::hash_code(src_obj);                   // Sets the hash code field(s)
     java_lang_String::set_deduplication_forbidden(src_obj); // Allows faster interning at runtime
     assert(java_lang_String::hash_is_set(src_obj), "hash must be set");
@@ -385,7 +382,7 @@ void AOTStreamedHeapWriter::update_header_for_buffered_addr(address buffered_add
     mw = mw.copy_set_hash(src_hash);
   }
 
-  if (HeapShared::is_interned_string(src_obj)) {
+  if (AOTHeap::is_interned_string(src_obj)) {
     // Mark the mark word of interned string so the loader knows to link these to
     // the string table at runtime.
     mw = mw.set_marked();
@@ -419,7 +416,7 @@ private:
   template <typename T>
   void do_oop_work(T *p) {
     size_t field_offset = pointer_delta(p, _src_obj, sizeof(char));
-    oop obj = HeapShared::maybe_remap_referent(_is_java_lang_ref, field_offset, HeapAccess<>::oop_load(p));
+    oop obj = AOTHeap::maybe_remap_referent(_is_java_lang_ref, field_offset, HeapAccess<>::oop_load(p));
     AOTStreamedHeapWriter::map_oop_field_in_buffer<T>(obj, (T*)(_buffered_obj + field_offset), _oopmap);
   }
 };
@@ -443,7 +440,7 @@ void AOTStreamedHeapWriter::map_embedded_oops(AOTStreamedHeapInfo* heap_info) {
 
   for (int i = 0; i < _source_objs->length(); i++) {
     oop src_obj = _source_objs->at(i);
-    HeapShared::CachedOopInfo* info = HeapShared::get_cached_oop_info(src_obj);
+    AOTHeap::CachedOopInfo* info = AOTHeap::get_cached_oop_info(src_obj);
     assert(info != nullptr, "must be");
     address buffered_obj = offset_to_buffered_address<address>(info->buffer_offset());
 
@@ -451,7 +448,7 @@ void AOTStreamedHeapWriter::map_embedded_oops(AOTStreamedHeapInfo* heap_info) {
 
     EmbeddedOopMapper mapper(src_obj, buffered_obj, heap_info->oopmap());
     src_obj->oop_iterate(&mapper);
-    HeapShared::remap_dumped_metadata(src_obj, buffered_obj);
+    AOTHeap::remap_dumped_metadata(src_obj, buffered_obj);
   };
 
   size_t total_bytes = (size_t)_buffer->length();
@@ -459,7 +456,7 @@ void AOTStreamedHeapWriter::map_embedded_oops(AOTStreamedHeapInfo* heap_info) {
 }
 
 size_t AOTStreamedHeapWriter::source_obj_to_buffered_offset(oop src_obj) {
-  HeapShared::CachedOopInfo* p = HeapShared::get_cached_oop_info(src_obj);
+  AOTHeap::CachedOopInfo* p = AOTHeap::get_cached_oop_info(src_obj);
   return p->buffer_offset();
 }
 
@@ -489,7 +486,7 @@ void AOTStreamedHeapWriter::populate_archive_heap_info(AOTStreamedHeapInfo* info
   info->set_buffer_region(MemRegion(offset_to_buffered_address<HeapWord*>(0),
                                     offset_to_buffered_address<HeapWord*>(_buffer_used)));
   info->set_roots_offset(_roots_offset);
-  info->set_num_roots((size_t)HeapShared::pending_roots()->length());
+  info->set_num_roots((size_t)AOTHeap::pending_roots()->length());
   info->set_forwarding_offset(_forwarding_offset);
   info->set_root_highest_object_index_table_offset(_root_highest_object_index_table_offset);
   info->set_num_archived_objects((size_t)_source_objs->length());

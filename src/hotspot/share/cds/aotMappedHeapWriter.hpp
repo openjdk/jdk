@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_AOTMAPPEDHEAPWRITER_HPP
 #define SHARE_CDS_AOTMAPPEDHEAPWRITER_HPP
 
+#include "cds/aotHeap.hpp"
 #include "cds/aotMapLogger.hpp"
-#include "cds/heapShared.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/compressedOops.hpp"
@@ -41,7 +41,7 @@ class MemRegion;
 
 #if INCLUDE_CDS_JAVA_HEAP
 class AOTMappedHeapWriter : AllStatic {
-  friend class HeapShared;
+  friend class AOTHeap;
   friend class AOTMappedHeapLoader;
   // AOTMappedHeapWriter manipulates three types of addresses:
   //
@@ -53,9 +53,9 @@ class AOTMappedHeapWriter : AllStatic {
   // - "source objects" are regular Java objects allocated during the execution
   //   of "java -Xshare:dump". They can be used as regular oops.
   //
-  //   Between HeapShared::start_scanning_for_oops() and HeapShared::end_scanning_for_oops(),
+  //   Between AOTHeap::start_scanning_for_oops() and AOTHeap::end_scanning_for_oops(),
   //   we recursively search for the oops that need to be stored into the CDS archive.
-  //   These are entered into HeapShared::archived_object_cache().
+  //   These are entered into AOTHeap::archived_object_cache().
   //
   // - "buffered objects" are copies of the "source objects", and are stored in into
   //   AOTMappedHeapWriter::_buffer, which is a GrowableArray that sits outside of

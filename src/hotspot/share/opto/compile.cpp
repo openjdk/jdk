@@ -311,7 +311,7 @@ void Compile::gvn_replace_by(Node* n, Node* nn) {
 // Identify all nodes that are reachable from below, useful.
 // Use breadth-first pass that records state in a Unique_Node_List,
 // recursive traversal is slower.
-void Compile::identify_useful_nodes(Unique_Node_List &useful) {
+void Compile::identify_useful_nodes(Unique_Node_List<Node>& useful) {
   int estimated_worklist_size = live_nodes();
   useful.map( estimated_worklist_size, nullptr );  // preallocate space
 
@@ -319,6 +319,8 @@ void Compile::identify_useful_nodes(Unique_Node_List &useful) {
   if (root() != nullptr)  { useful.push(root()); }
   // If 'top' is cached, declare it useful to preserve cached node
   if (cached_top_node())  { useful.push(cached_top_node()); }
+
+  if (dead_path()) { useful.push(dead_path()); }
 
   // Push all useful nodes onto the list, breadthfirst
   for( uint next = 0; next < useful.size(); ++next ) {
@@ -335,9 +337,9 @@ void Compile::identify_useful_nodes(Unique_Node_List &useful) {
 
 // Update dead_node_list with any missing dead nodes using useful
 // list. Consider all non-useful nodes to be useless i.e., dead nodes.
-void Compile::update_dead_node_list(Unique_Node_List &useful) {
+void Compile::update_dead_node_list(Unique_Node_List<Node>& useful) {
   uint max_idx = unique();
-  VectorSet& useful_node_set = useful.member_set();
+  const VectorSet& useful_node_set = useful.member_set();
 
   for (uint node_idx = 0; node_idx < max_idx; node_idx++) {
     // If node with index node_idx is not in useful set,
@@ -348,7 +350,7 @@ void Compile::update_dead_node_list(Unique_Node_List &useful) {
   }
 }
 
-void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful) {
+void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, const Unique_Node_List<Node>& useful) {
   int shift = 0;
   for (int i = 0; i < inlines->length(); i++) {
     CallGenerator* cg = inlines->at(i);
@@ -379,7 +381,7 @@ void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines
 }
 
 template<typename N, ENABLE_IF_SDEFN(std::is_base_of<Node, N>::value)>
-void Compile::remove_useless_nodes(GrowableArray<N*>& node_list, Unique_Node_List& useful) {
+void Compile::remove_useless_nodes(GrowableArray<N*>& node_list, const Unique_Node_List<Node>& useful) {
   for (int i = node_list.length() - 1; i >= 0; i--) {
     N* node = node_list.at(i);
     if (!useful.member(node)) {
@@ -396,7 +398,7 @@ void Compile::remove_useless_node(Node* dead) {
   // it reachable by adding use edges. So, we will NOT count Con nodes
   // as dead to be conservative about the dead node count at any
   // given time.
-  if (!dead->is_Con()) {
+  if (!dead->is_Con() && dead != dead_path()) {
     record_dead_node(dead->_idx);
   }
   if (dead->is_macro()) {
@@ -440,7 +442,7 @@ void Compile::remove_useless_node(Node* dead) {
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
-void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist, const Unique_Node_List* root_and_safepoints) {
+void Compile::disconnect_useless_nodes(Unique_Node_List<Node>& useful, Unique_Node_List<Node>& worklist, const Unique_Node_List<Node>* root_and_safepoints) {
   uint next = 0;
   while (next < useful.size()) {
     Node *n = useful.at(next++);
@@ -606,7 +608,7 @@ void Compile::print_compile_messages() {
   if( PrintOpto ) {
     if (is_osr_compilation()) {
       tty->print("[OSR]");
-    } else if (env()->task()->is_aot_compile()) {
+    } else if (is_aot_compile()) {
       if (for_aot_preload()) {
         tty->print("[PRE]");
       } else {
@@ -649,9 +651,8 @@ void Compile::print_ideal_ir(const char* compile_phase_name) const {
   NoSafepointVerifier nsv;
   ttyLocker ttyl;
   if (xtty != nullptr) {
-    CompileTask* task = env()->task();
-    bool aot_comp = task->is_aot_load_or_compile();
-    bool aot_preload_comp = task->is_aot_preload_or_compile();
+    bool aot_comp = is_aot_compile();
+    bool aot_preload_comp = for_aot_preload();
     xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" :
@@ -696,7 +697,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _strength_reduction(false),
       _do_cleanup(false),
       _has_reserved_stack_access(target->has_reserved_stack_access()),
-      _has_circular_value_type(false),
 #ifndef PRODUCT
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
@@ -730,6 +730,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _node_arena_one(mtCompiler, Arena::Tag::tag_node),
       _node_arena_two(mtCompiler, Arena::Tag::tag_node),
       _node_arena(&_node_arena_one),
+      _dead_path(nullptr),
       _mach_constant_base_node(nullptr),
       _Compile_types(mtCompiler, Arena::Tag::tag_type),
       _initial_gvn(nullptr),
@@ -775,10 +776,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_assembly(false); // must initialize.
 #endif
 
-#ifndef PRODUCT
-  set_parsed_irreducible_loop(false);
-#endif
-
   if (directive->ReplayInlineOption) {
     _replay_inline_data = ciReplay::load_inline_data(method(), entry_bci(), ci_env->comp_level());
   }
@@ -786,7 +783,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
-  if ((ProfileTraps && !ci_env->is_aot_compile()) ||
+  if ((ProfileTraps && !is_aot_compile()) ||
       AOTCodeCache::is_using_code()) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
@@ -798,6 +795,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 
   Init(/*do_aliasing=*/ true);
+  set_dead_path(new DeadPathNode());
 
   print_compile_messages();
 
@@ -811,7 +809,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   // GVN that will be run immediately on new nodes
   uint estimated_size = method()->code_size()*4+64;
   estimated_size = (estimated_size < MINIMUM_NODE_HASH ? MINIMUM_NODE_HASH : estimated_size);
-  _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
+  _igvn_worklist = new (comp_arena()) Unique_Node_List<Node>(comp_arena());
   _types = new (comp_arena()) Type_Array(comp_arena());
   _node_hash = new (comp_arena()) NodeHash(comp_arena(), estimated_size);
   PhaseGVN gvn;
@@ -1012,7 +1010,6 @@ Compile::Compile(ciEnv* ci_env,
       _inlining_progress(false),
       _inlining_incrementally(false),
       _has_reserved_stack_access(false),
-      _has_circular_value_type(false),
 #ifndef PRODUCT
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
@@ -1037,6 +1034,7 @@ Compile::Compile(ciEnv* ci_env,
       _node_arena_one(mtCompiler, Arena::Tag::tag_node),
       _node_arena_two(mtCompiler, Arena::Tag::tag_node),
       _node_arena(&_node_arena_one),
+      _dead_path(nullptr),
       _mach_constant_base_node(nullptr),
       _Compile_types(mtCompiler, Arena::Tag::tag_type),
       _initial_gvn(nullptr),
@@ -1075,7 +1073,6 @@ Compile::Compile(ciEnv* ci_env,
 
 #ifndef PRODUCT
   set_print_assembly(PrintFrameConverterAssembly);
-  set_parsed_irreducible_loop(false);
 #else
   set_print_assembly(false); // Must initialize.
 #endif
@@ -1085,7 +1082,7 @@ Compile::Compile(ciEnv* ci_env,
   Init(/*do_aliasing=*/ false);
   init_tf((*generator)());
 
-  _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
+  _igvn_worklist = new (comp_arena()) Unique_Node_List<Node>(comp_arena());
   _types = new (comp_arena()) Type_Array(comp_arena());
   _node_hash = new (comp_arena()) NodeHash(comp_arena(), 255);
 
@@ -1286,7 +1283,7 @@ void Compile::set_cached_top_node(Node* tn) {
 
 #ifdef ASSERT
 uint Compile::count_live_nodes_by_graph_walk() {
-  Unique_Node_List useful(comp_arena());
+  Unique_Node_List<Node> useful(comp_arena());
   // Get useful node list by walking the graph.
   identify_useful_nodes(useful);
   return useful.size();
@@ -1295,7 +1292,7 @@ uint Compile::count_live_nodes_by_graph_walk() {
 void Compile::print_missing_nodes() {
 
   // Return if CompileLog is null and PrintIdealNodeCount is false.
-  if ((_log == nullptr) && (! PrintIdealNodeCount)) {
+  if ((_log == nullptr) && !directive()->PrintIdealNodeCountOption) {
     return;
   }
 
@@ -1305,7 +1302,7 @@ void Compile::print_missing_nodes() {
   // by walking the flow graph and find the missing ones using
   // _dead_node_list.
 
-  Unique_Node_List useful(comp_arena());
+  Unique_Node_List<Node> useful(comp_arena());
   // Get useful node list by walking the graph.
   identify_useful_nodes(useful);
 
@@ -1318,7 +1315,7 @@ void Compile::print_missing_nodes() {
       _log->stamp();
       _log->end_head();
     }
-    VectorSet& useful_member_set = useful.member_set();
+    const VectorSet& useful_member_set = useful.member_set();
     int last_idx = l_nodes_by_walk;
     for (int i = 0; i < last_idx; i++) {
       if (useful_member_set.test(i)) {
@@ -1326,7 +1323,7 @@ void Compile::print_missing_nodes() {
           if (_log != nullptr) {
             _log->elem("mismatched_node_info node_idx='%d' type='both live and dead'", i);
           }
-          if (PrintIdealNodeCount) {
+          if (directive()->PrintIdealNodeCountOption) {
             // Print the log message to tty
               tty->print_cr("mismatched_node idx='%d' both live and dead'", i);
               useful.at(i)->dump();
@@ -1337,7 +1334,7 @@ void Compile::print_missing_nodes() {
         if (_log != nullptr) {
           _log->elem("mismatched_node_info node_idx='%d' type='neither live nor dead'", i);
         }
-        if (PrintIdealNodeCount) {
+        if (directive()->PrintIdealNodeCountOption) {
           // Print the log message to tty
           tty->print_cr("mismatched_node idx='%d' type='neither live nor dead'", i);
         }
@@ -2028,11 +2025,11 @@ void Compile::remove_value_type(Node* n) {
 // Does the return value keep otherwise useless value type allocations alive?
 static bool return_val_keeps_allocations_alive(Node* ret_val) {
   ResourceMark rm;
-  Unique_Node_List wq;
+  Unique_Node_List<const Node> wq;
   wq.push(ret_val);
   bool some_allocations = false;
   for (uint i = 0; i < wq.size(); i++) {
-    Node* n = wq.at(i);
+    const Node* n = wq.at(i);
     if (n->outcnt() > 1) {
       // Some other use for the allocation
       return false;
@@ -2053,15 +2050,15 @@ static bool return_val_keeps_allocations_alive(Node* ret_val) {
   return some_allocations;
 }
 
-bool Compile::clear_argument_if_only_used_as_buffer_at_calls(Node* result_cast, PhaseIterGVN& igvn) {
+bool Compile::clear_argument_if_only_used_as_buffer_at_calls(const Node* result_cast, PhaseIterGVN& igvn) {
   ResourceMark rm;
-  Unique_Node_List wq;
+  Unique_Node_List<const Node> wq;
   wq.push(result_cast);
-  Node_List calls;
+  Node_List<CallJavaNode> calls;
   for (uint i = 0; i < wq.size(); ++i) {
-    Node* n = wq.at(i);
+    const Node* n = wq.at(i);
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
-      Node* u = n->fast_out(j);
+      const Node* u = n->fast_out(j);
       if (u->is_Phi()) {
         wq.push(u);
       } else if (u->is_ValueType() && u->as_ValueType()->get_oop() == n) {
@@ -2100,7 +2097,7 @@ bool Compile::clear_argument_if_only_used_as_buffer_at_calls(Node* result_cast, 
     }
   }
   for (uint i = 0; i < calls.size(); ++i) {
-    CallJavaNode* call = calls.at(i)->as_CallJava();
+    CallJavaNode* call = calls.at(i);
     uint nargs = call->tf()->domain_cc()->cnt();
     for (uint k = TypeFunc::Parms; k < nargs; k++) {
       Node* in = call->in(k);
@@ -2117,7 +2114,7 @@ void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
 #ifdef ASSERT
   {
     ResourceMark rm;
-    Unique_Node_List wq;
+    Unique_Node_List<Node> wq;
     wq.push(C->root());
     for (uint i = 0; i < wq.size(); ++i) {
       Node* n = wq.at(i);
@@ -2322,11 +2319,11 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
   // one per element field. This should help memory access
   // optimizations.
   ResourceMark rm;
-  Unique_Node_List wq;
+  Unique_Node_List<Node> wq;
   wq.push(root());
 
-  Node_List mergememnodes;
-  Node_List memnodes;
+  Node_List<MergeMemNode> mergememnodes;
+  Node_List<MemNode> memnodes;
 
   // Alias index currently shared by all flat memory accesses
   int index = get_alias_index(TypeAryPtr::INLINES);
@@ -2336,14 +2333,14 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
     Node* n = wq.at(i);
     if (n->is_Mem()) {
       const TypePtr* adr_type = nullptr;
-      adr_type = get_adr_type(get_alias_index(n->adr_type()));
+      adr_type = get_adr_type(get_alias_index(n->in_adr_type()));
       if (adr_type == TypeAryPtr::INLINES) {
-        memnodes.push(n);
+        memnodes.push(n->as_Mem());
       }
     } else if (n->is_MergeMem()) {
       MergeMemNode* mm = n->as_MergeMem();
       if (mm->memory_at(index) != mm->base_memory()) {
-        mergememnodes.push(n);
+        mergememnodes.push(n->as_MergeMem());
       }
     }
     for (uint j = 0; j < n->req(); j++) {
@@ -2370,16 +2367,16 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
 
   int start_alias = num_alias_types(); // Start of new aliases
   for (uint i = 0; i < memnodes.size(); i++) {
-    Node* m = memnodes.at(i);
-    const TypePtr* adr_type = m->adr_type();
+    MemNode* m = memnodes.at(i);
+    const TypePtr* adr_type = m->in_adr_type();
 #ifdef ASSERT
-    m->as_Mem()->set_adr_type(adr_type);
+    m->set_adr_type(adr_type);
 #endif // ASSERT
     // This has the side effect of allocating new aliases for flat array accesses
     get_alias_index(adr_type);
   }
 
-  Node_Stack stack(0);
+  Node_Stack<Node> stack(0);
 #ifdef ASSERT
   VectorSet seen(Thread::current()->resource_area());
 #endif
@@ -2387,7 +2384,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
   // is moved to the right slice. Start from the MergeMem nodes.
   uint last = unique();
   for (uint i = 0; i < mergememnodes.size(); i++) {
-    MergeMemNode* current = mergememnodes.at(i)->as_MergeMem();
+    MergeMemNode* current = mergememnodes.at(i);
     if (current->outcnt() == 0) {
       // This node is killed by a previous iteration
       continue;
@@ -2401,8 +2398,8 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
       // bottom memory, we pop element off the stack one at a
       // time, in reverse order, and move them to the right slice
       // by changing their memory edges.
-      if ((n->is_Phi() && n->adr_type() != TypePtr::BOTTOM) || n->is_Mem() ||
-          (n->adr_type() == TypeAryPtr::INLINES && !n->is_NarrowMemProj())) {
+      if ((n->is_Phi() && n->out_adr_type() != TypePtr::BOTTOM) || n->is_Mem() ||
+          (n->out_adr_type() == TypeAryPtr::INLINES && !n->is_NarrowMemProj())) {
         assert(!seen.test_set(n->_idx), "");
         // Uses (a load for instance) will need to be moved to the
         // right slice as well and will get a new memory state
@@ -2452,7 +2449,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
           n = n->in(0)->in(TypeFunc::Memory);
         }
       } else {
-        assert(n->adr_type() == TypePtr::BOTTOM || (n->Opcode() == Op_Node && n->_idx >= last) || n->is_NarrowMemProj(), "");
+        assert(n->out_adr_type() == TypePtr::BOTTOM || (n->Opcode() == Op_Node && n->_idx >= last) || n->is_NarrowMemProj(), "");
         // Build a new MergeMem node to carry the new memory state
         // as we build it. IGVN should fold extraneous MergeMem
         // nodes.
@@ -2472,7 +2469,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
 
           Node* base = alloc->in(TypeFunc::Memory);
           assert(base->bottom_type() == Type::MEMORY, "the memory input of AllocateNode must be a memory");
-          assert(base->adr_type() == TypePtr::BOTTOM, "the memory input of AllocateNode must be a bottom memory");
+          assert(base->out_adr_type() == TypePtr::BOTTOM, "the memory input of AllocateNode must be a bottom memory");
           // Must create a MergeMem with base as the base memory, do not clone if base is a
           // MergeMem because it may not be processed yet
           mm = MergeMemNode::make(nullptr);
@@ -2513,7 +2510,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
           uint idx = stack.index();
           if (m->is_Mem()) {
             // Move memory node to its new slice
-            const TypePtr* adr_type = m->adr_type();
+            const TypePtr* adr_type = m->in_adr_type();
             int alias = get_alias_index(adr_type);
             Node* prev = mm->memory_at(alias);
             igvn.replace_input_of(m, MemNode::Memory, prev);
@@ -2560,7 +2557,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
               if (!adr_type->isa_aryptr() || !adr_type->is_flat()) {
                 continue;
               }
-              MemBarNode* mb = new MemBarCPUOrderNode(this, j, nullptr);
+              MemBarNode* mb = new MemBarCPUOrderNode(this, adr_type, adr_type, nullptr);
               igvn.register_new_node_with_optimizer(mb);
               Node* mem = mm->memory_at(j);
               mb->init_req(TypeFunc::Control, ctrl);
@@ -2617,7 +2614,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
   wq.push(root());
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    assert(n->adr_type() != TypeAryPtr::INLINES, "should have been removed from the graph");
+    assert(n->out_adr_type() != TypeAryPtr::INLINES && n->in_adr_type() != TypeAryPtr::INLINES, "should have been removed from the graph");
     for (uint j = 0; j < n->req(); j++) {
       Node* m = n->in(j);
       if (m != nullptr) {
@@ -2679,7 +2676,7 @@ void Compile::record_unstable_if_trap(UnstableIfTrap* trap) {
   }
 }
 
-void Compile::remove_useless_unstable_if_traps(Unique_Node_List& useful) {
+void Compile::remove_useless_unstable_if_traps(const Unique_Node_List<Node>& useful) {
   for (int i = _unstable_if_traps.length() - 1; i >= 0; i--) {
     UnstableIfTrap* trap = _unstable_if_traps.at(i);
     Node* n = trap->uncommon_trap();
@@ -3029,7 +3026,7 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
   assert(inlining_incrementally() == false, "not allowed");
   set_strength_reduction(true);
 #ifdef ASSERT
-  Unique_Node_List* modified_nodes = _modified_nodes;
+  Unique_Node_List<Node>* modified_nodes = _modified_nodes;
   _modified_nodes = nullptr;
 #endif
   assert(_late_inlines.length() > 0, "sanity");
@@ -3122,7 +3119,7 @@ void Compile::Optimize() {
   // Iterative Global Value Numbering, including ideal transforms
   PhaseIterGVN igvn;
 #ifdef ASSERT
-  _modified_nodes = new (comp_arena()) Unique_Node_List(comp_arena());
+  _modified_nodes = new (comp_arena()) Unique_Node_List<Node>(comp_arena());
 #endif
   {
     TracePhase tp(_t_iterGVN);
@@ -3471,6 +3468,9 @@ void Compile::Optimize() {
    }
  }
 
+  // Unique DeadPath node should not be used anymore
+  _dead_path = nullptr;
+
  print_method(PHASE_OPTIMIZE_FINISHED, 2);
  DEBUG_ONLY(set_phase_optimize_finished();)
 }
@@ -3478,10 +3478,10 @@ void Compile::Optimize() {
 #ifdef ASSERT
 void Compile::check_no_dead_use() const {
   ResourceMark rm;
-  Unique_Node_List wq;
+  Unique_Node_List<const Node> wq;
   wq.push(root());
   for (uint i = 0; i < wq.size(); ++i) {
-    Node* n = wq.at(i);
+    const Node* n = wq.at(i);
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
       Node* u = n->fast_out(j);
       if (u->outcnt() == 0 && !u->is_Con()) {
@@ -3570,7 +3570,7 @@ static bool is_vector_bitwise_cone_root(Node* n) {
   return true;
 }
 
-static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
+static uint collect_unique_inputs(Node* n, Unique_Node_List<Node>& inputs) {
   uint cnt = 0;
   if (is_vector_bitwise_op(n)) {
     uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
@@ -3604,8 +3604,8 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   return cnt;
 }
 
-void Compile::collect_logic_cone_roots(Unique_Node_List& list) {
-  Unique_Node_List useful_nodes;
+void Compile::collect_logic_cone_roots(Unique_Node_List<Node>& list) {
+  Unique_Node_List<Node> useful_nodes;
   C->identify_useful_nodes(useful_nodes);
 
   for (uint i = 0; i < useful_nodes.size(); i++) {
@@ -3618,8 +3618,8 @@ void Compile::collect_logic_cone_roots(Unique_Node_List& list) {
 
 Node* Compile::xform_to_MacroLogicV(PhaseIterGVN& igvn,
                                     const TypeVect* vt,
-                                    Unique_Node_List& partition,
-                                    Unique_Node_List& inputs) {
+                                    Unique_Node_List<Node>& partition,
+                                    Unique_Node_List<Node>& inputs) {
   assert(partition.size() == 2 || partition.size() == 3, "not supported");
   assert(inputs.size()    == 2 || inputs.size()    == 3, "not supported");
   assert(Matcher::match_rule_supported_vector(Op_MacroLogicV, vt->length(), vt->element_basic_type()), "not supported");
@@ -3704,7 +3704,7 @@ static void eval_operands(Node* n,
   }
 }
 
-uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List& inputs) {
+uint Compile::compute_truth_table(const Unique_Node_List<Node>& partition, const Unique_Node_List<Node>& inputs) {
   assert(inputs.size() <= 3, "sanity");
   ResourceMark rm;
   uint res = 0;
@@ -3767,7 +3767,7 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
 //  3) Masked parent can be packed with right child if its un-predicated
 //     or has matching predication condition.
 //  4) An unmasked parent can be packed with an unmasked child.
-bool Compile::compute_logic_cone(Node* n, Unique_Node_List& partition, Unique_Node_List& inputs) {
+bool Compile::compute_logic_cone(Node* n, Unique_Node_List<Node>& partition, Unique_Node_List<Node>& inputs) {
   assert(partition.size() == 0, "not empty");
   assert(inputs.size() == 0, "not empty");
   if (is_vector_ternary_bitwise_op(n)) {
@@ -3857,8 +3857,8 @@ void Compile::process_logic_cone_root(PhaseIterGVN &igvn, Node *n, VectorSet &vi
 
   // 2) Bottom up traversal: Merge node[s] with
   // the parent to form macro logic node.
-  Unique_Node_List partition;
-  Unique_Node_List inputs;
+  Unique_Node_List<Node> partition;
+  Unique_Node_List<Node> inputs;
   if (compute_logic_cone(n, partition, inputs)) {
     const TypeVect* vt = n->bottom_type()->is_vect();
     Node* pn = partition.at(partition.size() - 1);
@@ -3875,7 +3875,7 @@ void Compile::process_logic_cone_root(PhaseIterGVN &igvn, Node *n, VectorSet &vi
 void Compile::optimize_logic_cones(PhaseIterGVN &igvn) {
   ResourceMark rm;
   if (Matcher::match_rule_supported(Op_MacroLogicV)) {
-    Unique_Node_List list;
+    Unique_Node_List<Node> list;
     collect_logic_cone_roots(list);
 
     while (list.size() > 0) {
@@ -4028,7 +4028,7 @@ struct Final_Reshape_Counts : public StackObj {
   int  _java_call_count;        // count non-inlined 'java' calls
   int  _inner_loop_count;       // count loops which need alignment
   VectorSet _visited;           // Visitation flags
-  Node_List _tests;             // Set of IfNodes & PCTableNodes
+  Node_List<MultiBranchNode> _tests; // Set of IfNodes & PCTableNodes
 
   Final_Reshape_Counts() :
     _java_call_count(0), _inner_loop_count(0) { }
@@ -4042,7 +4042,7 @@ struct Final_Reshape_Counts : public StackObj {
 
 //------------------------------final_graph_reshaping_impl----------------------
 // Implement items 1-5 from final_graph_reshaping below.
-void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes) {
+void Compile::final_graph_reshaping_impl(Node* n, Final_Reshape_Counts& frc, Unique_Node_List<Node>& dead_nodes) {
 
   if ( n->outcnt() == 0 ) return; // dead node
   uint nop = n->Opcode();
@@ -4073,7 +4073,7 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
 
 #ifdef ASSERT
   if( n->is_Mem() ) {
-    int alias_idx = get_alias_index(n->as_Mem()->adr_type());
+    int alias_idx = get_alias_index(n->as_Mem()->in_adr_type());
     assert( n->in(0) != nullptr || alias_idx != Compile::AliasIdxRaw ||
             // oop will be recorded in oop map if load crosses safepoint
             (n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
@@ -4102,7 +4102,7 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
 
   // Collect CFG split points
   if (n->is_MultiBranch() && !n->is_RangeCheck()) {
-    frc._tests.push(n);
+    frc._tests.push(n->as_MultiBranch());
   }
 }
 
@@ -4155,7 +4155,7 @@ void Compile::handle_mulhi_mul_op(Node* n, bool is_unsigned) {
   n->subsume_by(mul_hi_lo->second_proj(), this);
 }
 
-void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
+void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List<Node>& dead_nodes) {
   switch( nop ) {
   case Op_Opaque1:              // Remove Opaque Nodes before matching
     n->subsume_by(n->in(1), this);
@@ -4165,7 +4165,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     if (!Matcher::match_rule_supported(Op_CallLeafPure)) {
       CallNode* call = n->as_Call();
       CallNode* new_call = new CallLeafNode(call->tf(), call->entry_point(),
-                                            call->_name, TypeRawPtr::BOTTOM);
+                                            call->_name, nullptr, nullptr);
       new_call->init_req(TypeFunc::Control, call->in(TypeFunc::Control));
       new_call->init_req(TypeFunc::I_O, C->top());
       new_call->init_req(TypeFunc::Memory, C->top());
@@ -4347,7 +4347,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     // those.
     if (n->in(0) != nullptr) {
       ResourceMark rm;
-      Unique_Node_List wq;
+      Unique_Node_List<Node> wq;
       wq.push(n);
 
 
@@ -4721,7 +4721,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     RangeCheckNode* rc = n->as_RangeCheck();
     Node* iff = new IfNode(rc->in(0), rc->in(1), rc->_prob, rc->_fcnt);
     n->subsume_by(iff, this);
-    frc._tests.push(iff);
+    frc._tests.push(iff->as_MultiBranch());
     break;
   }
   case Op_ConvI2L: {
@@ -4731,7 +4731,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       // address computations.
       n->as_Type()->set_type(TypeLong::INT);
       ResourceMark rm;
-      Unique_Node_List wq;
+      Unique_Node_List<Node> wq;
       wq.push(n);
       for (uint next = 0; next < wq.size(); next++) {
         Node *m = wq.at(next);
@@ -4786,6 +4786,21 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
   }
 #endif
+  case Op_DeadPath: {
+    // The CFG inputs are dead paths. Replace the DeadPath with a Region and insert a Halt node.
+    assert(n->req() > 1, "why not removed if no input other than itself?");
+    RegionNode* r = new RegionNode(n->req());
+    for (uint i = 1; i < n->req(); ++i) {
+      r->set_req(i, n->in(i));
+    }
+    n->disconnect_inputs(this);
+    Node* frame = start()->proj_out(TypeFunc::FramePtr);
+    stringStream ss;
+    ss.print("dead path discovered by data nodes during igvn");
+    Node* halt = new HaltNode(r, frame, ss.as_string(comp_arena()));
+    root()->set_req(root()->find_edge(n), halt);
+    break;
+  }
   default:
     assert(!n->is_Call(), "");
     assert(!n->is_Mem(), "");
@@ -4797,8 +4812,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 //------------------------------final_graph_reshaping_walk---------------------
 // Replacing Opaque nodes with their input in final_graph_reshaping_impl(),
 // requires that the walk visits a node's inputs before visiting the node.
-void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes) {
-  Unique_Node_List sfpt;
+void Compile::final_graph_reshaping_walk(Node_Stack<Node>& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List<Node>& dead_nodes) {
+  Unique_Node_List<SafePointNode> sfpt;
 
   frc._visited.set(root->_idx); // first, mark node as visited
   uint cnt = root->req();
@@ -4814,7 +4829,7 @@ void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_R
           // compute worst case interpreter size in case of a deoptimization
           update_interpreter_frame_size(m->as_SafePoint()->jvms()->interpreter_frame_size());
 
-          sfpt.push(m);
+          sfpt.push(m->as_SafePoint());
         }
         cnt = m->req();
         nstack.push(n, i); // put on stack parent and next input's index
@@ -4921,13 +4936,13 @@ bool Compile::final_graph_reshaping() {
 
   // Visit everybody reachable!
   // Allocate stack of size C->live_nodes()/2 to avoid frequent realloc
-  Node_Stack nstack(live_nodes() >> 1);
-  Unique_Node_List dead_nodes;
+  Node_Stack<Node> nstack(live_nodes() >> 1);
+  Unique_Node_List<Node> dead_nodes;
   final_graph_reshaping_walk(nstack, root(), frc, dead_nodes);
 
   // Check for unreachable (from below) code (i.e., infinite loops).
   for( uint i = 0; i < frc._tests.size(); i++ ) {
-    MultiBranchNode *n = frc._tests[i]->as_MultiBranch();
+    MultiBranchNode* n = frc._tests[i];
     // Get number of CFG targets.
     // Note that PCTables include exception targets after calls.
     uint required_outcnt = n->required_outcnt();
@@ -5189,10 +5204,10 @@ bool Compile::needs_clinit_barrier(ciInstanceKlass* holder, ciMethod* accessing_
 //------------------------------verify_bidirectional_edges---------------------
 // For each input edge to a node (ie - for each Use-Def edge), verify that
 // there is a corresponding Def-Use edge.
-void Compile::verify_bidirectional_edges(Unique_Node_List& visited, const Unique_Node_List* root_and_safepoints) const {
+void Compile::verify_bidirectional_edges(Unique_Node_List<const Node>& visited, const Unique_Node_List<Node>* root_and_safepoints) const {
   // Allocate stack of size C->live_nodes()/16 to avoid frequent realloc
   uint stack_size = live_nodes() >> 4;
-  Node_List nstack(MAX2(stack_size, (uint) OptoNodeListSize));
+  Node_List<const Node> nstack(MAX2(stack_size, (uint) OptoNodeListSize));
   if (root_and_safepoints != nullptr) {
     assert(root_and_safepoints->member(_root), "root is not in root_and_safepoints");
     for (uint i = 0, limit = root_and_safepoints->size(); i < limit; i++) {
@@ -5210,7 +5225,7 @@ void Compile::verify_bidirectional_edges(Unique_Node_List& visited, const Unique
   }
 
   while (nstack.size() > 0) {
-    Node* n = nstack.pop();
+    const Node* n = nstack.pop();
     if (visited.member(n)) {
       continue;
     }
@@ -5258,18 +5273,18 @@ void Compile::verify_bidirectional_edges(Unique_Node_List& visited, const Unique
 //------------------------------verify_graph_edges---------------------------
 // Walk the Graph and verify that there is a one-to-one correspondence
 // between Use-Def edges and Def-Use edges in the graph.
-void Compile::verify_graph_edges(bool no_dead_code, const Unique_Node_List* root_and_safepoints) const {
+void Compile::verify_graph_edges(bool no_dead_code, const Unique_Node_List<Node>* root_and_safepoints) const {
   if (VerifyGraphEdges) {
-    Unique_Node_List visited;
+    Unique_Node_List<const Node> visited;
 
     // Call graph walk to check edges
     verify_bidirectional_edges(visited, root_and_safepoints);
     if (no_dead_code) {
       // Now make sure that no visited node is used by an unvisited node.
       bool dead_nodes = false;
-      Unique_Node_List checked;
+      Unique_Node_List<const Node> checked;
       while (visited.size() > 0) {
-        Node* n = visited.pop();
+        const Node* n = visited.pop();
         checked.push(n);
         for (uint i = 0; i < n->outcnt(); i++) {
           Node* use = n->raw_out(i);
@@ -5359,7 +5374,7 @@ Compile::TracePhase::~TracePhase() {
     return; // timing code, not stressing bailouts.
   }
 #ifdef ASSERT
-  if (PrintIdealNodeCount) {
+  if (_compile->directive()->PrintIdealNodeCountOption) {
     tty->print_cr("phase name='%s' nodes='%d' live='%d' live_graph_walk='%d'",
                   phase_name(), _compile->unique(), _compile->live_nodes(), _compile->count_live_nodes_by_graph_walk());
   }
@@ -5665,6 +5680,23 @@ void Compile::cleanup_expensive_nodes(PhaseIterGVN &igvn) {
   }
 }
 
+void Compile::add_macro_node(Node* n) {
+  assert(!_macro_nodes.contains(n), "duplicate entry in expand list");
+  n->add_flag(Node::Flag_is_macro);
+  _macro_nodes.append(n);
+}
+
+void Compile::remove_macro_node(Node* n) {
+  // This function may be called twice for a node so we can only remove it
+  // if it's still existing.
+  _macro_nodes.remove_if_existing(n);
+  n->remove_flag(Node::Flag_is_macro);
+  // Remove from coarsened locks list if present
+  if (coarsened_count() > 0) {
+    remove_coarsened_lock(n);
+  }
+}
+
 void Compile::add_expensive_node(Node * n) {
   assert(!_expensive_nodes.contains(n), "duplicate entry in expensive list");
   assert(n->is_expensive(), "expensive nodes with non-null control here only");
@@ -5682,7 +5714,7 @@ void Compile::add_expensive_node(Node * n) {
  * Track coarsened Lock and Unlock nodes.
  */
 
-class Lock_List : public Node_List {
+class Lock_List : public Node_List<AbstractLockNode> {
   uint _origin_cnt;
 public:
   Lock_List(Arena *a, uint cnt) : Node_List(a), _origin_cnt(cnt) {}
@@ -5719,13 +5751,12 @@ void Compile::add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks) {
   }
 }
 
-void Compile::remove_useless_coarsened_locks(Unique_Node_List& useful) {
+void Compile::remove_useless_coarsened_locks(const Unique_Node_List<Node>& useful) {
   int count = coarsened_count();
   for (int i = 0; i < count; i++) {
-    Node_List* locks_list = _coarsened_locks.at(i);
+    Node_List<AbstractLockNode>* locks_list = _coarsened_locks.at(i);
     for (uint j = 0; j < locks_list->size(); j++) {
-      Node* lock = locks_list->at(j);
-      assert(lock->is_AbstractLock(), "sanity");
+      AbstractLockNode* lock = locks_list->at(j);
       if (!useful.member(lock)) {
         locks_list->yank(lock);
       }
@@ -5737,8 +5768,8 @@ void Compile::remove_coarsened_lock(Node* n) {
   if (n->is_AbstractLock()) {
     int count = coarsened_count();
     for (int i = 0; i < count; i++) {
-      Node_List* locks_list = _coarsened_locks.at(i);
-      locks_list->yank(n);
+      Node_List<AbstractLockNode>* locks_list = _coarsened_locks.at(i);
+      locks_list->yank(n->as_AbstractLock());
     }
   }
 }
@@ -5756,9 +5787,9 @@ bool Compile::coarsened_locks_consistent() {
       unbalanced = true; // Some locks were removed from list
     } else {
       for (uint j = 0; j < size; j++) {
-        Node* lock = locks_list->at(j);
+        AbstractLockNode* lock = locks_list->at(j);
         // All nodes in group should have the same state (modified or not)
-        if (!lock->as_AbstractLock()->is_coarsened()) {
+        if (!lock->is_coarsened()) {
           if (j == 0) {
             // first on list was modified, the rest should be too for consistency
             modified = true;
@@ -5800,18 +5831,18 @@ bool Compile::coarsened_locks_consistent() {
 void Compile::mark_unbalanced_boxes() const {
   int count = coarsened_count();
   for (int i = 0; i < count; i++) {
-    Node_List* locks_list = _coarsened_locks.at(i);
+    Node_List<AbstractLockNode>* locks_list = _coarsened_locks.at(i);
     uint size = locks_list->size();
     if (size > 0) {
-      AbstractLockNode* alock = locks_list->at(0)->as_AbstractLock();
+      AbstractLockNode* alock = locks_list->at(0);
       BoxLockNode* box = alock->box_node()->as_BoxLock();
       if (alock->is_coarsened()) {
         // coarsened_locks_consistent(), which is called before this method, verifies
         // that the rest of Lock/Unlock nodes on locks_list are also coarsened.
         assert(!box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
         for (uint j = 1; j < size; j++) {
-          assert(locks_list->at(j)->as_AbstractLock()->is_coarsened(), "only coarsened locks are expected here");
-          BoxLockNode* this_box = locks_list->at(j)->as_AbstractLock()->box_node()->as_BoxLock();
+          assert(locks_list->at(j)->is_coarsened(), "only coarsened locks are expected here");
+          BoxLockNode* this_box = locks_list->at(j)->box_node()->as_BoxLock();
           if (box != this_box) {
             assert(!this_box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
             box->set_unbalanced();
@@ -5828,7 +5859,7 @@ void Compile::mark_unbalanced_boxes() const {
  */
 void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
   if (UseTypeSpeculation) {
-    Unique_Node_List worklist;
+    Unique_Node_List<Node> worklist;
     worklist.push(root());
     int modified = 0;
     // Go over all type nodes that carry a speculative type, drop the
@@ -6212,7 +6243,7 @@ void Compile::record_method_not_compilable_oom() {
 
 #ifndef PRODUCT
 // Collects all the control inputs from nodes on the worklist and from their data dependencies
-static void find_candidate_control_inputs(Unique_Node_List& worklist, Unique_Node_List& candidates) {
+static void find_candidate_control_inputs(Unique_Node_List<Node>& worklist, Unique_Node_List<Node>& candidates) {
   // Follow non-control edges until we reach CFG nodes
   for (uint i = 0; i < worklist.size(); i++) {
     const Node* n = worklist.at(i);
@@ -6248,8 +6279,8 @@ static void find_candidate_control_inputs(Unique_Node_List& worklist, Unique_Nod
 }
 
 // Returns the candidate node that is a descendant to all the other candidates
-static Node* pick_control(Unique_Node_List& candidates) {
-  Unique_Node_List worklist;
+static Node* pick_control(Unique_Node_List<Node>& candidates) {
+  Unique_Node_List<Node> worklist;
   worklist.copy(candidates);
 
   // Traverse backwards through the CFG
@@ -6293,10 +6324,10 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
                               Node* parm6) const {
   Node* str_node = gvn->transform(new ConPNode(TypeRawPtr::make(((address) str))));
   const TypeFunc* type = OptoRuntime::debug_print_Type(parm0, parm1, parm2, parm3, parm4, parm5, parm6);
-  Node* call = new CallLeafNode(type, call_addr, "debug_print", TypeRawPtr::BOTTOM);
+  Node* call = new CallLeafNode(type, call_addr, "debug_print", nullptr, nullptr);
 
   // find the most suitable control input
-  Unique_Node_List worklist, candidates;
+  Unique_Node_List<Node> worklist, candidates;
   if (parm0 != nullptr) { worklist.push(parm0);
   if (parm1 != nullptr) { worklist.push(parm1);
   if (parm2 != nullptr) { worklist.push(parm2);
