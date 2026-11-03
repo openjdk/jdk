@@ -548,6 +548,8 @@ protected:
   // Original CPU feature flags vector, not affected by VM settings.
   static VM_Features _cpu_features;
 
+  static VM_Features _cpu_features_disabled_by_aot_cache;
+
   static const char* _features_names[];
 
   static void clear_feature(Feature_Flag feature) {
@@ -1154,6 +1156,8 @@ public:
   static void store_cpu_features(void* buf);
 
   static bool verify_aot_code_cache_features(void* features_buffer);
+
+  static void get_cpu_features_disabled_by_aot_cache(void* buf);
 };
 
 #endif // CPU_X86_VM_VERSION_X86_HPP

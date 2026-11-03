@@ -77,6 +77,7 @@ RV_NON_EXT_FEATURE_FLAGS(DEF_RV_NON_EXT_FEATURE)
 
 VM_Version::RVExtFeatures* VM_Version::_rv_ext_features = new VM_Version::RVExtFeatures();
 VM_Version::RVExtFeatures VM_Version::_rv_raw_ext_features;
+VM_Version::RVExtFeatures VM_Version::_rv_ext_features_disabled_by_aot_cache;
 
 void VM_Version::useRVA20U64Profile() {
   RV_USE_RVA20U64;
@@ -564,6 +565,10 @@ int VM_Version::cpu_features_size() {
 
 void VM_Version::store_cpu_features(void* buf) {
   memcpy(buf, RVExtFeatures::current(), sizeof(RVExtFeatures));
+}
+
+void VM_Version::get_cpu_features_disabled_by_aot_cache(void* buf) {
+  memcpy(buf, &_rv_ext_features_disabled_by_aot_cache, sizeof(RVExtFeatures));
 }
 
 bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {

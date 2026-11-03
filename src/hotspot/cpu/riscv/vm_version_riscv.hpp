@@ -532,6 +532,7 @@ private:
   static RVFeatureValue* _feature_list[];
   static RVExtFeatures* _rv_ext_features;
   static RVExtFeatures _rv_raw_ext_features;
+  static RVExtFeatures _rv_ext_features_disabled_by_aot_cache;
 
   // Enables features in _feature_list
   static void setup_cpu_available_features();
@@ -598,6 +599,7 @@ private:
   // AOT Code Cache support
   static int  cpu_features_size();
   static void store_cpu_features(void* buf);
+  static void get_cpu_features_disabled_by_aot_cache(void* buf);
   static bool verify_aot_code_cache_features(void* features_buffer);
   static void get_cpu_features_name(void* features_buffer, stringStream& ss);
   static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss);

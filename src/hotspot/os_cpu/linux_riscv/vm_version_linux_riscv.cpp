@@ -132,18 +132,15 @@ void VM_Version::apply_aot_cache_cpu_features() {
       }
       FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
     }
-    RVExtFeatures features_to_clear = rt_features->features_not_in(archived_cpu_features);
-    rt_features->clear_features(&features_to_clear);
-    LogTarget(Info, aot) aot_log;
+    _rv_ext_features_disabled_by_aot_cache = rt_features->features_not_in(archived_cpu_features);
+    rt_features->clear_features(&_rv_ext_features_disabled_by_aot_cache);
     LogTarget(Info, os, cpu) os_cpu_log;
-    if (os_cpu_log.is_enabled() || aot_log.is_enabled()) {
+    if (os_cpu_log.is_enabled()) {
       ResourceMark rm;
       stringStream ss;
-      insert_features_names(&features_to_clear, ss);
-      if (os_cpu_log.is_enabled()) {
+      insert_features_names(&_rv_ext_features_disabled_by_aot_cache, ss);
+      if (!ss.is_empty()) {
         os_cpu_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
-      } else if (aot_log.is_enabled()) {
-        aot_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
       }
     }
   }
@@ -170,7 +167,6 @@ void VM_Version::setup_cpu_available_features() {
   save_raw_cpu_features();
 
   apply_aot_cache_cpu_features();
-
 
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {

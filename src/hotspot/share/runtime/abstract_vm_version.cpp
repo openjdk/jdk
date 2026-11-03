@@ -41,6 +41,7 @@ uint64_t Abstract_VM_Version::_features = 0;
 const char* Abstract_VM_Version::_features_string = "";
 const char* Abstract_VM_Version::_cpu_info_string = "";
 uint64_t Abstract_VM_Version::_cpu_features = 0;
+uint64_t Abstract_VM_Version::_cpu_features_disabled_by_aot_cache = 0;
 
 #ifndef SUPPORTS_NATIVE_CX8
 bool Abstract_VM_Version::_supports_cx8 = false;

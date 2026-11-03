@@ -37,33 +37,56 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestUseAOTCacheCpuFeaturesOnlyOption {
+    static int testNum = 0;
+
+    enum OptionValue {
+        DEFAULT,
+        TRUE,
+        FALSE
+    }
+
     public static void main(String... args) throws Exception {
         Tester tester = new Tester();
         // This creates AOTCache with a cpu feature (like sse3 on x86) disabled, even though the
         // cpu supports it.
         tester.runAOTTrainingAndAssemblyWorkflow();
 
-        // Production run should fail due to incompatible cpu features, so avoid checking exit value
-        tester.setCheckExitValue(false);
+        // Production run with default value of UseAOTCacheCpuFeaturesOnlyOption.
+        // UseAOTCacheCpuFeaturesOnlyOption should get set ergonomically and the test should pass
+        printTestCase("Use default value of UseAOTCacheCpuFeaturesOnlyOption");
+        tester.setOptionValue(OptionValue.DEFAULT);
+        tester.setCheckExitValue(true);
         tester.productionRun();
 
-        tester.enableUseAOTCacheCpuFeaturesOnlyOption();
+        printTestCase("Turn on UseAOTCacheCpuFeaturesOnlyOption on command line");
+        tester.setOptionValue(OptionValue.TRUE);
         // Production run with UseAOTCacheCpuFeaturesOnlyOption should pass
         tester.setCheckExitValue(true);
         tester.productionRun();
+
+        printTestCase("Turn off UseAOTCacheCpuFeaturesOnlyOption on command line");
+        tester.setOptionValue(OptionValue.FALSE);
+        // Production run should fail due to incompatible cpu features, so avoid checking exit value
+        tester.setCheckExitValue(false);
+        tester.productionRun();
+    }
+
+    static void printTestCase(String s) {
+        System.out.println("vvvvvvv TEST CASE " + testNum + ": " + s + ": starts here vvvvvvv");
+        testNum++;
     }
 
     static class Tester extends CDSAppTester {
         static final String appJar = ClassFileInstaller.getJarPath("app.jar");
         static final String mainClass = "HelloWorld";
-        private boolean useAOTCacheCpuFeaturesOnlyOption = false;
+        private OptionValue useAOTCacheCpuFeaturesOnlyValue;
 
         public Tester() {
             super(mainClass);
         }
 
-        void enableUseAOTCacheCpuFeaturesOnlyOption() {
-            useAOTCacheCpuFeaturesOnlyOption = true;
+        void setOptionValue(OptionValue value) {
+            useAOTCacheCpuFeaturesOnlyValue = value;
         }
 
         @Override
@@ -80,8 +103,13 @@ public class TestUseAOTCacheCpuFeaturesOnlyOption {
                     return new String[] {"-XX:-UseCRC32"};
                 }
             } else if (runMode == RunMode.PRODUCTION) {
-                if (useAOTCacheCpuFeaturesOnlyOption) {
-                    return new String[] {"-XX:+UseAOTCacheCpuFeaturesOnly"};
+                switch(useAOTCacheCpuFeaturesOnlyValue) {
+                case OptionValue.TRUE:
+                    return new String[] {"-XX:+UseAOTCacheCpuFeaturesOnly", "-Xlog:aot", "-Xlog:os+cpu"};
+                case OptionValue.FALSE:
+                    return new String[] {"-XX:-UseAOTCacheCpuFeaturesOnly", "-Xlog:aot", "-Xlog:os+cpu"};
+                case OptionValue.DEFAULT:
+                    return new String[] {"-Xlog:aot", "-Xlog:os+cpu"};
                 }
             }
             return new String[0];
@@ -97,12 +125,19 @@ public class TestUseAOTCacheCpuFeaturesOnlyOption {
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) {
             if (runMode == RunMode.PRODUCTION) {
-                if (!useAOTCacheCpuFeaturesOnlyOption) {
-                    out.shouldContain("AOT Code Cache disabled: cpu features are incompatible");
-                    out.shouldNotContain("HelloWorld");
-                } else {
-                    out.shouldContain("CPU features turned off by UseAOTCacheCpuFeaturesOnly");
+                switch(useAOTCacheCpuFeaturesOnlyValue) {
+                case OptionValue.DEFAULT:
+                    // If UseAOTCacheCpuFeaturesOnly is not specified on command line, then
+                    // it is ergonomicallly set to true. So fallthrough.
+                case OptionValue.TRUE:
+                    out.shouldMatch("\\[info\\s*\\]\\[os,cpu\\s*\\] CPU features turned off by UseAOTCacheCpuFeaturesOnly");
+                    out.shouldMatch("\\[warning\\s*\\]\\[aot\\s*\\] Some CPU features are turned off by UseAOTCacheCpuFeaturesOnly");
+                    out.shouldMatch("\\[warning\\s*]\\[aot\\s*\\] CPU features disabled are");
                     out.shouldContain("HelloWorld");
+                    break;
+                case OptionValue.FALSE:
+                    out.shouldContain("AOT Code Cache disabled: cpu features are incompatible");
+                    break;
                 }
             }
         }

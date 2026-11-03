@@ -298,6 +298,7 @@ public:
   static void store_cpu_features(void* buf);
 
   static bool verify_aot_code_cache_features(void* features_buffer);
+  static void get_cpu_features_disabled_by_aot_cache(void* buf);
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

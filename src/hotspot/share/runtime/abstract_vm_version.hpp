@@ -82,6 +82,8 @@ class Abstract_VM_Version: AllStatic {
   // Original CPU feature flags, not affected by VM settings.
   static uint64_t _cpu_features;
 
+  static uint64_t _cpu_features_disabled_by_aot_cache;
+
   // These are set by machine-dependent initializations
 #ifndef SUPPORTS_NATIVE_CX8
   static bool         _supports_cx8;
@@ -237,6 +239,8 @@ class Abstract_VM_Version: AllStatic {
   static char  _cpu_name[CPU_TYPE_DESC_BUF_SIZE];
   static char  _cpu_desc[CPU_DETAILED_DESC_BUF_SIZE];
 
+  static void* get_aot_cache_cpu_features();
+
  public:
   static int number_of_threads(void);
   static int number_of_cores(void);
@@ -260,7 +264,7 @@ class Abstract_VM_Version: AllStatic {
   // features_buffer is an opaque object that stores arch specific representation of cpu features
   static bool verify_aot_code_cache_features(void* features_buffer) { return false; };
 
-  static void* get_aot_cache_cpu_features();
+  static void get_cpu_features_name_disabled_by_aot_cache(void* features_buffer) { return; }
 };
 
 #endif // SHARE_RUNTIME_ABSTRACT_VM_VERSION_HPP

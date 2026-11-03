@@ -106,7 +106,7 @@ static bool has_neoverse_n1_errata_1542419() {
            (major_rev_num == 4 && minor_rev_num == 0)));
 }
 
-void VM_Version::apply_aot_cache_cpu_features() {
+void VM_Version::apply_aot_cache_cp_feuatures() {
   uint64_t* aot_cache_cpu_features = (uint64_t*)get_aot_cache_cpu_features();
   if (aot_cache_cpu_features != nullptr) {
     assert(UseAOTCacheCpuFeaturesOnly, "UseAOTCacheCpuFeaturesOnly must be true");
@@ -116,18 +116,15 @@ void VM_Version::apply_aot_cache_cpu_features() {
       }
       FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
     }
-    uint64_t features_to_clear = features_not_in(_features, *aot_cache_cpu_features);
-    _features = clear_features(_features, features_to_clear);
-    LogTarget(Info, aot) aot_log;
+    _cpu_features_disabled_by_aot_cache = features_not_in(_features, *aot_cache_cpu_features);
+    _features = clear_features(_features, _cpu_features_disabled_by_aot_cache);
     LogTarget(Info, os, cpu) os_cpu_log;
-    if (os_cpu_log.is_enabled() || aot_log.is_enabled()) {
+    if (os_cpu_log.is_enabled()) {
       ResourceMark rm;
       stringStream ss;
-      insert_features_names(features_to_clear, ss);
-      if (os_cpu_log.is_enabled()) {
+      insert_features_names(_cpu_features_disabled_by_aot_cache, ss);
+      if (!ss.is_empty()) {
         os_cpu_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
-      } else if (aot_log.is_enabled()) {
-        aot_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
       }
     }
   }
@@ -822,6 +819,10 @@ int VM_Version::cpu_features_size() {
 
 void VM_Version::store_cpu_features(void* buf) {
   *(uint64_t*)buf = _features;
+}
+
+void VM_Version::get_cpu_features_disabled_by_aot_cache(void* buf) {
+  *(uint64_t*)buf = _cpu_features_disabled_by_aot_cache;
 }
 
 bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {

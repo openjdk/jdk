@@ -467,6 +467,11 @@ void AOTCodeCache::init3() {
       return;
     }
   }
+
+  // At this stage there is no reason for AOTCache to be rejected.
+  if (UseAOTCacheCpuFeaturesOnly) {
+
+  }
 }
 
 static uint _dump_jvmti_state = 0;

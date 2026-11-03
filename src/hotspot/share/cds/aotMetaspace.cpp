@@ -348,8 +348,24 @@ void AOTMetaspace::open_output_mapinfo() {
   _output_mapinfo->open_as_output();
 }
 
+static void get_cpu_features_name_disabled_by_aot_cache(stringStream& ss) {
+  void* buffer = os::malloc(VM_Version::cpu_features_size(), mtInternal);
+  VM_Version::get_cpu_features_disabled_by_aot_cache(buffer);
+  VM_Version::get_cpu_features_name(buffer, ss);
+  os::free(buffer);
+}
+
 // Called by universe_post_init()
 void AOTMetaspace::post_initialize(TRAPS) {
+  if (UseAOTCacheCpuFeaturesOnly) {
+    ResourceMark rm;
+    stringStream ss;
+    get_cpu_features_name_disabled_by_aot_cache(ss);
+    if (!ss.is_empty()) {
+      log_warning(aot)("Some CPU features are turned off by UseAOTCacheCpuFeaturesOnly and it can impact the performance");
+      log_warning(aot)("CPU features disabled are: %s", ss.as_string());
+    }
+  }
   if (CDSConfig::is_using_archive()) {
     FileMapInfo *static_mapinfo = FileMapInfo::current_info();
     FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
@@ -1645,18 +1661,17 @@ void AOTMetaspace::get_aot_code_region_size() {
 }
 
 char* AOTMetaspace::get_archived_cpu_features() {
+  char* cpu_features = nullptr;
   FileMapInfo* static_mapinfo = FileMapInfo::current_info();
   // may have been opened by get_aot_code_region_size()
   if (static_mapinfo == nullptr) {
     static_mapinfo = open_static_archive();
   }
-  if (static_mapinfo == nullptr) {
-    return nullptr;
+  if ((static_mapinfo != nullptr) &&
+      (static_mapinfo->cpu_features_size() == VM_Version::cpu_features_size())) {
+    cpu_features = (char *)static_mapinfo->archived_cpu_features();
   }
-  if (static_mapinfo->cpu_features_size() != VM_Version::cpu_features_size()) {
-    return nullptr;
-  }
-  return (char *)static_mapinfo->archived_cpu_features();
+  return cpu_features;
 }
 
 FileMapInfo* AOTMetaspace::open_static_archive() {

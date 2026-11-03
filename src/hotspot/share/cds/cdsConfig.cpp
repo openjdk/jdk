@@ -770,6 +770,7 @@ void CDSConfig::setup_compiler_args() {
     // JEP 483 workflow -- training
     FLAG_SET_ERGO_IF_DEFAULT(AOTRecordTraining, true);
     FLAG_SET_ERGO(AOTReplayTraining, false);
+    FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
     AOTCodeCache::disable_caching(); // No AOT code generation during training run
   } else if (is_dumping_final_static_archive() && can_dump_profile_and_compiled_code) {
     // JEP 483 workflow -- assembly
@@ -781,6 +782,7 @@ void CDSConfig::setup_compiler_args() {
     } else {
       AOTCodeCache::disable_caching();
     }
+    FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
     disable_dumping_aot_code();     // Don't dump AOT code until metadata and heap are dumped.
   } else if (is_using_archive() && can_use_profile_and_compiled_code) {
     // JEP 483 workflow -- production
@@ -792,15 +794,14 @@ void CDSConfig::setup_compiler_args() {
     } else {
       AOTCodeCache::disable_caching();
     }
+    if (AOTCodeCache::is_caching_enabled()) {
+      FLAG_SET_ERGO_IF_DEFAULT(UseAOTCacheCpuFeaturesOnly, true);
+    }
   } else {
     FLAG_SET_ERGO(AOTReplayTraining, false);
     FLAG_SET_ERGO(AOTRecordTraining, false);
-    AOTCodeCache::disable_caching();
-  }
-  // Explicitly disable UseAOTCacheCpuFeaturesOnly in scenarios where it should not be specified,
-  // for example during training or assembly phase.
-  if (!CDSConfig::is_using_archive() || !AOTCodeCache::is_caching_enabled() || CDSConfig::is_dumping_final_static_archive()) {
     FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+    AOTCodeCache::disable_caching();
   }
 }
 
