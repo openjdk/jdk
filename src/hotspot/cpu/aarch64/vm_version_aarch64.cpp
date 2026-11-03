@@ -118,6 +118,10 @@ void VM_Version::initialize() {
   get_os_cpu_info();
   _cpu_features = _features;
 
+  // ASIMD suport must be available as it is required by the AAPCS64
+  // Procdure Call Standard that the OS requires
+  assert(supports_feature(CPU_ASIMD), "Neon ASIMD support is mandatory");
+
   int dcache_line = dcache_line_size();
 
   // Limit AllocatePrefetchDistance so that it does not exceed the
@@ -281,7 +285,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (supports_feature(CPU_FP) || supports_feature(CPU_ASIMD)) {
+  if (supports_feature(CPU_FP)) {
     if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
     }
@@ -443,41 +447,20 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
-  if (supports_feature(CPU_ASIMD)) {
-    if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
-      UseChaCha20Intrinsics = true;
-    }
-  } else if (UseChaCha20Intrinsics) {
-    if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
-      warning("ChaCha20 intrinsic requires ASIMD instructions");
-    }
-    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+    UseChaCha20Intrinsics = true;
   }
 
   if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
      UseIntPolyIntrinsics = true;
   }
 
-  if (supports_feature(CPU_ASIMD)) {
-      if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
-          UseKyberIntrinsics = true;
-      }
-  } else if (UseKyberIntrinsics) {
-      if (!FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
-          warning("Kyber intrinsics require ASIMD instructions");
-      }
-      FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
+  if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+    UseKyberIntrinsics = true;
   }
 
-  if (supports_feature(CPU_ASIMD)) {
-      if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
-          UseDilithiumIntrinsics = true;
-      }
-  } else if (UseDilithiumIntrinsics) {
-      if (!FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
-          warning("Dilithium intrinsics require ASIMD instructions");
-      }
-      FLAG_SET_DEFAULT(UseDilithiumIntrinsics, false);
+  if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+    UseDilithiumIntrinsics = true;
   }
 
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
