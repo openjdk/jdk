@@ -182,8 +182,7 @@ void ShenandoahHeapRegion::make_humongous_start() {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
-      assert(index() <= 0xffffffffL, "Region index must fit in 32 bits");
-      _humongous_start_region_index = (uint32_t) index();
+      _humongous_start_region_index = checked_cast<uint32_t>(index());
       set_state(_humongous_start);
       return;
     default:
@@ -202,8 +201,7 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
     case _regular:
     case _humongous_start:
     case _humongous_cont:
-      assert(index() <= 0xffffffffL, "Region index must fit in 32 bits");
-      _humongous_start_region_index = (uint32_t) index();
+      _humongous_start_region_index = checked_cast<uint32_t>(index());
       set_state(_humongous_start);
       return;
     default:
