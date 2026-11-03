@@ -55,6 +55,7 @@ import java.security.SecureRandom;
 import java.security.spec.*;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 
 // The Hybrid class contains internal implementations for the TLS 1.3
 // hybrid key exchange named groups: X25519MLKEM768, SecP256r1MLKEM768,
@@ -390,12 +391,7 @@ public class Hybrid {
         public KEM.Encapsulated engineEncapsulate(int from, int to,
                 String algorithm) {
             int expectedSecretSize = engineSecretSize();
-            if (!(from == 0 && to == expectedSecretSize)) {
-                throw new IllegalArgumentException(
-                        "Invalid range for encapsulation: from = " + from +
-                        " to = " + to + ", expected total secret size = " +
-                        expectedSecretSize);
-            }
+            checkSecretRange(from, to, algorithm, expectedSecretSize);
 
             var left  = le.encapsulate();
             var right = re.encapsulate();
@@ -426,6 +422,8 @@ public class Hybrid {
         @Override
         public SecretKey engineDecapsulate(byte[] encapsulation, int from,
                 int to, String algorithm) throws DecapsulateException {
+            Objects.requireNonNull(encapsulation,
+                    "encapsulation must not be null");
             int expectedEncSize = engineEncapsulationSize();
             if (encapsulation.length != expectedEncSize) {
                 throw new DecapsulateException(
@@ -435,12 +433,7 @@ public class Hybrid {
             }
 
             int expectedSecretSize = engineSecretSize();
-            if (!(from == 0 && to == expectedSecretSize)) {
-                throw new IllegalArgumentException(
-                        "Invalid range for decapsulation: from = " + from +
-                        " to = " + to + ", expected total secret size = " +
-                        expectedSecretSize);
-            }
+            checkSecretRange(from, to, algorithm, expectedSecretSize);
 
             var left = Arrays.copyOf(encapsulation, ld.encapsulationSize());
             var right = Arrays.copyOfRange(encapsulation,
@@ -449,6 +442,21 @@ public class Hybrid {
                     ld.decapsulate(left, 0, ld.secretSize(), "Generic"),
                     rd.decapsulate(right, 0, rd.secretSize(), "Generic")
             );
+        }
+
+        private static void checkSecretRange(int from, int to,
+                String algorithm, int secretSize) {
+            Objects.requireNonNull(algorithm, "algorithm must not be null");
+            if (from < 0 || from > to || to > secretSize) {
+                throw new IndexOutOfBoundsException(
+                        "Invalid secret range: from = " + from +
+                                ", to = " + to + ", secret size = " +
+                                secretSize);
+            }
+            if (from != 0 || to != secretSize) {
+                throw new UnsupportedOperationException(
+                        "Partial hybrid secrets are not supported");
+            }
         }
     }
 
@@ -498,6 +506,19 @@ public class Hybrid {
         @Override
         public boolean isDestroyed() {
             return destroyed;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return this == obj || (obj instanceof SecretKeyImpl other &&
+                    Objects.equals(algorithm, other.algorithm) &&
+                    Objects.equals(k1, other.k1) &&
+                    Objects.equals(k2, other.k2));
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(algorithm, k1, k2);
         }
 
         private void writeObject(ObjectOutputStream out) throws IOException {

@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8379433 8385968
- * @summary Test expected DecapsulateException thrown by Hybrid KEM implementation
+ * @summary Test TLS 1.3 hybrid KEM key generation, encapsulation,
+ *          decapsulation, validation, and secret handling.
  * @modules java.base/sun.security.ssl
  * @run main/othervm TestHybrid
 */
@@ -43,6 +44,7 @@ import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEM;
+import javax.crypto.SecretKey;
 
 public class TestHybrid {
 
@@ -131,6 +133,15 @@ public class TestHybrid {
         testNotSerializable(kp.getPrivate(), "hybrid private key");
         testNotSerializable(enc.key(), "hybrid shared secret");
         byte[] ciphertext = enc.encapsulation();
+        SecretKey decapsulated = d.decapsulate(ciphertext, 0, secretSize,
+                "Generic");
+
+        if (!enc.key().equals(decapsulated) ||
+                enc.key().hashCode() != decapsulated.hashCode()) {
+            throw new RuntimeException("Hybrid shared secrets are not equal");
+        }
+
+        testKEMArgs(e, d, ciphertext, secretSize);
 
         byte[] badCiphertext = Arrays.copyOf(ciphertext,
                 ciphertext.length - 1);
@@ -156,6 +167,52 @@ public class TestHybrid {
             throw new RuntimeException("Accepted a key for another hybrid group");
         } catch (InvalidKeyException expected) {
             System.out.println("Rejected a key for another hybrid group");
+        }
+    }
+
+    private static void testKEMArgs(KEM.Encapsulator encapsulator,
+            KEM.Decapsulator decapsulator, byte[] ciphertext, int secretSize)
+            throws Exception {
+        try {
+            encapsulator.encapsulate(-1, secretSize, "Generic");
+            throw new RuntimeException("Accepted negative encapsulation range");
+        } catch (IndexOutOfBoundsException expected) {
+            System.out.println("Rejected negative encapsulation range");
+        }
+
+        try {
+            decapsulator.decapsulate(ciphertext, 0, secretSize + 1, "Generic");
+            throw new RuntimeException("Accepted oversized decapsulation range");
+        } catch (IndexOutOfBoundsException expected) {
+            System.out.println("Rejected oversized decapsulation range");
+        }
+
+        try {
+            encapsulator.encapsulate(0, secretSize - 1, "Generic");
+            throw new RuntimeException("Accepted partial encapsulation range");
+        } catch (UnsupportedOperationException expected) {
+            System.out.println("Rejected partial encapsulation range");
+        }
+
+        try {
+            decapsulator.decapsulate(ciphertext, 0, secretSize - 1, "Generic");
+            throw new RuntimeException("Accepted partial decapsulation range");
+        } catch (UnsupportedOperationException expected) {
+            System.out.println("Rejected partial decapsulation range");
+        }
+
+        try {
+            encapsulator.encapsulate(0, secretSize, null);
+            throw new RuntimeException("Accepted null encapsulation algorithm");
+        } catch (NullPointerException expected) {
+            System.out.println("Rejected null encapsulation algorithm");
+        }
+
+        try {
+            decapsulator.decapsulate(ciphertext, 0, secretSize, null);
+            throw new RuntimeException("Accepted null decapsulation algorithm");
+        } catch (NullPointerException expected) {
+            System.out.println("Rejected null decapsulation algorithm");
         }
     }
 
