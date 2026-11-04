@@ -1371,24 +1371,24 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
 }
 
 
-bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
-  if (!n->is_If()) {
-    return false;
-  }
-  if (n->outcnt() != n->as_If()->required_outcnt()) {
-    assert(false, "malformed IfNode with %d outputs", n->outcnt());
-    return false;
-  }
-  if (n->is_BaseCountedLoopEnd()) {
-    return false;
-  }
-  if (!n->in(0)->is_Region()) {
+bool PhaseIdealLoop::has_identical_back_to_back_ifs(Node* n) {
+  if (n->Opcode() != Op_If && n->Opcode() != Op_RangeCheck) {
     return false;
   }
 
-  Node* region = n->in(0);
+  IfNode* if_node = n->as_If();
+  if (if_node->outcnt() != if_node->required_outcnt()) {
+    assert(false, "malformed IfNode with %d outputs", if_node->outcnt());
+    return false;
+  }
+
+  if (!if_node->in(0)->is_Region()) {
+    return false;
+  }
+
+  Node* region = if_node->in(0);
   Node* dom = idom(region);
-  if (!dom->is_If() ||  !n->as_If()->same_condition(dom, &_igvn)) {
+  if (!dom->is_If() || !if_node->has_same_non_constant_condition(dom->as_If())) {
     return false;
   }
   IfNode* dom_if = dom->as_If();
@@ -1688,13 +1688,13 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
     if (bol->is_Bool() && (max > 1 || bol->in(1)->is_SubTypeCheck())) {
       // Search up IDOMs to see if this IF is dominated.
       Node* cmp = bol->in(1);
-      Node *cutoff = cmp->is_SubTypeCheck() ? dom_lca(get_ctrl(cmp->in(1)), get_ctrl(cmp->in(2))) : get_ctrl(bol);
+      Node* cutoff = cmp->is_SubTypeCheck() ? dom_lca(get_ctrl(cmp->in(1)), get_ctrl(cmp->in(2))) : get_ctrl(bol);
 
       // Now search up IDOMs till cutoff, looking for a dominating test
-      Node *prevdom = n;
-      Node *dom = idom(prevdom);
+      Node* prevdom = n;
+      Node* dom = idom(prevdom);
       while (dom != cutoff) {
-        if (dom->req() > 1 && n->as_If()->same_condition(dom, &_igvn) && prevdom->in(0) == dom &&
+        if (dom->is_If() && prevdom->in(0) == dom && n->as_If()->has_same_non_constant_condition(dom->as_If()) &&
             safe_for_if_replacement(dom)) {
           // It's invalid to move control dependent data nodes in the inner
           // strip-mined loop, because:
@@ -1764,7 +1764,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 //   // body 4
 // }
 bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
-  if (identical_backtoback_ifs(n) && can_split_if(n->in(0))) {
+  if (has_identical_back_to_back_ifs(n) && can_split_if(n->in(0))) {
     Node *n_ctrl = n->in(0);
     IfNode* dom_if = idom(n_ctrl)->as_If();
     if (n->in(1) != dom_if->in(1)) {
