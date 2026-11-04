@@ -70,7 +70,7 @@ void ShenandoahGenerationalMode::initialize_flags() const {
       // Configure flags in accordance with the heuristic
       ShenandoahCompactHeuristics::configure();
       break;
-    case  ShenandoahHeuristicsFlag::Heuristic::AGGRESSIVE:
+    case ShenandoahHeuristicsFlag::Heuristic::AGGRESSIVE:
       // This will configure the periodic gc interval to 1ms, effectively running
       // continuous collections as the aggressive heuristic would do in the single
       // generation mode. Note that global cycles will still only run when there is
