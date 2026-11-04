@@ -25,6 +25,7 @@
  * @test
  * @bug 8350971
  * @summary C2 compilation fails with assert(idx == alias_idx) failed: Following Phi nodes should be on the same memory slice
+ * @requires vm.opt.CompileThreshold == null
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -Xbatch -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestMemoryPhiAlias::main
  *                   -XX:CompileThresholdScaling=1.0
  *                   compiler.escapeAnalysis.TestMemoryPhiAlias
