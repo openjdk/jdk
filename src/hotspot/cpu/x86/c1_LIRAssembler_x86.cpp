@@ -495,7 +495,9 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
           __ call(rdi);
         } else
 #endif
-        __ call(RuntimeAddress(unpack_handler));
+        {
+          __ call(RuntimeAddress(unpack_handler));
+        }
       }
     } else if (return_type->is_instance_klass() && (!return_type->is_loaded() || StressCallingConvention)) {
       Label skip;

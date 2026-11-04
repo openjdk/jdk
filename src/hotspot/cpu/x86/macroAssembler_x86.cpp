@@ -6035,7 +6035,9 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
       mov_metadata(rbx, vk->constant_encoding());
     } else
 #endif
-    movptr(rbx, (intptr_t)vk->get_ValueKlass());
+    {
+      movptr(rbx, (intptr_t)vk->get_ValueKlass());
+    }
     jint lh = vk->layout_helper();
     assert(lh != Klass::_lh_neutral_value, "value class in return type must have been resolved");
     if (UseTLAB && !Klass::layout_helper_needs_slow_path(lh)) {
@@ -6090,7 +6092,9 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
         call(rbx);
       } else
 #endif
-      call(RuntimeAddress(vk->pack_handler())); // no need for call info as this will not safepoint.
+      {
+        call(RuntimeAddress(vk->pack_handler())); // no need for call info as this will not safepoint.
+      }
     } else {
       movptr(rbx, Address(klass, ValueKlass::adr_members_offset()));
       movptr(rbx, Address(rbx, ValueKlass::pack_handler_offset()));
