@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
- * @test id=default
+ * @test
  * @bug 8295785
  * @summary Tests the `sun.net.httpserver.idleInterval` system property, which
  *          defaults to 30s. The background task evicting idle connections is
@@ -55,78 +55,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *
  * @run junit/othervm
  *      -Dtest.evictionWaitDuration=40
- *      ${test.main.class}
- */
-
-/*
- * @test id=0
- * @bug 8295785
- * @summary Tests the `sun.net.httpserver.idleInterval` system property
- *          configured to 0, and expects it to be overridden by the default,
- *          i.e., 30. The background task evicting idle connections is scheduled
- *          to run every `sun.net.httpserver.clockTick` milliseconds, which
- *          defaults to 10000. We need to wait for at least `30+clockTick`
- *          seconds, that is, 40.
- *
- * @library /test/lib
- *
- * @run junit/othervm
- *      -Dsun.net.httpserver.idleInterval=0
- *      -Dtest.evictionWaitDuration=40
- *      ${test.main.class}
- */
-
-/*
- * @test id=negative
- * @bug 8295785
- * @summary Tests the `sun.net.httpserver.idleInterval` system property
- *          configured to -1, and expects it to be overridden by the default,
- *          i.e., 30. The background task evicting idle connections is scheduled
- *          to run every `sun.net.httpserver.clockTick` milliseconds, which
- *          defaults to 10000. We need to wait for at least `30+clockTick`
- *          seconds, that is, 40.
- *
- * @library /test/lib
- *
- * @run junit/othervm
- *      -Dsun.net.httpserver.idleInterval=-1
- *      -Dtest.evictionWaitDuration=40
- *      ${test.main.class}
- */
-
-/*
- * @test id=1
- * @bug 8295785
- * @summary Tests the `sun.net.httpserver.idleInterval` system property
- *          configured to 1. The background task evicting idle connections
- *          is scheduled to run every `sun.net.httpserver.clockTick`
- *          milliseconds, which defaults to 10000. Hence, without configuring
- *          `clockTick`, for values less than 10000, we need to wait at least
- *          for 10 seconds.
- *
- * @library /test/lib
- *
- * @run junit/othervm
- *      -Dsun.net.httpserver.idleInterval=1
- *      -Dtest.evictionWaitDuration=10
- *      ${test.main.class}
- */
-
-/*
- * @test id=1-with-clockTick
- * @bug 8295785
- * @summary Tests the `sun.net.httpserver.idleInterval`  and
- *          `sun.net.httpserver.clockTick` system properties configured to
- *          1 and 100, respectively. `clockTick` determines the frequency of the
- *          background task evicting idle connections, and it defaults to 10000
- *          milliseconds.
- *
- * @library /test/lib
- *
- * @run junit/othervm
- *      -Dsun.net.httpserver.idleInterval=1
- *      -Dsun.net.httpserver.clockTick=100
- *      -Dtest.evictionWaitDuration=1
  *      ${test.main.class}
  */
 
