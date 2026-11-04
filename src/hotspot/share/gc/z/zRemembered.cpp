@@ -202,7 +202,7 @@ struct ZRememberedScanForwardingContext {
       for (int i = 0; i < NumRecords; i++) {
         if (duration > _max_durations[i]) {
           // Slid to the side
-          for (int j = _max_count - 1; i < j; j--) {
+          for (int j = MIN2(_max_count, NumRecords - 1); i < j; j--) {
             _max_durations[j] = _max_durations[j - 1];
           }
 
