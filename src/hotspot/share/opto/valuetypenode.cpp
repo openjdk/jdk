@@ -2378,8 +2378,14 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   Node* payload = convert_to_payload(igvn, kit.control(), value, _null_free, oop_off_1, oop_off_2);
 
   ciValueKlass* vk = igvn.type(value)->value_klass();
+  // convert_to_payload should give us the offsets of up to 2 oops of vk in oop_off_1 and oop_off_2. The following holds:
+  // - they must be valid offsets for oops (0 or 4) or -1 (no oop)
+  // - if there is at least one oop, oop_off_1 != oop_off_2, i.e. oop_off_1 == oop_off_2 only if they are both -1, i.e. offsets are distincts
+  // - in case there is only one oop, its offset is stored in oop_off_1, and oop_off_2 == -1
   assert(oop_off_1 == -1 || oop_off_1 == 0 || oop_off_1 == 4, "invalid layout for %s, first oop at offset %d", vk->name()->as_utf8(), oop_off_1);
-  assert(oop_off_2 == -1 || oop_off_2 == 4, "invalid layout for %s, second oop at offset %d", vk->name()->as_utf8(), oop_off_2);
+  assert(oop_off_2 == -1 || oop_off_2 == 0 || oop_off_2 == 4, "invalid layout for %s, second oop at offset %d", vk->name()->as_utf8(), oop_off_2);
+  assert(oop_off_1 != oop_off_2 || oop_off_1 == -1, "we should have: oop_off_1 == oop_off_2 => oop_off_1 == -1. But oop_off_1=oop_off_2=%d", oop_off_1);
+  assert(oop_off_1 != -1 || oop_off_2 == -1, "we should have: oop_off_1 == -1 => oop_off_2 == -1. But oop_off_1=%d, oop_off_2=%d", oop_off_1, oop_off_2);
   BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
   kit.insert_mem_bar(Op_MemBarCPUOrder);
   if (!UseG1GC || oop_off_1 == -1) {
@@ -2414,6 +2420,8 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
 
 // Convert the field values to a payload value of type 'bt'
 Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTypeNode* value, bool null_free, int& oop_off_1, int& oop_off_2) {
+  oop_off_1 = -1;
+  oop_off_2 = -1;
   ciValueKlass* vk = igvn.type(value)->value_klass();
   BasicType payload_bt = vk->atomic_size_to_basic_type(null_free);
   Node* payload = igvn.zerocon(payload_bt);
@@ -2432,11 +2440,13 @@ Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTyp
     if (!field_klass->is_primitive_type()) {
       // Narrow oop field
       assert(UseCompressedOops && payload_bt == T_LONG, "Naturally atomic");
+      assert(field_offset_in_payload == 0 || field_offset_in_payload == 4, "Unexpected oop offset. field_offset_in_payload=%d", field_offset_in_payload);
       if (oop_off_1 == -1) {
         oop_off_1 = field_offset_in_payload;
       } else {
         assert(oop_off_2 == -1, "already set");
         oop_off_2 = field_offset_in_payload;
+        assert(oop_off_1 != oop_off_2, "Found the same offset again?! oop_off_1=oop_off_2=%d", oop_off_1);
       }
 
       const Type* val_type = Type::get_const_type(field_klass)->make_narrowoop();
@@ -2451,6 +2461,8 @@ Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTyp
     }
     payload = set_payload_value(igvn, payload_bt, payload, field_bt, field_value, field_offset_in_payload);
   }
+
+  assert(oop_off_2 == -1 || oop_off_1 != -1, "oop_off_2 != -1 => oop_off_1 != -1 ie. oop_off_1 is filled first. But oop_off_1=%d, oop_off_2=%d.", oop_off_1, oop_off_2);
 
   return payload;
 }

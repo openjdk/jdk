@@ -713,15 +713,10 @@ void gen_inst_format(FILE *fp, FormDict &globals, InstructForm &inst, bool for_c
       assert(0,"ShouldNotReachHere");
     }
     fprintf(fp,  "  st->cr();\n" );
-    fprintf(fp,  "  if (_jvms) _jvms->format(ra, this, st); else st->print_cr(\"        No JVM State Info\");\n" );
-    fprintf(fp,  "  st->print(\"        # \");\n" );
-    fprintf(fp,  "  if( _jvms && _oop_map ) _oop_map->print_on(st);\n");
+    fprintf(fp,  "  format_jvms_and_oopmap(ra, st);\n" );
   }
   else if(inst.is_ideal_safepoint()) {
-    fprintf(fp,  "  st->print_raw(\"\");\n" );
-    fprintf(fp,  "  if (_jvms) _jvms->format(ra, this, st); else st->print_cr(\"        No JVM State Info\");\n" );
-    fprintf(fp,  "  st->print(\"        # \");\n" );
-    fprintf(fp,  "  if( _jvms && _oop_map ) _oop_map->print_on(st);\n");
+    fprintf(fp,  "  format_jvms_and_oopmap(ra, st);\n" );
   }
   else if( inst.is_ideal_if() ) {
     fprintf(fp,  "  st->print(\"  P=%%f C=%%f\",_prob,_fcnt);\n" );

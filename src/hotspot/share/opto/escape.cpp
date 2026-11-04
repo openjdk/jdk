@@ -62,6 +62,7 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation
   _invocation(invocation),
   _build_iterations(0),
   _build_time(0.),
+  _virtual_array_init_nodes(C->comp_arena(), 0, 0, nullptr),
   _node_map(C->comp_arena()) {
   // Add unknown java object.
   add_java_object(C->top(), PointsToNode::GlobalEscape);
@@ -136,7 +137,7 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
 
 bool ConnectionGraph::compute_escape() {
   Compile* C = _compile;
-  PhaseGVN* igvn = _igvn;
+  PhaseIterGVN* igvn = _igvn;
 
   // Worklists used by EA.
   Unique_Node_List<Node> delayed_worklist;
@@ -179,6 +180,21 @@ bool ConnectionGraph::compute_escape() {
       _igvn->replace_input_of(n, MemNode::Address, addp);
       ideal_nodes.push(addp);
       _nodes.at_put_grow(addp->_idx, nullptr, nullptr);
+    }
+    if (n->is_AllocateArray() && n->in(AllocateNode::InitValue) != nullptr) {
+      // Add artificial AddP nodes to make the connection between allocated
+      // arrays and their initialization values explicit. Model the AddP as a
+      // raw address so that artificial AddP nodes are still created even if the
+      // AllocateArray OOP is unused. The resulting Field nodes are treated
+      // specially to avoid inhibiting scalar replacement.
+      Node* result = n->as_AllocateArray()->proj_out_or_null(AllocateNode::RawAddress);
+      if (result != nullptr) {
+        // Use an arbitrary offset. The corresponding CG Field node uses OffsetBot.
+        AddPNode* addp = AddPNode::make_off_heap(result, igvn->MakeConX(0));
+        igvn->register_new_node_with_optimizer(addp);
+        _virtual_array_init_nodes.push(addp);
+        _nodes.at_put_grow(addp->_idx, nullptr, nullptr);
+      }
     }
     // Create PointsTo nodes and add them to Connection Graph. Called
     // only once per ideal node since ideal_nodes is Unique_Node list.
@@ -1722,13 +1738,18 @@ void ConnectionGraph::add_node_to_connection_graph(Node* n, Unique_Node_List<Nod
       // adjust_scalar_replaceable_state() and split_unique_types().
       // Note, non-oop fields will have only base edges in Connection
       // Graph because such fields are not used for oop loads and stores.
-      int offset = address_offset(n, igvn);
+      bool is_virtual_array_init_n = is_virtual_array_init(n);
+      assert(!is_virtual_array_init_n || n->outcnt() == 0, "virtual AddPs must be unused");
+      int offset = is_virtual_array_init_n ? Type::OffsetBot : address_offset(n, igvn);
       add_field(n, PointsToNode::NoEscape, offset);
       if (ptn_base == nullptr) {
         delayed_worklist->push(n); // Process it later.
       } else {
         n_ptn = ptnode_adr(n_idx);
         add_base(n_ptn->as_Field(), ptn_base);
+        if (is_virtual_array_init_n) {
+          delayed_worklist->push(n);
+        }
       }
       break;
     }
@@ -1911,6 +1932,21 @@ void ConnectionGraph::add_final_edges(Node *n) {
       PointsToNode* ptn_base = ptnode_adr(base->_idx);
       assert(ptn_base != nullptr, "field's base should be registered");
       add_base(n_ptn->as_Field(), ptn_base);
+      if (is_virtual_array_init(n)) {
+        // Connect allocated arrays and their initialization values explicitly.
+        // Note that, for flat arrays, propagating the array's
+        // fields_escape_state into the initialization value is a conservative
+        // over-approximation and may result in an unnecessary constructor
+        // barrier. If needed, this could be addressed by connecting the field
+        // node directly to the referents of the initialization value fields.
+        AllocateNode* alloc = AllocateNode::Ideal_allocation(base);
+        assert(alloc != nullptr, "should be available if virtual field test passed");
+        Node* init = alloc->in(AllocateNode::InitValue);
+        assert(init != nullptr, "should have init value if virtual field test passed");
+        PointsToNode* init_ptn = ptnode_adr(init->_idx);
+        assert(init_ptn != nullptr, "init value should be registered");
+        add_edge(n_ptn, init_ptn);
+      }
       break;
     }
     case Op_ValueType:
@@ -2914,26 +2950,6 @@ bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptn
         // New edge was added
         add_field_uses_to_worklist(ptn->as_Field());
       }
-    } else if (ptn->is_JavaObject() && ptn->ideal_node()->is_AllocateArray()) {
-      // Manually propagate the fields escape state of array allocations to
-      // their initialization values, if present. This is needed because there
-      // may not exist an explicit connection in the connection graph between
-      // these two (as there is no explicit initialization store in the IR).
-      // Note that, for flat arrays, marking the initialization value as
-      // escaping is a conservative over-approximation and may result in an
-      // unnecessary constructor barrier. If necessary, this could be addressed
-      // by propagating the escape state directly to the fields of the
-      // initialization value.
-      AllocateArrayNode* alloc = ptn->ideal_node()->as_AllocateArray();
-      Node* init = alloc->in(AllocateNode::InitValue);
-      if (init != nullptr) {
-        PointsToNode* init_val = ptnode_adr(init->_idx);
-        assert(init_val != nullptr, "init value should be registered");
-        if (init_val->escape_state() < field_es) {
-          set_escape_state(init_val, field_es NOT_PRODUCT(COMMA trace_propagate_message(ptn)));
-          escape_worklist.push(init_val);
-        }
-      }
     }
     for (EdgeIterator i(ptn); i.has_next(); i.next()) {
       PointsToNode* e = i.get();
@@ -3349,8 +3365,9 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
       FieldNode* field = use->as_Field();
       assert(field->is_oop() && field->scalar_replaceable(), "sanity");
       // 1. An object is not scalar replaceable if the field into which it is
-      // stored has unknown offset (stored into unknown element of an array).
-      if (field->offset() == Type::OffsetBot) {
+      // stored has unknown offset (stored into unknown element of an array),
+      // with the exception of virtual array initialization fields.
+      if (field->offset() == Type::OffsetBot && !is_virtual_array_init(field->ideal_node())) {
         set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored at unknown offset"));
         return;
       }
@@ -3410,6 +3427,10 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
 
     // Non-escaping object node should point only to field nodes.
     FieldNode* field = j.get()->as_Field();
+    if (is_virtual_array_init(field->ideal_node())) {
+      // Virtual array initialization fields do not affect scalar replaceability.
+      continue;
+    }
     int offset = field->as_Field()->offset();
 
     // 4. An object is not scalar replaceable if it has a field with unknown
@@ -3547,7 +3568,7 @@ void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNod
         if (use->is_Field()) {
           FieldNode* field = use->as_Field();
           assert(field->is_oop() && field->scalar_replaceable(), "sanity");
-          assert(field->offset() != Type::OffsetBot, "sanity");
+          assert(field->offset() != Type::OffsetBot || is_virtual_array_init(field->ideal_node()), "sanity");
           for (BaseIterator i(field); i.has_next(); i.next()) {
             PointsToNode* base = i.get();
             // An object is not scalar replaceable if the field into which
@@ -3901,6 +3922,11 @@ void ConnectionGraph::add_arraycopy(Node *n, PointsToNode::EscapeState es,
 }
 
 bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
+  if (is_virtual_array_init(n)) {
+    // n models a virtual field containing a reference to an array's init value
+    // oop, so it should be treated as any other oop field by escape analysis.
+    return true;
+  }
   const Type* adr_type = n->as_AddP()->bottom_type();
   int field_offset = adr_type->isa_aryptr() ? adr_type->isa_aryptr()->field_offset().get() : Type::OffsetBot;
   BasicType bt = T_INT;
