@@ -69,6 +69,7 @@
 #include "prims/jniExport.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
+#include "prims/jvmtiAgentSet.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -4069,6 +4070,9 @@ jint JNICALL jni_GetEnv(JavaVM *vm, void **penv, jint version) {
   }
 
   if (JniExportedInterface::GetExportedInterface(vm, penv, version, &ret)) {
+    if (ret == JNI_OK) {
+      JvmtiAgentSet::on_env_creation(static_cast<const jvmtiEnv*>(*penv));
+    }
     return ret;
   }
 

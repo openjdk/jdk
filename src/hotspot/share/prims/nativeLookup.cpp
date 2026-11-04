@@ -37,8 +37,8 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvm_misc.hpp"
-#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiResolver.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/scopedMemoryAccess.hpp"
 #include "prims/unsafe.hpp"
@@ -282,16 +282,11 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   entry = (address) (intptr_t) result.get_jlong();
 
   if (entry == nullptr) {
+#if INCLUDE_JVMTI
     // findNative didn't find it, if there are any agent libraries look in them
-    JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
-    while (it.has_next()) {
-      entry = (address)os::dll_lookup(it.next()->os_lib(), jni_name);
-      if (entry != nullptr) {
-        return entry;
-      }
-    }
+    entry = JvmtiResolver::lookup_native_entry(jni_name);
+#endif // INCLUDE_JVMTI
   }
-
   return entry;
 }
 
