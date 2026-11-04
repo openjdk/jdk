@@ -22,9 +22,9 @@
  *
  */
 
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cdsConfig.hpp"
 #include "ci/ciMethodData.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -324,7 +324,7 @@ static bool is_excluded(Klass* k) {
       log_debug(aot, training)("Purged %s from MDO: unloaded class", k->name()->as_C_string());
       return true;
     } else {
-      bool excluded = SystemDictionaryShared::should_be_excluded(k) || !SystemDictionaryShared::is_builtin_loader(k->class_loader_data());
+      bool excluded = AOTSystemDictionary::should_be_excluded(k) || !AOTSystemDictionary::is_builtin_loader(k->class_loader_data());
       if (excluded) {
         log_debug(aot, training)("Purged %s from MDO: excluded class", k->name()->as_C_string());
       }
@@ -1947,7 +1947,9 @@ void MethodData::check_extra_data_locked() const {
     // Usually we only want non-const accesses on the lock,
     // so this here is an exception.
     MethodData* self = (MethodData*)this;
-    assert(self->extra_data_lock()->owned_by_self() || CDSConfig::is_dumping_archive(), "must have lock");
+    assert(self->extra_data_lock()->owned_by_self()
+           || CDSConfig::is_dumping_archive()
+           || AOTMapLogger::is_logging_at_bootstrap(), "must have lock");
     assert(!Thread::current()->is_Java_thread() ||
            JavaThread::current()->is_in_no_safepoint_scope(),
            "JavaThread must have NoSafepointVerifier inside lock scope");

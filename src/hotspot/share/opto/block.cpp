@@ -205,13 +205,17 @@ bool Block::has_uncommon_code() const {
     en = en->in(0);
   if (en->is_Catch())
     en = en->in(0);
-  if (en->is_MachProj() && en->in(0)->is_MachCall()) {
-    MachCallNode* call = en->in(0)->as_MachCall();
-    if (call->cnt() != COUNT_UNKNOWN && call->cnt() <= PROB_UNLIKELY_MAG(4)) {
-      // This is true for slow-path stubs like new_{instance,array},
-      // slow_arraycopy, complete_monitor_locking, uncommon_trap.
-      // The magic number corresponds to the probability of an uncommon_trap,
-      // even though it is a count not a probability.
+  if (en->is_MachProj()) {
+    if (en->in(0)->is_MachCall()) {
+      MachCallNode* call = en->in(0)->as_MachCall();
+      if (call->cnt() != COUNT_UNKNOWN && call->cnt() <= PROB_UNLIKELY_MAG(4)) {
+        // This is true for slow-path stubs like new_{instance,array},
+        // slow_arraycopy, complete_monitor_locking, uncommon_trap.
+        // The magic number corresponds to the probability of an uncommon_trap,
+        // even though it is a count not a probability.
+        return true;
+      }
+    } else if (en->in(0)->is_MachUncommonTrap()) {
       return true;
     }
   }

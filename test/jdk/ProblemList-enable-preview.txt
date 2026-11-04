@@ -35,4 +35,5 @@
 
 # Value Objects failures start here:
 
+jdk/jfr/event/oldobject/TestEmergencyDumpAtOOM.java 8385942 generic-all
 sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java 8394812 generic-all

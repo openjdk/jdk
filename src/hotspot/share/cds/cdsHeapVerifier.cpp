@@ -31,7 +31,6 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -372,8 +371,15 @@ public:
 // loaded. Later, we will check if any archived objects reference one of
 // these fields.
 void CDSHeapVerifier::do_klass(Klass* k) {
+  precond(CDSConfig::in_aot_safepoint());
   if (k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
+
+    if (!ik->is_loaded() || !ik->is_loader_alive()) {
+      // In the training run, we may see some classes that are just being created, or
+      // are in the process of being unloaded. Ignore them
+      return;
+    }
 
     if (AOTHeap::is_subgraph_root_class(ik)) {
       // ik is inside one of the ArchivableStaticFieldInfo tables
