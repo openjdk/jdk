@@ -185,6 +185,12 @@ source %{
           return false;
         }
         break;
+      case Op_DotV:
+      case Op_UDotV:
+        if (VM_Version::use_neon_for_vector(length_in_bytes) && !VM_Version::supports_asimddp()) {
+          return false;
+        }
+        break;
       case Op_AddReductionVI:
       case Op_AndReductionV:
       case Op_OrReductionV:
@@ -5628,3 +5634,28 @@ SELECT_FROM_TWO_VECTORS(10, 11)
 SELECT_FROM_TWO_VECTORS(12, 13)
 SELECT_FROM_TWO_VECTORS(17, 18)
 SELECT_FROM_TWO_VECTORS(23, 24)
+
+// ---------------------------- Vector dot product ----------------------------
+dnl VDOT($1,   $2,      $3,        $4      )
+dnl VDOT(type, op_name, neon_insn, sve_insn)
+define(`VDOT', `
+instruct v$1(vReg dst_src1, vReg src2, vReg src3) %{
+  match(Set dst_src1 ($2 dst_src1 (Binary src2 src3)));
+  format %{ "v$1 $dst_src1, $src2, $src3" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ $3($dst_src1$$FloatRegister, get_arrangement(this),
+            $src2$$FloatRegister, $src3$$FloatRegister,
+            length_in_bytes == 16 ? __ T16B : __ T8B);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ $4($dst_src1$$FloatRegister, get_reg_variant(this),
+            $src2$$FloatRegister, $src3$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+VDOT(dot,  DotV,  sdot, sve_sdot)
+VDOT(udot, UDotV, udot, sve_udot)
