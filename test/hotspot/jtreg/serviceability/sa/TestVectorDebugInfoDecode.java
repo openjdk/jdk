@@ -28,8 +28,15 @@ import sun.jvm.hotspot.code.LocationValue;
 import sun.jvm.hotspot.code.ObjectValue;
 import sun.jvm.hotspot.code.ScopeDesc;
 import sun.jvm.hotspot.code.ScopeValue;
+import sun.jvm.hotspot.debugger.OopHandle;
+import sun.jvm.hotspot.oops.Field;
+import sun.jvm.hotspot.oops.InstanceKlass;
 import sun.jvm.hotspot.oops.java_lang_Class;
+import sun.jvm.hotspot.oops.Klass;
+import sun.jvm.hotspot.oops.Oop;
+import sun.jvm.hotspot.oops.OopField;
 import sun.jvm.hotspot.runtime.CompiledVFrame;
+import sun.jvm.hotspot.runtime.StackValueCollection;
 import sun.jvm.hotspot.runtime.VM;
 
 import jdk.test.lib.apps.LingeredApp;
@@ -52,6 +59,7 @@ import java.util.Set;
  * @library /test/lib
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.code
+ *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
  *          jdk.incubator.vector
@@ -61,24 +69,75 @@ import java.util.Set;
 
 public class TestVectorDebugInfoDecode {
 
-    private static final Set<String> EXPECTED_EXTERNAL_NAME_SET = Set.of(
+    private static final Set<String> ALL_VECTOR_NAME_SET = Set.of(
+            "jdk/incubator/vector/ByteVectorMax",
+            "jdk/incubator/vector/ShortVectorMax",
+            "jdk/incubator/vector/IntVectorMax",
+            "jdk/incubator/vector/LongVectorMax",
+            "jdk/incubator/vector/FloatVectorMax",
+            "jdk/incubator/vector/DoubleVectorMax",
+            "jdk/incubator/vector/Float16VectorMax",
+            "jdk/incubator/vector/ByteVector512",
+            "jdk/incubator/vector/ShortVector512",
+            "jdk/incubator/vector/IntVector512",
+            "jdk/incubator/vector/LongVector512",
+            "jdk/incubator/vector/FloatVector512",
+            "jdk/incubator/vector/DoubleVector512",
+            "jdk/incubator/vector/Float16Vector512",
+            "jdk/incubator/vector/ByteVector256",
+            "jdk/incubator/vector/ShortVector256",
+            "jdk/incubator/vector/IntVector256",
+            "jdk/incubator/vector/LongVector256",
+            "jdk/incubator/vector/FloatVector256",
+            "jdk/incubator/vector/DoubleVector256",
+            "jdk/incubator/vector/Float16Vector256",
             "jdk/incubator/vector/ByteVector128",
             "jdk/incubator/vector/ShortVector128",
             "jdk/incubator/vector/IntVector128",
             "jdk/incubator/vector/LongVector128",
             "jdk/incubator/vector/FloatVector128",
             "jdk/incubator/vector/DoubleVector128",
+            "jdk/incubator/vector/Float16Vector128",
             "jdk/incubator/vector/ByteVector64",
             "jdk/incubator/vector/ShortVector64",
             "jdk/incubator/vector/IntVector64",
-            "jdk/incubator/vector/FloatVector64"
+            "jdk/incubator/vector/LongVector64",
+            "jdk/incubator/vector/FloatVector64",
+            "jdk/incubator/vector/DoubleVector64",
+            "jdk/incubator/vector/Float16Vector64"
     );
+
+    private static final Set<String> MANDATORY_VECTOR_NAME_SET = Set.of(
+            "jdk/incubator/vector/ByteVectorMax",
+            "jdk/incubator/vector/ShortVectorMax",
+            "jdk/incubator/vector/IntVectorMax",
+            "jdk/incubator/vector/LongVectorMax",
+            "jdk/incubator/vector/FloatVectorMax",
+            "jdk/incubator/vector/DoubleVectorMax",
+            "jdk/incubator/vector/Float16VectorMax",
+            "jdk/incubator/vector/ByteVector128",
+            "jdk/incubator/vector/ShortVector128",
+            "jdk/incubator/vector/IntVector128",
+            "jdk/incubator/vector/LongVector128",
+            "jdk/incubator/vector/FloatVector128",
+            "jdk/incubator/vector/DoubleVector128",
+            "jdk/incubator/vector/Float16Vector128",
+            "jdk/incubator/vector/ByteVector64",
+            "jdk/incubator/vector/ShortVector64",
+            "jdk/incubator/vector/IntVector64",
+            "jdk/incubator/vector/FloatVector64",
+            "jdk/incubator/vector/Float16Vector64"
+    );
+
+    private static final String VECTOR_PAYLOAD = "jdk/internal/vm/vector/VectorSupport$VectorPayload";
 
     private static LingeredAppWithVector theApp = null;
 
     private static void checkDecode(String pid) throws Exception {
         HotSpotAgent agent = new HotSpotAgent();
-        Set<String> externalNameSet = new HashSet<>();
+
+        Set<String> decodedVectorSet = new HashSet<>();
+        Set<String> vectorLocationSet = new HashSet<>();
 
         try {
             agent.attach(Integer.parseInt(pid));
@@ -98,32 +157,66 @@ public class TestVectorDebugInfoDecode {
                         scope.printValueOn(System.out);
                         System.out.println();
 
-                        List<ObjectValue> objects = scope.getObjects();
+                        List<ScopeValue> locals = scope.getLocals();
+                        StackValueCollection resolved = compiled.getLocals();
 
-                        if (objects == null) continue;
+                        for (int j = 0; j < locals.size(); j++) {
+                            ScopeValue sv = locals.get(j);
 
-                        for (ObjectValue object : objects) {
-                            System.out.println("## ObjectValue:");
-                            object.print();
-                            System.out.println();
+                            if (sv.isObject()) {
+                                ObjectValue object = (ObjectValue) sv;
+                                Klass k = klassOf(object);
+                                if (!isVectorKlass(k)) continue;
 
-                            System.out.println("## -> ExternalName:");
-                            var mirror = (ConstantOopReadValue) object.getKlass();
-                            var objectClass = VM.getVM().getObjectHeap().newOop(mirror.getValue());
-                            var externalName = java_lang_Class.asExternalName(objectClass);
-                            System.out.println(externalName);
-
-                            for (ScopeValue value : object.getFieldsValue()) {
-                                System.out.println("# ScopeValue:");
-                                value.printOn(System.out);
+                                System.out.println("## ObjectValue:");
+                                object.print();
                                 System.out.println();
 
-                                if (value instanceof LocationValue lv) {
-                                    Location loc = lv.getLocation();
-                                    if (loc.getType() == Location.Type.VECTOR) {
-                                        externalNameSet.add(externalName);
+                                String klassName = k.getName().asString();
+                                System.out.println(klassName);
+                                decodedVectorSet.add(klassName);
+
+                                for (ScopeValue value : object.getFieldsValue()) {
+                                    System.out.println("# ScopeValue:");
+                                    value.printOn(System.out);
+                                    System.out.println();
+
+                                    if (value instanceof LocationValue lv) {
+                                        Location loc = lv.getLocation();
+                                        if (loc.getType() == Location.Type.VECTOR) {
+                                            vectorLocationSet.add(klassName);
+                                        }
                                     }
                                 }
+                            } else if (sv.isLocation()) {
+                                Location loc = ((LocationValue) sv).getLocation();
+                                if (!loc.holdsOop() && !loc.holdsNarrowOop()) continue;
+
+                                OopHandle h = resolved.oopHandleAt(j);
+                                if (h == null) continue;
+
+                                Oop o = VM.getVM().getObjectHeap().newOop(h);
+                                if (o == null || !isVectorKlass(o.getKlass())) continue;
+
+                                System.out.println("## Heap Object:");
+                                String klassName = o.getKlass().getName().asString();
+                                System.out.println(klassName);
+
+                                Field field = ((InstanceKlass) o.getKlass()).findField("payload", "Ljava/lang/Object;");
+                                Oop payload = ((OopField) field).getValue(o);
+                                if (payload == null) {
+                                    throw new RuntimeException("Payload must not be null. klassName: " + klassName);
+                                }
+
+                                String payloadKlassName = payload.getKlass().getName().asString();
+                                if (!payload.isTypeArray()) {
+                                    throw new RuntimeException("Payload must be a primitive array." +
+                                            " klassName: " + klassName + ", payload: " + payloadKlassName);
+                                }
+                                System.out.println("# Payload:");
+                                System.out.println(payloadKlassName);
+
+                                decodedVectorSet.add(klassName);
                             }
                         }
                     }
@@ -133,14 +226,35 @@ public class TestVectorDebugInfoDecode {
             agent.detach();
         }
 
-        if (!externalNameSet.equals(EXPECTED_EXTERNAL_NAME_SET)) {
-            Set<String> missing = new HashSet<>(EXPECTED_EXTERNAL_NAME_SET);
-            missing.removeAll(externalNameSet);
-            Set<String> unexpected = new HashSet<>(externalNameSet);
-            unexpected.removeAll(EXPECTED_EXTERNAL_NAME_SET);
+        if (!decodedVectorSet.equals(ALL_VECTOR_NAME_SET)) {
+            Set<String> missing = new HashSet<>(ALL_VECTOR_NAME_SET);
+            missing.removeAll(decodedVectorSet);
 
-            throw new RuntimeException("missing: " + missing + ", unexpected: " + unexpected);
+            throw new RuntimeException("Missing decoded vectors. missing: " + missing);
         }
+
+        if (!vectorLocationSet.containsAll(MANDATORY_VECTOR_NAME_SET)) {
+            Set<String> missing = new HashSet<>(MANDATORY_VECTOR_NAME_SET);
+            missing.removeAll(vectorLocationSet);
+            Set<String> extra = new HashSet<>(vectorLocationSet);
+            extra.removeAll(MANDATORY_VECTOR_NAME_SET);
+
+            throw new RuntimeException("Mandatory vector locations not found." +
+                    " missing: " + missing + ", extra: " + extra);
+        }
+    }
+
+    private static boolean isVectorKlass(Klass k) {
+        for (Klass c = k; c != null; c = c.getSuper()) {
+            if (c.getName().asString().equals(VECTOR_PAYLOAD)) return true;
+        }
+        return false;
+    }
+
+    private static Klass klassOf(ObjectValue ov) {
+        var mirror = (ConstantOopReadValue) ov.getKlass();
+        Oop mirrorOop = VM.getVM().getObjectHeap().newOop(mirror.getValue());
+        return java_lang_Class.asKlass(mirrorOop);
     }
 
     private static void createAnotherToAttach(long lingeredAppPid) throws Exception {
@@ -148,6 +262,7 @@ public class TestVectorDebugInfoDecode {
                 "--add-modules=jdk.hotspot.agent",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.code=ALL-UNNAMED",
+                "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
                 "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.runtime=ALL-UNNAMED",
                 "TestVectorDebugInfoDecode",
