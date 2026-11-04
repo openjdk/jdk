@@ -498,6 +498,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       Label not_null;
       __ cbnz(r0, not_null);
       // Returned value is null, zero all return registers because they may belong to oop fields
+      __ mov(j_rarg0, zr);
       __ mov(j_rarg1, zr);
       __ mov(j_rarg2, zr);
       __ mov(j_rarg3, zr);
@@ -751,6 +752,11 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   } else {
     ShouldNotReachHere();
   }
+}
+
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  assert(UseCompressedOops, "should only be used with compressed oops");
+  __ decode_heap_oop(dest->as_pointer_register(), src->as_pointer_register());
 }
 
 void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
@@ -2415,7 +2421,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   // if we don't know anything, just go through the generic arraycopy
-  if (default_type == nullptr // || basic_type == T_OBJECT
+  if (default_type == nullptr || !default_type->is_loaded() // || basic_type == T_OBJECT
       ) {
     Label done;
     assert(src == r1 && src_pos == r2, "mismatch in calling convention");

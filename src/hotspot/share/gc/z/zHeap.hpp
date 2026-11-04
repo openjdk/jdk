@@ -73,15 +73,19 @@ public:
   void out_of_memory() const;
 
   // Heap metrics
-  size_t min_capacity() const;
-  size_t max_capacity() const;
-  size_t soft_max_capacity() const;
+  size_t static_min_capacity() const;
+  size_t static_max_capacity() const;
+  size_t dynamic_max_capacity() const;
+  size_t current_max_capacity() const;
+  size_t heuristic_max_capacity() const;
   size_t capacity() const;
   size_t used() const;
   size_t used_generation(ZGenerationId id) const;
   size_t used_young() const;
   size_t used_old() const;
   size_t unused() const;
+  void adapt_heuristic_max_capacity(ZGenerationId generation);
+  void adjust_capacity(size_t used_soon);
 
   size_t tlab_capacity() const;
   size_t tlab_used() const;

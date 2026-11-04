@@ -782,7 +782,7 @@ void PhaseIdealLoop::add_parse_predicates(IdealLoopTree* outer_ilt, LoopNode* in
 //
 // The same logic is used to transform an int counted loop that contains long range checks into a loop nest of 2 int
 // loops with long range checks transformed to int range checks in the inner loop.
-bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
+bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List<Node>& old_new) {
   Node* x = loop->_head;
   // Only for inner loops
   if (loop->_child != nullptr || !x->is_BaseCountedLoop() || x->as_Loop()->is_loop_nest_outer_loop()) {
@@ -847,7 +847,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
   assert(back_control->Opcode() == Op_IfTrue, "wrong projection for back edge");
 
-  Node_List range_checks;
+  Node_List<IfProjNode> range_checks;
   iters_limit = extract_long_range_checks(loop, stride_con, iters_limit, phi, range_checks);
 
   if (bt == T_INT) {
@@ -1170,7 +1170,7 @@ Node* PhaseIdealLoop::new_assertion_predicate_opaque_init(Node* entry_control, N
 // - LongCountedLoop: Create LoopNode but keep the loop limit type with a CastLL node to avoid that we later try to
 //                    create a Loop Limit Check when turning the LoopNode into a CountedLoopNode.
 // - CountedLoop: Can be reused.
-bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List &range_checks,
+bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List<IfProjNode>& range_checks,
                                                  const uint iters_limit) {
   if (!ShortRunningLongLoop) {
     return false;
@@ -1362,7 +1362,7 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
 // - we have the proper form "scale*iv + offset <u R" of a range check
 // The returned reduced iteration count is used as the limit of the inner iv in PhaseIdealLoop::create_loop_nest().
 int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint stride_con, int iters_limit, PhiNode* phi,
-                                              Node_List& range_checks) {
+                                              Node_List<IfProjNode>& range_checks) {
   const jlong min_iters = 2;
   jlong reduced_iters_limit = iters_limit;
   const jlong original_iters_limit = iters_limit;
@@ -1382,7 +1382,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint st
           assert(scale == (jint)scale, "scale should be an int");
           // Ensure: reduced_iters_limit * ABS(scale) <= original_iters_limit < max_jint
           reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
-          range_checks.push(c);
+          range_checks.push(if_proj);
         }
       }
     }
@@ -2441,7 +2441,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint st
 //     (LHS < 0) == (RHS < 0) == false
 //
 // We proved that the transformation is valid under the stated pre-conditions.
-void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List &range_checks, Node* outer_phi,
+void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List<IfProjNode>& range_checks, Node* outer_phi,
                                                  Node* inner_iters_actual_int, Node* inner_phi,
                                                  Node* iv_add, LoopNode* inner_head) {
   Node* long_zero = longcon(0);
@@ -2450,7 +2450,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
   Node* int_stride = intcon(checked_cast<int>(stride_con));
 
   for (uint i = 0; i < range_checks.size(); i++) {
-    ProjNode* proj = range_checks.at(i)->as_Proj();
+    IfProjNode* proj = range_checks.at(i);
     RangeCheckNode* rc = proj->in(0)->as_RangeCheck();
     jlong scale = 0;
     Node* offset = nullptr;
@@ -2678,7 +2678,7 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* head, B
   Node* back_control = loop_exit_control(loop);
   assert(back_control != nullptr, "no back control");
 
-  LoopExitTest exit_test(back_control, loop, this);
+  LoopExitTest exit_test(back_control, loop);
   exit_test.build();
   assert(exit_test.is_valid_with_bt(bt), "no exit test");
 
@@ -2940,8 +2940,8 @@ bool CountedLoopConverter::stress_long_counted_loop() {
   assert(should_stress_long_counted_loop(), "stress condition not satisfied");
 
   PhaseIterGVN* igvn = &_phase->igvn();
-  Unique_Node_List iv_nodes;
-  Node_List old_new;
+  Unique_Node_List<Node> iv_nodes;
+  Node_List<Node> old_new;
   iv_nodes.push(_structure.exit_test().cmp());
   bool failed = false;
 
@@ -3560,7 +3560,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
     if (_phase->is_deleteable_safept(backedge_sfpt)) {
       _phase->replace_node_and_forward_ctrl(backedge_sfpt, back_control);
       if (_loop->_safepts != nullptr) {
-        _loop->_safepts->yank(backedge_sfpt);
+        _loop->_safepts->yank(backedge_sfpt->as_SafePoint());
       }
       _loop->_tail = back_control;
     }
@@ -4574,10 +4574,10 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
 
   IfTrueNode* cle_tail = inner_cle->true_proj();
   ResourceMark rm;
-  Node_List old_new;
+  Node_List<Node> old_new;
   if (cle_tail->outcnt() > 1) {
     // Look for nodes on backedge of inner loop and clone them
-    Unique_Node_List backedge_nodes;
+    Unique_Node_List<Node> backedge_nodes;
     for (DUIterator_Fast imax, i = cle_tail->fast_outs(imax); i < imax; i++) {
       Node* u = cle_tail->fast_out(i);
       if (u != inner_cl) {
@@ -4723,7 +4723,7 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
   igvn->replace_input_of(this, LoopBackControl, igvn->C->top());
   inner_cl->clear_strip_mined();
   if (iloop != nullptr) {
-    Unique_Node_List wq;
+    Unique_Node_List<Node> wq;
     wq.push(safepoint);
 
     IdealLoopTree* outer_loop_ilt = iloop->get_loop(this);
@@ -5352,7 +5352,7 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
 //------------------------------allpaths_check_safepts----------------------------
 // Allpaths backwards scan. Starting at the head, traversing all backedges, and the body. Terminating each path at first
 // safepoint encountered.  Helper for check_safepts.
-void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack) {
+void IdealLoopTree::allpaths_check_safepts(VectorSet& visited, Node_List<Node>& stack) {
   assert(stack.size() == 0, "empty stack");
   stack.push(_head);
   visited.clear();
@@ -5367,9 +5367,11 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
       // to avoid this additional check.
     } else if (n->Opcode() == Op_SafePoint) {
       if (_phase->get_loop(n) != this) {
-        if (_required_safept == nullptr) _required_safept = new Node_List();
+        if (_required_safept == nullptr) {
+          _required_safept = new Node_List<const SafePointNode>();
+        }
         // save the first we run into on that path: closest to the tail if the head has a single backedge
-        _required_safept->push(n);
+        _required_safept->push(n->as_SafePoint());
       }
       // Terminate this path
     } else {
@@ -5449,7 +5451,7 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
 //     from the tail to the head, terminating a path when a call or sfpt
 //     is encountered, to find the ncsfpt's that are closest to the tail.
 //
-void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
+void IdealLoopTree::check_safepts(VectorSet& visited, Node_List<Node>& stack) {
   // Bottom up traversal
   IdealLoopTree* ch = _child;
   if (_child) _child->check_safepts(visited, stack);
@@ -5517,8 +5519,10 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
     // inner loop attempts to delete it's safepoints.
     if (_child != nullptr && !has_call && !has_local_ncsfpt) {
       if (nonlocal_ncsfpt != nullptr) {
-        if (_required_safept == nullptr) _required_safept = new Node_List();
-        _required_safept->push(nonlocal_ncsfpt);
+        if (_required_safept == nullptr) {
+          _required_safept = new Node_List<const SafePointNode>();
+        }
+        _required_safept->push(nonlocal_ncsfpt->as_SafePoint());
       } else {
         // Failed to find a suitable safept on the dom-path.  Now use
         // an all paths walk from tail to head, looking for safepoints to preserve.
@@ -5534,7 +5538,7 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
   assert(sfpt->Opcode() == Op_SafePoint, "");
   IdealLoopTree* lp = get_loop(sfpt)->_parent;
   while (lp != nullptr) {
-    Node_List* sfpts = lp->_required_safept;
+    Node_List<const SafePointNode>* sfpts = lp->_required_safept;
     if (sfpts != nullptr) {
       for (uint i = 0; i < sfpts->size(); i++) {
         if (sfpt == sfpts->at(i))
@@ -5725,7 +5729,7 @@ void IdealLoopTree::remove_safepoints(PhaseIdealLoop* phase, bool keep_one) {
   bool prune = !keep_one || keep != nullptr;
 
   // Delete other safepoints in this loop.
-  Node_List* sfpts = _safepts;
+  Node_List<SafePointNode>* sfpts = _safepts;
   if (prune && sfpts != nullptr) {
     assert(keep == nullptr || keep->Opcode() == Op_SafePoint, "not safepoint");
     for (uint i = 0; i < sfpts->size(); i++) {
@@ -5869,7 +5873,7 @@ uint IdealLoopTree::est_loop_flow_merge_sz() const {
 
 void IdealLoopTree::register_reachability_fence(ReachabilityFenceNode* rf) {
   if (_reachability_fences == nullptr) {
-    _reachability_fences = new Node_List();
+    _reachability_fences = new Node_List<ReachabilityFenceNode>();
   }
   if (!_reachability_fences->contains(rf)) {
     _reachability_fences->push(rf);
@@ -6018,12 +6022,12 @@ void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
   if (_zero_trip_guard_opaque_nodes.size() == 0) {
     return;
   }
-  Unique_Node_List useful_zero_trip_guard_opaques_nodes;
+  Unique_Node_List<const OpaqueZeroTripGuardNode> useful_zero_trip_guard_opaques_nodes;
   for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
     IdealLoopTree* lpt = iter.current();
     if (lpt->_child == nullptr && lpt->is_counted()) {
       CountedLoopNode* head = lpt->_head->as_CountedLoop();
-      Node* opaque = head->is_canonical_loop_entry();
+      OpaqueZeroTripGuardNode* opaque = head->is_canonical_loop_entry();
       if (opaque != nullptr) {
         useful_zero_trip_guard_opaques_nodes.push(opaque);
 #ifdef ASSERT
@@ -6048,7 +6052,7 @@ void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
     }
   }
   for (uint i = 0; i < _zero_trip_guard_opaque_nodes.size(); ++i) {
-    OpaqueZeroTripGuardNode* opaque = ((OpaqueZeroTripGuardNode*)_zero_trip_guard_opaque_nodes.at(i));
+    OpaqueZeroTripGuardNode* opaque = _zero_trip_guard_opaque_nodes.at(i);
     DEBUG_ONLY(CountedLoopNode* guarded_loop = opaque->guarded_loop());
     if (!useful_zero_trip_guard_opaques_nodes.member(opaque)) {
       IfNode* iff = opaque->if_node();
@@ -6076,7 +6080,7 @@ void PhaseIdealLoop::eliminate_useless_multiversion_if() {
   }
 
   ResourceMark rm;
-  Unique_Node_List useful_multiversioning_opaque_nodes;
+  Unique_Node_List<const OpaqueMultiversioningNode> useful_multiversioning_opaque_nodes;
 
   // The OpaqueMultiversioning is only used from the fast main loop in AutoVectorization, to add
   // speculative runtime-checks to the multiversion_if. Thus, a OpaqueMultiversioning is only
@@ -6104,7 +6108,7 @@ void PhaseIdealLoop::eliminate_useless_multiversion_if() {
   }
 
   for (uint i = 0; i < _multiversion_opaque_nodes.size(); i++) {
-    OpaqueMultiversioningNode* opaque = _multiversion_opaque_nodes.at(i)->as_OpaqueMultiversioning();
+    OpaqueMultiversioningNode* opaque = _multiversion_opaque_nodes.at(i);
     if (!useful_multiversioning_opaque_nodes.member(opaque)) {
       if (opaque->is_delayed_slow_loop()) {
         // We cannot hack the node directly, otherwise the slow_loop will complain that it cannot
@@ -6336,7 +6340,7 @@ void PhaseIdealLoop::build_and_optimize() {
     // Given dominators, try to find inner loops with calls that must
     // always be executed (call dominates loop tail).  These loops do
     // not need a separate safepoint.
-    Node_List cisstack;
+    Node_List<Node> cisstack;
     _ltree_root->check_safepts(visited, cisstack);
   }
 
@@ -6347,10 +6351,10 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Allocate stack with enough space to avoid frequent realloc
   int stack_size = (C->live_nodes() >> 1) + 16; // (live_nodes>>1)+16 from Java2D stats
-  Node_Stack nstack(stack_size);
+  Node_Stack<Node> nstack(stack_size);
 
   visited.clear();
-  Node_List worklist;
+  Node_List<Node> worklist;
   // Don't need C->root() on worklist since
   // it will be processed among C->top() inputs
   worklist.push(C->top());
@@ -6642,7 +6646,7 @@ void PhaseIdealLoop::verify() const {
 // Perform a BFS starting at n, through all inputs.
 // Call verify_idom and verify_node on all nodes of BFS traversal.
 bool PhaseIdealLoop::verify_idom_and_nodes(Node* root, const PhaseIdealLoop* phase_verify) const {
-  Unique_Node_List worklist;
+  Unique_Node_List<Node> worklist;
   worklist.push(root);
   bool success = true;
   for (uint i = 0; i < worklist.size(); i++) {
@@ -7330,8 +7334,8 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
         innermost->_has_call = 1; // = true
       } else if (n->Opcode() == Op_SafePoint) {
         // Record all safepoints in this loop.
-        if (innermost->_safepts == nullptr) innermost->_safepts = new Node_List();
-        innermost->_safepts->push(n);
+        if (innermost->_safepts == nullptr) innermost->_safepts = new Node_List<SafePointNode>();
+        innermost->_safepts->push(n->as_SafePoint());
       } else if (n->is_ReachabilityFence()) {
         innermost->register_reachability_fence(n->as_ReachabilityFence());
       }
@@ -7356,7 +7360,7 @@ void PhaseIdealLoop::verify_regions_in_irreducible_loops() {
   }
 
   RootNode* root = C->root();
-  Unique_Node_List worklist; // visit all nodes once
+  Unique_Node_List<Node> worklist; // visit all nodes once
   worklist.push(root);
   bool failure = false;
   for (uint i = 0; i < worklist.size(); i++) {
@@ -7416,7 +7420,7 @@ bool PhaseIdealLoop::is_in_irreducible_loop(RegionNode* region) {
 // Put Data nodes into some loop nest, by setting the _loop_or_ctrl[]->loop mapping.
 // First pass computes the earliest controlling node possible.  This is the
 // controlling input with the deepest dominating depth.
-void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, Node_Stack &nstack ) {
+void PhaseIdealLoop::build_loop_early(VectorSet& visited, Node_List<Node>& worklist, Node_Stack<Node>& nstack) {
   while (worklist.size() != 0) {
     // Use local variables nstack_top_n & nstack_top_i to cache values
     // on nstack's top.
@@ -7453,7 +7457,7 @@ void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, 
             Node *in = n->in(TypeFunc::Control);
             replace_node_and_forward_ctrl(n, in); // Pull safepoint now
             if (ilt->_safepts != nullptr) {
-              ilt->_safepts->yank(n);
+              ilt->_safepts->yank(n->as_SafePoint());
             }
             // Carry on with the recursion "as if" we are walking
             // only the control input
@@ -7633,7 +7637,7 @@ Node* PhaseIdealLoop::compute_lca_of_uses(Node* n, Node* early, bool verify) {
 // loop unswitching, and IGVN, or a combination of them) can freely change
 // the graph's shape. As a result, the graph shape outlined below cannot
 // be guaranteed anymore.
-Node* CountedLoopNode::is_canonical_loop_entry() {
+OpaqueZeroTripGuardNode* CountedLoopNode::is_canonical_loop_entry() {
   if (!is_main_loop() && !is_post_loop()) {
     return nullptr;
   }
@@ -7659,8 +7663,8 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
   if (input >= cmpzm->req() || cmpzm->in(input) == nullptr) {
     return nullptr;
   }
-  bool res = cmpzm->in(input)->Opcode() == Op_OpaqueZeroTripGuard;
 #ifdef ASSERT
+  bool res = cmpzm->in(input)->Opcode() == Op_OpaqueZeroTripGuard;
   bool found_opaque = false;
   for (uint i = 1; i < cmpzm->req(); i++) {
     Node* opnd = cmpzm->in(i);
@@ -7671,7 +7675,7 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
   }
   assert(found_opaque == res, "wrong pattern");
 #endif
-  return res ? cmpzm->in(input) : nullptr;
+  return cmpzm->in(input)->isa_OpaqueZeroTripGuard();
 }
 
 // Find pre loop end from main loop. Returns nullptr if none.
@@ -7743,7 +7747,7 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
 Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node* LCA) {
   int load_alias_idx = C->get_alias_index(n->in_adr_type());
   if (C->alias_type(load_alias_idx)->is_rewritable()) {
-    Unique_Node_List worklist;
+    Unique_Node_List<const Node> worklist;
 
     Node* mem = n->in(MemNode::Memory);
     for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
@@ -7751,7 +7755,7 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
       worklist.push(s);
     }
     for (uint i = 0; i < worklist.size() && LCA != early; i++) {
-      Node* s = worklist.at(i);
+      const Node* s = worklist.at(i);
       if (s->is_Load() || s->Opcode() == Op_SafePoint ||
           (s->is_CallStaticJava() && s->as_CallStaticJava()->uncommon_trap_request() != 0) ||
           s->is_Phi()) {
@@ -7794,7 +7798,7 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
     // For Phis only consider Region's inputs that were reached by following the memory edges
     if (LCA != early) {
       for (uint i = 0; i < worklist.size(); i++) {
-        Node* s = worklist.at(i);
+        const Node* s = worklist.at(i);
         if (s->is_Phi() && C->can_alias(s->out_adr_type(), load_alias_idx)) {
           Node* r = s->in(0);
           for (uint j = 1; j < s->req(); j++) {
@@ -7912,7 +7916,7 @@ void PhaseIdealLoop::init_dom_lca_tags() {
 //------------------------------build_loop_late--------------------------------
 // Put Data nodes into some loop nest, by setting the _loop_or_ctrl[]->loop mapping.
 // Second pass finds latest legal placement, and ideal loop placement.
-void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, Node_Stack &nstack ) {
+void PhaseIdealLoop::build_loop_late(VectorSet& visited, Node_List<Node>& worklist, Node_Stack<Node>& nstack) {
   while (worklist.size() != 0) {
     Node *n = worklist.pop();
     // Only visit once
@@ -7979,10 +7983,10 @@ void PhaseIdealLoop::verify_strip_mined_scheduling(Node *n, Node* least) {
       head->as_Loop()->outer_loop_end()->in(1)->find_int_con(-1) == 0) {
     Node* sfpt = head->as_Loop()->outer_safepoint();
     ResourceMark rm;
-    Unique_Node_List wq;
+    Unique_Node_List<const Node> wq;
     wq.push(sfpt);
     for (uint i = 0; i < wq.size(); i++) {
-      Node *m = wq.at(i);
+      const Node* m = wq.at(i);
       for (uint i = 1; i < m->req(); i++) {
         Node* nn = m->in(i);
         if (nn == n) {
@@ -8207,12 +8211,12 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   if( !chosen_loop->_child )   // Inner loop?
     chosen_loop->_body.push(n);// Collect inner loops
 
-  if (!_verify_only && n->Opcode() == Op_OpaqueZeroTripGuard) {
-    _zero_trip_guard_opaque_nodes.push(n);
+  if (!_verify_only && n->is_OpaqueZeroTripGuard()) {
+    _zero_trip_guard_opaque_nodes.push(n->as_OpaqueZeroTripGuard());
   }
 
-  if (!_verify_only && n->Opcode() == Op_OpaqueMultiversioning) {
-    _multiversion_opaque_nodes.push(n);
+  if (!_verify_only && n->is_OpaqueMultiversioning()) {
+    _multiversion_opaque_nodes.push(n->as_OpaqueMultiversioning());
   }
 }
 
@@ -8301,7 +8305,7 @@ class RealLCA {
   // Given idom chains of early and wrong LCA: Walk through idoms starting at StartNode and find the first node which
   // is different: Return the previously visited node which must be the real LCA.
   // The node lists also contain _early and _wrong_lca, respectively.
-  Node* find_real_lca(Unique_Node_List& early_with_idoms, Unique_Node_List& wrong_lca_with_idoms) {
+  Node* find_real_lca(const Unique_Node_List<Node>& early_with_idoms, const Unique_Node_List<Node>& wrong_lca_with_idoms) {
     int early_index = early_with_idoms.size() - 1;
     int wrong_lca_index = wrong_lca_with_idoms.size() - 1;
     bool found_difference = false;
@@ -8350,8 +8354,8 @@ class RealLCA {
 
   void compute_and_dump() {
     ResourceMark rm;
-    Unique_Node_List early_with_idoms;
-    Unique_Node_List wrong_lca_with_idoms;
+    Unique_Node_List<Node> early_with_idoms;
+    Unique_Node_List<Node>  wrong_lca_with_idoms;
     early_with_idoms.push(_early);
     wrong_lca_with_idoms.push(_wrong_lca);
     _phase->get_idoms(_early, 10000, early_with_idoms);
@@ -8375,8 +8379,8 @@ void PhaseIdealLoop::dump_idoms(Node* early, Node* wrong_lca) {
 //------------------------------dump-------------------------------------------
 void PhaseIdealLoop::dump() const {
   ResourceMark rm;
-  Node_Stack stack(C->live_nodes() >> 2);
-  Node_List rpo_list;
+  Node_Stack<Node> stack(C->live_nodes() >> 2);
+  Node_List<Node> rpo_list;
   VectorSet visited;
   visited.set(C->top()->_idx);
   rpo(C->root(), stack, visited, rpo_list);
@@ -8384,7 +8388,7 @@ void PhaseIdealLoop::dump() const {
   dump(_ltree_root, rpo_list.size(), rpo_list);
 }
 
-void PhaseIdealLoop::dump(IdealLoopTree* loop, uint idx, Node_List &rpo_list) const {
+void PhaseIdealLoop::dump(IdealLoopTree* loop, uint idx, Node_List<Node>& rpo_list) const {
   loop->dump_head();
 
   // Now scan for CFG nodes in the same loop
@@ -8445,13 +8449,13 @@ void PhaseIdealLoop::dump_idom(Node* n, const uint count) const {
     tty->print_cr("No idom for data nodes");
   } else {
     ResourceMark rm;
-    Unique_Node_List idoms;
+    Unique_Node_List<Node> idoms;
     get_idoms(n, count, idoms);
     dump_idoms_in_reverse(n, idoms);
   }
 }
 
-void PhaseIdealLoop::get_idoms(Node* n, const uint count, Unique_Node_List& idoms) const {
+void PhaseIdealLoop::get_idoms(Node* n, const uint count, Unique_Node_List<Node>& idoms) const {
   Node* next = n;
   for (uint i = 0; !next->is_Start() && i < count; i++) {
     next = idom(next);
@@ -8460,7 +8464,7 @@ void PhaseIdealLoop::get_idoms(Node* n, const uint count, Unique_Node_List& idom
   }
 }
 
-void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List& idom_list) const {
+void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List<Node>& idom_list) const {
   Node* next;
   uint padding = 3;
   uint node_index_padding_width = (C->unique() == 0 ? 0 : static_cast<int>(log10(static_cast<double>(C->unique())))) + 1;
@@ -8477,7 +8481,7 @@ void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List& idom_
 
 // Collect a R-P-O for the whole CFG.
 // Result list is in post-order (scan backwards for RPO)
-void PhaseIdealLoop::rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const {
+void PhaseIdealLoop::rpo(Node* start, Node_Stack<Node>& stk, VectorSet& visited, Node_List<Node>& rpo_list) {
   stk.push(start, 0);
   visited.set(start->_idx);
 

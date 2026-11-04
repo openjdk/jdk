@@ -1188,7 +1188,7 @@ static bool is_commutative_vector_operation(int opcode) {
   }
 }
 
-static bool is_associative_and_commutative_vector_operation(int opcode) {
+bool VectorNode::is_associative_and_commutative_vector_operation(int opcode) {
   switch (opcode) {
     case Op_AddVB:
     case Op_AddVS:
@@ -2427,7 +2427,7 @@ Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (n != nullptr) {
     return n;
   }
-  return TypeNode::Ideal(phase, can_reshape);
+  return nullptr;
 }
 
 Node* VectorMaskCastNode::Identity(PhaseGVN* phase) {

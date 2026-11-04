@@ -37,6 +37,7 @@ private:
   static bool is_os_supported();
 
 public:
+  virtual void set_heap_size();
   virtual void initialize_alignments();
   virtual void initialize_heap_flags_and_sizes();
   virtual void initialize();

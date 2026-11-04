@@ -165,8 +165,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     srli(tmp2_hash, tmp2_hash, markWord::hash_shift);
 
     // Get the table and calculate the bucket's address.
-    la(tmp3_t, ExternalAddress(ObjectMonitorTable::current_table_address()));
-    ld(tmp3_t, Address(tmp3_t));
+    ld(tmp3_t, ExternalAddress(ObjectMonitorTable::current_table_address()));
     ld(tmp1, Address(tmp3_t, ObjectMonitorTable::table_capacity_mask_offset()));
     andr(tmp2_hash, tmp2_hash, tmp1);
     ld(tmp3_t, Address(tmp3_t, ObjectMonitorTable::table_buckets_offset()));

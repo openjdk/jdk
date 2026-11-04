@@ -460,7 +460,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
   C2FastUnlockStub* stub = nullptr;
 
   if (!Compile::current()->output()->in_scratch_emit_size()) {
-    stub = new (Compile::current()->comp_arena()) C2FastUnlockStub(obj, mark, reg_rax, thread);
+    stub = new (Compile::current()->comp_arena()) C2FastUnlockStub(obj, reg_rax, thread);
     Compile::current()->output()->add_stub(stub);
   }
 

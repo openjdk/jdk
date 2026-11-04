@@ -780,11 +780,10 @@ void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
 }
 
 ShenandoahScanRememberedTask::ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
-                                                           ShenandoahObjToScanQueueSet* old_queue_set,
                                                            ShenandoahReferenceProcessor* rp,
                                                            ShenandoahRegionChunkIterator* work_list, bool is_concurrent) :
   WorkerTask("Scan Remembered Set"),
-  _queue_set(queue_set), _old_queue_set(old_queue_set), _rp(rp), _work_list(work_list), _is_concurrent(is_concurrent) {
+  _queue_set(queue_set), _rp(rp), _work_list(work_list), _is_concurrent(is_concurrent) {
   bool old_bitmap_stable = ShenandoahHeap::heap()->old_generation()->is_mark_complete();
   log_debug(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
 }
@@ -806,8 +805,7 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
   ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::init_scan_rset, ShenandoahPhaseTimings::Work, worker_id);
 
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahObjToScanQueue* old = _old_queue_set == nullptr ? nullptr : _old_queue_set->queue(worker_id);
-  ShenandoahRedirtyCardsMarkClosure cl(q, _rp, old);
+  ShenandoahRedirtyCardsMarkClosure cl(q, _rp);
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
 

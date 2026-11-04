@@ -205,7 +205,7 @@ class KlassInfoClosure;
 
 class HeapInspection : public StackObj {
  public:
-  void heap_inspection(outputStream* st, WorkerThreads* workers) NOT_SERVICES_RETURN;
+  void heap_inspection(outputStream* st, uint num_workers) NOT_SERVICES_RETURN;
   uintx populate_table(KlassInfoTable* cit, BoolObjectClosure* filter, WorkerThreads* workers) NOT_SERVICES_RETURN_(0);
   static void find_instances_at_safepoint(Klass* k, GrowableArray<oop>* result) NOT_SERVICES_RETURN;
 };

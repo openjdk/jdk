@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8335770 8375740
+ * @bug 8335770 8375740 8394667
  * @summary improve javap code coverage for value classes
  * @enablePreview
  * @library /tools/lib
@@ -55,11 +55,13 @@ public class ValueClassesJavapTest extends TestRunner {
     private static final List<String> expectedValueClassOutput = List.of(
             "Compiled from \"ValueClassesJavapTest.java\"",
             "final value class ValueClassesJavapTest$ValueClass {",
+            "  final ValueClassesJavapTest this$0;",
             "  ValueClassesJavapTest$ValueClass(ValueClassesJavapTest);",
             "}");
     private static final List<String> expectedAbstractValueClassOutput = List.of(
             "Compiled from \"ValueClassesJavapTest.java\"",
             "abstract value class ValueClassesJavapTest$AbstractValueClass {",
+            "  final ValueClassesJavapTest this$0;",
             "  ValueClassesJavapTest$AbstractValueClass(ValueClassesJavapTest);",
             "}");
     private static final List<String> expectedLoadableDescriptorOutput = List.of(

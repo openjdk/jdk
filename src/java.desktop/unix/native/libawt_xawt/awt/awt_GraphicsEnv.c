@@ -1639,18 +1639,14 @@ X11GD_CreateDisplayMode(JNIEnv *env, jint width, jint height,
     jint validRefreshRate = refreshRate;
 
     displayModeClass = (*env)->FindClass(env, "java/awt/DisplayMode");
-    CHECK_NULL_RETURN(displayModeClass, NULL);
-    if (JNU_IsNull(env, displayModeClass)) {
-        JNU_ThrowInternalError(env,
-                               "Could not get display mode class");
+    if (displayModeClass == NULL) {
+        JNU_ThrowInternalError(env, "Could not get display mode class");
         return NULL;
     }
 
     cid = (*env)->GetMethodID(env, displayModeClass, "<init>", "(IIII)V");
-    CHECK_NULL_RETURN(cid, NULL);
     if (cid == NULL) {
-        JNU_ThrowInternalError(env,
-                               "Could not get display mode constructor");
+        JNU_ThrowInternalError(env, "Could not get display mode constructor");
         return NULL;
     }
 
@@ -1681,7 +1677,6 @@ X11GD_AddDisplayMode(JNIEnv *env, jobject arrayList,
         }
         mid = (*env)->GetMethodID(env, arrayListClass, "add",
                                   "(Ljava/lang/Object;)Z");
-        CHECK_NULL(mid);
         if (mid == NULL) {
             JNU_ThrowInternalError(env,
                 "Could not get method java.util.ArrayList.add()");
