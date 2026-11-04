@@ -1514,7 +1514,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 
 #if INCLUDE_CDS
   VectorSet callee_visited;
-  if (C->env()->is_aot_compile() && ValueTypePassFieldsAsArgs) {
+  if (C->is_aot_compile() && ValueTypePassFieldsAsArgs) {
     _java_callees = new(C->comp_arena()) GrowableArray<ciMethod*>(C->comp_arena(), 8, 0, nullptr);
   }
 #endif
@@ -1610,7 +1610,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
         // Record callees for AOT code when Valhalla is enabled
         // to cache their fingerprint which are verified when
         // AOT code is loaded in production run.
-        if (C->env()->is_aot_compile() && ValueTypePassFieldsAsArgs &&
+        if (C->is_aot_compile() && ValueTypePassFieldsAsArgs &&
             mach->is_MachCallJava() && mach->as_MachCallJava()->_method != nullptr) {
           ciMethod* m = mach->as_MachCallJava()->_method;
           if (!callee_visited.test_set(m->ident())) {
