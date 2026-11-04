@@ -25,6 +25,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.Utils;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -55,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          when there are already 200 idle connections in the server's pool.
  *
  * @library /test/lib
+ * @modules jdk.httpserver/sun.net.httpserver:+open
  *
  * @run junit/othervm
  *      ${test.main.class}
@@ -68,6 +70,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          closed after use.
  *
  * @library /test/lib
+ * @modules jdk.httpserver/sun.net.httpserver:+open
  *
  * @run junit/othervm
  *      -Dsun.net.httpserver.maxIdleConnections=-1
@@ -81,6 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          results in all connections to be closed after use.
  *
  * @library /test/lib
+ * @modules jdk.httpserver/sun.net.httpserver:+open
  *
  * @run junit/othervm
  *      -Dsun.net.httpserver.maxIdleConnections=0
@@ -96,6 +100,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          reached.
  *
  * @library /test/lib
+ * @modules jdk.httpserver/sun.net.httpserver:+open
  *
  * @run junit/othervm
  *      -Dsun.net.httpserver.maxIdleConnections=3
@@ -127,6 +132,17 @@ class MaxIdleConnectionsPropertyTest {
 
         // Create the HTTP server
         var server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+
+        // Verify the `ServerImpl.MAX_IDLE_CONNECTIONS` constant
+        assertServerField(maxIdleConnectionCount);
+        Assumptions.assumeTrue(
+                maxIdleConnectionCount < 10,
+                "Effective idle connection limit (%s) might be too high for certain platforms to test using real sockets."
+                        .formatted(maxIdleConnectionCount) +
+                " Field check should suffice." +
+                " Skipping tests using sockets.");
+
+        // Configure & start the HTTP server
         server.createContext("/", new NoContentReturningHandler());
         server.start();
 
@@ -173,6 +189,12 @@ class MaxIdleConnectionsPropertyTest {
             server.stop(0);
         }
 
+    }
+
+    private static void assertServerField(int maxIdleConnectionCount) throws Exception {
+        var field = Class.forName("sun.net.httpserver.ServerImpl").getDeclaredField("MAX_IDLE_CONNECTIONS");
+        field.setAccessible(true);
+        assertEquals(maxIdleConnectionCount, field.getInt(null));
     }
 
     private static final class Requestor implements AutoCloseable {
