@@ -1185,6 +1185,15 @@ public:
   }
 };
 
+class ShenandoahRetireTLABClosure : public ThreadClosure {
+public:
+  void do_thread(Thread* thread) override {
+    assert(UseTLAB, "TLABs should be enabled");
+    assert(thread->is_Java_thread(), "Only Java threads have TLABs");
+    thread->retire_tlab();
+  }
+};
+
 class ShenandoahGCStatePropagatorHandshakeClosure : public HandshakeClosure {
 public:
   explicit ShenandoahGCStatePropagatorHandshakeClosure(char gc_state) :
@@ -1202,16 +1211,19 @@ class ShenandoahPrepareForUpdateRefsHandshakeClosure : public HandshakeClosure {
 public:
   explicit ShenandoahPrepareForUpdateRefsHandshakeClosure(char gc_state) :
     HandshakeClosure("Shenandoah Prepare for Update Refs"),
-    _retire(ResizeTLAB), _propagator(gc_state) {}
+    _retire_gclab(ResizeTLAB), _propagator(gc_state) {}
 
   void do_thread(Thread* thread) override {
     _propagator.do_thread(thread);
     if (ShenandoahThreadLocalData::gclab(thread) != nullptr) {
-      _retire.do_thread(thread);
+      _retire_gclab.do_thread(thread);
+    } else if (thread->is_Java_thread() && UseTLAB) {
+      _retire_tlab.do_thread(thread);
     }
   }
 private:
-  ShenandoahRetireGCLABClosure _retire;
+  ShenandoahRetireGCLABClosure _retire_gclab;
+  ShenandoahRetireTLABClosure _retire_tlab;
   ShenandoahGCStatePropagatorHandshakeClosure _propagator;
 };
 
@@ -1306,13 +1318,13 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
     set_gc_state_concurrent(UPDATE_REFS, true);
   }
 
-  // This will propagate the gc state and retire gclabs and plabs for threads that require it.
+  // This will propagate the gc state and retire labs for threads that require it.
   ShenandoahPrepareForUpdateRefsHandshakeClosure prepare_for_update_refs(_gc_state.raw_value());
 
   // The handshake won't touch worker threads (or control thread, or VM thread), so do those separately.
   Threads::non_java_threads_do(&prepare_for_update_refs);
 
-  // Now retire gclabs and plabs and propagate gc_state for mutator threads
+  // Now retire labs and propagate gc_state for Java threads
   Handshake::execute(&prepare_for_update_refs);
 }
 
@@ -1580,7 +1592,6 @@ void ShenandoahHeap::labs_make_parsable() {
     if (ZeroTLAB) {
       t->retire_tlab();
     }
-    cl.do_thread(t);
   }
 
   workers()->threads_do(&cl);
@@ -1603,9 +1614,6 @@ void ShenandoahHeap::tlabs_retire(bool resize) {
 
 #ifdef ASSERT
   ShenandoahCheckCleanGCLABClosure cl;
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    cl.do_thread(t);
-  }
   workers()->threads_do(&cl);
 #endif
 }
@@ -1615,10 +1623,6 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
   assert(!resize || ResizeTLAB, "Only call for resize when ResizeTLAB is enabled");
 
   ShenandoahRetireGCLABClosure cl(resize);
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    cl.do_thread(t);
-  }
-
   workers()->threads_do(&cl);
 }
 

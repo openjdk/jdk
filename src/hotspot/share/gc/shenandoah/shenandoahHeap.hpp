@@ -730,6 +730,7 @@ public:
 //
 protected:
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
+  inline HeapWord* allocate_from_tlab(Thread* thread, size_t size);
 
 private:
   HeapWord* allocate_memory_work(ShenandoahAllocRequest& request, bool& in_new_region);

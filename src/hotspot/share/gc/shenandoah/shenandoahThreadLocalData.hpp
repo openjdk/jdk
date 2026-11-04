@@ -59,7 +59,7 @@ private:
   bool _has_evac_failures;
 
   // Thread-local allocation buffer only used in generational mode.
-  // Used both by mutator threads and by GC worker threads
+  // Used by GC worker threads
   // for evacuations within the old generation and
   // for promotions from the young generation into the old generation.
   ShenandoahPLAB* _shenandoah_plab;

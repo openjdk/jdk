@@ -243,6 +243,22 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
   return allocate_from_gclab_slow(thread, size);
 }
 
+inline HeapWord* ShenandoahHeap::allocate_from_tlab(Thread* thread, size_t size) {
+  assert(UseTLAB, "TLABs should be enabled");
+
+  if (!thread->is_Java_thread()) {
+    return nullptr;
+  }
+
+  HeapWord* obj = thread->tlab().allocate(size);
+  if (obj != nullptr) {
+    ShenandoahHeapRegion* r = heap_region_containing(obj);
+    HeapWord* top = thread->tlab().top();
+    r->set_update_watermark_for_tlab(top);
+  }
+  return obj;
+}
+
 inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
   if (!mode()->is_generational()) {
     // everything is the same single generation

@@ -233,12 +233,12 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
 // to OLD_GENERATION.
 template<ShenandoahAffiliation FROM_GENERATION, ShenandoahAffiliation TO_GENERATION>
 oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region) {
-  bool alloc_from_lab = true;
-  bool has_plab = false;
+  bool alloc_from_gclab = true;
   uint from_region_age = from_region->age();
   HeapWord* copy = nullptr;
   size_t size = ShenandoahForwarding::size(p);
   constexpr bool is_promotion = (TO_GENERATION == OLD_GENERATION) && (FROM_GENERATION == YOUNG_GENERATION);
+  bool set_max_age = false;
 
 #ifdef ASSERT
   if (ShenandoahOOMDuringEvacALot &&
@@ -250,6 +250,12 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       switch (TO_GENERATION) {
         case YOUNG_GENERATION: {
           copy = allocate_from_gclab(thread, size);
+          if (copy == nullptr) {
+            copy = allocate_from_tlab(thread, size);
+            if (copy != nullptr) {
+              alloc_from_gclab = false;
+            }
+          }
           if ((copy == nullptr) && (size < ShenandoahThreadLocalData::gclab_size(thread))) {
             // GCLAB allocation failed because we are bumping up against the limit on young evacuation reserve.  Try resetting
             // the desired GCLAB size and retry GCLAB allocation to avoid cascading of shared memory allocations.
@@ -262,7 +268,6 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
         case OLD_GENERATION: {
           ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
           if (shenandoah_plab != nullptr) {
-            has_plab = true;
             copy = shenandoah_plab->allocate(size, is_promotion);
             if (copy == nullptr && size < shenandoah_plab->desired_size() && shenandoah_plab->retries_enabled()) {
               // PLAB allocation failed because we are bumping up against the limit on old evacuation reserve or because
@@ -280,6 +285,17 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
                 }
               }
             }
+          } else {
+            if (copy == nullptr) {
+              if (is_promotion && size <= PLAB::min_size()) {
+                // Defer the promotion to the next evacuation cycle, so GC workers can use their PLAB.
+                copy = allocate_from_tlab(thread, size);
+                set_max_age = true;
+                if (copy != nullptr) {
+                  alloc_from_gclab = false;
+                }
+              }
+            }
           }
           break;
         }
@@ -292,15 +308,15 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
 
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
-      if (!is_promotion || !has_plab || (size > PLAB::min_size())) {
+      if (!is_promotion || !UseTLAB || (size > PLAB::min_size())) {
         ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, TO_GENERATION, is_promotion);
         copy = allocate_memory(req);
-        alloc_from_lab = false;
+        alloc_from_gclab = false;
       }
       // else, we leave copy equal to nullptr, signaling a promotion failure below if appropriate.
       // We choose not to promote objects smaller than size_threshold by way of shared allocations as this is too
-      // costly.  Instead, we'll simply "evacuate" to young-gen memory (using a GCLAB) and will promote in a future
-      // evacuation pass.  This condition is denoted by: is_promotion && has_plab && (size <= size_threshhold).
+      // costly. Instead, we'll simply "evacuate" to young-gen memory (using a TLAB or GCLAB) and will promote in a future
+      // evacuation pass. This condition is denoted by: is_promotion && UseTLAB && (size <= size_threshhold).
     }
 #ifdef ASSERT
   }
@@ -352,7 +368,9 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
 
     // Update the age of the evacuated object
-    if (TO_GENERATION == YOUNG_GENERATION) {
+    if (set_max_age && TO_GENERATION == OLD_GENERATION) {
+      ShenandoahForwarding::increase_age(copy_val, ShenandoahGenerationalMaxTenuringAge);
+    } else if (TO_GENERATION == YOUNG_GENERATION) {
       ShenandoahForwarding::increase_age(copy_val, from_region_age + 1);
     }
   }
@@ -371,10 +389,11 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     // But if it happens to contain references to evacuated regions, those references would
     // not get updated for this stale copy during this cycle, and we will crash while scanning
     // it the next cycle.
-    if (alloc_from_lab) {
+    if (alloc_from_gclab) {
       // For LAB allocations, it is enough to rollback the allocation ptr. Either the next
       // object will overwrite this stale copy, or the filler object on LAB retirement will
       // do this.
+      // Can consider to undo allocation instead of creating a filler object for TLAB.
       switch (TO_GENERATION) {
         case YOUNG_GENERATION: {
           ShenandoahThreadLocalData::gclab(thread)->undo_allocation(copy, size);
