@@ -33,6 +33,7 @@ import jdk.test.lib.Asserts;
  * @library /test/lib
  * @enablePreview
  * @compile TestValueClassConstantDynamicHelper.jasm
+ * @run main ${test.main.class}
  * @run main/othervm -XX:-TieredCompilation -Xbatch
  *                   -XX:CompileCommand=compileonly,*::test
  *                   ${test.main.class}
