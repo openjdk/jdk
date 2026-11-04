@@ -55,7 +55,11 @@ static bool create_timer_for_thread(JavaThread* thread, timer_t& timerid) {
   sev.sigev_notify = SIGEV_THREAD_ID;
   sev.sigev_signo = CPUTIME_SIGNAL;
   sev.sigev_value.sival_ptr = nullptr;
-  ((int*)&sev.sigev_notify)[1] = thread->osthread()->thread_id();
+#ifdef MUSL_LIBC
+  sev.sigev_notify_thread_id = thread->osthread()->thread_id();
+#else
+  sev._sigev_un._tid = thread->osthread()->thread_id();
+#endif // MUSL_LIBC
 
   clockid_t clock;
   int err = pthread_getcpuclockid(thread->osthread()->pthread_id(), &clock);
@@ -262,7 +266,7 @@ void JfrCPUSamplerState::resize_if_needed() {
     return;
   }
   u4 capacity = _capacity;
-  if (capacity < CPU_TIME_QUEUE_MAX_CAPACITY) {
+  if (capacity < CPU_TIME_QUEUE_MAX_CAPACITY && capacity != 0) {
     float ratio = (float)lost_samples_due_to_queue_full / (float)capacity;
     int factor = 1;
     if (ratio > 8) { // idea is to quickly scale the queue in the worst case
@@ -419,7 +423,7 @@ void JfrCPUSamplerThread::on_javathread_terminate(JavaThread* thread) {
   css.deallocate();
   css.release_lock();
 
-  u4 lost_samples = css.lost_samples();
+  s4 lost_samples = css.lost_samples();
   if (lost_samples > 0 && is_enrolled()) {
     // Report lost samples only if CPU-time profiler is still running
     JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), lost_samples);

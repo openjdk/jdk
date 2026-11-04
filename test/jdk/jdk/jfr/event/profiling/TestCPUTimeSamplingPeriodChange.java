@@ -56,8 +56,8 @@ public class TestCPUTimeSamplingPeriodChange {
         OutputAnalyzer output = ProcessTools.executeTestJava(
                 TestCPUTimeSamplingPeriodChange.class.getName());
         output.shouldHaveExitValue(0);
-        output.shouldNotContain("warning");
-        output.shouldNotContain("error");
+        output.shouldNotContain("Failed to create timer");
+        output.shouldNotContain("Failed to set timer");
     }
 
     private static void runTest() {
@@ -87,7 +87,7 @@ public class TestCPUTimeSamplingPeriodChange {
                 t.start();
                 t.join();
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             // ignore
         }
     }

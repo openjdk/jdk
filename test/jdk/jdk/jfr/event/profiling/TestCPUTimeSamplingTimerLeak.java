@@ -23,6 +23,7 @@
 
 package jdk.jfr.event.profiling;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.SynchronousQueue;
@@ -53,6 +54,8 @@ public class TestCPUTimeSamplingTimerLeak {
             throw new SkippedException(PROC_TIMERS + " is not available on this system");
         }
 
+        long initialTimerCount = getTimerCount();
+
         var pool = new ThreadPoolExecutor(IDLE_THREADS, IDLE_THREADS,
                 10, TimeUnit.SECONDS, new SynchronousQueue<>());
 
@@ -67,15 +70,25 @@ public class TestCPUTimeSamplingTimerLeak {
             pool.prestartAllCoreThreads();
 
             r.enable(CPUTimeSample).with("throttle", "1ms");
+            long activeTimerCount = getTimerCount();
+            Asserts.assertGreaterThan(activeTimerCount, initialTimerCount,
+                    "Timers must have been created");
             r.disable(CPUTimeSample);
 
             // No stray timers should remain after the second iteration ends
-            String timers = Files.readString(PROC_TIMERS);
-            Asserts.assertEquals("", timers, "Unexpected leftover timers");
+            long finalTimerCount = getTimerCount();
+            Asserts.assertLessThanOrEqual(finalTimerCount, initialTimerCount,
+                    "Unexpected leftover timers");
 
             r.stop();
         } finally {
             pool.shutdown();
+        }
+    }
+
+    private static long getTimerCount() throws IOException {
+        try (var stream = Files.lines(PROC_TIMERS)) {
+            return stream.filter(s -> s.startsWith("ID:")).count();
         }
     }
 }
