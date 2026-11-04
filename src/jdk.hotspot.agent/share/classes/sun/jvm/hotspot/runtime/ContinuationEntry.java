@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2026, Alibaba Group Holding Limited. All Rights Reserved.
  * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
