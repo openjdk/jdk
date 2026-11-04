@@ -1956,7 +1956,8 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
   if (orig != nullptr)  C->copy_node_notes_to(n, orig);
   return n;
 }
-Node* PhaseIterGVN::find_node_or_register_new_node_with_optimizer(Node* n, Node* orig) {
+
+Node* PhaseIterGVN::find_node_or_register_new_node_with_optimizer(Node* n) {
   Node* existing = hash_find_insert(n);
   if (existing != nullptr) {
     n->destruct(this);
