@@ -40,6 +40,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/vectornode.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -2785,6 +2786,42 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->is_MinMax();
     });
   }
+
+  // fold_subI_no_underflow_pattern parses nested no-overflow
+  // addition and subtraction with constants. Thus, we need
+  // notification for:
+  //        u4           u3      u2           u1
+  // n -> AddL -> MaxL/MinL -> AddL -> MaxL/MinL   (4-hop - dropped)
+  //         n -> MaxL/MinL -> AddL -> MaxL/MinL   (3-hop)
+  //                      n -> AddL -> MaxL/MinL   (2-hop)
+  //
+  // However, the 4-hop notification could be a bit expensive,
+  // and so far no reproducer has been found. There probably
+  // cannot be any: one would have to update either side of
+  // the u4 AddL, without updating the type of AddL itself
+  // (that would cause a 3-hop notification). But for the
+  // optimization to be unlocked, the types of the inputs
+  // to the AddL would have to change, which would trigger
+  // a type update for AddL.
+  //
+  // 2-hop notification for fold_subI_no_underflow_pattern
+  if (use->Opcode() == Op_AddL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u1) {
+      return u1->Opcode() == Op_MaxL || u1->Opcode() == Op_MinL;
+    });
+  }
+  // 3-hop notification for fold_subI_no_underflow_pattern
+  if (use->Opcode() == Op_MaxL || use->Opcode() == Op_MinL) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* u2 = use->fast_out(i);
+      if (u2->Opcode() == Op_AddL) {
+        add_users_to_worklist_if(worklist, u2, [](Node* u1) {
+          return u1->Opcode() == Op_MaxL || u1->Opcode() == Op_MinL;
+        });
+      }
+    }
+  }
+
   // Check for A | (B | C) and (B | C) | A where A == B or A == C.
   if (use_op == Op_OrI || use_op == Op_OrL) {
     add_users_to_worklist_if(worklist, use, [&](Node* u) { return u->Opcode() == use->Opcode(); });
@@ -2914,6 +2951,20 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_LShiftCntV || use_op == Op_RShiftCntV) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->is_ShiftV();
+    });
+  }
+
+  // VectorNode::reassociate_vector_operation matches a two-hop pattern:
+  // VectorOp (Replicate INP1) (VectorOp (Replicate INP2) INP3)
+  //   => VectorOp (VectorOp (Replicate INP1) (Replicate INP2)) INP3
+  // The outer VectorOp only becomes idealizable once an input of the inner
+  // VectorOp is a Replicate, and the change of that input notifies the inner
+  // VectorOp alone.
+  if (VectorNode::is_associative_and_commutative_vector_operation(use_op) &&
+      !use->as_Vector()->is_predicated_vector()) {
+    add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
+      return u->Opcode() == use_op && !u->as_Vector()->is_predicated_vector() &&
+             (u->in(1)->Opcode() == Op_Replicate || u->in(2)->Opcode() == Op_Replicate);
     });
   }
 

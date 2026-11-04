@@ -1173,7 +1173,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   // in case of patching (i.e., object class is not yet loaded), we need to reexecute the instruction
   // and therefore provide the state before the parameters have been consumed
   CodeEmitInfo* patching_info = nullptr;
-  if (!x->klass()->is_loaded() || PatchALot) {
+  ciKlass* obj = ciObjArrayKlass::make(x->klass());
+  if (!x->klass()->is_loaded() || !obj->is_loaded() || PatchALot) {
     patching_info =  state_for(x, x->state_before());
   }
 
@@ -1189,15 +1190,13 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   length.load_item_force(FrameMap::r19_opr);
   LIR_Opr len = length.result();
 
-  ciKlass* obj = ciObjArrayKlass::make(x->klass());
-
   // TODO 8265122 Implement a fast path for this
   bool is_flat = obj->is_loaded() && obj->is_flat_array_klass();
   bool is_null_free = obj->is_loaded() && obj->as_array_klass()->is_elem_null_free();
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info, is_null_free);
-  if (obj == ciEnv::unloaded_ciobjarrayklass()) {
-    BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
+  if (x->klass()->is_loaded() && !obj->is_loaded()) {
+    BAILOUT("encountered unloaded ciobjarrayklass due to out of memory error");
   }
 
   klass2reg_with_patching(klass_reg, obj, patching_info);

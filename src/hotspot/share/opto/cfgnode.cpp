@@ -670,6 +670,8 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         if (outer_sfpt != nullptr && outer_out != nullptr) {
           Node* in = outer_sfpt->in(0);
           igvn->replace_node(outer_out, in);
+          // Now, in has 2 CFG outputs, disconnect outer_sfpt from it
+          igvn->replace_input_of(outer_sfpt, 0, igvn->C->top());
           LoopNode* outer = as_CountedLoop()->outer_loop();
           igvn->replace_input_of(outer, LoopNode::LoopBackControl, igvn->C->top());
         }
@@ -3149,7 +3151,7 @@ private:
     for (uint i = 1; i < phi->req(); ++i) {
       assert(casts.size() == 0, "must be cleared");
       Node* n = phi->in(i);
-      if (n == nullptr) {
+      if (n == nullptr || n->is_top()) {
         continue;
       }
       while (should_skip_over(n)) {
@@ -3172,11 +3174,13 @@ private:
       assert(n->is_top() || n->is_ValueType(), "Only InlineType or top at this point.");
       while (casts.size() != 0) {
         // Push the cast(s) through the ValueTypeNode
-        Node *cast = casts.pop()->clone();
-        cast->set_req_X(1, n->as_ValueType()->get_oop(), _phase);
-        n = n->clone();
-        n->as_ValueType()->set_oop(*_phase, _phase->transform(cast));
-        n = _phase->transform(n);
+        if (!n->is_top()) {
+          Node* cast = casts.pop()->clone();
+          cast->set_req_X(1, n->as_ValueType()->get_oop(), _phase);
+          n = n->clone();
+          n->as_ValueType()->set_oop(*_phase, _phase->transform(cast));
+          n = _phase->transform(n);
+        }
         if (n->is_top()) {
           if (casts.size() > 0) {
             // We could be skipping some unprocessed casts that are also dead. Clear the list for the next phi input.
@@ -3221,6 +3225,9 @@ public:
 
     for (uint next = 0; next < _nodes_from_phi.size(); next++) {
       Node* n = _nodes_from_phi.at(next);
+      if (n->is_top()) {
+        continue;
+      }
       if (n->is_Phi()) {
         assert(n->bottom_type()->make_ptr() != nullptr, "broken graph");
         if (n != _root_phi && !_can_reshape) {
