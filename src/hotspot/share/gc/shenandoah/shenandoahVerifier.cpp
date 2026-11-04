@@ -835,6 +835,59 @@ public:
   }
 };
 
+class ShenandoahIsGCWorkerClosure : public ThreadClosure {
+private:
+  const Thread* _target;
+  bool _found;
+
+public:
+  ShenandoahIsGCWorkerClosure(const Thread* t) : _target(t), _found(false) {}
+
+  void do_thread(Thread* t) override {
+    if (_target == t) {
+      _found = true;
+    }
+  }
+
+  bool found() const { return _found; }
+};
+
+class ShenandoahVerifyThreadLabsClosure : public ThreadClosure {
+private:
+  const char* _label;
+  const bool _generational;
+  const WorkerThreads* _workers;
+
+  void verify_labs(Thread* t, bool expect_labs) const {
+    const PLAB* gclab = ShenandoahThreadLocalData::gclab(t);
+    const ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(t);
+    const bool expect_plab = _generational && expect_labs;
+
+    guarantee((gclab != nullptr) == expect_labs, "%s: GCLAB %s be initialized for thread: %s",
+              _label, expect_labs ? "should" : "shouldn't", t->name());
+    guarantee((plab != nullptr) == expect_plab, "%s: PLAB %s be initialized for thread: %s",
+              _label, expect_plab ? "should" : "shouldn't", t->name());
+  }
+
+public:
+  ShenandoahVerifyThreadLabsClosure(const char* label, bool generational, const WorkerThreads* workers) :
+    _label(label),
+    _generational(generational),
+    _workers(workers) {}
+
+  void do_thread(Thread* t) override {
+    if (t->is_Java_thread()) {
+      verify_labs(t, true);
+    } else if (t->is_Worker_thread()) {
+      ShenandoahIsGCWorkerClosure cl(t);
+      _workers->threads_do(&cl);
+      verify_labs(t, cl.found());
+    } else {
+      verify_labs(t, false);
+    }
+  }
+};
+
 void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
                                              const char* label,
                                              VerifyRememberedSet remembered,
@@ -904,6 +957,9 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
       Threads::java_threads_do(&vtgcs);
     }
   }
+
+  ShenandoahVerifyThreadLabsClosure labs_cl(label, _heap->mode()->is_generational(), _heap->workers());
+  Threads::threads_do(&labs_cl);
 
   // Deactivate barriers temporarily: Verifier wants plain heap accesses
   ShenandoahGCStateResetter resetter;
