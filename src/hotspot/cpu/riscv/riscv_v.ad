@@ -50,17 +50,17 @@ source %{
   static void scaleGatherScatterIndex64(C2_MacroAssembler* masm, VectorRegister dst,
                                         VectorRegister idx, BasicType bt, uint vector_length) {
     assert(type2aelembytes(bt) == 8, "64-bit vector elements required");
-    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+    // Scale indices by 8 to obtain byte offsets for 64-bit elements.
     if (UseZvbb) {
       // e32,mf2 and e64,m1 have the same VLMAX, so the following
       // memory access observes the same vl.
       __ vsetvli_helper(T_INT, vector_length, Assembler::mf2);
-      __ vwsll_vi(dst, idx, (int)sew);
+      __ vwsll_vi(dst, idx, 3);
       __ vsetvli_helper(bt, vector_length);
     } else {
       __ vsetvli_helper(bt, vector_length);
       __ vzext_vf2(dst, idx);
-      __ vsll_vi(dst, dst, (int)sew);
+      __ vsll_vi(dst, dst, 3);
     }
   }
 
