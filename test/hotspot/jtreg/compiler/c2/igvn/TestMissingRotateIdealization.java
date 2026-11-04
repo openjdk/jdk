@@ -23,46 +23,61 @@
 
 package compiler.c2.igvn;
 
+import compiler.lib.ir_framework.*;
+import java.util.Random;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
+
 /*
  * @test
  * @bug 8396021
+ * @key randomness
  * @summary AddNode::IdealIL and OrI/OrLNode::Ideal turn shift/add and shift/or
  *          patterns into rotates. When an input of the shifts, or of a
  *          (0 - s) shift count, changes, the Add/Or must be put back on the
  *          IGVN worklist. Use -XX:VerifyIterativeGVN=1110 to catch missing
  *          optimizations.
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *      -Xcomp -XX:-TieredCompilation
- *      -XX:CompileCommand=compileonly,${test.main.class}::test*
- *      -XX:VerifyIterativeGVN=1110
- *      ${test.main.class}
- * @run main ${test.main.class}
+ * @requires os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64" | (os.arch == "riscv64" & vm.cpu.features ~= ".*zbb.*")
+ * @library /test/lib /
+ * @run driver ${test.main.class}
  */
-
 public class TestMissingRotateIdealization {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     public static void main(String[] args) {
-        check(testAddI(42), Integer.rotateRight(42, 16));
-        check(testAddL(42), Long.rotateRight(42, 16));
-        check(testOrI(42, 5), Integer.rotateRight(42, 5));
-        check(testOrL(42, 5), Long.rotateRight(42, 5));
-        check(testOrIRotateLeft(42, 5), Integer.rotateLeft(42, 5));
-        check(testOrLRotateLeft(42, 5), Long.rotateLeft(42, 5));
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                                   "-XX:VerifyIterativeGVN=1110",
+                                   "-XX:CompileCommand=compileonly,compiler.c2.igvn.TestMissingRotateIdealization::*");
     }
 
-    static void check(long actual, long expected) {
-        if (actual != expected) {
-            throw new RuntimeException("expected " + expected + ", got " + actual);
-        }
+    @Run(test = {"testAddI", "testAddL", "testOrI", "testOrL", "testOrIRotateLeft", "testOrLRotateLeft"})
+    public void runTests() {
+        int xi = RANDOM.nextInt();
+        long xl = RANDOM.nextLong();
+        int s = RANDOM.nextInt();
+
+        Asserts.assertEQ(Integer.rotateRight(xi, 16), testAddI(xi));
+        Asserts.assertEQ(Long.rotateRight(xl, 16), testAddL(xl));
+        Asserts.assertEQ(Integer.rotateRight(xi, s), testOrI(xi, s));
+        Asserts.assertEQ(Long.rotateRight(xl, s), testOrL(xl, s));
+        Asserts.assertEQ(Integer.rotateLeft(xi, s), testOrIRotateLeft(xi, s));
+        Asserts.assertEQ(Long.rotateLeft(xl, s), testOrLRotateLeft(xl, s));
     }
 
     // delayedOne is only known to be 1 after loop opts, so the shifted value
     // becomes x late: n -> shift -> add
+    @Test
+    @IR(failOn = {IRNode.ROTATE_LEFT, IRNode.ROTATE_RIGHT}, phase = CompilePhase.BEFORE_LOOP_OPTS)
+    @IR(failOn = IRNode.ADD_I, counts = {IRNode.ROTATE_RIGHT, "1"})
     static int testAddI(int x) {
         int delayedOne = 100;
         for (int i = 0; i < 99; i++) { delayedOne--; }
         return (x >>> 16) + ((x * delayedOne) << 16);
     }
 
+    @Test
+    @IR(failOn = {IRNode.ROTATE_LEFT, IRNode.ROTATE_RIGHT}, phase = CompilePhase.BEFORE_LOOP_OPTS)
+    @IR(failOn = IRNode.ADD_L, counts = {IRNode.ROTATE_RIGHT, "1"})
     static long testAddL(long x) {
         int delayedOne = 100;
         for (int i = 0; i < 99; i++) { delayedOne--; }
@@ -70,24 +85,36 @@ public class TestMissingRotateIdealization {
     }
 
     // the count of one shift becomes (0 - s) late: n -> SubI -> shift -> or
+    @Test
+    @IR(failOn = {IRNode.ROTATE_LEFT, IRNode.ROTATE_RIGHT}, phase = CompilePhase.BEFORE_LOOP_OPTS)
+    @IR(failOn = IRNode.OR_I, counts = {IRNode.ROTATE_RIGHT, "1"})
     static int testOrI(int x, int s) {
         int delayedOne = 100;
         for (int i = 0; i < 99; i++) { delayedOne--; }
         return (x >>> s) | (x << -(s * delayedOne));
     }
 
+    @Test
+    @IR(failOn = {IRNode.ROTATE_LEFT, IRNode.ROTATE_RIGHT}, phase = CompilePhase.BEFORE_LOOP_OPTS)
+    @IR(failOn = IRNode.OR_L, counts = {IRNode.ROTATE_RIGHT, "1"})
     static long testOrL(long x, int s) {
         int delayedOne = 100;
         for (int i = 0; i < 99; i++) { delayedOne--; }
         return (x >>> s) | (x << -(s * delayedOne));
     }
 
+    @Test
+    @IR(failOn = {IRNode.ROTATE_LEFT, IRNode.ROTATE_RIGHT}, phase = CompilePhase.BEFORE_LOOP_OPTS)
+    @IR(failOn = IRNode.OR_I, counts = {IRNode.ROTATE_LEFT, "1"})
     static int testOrIRotateLeft(int x, int s) {
         int delayedOne = 100;
         for (int i = 0; i < 99; i++) { delayedOne--; }
         return (x << s) | (x >>> -(s * delayedOne));
     }
 
+    @Test
+    @IR(failOn = {IRNode.ROTATE_LEFT, IRNode.ROTATE_RIGHT}, phase = CompilePhase.BEFORE_LOOP_OPTS)
+    @IR(failOn = IRNode.OR_L, counts = {IRNode.ROTATE_LEFT, "1"})
     static long testOrLRotateLeft(long x, int s) {
         int delayedOne = 100;
         for (int i = 0; i < 99; i++) { delayedOne--; }
