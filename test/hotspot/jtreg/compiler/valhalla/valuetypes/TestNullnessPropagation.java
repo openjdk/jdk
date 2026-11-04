@@ -32,7 +32,7 @@ import static compiler.lib.ir_framework.IRNode.LSHIFT_L;
 /*
  * @test
  * @bug 8395611 8396195
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64" | os.arch=="ppc64le"
+ * @requires vm.endian == "little"
  * @summary Test nullness propagation during parsing
  * @library /test/lib  /
  * @enablePreview
