@@ -106,7 +106,7 @@ static bool has_neoverse_n1_errata_1542419() {
            (major_rev_num == 4 && minor_rev_num == 0)));
 }
 
-void VM_Version::apply_aot_cache_cp_feuatures() {
+void VM_Version::apply_aot_cache_cpu_features() {
   uint64_t* aot_cache_cpu_features = (uint64_t*)get_aot_cache_cpu_features();
   if (aot_cache_cpu_features != nullptr) {
     assert(UseAOTCacheCpuFeaturesOnly, "UseAOTCacheCpuFeaturesOnly must be true");
