@@ -58,6 +58,9 @@ public class TestContinuationEntry {
             long alignment = 2 * wordSize;
             long alignedSize = ((rawSize + alignment - 1) / alignment) * alignment;
             String cpu = agent.getDebugger().getCPU();
+            // RISC-V's entry FP is above the saved caller FP and return address (two words).
+            // See ContinuationEntry::entry_fp() in continuationEntry_riscv.inline.hpp and
+            // RISCV64ContinuationEntry.getEntryFP() in SA.
             long expectedOffset = alignedSize + (cpu.equals("riscv64") ? 2 * wordSize : 0);
 
             // SP and FP accessors only do address arithmetic; they do not dereference this synthetic entry.
