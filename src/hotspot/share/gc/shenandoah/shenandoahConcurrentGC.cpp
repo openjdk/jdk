@@ -93,7 +93,7 @@ public:
 
 ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahController* controller, ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
   ShenandoahGC(generation),
-  _mark(generation),
+  _mark(generation, do_old_gc_bootstrap),
   _controller(controller),
   _abbreviated(false),
   _do_old_gc_bootstrap(do_old_gc_bootstrap) {

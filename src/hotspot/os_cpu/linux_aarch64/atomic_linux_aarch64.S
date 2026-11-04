@@ -62,6 +62,7 @@ DECLARE_FUNC(aarch64_atomic_fetch_add_8_relaxed_default_impl):
 DECLARE_FUNC(aarch64_atomic_fetch_add_4_relaxed_default_impl):
         ATOMIC_OP(ldxr, add, stxr, w, , ldadd)
 
+
 #undef ATOMIC_OP
 
 #ifdef __ARM_FEATURE_ATOMICS
@@ -82,6 +83,21 @@ DECLARE_FUNC(aarch64_atomic_fetch_add_4_relaxed_default_impl):
         mov     SZ ## 0, SZ ## 2                ;\
         ret
 #endif
+
+        .align 5
+DECLARE_FUNC(aarch64_atomic_xchg_1_default_impl):
+        hint    #0x22 // bti c
+#ifdef __ARM_FEATURE_ATOMICS
+        swpalb  w1, w2, [x0]
+#else
+        prfm    pstl1strm, [x0]
+0:      ldaxrb  w2, [x0]
+        stlxrb  w8, w1, [x0]
+        cbnz    w8, 0b
+#endif
+        dmb     ish
+        mov     w0, w2
+        ret
 
 DECLARE_FUNC(aarch64_atomic_xchg_8_default_impl):
         ATOMIC_OP(ldaxr, stlxr, x, swpal)
