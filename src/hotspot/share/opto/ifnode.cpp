@@ -694,10 +694,8 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
 //            shape, which works well for comparisions with constants, as they are
 //            canonicalized to the rhs. This may not happen with variables, and so
 //            the optimization may not work for those cases, when val stays on the rhs.
-const Type* IfNode::filtered_integer_type(PhaseGVN* gvn, Node* val, Node* if_proj, BasicType bt) {
+const Type* IfNode::filtered_integer_type_or_top(PhaseValues* phase, Node* val, Node* if_proj, BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "expected int or long");
-  const jlong min_value = bt == T_INT ? min_jint : min_jlong;
-  const jlong max_value = bt == T_INT ? max_jint : max_jlong;
   assert(if_proj &&
          (if_proj->Opcode() == Op_IfTrue || if_proj->Opcode() == Op_IfFalse), "expecting an if projection");
   if (if_proj->in(0) && if_proj->in(0)->is_If()) {
@@ -818,10 +816,16 @@ const Type* IfNode::filtered_integer_type(PhaseGVN* gvn, Node* val, Node* if_pro
   return nullptr;
 }
 
-const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj) {
-  const TypeInteger* t = filtered_integer_type(gvn, val, if_proj, T_INT);
-  return t == nullptr ? nullptr : t->is_int();
+const TypeInteger* IfNode::filtered_integer_type(PhaseGVN* gvn, Node* val, Node* if_proj, BasicType bt) {
+  const Type* t = filtered_integer_type_or_top(gvn, val, if_proj, T_INT);
+  return t == nullptr ? nullptr : t->is_integer(bt);
 }
+
+const TypeInt* IfNode::filtered_int_type(PhaseGVN* phase, Node* val, Node* if_proj) {
+  const Type* t = filtered_integer_type(phase, val, if_proj, T_INT);
+  return t != nullptr ? t->is_int() : nullptr;
+}
+
 
 //------------------------------fold_compares----------------------------
 // See if a pair of CmpIs/CmpLs can be converted into a CmpU/CmpUL.

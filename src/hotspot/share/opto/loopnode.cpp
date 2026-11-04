@@ -4904,10 +4904,10 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
     while (if_cnt < if_limit) {
       if ((pred->Opcode() == Op_IfTrue || pred->Opcode() == Op_IfFalse)) {
         if_cnt++;
-        const Type* if_t = IfNode::filtered_int_type(&_phase->igvn(), val, pred, T_INT);
-        if (if_t != nullptr && if_t->isa_int()) {
+        const TypeInt* if_t = IfNode::filtered_int_type(&_phase->igvn(), val, pred);
+        if (if_t != nullptr) {
           if (rtn_t == nullptr) {
-            rtn_t = if_t->is_int();
+            rtn_t = if_t;
           } else {
             const Type* join_t = rtn_t->join(if_t);
             if (!join_t->isa_int()) {

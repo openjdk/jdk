@@ -1093,7 +1093,7 @@ void PhaseConditionalPropagation::Analyzer::analyze_allocate_array(const Allocat
 }
 
 void PhaseConditionalPropagation::Analyzer::analyze_if(const Node* cmp, Node* n) {
-  const Type* t = IfNode::filtered_int_type(this, n, _current_ctrl, (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpU) ? T_INT : T_LONG);
+  const Type* t = IfNode::filtered_integer_type_or_top(this, n, _current_ctrl, (cmp->Opcode() == Op_CmpI || cmp->Opcode() == Op_CmpU) ? T_INT : T_LONG);
   if (t != nullptr) {
     const Type* n_t = type_at_current_ctrl(n);
     const Type* new_n_t = n_t->filter(t);
