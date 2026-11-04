@@ -640,7 +640,7 @@ void CDSConfig::check_aotmode_create() {
   UseSharedSpaces = true;
   RequireSharedSpaces = true;
 
-  FileMapInfo::check_preimage_static_archive(AOTConfiguration);
+  FileMapInfo::check_aot_configuration(AOTConfiguration);
   CDSConfig::enable_dumping_static_archive();
 
   // We don't load any agents in the assembly phase, so we can ensure that the agents
@@ -1059,7 +1059,7 @@ bool CDSConfig::are_vm_options_incompatible_with_dumping_heap() {
 }
 
 bool CDSConfig::is_dumping_heap() {
-  // Note: when dumping preimage static archive, only a very limited set of oops
+  // Note: when dumping AOT configuration, only a very limited set of oops
   // are dumped.
   if (!is_dumping_static_archive()
       || are_vm_options_incompatible_with_dumping_heap()
@@ -1095,7 +1095,7 @@ bool CDSConfig::is_dumping_klass_subgraphs() {
   }
 
   if (is_dumping_aot_configuration()) {
-    // KlassSubGraphs are disabled in the preimage static archive, which contains a very
+    // KlassSubGraphs are disabled in the AOT Configuration, which contains a very
     // limited set of oops.
     return false;
   }

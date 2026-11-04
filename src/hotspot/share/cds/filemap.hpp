@@ -326,7 +326,7 @@ public:
   FileMapHeader *header() const       { return _header; }
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 const char** base_archive_name);
-  static void check_preimage_static_archive(const char* file);
+  static void check_aot_configuration(const char* file);
 
   bool init_from_file(int fd);
 

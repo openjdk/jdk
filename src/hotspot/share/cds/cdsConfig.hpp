@@ -130,9 +130,6 @@ public:
   //
   // The first 3 types are also referred to as "static archives". At any time, a JVM can load
   // at most one static archive, and at most one dynamic archive.
-  //
-  // Note: [2] is also known as the "preimage static archive". [3] is also known as the "final static archive".
-  // These are outdated terminology and will be removed in the future.
 
   // archive(s) in general
   static bool is_dumping_archive()                           { return is_dumping_static_archive() || is_dumping_dynamic_archive(); }
@@ -146,8 +143,8 @@ public:
   static void enable_dumping_static_archive()                { CDS_ONLY(_is_dumping_static_archive = true); }
 
   static bool is_dumping_classic_static_archive()            NOT_CDS_RETURN_(false);
-  static bool is_dumping_aot_configuration()                 { return is_dumping_aot_configuration(); }
-  static bool is_dumping_aot_cache()                         { return is_dumping_aot_cache(); }
+  static bool is_dumping_aot_configuration()                 NOT_CDS_RETURN_(false);
+  static bool is_dumping_aot_cache()                         NOT_CDS_RETURN_(false);
 
   // Is the current JVM loading classes from an input archive and dumping into an output archive.
   static bool is_dumping_with_input_archive()                { return is_dumping_aot_cache() || is_redumping_aot_configuration(); }
