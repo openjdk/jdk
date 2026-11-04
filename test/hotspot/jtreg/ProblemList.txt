@@ -88,6 +88,8 @@ gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 83869
 gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
+gc/shenandoah/generational/TestGenerationalReferenceProcessing.java#young 8396682 generic-all
+gc/shenandoah/generational/TestGenerationalReferenceProcessing.java#young-no-compressed-oops 8396682 generic-all
 
 #############################################################################
 
