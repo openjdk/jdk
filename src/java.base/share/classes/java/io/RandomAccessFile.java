@@ -1042,10 +1042,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         try {
             while (!eol) {
                 c = read0();
-                if (c >= 0) {
-                    bytesRead++;
-                } else {
+                if (c == -1) {
                     endOfFile = true;
+                } else {
+                    bytesRead++;
                 }
                 switch (c) {
                     case -1, '\n' -> eol = true;
@@ -1053,10 +1053,10 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
                         eol = true;
                         long cur = getFilePointer();
                         int d = read0();
-                        if (d >= 0) {
-                            bytesRead++;
-                        } else {
+                        if (d == -1) {
                             endOfFile = true;
+                        } else {
+                            bytesRead++;
                         }
                         if (d != '\n') {
                             seek(cur);
