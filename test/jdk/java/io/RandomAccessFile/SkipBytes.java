@@ -118,14 +118,7 @@ class SkipBytes {
 
             // Verify the new position
             long position1 = raf.getFilePointer();
-            final long expectedPosition1;
-            if (position0 >= size || requestedSkip <= 0) {
-                expectedPosition1 = position0;
-            } else if (size - position0 > requestedSkip) {
-                expectedPosition1 = position0 + requestedSkip;
-            } else {
-                expectedPosition1 = size;
-            }
+            long expectedPosition1 = initialPosition + skip;
             assertEquals(expectedPosition1, position1);
 
             // Verify the read
