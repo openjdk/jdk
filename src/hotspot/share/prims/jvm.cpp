@@ -857,6 +857,7 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   Handle obj(THREAD, JNIHandles::resolve_non_null(handle));
   Klass* klass = obj->klass();
   JvmtiVMObjectAllocEventCollector oam;
+  JvmtiSampledObjectAllocEventCollector soam;
 
 #ifdef ASSERT
   // Just checking that the cloneable flag is set correct
