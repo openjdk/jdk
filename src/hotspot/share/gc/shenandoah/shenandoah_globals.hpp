@@ -305,7 +305,7 @@
           "regions that require committing back. Uncommits would be "       \
           "disabled by some heuristics, or with static heap size.")         \
                                                                             \
-  product(uintx, ShenandoahUncommitDelay, 5*60*1000, EXPERIMENTAL,          \
+  product(uintx, ShenandoahUncommitDelay, 15*1000, EXPERIMENTAL,            \
           "Uncommit regions that were not used for longer than this time. " \
           "First use after uncommit would incur delays to commit memory. "  \
           "Actively used regions are unlikely to be uncommitted. Time is "  \
