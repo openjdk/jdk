@@ -25,6 +25,7 @@
 #ifndef _LIBSAPROC_H_
 #define _LIBSAPROC_H_
 
+#include <jni.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <stdarg.h>
@@ -33,7 +34,6 @@
 #include <string.h>
 #include <fcntl.h>
 
-#ifdef __APPLE__
 typedef enum ps_err_e {
   PS_OK, PS_ERR, PS_BADPID, PS_BADLID,
   PS_BADADDR, PS_NOSYM, PS_NOFREGS
@@ -54,19 +54,6 @@ typedef int bool;
 #endif
 
 #include <mach/thread_status.h>
-#else   // __APPLE__
-#include <elf.h>
-#include <link.h>
-#include <machine/reg.h>
-#include <proc_service.h>
-
-// This C bool type must be int for compatibility with BSD calls and
-// it would be a mistake to equivalence it to C++ bool on many platforms
-typedef int bool;
-#define true  1
-#define false 0
-
-#endif // __APPLE__
 
 /************************************************************************************
 

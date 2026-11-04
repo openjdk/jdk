@@ -111,9 +111,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void push_2ptrs(Register first, Register second);
 
-  void move_l_to_d(Register l = R17_tos, FloatRegister d = F15_ftos);
-  void move_d_to_l(FloatRegister d = F15_ftos, Register l = R17_tos);
-
   void pop (TosState state);           // transition vtos -> state
   void push(TosState state);           // transition state -> vtos
   void empty_expression_stack();       // Resets both Lesp and SP.
