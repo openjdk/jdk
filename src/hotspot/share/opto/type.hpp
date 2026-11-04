@@ -311,6 +311,8 @@ public:
   const TypeInt    *isa_int() const;             // Returns null if not an Int
   const TypeInteger* is_integer(BasicType bt) const;
   const TypeInteger* isa_integer(BasicType bt) const;
+  const TypeInteger* is_integer() const;
+  const TypeInteger* isa_integer() const;
   const TypeLong   *is_long() const;
   const TypeLong   *isa_long() const;            // Returns null if not a Long
   const TypeD      *isa_double() const;          // Returns null if not a Double{Top,Con,Bot}
@@ -624,6 +626,8 @@ public:
   bool is_con() const { return lo_as_long() == hi_as_long(); }
   virtual short widen_limit() const { return _widen; }
 
+  virtual BasicType bt() const = 0;
+
   static const TypeInteger* make(jlong lo, jlong hi, int w, BasicType bt);
   static const TypeInteger* make(jlong con, BasicType bt);
 
@@ -833,6 +837,8 @@ public:
   virtual jlong hi_as_long() const { return _hi; }
   virtual jlong lo_as_long() const { return _lo; }
 
+  virtual BasicType bt() const { return T_INT; }
+
   // Do not kill _widen bits.
   // Convenience common pre-built types.
   static const TypeInt* MAX;
@@ -921,6 +927,8 @@ public:
 
   virtual jlong hi_as_long() const { return _hi; }
   virtual jlong lo_as_long() const { return _lo; }
+
+  virtual BasicType bt() const { return T_LONG; }
 
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
@@ -2362,6 +2370,15 @@ inline const TypeInteger *Type::is_integer(BasicType bt) const {
 
 inline const TypeInteger *Type::isa_integer(BasicType bt) const {
   return (((bt == T_INT && _base == Int) || (bt == T_LONG && _base == Long)) ? (TypeInteger*)this : nullptr);
+}
+
+inline const TypeInteger *Type::is_integer() const {
+  assert(_base == Int || _base == Long, "Not an Int");
+  return (TypeInteger*)this;
+}
+
+inline const TypeInteger *Type::isa_integer() const {
+  return ((_base == Int || _base == Long) ? (TypeInteger*)this : nullptr);
 }
 
 inline const TypeInt *Type::is_int() const {

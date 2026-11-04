@@ -363,7 +363,7 @@ void CastIINode::remove_range_check_cast(Compile* C) {
       Node* m = wq.at(next);
       for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
         Node* use = m->fast_out(i);
-        if (use->is_Mem() || use->is_div_or_mod(T_INT) || use->is_div_or_mod(T_LONG)) {
+        if (use->is_Mem() || use->is_div_or_mod()) {
           use->ensure_control_or_add_prec(in(0));
         } else if (!use->is_CFG() && !use->is_Phi()) {
           wq.push(use);

@@ -394,6 +394,8 @@ class Compile : public Phase {
   bool                  _flat_accesses_share_alias; // Initially all flat array share a single slice
   bool                  _scalarize_in_safepoints; // Scalarize value types in safepoint debug info
 
+  bool                  _run_loop_conditional_propagation; // Switched off to prevent further runs of loop conditional propagation
+
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
   void*                 _barrier_set_state;     // Potential GC barrier state for Compile
@@ -716,6 +718,9 @@ public:
   void          set_has_scoped_access(bool v)    { _has_scoped_access = v; }
   bool              has_clinit_barriers()const   { return _has_clinit_barriers; }
   void          set_has_clinit_barriers(bool z)  { _has_clinit_barriers = z; }
+
+  bool              run_loop_conditional_propagation() const           { return _run_loop_conditional_propagation; }
+  void          set_run_loop_conditional_propagation(bool z)           { _run_loop_conditional_propagation = z; }
 
   // check the CompilerOracle for special behaviours for this compile
   bool          method_has_option(CompileCommandEnum option) const {

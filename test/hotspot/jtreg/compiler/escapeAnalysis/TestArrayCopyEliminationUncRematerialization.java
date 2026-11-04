@@ -84,7 +84,7 @@ public class TestArrayCopyEliminationUncRematerialization {
         comp.compile();
 
         // Ensure consistent results for the node counts in the arraycopy subtests.
-        comp.invoke(PACKAGE + "." + CLASS_NAME, "main", new Object[] { new String[] { } });
+        comp.invoke(PACKAGE + "." + CLASS_NAME, "main", new Object[] { new String[] { "-XX:-UseLoopConditionalPropagation" } });
     }
 
     private record TestConfig(int srcSize, int copyLen, int copyIdx, int writeIdx, int returnIdx) {

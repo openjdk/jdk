@@ -149,9 +149,9 @@ public class TestRedundantLea {
 
         Scenario[] scenarios = new Scenario[2];
         // Scenario for the negative test without peephole optimizations.
-        scenarios[0] = new Scenario(0, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-OptoPeephole");
+        scenarios[0] = new Scenario(0, "-XX:-UseLoopConditionalPropagation", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-OptoPeephole");
         // Scenario for the positive test with +OptoPeephole (the default on x64).
-        scenarios[1] = new Scenario(1);
+        scenarios[1] = new Scenario(1, "-XX:-UseLoopConditionalPropagation");
         framework.addScenarios(scenarios).start();
     }
 }

@@ -89,6 +89,9 @@ public:
     f(         _t_reachability_optimize,  "reachabilityFence_optimize") \
     f(         _t_reachability_expand, "reachabilityFence_expand") \
     f(       _t_autoVectorize,       "autoVectorize")            \
+    f(       _t_conditionalElim,     "conditional elimination")  \
+    f(         _t_conditionalElimAnalysis, "conditional elimination analysis")  \
+    f(         _t_conditionalElimTransform, "conditional eliminationtransform") \
     f(     _t_idealLoopVerify,       "idealLoopVerify")          \
     f(     _t_ccp,                   "ccp")                      \
     f(     _t_iterGVN2,              "iterGVN2")                 \

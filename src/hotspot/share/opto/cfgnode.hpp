@@ -502,7 +502,6 @@ class IfNode : public MultiBranchNode {
   virtual uint size_of() const { return sizeof(*this); }
 
   // Helper methods for fold_compares
-  static const TypeInteger* filtered_integer_type(PhaseGVN* phase, Node* val, Node* if_proj, BasicType bt);
   bool cmp_folds(PhaseIterGVN* igvn, bool fold_ne = false);
   bool is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn);
   bool has_shared_region(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail) const;
@@ -627,11 +626,6 @@ public:
   Node* dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool prev_dom_not_imply_this);
   ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
 
-  // Takes the type of val and filters it through the test represented
-  // by if_proj and returns a more refined type if one is produced.
-  // Returns null is it couldn't improve the type.
-  static const TypeInt* filtered_int_type(PhaseGVN* phase, Node* val, Node* if_proj);
-
   bool is_flat_array_check(PhaseTransform* phase, Node** array = nullptr);
 
   AssertionPredicateType assertion_predicate_type() const {
@@ -646,6 +640,12 @@ public:
   void mark_projections_unsafe_for_fold_compare() const;
 
   static void pin_nodes_dependent_on(Node* ctrl, int old_iff_opcode, PhaseIterGVN* igvn, PhaseIdealLoop* loop);
+  // Takes the type of val and filters it through the test represented
+  // by if_proj and returns a more refined type if one is produced.
+  // Returns null is it couldn't improve the type.
+  static const Type* filtered_integer_type_or_top(PhaseValues* phase, Node* val, Node* if_proj, BasicType bt);
+  static const TypeInteger* filtered_integer_type(PhaseGVN* phase, Node* val, Node* if_proj, BasicType bt);
+  static const TypeInt* filtered_int_type(PhaseGVN* phase, Node* val, Node* if_proj);
 };
 
 class RangeCheckNode : public IfNode {

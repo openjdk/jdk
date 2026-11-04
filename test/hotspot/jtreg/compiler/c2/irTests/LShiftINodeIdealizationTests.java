@@ -321,7 +321,8 @@ public class LShiftINodeIdealizationTests {
     }
 
     @Test
-    @IR(counts = {IRNode.LSHIFT, "1", IRNode.IF, "2" } )
+    @IR(applyIf = { "UseLoopConditionalPropagation", "false" }, counts = {IRNode.LSHIFT, "1", IRNode.IF, "2" } )
+    @IR(applyIf = { "UseLoopConditionalPropagation", "true" }, counts = {IRNode.LSHIFT, "1" }, failOn = IRNode.IF )
     public int testShiftValueOverflow(int x) {
         x = Integer.max(x, Integer.MAX_VALUE - 1);
         int shift = x << 1;

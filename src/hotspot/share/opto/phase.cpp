@@ -94,6 +94,9 @@ void Phase::print_timers() {
     tty->print_cr ("             Optimize:        %7.3f s", timers[_t_reachability_optimize].seconds());
     tty->print_cr ("             Expand:          %7.3f s", timers[_t_reachability_expand].seconds());
     tty->print_cr ("           AutoVectorize:     %7.3f s", timers[_t_autoVectorize].seconds());
+    tty->print_cr ("           Conditional Elim:  %7.3f s", timers[_t_conditionalElim].seconds());
+    tty->print_cr ("             Analysis:        %7.3f s", timers[_t_conditionalElimAnalysis].seconds());
+    tty->print_cr ("             Transform:       %7.3f s", timers[_t_conditionalElimTransform].seconds());
     tty->print_cr ("         IdealLoop Verify:    %7.3f s", timers[_t_idealLoopVerify].seconds());
     tty->print_cr ("         Cond Const Prop:     %7.3f s", timers[_t_ccp].seconds());
     tty->print_cr ("         GVN 2:               %7.3f s", timers[_t_iterGVN2].seconds());
