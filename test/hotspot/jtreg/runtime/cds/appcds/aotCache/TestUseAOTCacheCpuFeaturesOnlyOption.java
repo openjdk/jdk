@@ -116,6 +116,7 @@ public class TestUseAOTCacheCpuFeaturesOnlyOption {
                 if (Platform.isRISCV64()) {
                     vmOptions.add("-XX:+UnlockDiagnosticVMOptions");
                     vmOptions.add("-XX:+UseZba");
+                    vmOptions.add("-XX:+PrintFlagsFinal");
                 }
                 vmOptions.add("-Xlog:aot");
                 vmOptions.add("-Xlog:os+cpu");
@@ -153,6 +154,9 @@ public class TestUseAOTCacheCpuFeaturesOnlyOption {
                     out.shouldMatch("\\[warning\\s*\\]\\[aot\\s*\\] Some CPU features are turned off by UseAOTCacheCpuFeaturesOnly");
                     out.shouldMatch("\\[warning\\s*]\\[aot\\s*\\] CPU features disabled are");
                     out.shouldContain("HelloWorld");
+                    if (Platform.isRISCV64()) {
+                        out.shouldMatch("(?m)^\\s*bool\\s+UseZba\\s+=\\s+false\\b");
+                    }
                     break;
                 case OptionValue.FALSE:
                     out.shouldContain("AOT Code Cache disabled: cpu features are incompatible");

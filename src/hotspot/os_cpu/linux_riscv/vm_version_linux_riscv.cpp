@@ -131,9 +131,18 @@ void VM_Version::apply_aot_cache_cpu_features() {
         warning("UseAOTCacheCpuFeaturesOnly is ignored: one or more cpu features recorded in AOT cache are not supported by this CPU");
       }
       FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+      return;
     }
     _rv_ext_features_disabled_by_aot_cache = runtime_cpu_features->features_not_in(archived_cpu_features);
-    runtime_cpu_features->clear_features(&_rv_ext_features_disabled_by_aot_cache);
+    // Undetected extensions can still have flags enabled by command-line options or RVA profiles.
+    for (int i = 0; i < RVExtFeatures::MAX_CPU_FEATURE_INDEX; i++) {
+      if (!archived_cpu_features->support_feature(i)) {
+        _feature_list[i]->disable_feature();
+        // Normal flag initialization skips disabled extensions.
+        _feature_list[i]->update_flag();
+      }
+    }
+
     LogTarget(Info, os, cpu) os_cpu_log;
     if (os_cpu_log.is_enabled()) {
       ResourceMark rm;

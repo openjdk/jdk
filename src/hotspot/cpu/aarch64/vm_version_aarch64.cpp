@@ -115,6 +115,7 @@ void VM_Version::apply_aot_cache_cpu_features() {
         warning("UseAOTCacheCpuFeaturesOnly is ignored: one or more cpu features recorded in AOT cache are not supported by this CPU");
       }
       FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+      return;
     }
     _cpu_features_disabled_by_aot_cache = features_not_in(_features, *aot_cache_cpu_features);
     _features = clear_features(_features, _cpu_features_disabled_by_aot_cache);

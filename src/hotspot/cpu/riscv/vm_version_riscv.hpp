@@ -77,7 +77,10 @@ class VM_Version : public Abstract_VM_Version {
 
   #define UPDATE_DEFAULT(flag)           \
   void update_flag() {                   \
-    assert(enabled(), "Must be.");       \
+    if (!enabled()) {                    \
+      FLAG_SET_ERGO(flag, false);        \
+      return;                            \
+    }                                    \
     if (FLAG_IS_DEFAULT(flag)) {         \
       FLAG_SET_DEFAULT(flag, true);      \
     } else {                             \
@@ -90,7 +93,10 @@ class VM_Version : public Abstract_VM_Version {
 
   #define UPDATE_DEFAULT_DEP(flag, dep0, ...)                                                               \
   void update_flag() {                                                                                      \
-      assert(enabled(), "Must be.");                                                                        \
+      if (!enabled()) {                                                                                     \
+        FLAG_SET_ERGO(flag, false);                                                                         \
+        return;                                                                                             \
+      }                                                                                                     \
       DEBUG_ONLY(verify_deps(dep0, ##__VA_ARGS__));                                                         \
       if (FLAG_IS_DEFAULT(flag)) {                                                                          \
         if (deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                        \
@@ -435,12 +441,6 @@ private:
       }
       return result;
     }
-
-    void clear_features(RVExtFeatures* features_to_clear) {
-      for (int i = 0; i < element_count(); i++) {
-        _features_bitmap[i] &= (~(features_to_clear->_features_bitmap[i]));
-      }
-    }
   };
 
   // enable extensions based on profile, current supported profiles:
@@ -522,7 +522,6 @@ private:
   // Null terminated list
   static RVFeatureValue* _feature_list[];
   static RVExtFeatures* _rv_ext_features;
-  static RVExtFeatures _rv_raw_ext_features;
   static RVExtFeatures _rv_ext_features_disabled_by_aot_cache;
 
   // Enables features in _feature_list
@@ -610,10 +609,6 @@ private:
  private:
   static void print_feature_name(stringStream& ss, RVFeatureValue* feature);
   static void insert_features_names(RVExtFeatures* features, stringStream& ss);
-  static void save_raw_cpu_features() {
-    RVExtFeatures* current = RVExtFeatures::current();
-    _rv_raw_ext_features = *current;
-  }
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP
