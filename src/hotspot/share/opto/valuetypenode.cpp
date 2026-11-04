@@ -1804,6 +1804,14 @@ Node* ValueTypeNode::is_loaded(PhaseGVN* phase, ciValueKlass* vk, Node* base, in
 
 Node* ValueTypeNode::tagged_klass(ciValueKlass* vk, PhaseGVN& gvn) {
   const TypeKlassPtr* tk = TypeKlassPtr::make(vk);
+#if INCLUDE_CDS
+  if (gvn.C->env()->is_aot_compile()) {
+    // Keep klass as metadata to make it relocatable for AOT code.
+    Node* k_con = gvn.makecon(tk);
+    Node* bits  = gvn.transform(new CastP2XNode(nullptr, k_con));
+    return gvn.transform(new OrLNode(bits, gvn.longcon(1)));
+  }
+#endif
   intptr_t bits = tk->get_con();
   set_nth_bit(bits, 0);
   return gvn.longcon((jlong)bits);
