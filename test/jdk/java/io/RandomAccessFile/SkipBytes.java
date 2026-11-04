@@ -31,6 +31,7 @@ import java.util.List;
 
 import static jdk.test.lib.Utils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /*
  * @test
@@ -129,10 +130,11 @@ class SkipBytes {
 
             // Verify the read
             int read = raf.read();
-            assertEquals(
-                    position1 >= size, read < 0,
-                    "Unexpected read of %s at position %s/%s"
-                            .formatted(read, position1, size));
+            if (position1 >= size) {
+                assertEquals(-1, read, "Expected EOF");
+            } else {
+                assertNotEquals(-1, read, "Expected a byte");
+            }
 
         }
     }
