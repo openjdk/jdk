@@ -298,12 +298,12 @@ struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
     const VM_Version::AtomicAccessMode mode = VM_Version::atomic_access_mode();
     T data;
     switch (mode) {
+      case VM_Version::AtomicAccessMode::RVWMO:
+        __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE);
+        break;
       case VM_Version::AtomicAccessMode::ZTSO:
         __atomic_load(const_cast<T*>(p), &data, __ATOMIC_RELAXED);
         compiler_barrier();
-        break;
-      case VM_Version::AtomicAccessMode::RVWMO:
-        __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE);
         break;
       case VM_Version::AtomicAccessMode::RVWMO_ZALASR:
         // Zalasr has no zero-extending form; l{b|h|w}.aq sign-extend. Narrowing
@@ -326,12 +326,12 @@ struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X>
     static_assert(byte_size == 1 || byte_size == 2 || byte_size == 4 || byte_size == 8);
     const VM_Version::AtomicAccessMode mode = VM_Version::atomic_access_mode();
     switch (mode) {
+      case VM_Version::AtomicAccessMode::RVWMO:
+        __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE);
+        break;
       case VM_Version::AtomicAccessMode::ZTSO:
         compiler_barrier();
         __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELAXED);
-        break;
-      case VM_Version::AtomicAccessMode::RVWMO:
-        __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE);
         break;
       case VM_Version::AtomicAccessMode::RVWMO_ZALASR:
         // s{b|h|w|d}.rl stores the low byte_size bytes of the register, so
