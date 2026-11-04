@@ -198,10 +198,11 @@ class ValueNumberingVisitor: public InstructionVisitor {
     }
   }
   void do_NewTypeArray   (NewTypeArray*    x) { /* nothing to do */ }
-  void do_NewObjectArray (NewObjectArray*  x) { /* nothing to do */ }
-  void do_NewMultiArray  (NewMultiArray*   x) { /* nothing to do */ }
+  // The following three operations can trigger class loading and thus side-effects in class loaders.
+  void do_NewObjectArray (NewObjectArray*  x) { kill_memory(); }
+  void do_NewMultiArray  (NewMultiArray*   x) { kill_memory(); }
+  void do_InstanceOf     (InstanceOf*      x) { kill_memory(); }
   void do_CheckCast      (CheckCast*       x) { /* nothing to do */ }
-  void do_InstanceOf     (InstanceOf*      x) { /* nothing to do */ }
   void do_BlockBegin     (BlockBegin*      x) { /* nothing to do */ }
   void do_Goto           (Goto*            x) { /* nothing to do */ }
   void do_If             (If*              x) { /* nothing to do */ }

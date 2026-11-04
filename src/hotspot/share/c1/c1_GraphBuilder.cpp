@@ -736,6 +736,20 @@ class MemoryBuffer: public CompilationResourceObj {
   }
 };
 
+class MemoryEffects: public ValueNumberingVisitor {
+ private:
+  MemoryBuffer* _mem;
+
+ protected:
+  void kill_memory() override                                { _mem->kill(); }
+  // Because we only care about memory effects the rest are noops.
+  void kill_field(ciField* field, bool all_offsets) override { return; }
+  void kill_array(ValueType* type) override                  { return; }
+
+ public:
+  explicit MemoryEffects(MemoryBuffer* mem): _mem(mem) {}
+};
+
 
 // Implementation of GraphBuilder's ScopeData
 
@@ -2661,13 +2675,11 @@ void GraphBuilder::monitorenter(Value x, int bci) {
   // save state before locking in case of deoptimization after a NullPointerException
   ValueStack* state_before = copy_state_for_exception_with_bci(bci);
   append_with_bci(new MonitorEnter(x, state()->lock(x), state_before, maybe_valuetype), bci);
-  kill_all();
 }
 
 
 void GraphBuilder::monitorexit(Value x, int bci) {
   append_with_bci(new MonitorExit(x, state()->unlock()), bci);
-  kill_all();
 }
 
 
@@ -2697,6 +2709,13 @@ void GraphBuilder::throw_op(int bci) {
 
 
 Instruction* GraphBuilder::append_with_bci(Instruction* instr, int bci) {
+  if (EliminateFieldAccess) {
+    // We must kill memory for operations with memory side effects
+    // before we canonicalize the instruction.
+    MemoryEffects mem_effects(_memory);
+    instr->visit(&mem_effects);
+  }
+
   Canonicalizer canon(compilation(), instr, bci);
   Instruction* i1 = canon.canonical();
   if (i1->is_linked() || !i1->can_be_linked()) {
@@ -2742,12 +2761,6 @@ Instruction* GraphBuilder::append_with_bci(Instruction* instr, int bci) {
   // save state after modification of operand stack for StateSplit instructions
   StateSplit* s = i1->as_StateSplit();
   if (s != nullptr) {
-    if (EliminateFieldAccess) {
-      Intrinsic* intrinsic = s->as_Intrinsic();
-      if (s->as_Invoke() != nullptr || (intrinsic && !intrinsic->preserves_state())) {
-        _memory->kill();
-      }
-    }
     s->set_state(state()->copy(ValueStack::StateAfter, canon.bci()));
   }
 
@@ -4736,7 +4749,6 @@ void GraphBuilder::append_unsafe_put(ciMethod* callee, BasicType t, bool is_vola
   }
   Instruction* op = append(new UnsafePut(t, args->at(1), offset, val, is_volatile));
   compilation()->set_has_unsafe_access(true);
-  kill_all();
 }
 
 void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
@@ -4892,7 +4904,6 @@ void GraphBuilder::append_unsafe_get_and_set(ciMethod* callee, bool is_add) {
 #endif
   Instruction* op = append(new UnsafeGetAndSet(t, args->at(1), offset, args->at(3), is_add));
   compilation()->set_has_unsafe_access(true);
-  kill_all();
   push(op->type(), op);
 }
 
