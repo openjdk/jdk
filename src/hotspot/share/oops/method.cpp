@@ -930,7 +930,7 @@ bool Method::is_getter() const {
     default:
       return false;
   }
-  if (ValueTypeReturnedAsFields && !is_native() && returns_value_type() != nullptr) {
+  if (ValueTypeReturnedAsFields && returns_value_type() != nullptr) {
     // Don't treat this as (trivial) getter method because the
     // value type could be returned in a scalarized form.
     return false;
