@@ -268,7 +268,6 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     public boolean writeData(RowSetInternal caller) throws SQLException {
         long conflicts = 0;
         boolean showDel = false;
-        PreparedStatement pstmtIns = null;
         iChangedValsInDbAndCRS = 0;
         iChangedValsinDbOnly = 0;
 
@@ -319,9 +318,6 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         }
         this.crsResolve.setMetaData(rsmdResolv);
 
-        // moved outside the insert inner loop
-        //pstmtIns = con.prepareStatement(insertCmd);
-
         if (callerColumnCount < 1) {
             // No data, so return success.
             if (reader.getCloseConnection() == true)
@@ -337,76 +333,95 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
         int rows =1;
         String[] primaryKeys = null;
-        while (crs.next()) {
-            if (crs.rowDeleted()) {
-                // The row has been deleted.
-                if (deleteOriginalRow(crs, this.crsResolve)) {
-                       status.add(rows, SyncResolver.DELETE_ROW_CONFLICT);
-                       conflicts++;
-                } else {
-                      // delete happened without any occurrence of conflicts
-                      // so update status accordingly
-                       status.add(rows, SyncResolver.NO_ROW_CONFLICT);
-                }
-
-           } else if (crs.rowInserted()) {
-                // The row has been inserted.
-                pstmtIns = con.prepareStatement(insertCmd);
-                if (primaryKeys == null) {
-                    try (ResultSet rs = con.getMetaData().getPrimaryKeys(null, null,
-                            crs.getTableName())) {
-                        var pks = new ArrayList<String>();
-                        while (rs.next()) {
-                            pks.add(rs.getString("COLUMN_NAME"));
-                        }
-                        primaryKeys = pks.toArray(new String[0]);
+        PreparedStatement pstmtIns = null;
+        Throwable originalEx = null;
+        try {
+            while (crs.next()) {
+                if (crs.rowDeleted()) {
+                    // The row has been deleted.
+                    if (deleteOriginalRow(crs, this.crsResolve)) {
+                        status.add(rows, SyncResolver.DELETE_ROW_CONFLICT);
+                        conflicts++;
+                    } else {
+                        // delete happened without any occurrence of conflicts
+                        // so update status accordingly
+                        status.add(rows, SyncResolver.NO_ROW_CONFLICT);
                     }
-                }
-                if (insertNewRow(crs, pstmtIns, primaryKeys)) {
-                          status.add(rows, SyncResolver.INSERT_ROW_CONFLICT);
-                          conflicts++;
+
+                } else if (crs.rowInserted()) {
+                    // The row has been inserted.
+                    if (pstmtIns == null) {
+                        pstmtIns = con.prepareStatement(insertCmd);
+                    }
+                    if (primaryKeys == null) {
+                        try (ResultSet rs = con.getMetaData().getPrimaryKeys(null, null,
+                                crs.getTableName())) {
+                            var pks = new ArrayList<String>();
+                            while (rs.next()) {
+                                pks.add(rs.getString("COLUMN_NAME"));
+                            }
+                            primaryKeys = pks.toArray(new String[0]);
+                        }
+                    }
+                    if (insertNewRow(crs, pstmtIns, primaryKeys)) {
+                        status.add(rows, SyncResolver.INSERT_ROW_CONFLICT);
+                        conflicts++;
+                    } else {
+                        // insert happened without any occurrence of conflicts
+                        // so update status accordingly
+                        status.add(rows, SyncResolver.NO_ROW_CONFLICT);
+                    }
+                } else if (crs.rowUpdated()) {
+                    // The row has been updated.
+                    if (updateOriginalRow(crs)) {
+                        status.add(rows, SyncResolver.UPDATE_ROW_CONFLICT);
+                        conflicts++;
+                    } else {
+                        // update happened without any occurrence of conflicts
+                        // so update status accordingly
+                        status.add(rows, SyncResolver.NO_ROW_CONFLICT);
+                    }
+
                 } else {
-                      // insert happened without any occurrence of conflicts
-                      // so update status accordingly
-                       status.add(rows, SyncResolver.NO_ROW_CONFLICT);
-                }
-            } else  if (crs.rowUpdated()) {
-                  // The row has been updated.
-                       if (updateOriginalRow(crs)) {
-                             status.add(rows, SyncResolver.UPDATE_ROW_CONFLICT);
-                             conflicts++;
-               } else {
-                      // update happened without any occurrence of conflicts
-                      // so update status accordingly
-                      status.add(rows, SyncResolver.NO_ROW_CONFLICT);
-               }
+                    /** The row is neither of inserted, updated or deleted.
+                     *  So set nulls in the this.crsResolve for this row,
+                     *  as nothing is to be done for such rows.
+                     *  Also note that if such a row has been changed in database
+                     *  and we have not changed(inserted, updated or deleted)
+                     *  that is fine.
+                     **/
+                    int icolCount = crs.getMetaData().getColumnCount();
+                    status.add(rows, SyncResolver.NO_ROW_CONFLICT);
 
-            } else {
-               /** The row is neither of inserted, updated or deleted.
-                *  So set nulls in the this.crsResolve for this row,
-                *  as nothing is to be done for such rows.
-                *  Also note that if such a row has been changed in database
-                *  and we have not changed(inserted, updated or deleted)
-                *  that is fine.
-                **/
-                int icolCount = crs.getMetaData().getColumnCount();
-                status.add(rows, SyncResolver.NO_ROW_CONFLICT);
+                    this.crsResolve.moveToInsertRow();
+                    for (int cols = 0; cols < iColCount; cols++) {
+                        this.crsResolve.updateNull(cols + 1);
+                    } //end for
 
-                this.crsResolve.moveToInsertRow();
-                for(int cols=0;cols<iColCount;cols++) {
-                   this.crsResolve.updateNull(cols+1);
-                } //end for
-
-                this.crsResolve.insertRow();
-                this.crsResolve.moveToCurrentRow();
+                    this.crsResolve.insertRow();
+                    this.crsResolve.moveToCurrentRow();
 
                 } //end if
-         rows++;
-      } //end while
+                rows++;
+            } //end while
+        } catch (Throwable e) {
+            originalEx = e;
+            throw e;
+        } finally {
+            // close the insert statement
+            try {
+                if (pstmtIns != null) {
+                    pstmtIns.close();
+                }
+            } catch (Throwable closeEx) {
+                if (originalEx == null) {
+                    throw closeEx;
+                } else {
+                    originalEx.addSuppressed(closeEx);
+                }
+            }
+        }
 
-        // close the insert statement
-        if(pstmtIns!=null)
-        pstmtIns.close();
         // reset
         crs.setShowDeleted(showDel);
 
@@ -475,7 +490,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         origVals.next();
 
         try {
-            updateWhere = buildWhereClause(updateWhere, origVals);
+            updateWhere = buildWhereClause(origVals);
 
             pstmt = con.prepareStatement(selectCmd + updateWhere,
                         ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -928,7 +943,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
         ResultSet origVals = crs.getOriginalRow();
         origVals.next();
 
-        deleteWhere = buildWhereClause(deleteWhere, origVals);
+        deleteWhere = buildWhereClause(origVals);
         pstmt = con.prepareStatement(selectCmd + deleteWhere,
                 ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
@@ -1229,10 +1244,9 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
     }
 
     /**
-     * Constructs an SQL {@code WHERE} clause using the given
-     * string as a starting point. The resulting clause will contain
-     * a column name and " = ?" for each key column, that is, each column
-     * that is needed to form a unique identifier for a row in the rowset.
+     * Constructs an SQL {@code WHERE} clause. The resulting clause will contain
+     * a column name and " = ?" or " IS NULL " for each key column that is needed
+     * to form a unique identifier for a row in the rowset.
      * This {@code WHERE} clause can be added to
      * a {@code PreparedStatement} object that updates, inserts, or
      * deletes a row.
@@ -1244,45 +1258,44 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
      * {@code PreparedStatement} object that is sent to the
      * {@code CachedRowSet} object's underlying data source.
      *
-     * @param whereClause a {@code String} object that is an empty
-     *                    string ("")
      * @param rs a {@code ResultSet} object that can be used
      *           to access the {@code CachedRowSet} object's data
      * @return a {@code WHERE} clause of the form "{@code WHERE}
      *         columnName = ? AND columnName = ? AND columnName = ? ..."
      * @throws SQLException if a database access error occurs
      */
-    private String buildWhereClause(String whereClause,
-                                    ResultSet rs) throws SQLException {
-        whereClause = "WHERE ";
+    private String buildWhereClause(ResultSet rs) throws SQLException {
+        return buildWhereClause(rs, callerMd, params, keyCols);
+    }
 
+    // Allows `updateResolvedConflictToDB` to provide its own metadata, key cols, and populate its params
+    private String buildWhereClause(ResultSet rs, ResultSetMetaData metaData, Object[] params, int[] keyCols)
+            throws SQLException {
+        StringBuilder whereClause = new StringBuilder("WHERE ");
         for (int i = 0; i < keyCols.length; i++) {
             if (i > 0) {
-                    whereClause += "AND ";
+                whereClause.append("AND ");
             }
-            whereClause += callerMd.getColumnName(keyCols[i]);
+            whereClause.append(metaData.getColumnName(keyCols[i]));
             params[i] = rs.getObject(keyCols[i]);
-            if (rs.wasNull() == true) {
-                whereClause += " IS NULL ";
+            if (rs.wasNull()) {
+                whereClause.append(" IS NULL ");
             } else {
-                whereClause += " = ? ";
+                whereClause.append(" = ? ");
             }
         }
-        return whereClause;
+        return whereClause.toString();
     }
 
     void updateResolvedConflictToDB(CachedRowSet crs, Connection con) throws SQLException {
           //String updateExe = ;
           PreparedStatement pStmt  ;
-          String strWhere = "WHERE " ;
           String strExec =" ";
           String strUpdate = "UPDATE ";
           int icolCount = crs.getMetaData().getColumnCount();
           int keyColumns[] = crs.getKeyColumns();
           Object param[];
           String strSet="";
-
-        strWhere = buildWhereClause(strWhere, crs);
 
         if (keyColumns == null || keyColumns.length == 0) {
             keyColumns = new int[icolCount];
@@ -1316,21 +1329,8 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
          // keycols will become part of where clause
          strUpdate += strSet;
-         strWhere = "WHERE ";
 
-        for (int i = 0; i < keyColumns.length; i++) {
-            if (i > 0) {
-                    strWhere += "AND ";
-            }
-            strWhere += crs.getMetaData().getColumnName(keyColumns[i]);
-            param[i] = crs.getObject(keyColumns[i]);
-            if (crs.wasNull() == true) {
-                strWhere += " IS NULL ";
-            } else {
-                strWhere += " = ? ";
-            }
-        }
-          strUpdate += strWhere;
+          strUpdate += buildWhereClause(crs, crs.getMetaData(), param, keyColumns);
 
         pStmt = con.prepareStatement(strUpdate);
 

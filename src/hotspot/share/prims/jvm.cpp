@@ -567,10 +567,10 @@ JVM_ENTRY(jboolean, JVM_IsAtomicArray(JNIEnv *env, jarray array))
 
   if (klass->is_flatArray_klass()) {
     FlatArrayKlass* fak = FlatArrayKlass::cast(klass);
-    if (LayoutKindHelper::is_atomic_flat(fak->layout_kind())) {
+    if (fak->flat_layout().is_atomic()) {
       return true;
     }
-    bool is_null_free = !LayoutKindHelper::is_nullable_flat(fak->layout_kind());
+    bool is_null_free = !fak->flat_layout().is_nullable();
     if (fak->element_klass()->is_naturally_atomic(is_null_free)) {
       return true;
     }
@@ -3492,7 +3492,6 @@ JVM_ENTRY(jobject, JVM_InvokeMethod(JNIEnv *env, jobject method, jobject obj, jo
     method_handle = Handle(THREAD, JNIHandles::resolve(method));
     Handle receiver(THREAD, JNIHandles::resolve(obj));
     objArrayHandle args(THREAD, (objArrayOop)JNIHandles::resolve(args0));
-    assert(args() == nullptr || !args->is_flatArray(), "args are never flat");
 
     oop result = Reflection::invoke_method(method_handle(), receiver, args, CHECK_NULL);
     jobject res = JNIHandles::make_local(THREAD, result);
@@ -3514,7 +3513,6 @@ JVM_END
 
 JVM_ENTRY(jobject, JVM_NewInstanceFromConstructor(JNIEnv *env, jobject c, jobjectArray args0))
   objArrayHandle args(THREAD, (objArrayOop)JNIHandles::resolve(args0));
-  assert(args() == nullptr || !args->is_flatArray(), "args are never flat");
   oop constructor_mirror = JNIHandles::resolve(c);
   oop result = Reflection::invoke_constructor(constructor_mirror, args, CHECK_NULL);
   jobject res = JNIHandles::make_local(THREAD, result);
