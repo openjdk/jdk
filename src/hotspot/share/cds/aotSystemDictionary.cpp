@@ -469,7 +469,7 @@ const char* AOTSystemDictionary::check_self_exclusion_helper(InstanceKlass* k, b
       // causing the JVM to fail at bootstrap.
       return "Unlinked class not supported by AOTClassLinking";
     } else if (CDSConfig::is_dumping_aot_configuration()) {
-      // When dumping the final static archive, we will unconditionally load and link all
+      // When dumping the AOT cache, we will unconditionally load and link all
       // classes from the AOT configuration. We don't want to get a VerifyError when linking this class.
       return "Unlinked class not supported by AOTConfiguration";
     }

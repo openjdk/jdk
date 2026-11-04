@@ -34,6 +34,7 @@
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotMetaspaceRecipes.hpp"
 #include "cds/aotModules.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/aotSystemDictionary.hpp"
@@ -47,7 +48,6 @@
 #include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/finalImageRecipes.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -528,7 +528,7 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   AOTHeap::serialize_tables(soc);
   AOTSystemDictionary::serialize_dictionary_headers(soc);
   AOTLinkedClassBulkLoader::serialize(soc);
-  FinalImageRecipes::serialize(soc);
+  AOTMetsapceRecipes::serialize(soc);
   TrainingData::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
 
@@ -753,7 +753,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
   cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
   AOTClassLinker::write_to_archive();
   if (CDSConfig::is_dumping_aot_configuration()) {
-    FinalImageRecipes::record_recipes();
+    AOTMetsapceRecipes::record_recipes();
   }
 
   TrainingData::dump_training_data();
@@ -933,11 +933,11 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
     //   initialized in the training run.
     // - Perform per-class optimization such as AOT-resolution of
     //   constant pool entries that were resolved during the training run.
-    FinalImageRecipes::apply_recipes(CHECK);
+    AOTMetsapceRecipes::apply_recipes(CHECK);
 
     // Because the AOT assembly phase does not run the same exact code as in the
     // training run (e.g., we use different lambda form invoker classes;
-    // generated lambda form classes are not recorded in FinalImageRecipes),
+    // generated lambda form classes are not recorded in AOTMetsapceRecipes),
     // the recipes do not cover all classes that have been loaded so far. As
     // a result, we might have some unlinked classes at this point. Since we
     // require cached classes to be linked, all such classes will be linked
@@ -1223,7 +1223,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     tty->print_cr("%sAOTConfiguration recorded: %s",
                   CDSConfig::has_temp_aot_config_file() ? "Temporary " : "", AOTConfiguration);
     if (CDSConfig::is_single_command_training()) {
-      fork_and_dump_final_static_archive(CHECK);
+      fork_and_dump_aot_cache(CHECK);
     }
   }
 
@@ -1349,7 +1349,7 @@ static int exec_jvm_with_java_tool_options(const char* java_launcher_path, TRAPS
   return result.get_jint();
 }
 
-void AOTMetaspace::fork_and_dump_final_static_archive(TRAPS) {
+void AOTMetaspace::fork_and_dump_aot_cache(TRAPS) {
   assert(CDSConfig::is_dumping_aot_configuration(), "sanity");
 
   ResourceMark rm;

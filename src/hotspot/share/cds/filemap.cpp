@@ -1710,7 +1710,7 @@ bool FileMapInfo::can_use_heap_region() {
     }
     if (!CDSConfig::is_using_full_module_graph()) {
       if (CDSConfig::is_dumping_aot_cache()) {
-        // We are loading the preimage static archive, which has no KlassSubGraphs.
+        // We are loading the AOT configuration, which has no KlassSubGraphs.
         // See CDSConfig::is_dumping_klass_subgraphs()
       } else {
         AOTMetaspace::report_loading_error("CDS heap data is disabled because archived full module graph is not used.");

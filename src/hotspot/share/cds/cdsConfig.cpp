@@ -1202,7 +1202,7 @@ bool CDSConfig::is_dumping_method_handles() {
 // AOT code generation and its archiving is disabled by default.
 // We enable it only after the metadata and heap are dumped for the AOT cache.
 // This affects only JITed code because it may have embedded oops and metadata pointers
-// which AOT code encodes as offsets in final CDS archive regions.
+// which AOT code encodes as offsets in the metaspace regions of the AOT cache.
 
 static bool _is_dumping_aot_code = false;
 
