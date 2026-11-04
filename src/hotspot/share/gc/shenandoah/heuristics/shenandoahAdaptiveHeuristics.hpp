@@ -58,8 +58,10 @@ public:
 
   bool should_start_gc() override;
 
-  const char* name() override     { return "Adaptive"; }
-  bool is_diagnostic() override   { return false; }
+  const char* name() override;
+
+  bool is_diagnostic() override;
+
   bool is_experimental() override { return false; }
 
   // In preparation for a span during which GC will be idle, compute the headroom adjustment that will be used to
