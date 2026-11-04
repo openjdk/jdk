@@ -306,11 +306,10 @@
           "disabled by some heuristics, or with static heap size.")         \
                                                                             \
   product(uintx, ShenandoahUncommitDelay, 5*60*1000, EXPERIMENTAL,          \
-          "Uncommit memory for regions that were not used for more than "   \
-          "this time. First use after that would incur allocation stalls. " \
-          "Actively used regions would never be uncommitted, because they " \
-          "do not become unused longer than this delay. Time is in "        \
-          "milliseconds. Setting this delay to 0 effectively uncommits "    \
+          "Uncommit regions that were not used for longer than this time. " \
+          "First use after uncommit would incur delays to commit memory. "  \
+          "Actively used regions are unlikely to be uncommitted. Time is "  \
+          "in milliseconds. Setting this delay to 0 effectively uncommits " \
           "regions almost immediately after they become unused.")           \
                                                                             \
   product(bool, ShenandoahRegionSampling, false, EXPERIMENTAL,              \
