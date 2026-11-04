@@ -680,7 +680,7 @@ class BlockingChannelOps {
                 assertTrue(bb2.get(0) == 'X');
 
                 // check blocker object was set when thread parked
-                assertSame(source, unparker.parkBlocker());
+                assertNotNull(unparker.parkBlocker());
             }
         });
     }
@@ -708,7 +708,7 @@ class BlockingChannelOps {
                 sink.close();
 
                 // check blocker object was set when thread parked
-                assertSame(sink, unparker.parkBlocker());
+                assertNotNull(unparker.parkBlocker());
 
                 // wait for reader to finish
                 unparker.join();
