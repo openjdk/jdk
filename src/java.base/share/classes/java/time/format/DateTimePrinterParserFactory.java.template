@@ -1,0 +1,117 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package java.time.format;
+
+import static java.time.format.DateTimeFormatterBuilder.DateTimeParser;
+import static java.time.format.DateTimeFormatterBuilder.DateTimePrinter;
+import static java.time.format.DateTimeFormatterBuilder.DateTimePrinterParser;
+
+final class DateTimePrinterParserFactory {
+    private DateTimePrinterParserFactory() {
+    }
+
+    /**
+     * Creates a DateTimePrinter based on the number of printer parsers.
+     * This method efficiently creates specialized formatters for different numbers of printer parsers,
+     * optimizing performance by avoiding loops for small numbers of parsers.
+     * The manual expansion of cases (rather than using a loop) is designed to allow the TypeProfile optimizer to be effective.
+     *
+     * @param printerParsers an array of DateTimePrinterParser instances to format
+     * @return a DateTimePrinter that formats according to the provided printer parsers
+     */
+    static DateTimePrinter createFormatter(DateTimePrinterParser[] printerParsers) {
+        int length = printerParsers.length;
+        return switch (length) {
+            case 1 -> printerParsers[0]::format;
+            case 2 -> (context, buf, optional)
+                    -> printerParsers[0].format(context, buf, optional)
+                    && printerParsers[1].format(context, buf, optional);
+            case 3 -> (context, buf, optional)
+                    -> printerParsers[0].format(context, buf, optional)
+                    && printerParsers[1].format(context, buf, optional)
+                    && printerParsers[2].format(context, buf, optional);
+%%%%CASES-FORMAT:4-16%%%%
+            default -> (context, buf, optional) -> {
+                   for (var pp : printerParsers) {
+                       if (!pp.format(context, buf, optional)) {
+                           return false;
+                       }
+                   }
+                   return true;
+            };
+        };
+    }
+
+     /**
+     * Creates a DateTimeParser based on the number of printer parsers.
+     * This method efficiently creates specialized parsers for different numbers of printer parsers,
+     * optimizing performance by avoiding loops for small numbers of parsers.
+     * The manual expansion of cases (rather than using a loop) is designed to allow the TypeProfile optimizer to be effective.
+     * For optional parsing, the method wraps the parser with optional handling logic that starts and ends an optional context.
+     *
+     * @param printerParsers an array of DateTimePrinterParser instances to parse
+     * @param optional flag indicating whether the parsing is optional
+     * @return a DateTimeParser that parses according to the provided printer parsers
+     */
+    static DateTimeParser createParser(DateTimePrinterParser[] printerParsers, boolean optional) {
+        int len = printerParsers.length;
+        DateTimeParser parser = switch (len) {
+            case 1 -> printerParsers[0]::parse;
+            case 2 -> (context, text, position)
+                    -> (position = printerParsers[0].parse(context, text, position)) < 0
+                    ? position : printerParsers[1].parse(context, text, position);
+            case 3 -> (context, text, position)
+                    -> (position = printerParsers[0].parse(context, text, position)) < 0
+                    ? position : (position = printerParsers[1].parse(context, text, position)) < 0
+                    ? position : printerParsers[2].parse(context, text, position);
+%%%%CASES-PARSE:4-16%%%%
+            default -> (context, text, position) -> {
+                for (var pp : printerParsers) {
+                    position = pp.parse(context, text, position);
+                    if (position < 0) {
+                        break;
+                    }
+                }
+                return position;
+            };
+        };
+        if (!optional) {
+            return parser;
+        }
+        // Wrap the parser with optional handling logic
+        return (context, text, position) -> {
+            context.startOptional();
+            int pos = position;
+            pos = parser.parse(context, text, pos);
+            if (pos < 0) {
+                context.endOptional(false);
+                return position;  // return original position
+            }
+            context.endOptional(true);
+            return pos;
+        };
+    }
+}
