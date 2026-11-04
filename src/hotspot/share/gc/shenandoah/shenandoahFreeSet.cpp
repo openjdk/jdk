@@ -1581,7 +1581,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
       if (i == beg) {
         r->make_humongous_start();
       } else {
-        r->make_humongous_cont();
+        r->make_humongous_cont(beg);
       }
       if ((i == end) && (used_words_in_last_region > 0)) {
         r->set_top(r->bottom() + used_words_in_last_region);
