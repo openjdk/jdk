@@ -2930,7 +2930,10 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       if (u->Opcode() != use_op || u->as_Vector()->is_predicated_vector()) {
         return false;
       }
-      // The inputs are null while 'u' is being disconnected from the graph.
+      // Reached from remove_globally_dead_node() -> replace_edge() ->
+      // set_req_X() after clearing one input leaves the shared input with a
+      // single user and has_special_unique_user() is true. 'u' is still being
+      // disconnected, so a required input may already be null.
       Node* in1 = u->in(1);
       Node* in2 = u->in(2);
       return (in1 != nullptr && in1->Opcode() == Op_Replicate) ||

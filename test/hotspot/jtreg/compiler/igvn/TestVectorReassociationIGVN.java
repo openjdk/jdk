@@ -21,28 +21,25 @@
  * questions.
  */
 
-package compiler.c2;
+package compiler.igvn;
 
 /*
  * @test id=reduced1
  * @bug 8396171
  * @summary C2: segfault while adding node to IGVN worklist.
- * @requires vm.compiler2.enabled
  * @requires vm.cpu.features ~= ".*avx.*"
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseAVX=2
- *                   -XX:CompileCommand=compileonly,compiler.c2.TestReduced1::test
- *                   compiler.c2.TestVectorReassociationIGVN
+ *                   -XX:CompileCommand=compileonly,compiler.igvn.TestReduced1::test
+ *                   ${test.main.class}
  */
 
 /*
  * @test id=reduced2
  * @bug 8396171
  * @summary C2: segfault while adding node to IGVN worklist.
- * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*avx.*"
  * @run main/othervm -Xbatch -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,compiler.c2.TestReduced2::test
- *                   compiler.c2.TestVectorReassociationIGVN
+ *                   -XX:CompileCommand=compileonly,compiler.igvn.TestReduced2::test
+ *                   ${test.main.class}
  */
 
 public class TestVectorReassociationIGVN {
