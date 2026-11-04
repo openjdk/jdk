@@ -3761,6 +3761,7 @@ public:
   INSN(sve_orr,  0b10, 0b0, 0b0);
   INSN(sve_orrs, 0b11, 0b0, 0b0);
   INSN(sve_bic,  0b00, 0b0, 0b1);
+  INSN(sve_bics, 0b01, 0b0, 0b1);
 #undef INSN
 
   // SVE increment register by predicate count

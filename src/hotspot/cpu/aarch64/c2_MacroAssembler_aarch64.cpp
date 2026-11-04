@@ -930,6 +930,220 @@ void C2_MacroAssembler::string_indexof(Register str2, Register str1,
   BIND(DONE);
 }
 
+void C2_MacroAssembler::string_indexof_sve(Register haystack, Register needle,
+                                           Register haystack_len, Register needle_len,
+                                           Register haystack_offset, Register lane_offset,
+                                           Register max_start_idx, Register induction,
+                                           Register last_full_vector_induction,
+                                           Register last_candidate_full_vector_index,
+                                           Register tmp7, Register tmp8,
+                                           FloatRegister first_needle_vec, FloatRegister last_needle_vec,
+                                           FloatRegister needle_vec, FloatRegister haystack_vec,
+                                           FloatRegister fp5,
+                                           PRegister pred_compare, PRegister verify_mask,
+                                           PRegister active_mask, PRegister lowest_pred,
+                                           PRegister candidate_mask,
+                                           Register result, int ae) {
+
+  assert(pred_compare->is_governing() && verify_mask->is_governing()
+         && active_mask->is_governing() && lowest_pred->is_governing()
+         && candidate_mask->is_governing(),
+         "These registers have to be governing predicate registers");
+
+  Label SCAN, CANDIDATE, FOUND, NOTFOUND, DONE, EQUALLENGTHSKIP;
+  Label CHARFALLBACK, CANDIDATE_INNERLOOP, CANDIDATE_REJECT;
+
+  Register induction_stride = rscratch1;
+  Register last_needle_char_offset = rscratch2;
+
+  mov(result, 0);
+  cbz(needle_len, DONE);
+
+  cmp(needle_len, (unsigned char) 1);
+  br(EQ, CHARFALLBACK);
+
+  cmp(haystack_len, needle_len);
+  br(LT, NOTFOUND);
+
+  SIMD_RegVariant variant = INVALID;
+  SIMD_RegVariant needle_variant = INVALID;
+  if (ae == StrIndexOfNode::ArgEncoding::LL) {
+    variant = B;
+    needle_variant = B;
+  } else if (ae == StrIndexOfNode::ArgEncoding::UU) {
+    variant = H;
+    needle_variant = H;
+  } else if (ae == StrIndexOfNode::ArgEncoding::UL) {
+    variant = H;
+    needle_variant = B;
+  } else {
+    ShouldNotReachHere();
+  }
+
+  auto sve_ld1 = [&](FloatRegister Zt, SIMD_RegVariant T, PRegister Pg, const Address &a) {
+    if (T == B) {
+      sve_ld1b(Zt, T, Pg, a);
+    } else if (T == H) {
+      sve_ld1h(Zt, T, Pg, a);
+    }
+  };
+
+  auto load_needle = [&](FloatRegister Zd, PRegister predicate, const Address &address) {
+    if (variant == H && needle_variant == B) {
+      // Explicitly handle variant mismatch
+      sve_ld1b(Zd, H, predicate, address);
+    } else {
+      sve_ld1(Zd, variant, predicate, address);
+    }
+  };
+
+  {
+    // Fast path for equal-length needle and haystack
+    cmp(needle_len, haystack_len);
+    br(NE, EQUALLENGTHSKIP);
+    {
+      if (variant == B) {
+        sve_cntb(induction_stride);
+      } else {
+        sve_cnth(induction_stride);
+      }
+      mov(induction, 0);
+      Label EQUALFASTPATH;
+      BIND(EQUALFASTPATH);
+      sve_whilelo(verify_mask, variant, induction, needle_len);
+      load_needle(needle_vec, verify_mask, Address(needle, induction));
+      sve_ld1(haystack_vec, variant, verify_mask, Address(haystack, induction));
+      sve_cmp(NE, verify_mask, variant, verify_mask, needle_vec, haystack_vec);
+      br(NE, NOTFOUND);
+      add(induction, induction, induction_stride);
+      cmp(induction, needle_len);
+      br(LT, EQUALFASTPATH);
+      mov(result, 0);
+      b(DONE);
+    }
+
+    BIND(EQUALLENGTHSKIP);
+    sub(max_start_idx, haystack_len, needle_len);
+    {
+      Register needle_char = last_needle_char_offset;
+      if (needle_variant == B) {
+        ldrb(needle_char, Address(needle));
+      } else if (needle_variant == H) {
+        ldrh(needle_char, Address(needle));
+      }
+      sve_dup(first_needle_vec, variant, needle_char);
+
+      sub(last_needle_char_offset, needle_len, 1);
+      if (needle_variant == B) {
+        ldrb(induction_stride, Address(needle, last_needle_char_offset));
+      } else if (needle_variant == H) {
+        ldrh(induction_stride, Address(needle, last_needle_char_offset, Address::lsl(1)));
+      }
+      sve_dup(last_needle_vec, variant, induction_stride);
+
+      if (variant == B) {
+        sve_cntb(induction_stride);
+      } else {
+        sve_cnth(induction_stride);
+      }
+    }
+    mov(induction, 0);
+    sve_ptrue(active_mask, variant);
+    sub(last_full_vector_induction, max_start_idx, induction_stride);
+    sub(last_candidate_full_vector_index, needle_len, induction_stride);
+  }
+  BIND(SCAN);
+  {
+    Register last_needle_offset = tmp7;
+    PRegister pred_compare_last = lowest_pred;
+    FloatRegister haystack_last_vec = fp5;
+    cmp(induction, max_start_idx);
+    br(GT, NOTFOUND);
+
+    Label whilele_skip;
+    subs(zr, induction, last_full_vector_induction);
+    br(LE, whilele_skip);
+    sve_whilele(active_mask, variant, induction, max_start_idx);
+    BIND(whilele_skip);
+
+    add(last_needle_offset, induction, last_needle_char_offset);
+    sve_ld1(haystack_vec, variant, active_mask, Address(haystack, induction));
+    sve_cmp(EQ, pred_compare, variant, active_mask, haystack_vec, first_needle_vec);
+    Label SCAN_INCREMENT;
+    br(EQ, SCAN_INCREMENT);
+    sve_ld1(haystack_last_vec, variant, active_mask, Address(haystack, last_needle_offset));
+    sve_cmp(EQ, pred_compare_last, variant, active_mask, haystack_last_vec, last_needle_vec);
+
+    sve_ands(pred_compare, active_mask, pred_compare, pred_compare_last);
+
+    br(NE, CANDIDATE);
+    BIND(SCAN_INCREMENT);
+    add(induction, induction, induction_stride);
+    b(SCAN);
+  }
+  BIND(CANDIDATE);
+  {
+    Register candidate_induction = tmp7;
+    mov(candidate_induction, 0);
+
+    sve_brkb(lowest_pred, active_mask, pred_compare, false);
+    sve_cntp(lane_offset, variant, lowest_pred, lowest_pred);
+    add(haystack_offset, induction, lane_offset);
+
+    sve_ptrue(candidate_mask, variant);
+    BIND(CANDIDATE_INNERLOOP);
+    {
+      Register haystack_load_offset = tmp8;
+      add(haystack_load_offset, haystack_offset, candidate_induction);
+
+      Label whilelo_skip;
+      subs(zr, candidate_induction, last_candidate_full_vector_index);
+      br(LE, whilelo_skip);
+      sve_whilelo(candidate_mask, variant, candidate_induction, needle_len);
+      BIND(whilelo_skip);
+      load_needle(needle_vec, candidate_mask, Address(needle, candidate_induction));
+      sve_ld1(haystack_vec, variant, candidate_mask, Address(haystack, haystack_load_offset));
+
+      sve_cmp(NE, verify_mask, variant, candidate_mask, haystack_vec, needle_vec);
+      br(NE, CANDIDATE_REJECT);
+      add(candidate_induction, candidate_induction, induction_stride);
+      cmp(candidate_induction, needle_len);
+      br(GE, FOUND);
+      b(CANDIDATE_INNERLOOP);
+    }
+
+    BIND(CANDIDATE_REJECT);
+    sve_brka(verify_mask, active_mask, pred_compare, false);
+    sve_bics(pred_compare, active_mask, pred_compare, verify_mask);
+    // If at least one element in pred_compare is true, branch to CANDIDATE
+    br(NE, CANDIDATE);
+    add(induction, induction, induction_stride);
+    b(SCAN);
+  }
+  BIND(FOUND);
+  {
+    mov(result, haystack_offset);
+    b(DONE);
+  }
+  BIND(NOTFOUND);
+  {
+    mov(result, -1);
+    b(DONE);
+  }
+
+  BIND(CHARFALLBACK);
+  if (needle_variant == B) {
+    ldrb(needle_len, Address(needle));
+  } else if (needle_variant == H) {
+    ldrh(needle_len, Address(needle));
+  }
+  string_indexof_char_sve(haystack, haystack_len, needle_len, result,
+    first_needle_vec, last_needle_vec, pred_compare, verify_mask,
+    ae == StrIndexOfNode::ArgEncoding::LL);
+
+  BIND(DONE);
+}
+
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 typedef void (MacroAssembler::* uxt_insn)(Register Rd, Register Rn);
 
