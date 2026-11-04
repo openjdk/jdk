@@ -88,7 +88,6 @@ public class GenerateCaseFolding {
     }
 
     private static long foldingToLong(String[] folding) {
-        int cp = Integer.parseInt(folding[0], 16);
         long value = (long)Integer.parseInt(folding[1], 16);
         if (folding.length != 2) {
             var shift = 16;

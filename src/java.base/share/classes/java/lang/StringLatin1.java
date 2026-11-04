@@ -393,11 +393,12 @@ final class StringLatin1 {
             int cp1 = getChar(value, k);
             int cp2 = StringUTF16.codePointAt(other, k, olast, true);
             if (cp1 != cp2) {
+                if (Character.charCount(cp2) != 1) {
+                    return compareToFC0_UTF16(value, k, last, other, k, olast);
+                }
                 long cf1 = CaseFolding.fold(cp1);
                 long cf2 = CaseFolding.fold(cp2);
-                if (cf1 != cf2 ||
-                    // Special case for Sharp-S
-                    cp1 == 0x00DF) {
+                if (cf1 != cf2) {
                     if (!CaseFolding.isSingleCodePoint(cf1) || !CaseFolding.isSingleCodePoint(cf2)) {
                         return compareToFC0_UTF16(value, k, last, other, k, olast);
                     }

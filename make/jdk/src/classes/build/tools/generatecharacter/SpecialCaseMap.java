@@ -54,7 +54,6 @@ public class SpecialCaseMap implements Comparable<SpecialCaseMap> {
      * @return  an array of SpecialCaseMap objects, one for each line of the
      *          special case map data file that could be successfully parsed
      */
-
     public static SpecialCaseMap[] readSpecFile(File file, int plane) throws IOException {
         ArrayList<SpecialCaseMap> caseMaps = new ArrayList<>(150);
 
@@ -71,7 +70,6 @@ public class SpecialCaseMap implements Comparable<SpecialCaseMap> {
         caseMaps.toArray(result);
         Arrays.sort(result);
         return result;
-
     }
 
    /**

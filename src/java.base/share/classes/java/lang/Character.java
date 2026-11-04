@@ -12421,7 +12421,7 @@ public final /*value*/ class Character
      * Converts the character (Unicode code point) argument to uppercase using case
      * mapping information from the SpecialCasing file in the Unicode
      * specification. If a character has no explicit uppercase
-     * mapping, then the {@code char} itself is returned in the
+     * mapping, then the character itself is returned in the
      * {@code char[]}.
      *
      * @param   codePoint   the character (Unicode code point) to be converted.
