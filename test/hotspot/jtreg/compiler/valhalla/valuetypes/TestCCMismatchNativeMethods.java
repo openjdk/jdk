@@ -48,7 +48,7 @@ public class TestCCMismatchNativeMethods {
     static public int test3(A1 a) {
         return a.m2().x();
     }
-    
+
     static public int test4(A2 a) {
         return a.m2().x();
     }
@@ -145,11 +145,11 @@ value record V1(int x) { }
 
 class A1 {
     static V1 fieldV1 = new V1(42);
-    
+
     int m1(V1 v1, V1 v2) {
         return v1.x();
     }
-    
+
     V1 m2() {
         return fieldV1;
     }
@@ -165,11 +165,11 @@ class C1 extends A1 {
 
 class A2 {
     static V1 fieldV1 = new V1(42);
-    
+
     int m1(V1 v1, V1 v2) {
         return v1.x();
     }
-    
+
     V1 m2() {
         return fieldV1;
     }
@@ -185,5 +185,3 @@ class D2 extends A2 {
     native int m1(V1 v1, V1 v2);
     native V1 m2();
 }
-
-    
