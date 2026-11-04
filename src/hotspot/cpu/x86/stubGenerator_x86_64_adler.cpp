@@ -198,7 +198,6 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ cmpl(chunk_size, size);
   __ cmovl(Assembler::above, chunk_size, size); // chunk_size = min(size, LIMIT)
 
-  __ align32();
   if (VM_Version::supports_avx512vl()) {
     // Use AVX2 up to the AVX-512 dispatch threshold.
     __ cmpl(chunk_size, MAX2(128, CopyAVX3Threshold));
@@ -226,6 +225,7 @@ address StubGenerator::generate_updateBytesAdler32() {
     // yb0 = 16 x yb0  - [a0 - a15] x ya
     //     = 64 x [a0 - a15] + 48 x [a16 - a31] + 32 x [a32 - a47] + 16 x [a48 - a63]  -  [a0 - a15] x ya
     //     = 64 x a0 + 63 x a1 + 62 x a2 ...... + a63
+    __ align32();
     __ bind(AVX512_LOOP_32);
       __ evpmovzxbd(ydata0, Address(data, 0), Assembler::AVX_512bit);
       __ evpmovzxbd(ydata1, Address(data, CHUNKSIZE), Assembler::AVX_512bit);
