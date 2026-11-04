@@ -1240,8 +1240,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private boolean isFlatNullable(InstanceKlass holder, int fieldIndex) {
         var valueFieldInfoArray = holder.getValueFieldInfoArray();
         var layoutInfo = valueFieldInfoArray.at(fieldIndex);
-        var layoutKind = layoutInfo.getKind();
-        return LayoutKindHelper.isNullableFlat(layoutKind);
+        var layout = layoutInfo.getOptionalFlatLayout();
+        return layout.getIsFlat() && LayoutKindHelper.isNullableFlat(layout.getFlatLayout().getLayoutKind());
     }
 
     private long generateIDForFlatObj() {
