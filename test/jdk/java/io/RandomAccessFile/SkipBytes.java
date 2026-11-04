@@ -26,7 +26,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.*;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,10 +45,6 @@ class SkipBytes {
     static List<Arguments> args() throws IOException {
         List<Arguments> args = new ArrayList<>();
         for (long size : List.of(0L, 1L, 100L)) {
-
-            // Populate the file
-            var fileNamePrefix = "RAF-%s-%s-".formatted(SkipBytes.class.getSimpleName(), size);
-            Path filePath = createTempFileOfSize(fileNamePrefix, ".dat", size);
 
             // Start positions
             long[] positions = {
@@ -87,7 +82,7 @@ class SkipBytes {
                 if (position >= 0) {
                     for (long skip : skips) {
                         if (skip <= Integer.MAX_VALUE) {
-                            args.add(Arguments.of(size, filePath, position, (int) skip));
+                            args.add(Arguments.of(size, position, (int) skip));
                         }
                     }
                 }
@@ -97,9 +92,10 @@ class SkipBytes {
         return args;
     }
 
-    @ParameterizedTest(name = "{0}, {2}, {3}")
+    @ParameterizedTest
     @MethodSource("args")
-    void test(long size, Path path, long expectedPosition0, int requestedSkip) throws IOException {
+    void test(long size, long expectedPosition0, int requestedSkip) throws IOException {
+        var path = createTempFileOfSize("RAF-SkipBytes-%s-".formatted(size), ".dat", size);
         try (var raf = new RandomAccessFile(path.toFile(), "rw")) {
 
             // Seek to the requested start position
