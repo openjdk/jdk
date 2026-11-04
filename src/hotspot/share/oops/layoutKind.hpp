@@ -177,9 +177,9 @@ class FlatLayoutSlot {
       // Paddings to ensure deterministic content in AOT cache. They prevent
       // the C++ compiler from potentially inserting random values in unused gaps.
       static_assert(sizeof(FlatLayout) == 4);
-      bool _unused1;
-      bool _unused2;
-      bool _unused3;
+      bool _padding1;
+      bool _padding2;
+      bool _padding3;
     };
   };
 
@@ -189,7 +189,7 @@ public:
 
   explicit FlatLayoutSlot(bool initialized_non_flat = false)
     : _initialized_non_flat(initialized_non_flat),
-      _unused1(0), _unused2(0), _unused3(0) {}
+      _padding1(0), _padding2(0), _padding3(0) {}
 
   // Get the FlatLayout. The external has_flat_layout discriminator is used to
   // catch when code tries to fetch layout without having a flat layout.
