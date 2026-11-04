@@ -29,17 +29,21 @@
 #include "gc/g1/g1Policy.hpp"
 #include "logging/log.hpp"
 
-G1CardSetGroup::G1CardSetGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id) :
+const char* G1CardSetGroup::_state_strings[] =  {"Updating", "Complete"};
+const char* G1CardSetGroup::_short_state_strings[] =  {"UPDAT", "CMPLT"};
+
+G1CardSetGroup::G1CardSetGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id, State state) :
   _items(4, mtGCCardSet),
   _card_set_mm(config, card_set_freelist_pool),
   _card_set(config, &_card_set_mm),
   _reclaimable_bytes(size_t(0)),
   _gc_efficiency(0.0),
-  _group_id(group_id)
+  _group_id(group_id),
+  _state(state)
 { }
 
-G1CardSetGroup::G1CardSetGroup() :
-  G1CardSetGroup(G1CollectedHeap::heap()->card_set_config(), G1CollectedHeap::heap()->card_set_freelist_pool(), InvalidId)
+G1CardSetGroup::G1CardSetGroup(State state) :
+  G1CardSetGroup(G1CollectedHeap::heap()->card_set_config(), G1CollectedHeap::heap()->card_set_freelist_pool(), InvalidId, state)
 { }
 
 void G1CardSetGroup::add(G1HeapRegion* hr) {
@@ -70,13 +74,18 @@ double G1CardSetGroup::liveness_percent() const {
   return ((capacity - _reclaimable_bytes) * 100.0) / capacity;
 }
 
-void G1CardSetGroup::clear(bool uninstall_card_set_group) {
+void G1CardSetGroup::clear(bool clear_backlinks) {
   clear_card_set();
-  if (uninstall_card_set_group) {
-    for (G1CardSetGroupItem ci : _items) {
-      G1HeapRegion* r = ci._r;
+  for (G1CardSetGroupItem ci : _items) {
+    G1HeapRegion* r = ci._r;
+    if (clear_backlinks) {
+      G1CardSetGroup* group_from_region = r->rem_set()->card_set_group();
+      assert(group_from_region == nullptr || group_from_region == this,
+             "must either refer to this group or be null, but already refers to %u.",
+             group_from_region->group_id());
       r->uninstall_card_set_group();
-      r->rem_set()->set_state_untracked();
+    } else {
+      assert(r->rem_set()->card_set_group() != this, "must not refer to this group any more.");
     }
   }
   _items.clear();
@@ -129,6 +138,17 @@ double G1CardSetGroup::predict_group_total_time_ms() const {
   return total_time_ms;
 }
 
+void G1CardSetGroup::verify() {
+  for (G1CardSetGroupItem it : _items) {
+    G1HeapRegion* r = it._r;
+    guarantee(!r->is_free(), "Free region %u in card set group", r->hrm_index());
+    guarantee(r->rem_set()->has_card_set_group(), "Region %u in group %u must have group", r->hrm_index(), group_id());
+    guarantee(r->rem_set()->card_set_group() == this,
+              "Region %u in card set group %u references different card set group %u",
+              r->hrm_index(), group_id(), r->rem_set()->card_set_group_id());
+  }
+}
+
 int G1CardSetGroup::compare_gc_efficiency(G1CardSetGroup** gr1, G1CardSetGroup** gr2) {
   G1CardSetGroup* group_1 = *gr1;
   G1CardSetGroup* group_2 = *gr2;
@@ -159,13 +179,13 @@ void G1CardSetGroupList::append(G1CardSetGroup* group) {
   _num_regions.store_relaxed(num_regions() + group->num_regions());
 }
 
-G1CardSetGroup* G1CardSetGroupList::at(uint index) {
+G1CardSetGroup* G1CardSetGroupList::at(uint index) const {
   return _groups.at(index);
 }
 
-void G1CardSetGroupList::clear(bool uninstall_card_set_group) {
+void G1CardSetGroupList::clear(bool clear_backlinks) {
   for (G1CardSetGroup* gr : _groups) {
-    gr->clear(uninstall_card_set_group);
+    gr->clear(clear_backlinks);
     delete gr;
   }
   _groups.clear();
@@ -178,9 +198,9 @@ void G1CardSetGroupList::prepare_for_scan() {
   }
 }
 
-void G1CardSetGroupList::remove_selected(uint count, uint num_regions_to_remove) {
-  _groups.remove_till(count);
-  _num_regions.store_relaxed(num_regions() - num_regions_to_remove);
+void G1CardSetGroupList::remove_all() {
+  _groups.clear();
+  _num_regions.store_relaxed(0);
 }
 
 void G1CardSetGroupList::remove(G1CardSetGroupList* other) {
@@ -207,7 +227,7 @@ void G1CardSetGroupList::remove(G1CardSetGroupList* other) {
   }
   _groups.swap(&new_list);
 
-  verify();
+  DEBUG_ONLY(verify();)
   assert(_groups.length() == new_length, "Must be");
 }
 
@@ -215,14 +235,13 @@ void G1CardSetGroupList::sort_by_efficiency() {
   _groups.sort(G1CardSetGroup::compare_gc_efficiency);
 }
 
-#ifndef PRODUCT
 void G1CardSetGroupList::verify() const {
   G1CardSetGroup* prev = nullptr;
 
   for (G1CardSetGroup* gr : _groups) {
     assert(prev == nullptr || prev->gc_efficiency() >= gr->gc_efficiency(),
            "Stored gc efficiency must be descending");
+    gr->verify();
     prev = gr;
   }
 }
-#endif

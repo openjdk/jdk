@@ -285,8 +285,6 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zicond      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicond))                                 \
   /* Zicsr Control and Status Register (CSR) Instructions */                                              \
   decl(Zicsr       ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
-  /* Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space. */             \
-  decl(Zic64b      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZic64b))                                 \
   /* Zifencei Instruction-Fetch Fence */                                                                  \
   decl(Zifencei    ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
   /* Zihintpause Pause instruction HINT */                                                                \
@@ -440,7 +438,6 @@ private:
     RV_ENABLE_EXTENSION(UseZba)                      \
     RV_ENABLE_EXTENSION(UseZbb)                      \
     RV_ENABLE_EXTENSION(UseZbs)                      \
-    RV_ENABLE_EXTENSION(UseZic64b)                   \
     RV_ENABLE_EXTENSION(UseZicbop)                   \
     RV_ENABLE_EXTENSION(UseZihintpause)              \
 
@@ -457,7 +454,6 @@ private:
     RV_ENABLE_EXTENSION(UseZcb)                     \
     RV_ENABLE_EXTENSION(UseZfa)                     \
     RV_ENABLE_EXTENSION(UseZfhmin)                  \
-    RV_ENABLE_EXTENSION(UseZic64b)                  \
     RV_ENABLE_EXTENSION(UseZicbop)                  \
     RV_ENABLE_EXTENSION(UseZicond)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
@@ -535,6 +531,8 @@ private:
   // Initialization
   static void initialize();
   static void initialize_cpu_information();
+
+  static uint32_t initial_vector_length() { return _initial_vector_length; }
 
   static bool use_zalasr_atomics() { return _use_zalasr_atomics; }
 
