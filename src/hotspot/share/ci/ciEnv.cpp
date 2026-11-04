@@ -1275,7 +1275,7 @@ void ciEnv::register_method(ciMethod* target,
       assert(!method->is_synchronized() || nm->has_monitors(), "");
 
 #if INCLUDE_CDS
-      if (task()->is_aot_compile()) {
+      if (is_aot_compile()) {
 #ifdef ASSERT
         LogStreamHandle(Trace, aot, codecache, nmethod) log;
         if (log.is_enabled()) {

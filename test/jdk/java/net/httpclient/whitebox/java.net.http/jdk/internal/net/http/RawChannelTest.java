@@ -255,8 +255,7 @@ public class RawChannelTest {
         HttpRequestImpl requestImpl = new HttpRequestImpl(req, null);
         requestImpl.isWebSocket(true);
         try {
-            MultiExchange<Void> mex = new MultiExchange<>(req,
-                    requestImpl,
+            MultiExchange<Void> mex = new MultiExchange<>(requestImpl,
                     clientImpl,
                     discarding(),
                     null);

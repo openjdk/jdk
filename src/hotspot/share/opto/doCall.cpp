@@ -48,6 +48,7 @@
 #include "opto/subnode.hpp"
 #include "opto/valuetypenode.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -179,7 +180,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg_intrinsic = cg;
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
-        if (IncrementalInlineVector && allow_inline) {
+        if (allow_inline && should_inline_vector_fallback(callee)) {
           // Try to incrementally inline fallback implementation if intrinsification attempt fails.
           CallGenerator* fallback_cg;
           {
@@ -528,6 +529,16 @@ bool Compile::should_delay_vector_reboxing_inlining(ciMethod* call_method, JVMSt
   return EnableVectorSupport && (call_method->intrinsic_id() == vmIntrinsics::_VectorRebox);
 }
 
+bool Compile::should_inline_vector_fallback(ciMethod* call_method) {
+  // Left at its default value, so only the operations which need their fallback
+  // inlined to generate good code are selected.
+  if (FLAG_IS_DEFAULT(IncrementalInlineVector) &&
+      call_method->intrinsic_id() == vmIntrinsics::_VectorSlice) {
+    return true;
+  }
+  return IncrementalInlineVector;
+}
+
 // uncommon-trap call-sites where callee is unloaded, uninitialized or will not link
 bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* klass) {
   // Additional inputs to consider...
@@ -542,7 +553,7 @@ bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* kl
   if (!holder_klass->is_being_initialized() &&
       !holder_klass->is_initialized() &&
       !holder_klass->is_interface()) {
-    if (C->env()->task()->is_aot_compile()) {
+    if (C->is_aot_compile()) {
       ResourceMark rm;
       log_debug(aot, compilation)("Emitting uncommon trap (cannot compile call site) in AOT code for %s", holder_klass->name()->as_klass_external_name());
     }

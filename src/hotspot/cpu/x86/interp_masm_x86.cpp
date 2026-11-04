@@ -1060,6 +1060,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     testptr(rax, rax);
     jcc(Assembler::notZero, not_null);
     // Returned value is null, zero all return registers because they may belong to oop fields
+    xorq(j_rarg0, j_rarg0);
     xorq(j_rarg1, j_rarg1);
     xorq(j_rarg2, j_rarg2);
     xorq(j_rarg3, j_rarg3);

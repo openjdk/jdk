@@ -197,11 +197,11 @@ bool ShenandoahBarrierSetC2::can_remove_load_barrier(Node* root) {
 
   ResourceMark rm;
   VectorSet visited;
-  Node_List worklist;
+  Node_List<const Node> worklist;
   worklist.push(root);
 
   while (worklist.size() > 0) {
-    Node* n = worklist.pop();
+    const Node* n = worklist.pop();
     if (visited.test_set(n->_idx)) {
       continue;
     }
@@ -339,7 +339,7 @@ uint8_t ShenandoahBarrierSetC2::refine_store(Node* n, uint8_t bd) {
 
 void ShenandoahBarrierSetC2::final_refinement(Compile* compile) const {
   ResourceMark rm;
-  Unique_Node_List wq;
+  Unique_Node_List<Node> wq;
 
   RootNode* root = compile->root();
   wq.push(root);
@@ -482,7 +482,8 @@ void ShenandoahBarrierSetC2::analyze_dominating_barriers() const {
   }
 
   ResourceMark rm;
-  Node_List accesses, dominators;
+  Node_List<MachNode> accesses;
+  Node_List<Node> dominators;
 
   PhaseCFG* const cfg = Compile::current()->cfg();
   for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
@@ -754,7 +755,7 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
   bool expect_load_store_barriers = expect_load_barriers || expect_store_barriers;
   bool expect_some_real           = final_phase;
 
-  Unique_Node_List wq;
+  Unique_Node_List<Node> wq;
 
   RootNode* root = compile->root();
   wq.push(root);

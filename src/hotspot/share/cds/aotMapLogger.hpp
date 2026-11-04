@@ -32,6 +32,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
 
 class AOTMappedHeapInfo;
 class AOTStreamedHeapInfo;
@@ -115,6 +116,8 @@ public:
 #endif
 
 private:
+  template <typename FUNC> static void log_metaspace_obj_details(FUNC func);
+
   class RequestedMetadataAddr;
   class RuntimeGatherArchivedMetaspaceObjs;
 
@@ -160,7 +163,7 @@ private:
   static void log_klass_training_data(KlassTrainingData* ktd, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_method_training_data(MethodTrainingData* mtd, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_compile_training_data(CompileTrainingData* ctd, address requested_addr, const char* type_name, int bytes, Thread* current);
-
+  static void log_ac_region();
 
 #if INCLUDE_CDS_JAVA_HEAP
   static void dumptime_log_mapped_heap_region(AOTMappedHeapInfo* mapped_heap_info);
@@ -176,7 +179,7 @@ private:
 
 public:
   static void ergo_initialize();
-  static bool is_logging_at_bootstrap() { return _is_logging_at_bootstrap; }
+  static bool is_logging_at_bootstrap() { return CDS_ONLY(_is_logging_at_bootstrap) NOT_CDS(false); }
 
   static void dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
                            AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info,
