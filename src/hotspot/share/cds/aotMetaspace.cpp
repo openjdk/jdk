@@ -120,7 +120,7 @@ void* AOTMetaspace::_aot_metaspace_static_top = nullptr;
 intx AOTMetaspace::_relocation_delta;
 char* AOTMetaspace::_requested_base_address;
 Array<Method*>* AOTMetaspace::_archived_method_handle_intrinsics = nullptr;
-int volatile AOTMetaspace::_preimage_static_archive_dumped = 0;
+int volatile AOTMetaspace::_aot_configuration_dumped = 0;
 FileMapInfo* AOTMetaspace::_output_mapinfo = nullptr;
 
 // The CDS archive is divided into the following regions:
@@ -577,7 +577,7 @@ static void rewrite_bytecodes(const methodHandle& method) {
       uint rfe_index = bcs.get_index_u2();
       bool is_resolved = cp->is_resolved(rfe_index, opcode);
       if (is_resolved) {
-        assert(!CDSConfig::is_dumping_aot_configuration(), "preimage should not have resolved field references");
+        assert(!CDSConfig::is_dumping_aot_configuration(), "AOT configuration should not have resolved field references");
         ResolvedFieldEntry* rfe = cp->resolved_field_entry_at(bcs.get_index_u2());
         switch(rfe->tos_state()) {
         case btos:
@@ -610,7 +610,7 @@ static void rewrite_bytecodes(const methodHandle& method) {
       uint rfe_index = bcs.get_index_u2();
       bool is_resolved = cp->is_resolved(rfe_index, opcode);
       if (is_resolved) {
-        assert(!CDSConfig::is_dumping_aot_configuration(), "preimage should not have resolved field references");
+        assert(!CDSConfig::is_dumping_aot_configuration(), "AOT configuration should not have resolved field references");
         ResolvedFieldEntry* rfe = cp->resolved_field_entry_at(bcs.get_index_u2());
         switch(rfe->tos_state()) {
         case btos: new_code = Bytecodes::_fast_bputfield; break;
@@ -1097,9 +1097,9 @@ void AOTMetaspace::exercise_runtime_cds_code(TRAPS) {
   CDSProtectionDomain::to_file_URL("dummy.jar", Handle(), CHECK);
 }
 
-bool AOTMetaspace::preimage_static_archive_dumped() {
+bool AOTMetaspace::aot_configuration_dumped() {
   assert(CDSConfig::is_dumping_aot_configuration(), "Required");
-  return AtomicAccess::load_acquire(&_preimage_static_archive_dumped) == 1;
+  return AtomicAccess::load_acquire(&_aot_configuration_dumped) == 1;
 }
 
 void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS) {
@@ -1107,7 +1107,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     // When dumping to the AOT configuration file ensure this function is only executed once.
     // Multiple invocations may happen via JCmd, during VM exit or other means (in the future)
     // from different threads and possibly concurrently.
-    if (AtomicAccess::cmpxchg(&_preimage_static_archive_dumped, 0, 1) != 0) {
+    if (AtomicAccess::cmpxchg(&_aot_configuration_dumped, 0, 1) != 0) {
       return;
     }
   }
@@ -1138,7 +1138,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
   if (CDSConfig::is_dumping_heap()) {
     if (!CDSConfig::is_dumping_aot_configuration()) {
       // A single thread is required for Reference handling and deterministic CDS archive.
-      // Its's not required for dumping preimage, where References won't be archived and
+      // It is not required for dumping AOT configuration, where References won't be archived and
       // determinism is not needed.
       assert(CDSConfig::allow_only_single_java_thread(), "Required");
     }

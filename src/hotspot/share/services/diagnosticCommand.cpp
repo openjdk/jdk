@@ -1013,13 +1013,13 @@ void AOTEndRecordingDCmd::execute(DCmdSource source, TRAPS) {
     return;
   }
 
-  if (AOTMetaspace::preimage_static_archive_dumped()) {
+  if (AOTMetaspace::aot_configuration_dumped()) {
     output()->print_cr("Recording has already ended.");
     return;
   }
 
   AOTMetaspace::dump_static_archive(THREAD);
-  if (!AOTMetaspace::preimage_static_archive_dumped()) {
+  if (!AOTMetaspace::aot_configuration_dumped()) {
     output()->print_cr("Error: Failed to end recording.");
     return;
   }

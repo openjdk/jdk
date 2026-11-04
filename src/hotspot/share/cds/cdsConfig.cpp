@@ -937,7 +937,7 @@ bool CDSConfig::is_logging_lambda_form_invokers() {
 bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
   if (is_dumping_aot_cache()) {
     // No need to regenerate -- the lambda form invokers should have been regenerated
-    // in the preimage archive (if allowed)
+    // in the AOT configuration (if allowed)
     return false;
   } else if (is_dumping_dynamic_archive() && is_using_aot_linked_classes()) {
     // The base archive has aot-linked classes that may have AOT-resolved CP references

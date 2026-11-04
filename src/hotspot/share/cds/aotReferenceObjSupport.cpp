@@ -194,7 +194,7 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
     // is not running.
     //
     // This code is called on every object found by AOTArtifactFinder. When dumping the
-    // preimage archive, AOTArtifactFinder should not find any Reference objects.
+    // AOT configuration, AOTArtifactFinder should not find any Reference objects.
     precond(!CDSConfig::is_dumping_aot_configuration());
     precond(CDSConfig::allow_only_single_java_thread());
 
