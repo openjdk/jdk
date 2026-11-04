@@ -817,13 +817,13 @@ const Type* IfNode::filtered_integer_type_or_top(PhaseValues* phase, Node* val, 
 }
 
 const TypeInteger* IfNode::filtered_integer_type(PhaseGVN* gvn, Node* val, Node* if_proj, BasicType bt) {
-  const Type* t = filtered_integer_type_or_top(gvn, val, if_proj, T_INT);
+  const Type* t = filtered_integer_type_or_top(gvn, val, if_proj, bt);
   return t == nullptr ? nullptr : t->is_integer(bt);
 }
 
 const TypeInt* IfNode::filtered_int_type(PhaseGVN* phase, Node* val, Node* if_proj) {
   const Type* t = filtered_integer_type(phase, val, if_proj, T_INT);
-  return t != nullptr ? t->is_int() : nullptr;
+  return t == nullptr ? nullptr : t->is_int();
 }
 
 
