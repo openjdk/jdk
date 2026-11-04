@@ -121,9 +121,8 @@ objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
 }
 
 refArrayOop oopFactory::new_refArray(Klass* klass, int length, ArrayProperties properties, TRAPS) {
-  ArrayKlass* ak = klass->array_klass(CHECK_NULL);
   ArrayDescription ad(Klass::RefArrayKlassKind, properties, LayoutKind::REFERENCE);
-  ObjArrayKlass* oak = ObjArrayKlass::cast(ak)->klass_from_description(ad, CHECK_NULL);
+  ObjArrayKlass* oak = ObjArrayKlass::klass_from_description(klass, ad, CHECK_NULL);
   // Cast below must pass because the array description required a RefArrayKlass
   RefArrayKlass* rak = RefArrayKlass::cast(oak);
   objArrayOop array = rak->allocate_instance(length, CHECK_NULL);
@@ -135,8 +134,7 @@ refArrayOop oopFactory::new_refArray(Klass* klass, int length, TRAPS) {
 }
 
 flatArrayOop oopFactory::new_flatArray(ValueKlass* ik, int length, ArrayProperties props, TRAPS) {
-  ArrayKlass* ak = ik->array_klass(CHECK_NULL);
-  ObjArrayKlass* oak = ObjArrayKlass::cast(ak)->klass_with_properties(props, CHECK_NULL);
+  ObjArrayKlass* oak = ObjArrayKlass::klass_with_properties(ik, props, CHECK_NULL);
   FlatArrayKlass* fak = FlatArrayKlass::cast(oak);
 
   objArrayOop array = fak->allocate_instance(length, CHECK_NULL);

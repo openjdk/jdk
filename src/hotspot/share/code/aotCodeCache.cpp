@@ -3792,7 +3792,7 @@ Klass* AOTCodeReader::read_klass(JavaThread* thread) {
     Klass* ak = k->array_klass_or_null(array_dim);
     if (ak != nullptr && array_desc != ArrayProperties::Invalid().value()) {
       ArrayDescription adesc = ArrayDescription::from_value(array_desc);
-      ak = ObjArrayKlass::cast(ak)->klass_from_description(adesc, thread);
+      ak = ObjArrayKlass::klass_from_description(ObjArrayKlass::cast(ak)->element_klass(), adesc, thread);
     }
     if (ak == nullptr) {
       set_lookup_failed("Lookup failed for array klass");

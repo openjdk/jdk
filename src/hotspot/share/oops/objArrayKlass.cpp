@@ -236,7 +236,7 @@ ObjArrayKlass* ObjArrayKlass::allocate_klass_from_description(ArrayDescription a
 }
 
 objArrayOop ObjArrayKlass::allocate_instance(int length, ArrayProperties props, TRAPS) {
-  ObjArrayKlass* ak = klass_with_properties(props, CHECK_NULL);
+  ObjArrayKlass* ak = klass_with_properties(element_klass(), props, CHECK_NULL);
   return ak->allocate_instance(length, THREAD);
 }
 
@@ -418,50 +418,53 @@ PackageEntry* ObjArrayKlass::package() const {
   return bottom_klass()->package();
 }
 
-ObjArrayKlass* ObjArrayKlass::klass_with_properties(ArrayProperties props, TRAPS) {
+ObjArrayKlass* ObjArrayKlass::klass_with_properties(Klass* element_klass, ArrayProperties props, TRAPS) {
   assert(props.is_valid(), "Sanity check");
-  ArrayDescription ad = array_layout_selection(element_klass(), props);
-
-  return klass_from_description(ad, THREAD);
+  ArrayDescription ad = array_layout_selection(element_klass, props);
+  return klass_from_description(element_klass, ad, THREAD);
 }
 
-ObjArrayKlass* ObjArrayKlass::klass_from_description(ArrayDescription ad, TRAPS) {
-  element_klass()->validate_array_description(ad);
+ObjArrayKlass* ObjArrayKlass::klass_from_description(Klass* elem_klass, ArrayDescription ad, TRAPS) {
+  elem_klass->validate_array_description(ad);
 
-  const ArrayProperties props = ad._properties;
-  assert(props.is_valid(), "must be");
+  ArrayKlass* ak = elem_klass->array_klass(CHECK_NULL);
+  ObjArrayKlass* oak = ObjArrayKlass::cast(ak);
+  assert(oak->is_unrefined_objArray_klass(), "");
 
-  if (properties() == props && kind() == ad._kind) {
-    assert(is_refined_objArray_klass(), "Must be a refined array klass");
-    return this;
-  }
-
-  ObjArrayKlass* ak = next_refined_array_klass_acquire();
-  if (ak == nullptr) {
-    // Ensure atomic creation of refined array klasses
+  ObjArrayKlass* current_refined_klass = oak->next_refined_array_klass_acquire();
+  if (current_refined_klass == nullptr) {
     RecursiveLocker rl(MultiArray_lock, THREAD);
-
-    if (next_refined_array_klass() == nullptr) {
-      ObjArrayKlass* first = this;
-      if (is_unrefined_objArray_klass()) {
-        // Make sure that the first entry in the linked list is always the default refined klass because
-        // C2 relies on this for a fast lookup (see LibraryCallKit::load_default_refined_array_klass).
-        ArrayDescription default_ad = array_layout_selection(element_klass(), ArrayProperties::Default());
-        if (default_ad._kind != ad._kind || default_ad._properties != ad._properties
-            || default_ad._layout_kind != ad._layout_kind) {
-          first = allocate_klass_from_description(default_ad, CHECK_NULL);
-          release_set_next_refined_klass(first);
-        }
-      }
-      ak = allocate_klass_from_description(ad, CHECK_NULL);
-      first->release_set_next_refined_klass(ak);
+    current_refined_klass = oak->next_refined_array_klass();
+    if (current_refined_klass == nullptr) {
+      // Make sure that the first entry in the linked list is always the default refined klass because
+      // C2 relies on this for a fast lookup (see LibraryCallKit::load_default_refined_array_klass).
+      ArrayDescription default_ad = array_layout_selection(elem_klass, ArrayProperties::Default());
+      ObjArrayKlass* first_refined = oak->allocate_klass_from_description(default_ad, CHECK_NULL);
+      oak->release_set_next_refined_klass(first_refined);
+      current_refined_klass = first_refined;
     }
   }
+  assert(current_refined_klass != nullptr, "");
 
-  ObjArrayKlass* next_ak = next_refined_array_klass();
-  assert(next_ak != nullptr, "should be set");
-  THREAD->check_possible_safepoint();
-  return next_ak->klass_from_description(ad, THREAD);
+  while (true) {
+    assert(current_refined_klass->is_refined_objArray_klass(), "Must be a refined array klass");
+    if (current_refined_klass->properties() == ad._properties && current_refined_klass->kind() == ad._kind) {
+      return current_refined_klass;
+    }
+    ObjArrayKlass* next = current_refined_klass->next_refined_array_klass();
+    if (next == nullptr) {
+      // Ensure atomic creation of refined array klasses
+      RecursiveLocker rl(MultiArray_lock, THREAD);
+      next = current_refined_klass->next_refined_array_klass();
+      if (next == nullptr) {
+        ObjArrayKlass* ak = current_refined_klass->allocate_klass_from_description(ad, CHECK_NULL);
+        current_refined_klass->release_set_next_refined_klass(ak);
+        next = ak;
+      }
+    }
+    current_refined_klass = next;
+    THREAD->check_possible_safepoint();
+  }
 }
 
 // Iterate the linked list of refined array klasses
