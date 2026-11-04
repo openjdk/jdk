@@ -47,8 +47,9 @@ source %{
     }
   }
 
-  static void scaleGatherScatterIndex(C2_MacroAssembler* masm, VectorRegister dst,
-                                      VectorRegister idx, BasicType bt, uint vector_length) {
+  static void scaleGatherScatterIndex64(C2_MacroAssembler* masm, VectorRegister dst,
+                                        VectorRegister idx, BasicType bt, uint vector_length) {
+    assert(type2aelembytes(bt) == 8, "64-bit vector elements required");
     Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
     if (UseZvbb) {
       // e32,mf2 and e64,m1 have the same VLMAX, so the following
@@ -5756,8 +5757,8 @@ instruct gather_loadD(vReg dst, indirect mem, vReg idx) %{
   format %{ "gather_loadD $dst, $mem, $idx" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    scaleGatherScatterIndex(masm, as_VectorRegister($dst$$reg), as_VectorRegister($idx$$reg),
-                            bt, Matcher::vector_length(this));
+    scaleGatherScatterIndex64(masm, as_VectorRegister($dst$$reg), as_VectorRegister($idx$$reg),
+                              bt, Matcher::vector_length(this));
     __ vluxei64_v(as_VectorRegister($dst$$reg), as_Register($mem$$base),
                   as_VectorRegister($dst$$reg));
  %}
@@ -5788,8 +5789,8 @@ instruct gather_loadD_masked(vReg dst, indirect mem, vReg idx, vRegMask_V0 v0, v
   format %{ "gather_loadD_masked $dst, $mem, $idx, $v0\t# KILL $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    scaleGatherScatterIndex(masm, as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg),
-                            bt, Matcher::vector_length(this));
+    scaleGatherScatterIndex64(masm, as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg),
+                              bt, Matcher::vector_length(this));
     __ vmv_v_i(as_VectorRegister($dst$$reg), 0);
     __ vluxei64_v(as_VectorRegister($dst$$reg), as_Register($mem$$base),
                   as_VectorRegister($tmp$$reg), Assembler::v0_t);
@@ -5822,8 +5823,8 @@ instruct scatter_storeD(indirect mem, vReg src, vReg idx, vReg tmp) %{
   format %{ "scatter_storeD $mem, $idx, $src\t# KILL $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    scaleGatherScatterIndex(masm, as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg),
-                            bt, Matcher::vector_length(this, $src));
+    scaleGatherScatterIndex64(masm, as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg),
+                              bt, Matcher::vector_length(this, $src));
     __ vsuxei64_v(as_VectorRegister($src$$reg), as_Register($mem$$base),
                   as_VectorRegister($tmp$$reg));
   %}
@@ -5853,8 +5854,8 @@ instruct scatter_storeD_masked(indirect mem, vReg src, vReg idx, vRegMask_V0 v0,
   format %{ "scatter_storeD_masked $mem, $idx, $src, $v0\t# KILL $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    scaleGatherScatterIndex(masm, as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg),
-                            bt, Matcher::vector_length(this, $src));
+    scaleGatherScatterIndex64(masm, as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg),
+                              bt, Matcher::vector_length(this, $src));
     __ vsuxei64_v(as_VectorRegister($src$$reg), as_Register($mem$$base),
                   as_VectorRegister($tmp$$reg), Assembler::v0_t);
   %}
