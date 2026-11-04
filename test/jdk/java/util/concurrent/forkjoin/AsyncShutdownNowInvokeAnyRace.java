@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,33 +112,35 @@ public class AsyncShutdownNowInvokeAnyRace {
             Future<Void> shutdownResult = CompletableFuture.runAsync(shutdown);
 
             try (pool) { // Ensure that the pool is terminated after each iteration
-                if (rnd.nextBoolean())
-                    pool.invokeAny(tasks, 10L, SECONDS);
-                else
-                    pool.invokeAny(tasks);
-                throw new AssertionError("should throw");
-            } catch (RejectedExecutionException re) {
-                falseAlarms++;
-            } catch (CancellationException re) {
-            } catch (ExecutionException ex) {
-                Throwable cause = ex.getCause();
-                if (!(cause instanceof InterruptedException) &&
-                    !(cause instanceof CancellationException))
-                    throw ex;
-            } catch (TimeoutException ex) {
-                dumpTestThreads();
-                String detail = String.format(
-                    "invokeAny timed out, "
-                    + "nTasks=%d rep=%d threadsStarted=%d%n"
-                    + "poolAtShutdownNow=%s%n"
-                    + "poolAtTimeout=%s%n"
-                    + "queuedTaskCount=%d queuedSubmissionCount=%d",
-                    nTasks, rep, threadsStarted.get(),
-                    poolAtShutdownNow,
-                    pool,
-                    pool.getQueuedTaskCount(),
-                    pool.getQueuedSubmissionCount());
-                throw new AssertionError(detail, ex);
+                try { // Ensure that exceptions are handled prior to closing the pool
+                    if (rnd.nextBoolean())
+                        pool.invokeAny(tasks, 10L, SECONDS);
+                    else
+                        pool.invokeAny(tasks);
+                    throw new AssertionError("should throw");
+                } catch (RejectedExecutionException re) {
+                    falseAlarms++;
+                } catch (CancellationException re) {
+                } catch (ExecutionException ex) {
+                    Throwable cause = ex.getCause();
+                    if (!(cause instanceof InterruptedException) &&
+                            !(cause instanceof CancellationException))
+                        throw ex;
+                } catch (TimeoutException ex) {
+                    dumpTestThreads();
+                    String detail = String.format(
+                            "invokeAny timed out, "
+                                    + "nTasks=%d rep=%d threadsStarted=%d%n"
+                                    + "poolAtShutdownNow=%s%n"
+                                    + "poolAtTimeout=%s%n"
+                                    + "queuedTaskCount=%d queuedSubmissionCount=%d",
+                            nTasks, rep, threadsStarted.get(),
+                            poolAtShutdownNow,
+                            pool,
+                            pool.getQueuedTaskCount(),
+                            pool.getQueuedSubmissionCount());
+                    throw new AssertionError(detail, ex);
+                }
             }
 
             if (falseAlarms != 0)

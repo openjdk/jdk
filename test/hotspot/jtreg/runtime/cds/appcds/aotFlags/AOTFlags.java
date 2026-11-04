@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8362530 8396140
  * @summary General use of AOT flags
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.flagless
@@ -100,6 +101,22 @@ public class AOTFlags {
         out.shouldContain("Using AOT-linked classes: true (static archive: has aot-linked classes)");
         out.shouldContain("Opened AOT cache hello.aot.");
         out.shouldContain("Hello World");
+        out.shouldMatch(hasMappedAOTCodePattern);
+        out.shouldHaveExitValue(0);
+
+        //----------------------------------------------------------------------
+        printTestCase("Production Run with PrintSharedArchiveAndExit");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTCache=" + aotCacheFile,
+            "-XX:AOTMode=required",
+            "-XX:+PrintSharedArchiveAndExit",
+            "-Xlog:aot",
+            "-Xlog:aot+codecache*",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "prod");
+        out.shouldContain("Using AOT-linked classes: true (static archive: has aot-linked classes)");
+        out.shouldContain("Opened AOT cache hello.aot.");
+        out.shouldContain("AOT Code Cache entries");
         out.shouldMatch(hasMappedAOTCodePattern);
         out.shouldHaveExitValue(0);
 

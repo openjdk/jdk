@@ -38,6 +38,7 @@
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/g1/g1HumongousCardSetGroups.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -384,11 +385,20 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   }
 }
 
-class G1FreeHumongousRegionClosure : public G1HeapRegionIndexClosure {
+#ifdef COMPILER2
+class G1PostEvacuateCollectionSetCleanupTask2::UpdateDerivedPointersTask : public G1AbstractSubTask {
+public:
+  UpdateDerivedPointersTask() : G1AbstractSubTask(G1GCPhaseTimes::UpdateDerivedPointers) { }
+
+  double worker_cost() const override { return 1.0; }
+  void do_work(uint worker_id) override {   DerivedPointerTable::update_pointers(); }
+};
+#endif // COMPILER2
+
+class G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask : public G1AbstractSubTask {
   uint _num_humongous_objects_reclaimed;
   uint _num_humongous_regions_reclaimed;
-  size_t _freed_bytes;
-  G1CollectedHeap* _g1h;
+  size_t _bytes_freed;
 
   // Returns whether the given humongous object defined by the start region index
   // is reclaimable.
@@ -418,107 +428,76 @@ class G1FreeHumongousRegionClosure : public G1HeapRegionIndexClosure {
   // Other implementation considerations:
   // - never consider non-typeArrays during marking as there is a considerable cost
   // for maintaining the SATB invariant.
-  bool is_reclaimable(uint region_idx) const {
-    return G1CollectedHeap::heap()->is_humongous_reclaim_candidate(region_idx);
+  bool is_reclaimable(G1HeapRegion* r) const {
+    return G1CollectedHeap::heap()->is_humongous_reclaim_candidate(r->hrm_index());
   }
 
-public:
-  G1FreeHumongousRegionClosure() :
-    _num_humongous_objects_reclaimed(0),
-    _num_humongous_regions_reclaimed(0),
-    _freed_bytes(0),
-    _g1h(G1CollectedHeap::heap())
-  {}
+  void free_eagerly_reclaimed_humongous_objects() {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  bool do_heap_region_index(uint region_index) override {
-    if (!is_reclaimable(region_index)) {
-      return false;
-    }
+    g1h->humongous_card_set_groups()->clean([&] (G1CardSetGroup* gr) {
+      G1HeapRegion* r = gr->region_at(0);
 
-    G1HeapRegion* r = _g1h->region_at(region_index);
-
-    oop obj = cast_to_oop(r->bottom());
-    {
-      ResourceMark rm;
-      bool mark_in_progress = _g1h->collector_state()->is_in_marking();
-      bool allocated_after_mark_start = false;
-      if (mark_in_progress) {
-        // top_at_mark_start() will assert if we are not in marking, so check first.
-        allocated_after_mark_start = r->bottom() == _g1h->concurrent_mark()->top_at_mark_start(r);
+      if (!is_reclaimable(r)) {
+        return false;
       }
 
-      guarantee(_g1h->can_be_marked_through_immediately(obj) || (allocated_after_mark_start || !mark_in_progress),
-                "Only eagerly reclaiming arrays without oops is always supported, other humongous objects only if allocated after mark start, but the object "
-                PTR_FORMAT " (%s) is not (allocated after mark: %d mark in progress %d marked immediately %d is_array %d array_with_oops %d).",
-                p2i(r->bottom()), obj->klass()->name()->as_C_string(), allocated_after_mark_start, mark_in_progress, _g1h->can_be_marked_through_immediately(obj), obj->is_array(), obj->is_array_with_oops());
-    }
-    log_debug(gc, humongous)("Reclaimed humongous region %u (object size %zu @ " PTR_FORMAT ")",
-                             region_index,
-                             obj->size() * HeapWordSize,
-                             p2i(r->bottom())
-                            );
+      oop obj = cast_to_oop(r->bottom());
+      {
+        ResourceMark rm;
+        bool mark_in_progress = g1h->collector_state()->is_in_marking();
+        bool allocated_after_mark_start = false;
+        if (mark_in_progress) {
+          // top_at_mark_start() will assert if we are not in marking, so check first.
+          allocated_after_mark_start = r->bottom() == g1h->concurrent_mark()->top_at_mark_start(r);
+        }
 
-    G1ConcurrentMark* const cm = _g1h->concurrent_mark();
-    cm->humongous_object_eagerly_reclaimed(r);
-    assert(!cm->is_marked_in_bitmap(obj),
-           "Eagerly reclaimed humongous region %u should not be marked at all but is in bitmap %s",
-           region_index,
-           BOOL_TO_STR(cm->is_marked_in_bitmap(obj)));
-    _num_humongous_objects_reclaimed++;
+        guarantee(g1h->can_be_marked_through_immediately(obj) || (allocated_after_mark_start || !mark_in_progress),
+                  "Only eagerly reclaiming arrays without oops is always supported, other humongous objects only if allocated after mark start, but the object "
+                  PTR_FORMAT " (%s) is not (allocated after mark: %d mark in progress %d marked immediately %d is_array %d array_with_oops %d).",
+                  p2i(r->bottom()), obj->klass()->name()->as_C_string(), allocated_after_mark_start, mark_in_progress, g1h->can_be_marked_through_immediately(obj), obj->is_array(), obj->is_array_with_oops());
+      }
+      log_debug(gc, humongous)("Reclaimed humongous region %u (object size %zu @ " PTR_FORMAT ")",
+                              r->hrm_index(),
+                              obj->size() * HeapWordSize,
+                              p2i(r->bottom())
+                              );
 
-    auto free_humongous_region = [&] (G1HeapRegion* r) {
-      _freed_bytes += r->used();
-      r->set_containing_set(nullptr);
-      _num_humongous_regions_reclaimed++;
-      G1HeapRegionPrinter::eager_reclaim(r);
-      // Humongous non-typeArrays may have dirty card tables. Need to be cleared. Do it
-      // for all types just in case.
-      r->clear_both_card_tables();
-      _g1h->free_humongous_region(r, nullptr);
-    };
+      G1ConcurrentMark* const cm = g1h->concurrent_mark();
+      cm->humongous_object_eagerly_reclaimed(r);
+      assert(!cm->is_marked_in_bitmap(obj),
+            "Eagerly reclaimed humongous region %u should not be marked at all but is in bitmap %s",
+            r->hrm_index(),
+            BOOL_TO_STR(cm->is_marked_in_bitmap(obj)));
+      _num_humongous_objects_reclaimed++;
 
-    _g1h->humongous_obj_regions_iterate(r, free_humongous_region);
+      auto free_humongous_region = [&] (G1HeapRegion* r) {
+        _bytes_freed += r->used();
+        r->set_containing_set(nullptr);
+        _num_humongous_regions_reclaimed++;
+        G1HeapRegionPrinter::eager_reclaim(r);
+        // Humongous non-typeArrays may have dirty card tables. Need to be cleared. Do it
+        // for all types just in case.
+        r->clear_both_card_tables();
+        g1h->free_humongous_region(r, nullptr);
+      };
+      g1h->humongous_obj_regions_iterate(r, free_humongous_region);
 
-    return false;
+      return true;
+    });
   }
-
-  uint num_humongous_objects_reclaimed() {
-    return _num_humongous_objects_reclaimed;
-  }
-
-  uint num_humongous_regions_reclaimed() {
-    return _num_humongous_regions_reclaimed;
-  }
-
-  size_t bytes_freed() const {
-    return _freed_bytes;
-  }
-};
-
-#ifdef COMPILER2
-class G1PostEvacuateCollectionSetCleanupTask2::UpdateDerivedPointersTask : public G1AbstractSubTask {
-public:
-  UpdateDerivedPointersTask() : G1AbstractSubTask(G1GCPhaseTimes::UpdateDerivedPointers) { }
-
-  double worker_cost() const override { return 1.0; }
-  void do_work(uint worker_id) override {   DerivedPointerTable::update_pointers(); }
-};
-#endif // COMPILER2
-
-class G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask : public G1AbstractSubTask {
-  uint _humongous_regions_reclaimed;
-  size_t _bytes_freed;
 
 public:
   EagerlyReclaimHumongousObjectsTask() :
     G1AbstractSubTask(G1GCPhaseTimes::EagerlyReclaimHumongousObjects),
-    _humongous_regions_reclaimed(0),
+    _num_humongous_objects_reclaimed(0),
+    _num_humongous_regions_reclaimed(0),
     _bytes_freed(0) { }
 
   virtual ~EagerlyReclaimHumongousObjectsTask() {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    g1h->remove_from_old_gen_sets(0, _humongous_regions_reclaimed);
+    g1h->remove_from_old_gen_sets(0, _num_humongous_regions_reclaimed);
     g1h->decrement_summary_bytes(_bytes_freed);
   }
 
@@ -526,15 +505,11 @@ public:
   void do_work(uint worker_id) override {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    G1FreeHumongousRegionClosure cl;
-    g1h->heap_region_iterate(&cl);
+    free_eagerly_reclaimed_humongous_objects();
 
     record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumTotal, g1h->num_humongous_objects());
     record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumCandidates, g1h->num_humongous_reclaim_candidates());
-    record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumReclaimed, cl.num_humongous_objects_reclaimed());
-
-    _humongous_regions_reclaimed = cl.num_humongous_regions_reclaimed();
-    _bytes_freed = cl.bytes_freed();
+    record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumReclaimed, _num_humongous_objects_reclaimed);
   }
 };
 
@@ -732,7 +707,7 @@ class FreeCSetClosure : public G1HeapRegionClosure {
 
     bool retain_region = _g1h->policy()->should_retain_evac_failed_region(r);
     // Update the region state due to the failed evacuation.
-    r->handle_evacuation_failure(retain_region);
+    r->handle_evacuation_failure();
     assert(r->is_old(), "must already be relabelled as old");
 
     if (retain_region) {

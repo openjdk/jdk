@@ -826,7 +826,7 @@
   product(bool, IncrementalInlineForceCleanup, false, DIAGNOSTIC,           \
           "do cleanup after every iteration of incremental inlining")       \
                                                                             \
-  product(bool, IncrementalInlineVector, true, DIAGNOSTIC,                  \
+  product(bool, IncrementalInlineVector, false, DIAGNOSTIC,                 \
           "Inline fallback implementation of failed vector intrinsics")     \
                                                                             \
   product(intx, LiveNodeCountInliningCutoff, 40000,                         \

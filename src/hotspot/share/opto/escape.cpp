@@ -1843,10 +1843,11 @@ void ConnectionGraph::add_node_to_connection_graph(Node* n, Unique_Node_List<Nod
     }
     case Op_Rethrow: // Exception object escapes
     case Op_Return: {
-      if (n->req() > TypeFunc::Parms &&
-          igvn->type(n->in(TypeFunc::Parms))->isa_oopptr()) {
-        // Treat Return value as LocalVar with GlobalEscape escape state.
-        add_local_var_and_edge(n, PointsToNode::GlobalEscape, n->in(TypeFunc::Parms), delayed_worklist);
+      // Returned oops always escape, including oop fields of returned scalarized value types.
+      for (uint i = TypeFunc::Parms; i < n->req(); i++) {
+        if (igvn->type(n->in(i))->isa_oopptr()) {
+          add_local_var_and_edge(n, PointsToNode::GlobalEscape, n->in(i), delayed_worklist);
+        }
       }
       break;
     }
@@ -2024,10 +2025,15 @@ void ConnectionGraph::add_final_edges(Node *n) {
     }
     case Op_Rethrow: // Exception object escapes
     case Op_Return: {
-      assert(n->req() > TypeFunc::Parms && _igvn->type(n->in(TypeFunc::Parms))->isa_oopptr(),
-             "Unexpected node type");
-      // Treat Return value as LocalVar with GlobalEscape escape state.
-      add_local_var_and_edge(n, PointsToNode::GlobalEscape, n->in(TypeFunc::Parms), nullptr);
+      // Returned oops always escape, including oop fields of returned scalarized value types.
+      DEBUG_ONLY(bool has_oop = false;)
+      for (uint i = TypeFunc::Parms; i < n->req(); i++) {
+        if (_igvn->type(n->in(i))->isa_oopptr()) {
+          DEBUG_ONLY(has_oop = true;)
+          add_local_var_and_edge(n, PointsToNode::GlobalEscape, n->in(i), nullptr);
+        }
+      }
+      assert(has_oop, "expected at least one returned oop");
       break;
     }
     case Op_CompareAndExchangeP:

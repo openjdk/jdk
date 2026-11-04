@@ -528,7 +528,7 @@ public:
   inline static bool is_in_parsable_area(const void* const addr, const void* const pb);
 
   // Update the region state after a failed evacuation.
-  void handle_evacuation_failure(bool retain);
+  void handle_evacuation_failure();
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for

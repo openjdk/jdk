@@ -1410,14 +1410,15 @@ void G1ConcurrentMark::remark() {
       log_debug(gc,ergo)("Running %s using %u workers for %u regions in heap", cl.name(), num_workers, _g1h->num_active_regions());
       _g1h->workers()->run_task(&cl, num_workers);
 
-      log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
+      log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected rebuild targets %u",
                                       _g1h->num_active_regions(), cl.total_selected_for_rebuild());
 
       _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
 
       if (_needs_remembered_set_rebuild) {
-        GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected = cl.sort_and_prune_old_selected();
-        _g1h->collection_set_candidates()->set_candidates_from_marking(selected);
+        GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected_old = cl.sort_and_prune_selected();
+        _g1h->collection_set_candidates()->set_candidates_from_marking(selected_old);
+        _g1h->humongous_card_set_groups()->add_for_rebuild(cl.humongous_selected());
       }
     }
 
@@ -1493,20 +1494,6 @@ void G1ConcurrentMark::compute_new_sizes() {
   _g1h->monitoring_support()->update_sizes();
 }
 
-class G1UpdateRegionsAfterRebuild : public G1HeapRegionClosure {
-  G1CollectedHeap* _g1h;
-
-public:
-  G1UpdateRegionsAfterRebuild(G1CollectedHeap* g1h) : _g1h(g1h) { }
-
-  bool do_heap_region(G1HeapRegion* r) override {
-    // Update the remset tracking state from updating to complete
-    // if remembered sets have been rebuilt.
-    _g1h->policy()->remset_tracker()->update_after_rebuild(r);
-    return false;
-  }
-};
-
 void G1ConcurrentMark::cleanup() {
   assert_at_safepoint_on_vm_thread();
 
@@ -1526,8 +1513,8 @@ void G1ConcurrentMark::cleanup() {
     // Update the remset tracking information as well as marking all regions
     // as fully parsable.
     GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking After Rebuild", _gc_timer_cm);
-    G1UpdateRegionsAfterRebuild cl(_g1h);
-    _g1h->heap_region_iterate(&cl);
+    _g1h->collection_set_candidates()->after_rebuild();
+    _g1h->humongous_card_set_groups()->after_rebuild();
   } else {
     log_debug(gc, phases)("No Remembered Sets to update after rebuild");
   }
