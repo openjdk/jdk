@@ -134,7 +134,7 @@ public class TestHybrid {
         testNotSerializable(enc.key(), "hybrid shared secret");
         byte[] ciphertext = enc.encapsulation();
         SecretKey decapsulated = d.decapsulate(ciphertext, 0, secretSize,
-                "Generic");
+                "generic");
 
         if (!enc.key().equals(decapsulated) ||
                 enc.key().hashCode() != decapsulated.hashCode()) {

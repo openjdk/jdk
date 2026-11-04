@@ -511,14 +511,14 @@ public class Hybrid {
         @Override
         public boolean equals(Object obj) {
             return this == obj || (obj instanceof SecretKeyImpl other &&
-                    Objects.equals(algorithm, other.algorithm) &&
+                    algorithm.equalsIgnoreCase(other.algorithm) &&
                     Objects.equals(k1, other.k1) &&
                     Objects.equals(k2, other.k2));
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(algorithm, k1, k2);
+            return Objects.hash(algorithm.toLowerCase(Locale.ENGLISH), k1, k2);
         }
 
         private void writeObject(ObjectOutputStream out) throws IOException {
