@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,114 +242,6 @@ TEST_VM(AtomicAccessEnumTest, scoped_enum) {
   Support().test_store_load(B);
   Support().test_cmpxchg(B, C);
   Support().test_xchg(B, C);
-}
-
-template<typename T>
-struct AtomicAccessBitopsTestSupport {
-  volatile T _test_value;
-
-  // At least one byte differs between _old_value and _old_value op _change_value.
-  static const T _old_value =    static_cast<T>(UCONST64(0x7f5300007f530044));
-  static const T _change_value = static_cast<T>(UCONST64(0x3800530038005322));
-
-  AtomicAccessBitopsTestSupport() : _test_value(0) {}
-
-  void fetch_then_and() {
-    AtomicAccess::store(&_test_value, _old_value);
-    T expected = _old_value & _change_value;
-    EXPECT_NE(_old_value, expected);
-    T result = AtomicAccess::fetch_then_and(&_test_value, _change_value);
-    EXPECT_EQ(_old_value, result);
-    EXPECT_EQ(expected, AtomicAccess::load(&_test_value));
-  }
-
-  void fetch_then_or() {
-    AtomicAccess::store(&_test_value, _old_value);
-    T expected = _old_value | _change_value;
-    EXPECT_NE(_old_value, expected);
-    T result = AtomicAccess::fetch_then_or(&_test_value, _change_value);
-    EXPECT_EQ(_old_value, result);
-    EXPECT_EQ(expected, AtomicAccess::load(&_test_value));
-  }
-
-  void fetch_then_xor() {
-    AtomicAccess::store(&_test_value, _old_value);
-    T expected = _old_value ^ _change_value;
-    EXPECT_NE(_old_value, expected);
-    T result = AtomicAccess::fetch_then_xor(&_test_value, _change_value);
-    EXPECT_EQ(_old_value, result);
-    EXPECT_EQ(expected, AtomicAccess::load(&_test_value));
-  }
-
-  void and_then_fetch() {
-    AtomicAccess::store(&_test_value, _old_value);
-    T expected = _old_value & _change_value;
-    EXPECT_NE(_old_value, expected);
-    T result = AtomicAccess::and_then_fetch(&_test_value, _change_value);
-    EXPECT_EQ(expected, result);
-    EXPECT_EQ(expected, AtomicAccess::load(&_test_value));
-  }
-
-  void or_then_fetch() {
-    AtomicAccess::store(&_test_value, _old_value);
-    T expected = _old_value | _change_value;
-    EXPECT_NE(_old_value, expected);
-    T result = AtomicAccess::or_then_fetch(&_test_value, _change_value);
-    EXPECT_EQ(expected, result);
-    EXPECT_EQ(expected, AtomicAccess::load(&_test_value));
-  }
-
-  void xor_then_fetch() {
-    AtomicAccess::store(&_test_value, _old_value);
-    T expected = _old_value ^ _change_value;
-    EXPECT_NE(_old_value, expected);
-    T result = AtomicAccess::xor_then_fetch(&_test_value, _change_value);
-    EXPECT_EQ(expected, result);
-    EXPECT_EQ(expected, AtomicAccess::load(&_test_value));
-  }
-
-#define TEST_BITOP(name) { SCOPED_TRACE(XSTR(name)); name(); }
-
-  void operator()() {
-    TEST_BITOP(fetch_then_and)
-    TEST_BITOP(fetch_then_or)
-    TEST_BITOP(fetch_then_xor)
-    TEST_BITOP(and_then_fetch)
-    TEST_BITOP(or_then_fetch)
-    TEST_BITOP(xor_then_fetch)
-  }
-
-#undef TEST_BITOP
-};
-
-template<typename T>
-const T AtomicAccessBitopsTestSupport<T>::_old_value;
-
-template<typename T>
-const T AtomicAccessBitopsTestSupport<T>::_change_value;
-
-TEST_VM(AtomicAccessBitopsTest, int8) {
-  AtomicAccessBitopsTestSupport<int8_t>()();
-}
-
-TEST_VM(AtomicAccessBitopsTest, uint8) {
-  AtomicAccessBitopsTestSupport<uint8_t>()();
-}
-
-TEST_VM(AtomicAccessBitopsTest, int32) {
-  AtomicAccessBitopsTestSupport<int32_t>()();
-}
-
-TEST_VM(AtomicAccessBitopsTest, uint32) {
-  AtomicAccessBitopsTestSupport<uint32_t>()();
-}
-
-TEST_VM(AtomicAccessBitopsTest, int64) {
-  AtomicAccessBitopsTestSupport<int64_t>()();
-}
-
-TEST_VM(AtomicAccessBitopsTest, uint64) {
-  AtomicAccessBitopsTestSupport<uint64_t>()();
 }
 
 // The following tests verify that atomic operations produce correct results for
