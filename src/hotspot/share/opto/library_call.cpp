@@ -6308,9 +6308,9 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
     Node* chk = _gvn.transform(new CmpINode(should_post_vm_object_alloc, intcon(0)));
     Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
     {
-    BuildCutout unless(this, tst, PROB_MAX);
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_make_not_entrant);
+      BuildCutout unless(this, tst, PROB_MAX);
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_make_not_entrant);
     }
     if (stopped()) {
       return true;
