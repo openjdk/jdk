@@ -94,14 +94,14 @@ class SkipBytes {
 
     @ParameterizedTest
     @MethodSource("args")
-    void test(long size, long expectedPosition0, int requestedSkip) throws IOException {
+    void test(long size, long initialPosition, int requestedSkip) throws IOException {
         var path = createTempFileOfSize("RAF-SkipBytes-%s-".formatted(size), ".dat", size);
         try (var raf = new RandomAccessFile(path.toFile(), "rw")) {
 
             // Seek to the requested start position
-            raf.seek(expectedPosition0);
+            raf.seek(initialPosition);
             long position0 = raf.getFilePointer();
-            assertEquals(expectedPosition0, position0);
+            assertEquals(initialPosition, position0);
 
             // Skip requested bytes
             int skip = raf.skipBytes(requestedSkip);
