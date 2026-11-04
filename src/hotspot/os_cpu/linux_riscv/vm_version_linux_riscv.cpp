@@ -133,7 +133,7 @@ void VM_Version::apply_aot_cache_cpu_features() {
       FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
     }
     _rv_ext_features_disabled_by_aot_cache = runtime_cpu_features->features_not_in(archived_cpu_features);
-    rt_features->clear_features(&_rv_ext_features_disabled_by_aot_cache);
+    runtime_cpu_features->clear_features(&_rv_ext_features_disabled_by_aot_cache);
     LogTarget(Info, os, cpu) os_cpu_log;
     if (os_cpu_log.is_enabled()) {
       ResourceMark rm;
