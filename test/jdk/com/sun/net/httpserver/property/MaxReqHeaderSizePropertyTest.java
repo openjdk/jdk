@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test id=default
- * @bug 8295785
+ * @bug 8396660
  * @summary Verifies `HttpServer` behavior when
  *          `sun.net.httpserver.maxReqHeaderSize` is not configured, and left to
  *          its default, 389120.
@@ -63,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test id=200
- * @bug 8295785
+ * @bug 8396660
  * @summary Verifies `HttpServer` behavior when
  *          `sun.net.httpserver.maxReqHeaderSize` is configured to 200.
  *
