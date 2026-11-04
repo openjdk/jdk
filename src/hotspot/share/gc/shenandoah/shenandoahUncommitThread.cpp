@@ -153,10 +153,6 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
   assert(_uncommit_in_progress.is_unset(), "Uncommit should not be in progress");
   assert(_candidates_count > 0, "Should be");
 
-  const char* msg = "Concurrent uncommit";
-  EventMark em("%s", msg);
-  log_info(gc, start)("%s", msg);
-
   size_t used_before = _heap->used();
   double start = os::elapsedTime();
 
@@ -213,13 +209,12 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
 
   if (uncommitted_count > 0) {
     _heap->notify_heap_changed();
-  }
 
-  log_info(gc)("%s " PROPERFMT " (%zuM) %.3fms",
-               msg,
-               PROPERFMTARGS(uncommitted_count * ShenandoahHeapRegion::region_size_bytes()),
-               _heap->capacity() / M,
-               elapsed * MILLIUNITS);
+    log_info(gc)("Concurrent uncommit " PROPERFMT " (%zuM) %.3fms",
+                 PROPERFMTARGS(uncommitted_count * ShenandoahHeapRegion::region_size_bytes()),
+                 _heap->capacity() / M,
+                 elapsed * MILLIUNITS);
+  }
 
   assert(_uncommit_in_progress.is_unset(), "Uncommit should not be in progress");
 }
