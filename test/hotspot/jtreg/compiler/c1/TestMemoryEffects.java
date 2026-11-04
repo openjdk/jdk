@@ -50,7 +50,7 @@ public class TestMemoryEffects {
         TestFramework tf = new TestFramework();
         tf.setDefaultWarmup(0); // All tests need -Xcomp.
         tf.addFlags("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
-        tf.addCrossProductScenarios(Set.of("", "--enable-preview", "-XX:+StressLoopInvariantCodeMotion"));
+        tf.addCrossProductScenarios(Set.of("", "--enable-preview", "-XX:+IgnoreUnrecognizedVMOptions -XX:+StressLoopInvariantCodeMotion"));
         tf.start();
     }
 
