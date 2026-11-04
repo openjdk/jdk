@@ -24,11 +24,13 @@
 /*
  * @test
  * @bug 8396399
- * @summary Test verifies how VMObjectAlloc works for clone() method.
+ * @summary Test verifies how VMObjectAlloc works for clone() method with compiler optimizations.
  *
  * @requires vm.jvmti
  *
  * @run main/othervm/native -agentlib:VMObjectAllocClone -Xbatch VMObjectAllocCloneTest
+ * @run main/othervm/native -agentlib:VMObjectAllocClone -Xbatch -XX:-TieredCompilation VMObjectAllocCloneTest
+ * @run main/othervm/native -agentlib:VMObjectAllocClone -Xbatch -XX:TieredStopAtLevel=1 VMObjectAllocCloneTest
  */
 
 import java.lang.ref.Reference;
