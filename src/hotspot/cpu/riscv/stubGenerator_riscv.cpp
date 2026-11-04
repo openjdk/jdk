@@ -6678,8 +6678,8 @@ class StubGenerator: public StubCodeGenerator {
       __ xorr(dst, dst, t1);
     } else {
       // x ^ y ^ z
-      __ xorr(dst, y, z);
-      __ xorr(dst, dst, x);
+      __ xorr(dst, x, y);
+      __ xorr(dst, dst, z);
     }
   }
 
@@ -6813,7 +6813,7 @@ class StubGenerator: public StubCodeGenerator {
     // [saved-reg]: x18 - x27
 
     // h0/1/2/3/4
-    const Register a0 = x14, b0 = x15, c0 = x16, d0 = x17, e0 = x28;
+    Register a = x14, b = x15, c = x16, d = x17, e = x28;
     // w0, w1, ... w15
     // put two adjecent w's in one register:
     //    one at high word part, another at low word part
@@ -6852,20 +6852,18 @@ class StubGenerator: public StubCodeGenerator {
     // we can apply further optimization, which is to just ignore the
     // higher 32-bits in a/c/e, rather than set the higher
     // 32-bits of a/c/e to zero explicitly with extra instructions.
-    __ ld(a0, Address(state, 0));
-    __ srli(b0, a0, 32);
-    __ ld(c0, Address(state, 8));
-    __ srli(d0, c0, 32);
-    __ lw(e0, Address(state, 16));
+    __ ld(a, Address(state, 0));
+    __ srli(b, a, 32);
+    __ ld(c, Address(state, 8));
+    __ srli(d, c, 32);
+    __ lw(e, Address(state, 16));
 
     Label L_sha1_loop;
     if (multi_block) {
       __ BIND(L_sha1_loop);
     }
 
-    sha1_preserve_prev_abcde(a0, b0, c0, d0, e0, prev_ab, prev_cd, prev_e);
-
-    Register a = a0, b = b0, c = c0, d = d0, e = e0;
+    sha1_preserve_prev_abcde(a, b, c, d, e, prev_ab, prev_cd, prev_e);
 
     for (int round = 0; round < 80; round++) {
       // prepare K't value
@@ -6879,8 +6877,12 @@ class StubGenerator: public StubCodeGenerator {
 
       // Software register renaming for next round:
       //   a' = e, b' = a, c' = b, d' = c, e' = d
-      Register pa = a, pb = b, pc = c, pd = d, pe = e;
-      a = pe, b = pa, c = pb, d = pc, e = pd;
+      Register old_e = e;
+      e = d;
+      d = c;
+      c = b;
+      b = a;
+      a = old_e;
     }
 
     // compute the intermediate hash value
