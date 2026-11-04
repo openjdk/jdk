@@ -205,7 +205,7 @@ DumpTimeClassInfo* AOTSystemDictionary::get_info_locked(InstanceKlass* k) {
 }
 
 void AOTSystemDictionary::check_code_source(InstanceKlass* ik, const ClassFileStream* cfs) {
-  if (CDSConfig::is_dumping_preimage_static_archive() && !is_builtin_loader(ik->class_loader_data())) {
+  if (CDSConfig::is_dumping_aot_configuration() && !is_builtin_loader(ik->class_loader_data())) {
     if (cfs == nullptr || cfs->source() == nullptr || strncmp(cfs->source(), "file:", 5) != 0) {
       // AOT cache filtering:
       // For non-built-in loaders, cache only the classes that have a file: code source, so
@@ -468,7 +468,7 @@ const char* AOTSystemDictionary::check_self_exclusion_helper(InstanceKlass* k, b
       // An unlinked class may fail to verify in AOTLinkedClassBulkLoader::init_required_classes_for_loader(),
       // causing the JVM to fail at bootstrap.
       return "Unlinked class not supported by AOTClassLinking";
-    } else if (CDSConfig::is_dumping_preimage_static_archive()) {
+    } else if (CDSConfig::is_dumping_aot_configuration()) {
       // When dumping the final static archive, we will unconditionally load and link all
       // classes from the preimage. We don't want to get a VerifyError when linking this class.
       return "Unlinked class not supported by AOTConfiguration";
@@ -825,7 +825,7 @@ void AOTSystemDictionary::handle_class_unloading(InstanceKlass* klass) {
 }
 
 void AOTSystemDictionary::init_dumptime_info_from_input_archive(InstanceKlass* k) {
-  if (CDSConfig::is_dumping_preimage_static_archive() && k->defined_by_other_loaders()) {
+  if (CDSConfig::is_dumping_aot_configuration() && k->defined_by_other_loaders()) {
     DEBUG_ONLY({
         DumpTimeClassInfo* info = _dumptime_table->get(k);
         guarantee(info != nullptr, "Already added in AOTSystemDictionary::copy_unregistered_classes_for_retraining()");
@@ -1009,7 +1009,7 @@ bool AOTSystemDictionary::should_be_excluded(Klass* k) {
 
 void AOTSystemDictionary::finish_exclusion_checks() {
   assert_at_safepoint();
-  if (CDSConfig::is_dumping_dynamic_archive() || CDSConfig::is_dumping_preimage_static_archive()) {
+  if (CDSConfig::is_dumping_dynamic_archive() || CDSConfig::is_dumping_aot_configuration()) {
     // Do this first -- if a base class is excluded due to duplication,
     // all of its subclasses will also be excluded.
     ResourceMark rm;
@@ -1158,7 +1158,7 @@ void AOTSystemDictionary::check_verification_constraints(InstanceKlass* klass,
       if (from_name == nullptr) {
         // This is for old verifier. No need to check, as we can guarantee that all classes checked by
         // the old verifier during AOT training phase cannot be replaced in the asembly phase.
-        precond(CDSConfig::is_dumping_final_static_archive());
+        precond(CDSConfig::is_dumping_aot_cache());
         continue;
       }
 

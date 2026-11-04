@@ -50,8 +50,8 @@
 #include "utilities/globalDefinitions.hpp"
 
 bool CDSConfig::_is_dumping_static_archive = false;
-bool CDSConfig::_is_dumping_preimage_static_archive = false;
-bool CDSConfig::_is_dumping_final_static_archive = false;
+bool CDSConfig::_is_dumping_aot_configuration = false;
+bool CDSConfig::_is_dumping_aot_cache = false;
 bool CDSConfig::_is_dumping_dynamic_archive = false;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
@@ -606,10 +606,10 @@ void CDSConfig::check_aotmode_record() {
   }
 
   _is_dumping_static_archive = true;
-  _is_dumping_preimage_static_archive = true;
+  _is_dumping_aot_configuration = true;
 
   // At the end of the training run, the module graph may be contaminated with program states.
-  // We will rebuild the module graph when dumping the CDS final image.
+  // We will rebuild the module graph when dumping the AOT cache.
   _is_dumping_full_module_graph = false;
 }
 
@@ -635,7 +635,7 @@ void CDSConfig::check_aotmode_create() {
 
   substitute_aot_filename(FLAG_MEMBER_ENUM(AOTCache));
 
-  _is_dumping_final_static_archive = true;
+  _is_dumping_aot_cache = true;
   _is_using_full_module_graph = false;
   UseSharedSpaces = true;
   RequireSharedSpaces = true;
@@ -657,11 +657,11 @@ void CDSConfig::check_aotmode_create() {
 void CDSConfig::ergo_init_aot_paths() {
   assert(_cds_ergo_initialize_started, "sanity");
   if (is_dumping_static_archive()) {
-    if (is_dumping_preimage_static_archive()) {
+    if (is_dumping_aot_configuration()) {
       _input_static_archive_path = AOTCache; // non-null when re-training
       _output_archive_path = AOTConfiguration;
     } else {
-      assert(is_dumping_final_static_archive(), "must be");
+      assert(is_dumping_aot_cache(), "must be");
       _input_static_archive_path = AOTConfiguration;
       _output_archive_path = AOTCache;
     }
@@ -700,9 +700,9 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   }
 
   if (is_dumping_static_archive()) {
-    if (is_dumping_preimage_static_archive()) {
+    if (is_dumping_aot_configuration()) {
       // Don't tweak execution mode during AOT training run
-    } else if (is_dumping_final_static_archive()) {
+    } else if (is_dumping_aot_cache()) {
       if (Arguments::mode() == Arguments::_comp) {
         // AOT assembly phase submits the non-blocking compilation requests
         // for methods collected during training run, then waits for all compilations
@@ -889,16 +889,16 @@ void CDSConfig::prepare_for_dumping() {
 
 bool CDSConfig::is_dumping_classic_static_archive() {
   return _is_dumping_static_archive &&
-    !is_dumping_preimage_static_archive() &&
-    !is_dumping_final_static_archive();
+    !is_dumping_aot_configuration() &&
+    !is_dumping_aot_cache();
 }
 
-bool CDSConfig::is_dumping_preimage_static_archive() {
-  return _is_dumping_preimage_static_archive;
+bool CDSConfig::is_dumping_aot_configuration() {
+  return _is_dumping_aot_configuration;
 }
 
-bool CDSConfig::is_dumping_final_static_archive() {
-  return _is_dumping_final_static_archive;
+bool CDSConfig::is_dumping_aot_cache() {
+  return _is_dumping_aot_cache;
 }
 
 void CDSConfig::enable_dumping_dynamic_archive(const char* output_path) {
@@ -915,7 +915,7 @@ void CDSConfig::enable_dumping_dynamic_archive(const char* output_path) {
 
 bool CDSConfig::allow_only_single_java_thread() {
   // See comments in JVM_StartThread()
-  return is_dumping_classic_static_archive() || is_dumping_final_static_archive();
+  return is_dumping_classic_static_archive() || is_dumping_aot_cache();
 }
 
 bool CDSConfig::is_using_archive() {
@@ -931,11 +931,11 @@ bool CDSConfig::is_using_only_default_archive() {
 }
 
 bool CDSConfig::is_logging_lambda_form_invokers() {
-  return ClassListWriter::is_enabled() || is_dumping_dynamic_archive() || is_dumping_preimage_static_archive();
+  return ClassListWriter::is_enabled() || is_dumping_dynamic_archive() || is_dumping_aot_configuration();
 }
 
 bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
-  if (is_dumping_final_static_archive()) {
+  if (is_dumping_aot_cache()) {
     // No need to regenerate -- the lambda form invokers should have been regenerated
     // in the preimage archive (if allowed)
     return false;
@@ -975,7 +975,7 @@ bool CDSConfig::in_dumper_thread() {
 }
 
 const char* CDSConfig::type_of_archive_being_loaded() {
-  if (is_dumping_final_static_archive()) {
+  if (is_dumping_aot_cache()) {
     return "AOT configuration file";
   } else if (new_aot_flags_used()) {
     return "AOT cache";
@@ -985,7 +985,7 @@ const char* CDSConfig::type_of_archive_being_loaded() {
 }
 
 const char* CDSConfig::type_of_archive_being_written() {
-  if (is_dumping_preimage_static_archive()) {
+  if (is_dumping_aot_configuration()) {
     return "AOT configuration file";
   } else if (new_aot_flags_used()) {
     return "AOT cache";
@@ -1038,9 +1038,9 @@ bool CDSConfig::is_preserving_verification_constraints() {
   // in the assembly phase, all of the verifier's assignability checks will remain
   // valid in the production run, so we don't need to verify aot-linked classes again.
 
-  if (is_dumping_preimage_static_archive()) { // writing AOT config
+  if (is_dumping_aot_configuration()) {
     return AOTClassLinking;
-  } else if (is_dumping_final_static_archive()) { // writing AOT cache
+  } else if (is_dumping_aot_cache()) {
     return is_dumping_aot_linked_classes();
   } else if (is_dumping_classic_static_archive()) {
     return false;
@@ -1094,7 +1094,7 @@ bool CDSConfig::is_dumping_klass_subgraphs() {
     return false;
   }
 
-  if (is_dumping_preimage_static_archive()) {
+  if (is_dumping_aot_configuration()) {
     // KlassSubGraphs are disabled in the preimage static archive, which contains a very
     // limited set of oops.
     return false;
@@ -1113,7 +1113,7 @@ bool CDSConfig::is_dumping_klass_subgraphs() {
 bool CDSConfig::is_using_klass_subgraphs() {
   return (is_loading_heap() &&
           !CDSConfig::is_using_aot_linked_classes() &&
-          !CDSConfig::is_dumping_final_static_archive());
+          !CDSConfig::is_dumping_aot_cache());
 }
 
 // Prevent the JVM from dumping or using the archived full module graph
@@ -1162,7 +1162,7 @@ void CDSConfig::stop_using_full_module_graph(const char* reason) {
 }
 
 bool CDSConfig::is_dumping_aot_linked_classes() {
-  if (is_dumping_final_static_archive()) {
+  if (is_dumping_aot_cache()) {
     // FMG is required to guarantee that all cached boot/platform/app classes
     // are visible in the production run, so they can be unconditionally
     // loaded during VM bootstrap.
@@ -1200,7 +1200,7 @@ bool CDSConfig::is_dumping_method_handles() {
 #endif // INCLUDE_CDS_JAVA_HEAP
 
 // AOT code generation and its archiving is disabled by default.
-// We enable it only in the final image dump after the metadata and heap are dumped.
+// We enable it only after the metadata and heap are dumped for the AOT cache.
 // This affects only JITed code because it may have embedded oops and metadata pointers
 // which AOT code encodes as offsets in final CDS archive regions.
 
@@ -1219,5 +1219,5 @@ void CDSConfig::enable_dumping_aot_code() {
 }
 
 bool CDSConfig::is_dumping_adapters() {
-  return (AOTAdapterCaching && is_dumping_final_static_archive());
+  return (AOTAdapterCaching && is_dumping_aot_cache());
 }

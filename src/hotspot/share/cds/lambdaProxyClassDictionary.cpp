@@ -164,7 +164,7 @@ void LambdaProxyClassDictionary::add_lambda_proxy_class(InstanceKlass* caller_ik
     return;
   }
 
-  if (CDSConfig::is_dumping_preimage_static_archive()) {
+  if (CDSConfig::is_dumping_aot_configuration()) {
     // Information about lambda proxies are recorded in FinalImageRecipes.
     return;
   }

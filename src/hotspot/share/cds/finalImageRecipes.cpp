@@ -153,7 +153,7 @@ void FinalImageRecipes::record_recipes_for_constantpool() {
 }
 
 void FinalImageRecipes::apply_recipes_for_constantpool(JavaThread* current) {
-  assert(CDSConfig::is_dumping_final_static_archive(), "must be");
+  assert(CDSConfig::is_dumping_aot_cache(), "must be");
 
   for (int i = 0; i < _all_klasses->length(); i++) {
     Array<int>* cp_indices = _cp_recipes->at(i);
@@ -182,7 +182,7 @@ void FinalImageRecipes::apply_recipes_for_constantpool(JavaThread* current) {
 }
 
 void FinalImageRecipes::load_all_classes(TRAPS) {
-  assert(CDSConfig::is_dumping_final_static_archive(), "sanity");
+  assert(CDSConfig::is_dumping_aot_cache(), "sanity");
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
   for (int i = 0; i < _all_klasses->length(); i++) {
     Klass* k = _all_klasses->at(i);
@@ -215,14 +215,14 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
 }
 
 void FinalImageRecipes::record_recipes() {
-  assert(CDSConfig::is_dumping_preimage_static_archive(), "must be");
+  assert(CDSConfig::is_dumping_aot_configuration(), "must be");
   _final_image_recipes = new FinalImageRecipes();
   _final_image_recipes->record_all_classes();
   _final_image_recipes->record_recipes_for_constantpool();
 }
 
 void FinalImageRecipes::apply_recipes(TRAPS) {
-  assert(CDSConfig::is_dumping_final_static_archive(), "must be");
+  assert(CDSConfig::is_dumping_aot_cache(), "must be");
   if (_final_image_recipes != nullptr) {
     _final_image_recipes->apply_recipes_impl(THREAD);
     if (HAS_PENDING_EXCEPTION) {

@@ -282,7 +282,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   set_base_archive_name_size((unsigned int)base_archive_name_size);
   if (CDSConfig::is_dumping_dynamic_archive()) {
     set_magic(CDS_DYNAMIC_ARCHIVE_MAGIC);
-  } else if (CDSConfig::is_dumping_preimage_static_archive()) {
+  } else if (CDSConfig::is_dumping_aot_configuration()) {
     set_magic(CDS_PREIMAGE_ARCHIVE_MAGIC);
   } else {
     set_magic(CDS_ARCHIVE_MAGIC);
@@ -709,7 +709,7 @@ bool FileMapInfo::init_from_file(int fd) {
   const char* file_type = CDSConfig::type_of_archive_being_loaded();
   if (_is_static) {
     if ((gen_header->_magic == CDS_ARCHIVE_MAGIC) ||
-        (gen_header->_magic == CDS_PREIMAGE_ARCHIVE_MAGIC && CDSConfig::is_dumping_final_static_archive())) {
+        (gen_header->_magic == CDS_PREIMAGE_ARCHIVE_MAGIC && CDSConfig::is_dumping_aot_cache())) {
       // Good
     } else {
       if (CDSConfig::new_aot_flags_used()) {
@@ -804,7 +804,7 @@ bool FileMapInfo::open_for_read() {
     return true;
   }
   const char* file_type = CDSConfig::type_of_archive_being_loaded();
-  const char* info = CDSConfig::is_dumping_final_static_archive() ?
+  const char* info = CDSConfig::is_dumping_aot_cache() ?
     "AOTConfiguration file " : "";
   aot_log_info(aot)("trying to map %s%s", info, _full_path);
   int fd = os::open(_full_path, O_RDONLY | O_BINARY, 0);
@@ -829,7 +829,7 @@ bool FileMapInfo::open_for_read() {
 
 void FileMapInfo::open_as_output() {
   if (CDSConfig::new_aot_flags_used()) {
-    if (CDSConfig::is_dumping_preimage_static_archive()) {
+    if (CDSConfig::is_dumping_aot_configuration()) {
       log_info(aot)("Writing binary AOTConfiguration file: %s",  _full_path);
     } else {
       log_info(aot)("Writing AOTCache file: %s",  _full_path);
@@ -1143,7 +1143,7 @@ void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
     close();
     remove(_full_path);
 
-    if (CDSConfig::is_dumping_preimage_static_archive()) {
+    if (CDSConfig::is_dumping_aot_configuration()) {
       AOTMetaspace::writing_error("Unable to write to AOT configuration file.");
     } else if (CDSConfig::new_aot_flags_used()) {
       AOTMetaspace::writing_error("Unable to write to AOT cache.");
@@ -1364,7 +1364,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     // Note that this may either be a "fresh" mapping into unreserved address
     // space (Windows, first mapping attempt), or a mapping into pre-reserved
     // space (Posix). See also comment in AOTMetaspace::map_archives().
-    bool read_only = r->read_only() && !CDSConfig::is_dumping_final_static_archive();
+    bool read_only = r->read_only() && !CDSConfig::is_dumping_aot_cache();
 
     char* base = map_memory(_fd, _full_path, r->file_offset(),
                             requested_addr, size, read_only,
@@ -1709,7 +1709,7 @@ bool FileMapInfo::can_use_heap_region() {
       return false;
     }
     if (!CDSConfig::is_using_full_module_graph()) {
-      if (CDSConfig::is_dumping_final_static_archive()) {
+      if (CDSConfig::is_dumping_aot_cache()) {
         // We are loading the preimage static archive, which has no KlassSubGraphs.
         // See CDSConfig::is_dumping_klass_subgraphs()
       } else {
@@ -1935,7 +1935,7 @@ bool FileMapInfo::validate_aot_class_linking() {
 #endif
   }
 
-  if (CDSConfig::is_dumping_final_static_archive() && header()->aot_class_linking_value() && !CDSConfig::is_dumping_aot_linked_classes()) {
+  if (CDSConfig::is_dumping_aot_cache() && header()->aot_class_linking_value() && !CDSConfig::is_dumping_aot_linked_classes()) {
     ResourceMark rm;
     const char* msg = err_msg("AOT class linking was enabled in training run but has been disabled%s",
                               (CDSConfig::is_dumping_full_module_graph() ? "" : " due to incompatible module options"));

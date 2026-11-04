@@ -290,7 +290,7 @@ void LambdaFormInvokers::read_static_archive_invokers() {
 
 void LambdaFormInvokers::serialize(SerializeClosure* soc) {
   soc->do_ptr(&_static_archive_invokers);
-  if (soc->reading() && CDSConfig::is_dumping_final_static_archive()) {
+  if (soc->reading() && CDSConfig::is_dumping_aot_cache()) {
     if (!CDSConfig::is_dumping_aot_linked_classes()) {
       // See CDSConfig::is_dumping_regenerated_lambdaform_invokers() -- a dynamic archive can
       // regenerate lambda form invokers only if the base archive does not contain aot-linked classes.

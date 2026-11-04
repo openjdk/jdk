@@ -35,8 +35,8 @@ class InstanceKlass;
 class CDSConfig : public AllStatic {
 #if INCLUDE_CDS
   static bool _is_dumping_static_archive;
-  static bool _is_dumping_preimage_static_archive;
-  static bool _is_dumping_final_static_archive;
+  static bool _is_dumping_aot_configuration;
+  static bool _is_dumping_aot_cache;
   static bool _is_dumping_dynamic_archive;
   static bool _is_dumping_full_module_graph;
   static bool _is_using_full_module_graph;
@@ -146,18 +146,14 @@ public:
   static void enable_dumping_static_archive()                { CDS_ONLY(_is_dumping_static_archive = true); }
 
   static bool is_dumping_classic_static_archive()            NOT_CDS_RETURN_(false);
-  static bool is_dumping_preimage_static_archive()           NOT_CDS_RETURN_(false);
-  static bool is_dumping_final_static_archive()              NOT_CDS_RETURN_(false);
+  static bool is_dumping_aot_configuration()                 { return is_dumping_aot_configuration(); }
+  static bool is_dumping_aot_cache()                         { return is_dumping_aot_cache(); }
 
   // Is the current JVM loading classes from an input archive and dumping into an output archive.
-  static bool is_dumping_with_input_archive() { return is_dumping_aot_cache() || is_redumping_aot_configuration(); }
-
-  // New names:
-  static bool is_dumping_aot_configuration() { return is_dumping_preimage_static_archive(); }
-  static bool is_dumping_aot_cache()         { return is_dumping_final_static_archive(); }
+  static bool is_dumping_with_input_archive()                { return is_dumping_aot_cache() || is_redumping_aot_configuration(); }
 
   // Iterative training
-  static bool is_redumping_aot_configuration() { return is_dumping_aot_configuration() && is_using_archive(); }
+  static bool is_redumping_aot_configuration()               { return is_dumping_aot_configuration() && is_using_archive(); }
 
   // dynamic_archive
   static bool is_dumping_dynamic_archive()                   { return CDS_ONLY(_is_dumping_dynamic_archive) NOT_CDS(false); }

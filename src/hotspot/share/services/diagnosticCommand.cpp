@@ -1008,7 +1008,7 @@ void ClassesDCmd::execute(DCmdSource source, TRAPS) {
 
 #if INCLUDE_CDS
 void AOTEndRecordingDCmd::execute(DCmdSource source, TRAPS) {
-  if (!CDSConfig::is_dumping_preimage_static_archive()) {
+  if (!CDSConfig::is_dumping_aot_configuration()) {
     output()->print_cr("AOT.end_recording is unsupported when VM flags -XX:AOTMode=record or -XX:AOTCacheOutput=<file> are missing.");
     return;
   }

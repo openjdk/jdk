@@ -36,8 +36,8 @@ template <typename T> class Array;
 
 // This class is used for transferring information from the AOTConfiguration file (aka the "preimage")
 // to the JVM that creates the AOTCache (aka the "final image").
-//   - The recipes are recorded when CDSConfig::is_dumping_preimage_static_archive() is true.
-//   - The recipes are applied when CDSConfig::is_dumping_final_static_archive() is true.
+//   - The recipes are recorded when CDSConfig::is_dumping_aot_configuration() is true.
+//   - The recipes are applied when CDSConfig::is_dumping_aot_cache() is true.
 // The following information are recorded:
 //   - The list of all classes that are stored in the AOTConfiguration file.
 //   - The list of all classes that require AOT resolution of invokedynamic call sites.

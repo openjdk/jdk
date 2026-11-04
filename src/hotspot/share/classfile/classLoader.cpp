@@ -1422,7 +1422,7 @@ void ClassLoader::record_result_for_builtin_loader(s2 classpath_index, InstanceK
     precond(loader == nullptr);
   }
 
-  if (CDSConfig::is_dumping_preimage_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {
+  if (CDSConfig::is_dumping_aot_configuration() || CDSConfig::is_dumping_dynamic_archive()) {
     if (!AOTClassLocationConfig::dumptime()->is_valid_classpath_index(classpath_index, result)) {
       classpath_index = -1;
     }
