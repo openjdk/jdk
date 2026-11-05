@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ struct ZRememberedScanForwardingContext {
       // Install into max array
       for (int i = 0; i < NumRecords; i++) {
         if (duration > _max_durations[i]) {
-          // Slid to the side
+          // Shift entries to the right
           for (int j = MIN2(_max_count, NumRecords - 1); i < j; j--) {
             _max_durations[j] = _max_durations[j - 1];
           }
