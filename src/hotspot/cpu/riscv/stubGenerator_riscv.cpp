@@ -1039,53 +1039,42 @@ class StubGenerator: public StubCodeGenerator {
     bool is_backward = step < 0;
     int granularity = g_uabs(step);
 
-    const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
-    assert_different_registers(s, d, cnt, vl, tmp1, tmp2);
-    Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
+    const Register src = x30, dst = x31, vl = x14, cnt = x15;
+    assert_different_registers(s, d, count, src, dst, cnt, vl);
     // Use a 128-byte tuning target for vector group capacity, with a minimum LMUL of m1.
     const int vector_length = static_cast<int>(VM_Version::initial_vector_length());
     const int lmul_multiplier = MAX2(128 / vector_length, 1);
     const Assembler::LMUL lmul = static_cast<Assembler::LMUL>(exact_log2(lmul_multiplier));
-    Label loop_forward, loop_backward, done;
-
     __ mv(dst, d);
     __ mv(src, s);
-    __ mv(cnt, count);
-
-    __ bind(loop_forward);
-    __ vsetvli(vl, cnt, sew, lmul);
-    if (is_backward) {
-      __ bne(vl, cnt, loop_backward);
+    if (granularity > 1) {
+      __ slli(cnt, count, exact_log2(granularity));
+    } else {
+      __ mv(cnt, count);
     }
 
-    __ vlex_v(v0, src, sew);
-    __ sub(cnt, cnt, vl);
-    if (sew != Assembler::e8) {
-      // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
-      __ slli(vl, vl, sew);
-    }
-    __ add(src, src, vl);
-
-    __ vsex_v(v0, dst, sew);
-    __ add(dst, dst, vl);
-    __ bnez(cnt, loop_forward);
-
-    if (is_backward) {
-      __ j(done);
-
-      __ bind(loop_backward);
-      __ sub(t0, cnt, vl);
-      if (sew != Assembler::e8) {
-        // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
-        __ slli(t0, t0, sew);
-      }
-      __ add(tmp1, s, t0);
-      __ vlex_v(v0, tmp1, sew);
-      __ add(tmp2, d, t0);
-      __ vsex_v(v0, tmp2, sew);
+    if (!is_backward) {
+      Label loop;
+      __ bind(loop);
+      __ vsetvli(vl, cnt, Assembler::e8, lmul);
+      __ vle8_v(v0, src);
       __ sub(cnt, cnt, vl);
-      __ bnez(cnt, loop_forward);
-      __ bind(done);
+      __ add(src, src, vl);
+      __ vse8_v(v0, dst);
+      __ add(dst, dst, vl);
+      __ bnez(cnt, loop);
+    } else {
+      Label loop;
+      __ add(src, src, cnt);
+      __ add(dst, dst, cnt);
+      __ bind(loop);
+      __ vsetvli(vl, cnt, Assembler::e8, lmul);
+      __ sub(src, src, vl);
+      __ sub(dst, dst, vl);
+      __ vle8_v(v0, src);
+      __ vse8_v(v0, dst);
+      __ sub(cnt, cnt, vl);
+      __ bnez(cnt, loop);
     }
   }
 
