@@ -1340,7 +1340,7 @@ public class Gen extends JCTree.Visitor {
                     stackBeforeSwitchExpression = stackBeforeSwitchExpression.prepend(item);
                     item.store();
                 }
-                switchResult = makeTemp(tree.type);
+                switchResult = makeTemp(pt);
             }
             int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
             try {

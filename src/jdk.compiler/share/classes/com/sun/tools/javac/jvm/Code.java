@@ -1785,7 +1785,13 @@ public class Code {
         }
 
         Type peek() {
-            return stack[stacksize-1];
+            Type top = stack[stacksize-1];
+
+            if (top == null) {
+                top = stack[stacksize - 2];
+                Assert.check(Code.width(top) == 2);
+            }
+            return top;
         }
 
         Type pop2() {
