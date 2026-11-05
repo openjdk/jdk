@@ -115,10 +115,8 @@ void tls_fixup_pd(void* tlsPtr);
 //
 
 // One structure to keep in sync with the JVM:
-#define REVIVAL_MAGIC 0x2e6e656b6e617266
 #define REVIVAL_VERSION 1
 struct revival_data {
-  uint64_t magic;
   uint64_t version;
   uint64_t size_this;
 

@@ -579,10 +579,8 @@ bool Thread::set_as_starting_thread(JavaThread* jt) {
 
 bool Thread::_revived_vm = false;
 
-#define REVIVAL_MAGIC 0x2e6e656b6e617266
 #define REVIVAL_VERSION 1
 struct revival_data {
-  uint64_t magic;
   uint64_t version;
   uint64_t size_this;
 
@@ -639,7 +637,6 @@ void* Thread::process_revival() {
 
   // Initialize the revival data structure to return:
   memset(&vm_revival_data, 0, sizeof(struct revival_data));
-  vm_revival_data.magic = REVIVAL_MAGIC;
   vm_revival_data.version = REVIVAL_VERSION;
   vm_revival_data.size_this = sizeof(vm_revival_data);
 

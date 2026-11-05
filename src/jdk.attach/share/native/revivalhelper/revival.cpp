@@ -876,9 +876,6 @@ int revive_image_cooperative() {
         return -1;
     }
     // Verify revival data from JVM:
-    if (rdata->magic != REVIVAL_MAGIC) {
-        error("revival: VM returns unrecognized data: %llx", (unsigned long long) rdata->magic);
-    }
     if (rdata->version == 0 || rdata->version > REVIVAL_VERSION) {
         error("revival: VM returns unrecognised data version: %llx", (unsigned long long) rdata->version);
     }
