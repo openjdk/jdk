@@ -63,9 +63,6 @@ void ShenandoahGenerationalMode::initialize_flags() const {
     case ShenandoahHeuristicsFlag::Heuristic::ADAPTIVE:
       // Nothing to do, this is the default
       break;
-    case ShenandoahHeuristicsFlag::Heuristic::PASSIVE:
-      // This is also acceptable, but will be handled in the regulator thread
-      break;
     case ShenandoahHeuristicsFlag::Heuristic::COMPACT:
       // Configure flags in accordance with the heuristic
       ShenandoahCompactHeuristics::configure();
