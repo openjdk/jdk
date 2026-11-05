@@ -31,6 +31,7 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.ByteBuffer;
@@ -44,7 +45,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -224,6 +229,130 @@ class H2GoAwayPromptConnectionClose {
             assertArrayEquals(RESPONSE.getBytes(StandardCharsets.UTF_8), bytes);
             System.out.printf("Got expected response for request[%s]%n", i);
             System.err.printf("Got expected response for request[%s]%n", i);
+        }
+    }
+
+    @Test
+    void testDelayedEmptyRequestBody() throws Exception {
+        sendDelayedRequestBody("");
+    }
+
+    @Test
+    void testDelayedRequestBody() throws Exception {
+        sendDelayedRequestBody("Un soir, t'en souvient-il? nous voguions en silence");
+    }
+
+    private void sendDelayedRequestBody(String requestBody) throws Exception{
+        final InetSocketAddress serverAddr = server.getServerAddress();
+        final URI reqURI = URIBuilder.newBuilder()
+                .scheme("https")
+                .host(serverAddr.getAddress())
+                .port(serverAddr.getPort())
+                .path(REQUEST_PATH)
+                .build();
+        for (int i=0; i < 5; i++) {
+            assertEquals(0, connTerminationLatch.availablePermits());
+            // released when the request body publisher is subscribed
+            var publisherReady = new Semaphore(0);
+            // released when we have pulled all response body bytes
+            var responseBodyObtained = new Semaphore(0);
+            // a reference to the publisher's thread
+            var publisherThread = new AtomicReference<Thread>();
+            // A delayed body publisher which will delay invonking onSubscribe
+            // on its subscriber until the connTerminationLatch has been released,
+            // and all response body bytes have been obtained
+            final DelayedBodyPublisher publisher = new DelayedBodyPublisher(
+                    requestBody,
+                    connTerminationLatch,
+                    publisherReady,
+                    responseBodyObtained,
+                    publisherThread);
+
+            final HttpRequest req = HttpRequest.newBuilder().version(HTTP_2)
+                    .uri(reqURI)
+                    .POST(publisher)
+                    .header(XKEY, "yes")
+                    .build();
+            try {
+                System.out.printf("issuing request[%s]: %s%n", i, req);
+                System.err.printf("issuing request[%s]: %s%n", i, req);
+                final HttpResponse<InputStream> resp = client.send(req, BodyHandlers.ofInputStream());
+                publisherReady.acquire(); // wait until the body publisher is subscribed
+                assertEquals(200, resp.statusCode(), "unexpected status code");
+                assertEquals(HTTP_2, resp.version(), "unexpected HTTP version in response");
+                System.out.println("Pulling response bytes");
+                System.err.println("Pulling response bytes");
+                byte[] bytes = resp.body().readAllBytes();
+                assertArrayEquals(RESPONSE.getBytes(StandardCharsets.UTF_8), bytes);
+                System.out.printf("Got expected response for request[%s]%n", i);
+                System.err.printf("Got expected response for request[%s]%n", i);
+            } finally {
+                // tell the request body publisher that we got all the
+                // response bytes
+                responseBodyObtained.release();
+            }
+            // wait for the publisher thread to finish
+            Thread thread = publisherThread.get();
+            if (thread != null) {
+                System.out.println("Joining publisher's thread");
+                System.err.println("Joining publisher's thread");
+                thread.join();
+            }
+        }
+    }
+
+    record DelayedBodyPublisher(String requestBody,
+                                Semaphore connectionClosed,
+                                Semaphore publisherReady,
+                                Semaphore responseAcquired,
+                                AtomicReference<Thread> threadRef)
+            implements BodyPublisher {
+        @Override
+        public void subscribe(Subscriber<? super ByteBuffer> subscriber) {
+            DelayedSubscription subscription =
+                    new DelayedSubscription(new AtomicBoolean(), this, subscriber);
+            threadRef.set(Thread.ofPlatform().start(new SubscriberTask(subscription)));
+        }
+        @Override
+        public long contentLength() {return requestBody.getBytes(StandardCharsets.UTF_8).length;}
+    }
+    record DelayedSubscription(AtomicBoolean completed,
+                               DelayedBodyPublisher publisher,
+                               Subscriber<? super ByteBuffer> subscriber) implements Subscription {
+        @Override
+        public void request(long n) {
+            if (completed.compareAndSet(false, true)) {
+                if (publisher.contentLength() != 0) {
+                    subscriber.onNext(ByteBuffer.wrap(publisher.requestBody().getBytes(StandardCharsets.UTF_8)));
+                }
+                subscriber.onComplete();
+            }
+        }
+        @Override
+        public void cancel() { completed.compareAndSet(false, true);}
+    }
+    record SubscriberTask(DelayedSubscription subscription) implements Runnable {
+        @Override
+        public void run() {
+            DelayedBodyPublisher publisher = subscription.publisher();
+            var subscriber = subscription.subscriber();
+            try {
+                System.out.println("awaiting connection termination");
+                System.err.println("awaiting connection termination");
+                publisher.connectionClosed().acquire();
+                publisher.publisherReady().release();
+                System.out.println("awaiting response body");
+                System.err.println("awaiting response body");
+                publisher.responseAcquired().acquire();
+                boolean noBody = publisher.contentLength() == 0;
+                subscriber.onSubscribe(subscription);
+                // complete immediately if no body
+                if (noBody && subscription.completed().compareAndSet(false, true)) {
+                    subscriber.onComplete();
+                }
+            } catch (Throwable t) {
+                subscriber.onError(t);
+            }
         }
     }
 

@@ -1537,25 +1537,20 @@ class Stream<T> extends ExchangeImpl<T> {
         cancelImpl(cause, code);
     }
 
-    private boolean requestBodySuccessfullySent() {
-        if (requestPublisher == null) return true;
-        return requestBodyCF.isDone() && !requestBodyCF.isCompletedExceptionally();
-    }
-
     void connectionClosing(Throwable cause) {
         boolean runScheduler = false;
         inputQLock.lock();
         try {
             errorRef.compareAndSet(null, cause);
-            if (requestBodySuccessfullySent() && !sched.isStopped() && !inputQ.isEmpty()) {
-                // avoid cancelling if there was no body, or the body was successfully sent,
-                // and we have buffered data.
+            if (!sched.isStopped() && !inputQ.isEmpty()) {
+                // avoid cancelling right away if we have buffered data.
                 runScheduler = true;
             }
         } finally {
             inputQLock.unlock();
         }
         if (runScheduler) {
+            requestBodyCF.complete(null); // no need to continue sending
             sched.runOrSchedule();
         } else {
             cancelImpl(cause);
