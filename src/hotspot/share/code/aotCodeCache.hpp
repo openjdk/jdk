@@ -689,6 +689,10 @@ protected:
     bool _avoidUnalignedAccesses;
 #endif
 
+#if defined(RISCV64) && defined(COMPILER2)
+    bool _alignVector;
+#endif
+
 #ifdef COMPILER2
     bool _reduceInitialCardMarks;
     uint _c2_ea_state;

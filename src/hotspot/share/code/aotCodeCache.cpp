@@ -751,6 +751,10 @@ void AOTCodeCache::Config::record() {
   _avoidUnalignedAccesses = AvoidUnalignedAccesses;
 #endif
 
+#if defined(RISCV64) && defined(COMPILER2)
+  _alignVector = AlignVector;
+#endif
+
 #ifdef COMPILER2
   _reduceInitialCardMarks = ReduceInitialCardMarks;
   _c2_ea_state = get_c2_ea_state();
@@ -962,6 +966,14 @@ bool AOTCodeCache::Config::verify() const {
     return false;
   }
 #endif // (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
+
+#if defined(RISCV64) && defined(COMPILER2)
+  // Cached vector accesses may be unaligned even when the runtime requires alignment.
+  if (!_alignVector && AlignVector) {
+    log_config_mismatch(_alignVector, AlignVector, "AlignVector");
+    return false;
+  }
+#endif
 
   uint current_jvmti_state = AOTCodeCache::get_jvmti_state();
   if (AOTCodeCaching &&_jvmti_state != current_jvmti_state) {
