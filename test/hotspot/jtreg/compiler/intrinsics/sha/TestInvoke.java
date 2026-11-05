@@ -73,17 +73,14 @@ public class TestInvoke {
             m.setAccessible(true);
 
             long[] buf0 = new long[25];
-            long[] buf1 = new long[25];
-            long[] buf2 = new long[25];
-            long[] buf3 = new long[25];
             int actual = 0;
 
             /* repeatedly get result */
             for (int i = 0; i < iters; i++) {
                 if (method.equals(DOUBLE_KECCAK_METHOD_ID) == true) {
-                    actual = (int) m.invoke(null, buf0, buf1);
+                    actual = (int) m.invoke(null, buf0, buf0);
                 } else if (method.equals(QUAD_KECCAK_METHOD_ID) == true) {
-                    actual = (int) m.invoke(null, buf0, buf1, buf2, buf3);
+                    actual = (int) m.invoke(null, buf0, buf0, buf0, buf0);
                 }
                 valSave = actual;
             }
