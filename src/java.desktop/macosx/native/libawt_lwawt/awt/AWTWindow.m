@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1209,6 +1209,29 @@ JNI_COCOA_ENTER(env);
     }];
 
 JNI_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CPlatformWindow
+ * Method:    nativeSetNSWindowAccessibilityElement
+ * Signature: (JII)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetNSWindowAccessibilityElement
+(JNIEnv *env, jclass clazz, jlong windowPtr, jboolean axElement)
+{
+JNI_COCOA_ENTER(env);
+
+
+    NSWindow *nsWindow = OBJC(windowPtr);
+
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+
+        AWTWindow *window = (AWTWindow*)[nsWindow delegate];
+
+        [nsWindow setAccessibilityElement:axElement];
+    }];
+
+    JNI_COCOA_EXIT(env);
 }
 
 /*

@@ -110,7 +110,6 @@ public class ApplicableIRRulesPrinter {
         "avx512_vbmi2",
         "avx10_2",
         "bmi2",
-        "fast_bmi2",
         // Intel APX
         "apx_f",
         // AArch64
@@ -123,6 +122,7 @@ public class ApplicableIRRulesPrinter {
         "asimdhp",
         // RISCV64
         "rvv",
+        "zbb",
         "zbkb",
         "zfh",
         "zvbb",

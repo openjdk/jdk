@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import sun.net.util.IPAddressUtil;
 import sun.security.util.*;
 
 /**
@@ -131,14 +132,21 @@ public class URIName implements GeneralNameInterface {
                 try {
                     hostDNS = new DNSName(host);
                 } catch (IOException ioe) {
-                    // Not a valid DNSName; see if it is a valid IPv4
-                    // IPAddressName
-                    try {
-                        hostIP = new IPAddressName(host);
-                    } catch (Exception ioe2) {
+                    // Not a valid DNSName; only accept host as an
+                    // IPv4 literal.
+                    byte[] ipV4 = IPAddressUtil.textToNumericFormatV4(host);
+                    if (ipV4 != null) {
+                        try {
+                            hostIP = new IPAddressName(ipV4);
+                        } catch (IOException ioe2) {
+                            throw new IOException("invalid URI name (host " +
+                                "portion is not a valid DNSName or IPv4 address" +
+                                "):" + name, ioe2);
+                        }
+                    } else {
                         throw new IOException("invalid URI name (host " +
-                            "portion is not a valid DNSName, IPv4 address," +
-                            " or IPv6 address):" + name);
+                            "portion is not a valid DNSName or IPv4 address" +
+                            "):" + name);
                     }
                 }
             }

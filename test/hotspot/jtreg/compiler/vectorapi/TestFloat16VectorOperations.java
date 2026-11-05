@@ -28,7 +28,7 @@
 * @modules jdk.incubator.vector
 * @library /test/lib /
 * @compile TestFloat16VectorOperations.java
-* @run driver/timeout=480 compiler.vectorapi.TestFloat16VectorOperations
+* @run driver/timeout=480 ${test.main.class}
 */
 
 package compiler.vectorapi;
@@ -54,16 +54,22 @@ public class TestFloat16VectorOperations {
 
     public static void main(String args[]) {
         // Test with default MaxVectorSize
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
+        runTest();
 
         // Test with different values of MaxVectorSize
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:MaxVectorSize=8");
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:MaxVectorSize=16");
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:MaxVectorSize=32");
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:MaxVectorSize=64");
+        runTest("-XX:MaxVectorSize=8");
+        runTest("-XX:MaxVectorSize=16");
+        runTest("-XX:MaxVectorSize=32");
+        runTest("-XX:MaxVectorSize=64");
 
         // Test with FMA instructions disabled
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:-UseFMA");
+        runTest("-XX:-UseFMA",
+                "-DTest=vectorFmaFloat16,vectorFmaFloat16ScalarMixedConstants," +
+                "vectorFmaFloat16MixedConstants,vectorFmaFloat16AllConstants");
+    }
+
+    private static void runTest(String... flags) {
+        new TestFramework().setDefaultWarmup(50).addFlags("--add-modules=jdk.incubator.vector").addFlags(flags).start();
     }
 
     static void assertResults(int arity, short ... values) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  *
  */
-#ifndef SHARE_VM_OOPS_VALUEKLASS_INLINE_HPP
-#define SHARE_VM_OOPS_VALUEKLASS_INLINE_HPP
+
+#ifndef SHARE_OOPS_VALUEKLASS_INLINE_HPP
+#define SHARE_OOPS_VALUEKLASS_INLINE_HPP
 
 #include "oops/valueKlass.hpp"
 
@@ -30,12 +31,6 @@
 #include "runtime/handles.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/devirtualizer.inline.hpp"
-
-inline bool ValueKlass::layout_has_null_marker(LayoutKind lk) const {
-  assert(is_layout_supported(lk), "Must be");
-  return LayoutKindHelper::is_nullable_flat(lk) ||
-         (lk == LayoutKind::BUFFERED && supports_nullable_layouts());
-}
 
 inline bool ValueKlass::is_layout_supported(LayoutKind lk) const {
   switch(lk) {
@@ -50,9 +45,6 @@ inline bool ValueKlass::is_layout_supported(LayoutKind lk) const {
       break;
     case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
       return has_nullable_non_atomic_layout();
-      break;
-    case LayoutKind::BUFFERED:
-      return true;
       break;
     default:
       ShouldNotReachHere();
@@ -77,9 +69,6 @@ inline int ValueKlass::layout_size_in_bytes(LayoutKind kind) const {
       assert(has_nullable_non_atomic_layout(), "Layout not available");
       return nullable_non_atomic_size_in_bytes();
       break;
-    case LayoutKind::BUFFERED:
-      return payload_size_in_bytes();
-      break;
     default:
       ShouldNotReachHere();
   }
@@ -102,9 +91,6 @@ inline int ValueKlass::layout_alignment(LayoutKind kind) const {
     case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
       assert(has_nullable_non_atomic_layout(), "Layout not available");
       return null_free_non_atomic_alignment();
-    break;
-    case LayoutKind::BUFFERED:
-      return payload_alignment();
       break;
     default:
       ShouldNotReachHere();
@@ -121,8 +107,8 @@ void ValueKlass::oop_iterate_value_payload_f(address payload, Function function)
   OopMapBlock* const end_map = map + nonstatic_oop_map_count();
 
   // OopMap offsets are relative to an object header, but we are iterating over
-  // inlined value payloads, which often don't have an object header. Set up a
-  // synthetic object base that can be used by the oop map offset calculations.
+  // flattened value payloads, which often don't have an object header. Use a
+  // synthetic object base for the oop map offset calculations.
   const address synthetic_object_base = payload - payload_offset();
 
   for (; map < end_map; map++) {
@@ -150,8 +136,8 @@ inline void ValueKlass::oop_iterate_value_payload_bounded(address payload, OopCl
   T* const h   = (T*) hi;
 
   // OopMap offsets are relative to an object header, but we are iterating over
-  // inlined value payloads, which often don't have an object header. Set up a
-  // synthetic object base that can be used by the oop map offset calculations.
+  // flattened value payloads, which often don't have an object header. Use a
+  // synthetic object base for the oop map offset calculations.
   const address synthetic_object_base = payload - payload_offset();
 
   for (; map < end_map; map++) {
@@ -169,4 +155,4 @@ inline void ValueKlass::oop_iterate_value_payload_bounded(address payload, OopCl
   }
 }
 
-#endif // SHARE_VM_OOPS_VALUEKLASS_INLINE_HPP
+#endif // SHARE_OOPS_VALUEKLASS_INLINE_HPP

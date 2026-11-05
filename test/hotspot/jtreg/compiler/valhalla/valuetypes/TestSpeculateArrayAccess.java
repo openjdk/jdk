@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,23 @@
  */
 
 /**
- * @test
+ * @test id=vanilla
+ * @bug 8333889
+ * @summary Test that speculative array access checks do not cause a load to be wrongly hoisted before its range check.
+ * @run main ${test.main.class}
+ */
+
+/**
+ * @test id=stress
  * @key stress randomness
  * @bug 8333889
  * @summary Test that speculative array access checks do not cause a load to be wrongly hoisted before its range check.
- * @run main/othervm -XX:CompileCommand=dontinline,*::* -XX:CompileCommand=compileonly,*TestSpeculateArrayAccess::test
+ * @run main/othervm -XX:CompileCommand=dontinline,*::* -XX:CompileCommand=compileonly,${test.main.class}::test
  *                   -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=1202682944
- *                   compiler.valhalla.valuetypes.TestSpeculateArrayAccess
- * @run main/othervm -XX:CompileCommand=dontinline,*::* -XX:CompileCommand=compileonly,*TestSpeculateArrayAccess::test
+ *                   ${test.main.class}
+ * @run main/othervm -XX:CompileCommand=dontinline,*::* -XX:CompileCommand=compileonly,${test.main.class}::test
  *                   -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM
- *                   compiler.valhalla.valuetypes.TestSpeculateArrayAccess
+ *                   ${test.main.class}
  */
 
 package compiler.valhalla.valuetypes;
@@ -73,4 +80,3 @@ public class TestSpeculateArrayAccess {
         }
     }
 }
-

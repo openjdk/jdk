@@ -26,6 +26,7 @@
 #ifndef _DWARF_HPP_
 #define _DWARF_HPP_
 
+#include <climits>
 #include <map>
 
 #include "libproc_impl.h"
@@ -34,6 +35,8 @@
 #include "dwarf_regs_amd64.h"
 #elif defined(__aarch64__)
 #include "dwarf_regs_aarch64.h"
+#elif defined(__riscv) && __riscv_xlen == 64
+#include "dwarf_regs_riscv64.h"
 #endif
 
 enum DWARF_Register {
@@ -61,8 +64,10 @@ struct DwarfState {
  */
 class DwarfParser {
   private:
-    const lib_info *_lib;
+    lib_info *_lib;
     unsigned char *_buf;
+    unsigned char _dwarf_version;
+    unsigned char _is_64bit_dwarf;
     bool _has_augmentation;
     unsigned char _fde_ptr_encoding;
     unsigned int _code_factor;
@@ -74,8 +79,8 @@ class DwarfParser {
 
     void init_state(struct DwarfState& st);
     uint64_t get_entry_length();
-    bool process_cie(unsigned char *start_of_entry, uint32_t id);
-    void parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const unsigned char *end);
+    bool process_cie(unsigned char *start_of_entry, uint64_t id);
+    bool parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const unsigned char *end);
     uint32_t get_decoded_value(unsigned char enc);
     unsigned int get_pc_range();
 
@@ -101,7 +106,11 @@ class DwarfParser {
     enum DWARF_Register get_cfa_register() { return _state.cfa_reg; }
     int get_cfa_offset() { return _state.cfa_offset; }
     enum DWARF_Register get_ra_register() { return _state.return_address_reg; }
-    int get_offset_from_cfa(enum DWARF_Register reg) { return _state.offset_from_cfa[reg]; }
+    int get_offset_from_cfa(enum DWARF_Register reg) {
+      // Malformed DWARF can supply a register number outside the map
+      auto offset = _state.offset_from_cfa.find(reg);
+      return offset == _state.offset_from_cfa.end() ? INT_MAX : offset->second;
+    }
 
     bool is_in(long pc) {
       return (_lib->exec_start <= pc) && (pc < _lib->exec_end);

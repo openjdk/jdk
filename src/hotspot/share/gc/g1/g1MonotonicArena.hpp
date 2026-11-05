@@ -251,4 +251,4 @@ public:
   MemTag mem_tag() const {return _mem_tag; }
 };
 
-#endif //SHARE_GC_G1_MONOTONICARENA_HPP
+#endif // SHARE_GC_G1_G1MONOTONICARENA_HPP

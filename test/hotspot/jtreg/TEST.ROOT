@@ -61,6 +61,7 @@ requires.properties= \
     java.enablePreview \
     vm.simpleArch \
     vm.bits \
+    vm.endian \
     vm.flightRecorder \
     vm.gc.G1 \
     vm.gc.Serial \
@@ -80,6 +81,7 @@ requires.properties= \
     vm.cds.default.archive.available \
     vm.cds.nocoops.archive.available \
     vm.cds.nocoh.archive.available \
+    vm.cds.nocoops.nocoh.archive.available \
     vm.cds.custom.loaders \
     vm.cds.supports.aot.class.linking \
     vm.cds.supports.aot.code.caching \

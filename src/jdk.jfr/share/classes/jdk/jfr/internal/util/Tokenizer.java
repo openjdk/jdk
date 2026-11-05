@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,15 +43,30 @@ public final class Tokenizer implements AutoCloseable {
     }
 
     /**
+     * If the next non-whitespace character matches, it is consumed and
+     * {@code true} returned, {@code false} otherwise.
+     */
+    public boolean accept(char c) {
+        skipWhitespace();
+        if (index < text.length()) {
+            if (Character.toLowerCase(text.charAt(index)) == Character.toLowerCase(c)) {
+                index++;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * If the next token matches a string, it is consumed and {@code true} returned,
      * {@code false} otherwise.
      */
-    public boolean accept(String match) {
+    public boolean accept(String token) {
         skipWhitespace();
         int t = 0;
-        while (index + t < text.length() && t < match.length()) {
+        while (index + t < text.length() && t < token.length()) {
             char c = Character.toLowerCase(text.charAt(index + t));
-            char d = Character.toLowerCase(match.charAt(t));
+            char d = Character.toLowerCase(token.charAt(t));
             if (d != c) {
                 return false;
             }
@@ -60,9 +75,17 @@ public final class Tokenizer implements AutoCloseable {
                 break;
             }
         }
-        if (t == match.length()) {
-            index += match.length();
-            return true;
+        if (t == token.length()) {
+            int position = index + t;
+            if (position >= text.length()) {
+                index = position;
+                return true;
+            }
+            char c = text.charAt(position);
+            if (isSeparator(c)|| Character.isWhitespace(c)) {
+                index = position;
+                return true;
+            }
         }
         return false;
     }
@@ -70,10 +93,10 @@ public final class Tokenizer implements AutoCloseable {
     /**
      * Similar to accept(String), but requires several tokens to match.
      */
-    public boolean accept(String... matches) {
+    public boolean accept(String... tokens) {
         int position = index;
-        for (String s : matches) {
-            if (!accept(s)) {
+        for (String token : tokens) {
+            if (!accept(token)) {
                 index = position;
                 return false;
 
@@ -88,9 +111,9 @@ public final class Tokenizer implements AutoCloseable {
      * @param matches
      * @return
      */
-    public boolean acceptAny(String... matches) {
-        for (String match : matches) {
-            if (accept(match)) {
+    public boolean acceptAny(String... tokens) {
+        for (String token : tokens) {
+            if (accept(token)) {
                 return true;
             }
         }
@@ -115,7 +138,16 @@ public final class Tokenizer implements AutoCloseable {
     /**
      * Throws exception if the next token doesn't match.
      */
-    public void expect(String expected) throws ParseException {
+    public void expect(String token) throws ParseException {
+        if (!accept(token)) {
+            throw new ParseException("Expected " + token, index);
+        }
+    }
+
+    /**
+     * Throws exception if the next non-whitspace character doesn't match.
+     */
+    public void expect(char expected) throws ParseException {
         if (!accept(expected)) {
             throw new ParseException("Expected " + expected, index);
         }
@@ -139,6 +171,7 @@ public final class Tokenizer implements AutoCloseable {
     public String next() throws ParseException {
         skipWhitespace();
         StringBuilder sb = new StringBuilder();
+        int start = index;
         while (index < text.length()) {
             char c = text.charAt(index);
             if (isQuoteCharacter(c)) {
@@ -148,9 +181,9 @@ public final class Tokenizer implements AutoCloseable {
                 index = p;
             } else {
                 if (isSeparator(c)) {
-                    if (sb.isEmpty()) {
+                    if (start == index) {
                         index++;
-                        return String.valueOf(c); // Inte helt optimalt
+                        return String.valueOf(c);
                     } else {
                         return sb.toString();
                     }
@@ -162,7 +195,7 @@ public final class Tokenizer implements AutoCloseable {
             }
             index++;
         }
-        if (sb.isEmpty()) {
+        if (start == index) {
             throw new ParseException("Unexpected EOF reached", index);
         }
         return sb.toString();
@@ -185,6 +218,13 @@ public final class Tokenizer implements AutoCloseable {
      */
     public int getPosition() {
         return index;
+    }
+
+    /**
+     * Sets the current position in the text.
+     */
+    public void setPosition(int index) {
+        this.index = index;
     }
 
     private void skipWhitespace() {

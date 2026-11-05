@@ -42,6 +42,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "registerSaver_aarch64.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/globals.hpp"
@@ -72,43 +73,6 @@
 #endif
 
 const int StackAlignmentInSlots = StackAlignmentInBytes / VMRegImpl::stack_slot_size;
-
-// FIXME -- this is used by C1
-class RegisterSaver {
-  const bool _save_vectors;
- public:
-  RegisterSaver(bool save_vectors) : _save_vectors(save_vectors) {}
-
-  OopMap* save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words);
-  void restore_live_registers(MacroAssembler* masm);
-
-  // Offsets into the register save area
-  // Used by deoptimization when it is managing result register
-  // values on its own
-
-  int reg_offset_in_bytes(Register r);
-  int r0_offset_in_bytes()    { return reg_offset_in_bytes(r0); }
-  int rscratch1_offset_in_bytes()    { return reg_offset_in_bytes(rscratch1); }
-  int v0_offset_in_bytes();
-
-  // Total stack size in bytes for saving sve predicate registers.
-  int total_sve_predicate_in_bytes();
-
-  // Capture info about frame layout
-  // Note this is only correct when not saving full vectors.
-  enum layout {
-                fpu_state_off = 0,
-                fpu_state_end = fpu_state_off + FPUStateSizeInWords - 1,
-                // The frame sender code expects that rfp will be in
-                // the "natural" place and will override any oopMap
-                // setting for it. We must therefore force the layout
-                // so that it agrees with the frame sender code.
-                r0_off = fpu_state_off + FPUStateSizeInWords,
-                rfp_off = r0_off + (Register::number_of_registers - 2) * Register::max_slots_per_register,
-                return_off = rfp_off + Register::max_slots_per_register,      // slot for return address
-                reg_save_size = return_off + Register::max_slots_per_register};
-
-};
 
 int RegisterSaver::reg_offset_in_bytes(Register r) {
   // The integer registers are located above the floating point
@@ -584,7 +548,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
                             OopMapSet* oop_maps,
                             int& frame_complete,
                             int& frame_size_in_words,
-                            bool alloc_inline_receiver) {
+                            bool alloc_value_receiver) {
   if (requires_clinit_barrier) {
     assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     Label L_skip_barrier;
@@ -645,7 +609,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       // compiled code so we may not have buffers to back the value
       // objects. Allocate the buffers here with a runtime call for
       // the value arguments that needs a buffer.
-      RegisterSaver reg_save(true /* save_vectors */);
+      RegisterSaver reg_save(false /* save_vectors */);
       OopMap* map = reg_save.save_live_registers(masm, 0, &frame_size_in_words);
 
       frame_complete = __ offset();
@@ -656,7 +620,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
       __ mov(c_rarg0, rthread);
       __ mov(c_rarg1, rmethod);
-      __ mov(c_rarg2, (int64_t)alloc_inline_receiver);
+      __ mov(c_rarg2, (int64_t)alloc_value_receiver);
 
       __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::allocate_value_types)));
       __ blr(rscratch1);
@@ -735,7 +699,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       int vt = 1;
       // write fields we get from compiled code in registers/stack
       // slots to the buffer: we know we are done with that value type
-      // argument when we hit the T_VOID that acts as an end of inline
+      // argument when we hit the T_VOID that acts as an end of value
       // type delimiter for this value type. Value types are flattened
       // so we might encounter embedded value types. Each entry in
       // sig_extended contains a field offset in the buffer.
@@ -993,7 +957,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   if (regs_cc != regs_cc_ro) {
     // No class init barrier needed because method is guaranteed to be non-static
     gen_c2i_adapter(masm, sig_cc_ro, regs_cc_ro, /* requires_clinit_barrier = */ false, entry_address[AdapterBlob::C2I_No_Clinit_Check],
-                    skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ false);
+                    skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_value_receiver = */ false);
     skip_fixup.reset();
   }
 
@@ -1001,7 +965,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   entry_address[AdapterBlob::C2I]       = __ pc();
   entry_address[AdapterBlob::C2I_Value] = __ pc();
   gen_c2i_adapter(masm, sig_cc, regs_cc, /* requires_clinit_barrier = */ true, entry_address[AdapterBlob::C2I_No_Clinit_Check],
-                  skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ true);
+                  skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_value_receiver = */ true);
 
   // Non-scalarized c2i adapter
   if (regs != regs_cc) {
@@ -1011,7 +975,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
 
     entry_address[AdapterBlob::C2I_Value] = __ pc();
     gen_c2i_adapter(masm, sig, regs, /* requires_clinit_barrier = */ true, entry_address[AdapterBlob::C2I_No_Clinit_Check],
-                    value_entry_skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ false);
+                    value_entry_skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_value_receiver = */ false);
   }
 
   // The c2i adapters might safepoint and trigger a GC. The caller must make sure that
@@ -2927,7 +2891,7 @@ BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const
   Register Rresult = r14;  // See StubGenerator::generate_call_stub().
   __ ldr(r0, Address(Rresult));
   __ resolve_jobject(r0 /* value */,
-                     rthread /* thread */,
+                     r11 /* tmp */,
                      r12 /* tmp */);
   __ str(r0, Address(Rresult));
 

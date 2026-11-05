@@ -123,7 +123,8 @@ void Parse::array_load(BasicType bt) {
       if (!array_type->is_not_flat()) {
         if (element_ptr->is_valueklassptr()) {
           ciValueKlass* vk = element_ptr->value_klass();
-          Node* flat_array = cast_to_flat_array(array, vk);
+          ciObjArrayKlass* array_klass = get_flat_array_klass(vk);
+          Node* flat_array = cast_to_flat_array(array, array_klass, false);
 
           // It may be the case that array is only known to be not flat when we try to cast it to a
           // flat array. For example, array is a not-null-free array and vk does not have a
@@ -293,7 +294,8 @@ void Parse::array_store(BasicType bt) {
 
           if (vk != nullptr) {
             // Element type is known, cast and store to flat array layout.
-            Node* flat_array = cast_to_flat_array(array, vk);
+            ciObjArrayKlass* array_klass = get_flat_array_klass(vk);
+            Node* flat_array = cast_to_flat_array(array, array_klass, false);
 
             // It may be the case that array is only known to be not flat when we try to cast it to
             // a flat array. For example, array is a not-null-free array and vk does not have a
@@ -1300,7 +1302,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   i = 0;
   for (SwitchRange* r = lo; r <= hi; r++) {
     for (int64_t j = r->lo(); j <= r->hi(); j++, i++) {
-      Node* input = _gvn.transform(new JumpProjNode(jtn, i, r->dest(), (int)(j - lowval)));
+      Node* input = _gvn.transform(new JumpProjNode(jtn, i, r->dest()));
       {
         PreserveJVMState pjvms(this);
         set_control(input);
@@ -1615,7 +1617,7 @@ static bool counters_are_meaningful(int counter1, int counter2, int min) {
   }
   // check for integer overflow of the sum
   int64_t sum = (int64_t)counter1 + (int64_t)counter2;
-  STATIC_ASSERT(sizeof(counter1) < sizeof(sum));
+  static_assert(sizeof(counter1) < sizeof(sum));
   if (sum > INT_MAX) {
     return false;
   }
@@ -1675,13 +1677,13 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
   }
 
   // Compute frequency that we arrive here
-  float sum = taken + not_taken;
+  cnt = taken + not_taken;
   // Adjust, if this block is a cloned private block but the
   // Jump counts are shared.  Taken the private counts for
   // just this path instead of the shared counts.
-  if( block()->count() > 0 )
-    sum = block()->count();
-  cnt = sum / FreqCountInvocations;
+  if (block()->count() > 0) {
+    cnt = block()->count();
+  }
 
   // Pin probability to sane limits
   float prob;
@@ -1784,7 +1786,7 @@ inline int Parse::repush_if_args() {
 }
 
 // Used by StressUnstableIfTraps
-static volatile int _trap_stress_counter = 0;
+volatile int Parse::_trap_stress_counter = 0;
 
 void Parse::increment_trap_stress_counter(Node*& counter, Node*& incr_store) {
   Node* counter_addr = makecon(TypeRawPtr::make((address)&_trap_stress_counter));
@@ -2813,7 +2815,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
     const Type* obj_type = _gvn.type(obj);
     const Type* tboth = obj_type->filter_speculative(cast_type);
     assert(tboth->higher_equal(obj_type) && tboth->higher_equal(cast_type), "sanity");
-    if (tboth == Type::TOP && KillPathsReachableByDeadTypeNode) {
+    if (tboth == Type::TOP && KillPathsReachableByDeadDataNode) {
       // Let dead type node cleaning logic prune effectively dead path for us.
       // CheckCastPP::Value() == TOP and it will trigger the cleanup during GVN.
       // Don't materialize the cast when cleanup is disabled, because
@@ -3033,7 +3035,11 @@ void Parse::do_one_bytecode() {
     assert(constant.is_loaded(), "constant is not loaded");
     const Type* con_type = Type::make_from_constant(constant);
     if (con_type != nullptr) {
-      push_node(con_type->basic_type(), makecon(con_type));
+      Node* con = makecon(con_type);
+      if (con_type->is_valueklassptr()) {
+        con = ValueTypeNode::make_from_oop(this, con, con_type->value_klass());
+      }
+      push_node(con_type->basic_type(), con);
     }
     break;
   }
@@ -3733,26 +3739,20 @@ void Parse::do_one_bytecode() {
     maybe_add_safepoint(iter().get_dest());
     a = null();
     b = pop();
-    if (b->is_ValueType()) {
-      // Null checking a scalarized but nullable value type. Check the null marker
-      // input instead of the oop input to avoid keeping buffer allocations alive
-      c = _gvn.transform(new CmpINode(b->as_ValueType()->get_null_marker(), zerocon(T_INT)));
-    } else {
-      if (!_gvn.type(b)->speculative_maybe_null() &&
-          !too_many_traps(Deoptimization::Reason_speculate_null_check)) {
-        inc_sp(1);
-        Node* null_ctl = top();
-        b = null_check_oop(b, &null_ctl, true, true, true);
-        assert(null_ctl->is_top(), "no null control here");
-        dec_sp(1);
-      } else if (_gvn.type(b)->speculative_always_null() &&
-                 !too_many_traps(Deoptimization::Reason_speculate_null_assert)) {
-        inc_sp(1);
-        b = null_assert(b);
-        dec_sp(1);
-      }
-      c = _gvn.transform( new CmpPNode(b, a) );
+    if (!_gvn.type(b)->speculative_maybe_null() &&
+        !too_many_traps(Deoptimization::Reason_speculate_null_check)) {
+      inc_sp(1);
+      Node* null_ctl = top();
+      b = null_check_oop(b, &null_ctl, true, true, true);
+      assert(null_ctl->is_top(), "no null control here");
+      dec_sp(1);
+    } else if (_gvn.type(b)->speculative_always_null() &&
+               !too_many_traps(Deoptimization::Reason_speculate_null_assert)) {
+      inc_sp(1);
+      b = null_assert(b);
+      dec_sp(1);
     }
+    c = _gvn.transform(new CmpPNode(b, a));
     do_ifnull(btest, c);
     break;
 

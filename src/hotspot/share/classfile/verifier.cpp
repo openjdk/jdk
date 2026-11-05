@@ -62,7 +62,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #if INCLUDE_CDS
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #endif
 
 #define NOFAILOVER_MAJOR_VERSION                       51
@@ -239,8 +239,8 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
       // Exclude any classes that are verified with the old verifier when the verification constraints
       // cannot be preserved.
       if (CDSConfig::is_dumping_archive() && !CDSConfig::is_preserving_verification_constraints()) {
-        SystemDictionaryShared::log_exclusion(klass, "Verified with old verifier");
-        SystemDictionaryShared::set_excluded(klass);
+        AOTSystemDictionary::log_exclusion(klass, "Verified with old verifier");
+        AOTSystemDictionary::set_excluded(klass);
       }
 #endif
       message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
@@ -734,7 +734,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
   // Collect the initial strict instance fields if there are any
   AssertUnsetFieldTable* strict_fields = nullptr;
-  if (m->is_object_constructor()) {
+  if (m->is_object_constructor() && m->method_holder()->has_strict_instance_fields()) {
     for (AllFieldStream fs(m->method_holder()); !fs.done(); fs.next()) {
       if (fs.access_flags().is_strict() && !fs.access_flags().is_static()) {
         if (strict_fields == nullptr) {
@@ -2736,7 +2736,7 @@ void ClassVerifier::verify_invoke_instructions(
   // or any superclass (including Object).
   else if (opcode == Bytecodes::_invokespecial
            && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
-           && !ref_class_type.equals(VerificationType::reference_type(current_class()->super()->name()))) { // super() can never be a value_type.
+           && !ref_class_type.equals(VerificationType::reference_type(current_class()->super()->name()))) {
 
     // We know it is not current class, direct superinterface or immediate superclass. That means it
     // could be:

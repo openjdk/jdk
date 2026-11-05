@@ -49,7 +49,6 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
  * @key randomness
  * @summary Test intrinsic support for value classes.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
@@ -62,7 +61,6 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
  * @key randomness
  * @summary Test intrinsic support for value classes.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
@@ -75,7 +73,6 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
  * @key randomness
  * @summary Test intrinsic support for value classes.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
@@ -88,7 +85,6 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
  * @key randomness
  * @summary Test intrinsic support for value classes.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
@@ -101,7 +97,6 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
  * @key randomness
  * @summary Test intrinsic support for value classes.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
@@ -114,7 +109,6 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
  * @key randomness
  * @summary Test intrinsic support for value classes.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
@@ -127,7 +121,6 @@ import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
  * @key randomness
  * @summary Test intrinsic support for value classes.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.value
@@ -634,9 +627,9 @@ public class TestIntrinsics {
             }
         } else {
             if (X_OFFSET < Y_OFFSET) {
-                Asserts.assertEQ(((int)res), v.x >>> 8);
+                Asserts.assertEQ(((int)res) >> 8, (v.x << 8) >> 8);
             } else {
-                Asserts.assertEQ(res, v.y >>> 8);
+                Asserts.assertEQ(res >> 8, (v.y << 8) >> 8);
             }
         }
     }

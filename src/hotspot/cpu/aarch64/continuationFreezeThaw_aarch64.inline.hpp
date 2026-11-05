@@ -63,12 +63,13 @@ inline frame FreezeBase::sender(const frame& f) {
   frame::CompiledFramePointers cfp = f.compiled_frame_details();
 
   int slot = 0;
-  CodeBlob* sender_cb = CodeCache::find_blob_and_oopmap(*cfp.sender_pc_addr, slot);
+  address sender_pc = ContinuationHelper::return_address_at((intptr_t*)cfp.sender_pc_addr);
+  CodeBlob* sender_cb = CodeCache::find_blob_and_oopmap(sender_pc, slot);
 
   return sender_cb != nullptr
-    ? frame(cfp.sender_sp, cfp.sender_sp, *cfp.saved_fp_addr, *cfp.sender_pc_addr, sender_cb,
-            slot == -1 ? nullptr : sender_cb->oop_map_for_slot(slot, *cfp.sender_pc_addr), false)
-    : frame(cfp.sender_sp, cfp.sender_sp, *cfp.saved_fp_addr, *cfp.sender_pc_addr);
+    ? frame(cfp.sender_sp, cfp.sender_sp, *cfp.saved_fp_addr, sender_pc, sender_cb,
+            slot == -1 ? nullptr : sender_cb->oop_map_for_slot(slot, sender_pc), false)
+    : frame(cfp.sender_sp, cfp.sender_sp, *cfp.saved_fp_addr, sender_pc);
 }
 
 template<typename FKind>

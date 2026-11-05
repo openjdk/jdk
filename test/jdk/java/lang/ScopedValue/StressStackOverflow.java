@@ -24,26 +24,22 @@
 /*
  * @test id=default
  * @summary Stress ScopedValue stack overflow recovery path
- * @enablePreview
  * @run main/othervm/timeout=300 ${test.main.class}
  */
 
 /*
  * @test id=no-TieredCompilation
- * @enablePreview
  * @run main/othervm/timeout=300 -XX:-TieredCompilation ${test.main.class}
  */
 
 /*
  * @test id=TieredStopAtLevel1
- * @enablePreview
  * @run main/othervm/timeout=300 -XX:TieredStopAtLevel=1 ${test.main.class}
  */
 
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @enablePreview
  * @run main/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ${test.main.class}
  */
 

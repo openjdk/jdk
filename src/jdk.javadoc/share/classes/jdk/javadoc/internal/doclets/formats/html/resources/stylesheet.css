@@ -104,6 +104,7 @@
     --glass-svg: url("glass.svg");
     --x-svg: url("x.svg");
     --current-theme-svg: url("sun.svg");
+    --underline-thickness: 0.08em;
 }
 /* Dark theme variables */
 :root[data-theme="theme-dark"] {
@@ -171,12 +172,35 @@
     <path d="m8 8 84 84" style="stroke:%23e0e0e0;stroke-width:15"/>\
     <path d="M8 92 92 8" style="stroke:%23e0e0e0;stroke-width:15"/></svg>');
     --current-theme-svg: url("moon.svg");
+    --underline-thickness: 0.05em;
     div.block a[href], div.horizontal-scroll a[href], div.inherited-list h3 a[href], header > div a[href],
     .hierarchy a[href], .index a[href], div.caption a[href], .sub-title a[href], .deprecation-comment a[href],
-    .serialized-class-details a[href] {
-        text-decoration: underline;
-        text-decoration-thickness: 0.02em;
-        text-underline-offset: 0.12em;
+    .serialized-class-details a[href], body.doc-file-page main a[href], main a[href]:hover, main a[href]:active {
+        text-decoration: underline var(--underline-thickness);
+        text-underline-offset: 0.14em;
+    }
+}
+@supports (-webkit-hyphens:none) {
+    :root {
+        --underline-thickness: 0.05em;
+    }
+    :root[data-theme="theme-dark"] {
+        --underline-thickness: 0.03em;
+    }
+}
+:root[data-underline-links="on"] {
+    div.block a[href], div.horizontal-scroll a[href], div.inherited-list h3 a[href], header > div a[href],
+    .hierarchy a[href], .index a[href], div.caption a[href], .sub-title a[href], .deprecation-comment a[href],
+    .serialized-class-details a[href], body.doc-file-page main a[href], main a[href]:hover, main a[href]:active {
+        text-decoration: underline var(--underline-thickness);
+        text-underline-offset: 0.14em;
+    }
+}
+:root[data-underline-links="off"] {
+    div.block a[href], div.horizontal-scroll a[href], div.inherited-list h3 a[href], header > div a[href],
+    .hierarchy a[href], .index a[href], div.caption a[href], .sub-title a[href], .deprecation-comment a[href],
+    .serialized-class-details a[href], body.doc-file-page main a[href], main a[href]:hover, main a[href]:active {
+        text-decoration: none;
     }
 }
 /*
@@ -353,18 +377,36 @@ div#theme-panel {
     z-index: 8;
     background-color: var(--toc-background-color);
     color: var(--body-text-color);
+    font-size: var(--nav-font-size);
     padding: 4px;
     white-space: nowrap;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
 }
-div#theme-panel div:first-child {
+button#theme-panel-close-button {
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    width: 24px;
+    height: 24px;
+    background: var(--x-svg) no-repeat 5.5px;
+    background-size: 12px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+}
+button#theme-panel-close-button:hover,
+button#theme-panel-close-button:focus-visible {
+    border: 1px solid var(--button-border-color);
+    background-color: var(--toc-hover-color);
+}
+div#theme-panel div.panel-heading {
     font-weight: bold;
     font-size: 16px;
 }
 div#theme-panel div {
-    padding: 8px;
+    padding: 10px 8px;
 }
 div#theme-panel label {
     margin-right: 8px;

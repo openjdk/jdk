@@ -111,7 +111,7 @@ inline uint32_t CompressedOops::narrow_oop_value(narrowOop o) {
 
 template<typename T>
 inline narrowOop CompressedOops::narrow_oop_cast(T i) {
-  static_assert(std::is_integral<T>::value, "precondition");
+  static_assert(std::is_integral<T>::value);
   uint32_t narrow_value = static_cast<uint32_t>(i);
   // Ensure no bits lost in conversion to uint32_t.
   assert(i == static_cast<T>(narrow_value), "narrowOop overflow");

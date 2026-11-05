@@ -31,7 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacDmgPackageMixin;
-import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.ExplodedPath;
 
 final class MacDmgPackageBuilder {
 
@@ -39,7 +39,7 @@ final class MacDmgPackageBuilder {
         this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
-    MacDmgPackageBuilder dmgRootDirSources(Collection<RootedPath> v) {
+    MacDmgPackageBuilder dmgRootDirSources(Collection<ExplodedPath> v) {
         dmgRootDirSources = v;
         return this;
     }
@@ -49,7 +49,7 @@ final class MacDmgPackageBuilder {
         return this;
     }
 
-    private Collection<RootedPath> validatedDmgRootDirSources() {
+    private Collection<ExplodedPath> validatedDmgRootDirSources() {
         return Optional.ofNullable(dmgRootDirSources).orElseGet(List::of);
     }
 
@@ -62,6 +62,6 @@ final class MacDmgPackageBuilder {
     }
 
     private Path icon;
-    private Collection<RootedPath> dmgRootDirSources;
+    private Collection<ExplodedPath> dmgRootDirSources;
     private final MacPackageBuilder pkgBuilder;
 }

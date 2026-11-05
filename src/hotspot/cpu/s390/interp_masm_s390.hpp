@@ -121,7 +121,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_field_entry (Register cache, Register index, int bcp_offset = 1);
   void load_method_entry(Register cache, Register index, int bcp_offset = 1);
   void get_cache_index_at_bcp(Register index, int bcp_offset, size_t index_size = sizeof(u2));
-  void load_resolved_reference_at_index(Register result, Register index);
+  void load_resolved_reference_at_index(Register result, Register index, Register tmp);
   // load cpool->resolved_klass_at(index)
   void load_resolved_klass_at_offset(Register cpool, Register offset, Register iklass);
 
@@ -271,9 +271,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Valhalla support for flat fields
   void read_flat_field(Register entry, Register obj);
-  void write_flat_field(Register entry, Register field_offset,
-                        Register tmp1, Register tmp2,
-                        Register obj);
+  void write_flat_field(Register entry, Register tmp1,
+                        Register tmp2, Register obj);
 
   // Interpreter profiling operations
   void set_method_data_pointer_for_bcp();

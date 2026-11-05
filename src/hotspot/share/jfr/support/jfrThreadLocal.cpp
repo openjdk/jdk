@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@
 #include "runtime/os.hpp"
 #include "runtime/threadIdentifier.hpp"
 #include "utilities/sizes.hpp"
-#include "utilities/spinYield.hpp"
 
 JfrThreadLocal::JfrThreadLocal() :
   _sample_request(),
@@ -85,7 +84,6 @@ JfrThreadLocal::JfrThreadLocal() :
   _sampling_critical_section(false)
 #ifdef LINUX
   ,_cpu_timer(nullptr),
-  _cpu_time_jfr_locked(UNLOCKED),
   _has_cpu_time_jfr_requests(false),
   _cpu_time_jfr_queue(0),
   _do_async_processing_of_cpu_time_jfr_requests(false)
@@ -225,7 +223,7 @@ void JfrThreadLocal::release(JfrThreadLocal* tl, Thread* t) {
   assert(Thread::current() == t, "invariant");
   assert(!tl->is_dead(), "invariant");
   assert(tl->shelved_buffer() == nullptr, "invariant");
-  tl->_dead = true;
+  AtomicAccess::store(&tl->_dead, true);
   tl->release(t);
 }
 
@@ -379,7 +377,6 @@ bool JfrThreadLocal::is_impersonating(const Thread* t) {
 
 void JfrThreadLocal::impersonate(const Thread* t, traceid other_thread_id) {
   assert(t != nullptr, "invariant");
-  assert(other_thread_id != 0, "invariant");
   JfrThreadLocal* const tl = t->jfr_thread_local();
   tl->_thread_id_alias = other_thread_id;
 }
@@ -604,43 +601,6 @@ timer_t* JfrThreadLocal::cpu_timer() const {
   return _cpu_timer;
 }
 
-bool JfrThreadLocal::is_cpu_time_jfr_enqueue_locked() {
-  return AtomicAccess::load_acquire(&_cpu_time_jfr_locked) == ENQUEUE;
-}
-
-bool JfrThreadLocal::is_cpu_time_jfr_dequeue_locked() {
-  return AtomicAccess::load_acquire(&_cpu_time_jfr_locked) == DEQUEUE;
-}
-
-bool JfrThreadLocal::try_acquire_cpu_time_jfr_enqueue_lock() {
-  return AtomicAccess::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
-}
-
-bool JfrThreadLocal::try_acquire_cpu_time_jfr_dequeue_lock() {
-  CPUTimeLockState got;
-  while (true)  {
-    CPUTimeLockState got = AtomicAccess::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE);
-    if (got == UNLOCKED) {
-      return true; // successfully locked for dequeue
-    }
-    if (got == DEQUEUE) {
-      return false; // already locked for dequeue
-    }
-    // else wait for the lock to be released from a signal handler
-  }
-}
-
-void JfrThreadLocal::acquire_cpu_time_jfr_dequeue_lock() {
-  SpinYield s;
-  while (AtomicAccess::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED) {
-    s.wait();
-  }
-}
-
-void JfrThreadLocal::release_cpu_time_jfr_queue_lock() {
-  AtomicAccess::release_store(&_cpu_time_jfr_locked, UNLOCKED);
-}
-
 void JfrThreadLocal::set_has_cpu_time_jfr_requests(bool has_requests) {
   AtomicAccess::release_store(&_has_cpu_time_jfr_requests, has_requests);
 }
@@ -651,10 +611,6 @@ bool JfrThreadLocal::has_cpu_time_jfr_requests() {
 
 JfrCPUTimeTraceQueue& JfrThreadLocal::cpu_time_jfr_queue() {
   return _cpu_time_jfr_queue;
-}
-
-void JfrThreadLocal::deallocate_cpu_time_jfr_queue() {
-  cpu_time_jfr_queue().set_capacity(0);
 }
 
 void JfrThreadLocal::set_do_async_processing_of_cpu_time_jfr_requests(bool wants) {

@@ -45,7 +45,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   // means objs haven't got time to die yet, so #promoted objs will be high.
   // Default: 100ms.
   static constexpr double MinGCDistanceSecond = 0.100;
-  static_assert(MinGCDistanceSecond >= 0.001, "inv");
+  static_assert(MinGCDistanceSecond >= 0.001);
 
   // pause and interval times for collections
   static elapsedTimer _minor_timer;
