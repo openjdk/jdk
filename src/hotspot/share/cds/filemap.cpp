@@ -2091,7 +2091,7 @@ bool FileMapHeader::validate() {
                                          _cpu_features_size, VM_Version::cpu_features_size());
       return false;
     }
-    if ((_cpu_features_offset < 0) ||
+    if ((_cpu_features_offset < (int)sizeof(FileMapHeader)) ||
         (_cpu_features_offset > (int)header_size()) ||
         (_cpu_features_size > ((int)header_size() - _cpu_features_offset))) {
       AOTMetaspace::report_loading_error("The %s's cpu features offset is invalid (%d)", _cpu_features_offset);
