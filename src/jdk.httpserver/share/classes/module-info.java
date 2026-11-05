@@ -72,7 +72,7 @@ import com.sun.net.httpserver.*;
  * while the headers are being read, then the connection is terminated and the request ignored.
  * If the value is less than or equal to zero, then the default value is used.
  * </li>
- * <li><p><b>{@systemProperty sun.net.httpserver.maxReqHeaderSize}</b> (default: 389120 or 380kB)<br>
+ * <li><p><b>{@systemProperty sun.net.httpserver.maxReqHeaderSize}</b> (default: 393216 or 384kB)<br>
  *  The maximum header field section size that the server is prepared to accept.
  *  This is computed as the sum of the size of the header name, plus
  *  the size of the header value, plus an overhead of 32 bytes for

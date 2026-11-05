@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @bug 8396660
  * @summary Verifies `HttpServer` behavior when
  *          `sun.net.httpserver.maxReqHeaderSize` is not configured, and left to
- *          its default, 389120.
+ *          its default, 393216.
  *
  * @library /test/lib
  *
@@ -120,7 +120,7 @@ class MaxReqHeaderSizePropertyTest {
 
     private static int effectiveMaxRequestHeaderSize() {
         var count = Integer.getInteger("sun.net.httpserver.maxReqHeaderSize");
-        return count != null && count > 0 ? count : 389120;
+        return count != null && count > 0 ? count : 393216;
     }
 
     private static final String REQUEST_LINE = "GET / HTTP/1.1";
