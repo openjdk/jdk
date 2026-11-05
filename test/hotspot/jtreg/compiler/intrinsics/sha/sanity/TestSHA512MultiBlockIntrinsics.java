@@ -41,7 +41,7 @@
  *                   -XX:+UseSHA512Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
  *                   -Dalgorithm=SHA-384
- *                   compiler.intrinsics.sha.sanity.TestSHA512MultiBlockIntrinsics
+ *                   ${test.main.class}
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
@@ -49,7 +49,7 @@
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA5::*
  *                   -XX:+UseSHA512Intrinsics -Dalgorithm=SHA-384
- *                   compiler.intrinsics.sha.sanity.TestSHA512MultiBlockIntrinsics
+ *                   ${test.main.class}
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
@@ -58,7 +58,7 @@
  *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
  *                   -XX:CompileOnly=sun.security.provider.SHA5::*
  *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA-384
- *                   compiler.intrinsics.sha.sanity.TestSHA1Intrinsics
+ *                   ${test.main.class}
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
@@ -68,7 +68,7 @@
  *                   -XX:+UseSHA512Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
  *                   -Dalgorithm=SHA-512
- *                   compiler.intrinsics.sha.sanity.TestSHA512MultiBlockIntrinsics
+ *                   ${test.main.class}
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
@@ -76,7 +76,7 @@
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA5::*
  *                   -XX:+UseSHA512Intrinsics -Dalgorithm=SHA-512
- *                   compiler.intrinsics.sha.sanity.TestSHA512MultiBlockIntrinsics
+ *                   ${test.main.class}
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
@@ -85,7 +85,7 @@
  *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
  *                   -XX:CompileOnly=sun.security.provider.SHA5::*
  *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA-512
- *                   compiler.intrinsics.sha.sanity.TestSHA512MultiBlockIntrinsics
+ *                   ${test.main.class}
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
  *                    compiler.testlibrary.intrinsics.Verifier positive_384.log positive_512.log
  *                    positive_384_def.log positive_512_def.log negative_384.log
