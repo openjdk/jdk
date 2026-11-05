@@ -167,11 +167,20 @@ class FlatLayoutSlot {
     // This is only set when a flat layout is present.
     FlatLayout _flat_layout;
 
-    // This bool is set when the flat layout is not present.
-    //
-    // Its value is used to determine if this slot should be considered
-    // initialized
-    bool _initialized_non_flat;
+    struct {
+      // This bool is set when the flat layout is not present.
+      //
+      // Its value is used to determine if this slot should be considered
+      // initialized
+      bool _initialized_non_flat;
+
+      // Paddings to ensure deterministic content in AOT cache. They prevent
+      // the C++ compiler from potentially inserting random values in unused gaps.
+      static_assert(sizeof(FlatLayout) == 4);
+      bool _padding1;
+      bool _padding2;
+      bool _padding3;
+    };
   };
 
 public:
@@ -179,7 +188,8 @@ public:
     : _flat_layout(flat_layout) {}
 
   explicit FlatLayoutSlot(bool initialized_non_flat = false)
-    : _initialized_non_flat(initialized_non_flat) {}
+    : _initialized_non_flat(initialized_non_flat),
+      _padding1(0), _padding2(0), _padding3(0) {}
 
   // Get the FlatLayout. The external has_flat_layout discriminator is used to
   // catch when code tries to fetch layout without having a flat layout.
