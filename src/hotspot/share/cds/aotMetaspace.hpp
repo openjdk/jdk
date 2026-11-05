@@ -53,7 +53,7 @@ enum MapArchiveResult {
 class AOTMetaspace : AllStatic {
   static ReservedSpace _symbol_rs;  // used only during -Xshare:dump
   static VirtualSpace _symbol_vs;   // used only during -Xshare:dump
-  static bool _archive_invalid;
+  static bool _static_archive_validation_failed;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
   static void* _aot_metaspace_static_top;
@@ -97,10 +97,10 @@ public:
 
   static void print_on(outputStream* st);
 
-  static void mark_archive_invalid() {
-    _archive_invalid = true;
+  static void set_static_archive_validation_failed() {
+    _static_archive_validation_failed = true;
   }
-  static bool is_archive_marked_invalid() { return _archive_invalid; }
+  static bool has_static_archive_validation_failed() { return _static_archive_validation_failed; }
 
   static void set_archive_loading_failed() {
     _archive_loading_failed = true;

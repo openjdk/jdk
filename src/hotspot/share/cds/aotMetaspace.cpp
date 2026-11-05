@@ -114,7 +114,7 @@
 
 ReservedSpace AOTMetaspace::_symbol_rs;
 VirtualSpace AOTMetaspace::_symbol_vs;
-bool AOTMetaspace::_archive_invalid = false;
+bool AOTMetaspace::_static_archive_validation_failed = false;
 bool AOTMetaspace::_archive_loading_failed = false;
 bool AOTMetaspace::_remapped_readwrite = false;
 void* AOTMetaspace::_aot_metaspace_static_top = nullptr;
@@ -1639,7 +1639,7 @@ void AOTMetaspace::get_aot_code_region_size() {
 }
 
 FileMapInfo* AOTMetaspace::get_static_archive() {
-  if (is_archive_marked_invalid()) {
+  if (has_static_archive_validation_failed()) {
     return nullptr;
   }
   FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive();
