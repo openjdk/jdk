@@ -37,7 +37,6 @@ import jdk.test.lib.Utils;
  *          (0 - s) shift count, changes, the Add/Or must be put back on the
  *          IGVN worklist. Use -XX:VerifyIterativeGVN=1110 to catch missing
  *          optimizations.
- * @requires os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64" | (os.arch == "riscv64" & vm.cpu.features ~= ".*zbb.*")
  * @library /test/lib /
  * @run driver ${test.main.class}
  */
@@ -67,7 +66,10 @@ public class TestMissingRotateIdealization {
     // becomes x late: n -> shift -> add
     @Test
     @IR(failOn = {IRNode.ROTATE_LEFT, IRNode.ROTATE_RIGHT}, phase = CompilePhase.BEFORE_LOOP_OPTS)
-    @IR(failOn = IRNode.ADD_I, counts = {IRNode.ROTATE_RIGHT, "1"})
+    @IR(failOn = IRNode.ADD_I, counts = {IRNode.ROTATE_RIGHT, "1"},
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true"})
+    @IR(failOn = IRNode.ADD_I, counts = {IRNode.ROTATE_RIGHT, "1"},
+        applyIfPlatform = {"riscv64", "true"}, applyIfCPUFeature = {"zbb", "true"})
     static int testAddI(int x) {
         int delayedOne = 100;
         for (int i = 0; i < 99; i++) { delayedOne--; }
@@ -76,7 +78,10 @@ public class TestMissingRotateIdealization {
 
     @Test
     @IR(failOn = {IRNode.ROTATE_LEFT, IRNode.ROTATE_RIGHT}, phase = CompilePhase.BEFORE_LOOP_OPTS)
-    @IR(failOn = IRNode.ADD_L, counts = {IRNode.ROTATE_RIGHT, "1"})
+    @IR(failOn = IRNode.ADD_L, counts = {IRNode.ROTATE_RIGHT, "1"},
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true"})
+    @IR(failOn = IRNode.ADD_L, counts = {IRNode.ROTATE_RIGHT, "1"},
+        applyIfPlatform = {"riscv64", "true"}, applyIfCPUFeature = {"zbb", "true"})
     static long testAddL(long x) {
         int delayedOne = 100;
         for (int i = 0; i < 99; i++) { delayedOne--; }
@@ -86,7 +91,10 @@ public class TestMissingRotateIdealization {
     // the count of one shift becomes (0 - s) late: n -> SubI -> shift -> or
     @Test
     @IR(failOn = {IRNode.ROTATE_LEFT, IRNode.ROTATE_RIGHT}, phase = CompilePhase.BEFORE_LOOP_OPTS)
-    @IR(failOn = IRNode.OR_I, counts = {IRNode.ROTATE_RIGHT, "1"})
+    @IR(failOn = IRNode.OR_I, counts = {IRNode.ROTATE_RIGHT, "1"},
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true"})
+    @IR(failOn = IRNode.OR_I, counts = {IRNode.ROTATE_RIGHT, "1"},
+        applyIfPlatform = {"riscv64", "true"}, applyIfCPUFeature = {"zbb", "true"})
     static int testOrI(int x, int s) {
         int delayedOne = 100;
         for (int i = 0; i < 99; i++) { delayedOne--; }
@@ -95,7 +103,10 @@ public class TestMissingRotateIdealization {
 
     @Test
     @IR(failOn = {IRNode.ROTATE_LEFT, IRNode.ROTATE_RIGHT}, phase = CompilePhase.BEFORE_LOOP_OPTS)
-    @IR(failOn = IRNode.OR_L, counts = {IRNode.ROTATE_RIGHT, "1"})
+    @IR(failOn = IRNode.OR_L, counts = {IRNode.ROTATE_RIGHT, "1"},
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true"})
+    @IR(failOn = IRNode.OR_L, counts = {IRNode.ROTATE_RIGHT, "1"},
+        applyIfPlatform = {"riscv64", "true"}, applyIfCPUFeature = {"zbb", "true"})
     static long testOrL(long x, int s) {
         int delayedOne = 100;
         for (int i = 0; i < 99; i++) { delayedOne--; }
@@ -104,7 +115,10 @@ public class TestMissingRotateIdealization {
 
     @Test
     @IR(failOn = {IRNode.ROTATE_LEFT, IRNode.ROTATE_RIGHT}, phase = CompilePhase.BEFORE_LOOP_OPTS)
-    @IR(failOn = IRNode.OR_I, counts = {IRNode.ROTATE_LEFT, "1"})
+    @IR(failOn = IRNode.OR_I, counts = {IRNode.ROTATE_LEFT, "1"},
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true"})
+    @IR(failOn = IRNode.OR_I, counts = {IRNode.ROTATE_LEFT, "1"},
+        applyIfPlatform = {"riscv64", "true"}, applyIfCPUFeature = {"zbb", "true"})
     static int testOrIRotateLeft(int x, int s) {
         int delayedOne = 100;
         for (int i = 0; i < 99; i++) { delayedOne--; }
@@ -113,7 +127,10 @@ public class TestMissingRotateIdealization {
 
     @Test
     @IR(failOn = {IRNode.ROTATE_LEFT, IRNode.ROTATE_RIGHT}, phase = CompilePhase.BEFORE_LOOP_OPTS)
-    @IR(failOn = IRNode.OR_L, counts = {IRNode.ROTATE_LEFT, "1"})
+    @IR(failOn = IRNode.OR_L, counts = {IRNode.ROTATE_LEFT, "1"},
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true"})
+    @IR(failOn = IRNode.OR_L, counts = {IRNode.ROTATE_LEFT, "1"},
+        applyIfPlatform = {"riscv64", "true"}, applyIfCPUFeature = {"zbb", "true"})
     static long testOrLRotateLeft(long x, int s) {
         int delayedOne = 100;
         for (int i = 0; i < 99; i++) { delayedOne--; }
