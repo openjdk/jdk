@@ -54,6 +54,8 @@ bool should_relocate_addend(Elf64_Rela* rela) {
     switch (ELF64_R_TYPE(rela->r_info)) {
 #if defined(__aarch64__)
         case R_AARCH64_RELATIVE:
+#elif defined(__riscv) && __riscv_xlen == 64
+        case R_RISCV_RELATIVE:
 #else
         case R_X86_64_RELATIVE:
 #endif
@@ -112,6 +114,11 @@ bool ELFFile::verify() {
 #if defined(__aarch64__)
     if (hdr->e_machine != EM_AARCH64) {
         warn("%s: not an AARCH64 ELF file.", filename);
+        return false;
+    }
+#elif defined(__riscv) && __riscv_xlen == 64
+    if (hdr->e_machine != EM_RISCV) {
+        warn("%s: not a RISCV64 ELF file.", filename);
         return false;
     }
 #else
