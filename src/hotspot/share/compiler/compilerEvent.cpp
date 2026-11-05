@@ -101,7 +101,7 @@ int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exi
     }
 
     index = _phase_names->length();
-    _phase_names->append(use_strdup ? os::strdup(phase_name) : phase_name);
+    _phase_names->append(use_strdup ? os::strdup(phase_name, mtCompiler) : phase_name);
   }
   if (register_jfr_serializer) {
     JfrSerializer::register_serializer(TYPE_COMPILERPHASETYPE, false, new CompilerPhaseTypeConstant());

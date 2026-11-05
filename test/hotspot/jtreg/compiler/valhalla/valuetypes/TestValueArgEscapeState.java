@@ -68,6 +68,11 @@ class TestValueArgEscapeState {
         }
     }
 
+    // Just to force initialization of ValueHolder and ValueHolderHolder before
+    // the tests are compiled, in case they are run with warm-up disabled.
+    static final ValueHolderHolder LOAD_VALUE_HOLDERS =
+        new ValueHolderHolder(new ValueHolder(null));
+
     static IdentityObject globalObj = null;
     static ValueHolder globalHolder = null;
 

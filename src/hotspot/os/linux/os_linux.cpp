@@ -3352,6 +3352,8 @@ bool os::Linux::libnuma_init() {
                                                    libnuma_dlsym(handle, "numa_num_configured_nodes")));
       set_numa_available(CAST_TO_FN_PTR(numa_available_func_t,
                                         libnuma_dlsym(handle, "numa_available")));
+      set_numa_node_size64(CAST_TO_FN_PTR(numa_node_size64_func_t,
+                                          libnuma_dlsym(handle, "numa_node_size64")));
       set_numa_tonode_memory(CAST_TO_FN_PTR(numa_tonode_memory_func_t,
                                             libnuma_dlsym(handle, "numa_tonode_memory")));
       set_numa_interleave_memory(CAST_TO_FN_PTR(numa_interleave_memory_func_t,
@@ -3641,6 +3643,7 @@ os::Linux::numa_node_to_cpus_func_t os::Linux::_numa_node_to_cpus;
 os::Linux::numa_node_to_cpus_v2_func_t os::Linux::_numa_node_to_cpus_v2;
 os::Linux::numa_max_node_func_t os::Linux::_numa_max_node;
 os::Linux::numa_num_configured_nodes_func_t os::Linux::_numa_num_configured_nodes;
+os::Linux::numa_node_size64_func_t os::Linux::_numa_node_size64;
 os::Linux::numa_available_func_t os::Linux::_numa_available;
 os::Linux::numa_tonode_memory_func_t os::Linux::_numa_tonode_memory;
 os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;

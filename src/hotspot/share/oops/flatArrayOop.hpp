@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_FLATARRAYOOP_HPP
-#define SHARE_VM_OOPS_FLATARRAYOOP_HPP
+#ifndef SHARE_OOPS_FLATARRAYOOP_HPP
+#define SHARE_OOPS_FLATARRAYOOP_HPP
 
 #include "oops/klass.hpp"
 #include "oops/objArrayOop.hpp"
@@ -87,4 +87,4 @@ class flatArrayOopDesc : public objArrayOopDesc {
 // See similar requirement for oopDesc.
 static_assert(std::is_trivially_default_constructible<flatArrayOopDesc>::value);
 
-#endif // SHARE_VM_OOPS_FLATARRAYOOP_HPP
+#endif // SHARE_OOPS_FLATARRAYOOP_HPP

@@ -713,7 +713,7 @@ In order to build man pages and the full docs (see the `--enable-full-docs`
 configure option) [Pandoc](https://pandoc.org) is required. For full docs also
 [Graphviz](https://www.graphviz.org) is required. Any recent versions should
 work. For reference, and subject to change, Oracle builds use Graphviz
-9.0.0 and Pandoc 2.19.2.
+9.0.0 and Pandoc 3.6.4.
 
 ## Running Configure
 
@@ -1720,7 +1720,7 @@ certain well-known problems, but it can never find all possible errors.
 * Checking for warnings from configure...
  ---
 The following warnings were produced. Repeated here for convenience:
-WARNING: pandoc is version 3.1.9, not the recommended version 2.19.2
+WARNING: pandoc is version 3.1.9, not the recommended version 3.6.4
  ---
 ! Inspect the warnings, fix any problems, and re-run configure
 

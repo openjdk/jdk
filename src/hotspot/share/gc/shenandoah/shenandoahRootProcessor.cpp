@@ -178,15 +178,6 @@ void ShenandoahConcurrentRootScanner::update_tlab_stats() {
   }
 }
 
-ShenandoahRootUpdater::ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
-  ShenandoahRootProcessor(phase),
-  _vm_roots(phase),
-  _cld_roots(phase, n_workers, false /*heap iteration*/),
-  _thread_roots(phase, n_workers > 1),
-  _weak_roots(phase),
-  _code_roots(phase) {
-}
-
 ShenandoahRootAdjuster::ShenandoahRootAdjuster(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
   _vm_roots(phase),

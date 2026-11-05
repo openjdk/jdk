@@ -26,7 +26,7 @@
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
-#include "gc/g1/g1CardSetGroup.hpp"
+#include "gc/g1/g1CardSetGroup.inline.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CardTableClaimTable.inline.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
@@ -40,6 +40,7 @@
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/g1/g1HumongousCardSetGroups.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -1048,53 +1049,40 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
   };
 
-  // Visitor for the remembered sets of humongous candidate regions to merge their
-  // remembered set into the card table.
-  class G1FlushHumongousCandidateRemSets : public G1HeapRegionIndexClosure {
-    G1MergeCardSetClosure _cl;
+  // Merge the card sets of humongous candidate regions into the card table.
+  const G1MergeCardSetStats merge_humongous_card_sets() {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    G1MergeCardSetClosure cl(_scan_state);
 
-  public:
-    G1FlushHumongousCandidateRemSets(G1RemSetScanState* scan_state) : _cl(scan_state) { }
-
-    bool do_heap_region_index(uint region_index) override {
-      G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-      if (!g1h->region_attr(region_index).is_humongous_candidate()) {
-        return false;
+    g1h->humongous_card_set_groups()->iterate([&] (G1CardSetGroup* gr) {
+      G1HeapRegion* r = gr->region_at(0);
+      if (!g1h->region_attr(r->hrm_index()).is_humongous_candidate()) {
+        return;
       }
-
-      G1HeapRegion* r = g1h->region_at(region_index);
-
-      assert(r->rem_set()->is_complete(), "humongous candidates must have complete remset");
+      assert(gr->is_complete(), "Humongous candidate card set group must have complete remset");
 
       guarantee(r->rem_set()->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold),
                 "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
+      guarantee(r->rem_set()->code_roots_length() == 0, "Merging of code root sets not supported.");
 
-      if (!r->rem_set()->is_empty()) {
-        r->rem_set()->iterate_for_merge(_cl);
+      if (gr->has_cards()) {
+        gr->iterate_for_merge(cl);
         // We should only clear the card based remembered set here as we will not
         // implicitly rebuild anything else during eager reclaim. Note that at the moment
         // (and probably never) we do not enter this path if there are other kind of
         // remembered sets for this region.
         // We want to continue collecting remembered set entries for humongous regions
         // that were not reclaimed.
-        G1CardSetGroup* group = r->rem_set()->card_set_group();
-        assert(group != nullptr, "must have a card set group");
-        assert(group->num_regions() == 1, "Card set groups containing humongous regions must have a single region");
-        group->clear_card_set();
+        gr->clear_card_set();
       }
 
       // Postcondition
-      assert(r->rem_set()->is_empty(), "must be empty after flushing");
-      assert(r->rem_set()->is_complete(), "should still be after flushing");
+      assert(!gr->has_cards(), "must be empty after flushing");
+      assert(gr->is_complete(), "should still be after flushing");
+    });
 
-      return false;
-    }
-
-    G1MergeCardSetStats stats() {
-      return _cl.stats();
-    }
-  };
+    return cl.stats();
+  }
 
   uint _num_workers;
   G1HeapRegionClaimer _hr_claimer;
@@ -1134,11 +1122,7 @@ public:
             _fast_reclaim_handled.compare_set(false, true)) {
 
           G1GCParPhaseTimesTracker subphase_x(p, G1GCPhaseTimes::MergeER, worker_id);
-
-          G1FlushHumongousCandidateRemSets cl(_scan_state);
-          g1h->heap_region_iterate(&cl);
-          G1MergeCardSetStats stats = cl.stats();
-
+          const G1MergeCardSetStats stats = merge_humongous_card_sets();
           for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
             p->record_or_add_thread_work_item(merge_remset_phase, worker_id, stats.merged(i), i);
           }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public:
   // perform the dirtying atomically.
   inline bool mark_clean_as_from_remset(CardValue* card);
 
-  // Change Clean cards in a (large) area on the card table as From_Remset, preserving
+  // Mark Clean cards in a (large) area on the card table as From_Remset, preserving
   // cards already marked otherwise. Assumes that most cards in that area are Clean.
   // Not atomic.
   inline size_t mark_clean_range_as_from_remset(size_t start_card_index, size_t num_cards);

@@ -1255,7 +1255,7 @@ bool compilerOracle_init() {
   // Register default compile commands first - any commands specified via CompileCommand will
   // supersede these default commands.
   for (int i = 0; default_compile_commands[i] != nullptr; i ++) {
-    char* s = os::strdup(default_compile_commands[i]);
+    char* s = os::strdup(default_compile_commands[i], mtCompiler);
     success = CompilerOracle::parse_from_line_quietly(s);
     os::free(s);
     assert(success, "default compile command \"%s\" failed to parse", default_compile_commands[i]);

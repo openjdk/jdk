@@ -26,7 +26,6 @@
 #define SHARE_GC_G1_G1COLLECTIONSET_HPP
 
 #include "gc/g1/g1CardSetGroup.hpp"
-#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -136,10 +135,7 @@ class G1CollectionSet {
   G1CollectedHeap* _g1h;
   G1Policy* _policy;
 
-  // All old gen collection set candidate regions.
-  G1CollectionSetCandidates _candidates;
-
-  // The actual collection set as an array of region indices.
+  // The actual collection set as a set of region indices.
   //
   // All regions in _regions below _num_regions are assumed to be part of the
   // collection set.
@@ -156,6 +152,9 @@ class G1CollectionSet {
 
   Atomic<uint> _num_regions;
 
+  // Card set group for the young generation regions.
+  G1CardSetGroup _young_regions_card_set_group;
+
   // Card set groups selected for evacuation.
   G1CardSetGroupList _selected_groups;
 
@@ -168,6 +167,7 @@ class G1CollectionSet {
   // When doing mixed collections we can add old regions to the collection set, which
   // will be collected only if there is enough time. We call these optional (old)
   // groups. Regions are reachable via this list as well.
+  // Groups in this list are not owned by the collection set.
   G1CardSetGroupList _optional_groups;
 
 #ifdef ASSERT
@@ -199,8 +199,6 @@ class G1CollectionSet {
   void prepare_optional_group(G1CardSetGroup* gr, uint cur_index);
 
   void add_group_to_collection_set(G1CardSetGroup* gr);
-
-  void add_region_to_collection_set(G1HeapRegion* r);
 
   double select_candidates_from_marking(double time_remaining_ms);
 
@@ -243,13 +241,10 @@ public:
   // Initializes the collection set giving the maximum possible number of regions in the collection set.
   void initialize(uint max_num_regions);
 
-  // Drop the collection set and collection set candidates.
+  // Drop the collection set.
   void abandon();
-  // Drop all collection set candidates (only the candidates).
-  void abandon_all_candidates();
 
-  G1CollectionSetCandidates* candidates() { return &_candidates; }
-  const G1CollectionSetCandidates* candidates() const { return &_candidates; }
+  G1CardSetGroup* young_regions_card_set_group() { return &_young_regions_card_set_group; }
 
   void prepare_for_scan();
 
@@ -317,6 +312,7 @@ public:
   // Add survivor region to the collection set.
   void add_survivor_regions(G1HeapRegion* hr);
 
+  void verify();
 #ifndef PRODUCT
   bool verify_young_ages();
 

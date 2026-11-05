@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_TABLE_STATISTICS_HPP
-#define SHARE_UTILITIES_TABLE_STATISTICS_HPP
+#ifndef SHARE_UTILITIES_TABLESTATISTICS_HPP
+#define SHARE_UTILITIES_TABLESTATISTICS_HPP
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
@@ -90,4 +90,4 @@ public:
   void print(outputStream* st, const char *table_name);
 };
 
-#endif // SHARE_UTILITIES_TABLE_STATISTICS_HPP
+#endif // SHARE_UTILITIES_TABLESTATISTICS_HPP
