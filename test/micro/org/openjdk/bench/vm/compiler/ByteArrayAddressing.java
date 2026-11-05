@@ -45,11 +45,6 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Fork(3)
 public class ByteArrayAddressing {
-
-    @Param("0")
-    private int seed;
-    private Random r = new Random(seed);
-
     int index;
 
     byte[] a;
