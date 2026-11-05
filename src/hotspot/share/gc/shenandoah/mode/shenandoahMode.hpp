@@ -68,9 +68,6 @@ class ShenandoahMode : public CHeapObj<mtGC> {
 public:
   virtual void initialize_flags() const = 0;
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahSpaceInfo* space_info) const;
-  virtual const char* name() = 0;
-  virtual bool is_diagnostic() = 0;
-  virtual bool is_experimental() = 0;
   virtual bool is_generational() { return false; }
   virtual bool is_concurrent() { return true; }
 };

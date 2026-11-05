@@ -42,10 +42,6 @@ public:
                                              size_t free) override;
 
   bool should_start_gc() override;
-
-  const char* name()     override { return "Aggressive"; }
-  bool is_diagnostic()   override { return true; }
-  bool is_experimental() override { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHAGGRESSIVEHEURISTICS_HPP

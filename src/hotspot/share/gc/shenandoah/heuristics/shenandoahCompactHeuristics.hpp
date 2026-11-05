@@ -39,9 +39,6 @@ public:
   explicit ShenandoahCompactHeuristics(ShenandoahSpaceInfo* space_info);
 
   bool should_start_gc() override;
-  const char* name() override     { return "Compact"; }
-  bool is_diagnostic() override   { return false; }
-  bool is_experimental() override { return false; }
 
 protected:
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,

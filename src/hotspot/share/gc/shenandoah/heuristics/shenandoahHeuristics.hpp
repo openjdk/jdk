@@ -288,9 +288,6 @@ public:
 
   virtual bool can_unload_classes();
 
-  virtual const char* name() = 0;
-  virtual bool is_diagnostic() = 0;
-  virtual bool is_experimental() = 0;
   virtual void initialize();
   virtual void post_initialize();
 
