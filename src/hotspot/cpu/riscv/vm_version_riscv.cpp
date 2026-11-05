@@ -550,14 +550,17 @@ int VM_Version::cpu_features_size() {
 }
 
 void VM_Version::store_cpu_features(void* buf) {
+  assert(is_aligned(buf, cpu_features_alignment()), "sanity check");
   memcpy(buf, RVExtFeatures::current(), sizeof(RVExtFeatures));
 }
 
 void VM_Version::get_cpu_features_disabled_by_aot_cache(void* buf) {
+  assert(is_aligned(buf, cpu_features_alignment()), "sanity check");
   memcpy(buf, &_rv_ext_features_disabled_by_aot_cache, sizeof(RVExtFeatures));
 }
 
 bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {
+  assert(is_aligned(features_buffer, cpu_features_alignment()), "sanity check");
   RVExtFeatures* features_to_test = (RVExtFeatures*)features_buffer;
   return RVExtFeatures::current()->verify_aot_code_cache_features(features_to_test);
 }
@@ -589,11 +592,14 @@ void VM_Version::insert_features_names(RVExtFeatures* features, stringStream& ss
 }
 
 void VM_Version::get_cpu_features_name(void* features_buffer, stringStream& ss) {
+  assert(is_aligned(features_buffer, cpu_features_alignment()), "sanity check");
   RVExtFeatures* features = (RVExtFeatures*)features_buffer;
   insert_features_names(features, ss);
 }
 
 void VM_Version::get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) {
+  assert(is_aligned(features_set1, cpu_features_alignment()), "sanity check");
+  assert(is_aligned(features_set2, cpu_features_alignment()), "sanity check");
   RVExtFeatures* rv_ext_features_set1 = (RVExtFeatures*)features_set1;
   RVExtFeatures* rv_ext_features_set2 = (RVExtFeatures*)features_set2;
   const char* sep = "";

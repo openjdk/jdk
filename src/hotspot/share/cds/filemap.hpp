@@ -252,6 +252,7 @@ public:
       return nullptr;
     }
     char* cpu_features = ((char*)this) + _cpu_features_offset;
+    assert(is_aligned(cpu_features, VM_Version::cpu_features_alignment()), "sanity check");
     return (void *)cpu_features;
   }
 

@@ -158,6 +158,10 @@ void VM_Version::get_os_cpu_info() {
       check_feature(auxv2, BIT_MASK(CPU_ECV),        HWCAP2_ECV) |
       check_feature(auxv2, BIT_MASK(CPU_WFXT),       HWCAP2_WFXT);
 
+  if (_cpu == CPU_ARM && model_is(CPU_MODEL_ARM_CORTEX_A53)) {
+    set_feature(CPU_A53MAC);
+  }
+
   uint64_t ctr_el0;
   uint64_t dczid_el0;
   __asm__ (

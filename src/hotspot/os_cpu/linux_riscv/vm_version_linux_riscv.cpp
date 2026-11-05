@@ -124,6 +124,7 @@ void VM_Version::RVNonExtFeatureValue::log_enabled() {
 void VM_Version::apply_aot_cache_cpu_features() {
   RVExtFeatures* archived_cpu_features = (RVExtFeatures*)get_aot_cache_cpu_features();
   if (archived_cpu_features != nullptr) {
+    assert(is_aligned(archived_cpu_features, cpu_features_alignment()), "sanity check");
     assert(UseAOTCacheCpuFeaturesOnly, "UseAOTCacheCpuFeaturesOnly must be true");
     RVExtFeatures* runtime_cpu_features = RVExtFeatures::current();
     if (!runtime_cpu_features->super_set_of(archived_cpu_features)) {

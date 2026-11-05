@@ -513,6 +513,7 @@ protected:
       VM_Features copy = *this;
       // HT does not result in incompatibility of aot code cache
       copy.clear_feature(CPU_HT);
+      copy.clear_feature(CPU_HV);
       return copy;
     }
 
@@ -1158,6 +1159,8 @@ public:
   static bool verify_aot_code_cache_features(void* features_buffer);
 
   static void get_cpu_features_disabled_by_aot_cache(void* buf);
+
+  static int cpu_features_alignment() { return alignof(VM_Features); }
 };
 
 #endif // CPU_X86_VM_VERSION_X86_HPP

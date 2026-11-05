@@ -265,6 +265,8 @@ class Abstract_VM_Version: AllStatic {
   static bool verify_aot_code_cache_features(void* features_buffer) { return false; };
 
   static void get_cpu_features_disabled_by_aot_cache(void* features_buffer) { return; }
+
+  static int cpu_features_alignment() { return alignof(decltype(_features)); }
 };
 
 #endif // SHARE_RUNTIME_ABSTRACT_VM_VERSION_HPP

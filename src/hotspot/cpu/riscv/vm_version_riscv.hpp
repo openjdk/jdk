@@ -605,6 +605,7 @@ private:
   static bool verify_aot_code_cache_features(void* features_buffer);
   static void get_cpu_features_name(void* features_buffer, stringStream& ss);
   static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss);
+  static int cpu_features_alignment() { return alignof(RVExtFeatures); }
 
  private:
   static void print_feature_name(stringStream& ss, RVFeatureValue* feature);

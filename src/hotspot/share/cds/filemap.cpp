@@ -253,8 +253,8 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     header_size = c_header_size;
     if (CDSConfig::new_aot_flags_used() && AOTCodeCache::is_caching_enabled()) {
       cpu_features_size += VM_Version::cpu_features_size();
-      header_size += cpu_features_size;
-      cpu_features_offset = (int)c_header_size;
+      cpu_features_offset = align_up((int)c_header_size, VM_Version::cpu_features_alignment());
+      header_size = cpu_features_offset + cpu_features_size;
     }
   } else {
     // dynamic header including base archive name for non-default base archive

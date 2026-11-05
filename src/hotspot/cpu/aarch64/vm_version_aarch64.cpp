@@ -109,6 +109,7 @@ static bool has_neoverse_n1_errata_1542419() {
 void VM_Version::apply_aot_cache_cpu_features() {
   uint64_t* aot_cache_cpu_features = (uint64_t*)get_aot_cache_cpu_features();
   if (aot_cache_cpu_features != nullptr) {
+    assert(is_aligned(archived_cpu_features, cpu_features_alignment()), "sanity check");
     assert(UseAOTCacheCpuFeaturesOnly, "UseAOTCacheCpuFeaturesOnly must be true");
     if (!super_set_of(_features, *aot_cache_cpu_features)) {
       if (!FLAG_IS_DEFAULT(UseAOTCacheCpuFeaturesOnly)) {
@@ -272,7 +273,6 @@ void VM_Version::initialize() {
   }
 
   if (_cpu == CPU_ARM && model_is(CPU_MODEL_ARM_CORTEX_A53)) {
-    set_feature(CPU_A53MAC);
     if (FLAG_IS_DEFAULT(UseSIMDForArrayEquals)) {
       FLAG_SET_DEFAULT(UseSIMDForArrayEquals, false);
     }
@@ -793,11 +793,14 @@ void VM_Version::insert_features_names(uint64_t features, stringStream& ss) {
 }
 
 void VM_Version::get_cpu_features_name(void* features_buffer, stringStream& ss) {
+  assert(is_aligned(features_buffer, cpu_features_alignment()), "sanity check");
   uint64_t features = *(uint64_t*)features_buffer;
   insert_features_names(features, ss);
 }
 
 void VM_Version::get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) {
+  assert(is_aligned(features_set1, cpu_features_alignment()), "sanity check");
+  assert(is_aligned(features_set2, cpu_features_alignment()), "sanity check");
   uint64_t vm_features_set1 = *(uint64_t*)features_set1;
   uint64_t vm_features_set2 = *(uint64_t*)features_set2;
   int i = 0;
@@ -819,14 +822,17 @@ int VM_Version::cpu_features_size() {
 }
 
 void VM_Version::store_cpu_features(void* buf) {
+  assert(is_aligned(buf, cpu_features_alignment()), "sanity check");
   *(uint64_t*)buf = _features;
 }
 
 void VM_Version::get_cpu_features_disabled_by_aot_cache(void* buf) {
+  assert(is_aligned(buf, cpu_features_alignment()), "sanity check");
   *(uint64_t*)buf = _cpu_features_disabled_by_aot_cache;
 }
 
 bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {
+  assert(is_aligned(features_buffer, cpu_features_alignment()), "sanity check");
   uint64_t features_to_test = *(uint64_t*)features_buffer;
   return (_features == features_to_test);
 }
