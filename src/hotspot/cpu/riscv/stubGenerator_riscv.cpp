@@ -1036,7 +1036,7 @@ class StubGenerator: public StubCodeGenerator {
   typedef void (MacroAssembler::*copy_insn)(Register Rd, const Address &adr, Register temp);
 
   void copy_memory_v(Register s, Register d, Register count, int step) {
-    bool is_backward = step < 0;
+    bool is_forward = step >= 0;
     int granularity = g_uabs(step);
 
     const Register src = x30, dst = x31, vl = x14, cnt = x15;
@@ -1053,7 +1053,7 @@ class StubGenerator: public StubCodeGenerator {
       __ mv(cnt, count);
     }
 
-    if (!is_backward) {
+    if (is_forward) {
       Label loop;
       __ bind(loop);
       __ vsetvli(vl, cnt, Assembler::e8, lmul);
@@ -1072,8 +1072,8 @@ class StubGenerator: public StubCodeGenerator {
       __ sub(src, src, vl);
       __ sub(dst, dst, vl);
       __ vle8_v(v0, src);
-      __ vse8_v(v0, dst);
       __ sub(cnt, cnt, vl);
+      __ vse8_v(v0, dst);
       __ bnez(cnt, loop);
     }
   }
