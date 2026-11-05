@@ -734,9 +734,7 @@ Node* PhaseGVN::transform(Node* n) {
       set_progress();
     }
 #endif
-    set_type(k, t);
-    // If k is a TypeNode, capture any more-precise type permanently into Node
-    k->raise_bottom_type(t);
+    set_type_and_raise_bottom_type(k, t);
   }
 
   if (t->singleton() && !k->is_Con()) {
@@ -1959,6 +1957,15 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
   return n;
 }
 
+Node* PhaseIterGVN::find_node_or_register_new_node_with_optimizer(Node* n) {
+  Node* existing = hash_find_insert(n);
+  if (existing != nullptr) {
+    n->destruct(this);
+    return existing;
+  }
+  return register_new_node_with_optimizer(n);
+}
+
 //------------------------------transform--------------------------------------
 // Non-recursive: idealize Node 'n' with respect to its inputs and its value
 Node *PhaseIterGVN::transform( Node *n ) {
@@ -2159,9 +2166,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   if (type_or_null(k) != t) {
     NOT_PRODUCT(inc_new_values();)
     set_progress();
-    set_type(k, t);
-    // If k is a TypeNode, capture any more-precise type permanently into Node
-    k->raise_bottom_type(t);
+    set_type_and_raise_bottom_type(k, t);
     // Move users of node to worklist
     add_users_to_worklist(k);
   }
@@ -2786,6 +2791,42 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->is_MinMax();
     });
   }
+
+  // fold_subI_no_underflow_pattern parses nested no-overflow
+  // addition and subtraction with constants. Thus, we need
+  // notification for:
+  //        u4           u3      u2           u1
+  // n -> AddL -> MaxL/MinL -> AddL -> MaxL/MinL   (4-hop - dropped)
+  //         n -> MaxL/MinL -> AddL -> MaxL/MinL   (3-hop)
+  //                      n -> AddL -> MaxL/MinL   (2-hop)
+  //
+  // However, the 4-hop notification could be a bit expensive,
+  // and so far no reproducer has been found. There probably
+  // cannot be any: one would have to update either side of
+  // the u4 AddL, without updating the type of AddL itself
+  // (that would cause a 3-hop notification). But for the
+  // optimization to be unlocked, the types of the inputs
+  // to the AddL would have to change, which would trigger
+  // a type update for AddL.
+  //
+  // 2-hop notification for fold_subI_no_underflow_pattern
+  if (use->Opcode() == Op_AddL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u1) {
+      return u1->Opcode() == Op_MaxL || u1->Opcode() == Op_MinL;
+    });
+  }
+  // 3-hop notification for fold_subI_no_underflow_pattern
+  if (use->Opcode() == Op_MaxL || use->Opcode() == Op_MinL) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* u2 = use->fast_out(i);
+      if (u2->Opcode() == Op_AddL) {
+        add_users_to_worklist_if(worklist, u2, [](Node* u1) {
+          return u1->Opcode() == Op_MaxL || u1->Opcode() == Op_MinL;
+        });
+      }
+    }
+  }
+
   // Check for A | (B | C) and (B | C) | A where A == B or A == C.
   if (use_op == Op_OrI || use_op == Op_OrL) {
     add_users_to_worklist_if(worklist, use, [&](Node* u) { return u->Opcode() == use->Opcode(); });
@@ -2927,8 +2968,17 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (VectorNode::is_associative_and_commutative_vector_operation(use_op) &&
       !use->as_Vector()->is_predicated_vector()) {
     add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
-      return u->Opcode() == use_op && !u->as_Vector()->is_predicated_vector() &&
-             (u->in(1)->Opcode() == Op_Replicate || u->in(2)->Opcode() == Op_Replicate);
+      if (u->Opcode() != use_op || u->as_Vector()->is_predicated_vector()) {
+        return false;
+      }
+      // Reached from remove_globally_dead_node() -> replace_edge() ->
+      // set_req_X() after clearing one input leaves the shared input with a
+      // single user and has_special_unique_user() is true. 'u' is still being
+      // disconnected, so a required input may already be null.
+      Node* in1 = u->in(1);
+      Node* in2 = u->in(2);
+      return (in1 != nullptr && in1->Opcode() == Op_Replicate) ||
+             (in2 != nullptr && in2->Opcode() == Op_Replicate);
     });
   }
 

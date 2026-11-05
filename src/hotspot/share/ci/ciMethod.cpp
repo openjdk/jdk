@@ -1276,7 +1276,9 @@ int ciMethod::inline_instructions_size() {
         if (ctd != nullptr) {
           methodHandle mh(Thread::current(), get_Method());
           MethodTrainingData* this_mtd = MethodTrainingData::make(mh);
-          ctd->ci_records().ciMethod__inline_instructions_size.append_if_missing(_inline_instructions_size, this_mtd);
+          if (this_mtd != nullptr) {
+            ctd->ci_records().ciMethod__inline_instructions_size.append_if_missing(_inline_instructions_size, this_mtd);
+          }
         }
       }
     );

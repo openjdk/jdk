@@ -45,7 +45,7 @@ public abstract class ContinuationEntry extends VMObject {
 
     private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
         Type type = db.lookupType("ContinuationEntry");
-        size = type.getSize();
+        size = VM.getVM().alignUp(type.getSize(), 2 * VM.getVM().getAddressSize());
         parentField = type.getAddressField("_parent");
         returnPC = type.getAddressField("_return_pc").getValue();
     }

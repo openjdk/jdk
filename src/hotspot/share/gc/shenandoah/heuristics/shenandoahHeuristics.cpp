@@ -270,12 +270,6 @@ bool ShenandoahHeuristics::can_unload_classes() {
   return ClassUnloading;
 }
 
-bool ShenandoahHeuristics::should_unload_classes() {
-  if (!can_unload_classes()) return false;
-  if (has_metaspace_oom()) return true;
-  return ClassUnloadingWithConcurrentMark;
-}
-
 void ShenandoahHeuristics::initialize() {
   // Nothing to do by default.
 }

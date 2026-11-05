@@ -1071,10 +1071,14 @@ static oop invoke(InstanceKlass* klass,
 
   for (int i = 0; i < args_len; i++) {
     oop type_mirror = ptypes->obj_at(i, CHECK_NULL);
+    // obj_at of args below may allocate, wrap type_mirror in a Handle so that
+    // it is protected.
+    Handle type_mirror_handle(THREAD, type_mirror);
     oop arg = args->obj_at(i, CHECK_NULL);
-    if (java_lang_Class::is_primitive(type_mirror)) {
+
+    if (java_lang_Class::is_primitive(type_mirror_handle())) {
       jvalue value;
-      BasicType ptype = basic_type_mirror_to_basic_type(type_mirror);
+      BasicType ptype = basic_type_mirror_to_basic_type(type_mirror_handle());
       BasicType atype = Reflection::unbox_for_primitive(arg, &value, CHECK_NULL);
       if (ptype != atype) {
         Reflection::widen(&value, atype, ptype, CHECK_NULL);
@@ -1093,7 +1097,7 @@ static oop invoke(InstanceKlass* klass,
       }
     } else {
       if (arg != nullptr) {
-        Klass* k = java_lang_Class::as_Klass(type_mirror);
+        Klass* k = java_lang_Class::as_Klass(type_mirror_handle());
         if (!arg->is_a(k)) {
           THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
                          "argument type mismatch");

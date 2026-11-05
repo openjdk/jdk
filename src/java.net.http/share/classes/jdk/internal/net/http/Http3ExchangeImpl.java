@@ -399,8 +399,6 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         }
         HttpHeaders sysh = filterHeaders(h.build());
         HttpHeaders userh = filterHeaders(request.getUserHeaders());
-        // Filter context restricted from userHeaders
-        userh = HttpHeaders.of(userh.map(), Utils.ACCEPT_ALL);
         Utils.setUserAuthFlags(request, userh);
 
         // Don't override Cookie values that have been set by the CookieHandler.

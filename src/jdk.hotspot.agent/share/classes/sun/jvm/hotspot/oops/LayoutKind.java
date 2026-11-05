@@ -25,21 +25,16 @@
 package sun.jvm.hotspot.oops;
 
 import sun.jvm.hotspot.runtime.VM;
-import sun.jvm.hotspot.runtime.VMObject;
-import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.types.WrongTypeException;
 
 
 public final class LayoutKind {
 
-    public static LayoutKind REFERENCE;
-    public static LayoutKind BUFFERED;
     public static LayoutKind NULL_FREE_NON_ATOMIC_FLAT;
     public static LayoutKind NULL_FREE_ATOMIC_FLAT;
     public static LayoutKind NULLABLE_ATOMIC_FLAT;
     public static LayoutKind NULLABLE_NON_ATOMIC_FLAT;
-    public static LayoutKind UNKNOWN;
 
     private final int value;
 
@@ -48,15 +43,10 @@ public final class LayoutKind {
     }
 
     private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-        Type type = db.lookupType("LayoutKind");
-
-        REFERENCE = new LayoutKind(db.lookupIntConstant("LayoutKind::REFERENCE").intValue());
-        BUFFERED = new LayoutKind(db.lookupIntConstant("LayoutKind::BUFFERED").intValue());
         NULL_FREE_NON_ATOMIC_FLAT = new LayoutKind(db.lookupIntConstant("LayoutKind::NULL_FREE_NON_ATOMIC_FLAT").intValue());
         NULL_FREE_ATOMIC_FLAT = new LayoutKind(db.lookupIntConstant("LayoutKind::NULL_FREE_ATOMIC_FLAT").intValue());
         NULLABLE_ATOMIC_FLAT = new LayoutKind(db.lookupIntConstant("LayoutKind::NULLABLE_ATOMIC_FLAT").intValue());
         NULLABLE_NON_ATOMIC_FLAT = new LayoutKind(db.lookupIntConstant("LayoutKind::NULLABLE_NON_ATOMIC_FLAT").intValue());
-        UNKNOWN = new LayoutKind(db.lookupIntConstant("LayoutKind::UNKNOWN").intValue());
     }
 
     private LayoutKind(int value) {
@@ -64,11 +54,7 @@ public final class LayoutKind {
     }
 
     public static LayoutKind valueOf(int rawValue) {
-        if (rawValue == REFERENCE.value) {
-            return REFERENCE;
-        } else if (rawValue == BUFFERED.value) {
-            return BUFFERED;
-        } else if (rawValue == NULL_FREE_NON_ATOMIC_FLAT.value) {
+        if (rawValue == NULL_FREE_NON_ATOMIC_FLAT.value) {
             return NULL_FREE_NON_ATOMIC_FLAT;
         } else if (rawValue == NULL_FREE_ATOMIC_FLAT.value) {
             return NULL_FREE_ATOMIC_FLAT;
@@ -76,8 +62,6 @@ public final class LayoutKind {
             return NULLABLE_ATOMIC_FLAT;
         } else if (rawValue == NULLABLE_NON_ATOMIC_FLAT.value) {
             return NULLABLE_NON_ATOMIC_FLAT;
-        } else if (rawValue == UNKNOWN.value) {
-            return UNKNOWN;
         } else {
             throw new IllegalArgumentException("Out of range");
         }
