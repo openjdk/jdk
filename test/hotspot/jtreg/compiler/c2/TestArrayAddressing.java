@@ -35,6 +35,7 @@ package compiler.c2;
 import compiler.lib.compile_framework.CompileFramework;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
+import compiler.lib.template_framework.library.CodeGenerationDataNameType;
 import compiler.lib.template_framework.library.PrimitiveType;
 import compiler.lib.template_framework.library.TestFrameworkClass;
 
@@ -44,6 +45,7 @@ import java.util.Set;
 
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.scope;
+import static compiler.lib.template_framework.library.CodeGenerationDataNameType.booleans;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.bytes;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.chars;
 import static compiler.lib.template_framework.library.CodeGenerationDataNameType.shorts;
@@ -65,7 +67,7 @@ public class TestArrayAddressing {
     }
 
     private static String generate(CompileFramework comp) {
-        final List<PrimitiveType> types = List.of(bytes(), shorts(), chars());
+        final List<PrimitiveType> types = List.of(booleans(), bytes(), shorts(), chars());
 
         final List<TemplateToken> tests = new ArrayList<>();
         tests.add(valueGenerator());
@@ -101,13 +103,17 @@ public class TestArrayAddressing {
         TemplateToken generate() {
             var template = Template.make(() -> scope(
                 let("type", type.name()),
+                let("valueCast", type == CodeGenerationDataNameType.booleans()
+                    ? "((GEN_I.next().intValue() & 1) == 0)" : "GEN_I.next().intValue()"),
+                let("returnType", type == CodeGenerationDataNameType.booleans() ? "boolean" : "int"),
+                let("op", type == CodeGenerationDataNameType.booleans() ? "&" : "+"),
                 let("uMethodName", "get" + type.name().substring(0, 1).toUpperCase() + type.name().substring(1)),
                 """
                 @Setup
                 public static Object[] $setupOneArray() {
                     final #type[] arr = new #type[100];
                     for (int i = 0; i < arr.length; i++) {
-                        arr[i] = (#type) GEN_I.next().intValue();
+                        arr[i] = (#type) #valueCast;
                     }
                     return new Object[] {arr, 42};
                 }
@@ -117,7 +123,7 @@ public class TestArrayAddressing {
                 @IR(counts = {IRNode.X86_SCONV_I2L, "= 0"},
                     applyIfPlatform = {"x64", "true"},
                     phase = CompilePhase.MATCHING)
-                private static int $test(#type[] arr, int i) {
+                private static #type $test(#type[] arr, int i) {
                     return arr[i];
                 }
 
@@ -128,11 +134,11 @@ public class TestArrayAddressing {
                 @IR(counts = {IRNode.X86_SCONV_I2L, "= 0"},
                     applyIfPlatform = {"x64", "true"},
                     phase = CompilePhase.MATCHING)
-                private static int $testSameOffset(#type[] arr, int i) {
+                private static #returnType $testSameOffset(#type[] arr, int i) {
                     i = Integer.min(Integer.max(i, 0), 1000);
-                    int v = arr[i];
+                    #type v = arr[i];
                     $volatileField = 42;
-                    return v + arr[i];
+                    return v #op arr[i];
                 }
 
                 @Test
@@ -140,9 +146,9 @@ public class TestArrayAddressing {
                 @IR(counts = {IRNode.X86_SCONV_I2L, "= 0"},
                     applyIfPlatform = {"x64", "true"},
                     phase = CompilePhase.MATCHING)
-                private static int $testDifferentOffset(#type[] arr, int i) {
+                private static #returnType $testDifferentOffset(#type[] arr, int i) {
                     i = Integer.min(Integer.max(i, 0), 1000);
-                    return arr[i] + arr[i + 1];
+                    return arr[i] #op arr[i + 1];
                 }
 
                 private static final int $base = (int) UNSAFE.arrayBaseOffset(#type[].class);
@@ -152,8 +158,8 @@ public class TestArrayAddressing {
                     final #type[] a = new #type[100];
                     final #type[] b = new #type[100];
                     for (int i = 0; i < a.length; i++) {
-                        a[i] = (#type) GEN_I.next().intValue();
-                        b[i] = (#type) GEN_I.next().intValue();
+                        a[i] = (#type) #valueCast;
+                        b[i] = (#type) #valueCast;
                     }
                     return new Object[] {a, b, $base + 42};
                 }
@@ -163,9 +169,9 @@ public class TestArrayAddressing {
                 @IR(counts = {IRNode.X86_SCONV_I2L, "= 1"},
                     applyIfPlatform = {"x64", "true"},
                     phase = CompilePhase.MATCHING)
-                private static int $testUnsafe(#type[] a, #type b[], int offset) {
+                private static #returnType $testUnsafe(#type[] a, #type b[], int offset) {
                     int checked = Objects.checkIndex(offset, 1000);
-                    return UNSAFE.#uMethodName(a, checked) + UNSAFE.#uMethodName(b, checked);
+                    return UNSAFE.#uMethodName(a, checked) #op UNSAFE.#uMethodName(b, checked);
                 }
                 """
             ));
