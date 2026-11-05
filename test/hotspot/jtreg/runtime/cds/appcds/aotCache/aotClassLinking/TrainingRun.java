@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary -XX:AOTMode=record should not interfere with app execution: (1) thread creation; (2) exit code
- * @bug 8351327
+ * @bug 8351327 8393591
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build TrainingRun
@@ -42,13 +42,16 @@ public class TrainingRun {
     static final String mainClass = "MyTestApp";
 
     public static void main(String[] args) throws Exception {
-        (new Tester()).run(args);
+        (new Tester(false)).run(args);
+        (new Tester(true)).run(args);
     }
 
     static class Tester extends CDSAppTester {
-        public Tester() {
-            super(mainClass);
+        boolean stressRewriter;
 
+        public Tester(boolean stressRewriter) {
+            super(mainClass);
+            this.stressRewriter = stressRewriter;
             // CDSAppTester usually wants the app to return exit value 0, but this test
             // checks whether the training run can return 2.
             setCheckExitValue(false);
@@ -57,6 +60,18 @@ public class TrainingRun {
         @Override
         public String classpath(RunMode runMode) {
             return appJar;
+        }
+
+        @Override
+        public String[] vmArgs(RunMode runMode) {
+            if (stressRewriter) {
+                return new String[] {
+                    "-XX:+IgnoreUnrecognizedVMOptions",
+                    "-XX:+StressRewriter"
+                };
+            } else {
+                return new String[0];
+            }
         }
 
         @Override
