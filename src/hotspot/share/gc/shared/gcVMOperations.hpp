@@ -229,6 +229,15 @@ class VM_CollectForMetadataAllocation: public VM_GC_Collect_Operation {
   MetaWord* result() const       { return _result; }
 };
 
+class VM_OOMDuringInitialization: public VM_Operation {
+ public:
+  virtual void doit() override;
+
+  VMOp_Type type() const override {
+    return VMOp_OOMDuringInitialization;
+  }
+};
+
 class SvcGCMarker : public StackObj {
  private:
   JvmtiGCMarker _jgcm;

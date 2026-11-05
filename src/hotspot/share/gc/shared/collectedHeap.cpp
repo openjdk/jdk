@@ -231,6 +231,16 @@ void CollectedHeap::trace_heap_after_gc(const GCTracer* gc_tracer) {
   trace_heap(GCWhen::AfterGC, gc_tracer);
 }
 
+void CollectedHeap::oom_safepoint_during_initialization() {
+  VM_OOMDuringInitialization op;
+  VMThread::execute(&op);
+  ShouldNotReachHere();
+}
+
+void CollectedHeap::oom_during_initialization() {
+  vm_exit_during_initialization("java.lang.OutOfMemoryError", "Java heap space");
+}
+
 // Default implementation, for collectors that don't support the feature.
 bool CollectedHeap::supports_concurrent_gc_breakpoints() const {
   return false;

@@ -65,6 +65,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
@@ -126,6 +127,13 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
     // Nothing to do. Tell the allocation path that we have failed to make
     // progress, and it can finally fail.
     heap->notify_gc_no_progress();
+
+    const bool allocation_failure = ShenandoahCollectorPolicy::is_allocation_failure(cause) ||
+                                    cause == GCCause::_shenandoah_upgrade_to_full_gc;
+
+    if (allocation_failure && !is_vm_created()) {
+      heap->oom_during_initialization();
+    }
   }
 
   // Regardless if progress was made, we record that we completed a full GC.

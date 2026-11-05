@@ -386,6 +386,9 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
     // Was the gc-overhead reached inside the safepoint? If so, this mutator
     // should return null as well for global consistency.
     if (_gc_overhead_counter >= GCOverheadLimitThreshold) {
+      if (!is_tlab && !is_vm_created()) {
+        oom_safepoint_during_initialization();
+      }
       return nullptr;
     }
 
