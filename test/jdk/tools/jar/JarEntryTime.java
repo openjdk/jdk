@@ -25,30 +25,22 @@
  * @test
  * @bug 4225317 6969651 8277422
  * @modules jdk.jartool
+ * @library /test/lib
  * @summary Check extracted files have date as per those in the .jar file
  */
+
+import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
 import java.io.PrintWriter;
 import java.nio.file.attribute.FileTime;
-import java.time.ZoneId;
-import java.util.Date;
-import java.util.TimeZone;
-import java.util.spi.ToolProvider;
+import java.util.stream.Stream;
 
 public class JarEntryTime {
-    static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
-        .orElseThrow(() ->
-            new RuntimeException("jar tool not found")
-        );
-
-
     // ZipEntry's mod date has 2 seconds precision: give extra time to
     // allow for e.g. rounding/truncation and networked/samba drives.
     static final long PRECISION = 10000L;
-
-    static final TimeZone TZ = TimeZone.getDefault();
-    static final boolean DST = TZ.inDaylightTime(new Date());
 
     static boolean cleanup(File dir) throws Throwable {
         boolean rc = true;
@@ -62,23 +54,21 @@ public class JarEntryTime {
     }
 
     static void extractJar(File jarFile, boolean useExtractionTime) throws Throwable {
-        String javahome = System.getProperty("java.home");
-        String jarcmd = javahome + File.separator + "bin" + File.separator + "jar";
-        String[] args;
+        jar(useExtractionTime, "xf", jarFile.getName());
+    }
+
+    static void createJar(File jarFile, File dirOuter) throws Throwable {
+        jar(false, "cf", jarFile.getName(), dirOuter.getName());
+    }
+
+    private static void jar(boolean useExtractionTime, String... args) throws Throwable {
+        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jar");
+        launcher.addVMArg("-Duser.timezone=UTC");
         if (useExtractionTime) {
-            args = new String[] {
-                jarcmd,
-                "-J-Dsun.tools.jar.useExtractionTime=true",
-                "xf",
-                jarFile.getName() };
-        } else {
-            args = new String[] {
-                jarcmd,
-                "xf",
-                jarFile.getName() };
+            launcher.addVMArg("-Dsun.tools.jar.useExtractionTime=true");
         }
-        Process p = Runtime.getRuntime().exec(args);
-        check(p != null && (p.waitFor() == 0));
+        Stream.of(args).forEach(launcher::addToolArg);
+        ProcessTools.executeCommand(launcher.getCommand()).shouldHaveExitValue(0);
     }
 
     public static void realMain(String[] args) throws Throwable {
@@ -93,14 +83,6 @@ public class JarEntryTime {
         cleanup(dirOuter);
         jarFile.delete();
         testFile.delete();
-
-        var date = new Date();
-        var defZone = ZoneId.systemDefault();
-        if (defZone.getRules().getTransition(
-                date.toInstant().atZone(defZone).toLocalDateTime()) != null) {
-            System.out.println("At the offset transition.  JarEntryTime test skipped.");
-            return;
-        }
 
         /* Create a directory structure
          * outer/
@@ -128,8 +110,7 @@ public class JarEntryTime {
         check(fileInner.setLastModified(earlier));
 
         // Make a jar file from that directory structure
-        check(JAR_TOOL.run(System.out, System.err,
-                           "cf", jarFile.getName(), dirOuter.getName()) == 0);
+        createJar(jarFile, dirOuter);
         check(jarFile.exists());
 
         check(cleanup(dirInner));
@@ -176,10 +157,6 @@ public class JarEntryTime {
     }
 
     static void checkFileTime(long now, long original) {
-        if (isTimeSettingChanged()) {
-            return;
-        }
-
         if (Math.abs(now - original) > PRECISION) {
             System.out.format("Extracted to %s, expected to be close to %s%n",
                 FileTime.fromMillis(now), FileTime.fromMillis(original));
@@ -188,10 +165,6 @@ public class JarEntryTime {
     }
 
     static void checkFileTime(long start, long now, long end) {
-        if (isTimeSettingChanged()) {
-            return;
-        }
-
         if (now < start || now > end) {
             System.out.format("Extracted to %s, "
                               + "expected to be after %s and before %s%n",
@@ -200,12 +173,6 @@ public class JarEntryTime {
                               FileTime.fromMillis(end));
             fail();
         }
-    }
-
-    private static boolean isTimeSettingChanged() {
-        TimeZone currentTZ = TimeZone.getDefault();
-        boolean currentDST = currentTZ.inDaylightTime(new Date());
-        return (!currentTZ.equals(TZ) || currentDST != DST);
     }
 
     //--------------------- Infrastructure ---------------------------
