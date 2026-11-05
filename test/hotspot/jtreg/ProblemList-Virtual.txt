@@ -86,6 +86,10 @@ vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemor
 # to make progress when all other threads are currently suspended.
 vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.java 8338713 generic-all
 
+###
+# PopFrame with the caller frozen in a stack chunk is not supported on these platforms yet.
+vmTestbase/nsk/jdwp/StackFrame/PopFrames/popframes001/TestDescription.java 8396838 linux-ppc64le,aix-ppc64,linux-s390x
+
 #############################################################################
 
 # Preview project specific failures go here at the end of the file.

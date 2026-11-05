@@ -27,6 +27,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "interpreter/interpreter.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -2548,6 +2549,12 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
       return;
     }
     is_interpreted[frame_count] = vfs.is_interpreted_frame();
+    if (is_interpreted[frame_count] && frame_count == 1 && vfs.reg_map()->in_cont() &&
+        Interpreter::cont_popframe_reexecute_entry() == nullptr) {
+      // No entry on this platform to reexecute the invoke of a frozen interpreted caller.
+      _result = JVMTI_ERROR_OPAQUE_FRAME;
+      return;
+    }
     if (!is_interpreted[frame_count]) {
       javaVFrame* jvf = vfs.asJavaVFrame();
       // The frame is frozen in a stack chunk on the heap, not on the thread stack.

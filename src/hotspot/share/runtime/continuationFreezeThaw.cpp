@@ -1777,6 +1777,7 @@ static void popframe_reexecute_invoke(JavaThread* thread, frame& f) {
   if (!popframe_reexecutes_interpreted_caller(thread, f)) {
     return;
   }
+  assert(Interpreter::cont_popframe_reexecute_entry() != nullptr, "PopFrame should have rejected this frame");
   ContinuationHelper::Frame::patch_pc(f, Interpreter::cont_popframe_reexecute_entry());
   popframe_restore_args(thread, f);
 }
