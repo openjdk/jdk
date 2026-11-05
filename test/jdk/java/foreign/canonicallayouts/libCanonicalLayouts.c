@@ -21,6 +21,12 @@
  * questions.
  */
 
+#ifdef _AIX
+// The JDK prefers linux compatible double alignment by default.
+// Also see usage of #pragma align (natural)
+typedef double linux_double __attribute__((aligned(8)));
+#endif
+
 #include "export.h"
 
 #include <stdint.h>
@@ -48,7 +54,11 @@ CHECKS_ALL(T, NAME) \
 
 CHECKS_ALL(bool, bool)
 CHECKS_ALL(float, float)
+#ifdef _AIX
+CHECKS_ALL(linux_double, double)
+#else
 CHECKS_ALL(double, double)
+#endif
 CHECKS_ALL(void*, void_star)
 
 CHECKS_INTEGRAL(char, char)
