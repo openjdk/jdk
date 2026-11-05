@@ -39,6 +39,26 @@
 #include "runtime/globals_extension.hpp"
 #include "utilities/quickSort.hpp"
 
+ShenandoahHeuristicsFlag::Heuristic ShenandoahHeuristicsFlag::_value = Heuristic::ADAPTIVE;
+void ShenandoahHeuristicsFlag::initialize() {
+  if (ShenandoahGCHeuristics == nullptr) {
+    vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
+  }
+  if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
+    _value = Heuristic::ADAPTIVE;
+  } else if (strcmp(ShenandoahGCHeuristics, "passive") == 0) {
+    _value = Heuristic::PASSIVE;
+  } else if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
+    _value = Heuristic::AGGRESSIVE;
+  } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
+    _value = Heuristic::STATIC;
+  } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
+    _value = Heuristic::COMPACT;
+  } else {
+    vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
+  }
+}
+
 // sort by decreasing garbage (so most garbage comes first)
 int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
   if (a.get_garbage() > b.get_garbage()) {
