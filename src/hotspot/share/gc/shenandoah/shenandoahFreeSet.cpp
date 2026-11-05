@@ -1801,7 +1801,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
       if (i == beg) {
         r->make_humongous_start();
       } else {
-        r->make_humongous_cont();
+        r->make_humongous_cont(beg);
       }
       if ((i == end) && (used_words_in_last_region > 0)) {
         r->set_top(r->bottom() + used_words_in_last_region);
@@ -2942,22 +2942,21 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
                              /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
                              /* UnaffiliatedChangesAreYoungNeutral */ false>();
   _partitions.assert_bounds();
-  if (LogTarget(Info, gc, free)::is_enabled()) {
-    size_t old_reserve = _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector);
-    if (old_reserve < to_reserve_old) {
-      log_info(gc, free)("Wanted " PROPERFMT " for old reserve, but only reserved: " PROPERFMT,
-                         PROPERFMTARGS(to_reserve_old), PROPERFMTARGS(old_reserve));
-      assert(_heap->mode()->is_generational(), "to_old_reserve > 0 implies generational mode");
-      reduce_old_reserve(old_reserve, to_reserve_old);
+
+  const size_t old_reserve = _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector);
+  if (old_reserve < to_reserve_old) {
+    log_info(gc, free)("Wanted " PROPERFMT " for old reserve, but only reserved: " PROPERFMT,
+                       PROPERFMTARGS(to_reserve_old), PROPERFMTARGS(old_reserve));
+    assert(_heap->mode()->is_generational(), "to_old_reserve > 0 implies generational mode");
+    reduce_old_reserve(old_reserve, to_reserve_old);
+  }
+  const size_t reserve = _partitions.available_in(ShenandoahFreeSetPartitionId::Collector);
+  if (reserve < to_reserve) {
+    if (_heap->mode()->is_generational()) {
+      reduce_young_reserve(reserve, to_reserve);
     }
-    size_t reserve = _partitions.available_in(ShenandoahFreeSetPartitionId::Collector);
-    if (reserve < to_reserve) {
-      if (_heap->mode()->is_generational()) {
-        reduce_young_reserve(reserve, to_reserve);
-      }
-      log_info(gc, free)("Wanted " PROPERFMT " for young reserve, but only reserved: " PROPERFMT,
-                         PROPERFMTARGS(to_reserve), PROPERFMTARGS(reserve));
-    }
+    log_info(gc, free)("Wanted " PROPERFMT " for young reserve, but only reserved: " PROPERFMT,
+                       PROPERFMTARGS(to_reserve), PROPERFMTARGS(reserve));
   }
   return mutator_allocatable_words;
 }
