@@ -35,6 +35,7 @@ import jdk.test.lib.jfr.Events;
 
 /*
  * @test
+ * @bug 8396523
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
