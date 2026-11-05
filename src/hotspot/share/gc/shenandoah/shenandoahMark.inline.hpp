@@ -343,11 +343,11 @@ void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, Shenand
 
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   oop obj = CompressedOops::decode_not_null(o);
-  shenandoah_assert_not_forwarded(p, obj);
-  shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
+  shenandoah_assert_marking_not_forwarded(p, obj);
+  shenandoah_assert_marking_not_in_cset_except(p, obj, heap->cancelled_gc());
   if (in_generation<GENERATION>(heap, obj)) {
     mark_ref(q, mark_context, weak, obj);
-    shenandoah_assert_marked(p, obj);
+    shenandoah_assert_marking_marked(p, obj);
     if (REDIRTY && heap->has_affiliation(p, OLD_GENERATION)) {
       // We are redirtying the remembered set, the object iterator
       // may visit class metadata that lives outside the heap so we cannot
@@ -362,7 +362,7 @@ void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, Shenand
   } else if (old_q != nullptr) {
     // Young mark, bootstrapping old_q or concurrent with old_q marking.
     mark_ref(old_q, mark_context, weak, obj);
-    shenandoah_assert_marked(p, obj);
+    shenandoah_assert_marking_marked(p, obj);
   } else if (GENERATION == OLD) {
     // Old mark, found a young pointer.
     if (heap->is_in_reserved(p)) {
@@ -391,12 +391,12 @@ void ShenandoahMark::mark_non_generational_ref(T* p, ShenandoahObjToScanQueue* q
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
 
-    shenandoah_assert_not_forwarded(p, obj);
-    shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc() || ShenandoahHeap::heap()->has_self_forwarded_objects());
+    shenandoah_assert_marking_not_forwarded(p, obj);
+    shenandoah_assert_marking_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc() || ShenandoahHeap::heap()->has_self_forwarded_objects());
 
     mark_ref(q, mark_context, weak, obj);
 
-    shenandoah_assert_marked(p, obj);
+    shenandoah_assert_marking_marked(p, obj);
   }
 }
 

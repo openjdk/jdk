@@ -61,12 +61,19 @@ public:
   static void assert_in_heap_bounds_or_null(void* interior_loc, oop obj, const char* file, int line);
   static void assert_in_correct_region(void* interior_loc, oop obj, const char* file, int line);
 
+  static void assert_address_correct(void* interior_loc, oop obj, const char* file, int line);
   static void assert_correct(void* interior_loc, oop obj, const char* file, int line);
   static void assert_forwarded(void* interior_loc, oop obj, const char* file, int line);
   static void assert_not_forwarded(void* interior_loc, oop obj, const char* file, int line);
   static void assert_marked(void* interior_loc, oop obj, const char* file, int line);
-  static void assert_marked_weak(void* interior_loc, oop obj, const char* file, int line);
-  static void assert_marked_strong(void* interior_loc, oop obj, const char* file, int line);
+
+  // Escape analysis may omit storestore barrier between store an initialization of newly allocated object,
+  // so we can only use the mark word of this object if we know it was allocated before marking started.
+  // This group of assertions should only be used during marking.
+  static void assert_marking_not_forwarded(void* interior_loc, oop obj, const char* file, int line);
+  static void assert_marking_not_in_cset(void* interior_loc, oop obj, const char* file, int line);
+  static void assert_marking_marked(void* interior_loc, oop obj, const char* file, int line);
+
   static void assert_bitmap_clear_above_top(ShenandoahHeapRegion* region);
 
   // Assert that marking is complete for the generation where this obj resides
@@ -126,19 +133,12 @@ public:
 #define shenandoah_assert_marked(interior_loc, obj) \
                     ShenandoahAsserts::assert_marked(interior_loc, obj, __FILE__, __LINE__)
 
-#define shenandoah_assert_marked_weak_if(interior_loc, obj, condition) \
-  if (condition)    ShenandoahAsserts::assert_marked_weak(interior_loc, obj, __FILE__, __LINE__)
-#define shenandoah_assert_marked_weak_except(interior_loc, obj, exception) \
-  if (!(exception)) ShenandoahAsserts::assert_marked_weak(interior_loc, obj, __FILE__, __LINE__)
-#define shenandoah_assert_marked_weak(interior_loc, obj) \
-                    ShenandoahAsserts::assert_marked_weak(interior_loc, obj, __FILE__, __LINE__)
-
-#define shenandoah_assert_marked_strong_if(interior_loc, obj, condition) \
-  if (condition)    ShenandoahAsserts::assert_marked_strong(interior_loc, obj, __FILE__, __LINE__)
-#define shenandoah_assert_marked_strong_except(interior_loc, obj, exception) \
-  if (!(exception)) ShenandoahAsserts::assert_marked_strong(interior_loc, obj, __FILE__, __LINE__)
-#define shenandoah_assert_marked_strong(interior_loc, obj) \
-                    ShenandoahAsserts::assert_marked_strong(interior_loc, obj, __FILE__, __LINE__)
+#define shenandoah_assert_marking_not_forwarded(interior_loc, obj) \
+                    ShenandoahAsserts::assert_marking_not_forwarded(interior_loc, obj, __FILE__, __LINE__)
+#define shenandoah_assert_marking_not_in_cset_except(interior_loc, obj, exception) \
+  if (!(exception)) ShenandoahAsserts::assert_marking_not_in_cset(interior_loc, obj, __FILE__, __LINE__)
+#define shenandoah_assert_marking_marked(interior_loc, obj) \
+                    ShenandoahAsserts::assert_marking_marked(interior_loc, obj, __FILE__, __LINE__)
 
 #define shenandoah_assert_clear_above_top(region) \
                     ShenandoahAsserts::assert_bitmap_clear_above_top(region)
@@ -225,13 +225,9 @@ public:
 #define shenandoah_assert_marked_except(interior_loc, obj, exception)
 #define shenandoah_assert_marked(interior_loc, obj)
 
-#define shenandoah_assert_marked_weak_if(interior_loc, obj, condition)
-#define shenandoah_assert_marked_weak_except(interior_loc, obj, exception)
-#define shenandoah_assert_marked_weak(interior_loc, obj)
-
-#define shenandoah_assert_marked_strong_if(interior_loc, obj, condition)
-#define shenandoah_assert_marked_strong_except(interior_loc, obj, exception)
-#define shenandoah_assert_marked_strong(interior_loc, obj)
+#define shenandoah_assert_marking_not_forwarded(interior_loc, obj)
+#define shenandoah_assert_marking_not_in_cset_except(interior_loc, obj, exception)
+#define shenandoah_assert_marking_marked(interior_loc, obj)
 
 #define shenandoah_assert_clear_above_top(region)
 #define shenandoah_assert_mark_complete(obj)
