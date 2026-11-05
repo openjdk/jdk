@@ -376,12 +376,14 @@ void handler(int sig, siginfo_t* info, void* ucontext) {
             return;
         }
     }
-    warn("revival: handler: si_addr = %p : not handled.", addr);
-    diagWait();
     if (logLevel >= LOG_DEBUG) {
+        warn("revival: handler: si_addr = %p : not handled.", addr);
+        warn("(bad address: %p)", addr);
+        diagWait();
         abort();
+    } else {
+        error("(bad address: %p)", addr);
     }
-    exitForRetry();
 }
 
 /**
@@ -600,7 +602,13 @@ void copy_and_relocate(const char* srcfile, const char* destdir, uint64_t addres
     if (p != nullptr) {
         snprintf(p, PATH_MAX - 1, ".debuginfo"); // Append to debuginfo_path in place of .so
         if (file_exists_pd(debuginfo_path)) {
-            snprintf(debuginfo_copy_path, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s.debuginfo", destdir, basefilename);
+            char basefile_no_ext[20];
+            strncpy(basefile_no_ext, basefilename, 19);
+            p = strstr(basefile_no_ext, ".");
+            if (p != nullptr) {
+                *p = 0; // terminate on the . and will append .debuginfo
+            }
+            snprintf(debuginfo_copy_path, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s.debuginfo", destdir, basefile_no_ext);
             logv("Copying debuginfo %s to %s", debuginfo_path, debuginfo_copy_path);
             copy_file_pd(debuginfo_path, debuginfo_copy_path);
         }
@@ -626,15 +634,6 @@ void copy_and_relocate(ELFFile core, const char* destdir) {
     }
 }
 
-/**
- * Create a "core.revival" directory containing what's needed to revive a corefile:
- *
- *  - A copy of libjvm.so, which this method then relocates to load at the same address as it was in the corefile
- *  - "core.mappings" a text file with instructions on which segments to load from the core
- *  - "jvm.symbols" a text file with information about important symbols in libjvm.so
- *
- * Also take a copy of libjvm.debuginfo if present.
- */
 int create_revival_cache_pd(const char* corename, const char* revival_dirname, const char* libdirs) {
     logv("create_revival_cache_pd");
 

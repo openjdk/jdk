@@ -55,7 +55,7 @@
 
 // Filenames
 #define MAPPINGS_FILENAME "core.mappings"
-#define SYMBOLS_FILENAME "jvm.symbols"
+#define SYMBOLS_FILENAME "core.symbols"
 #define REVIVAL_SUFFIX ".revival"
 
 // Essential symbols to resolve are defined in "SYM_" macros.
@@ -316,7 +316,7 @@ int create_revival_cache_pd(const char* corename, const char* dirname, const cha
 int mappings_file_create(const char* filename, const char* corename);
 
 /**
- * Create jvm.symbols file
+ * Create symbols file.
  * Return the fd so other code can write the symbols lines.
  */
 int symbols_file_create(const char* filename);

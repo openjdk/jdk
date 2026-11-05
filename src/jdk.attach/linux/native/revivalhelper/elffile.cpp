@@ -183,7 +183,7 @@ ELFFile::ELFFile(const char* filename, const char* libdirs, bool write) {
         sh = nullptr; // cores don't usually have Sections
     }
 
-    logd("ELFFile: %s hdr = %p phoff = 0x%lx sh_off = 0x%lx   ph = %p sh = %p",
+    logd("ELFFile: %s hdr = %p phoff = 0x%lx sh_off = 0x%lx ph = %p sh = %p",
          filename, hdr, hdr->e_phoff, hdr->e_shoff, ph, sh);
 }
 
@@ -670,9 +670,9 @@ std::list<Segment> ELFFile::get_sharedlib_mappings() {
 }
 
 void ELFFile::write_mem_mappings(int mappings_fd) {
-    // For each Program Header, create a Segment, call Segment::write_mapping(int fd) to write an "M" entry.
-    // Skip if PH is trivial, i.e. filesize or memsize is zero.
-    // Skip if PH is non-writable, and clashes with a library mapping (i.e. we only want library data).
+    // For each Program Header: create a Segment, call Segment::write_mapping(int fd) to write an "M" entry.
+    // Skip if PH is trivial, i.e. filesize or memsize is zero, or is read-only and clashes with a library mapping
+    // (we only want the data from libraries).
     logv("write_mem_mappings");
     if (!is_core()) {
         warn("write_mem_mappings: Not writing mappings for non-core file: %s", filename);
@@ -683,15 +683,14 @@ void ELFFile::write_mem_mappings(int mappings_fd) {
     int n_skipped = 0;
     Elf64_Phdr* phdr = ph;
     for (int i = 0; i < hdr->e_phnum; i++) {
+        if (phdr->p_vaddr >= max_user_vaddr_pd()) {
+            break; // Kernel mapping?  Not something we can map in.  Phdrs are in ascending address order.
+        }
         if (is_unwanted_phdr(phdr)) {
             n_skipped++;
             phdr = next_ph(phdr);
             continue;
         }
-        if (phdr->p_vaddr >= max_user_vaddr_pd()) {
-            break; // Kernel mapping?  Not something we can map in.  Phdrs are in ascending address order.
-        }
-
         bool skip = false;
         if (!(phdr->p_flags & PF_W)) {
             std::list<Segment>::iterator iter;
@@ -699,18 +698,16 @@ void ELFFile::write_mem_mappings(int mappings_fd) {
                 Segment lib = *iter;
                 if (is_inside(phdr, lib.start(), lib.end())) {
                     logd("Skipping core PH 0x%lx - 0x%lx due to overlap with %s", phdr->p_vaddr, phdr->p_vaddr + phdr->p_memsz, lib.name);
+                    n_skipped++;
                     skip = true;
                     break;
                 }
             }
-            if (skip) {
-                n_skipped++;
-                phdr = next_ph(phdr);
-                continue;
-            }
         }
-        Segment s((void*) phdr->p_vaddr, phdr->p_memsz, phdr->p_offset, phdr->p_filesz);
-        s.write_mapping(mappings_fd, "M");
+        if (!skip) {
+            Segment s((void*) phdr->p_vaddr, phdr->p_memsz, phdr->p_offset, phdr->p_filesz);
+            s.write_mapping(mappings_fd, "M");
+        }
         phdr = next_ph(phdr);
     }
     logv("write_mem_mappings done.  Skipped = %i", n_skipped);

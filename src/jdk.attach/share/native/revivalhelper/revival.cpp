@@ -458,9 +458,10 @@ int mappings_file_read(const char* corename, const char* dirname, const char* ma
 
     // Read and process the mappings:
     while (1) {
-        if (strcmp(corename, core_filename)) {
-            error("revival: line %d: core file named corrupted: copy %s != param 0x%llx: %s",
+        if (strncmp(corename, core_filename, PATH_MAX)) {
+            warn("revival: line %d: core file named corrupted: copy %s != param 0x%llx: %s",
                   lines, core_filename, (unsigned long long) &corename, corename);
+            exitForRetry();
         }
 
         lines++;
@@ -584,7 +585,7 @@ void* symbol_resolve_from_symbol_file(const char* sym) {
     if (!revivaldir) {
         error("symbol_resolve_from_symbol_file: call revive_image first.");
     }
-    snprintf(buf, PATH_MAX - 1, "%s/%s", revivaldir, SYMBOLS_FILENAME);
+    snprintf(buf, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s", revivaldir, SYMBOLS_FILENAME);
     int e = 0;
     void* addr = (void*) -1;
     FILE* f = fopen((char*) buf, "r");
@@ -642,8 +643,8 @@ void* symbol(const char* sym) {
 }
 
 /**
- * Resolve a symbol from jvm.symbols, and call it.
- * Use the symbol() function which will try using jvm.symbols first, then a live lookup.
+ * Resolve a symbol, then call it.
+ * Use the symbol() function which will try using symbols file first, then a live lookup.
  */
 void* symbol_call(const char* sym) {
     void* p = symbol(sym);
@@ -800,7 +801,7 @@ int mappings_file_create(const char* dirname, const char* corename) {
     // Shared libraries written later:
     // L jvm addresshex 0   (0 is placeholder for possible checksum)
 
-    snprintf(buf, BUFLEN - 1, "%s%s", dirname, "/" MAPPINGS_FILENAME);
+    snprintf(buf, BUFLEN - 1, "%s" FILE_SEPARATOR "%s", dirname, MAPPINGS_FILENAME);
     logv("mappings_file_create: %s", buf);
 #ifdef WINDOWS
     int fd = _open(buf, _O_CREAT | _O_WRONLY | _O_TRUNC, _S_IREAD | _S_IWRITE);
@@ -826,7 +827,7 @@ int mappings_file_create(const char* dirname, const char* corename) {
 
 int symbols_file_create(const char* dirname) {
     char buf[PATH_MAX];
-    snprintf(buf, PATH_MAX - 1, "%s%s", dirname, "/" SYMBOLS_FILENAME);
+    snprintf(buf, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s", dirname, SYMBOLS_FILENAME);
     logv("symbols_file_create: %s", buf);
 #ifdef WINDOWS
     int fd = _open(buf, _O_CREAT | _O_WRONLY | _O_TRUNC, _S_IREAD | _S_IWRITE);
@@ -989,7 +990,7 @@ void version_check(const char* corename, const char* directory, const char* file
 }
 
 /**
- * Check presence of 'core.mappings' in revival directory, and copy of JVM.
+ * Check presence of mappings file in revival directory, and copy of JVM.
  * If either are missing, revival cache is rebuilt.
  */
 bool revival_cache_exists(char* dirname, const char* mappings_filename) {
