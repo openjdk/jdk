@@ -33,8 +33,8 @@ CgroupV2Controller::CgroupV2Controller(char* mount_path,
                                        char *cgroup_path,
                                        bool ro) :  _read_only(ro),
                                                    _path(construct_path(mount_path, cgroup_path)) {
-  _cgroup_path = os::strdup(cgroup_path);
-  _mount_point = os::strdup(mount_path);
+  _cgroup_path = os::strdup(cgroup_path, mtInternal);
+  _mount_point = os::strdup(mount_path, mtInternal);
 }
 // Shallow copy constructor
 CgroupV2Controller::CgroupV2Controller(const CgroupV2Controller& o) :
@@ -168,13 +168,13 @@ bool CgroupV2Subsystem::is_containerized() {
 char* CgroupV2Subsystem::cpu_cpuset_cpus() {
   char cpus[1024];
   CONTAINER_READ_STRING_CHECKED(unified(), "/cpuset.cpus", "cpuset.cpus", cpus, 1024);
-  return os::strdup(cpus);
+  return os::strdup(cpus, mtInternal);
 }
 
 char* CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
   char mems[1024];
   CONTAINER_READ_STRING_CHECKED(unified(), "/cpuset.mems", "cpuset.mems", mems, 1024);
-  return os::strdup(mems);
+  return os::strdup(mems, mtInternal);
 }
 
 bool CgroupV2CpuController::cpu_period(int& result) {
@@ -354,7 +354,7 @@ void CgroupV2Controller::set_subsystem_path(const char* cgroup_path) {
   if (_cgroup_path != nullptr) {
     os::free(_cgroup_path);
   }
-  _cgroup_path = os::strdup(cgroup_path);
+  _cgroup_path = os::strdup(cgroup_path, mtInternal);
   if (_path != nullptr) {
     os::free(_path);
   }
@@ -387,7 +387,7 @@ char* CgroupV2Controller::construct_path(char* mount_path, const char* cgroup_pa
   if (strcmp(cgroup_path, "/") != 0) {
     ss.print_raw(cgroup_path);
   }
-  return os::strdup(ss.base());
+  return os::strdup(ss.base(), mtInternal);
 }
 
 /* pids_max

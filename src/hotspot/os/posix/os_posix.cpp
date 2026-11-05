@@ -322,7 +322,7 @@ int os::create_file_for_heap(const char* dir) {
   int fd;
 
 #if defined(LINUX) && defined(O_TMPFILE)
-  char* native_dir = os::strdup(dir);
+  char* native_dir = os::strdup(dir, mtInternal);
   if (native_dir == nullptr) {
     vm_exit_during_initialization(err_msg("strdup failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
@@ -854,7 +854,7 @@ void os::dll_unload(void *lib) {
   char* l_pathdup = nullptr;
   l_path = os::Linux::dll_path(lib);
   if (l_path != nullptr) {
-    l_path = l_pathdup = os::strdup(l_path);
+    l_path = l_pathdup = os::strdup(l_path, mtInternal);
   }
 #endif  // LINUX
 

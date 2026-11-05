@@ -54,7 +54,7 @@ public:
                     Alt_Post_Visit   // alternative post-visit path
   };
 
-  class MStack: public Node_Stack {
+  class MStack: public Node_Stack<Node> {
   public:
     MStack(int size) : Node_Stack(size) { }
 
@@ -82,7 +82,7 @@ private:
   ResourceArea _states_arena;
 
   // Map old nodes to new nodes
-  Node_List   _new_nodes;
+  Node_List<Node> _new_nodes;
 
   VectorSet   _visited;         // Visit bits
 
@@ -108,10 +108,6 @@ private:
   // Map dense opcode number to info on when rule is swallowed constant.
   const bool *_swallowed;
 
-  // Map dense rule number to determine if this is an instruction chain rule
-  const uint _begin_inst_chain_rule;
-  const uint _end_inst_chain_rule;
-
   // We want to clone constants and possible CmpI-variants.
   // If we do not clone CmpI, then we can have many instances of
   // condition codes alive at once.  This is OK on some chips and
@@ -133,13 +129,13 @@ private:
 
   Node *transform( Node *dummy );
 
-  Node_List _projection_list;        // For Machine nodes killing many values
+  Node_List<MachProjNode> _projection_list;        // For Machine nodes killing many values
 
-  Node_Array _shared_nodes;
+  Node_Array<MachNode> _shared_nodes;
 
 #ifndef PRODUCT
-  Node_Array _old2new_map;    // Map roots of ideal-trees to machine-roots
-  Node_Array _new2old_map;    // Maps machine nodes back to ideal
+  Node_Array<const Node> _old2new_map;    // Map roots of ideal-trees to machine-roots
+  Node_Array<Node> _new2old_map;    // Maps machine nodes back to ideal
   VectorSet _reused;          // Ideal IGV identifiers reused by machine nodes
 #endif // !PRODUCT
 
@@ -169,6 +165,7 @@ private:
   MachNode* _mach_null;
 
   void handle_precedence_edges(Node* n, MachNode *mach);
+  void combine_adr_type(const Node* n, MachNode* mach) const;
 
 public:
   int LabelRootDepth;
@@ -178,7 +175,6 @@ public:
   RegMask *idealreg2debugmask  [_last_machine_leaf];
   void init_spill_mask( Node *ret );
   // Convert machine register number to register mask
-  static uint mreg2regmask_max;
   static RegMask mreg2regmask[];
   static RegMask STACK_ONLY_mask;
   static RegMask caller_save_regmask;
@@ -204,8 +200,6 @@ public:
   static const char *regName[];
   // Machine register encodings
   static const unsigned char _regEncode[];
-  // Machine Node names
-  const char **_ruleName;
   // Rules that are cheaper to rematerialize than to spill
   static const uint _begin_rematerialize;
   static const uint _end_rematerialize;
@@ -233,24 +227,20 @@ public:
 
   // List of IfFalse or IfTrue Nodes that indicate a taken null test.
   // List is valid in the post-matching space.
-  Node_List _null_check_tests;
+  Node_List<Node> _null_check_tests;
   void collect_null_checks( Node *proj, Node *orig_proj );
   void validate_null_checks( );
 
   Matcher();
 
   // Get a projection node at position pos
-  Node* get_projection(uint pos) {
+  MachProjNode* get_projection(uint pos) {
     return _projection_list[pos];
   }
 
   // Push a projection node onto the projection list
-  void push_projection(Node* node) {
+  void push_projection(MachProjNode* node) {
     _projection_list.push(node);
-  }
-
-  Node* pop_projection() {
-    return _projection_list.pop();
   }
 
   // Number of nodes in the projection list

@@ -47,7 +47,7 @@ static Node* ideal_mem_intrinsic_node(PhaseGVN* phase, bool can_reshape, Node* n
   }
 
   // If mem input is a MergeMem, get the desired slice
-  if (const TypePtr* adr_type = n->adr_type(); can_reshape && adr_type != TypePtr::BOTTOM) {
+  if (const TypePtr* adr_type = n->in_adr_type(); can_reshape && adr_type != TypePtr::BOTTOM) {
     Node* mem = n->in(MemNode::Memory);
     uint alias_idx = phase->C->get_alias_index(adr_type);
     Node* new_mem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(alias_idx) : mem;

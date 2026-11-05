@@ -482,14 +482,14 @@ void ZBarrierSetC2::analyze_dominating_barriers() const {
   Compile* const C = Compile::current();
   PhaseCFG* const cfg = C->cfg();
 
-  Node_List loads;
-  Node_List load_dominators;
+  Node_List<MachNode> loads;
+  Node_List<Node> load_dominators;
 
-  Node_List stores;
-  Node_List store_dominators;
+  Node_List<MachNode> stores;
+  Node_List<Node> store_dominators;
 
-  Node_List atomics;
-  Node_List atomic_dominators;
+  Node_List<MachNode> atomics;
+  Node_List<Node> atomic_dominators;
 
   // Step 1 - Find accesses and allocations, and track them in lists
   for (uint i = 0; i < cfg->number_of_blocks(); ++i) {

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CIVALUEKLASS_HPP
-#define SHARE_VM_CI_CIVALUEKLASS_HPP
+#ifndef SHARE_CI_CIVALUEKLASS_HPP
+#define SHARE_CI_CIVALUEKLASS_HPP
 
 #include "ci/ciInstanceKlass.hpp"
 #include "oops/valueKlass.hpp"
@@ -83,7 +83,8 @@ public:
   int field_map_offset() const;
   ciConstant get_field_map() const;
   ciConstant get_null_reset_value();
+  int get_null_reset_value_offset();
   ArrayDescription array_description_of_array_properties(const ArrayProperties&);
 };
 
-#endif // SHARE_VM_CI_CIVALUEKLASS_HPP
+#endif // SHARE_CI_CIVALUEKLASS_HPP
