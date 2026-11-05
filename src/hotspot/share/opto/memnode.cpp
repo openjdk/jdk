@@ -497,6 +497,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
     Node* frame = igvn->transform(new ParmNode(phase->C->start(), TypeFunc::FramePtr));
     Node* halt = igvn->transform(new HaltNode(ctl, frame, "unsafe off-heap access with zero address"));
     phase->C->root()->add_req(halt);
+    igvn->_worklist.push(phase->C->root());
     return this;
   }
 
@@ -2496,7 +2497,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
       }
       if (klass->is_flat_array_klass() && tkls->offset() == in_bytes(FlatArrayKlass::layout_kind_offset())) {
         assert(Opcode() == Op_LoadI, "must load an int from _layout_kind");
-        return TypeInt::make(static_cast<jint>(klass->as_flat_array_klass()->layout_kind()));
+        return TypeInt::make(static_cast<jint>(klass->as_flat_array_klass()->flat_layout().layout_kind()));
       }
       // Class encoding and some class's values may change between runs.
       // Force loading them when AOT code is generated.

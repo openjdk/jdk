@@ -70,6 +70,7 @@ compiler/c2/aarch64/TestStaticCallStub.java 8359963 generic-aarch64
 compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch64
 
 compiler/igvn/TestIncorrectDeadPathTypeNode.java 8392354 generic-all
+compiler/rangechecks/TestFoldComparesFuzzer.java 8396524 generic-all
 
 #############################################################################
 
@@ -87,6 +88,8 @@ gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 83869
 gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
+gc/shenandoah/generational/TestGenerationalReferenceProcessing.java#young 8396415 generic-all
+gc/shenandoah/generational/TestGenerationalReferenceProcessing.java#young-no-compressed-oops 8396415 generic-all
 
 #############################################################################
 
