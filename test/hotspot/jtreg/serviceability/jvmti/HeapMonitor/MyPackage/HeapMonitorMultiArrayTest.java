@@ -53,7 +53,8 @@ public class HeapMonitorMultiArrayTest {
     int expectedNumber = iterations * allocationsPerIteration;
 
     // Other allocations in the window get sampled too.
-    if (!HeapMonitor.statsHaveExpectedNumberSamples(expectedNumber, 10)) {
+    if (sampledEvents < expectedNumber ||
+        !HeapMonitor.statsHaveExpectedNumberSamples(expectedNumber, 10)) {
       throw new RuntimeException("Number of samples (" + sampledEvents + ") not within 10% of the expected ("
           + expectedNumber + ")");
     }
