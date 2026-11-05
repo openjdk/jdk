@@ -4111,10 +4111,10 @@ void os::Linux::large_page_init() {
     HugePages::set_requested(UseLargePages);
   }
 
-  // Record if the user requested THP to be on or off, unless large pages has
-  // been turned completely off.
-  if (!FLAG_IS_DEFAULT(UseTransparentHugePages) && !HugePages::is_requested_off()) {
-    HugePages::set_thp_requested(UseTransparentHugePages);
+  // Record if the user requested THP to be on or off.
+  if (!FLAG_IS_DEFAULT(UseTransparentHugePages)) {
+    // Completely turning off huge pages takes precedence over the THP flag.
+    HugePages::set_thp_requested(UseTransparentHugePages && !HugePages::is_requested_off());
   }
 
   // If THPs are unconditionally enabled (THP mode "always"), khugepaged may attempt to
