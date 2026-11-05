@@ -89,6 +89,7 @@ private:
   GrowableArray<ciInstanceKlass*>* compute_transitive_interfaces(Arena* arena, InstanceKlass* ik);
 
   ciField* get_nonstatic_field_by_offset(int field_offset);
+  static void keep_alive(InstanceKlass* ik);
 
 protected:
   ciInstanceKlass(Klass* k);

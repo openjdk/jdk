@@ -61,6 +61,7 @@
 ciInstanceKlass::ciInstanceKlass(Klass* k) : ciKlass(k) {
   assert(get_Klass()->is_instance_klass(), "wrong type");
   InstanceKlass* ik = get_instanceKlass();
+  keep_alive(ik);
 
 #ifdef ASSERT
   if (!ik->is_loaded()) {
@@ -68,6 +69,9 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) : ciKlass(k) {
     assert(false, "must be at least loaded: %s", ik->name()->as_C_string());
   }
 #endif // ASSERT
+
+  InstanceKlass* super_k = ik->super();
+  _super = super_k != nullptr ? CURRENT_ENV->get_instance_klass(super_k) : nullptr;
 
   AccessFlags access_flags = ik->access_flags();
   _flags = ciFlags(access_flags);
@@ -82,26 +86,6 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) : ciKlass(k) {
   _nonstatic_fields = nullptr;          // initialized lazily by compute_nonstatic_fields
   _trust_final_fields = ik->trust_final_fields();
   _has_injected_fields = -1;
-
-  // Ensure that the metadata wrapped by the ciMetadata is kept alive by GC.
-  // This is primarily useful for metadata which is considered as weak roots
-  // by the GC but need to be strong roots if reachable from a current compilation.
-  // InstanceKlass are created for both weak and strong metadata.  Ensuring this metadata
-  // alive covers the cases where there are weak roots without performance cost.
-  oop holder = ik->klass_holder();
-  if (ik->class_loader_data()->has_class_mirror_holder()) {
-    // Though ciInstanceKlass records class loader oop, it's not enough to keep
-    // non-strong hidden classes alive (loader == nullptr). Klass holder should
-    // be used instead. It is enough to record a ciObject, since cached elements are never removed
-    // during ciObjectFactory lifetime. ciObjectFactory itself is created for
-    // every compilation and lives for the whole duration of the compilation.
-    assert(holder != nullptr, "holder of hidden class is the mirror which is never null");
-    (void)CURRENT_ENV->get_object(holder);
-  }
-
-  // Should be after ik has been kept alive
-  InstanceKlass* super_k = ik->super();
-  _super = super_k != nullptr ? CURRENT_ENV->get_instance_klass(super_k) : nullptr;
   _transitive_interfaces = compute_transitive_interfaces(CURRENT_ENV->arena(), ik);
 
   JavaThread *thread = JavaThread::current();
@@ -939,6 +923,25 @@ GrowableArray<ciInstanceKlass*>* ciInstanceKlass::compute_transitive_interfaces(
   return transitive_interfaces;
 }
 
+// Prevent an InstanceKlass from being unloaded until the end of the compilation
+void ciInstanceKlass::keep_alive(InstanceKlass* ik) {
+  // Ensure that the metadata wrapped by the ciMetadata is kept alive by GC.
+  // This is primarily useful for metadata which is considered as weak roots
+  // by the GC but need to be strong roots if reachable from a current compilation.
+  // InstanceKlass are created for both weak and strong metadata.  Ensuring this metadata
+  // alive covers the cases where there are weak roots without performance cost.
+  oop holder = ik->klass_holder();
+  if (ik->class_loader_data()->has_class_mirror_holder()) {
+    // Though ciInstanceKlass records class loader oop, it's not enough to keep
+    // non-strong hidden classes alive (loader == nullptr). Klass holder should
+    // be used instead. It is enough to record a ciObject, since cached elements are never removed
+    // during ciObjectFactory lifetime. ciObjectFactory itself is created for
+    // every compilation and lives for the whole duration of the compilation.
+    assert(holder != nullptr, "holder of hidden class is the mirror which is never null");
+    (void)CURRENT_ENV->get_object(holder);
+  }
+}
+
 // Whether this ciInstanceKlass has a proper non-interface subklass
 bool ciInstanceKlass::has_subklass() {
   assert(is_loaded(), "must be loaded");
@@ -1038,7 +1041,7 @@ void ciInstanceKlass::compute_cha_info() {
     return;
   }
 
-  Handle implementor_k_keepalive(THREAD, implementor_k->klass_holder());
+  keep_alive(implementor_k);
   // We found a bound for all concrete subklasses of an abstract klass or interface, check that
   // loading it into the compiler (by creating a ciInstanceKlass) does not create any inconsistency
   if (!check_cha_consistency(implementor_k)) {
