@@ -93,7 +93,7 @@ public class popframes001a {
             return popframes001.FAILED;
         }
 
-        // the popped frame runs again, so the tested method is invoked exactly twice
+        // the tested method is expected to be invoked twice
         if (TestedThreadClass.invocations != 2) {
             log.complain("Tested method invoked " + TestedThreadClass.invocations + " times, expected 2");
             log.display("Debugee FAILED");
@@ -144,9 +144,10 @@ public class popframes001a {
             int boo = 0;
 
             if (isVirtual()) {
-                // The first join unmounts the tested thread, leaving its caller in the
-                // heap when PopFrame is executed. Code before this join must not deoptimize
-                // this frame, as thawing an interpreted frame also thaws its compiled caller.
+                // PopFrame pops this frame and the caller invokes testedMethod() again.
+                // The first join unmounts the thread, so that caller frame sits in the
+                // heap when PopFrame runs. Code before this join must not deoptimize
+                // this frame, thawing an interpreted frame also thaws its compiled caller.
                 try {
                     parker.join();
                 } catch (InterruptedException e) {
