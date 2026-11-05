@@ -144,7 +144,7 @@ class MaxReqHeaderSizePropertyTest {
 
         args.add(Arguments.of(
                 "at limit", true,
-                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                createRequestHeaderLines(lines -> {
                     int valueLength = 50
                             - 2     // "k:" (key)
                             - OFFSET;
@@ -154,7 +154,7 @@ class MaxReqHeaderSizePropertyTest {
         var S = " ";
         args.add(Arguments.of(
                 "at limit with extra whitespace before the key", true,
-                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                createRequestHeaderLines(lines -> {
                     int valueLength = 50
                             - 2     // "k:" (key)
                             - OFFSET;
@@ -165,7 +165,7 @@ class MaxReqHeaderSizePropertyTest {
                 "at limit with extra whitespace after the key",
                 // No whitespace is allowed between the field name and colon (RFC 9112)
                 false,
-                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                createRequestHeaderLines(lines -> {
                     int valueLength = 50
                             - 2     // "k:" (key)
                             - OFFSET;
@@ -176,7 +176,7 @@ class MaxReqHeaderSizePropertyTest {
                 "at limit with extra whitespace before the value",
                 // Leading whitespace is taken into account while calculating the "size" of the value.
                 false,
-                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                createRequestHeaderLines(lines -> {
                     int valueLength = 50
                             - 2     // "k:" (key)
                             - OFFSET;
@@ -187,7 +187,7 @@ class MaxReqHeaderSizePropertyTest {
                 "at limit with extra whitespace after the value",
                 // Trailing whitespace is taken into account while calculating the "size" of the value.
                 false,
-                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                createRequestHeaderLines(lines -> {
                     int valueLength = 50
                             - 2     // "k:" (key)
                             - OFFSET;
@@ -196,7 +196,7 @@ class MaxReqHeaderSizePropertyTest {
 
         args.add(Arguments.of(
                 "off limit due to excessive key", false,
-                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                createRequestHeaderLines(lines -> {
                     int keyLength = 50
                             - 2     // ":v" (value)
                             - OFFSET
@@ -206,7 +206,7 @@ class MaxReqHeaderSizePropertyTest {
 
         args.add(Arguments.of(
                 "off limit due to excessive value", false,
-                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                createRequestHeaderLines(lines -> {
                     int valueLength = 50
                             - 2     // "k:" (key)
                             - OFFSET
@@ -218,7 +218,16 @@ class MaxReqHeaderSizePropertyTest {
 
     }
 
-    private static List<String> createRequestHeaderLinesLeavingRoomFor50MoreCharacters(
+    /**
+     * Creates headers that would fill up the configured
+     * {@code sun.net.httpserver.maxReqHeaderSize} limit, and leaves room for 50
+     * characters to be used by the provided {@code consumer}.
+     *
+     * @param consumer a function to modify the list of populated headers before
+     *                 returning them
+     * @return the list of populated headers
+     */
+    private static List<String> createRequestHeaderLines(
             Consumer<List<String>> consumer) {
         var lines = new ArrayList<String>();
         var hostHeader = "host:localhost";
