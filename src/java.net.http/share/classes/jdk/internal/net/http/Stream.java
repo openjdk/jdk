@@ -1539,6 +1539,11 @@ class Stream<T> extends ExchangeImpl<T> {
 
     void connectionClosing(Throwable cause) {
         boolean runScheduler = false;
+        // The inputQLock is needed to synchronize with the scheduler loop:
+        // if the scheduler loop pulls the last DATA frame that contains
+        // the END_STREAM, then without the lock, connectionClosing()
+        // may observe an empty inputQ and call cancelImpl() before
+        // the loop has a chance to call onComplete().
         inputQLock.lock();
         try {
             errorRef.compareAndSet(null, cause);
