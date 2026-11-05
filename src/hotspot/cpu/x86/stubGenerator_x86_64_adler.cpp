@@ -168,9 +168,9 @@ address StubGenerator::generate_updateBytesAdler32() {
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
+  __ push_ppx(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r14);
 
   __ vmovdqu(yweight0, ExternalAddress((address)ADLER32_DOT2V_TABLE), r14 /*rscratch*/);
   __ vmovdqu(yweight1, ExternalAddress((address)ADLER32_DOT2V_0_TABLE), r14 /*rscratch*/);
@@ -422,6 +422,10 @@ address StubGenerator::generate_updateBytesAdler32() {
   reduce_mod_base(a_d, rcx);
   reduce_mod_base(b_d, rcx);
 
+  // The AVX2 chunk reduction has already normalized A and B.
+  __ testl(size, size);
+  __ jcc(Assembler::zero, PACK_RESULT);
+
   __ cmpl(size, 32);
   __ jcc(Assembler::aboveEqual, LIMIT_CHUNK_LOOP);
   __ cmpl(size, 16);
@@ -478,9 +482,9 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ shll(rax, 16);
   __ orl(rax, a_d);
 
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
+  __ pop_ppx(r14);
+  __ pop_ppx(r13);
+  __ pop_ppx(r12);
 
   __ vzeroupper();
   __ leave();

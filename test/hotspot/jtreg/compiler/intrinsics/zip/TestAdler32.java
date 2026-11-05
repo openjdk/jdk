@@ -40,6 +40,17 @@
  * @run main/othervm/timeout=600 -Xbatch -XX:UseAVX=2 -DallFF=true compiler.intrinsics.zip.TestAdler32 -m
  */
 
+/**
+ * @test
+ * @bug 8394260
+ * @summary Verify the Adler32 AVX2 intrinsic with a mixed byte pattern near LIMIT
+ * @requires vm.compiler2.enabled
+ * @requires os.simpleArch == "x64"
+ * @requires vm.cpu.features ~= ".*avx2.*"
+ *
+ * @run main/othervm/timeout=600 -Xbatch -XX:UseAVX=2 -Dtest.adler32.mixedPattern=true compiler.intrinsics.zip.TestAdler32 -m
+ */
+
 package compiler.intrinsics.zip;
 
 import java.nio.ByteBuffer;
@@ -167,6 +178,12 @@ public class TestAdler32 {
         byte[] bytes = new byte[M + offset];
         if (Boolean.getBoolean("allFF")) {
             Arrays.fill(bytes, (byte) 0xFF);
+            return bytes;
+        }
+        if (Boolean.getBoolean("test.adler32.mixedPattern")) {
+            for (int i = 0; i < bytes.length; i++) {
+                bytes[i] = (byte) ((i % 2 == 0) ? 0xFF : 0xF0);
+            }
             return bytes;
         }
         for (int i = 0; i < offset; i++) {
