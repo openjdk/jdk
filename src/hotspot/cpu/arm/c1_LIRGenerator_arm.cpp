@@ -948,6 +948,9 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   // Evaluate state_for() first, because it can emit code
   // with the same fixed registers that are used here (R1, R2)
   CodeEmitInfo* info = state_for(x, x->state());
+
+  deoptimize_vmalloc_for_jvmti(!x->zero_array(), info);
+
   LIRItem length(x->length(), this);
 
   length.load_item_force(FrameMap::R2_opr);      // R2 is required by runtime call in NewTypeArrayStub::emit_code

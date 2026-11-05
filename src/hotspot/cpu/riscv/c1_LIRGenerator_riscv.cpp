@@ -177,7 +177,8 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
       return new LIR_Address(base, (jint)c, type);
     } else {
       LIR_Opr tmp = new_register(T_LONG);
-      __ move(index, tmp);
+      // A T_INT index can still require a 64-bit byte offset.
+      __ move(LIR_OprFact::longConst(c), tmp);
       return new LIR_Address(base, tmp, type);
     }
   }
@@ -1014,6 +1015,8 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   } else {
     info = state_for(x, x->state());
   }
+
+  deoptimize_vmalloc_for_jvmti(!x->zero_array(), info);
 
   LIRItem length(x->length(), this);
   length.load_item_force(FrameMap::r9_opr);

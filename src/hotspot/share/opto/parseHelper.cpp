@@ -62,6 +62,30 @@ void GraphKit::make_dtrace_method_entry_exit(ciMethod* method, bool is_entry) {
                     thread, method_node);
 }
 
+Node* Parse::null_assert_for_unloaded_type(Node* value, ciType* unloaded_type,
+                                           const char* reason, bool trap_at_next_bci,
+                                           ciMethod* callee) {
+  if (PrintOpto && (Verbose || WizardMode)) {
+    method()->print_name();
+    tty->print_cr(" asserting nullness of %s at bci: %d", reason, bci());
+    if (callee != nullptr) {
+      callee->print_name();
+      tty->cr();
+    }
+  }
+  if (C->log() != nullptr) {
+    C->log()->elem("assert_null reason='%s' klass='%d'",
+                   reason, C->log()->identify(unloaded_type));
+  }
+  if (trap_at_next_bci) {
+    set_bci(iter().next_bci());
+  }
+  Node* result = null_assert(value);
+  if (trap_at_next_bci) {
+    set_bci(iter().cur_bci()); // put it back
+  }
+  return result;
+}
 
 //=============================================================================
 //------------------------------do_checkcast-----------------------------------
@@ -75,20 +99,10 @@ void Parse::do_checkcast() {
   // then the checkcast does nothing.
   const TypeOopPtr *tp = _gvn.type(obj)->isa_oopptr();
   if (!will_link || (tp && !tp->is_loaded())) {
-    if (C->log() != nullptr) {
-      if (!will_link) {
-        C->log()->elem("assert_null reason='checkcast' klass='%d'",
-                       C->log()->identify(klass));
-      }
-      if (tp && !tp->is_loaded()) {
-        // %%% Cannot happen?
-        ciKlass* klass = tp->unloaded_klass();
-        C->log()->elem("assert_null reason='checkcast source' klass='%d'",
-                       C->log()->identify(klass));
-      }
-    }
-    null_assert(obj);
-    assert( stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null" );
+    ciKlass* unloaded_klass = !will_link ? klass : tp->unloaded_klass();
+    const char* reason = !will_link ? "checkcast" : "checkcast source";
+    null_assert_for_unloaded_type(obj, unloaded_klass, reason, false);
+    assert(stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null");
     return;
   }
 
@@ -115,12 +129,8 @@ void Parse::do_instanceof() {
   ciKlass* klass = iter().get_klass(will_link);
 
   if (!will_link) {
-    if (C->log() != nullptr) {
-      C->log()->elem("assert_null reason='instanceof' klass='%d'",
-                     C->log()->identify(klass));
-    }
-    null_assert(peek());
-    assert( stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null" );
+    null_assert_for_unloaded_type(peek(), klass, "instanceof", false);
+    assert(stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null");
     if (!stopped()) {
       // The object is now known to be null.
       // Shortcut the effect of gen_instanceof and return "false" directly.
