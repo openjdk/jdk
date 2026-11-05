@@ -46,8 +46,7 @@ public class TestMissingRotateIdealization {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
-                                   "-XX:VerifyIterativeGVN=1110",
-                                   "-XX:CompileCommand=compileonly,compiler.c2.igvn.TestMissingRotateIdealization::*");
+                                   "-XX:VerifyIterativeGVN=1110");
     }
 
     @Run(test = {"testAddI", "testAddL", "testOrI", "testOrL", "testOrIRotateLeft", "testOrLRotateLeft"})
