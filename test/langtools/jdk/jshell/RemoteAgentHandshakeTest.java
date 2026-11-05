@@ -26,7 +26,7 @@
  * @summary Verify the correct handshake is used for remote agents.
  * @modules jdk.jshell
  *          jdk.jfr
- * @run junit/othervm RemoteAgentHandshakeTest
+ * @run junit RemoteAgentHandshakeTest
  */
 
 import java.time.Duration;
