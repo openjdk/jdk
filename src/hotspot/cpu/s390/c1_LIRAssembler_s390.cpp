@@ -1100,6 +1100,11 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
   }
 }
 
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  assert(UseCompressedOops, "should only be used with compressed oops");
+  __ oop_decoder(dest->as_pointer_register(), src->as_pointer_register(), true /* maybenull */);
+}
+
 void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info,
                             bool wide) {
@@ -2381,7 +2386,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
   }
   if (dest->is_single_cpu()) {
     assert(code == lir_shl || left == dest, "left and dest must be equal for 2 operand form right shifts");
-    count = count & 0x1F; // Java spec
+    count &= right_n_bits(LogBitsPerInt); // Java spec
     switch (code) {
       case lir_shl:  __ z_sllg (dest->as_register(), left->as_register(), count); break;
       case lir_shr:  __ z_sra  (dest->as_register(), count); break;
@@ -2389,7 +2394,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
       default: ShouldNotReachHere();
     }
   } else if (dest->is_double_cpu()) {
-    count = count & 63; // Java spec
+    count &= right_n_bits(LogBitsPerLong); // Java spec
     Register l = left->as_pointer_register();
     Register d = dest->as_pointer_register();
     switch (code) {

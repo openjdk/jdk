@@ -164,9 +164,11 @@ public class DwarfCFrame extends BasicCFrame {
         }
 
         try {
-            return dwarf == null
-                ? fp.getAddressAt(VM.getVM().getAddressSize()) // Current frame is Java
-                : cfa.getAddressAt(dwarf.getReturnAddressOffsetFromCFA()); // current frame is Native
+            if (dwarf == null) {
+                return fp.getAddressAt(VM.getVM().getAddressSize()); // Current frame is Java
+            }
+            int offset = dwarf.getReturnAddressOffsetFromCFA();
+            return offset == Integer.MAX_VALUE ? null : cfa.getAddressAt(offset); // current frame is Native
         } catch (UnmappedAddressException | UnalignedAddressException _) {
             // Sender PC is invalid - maybe bottom of stack
             return null;
@@ -200,6 +202,11 @@ public class DwarfCFrame extends BasicCFrame {
         }
     }
 
+    /**
+     * For a native sender PC (a return address), look up the library, FDE, CFI row and symbol at PC - 1.
+     * Use the exact PC for the top frame and the frame restored from a signal context,
+     * also for signal trampoline PCs, and for code cache (Java) PCs.
+     */
     @Override
     public CFrame sender(ThreadProxy th) {
         return sender(th, null, null, null);
