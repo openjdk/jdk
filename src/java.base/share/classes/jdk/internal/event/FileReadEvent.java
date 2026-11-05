@@ -60,7 +60,7 @@ public final class FileReadEvent extends Event {
      *
      * @param start  the start time
      * @param path  the path
-     * @param bytesRead  the number of bytes that were read, or -1 if the end of the file was reached
+     * @param bytesRead  the number of bytes that were read, or a negative value if the end of the file was reached
      */
     public static void offer(long start, String path, long bytesRead) {
         if (bytesRead < 0) {
