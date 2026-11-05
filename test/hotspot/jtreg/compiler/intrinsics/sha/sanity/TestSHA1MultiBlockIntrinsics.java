@@ -55,9 +55,8 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
- *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
- *                   -XX:CompileOnly=sun.security.provider.SHA::* -XX:-UseSHA
- *                   -Dalgorithm=SHA-1
+ *                   -XX:CompileOnly=sun.security.provider.SHA::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA-1
  *                   compiler.intrinsics.sha.sanity.TestSHA1MultiBlockIntrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
  *                   compiler.testlibrary.intrinsics.Verifier positive.log positive_def.log

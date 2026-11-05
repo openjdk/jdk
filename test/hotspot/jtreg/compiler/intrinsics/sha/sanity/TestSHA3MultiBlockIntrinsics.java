@@ -59,8 +59,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=negative_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
- *                   -XX:CompileOnly=sun.security.provider.SHA3::* -XX:-UseSHA
- *                   -Dalgorithm=SHA3-224
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA3-224
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -89,8 +89,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=negative_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
- *                   -XX:CompileOnly=sun.security.provider.SHA3::* -XX:-UseSHA
- *                   -Dalgorithm=SHA3-256
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA3-256
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -119,8 +119,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=negative_384.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
- *                   -XX:CompileOnly=sun.security.provider.SHA3::* -XX:-UseSHA
- *                   -Dalgorithm=SHA3-384
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA3-384
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -149,8 +149,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=negative_512.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
- *                   -XX:CompileOnly=sun.security.provider.SHA3::* -XX:-UseSHA
- *                   -Dalgorithm=SHA3-512
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA3-512
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
  *                    compiler.testlibrary.intrinsics.Verifier positive_224.log positive_256.log

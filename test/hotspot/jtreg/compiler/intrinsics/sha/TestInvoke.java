@@ -28,12 +28,12 @@
  *
  * @run main/othervm/timeout=600 -Xbatch -XX:-TieredCompilation
  *      --add-opens java.base/sun.security.provider=ALL-UNNAMED
- *      -Dmethod=doubleKeccak -XX:DisableIntrinsic=_double_keccak
- *      compiler.intrinsics.sha.TestInvoke
+ *      -XX:-UseSHA3Intrinsics -Dmethod=doubleKeccak
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch -XX:-TieredCompilation
  *      --add-opens java.base/sun.security.provider=ALL-UNNAMED
- *      -Dmethod=quadKeccak -XX:DisableIntrinsic=_quad_keccak
- *      compiler.intrinsics.sha.TestInvoke
+ *      -XX:-UseSHA3Intrinsics -Dmethod=quadKeccak
+ *      ${test.main.class}
  */
 
 package compiler.intrinsics.sha;
