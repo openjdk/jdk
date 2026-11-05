@@ -233,6 +233,11 @@ public class Names {
     public final Name permits;
     public final Name sealed;
 
+    // singleobject types
+    public final Name singleobject;
+    public final Name getInstance;
+    public final Name dollarInstance;
+
     // pattern switches
     public final Name typeSwitch;
     public final Name enumSwitch;
@@ -427,6 +432,11 @@ public class Names {
         // sealed types
         permits = fromString("permits");
         sealed = fromString("sealed");
+
+        // singleobject types
+        singleobject = fromString("singleobject");
+        getInstance = fromString("getInstance");
+        dollarInstance = fromString("$INSTANCE");
 
 
         // pattern switches
