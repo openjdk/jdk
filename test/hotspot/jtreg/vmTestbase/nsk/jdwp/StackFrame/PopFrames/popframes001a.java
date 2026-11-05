@@ -144,10 +144,9 @@ public class popframes001a {
             int boo = 0;
 
             if (isVirtual()) {
-                // PopFrame pops this frame and the caller invokes testedMethod() again.
-                // The first join unmounts the thread, so that caller frame sits in the
-                // heap when PopFrame runs. Code before this join must not deoptimize
-                // this frame, thawing an interpreted frame also thaws its compiled caller.
+                // PopFrame pops this frame, testedMethod() runs twice. The first join unmounts the
+                // thread, leaving the caller in the heap when PopFrame runs. Code before this join
+                // must not deoptimize this frame, an interpreted frame thaws its compiled caller.
                 try {
                     parker.join();
                 } catch (InterruptedException e) {
