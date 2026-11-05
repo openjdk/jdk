@@ -204,7 +204,7 @@ public abstract class Collator
      * set, both Unicode canonical variants and Unicode compatibility variants
      * will be decomposed for collation.  This causes not only accented
      * characters to be collated, but also characters that have special formats
-     * to be collated with their norminal form. For example, the half-width and
+     * to be collated with their nominal form. For example, the half-width and
      * full-width ASCII and Katakana characters are then collated together.
      * FULL_DECOMPOSITION is the most complete and therefore the slowest
      * decomposition mode.

@@ -85,7 +85,7 @@ import sun.util.logging.PlatformLogger;
  * </ul>
  * </blockquote>
  *
- * <p>There're various ways user can hook up his own HTTP cookie management behavior, e.g.
+ * <p>There are various ways a user can hook up his own HTTP cookie management behavior, e.g.
  * <blockquote>
  * <ul>
  *   <li>Use CookieHandler.setDefault to set a brand new {@link CookieHandler} implementation

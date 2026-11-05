@@ -37,7 +37,7 @@ import jdk.internal.classfile.impl.Util;
  *
  * @see LocalVariableTableAttribute#localVariables()
  * @see LocalVariable
- * @jvms 4.7.13 The {@code LocalVaribleTable} Attribute
+ * @jvms 4.7.13 The {@code LocalVariableTable} Attribute
  * @since 24
  */
 public sealed interface LocalVariableInfo

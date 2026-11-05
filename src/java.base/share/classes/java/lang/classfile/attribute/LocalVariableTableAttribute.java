@@ -63,7 +63,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * attribute to be present.
  *
  * @see Attributes#localVariableTable()
- * @jvms 4.7.13 The {@code LocalVaribleTable} Attribute
+ * @jvms 4.7.13 The {@code LocalVariableTable} Attribute
  * @since 24
  */
 public sealed interface LocalVariableTableAttribute

@@ -40,7 +40,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * A throw instruction has no visible state.
  *
  * @see Opcode.Kind#THROW_EXCEPTION
- * @see CodeBuilder#athrow CodeBuiler::athrow
+ * @see CodeBuilder#athrow CodeBuilder::athrow
  * @since 24
  */
 public sealed interface ThrowInstruction extends Instruction
