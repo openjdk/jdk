@@ -180,24 +180,21 @@
           "barriers are in in use. Possible values are:"                    \
           " satb - snapshot-at-the-beginning concurrent GC (three pass mark-evac-update);"  \
           " passive - stop the world full GC only (diagnostic mode);"       \
-          " generational - generational concurrent GC;")                    \
+          " generational - generational concurrent GC")                     \
                                                                             \
   product(ccstr, ShenandoahGCHeuristics, "adaptive",                        \
           "GC heuristics to use. This fine-tunes the GC mode selected, "    \
           "by choosing when to start the GC, how much to process on each "  \
           "cycle, and what other features to automatically enable. "        \
-          "When -XX:ShenandoahGCMode is generational, only the decision  "  \
-          "of when to start the gc is altered. Possible values are:"        \
+          "When -XX:ShenandoahGCMode is generational, the only supported "  \
+          "option is the default, adaptive. Possible values are:"           \
           " adaptive - adapt to maintain the given amount of free heap "    \
           "at all times, even during the GC cycle;"                         \
           " static - trigger GC when free heap falls below a specified "    \
           "threshold;"                                                      \
-          " aggressive - run GC continuously, try to evacuate everything "  \
-          "(diagnostic);"                                                   \
+          " aggressive - run GC continuously, try to evacuate everything;"  \
           " compact - run GC more frequently and with deeper targets to "   \
-          "free up more memory;"                                            \
-          " passive - disable triggers, only explicit requests or heap "    \
-          "exhaustion will run GC (diagnostic);")                           \
+          "free up more memory.")                                           \
                                                                             \
   product(uintx, ShenandoahExpeditePromotionsThreshold, 5, EXPERIMENTAL,    \
           "When Shenandoah expects to promote at least this percentage "    \
