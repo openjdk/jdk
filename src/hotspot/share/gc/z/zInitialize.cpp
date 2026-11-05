@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddress.hpp"
+#include "gc/z/zArguments.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zCPU.hpp"
 #include "gc/z/zDriver.hpp"
@@ -58,6 +59,7 @@ void ZInitialize::initialize(ZBarrierSet* barrier_set) {
   // Early initialization
   ZNMT::initialize();
   ZNUMA::initialize();
+  ZArguments::initialize_max_tenuring_threshold();
   ZGlobalsPointers::initialize();
   ZCPU::initialize();
   ZStatValue::initialize();
