@@ -952,11 +952,18 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   HeapWord* result = nullptr;
 
   if (req.is_mutator_alloc()) {
+    const bool is_humongous = !req.is_cds() && ShenandoahHeapRegion::requires_humongous(req.size());
+    if (is_humongous) {
+      record_humongous_request(req);
+    }
 
     if (!ShenandoahAllocFailureALot || !should_inject_alloc_failure()) {
       result = allocate_memory_work(req, in_new_region);
     }
 
+    if (result == nullptr && is_humongous) {
+      _failed_humongous_request_count_since_gc_end.add_then_fetch(1, memory_order_relaxed);
+    }
     // Check that gc overhead is not exceeded.
     //
     // Shenandoah will grind along for quite a while allocating one
@@ -1042,13 +1049,6 @@ HeapWord* ShenandoahHeap::allocate_memory_work(ShenandoahAllocRequest& req, bool
 
   HeapWord* result = _allocator->allocate(req, in_new_region);
 
-  if (req.is_mutator_alloc() && ShenandoahHeapRegion::requires_humongous(req.size()) && !req.is_cds()) {
-    const size_t curr_region_count = ShenandoahHeapRegion::required_regions(req.size() * HeapWordSize);
-    if (curr_region_count > _max_humongous_regions_since_gc.load_relaxed()) {
-      _max_humongous_regions_since_gc.store_relaxed(curr_region_count);
-    }
-  }
-
   if (result != nullptr) {
     if (req.is_mutator_alloc()) {
       size_t total_words = req.actual_size() + req.waste();
@@ -1070,6 +1070,22 @@ HeapWord* ShenandoahHeap::allocate_memory_work(ShenandoahAllocRequest& req, bool
     old_generation()->unexpend_promoted(req.size() << LogHeapWordSize);
   }
   return result;
+}
+
+void ShenandoahHeap::record_humongous_request(const ShenandoahAllocRequest& req) {
+  assert(ShenandoahHeapRegion::requires_humongous(req.size()), "record_humongous_request can only record humongous requests");
+  assert(req.is_mutator_alloc(), "record_humongous_request can only take mutator allocation requests");
+  assert(!req.is_cds(), "record_humongous_request cannot record cds request");
+
+  const size_t curr_request_count = ShenandoahHeapRegion::required_regions(req.size() * HeapWordSize);
+  _total_humongous_region_count_requested_since_gc_end.add_then_fetch(curr_request_count, memory_order_relaxed);
+
+  size_t curr_max = _max_humongous_region_count_requested_since_gc_end.load_relaxed();
+  while (curr_request_count > curr_max) {
+    const size_t old = _max_humongous_region_count_requested_since_gc_end.compare_exchange(curr_max, curr_request_count, memory_order_relaxed);
+    if (old == curr_max) break;
+    curr_max = old;
+  }
 }
 
 HeapWord* ShenandoahHeap::mem_allocate(size_t size) {
@@ -1774,7 +1790,35 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
     old_generation()->heuristics()->record_cycle_end();
   }
 
-  _max_humongous_regions_since_gc.store_relaxed(0);
+  if (!generation->is_old() && !cancelled_gc()) {
+    size_t max = _max_humongous_region_count_requested_since_gc_end.exchange(0, memory_order_relaxed);
+    size_t total = _total_humongous_region_count_requested_since_gc_end.exchange(0, memory_order_relaxed);
+    size_t failed = _failed_humongous_request_count_since_gc_end.exchange(0, memory_order_relaxed);
+
+    _humongous_allocation_history.push(max, total, failed);
+
+    {
+      ShenandoahHeapLocker locker(lock());
+      const size_t empty_region_array_size = free_set()->build_empty_region_array();
+      const double prob_failure = _humongous_allocation_history.probability_of_failure(
+        free_set()->empty_region_array(),
+        empty_region_array_size,
+        0.8 // TODO: define recency_weight
+      );
+      const bool need_gc = _humongous_allocation_history.sample_count() >= 4 && prob_failure >= 0.5; // TODO: define in shen_globals
+      _need_conc_gc_for_humongous.store_relaxed(need_gc);
+      log_info(gc, ergo)("Humongous allocation failure probability: %.1f%%, %zu epochs in history%s",
+                    prob_failure * 100, _humongous_allocation_history.sample_count(),
+                    need_gc ? ", need a concurrent gc" : "");
+
+      size_t humongous_budget = 0;
+      for (size_t i = 0; i < empty_region_array_size; i++) {
+        humongous_budget += free_set()->empty_region_array()[i];
+      }
+      _humongous_budget_region_count.store_relaxed(humongous_budget);
+    }
+  }
+
   set_gc_cause(GCCause::_no_gc);
 }
 
@@ -3049,6 +3093,54 @@ void ShenandoahHeap::log_heap_status(const char* msg) const {
   } else {
     global_generation()->log_status(msg);
   }
+}
+
+bool ShenandoahHumongousAllocationHistory::can_fit(const Epoch& epoch, const size_t* empty_region_array, size_t empty_region_array_length, size_t max_contig) {
+  const size_t max_requested_region_count = epoch.max_requested_region_count;
+  if (max_requested_region_count == 0) {
+    return true;
+  }
+
+  if (max_requested_region_count > max_contig) {
+    return false;
+  }
+
+  size_t available_slots = 0;
+  for (size_t i = 0; i < empty_region_array_length; i++) {
+    available_slots += empty_region_array[i] / max_requested_region_count;
+  }
+  return (epoch.total_requested_region_count + max_requested_region_count - 1) / max_requested_region_count <= available_slots;
+}
+
+void ShenandoahHumongousAllocationHistory::push(size_t max_requested_region_count, size_t total_requested_region_count, size_t failed_humongous_request_count) {
+  _epochs[_next] = { max_requested_region_count, total_requested_region_count, failed_humongous_request_count };
+  _next = (_next + 1) % max_history_entry;
+  if (_sample_count < max_history_entry) {
+    _sample_count++;
+  }
+}
+
+double ShenandoahHumongousAllocationHistory::probability_of_failure(const size_t* empty_region_array, size_t empty_region_array_length, double recency_weight) const {
+  if (_sample_count == 0) return 0; // no sample, return no failure
+
+  size_t max_contig = 0;
+  for (size_t i = 0; i < empty_region_array_length; i++) {
+    max_contig = MAX2(max_contig, empty_region_array[i]);
+  }
+
+  double weight = 1.0;
+  double failed = 0.0;
+  double total = 0.0;
+
+  for (uint age = 0; age < _sample_count; age++) {
+    const Epoch& epoch = _epochs[(_next + max_history_entry - 1 - age) % max_history_entry];
+    if (!can_fit(epoch, empty_region_array, empty_region_array_length, max_contig)) {
+      failed += weight;
+    }
+    total += weight;
+    weight *= recency_weight;
+  }
+  return failed / total;
 }
 
 ShenandoahHeapLocker::ShenandoahHeapLocker(ShenandoahHeapLock* lock, bool allow_block_for_safepoint) : _lock(lock) {

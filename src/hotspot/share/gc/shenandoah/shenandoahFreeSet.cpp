@@ -1382,8 +1382,7 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _global_unaffiliated_regions(0),
   _total_young_regions(0),
   _total_global_regions(0),
-  _cached_max_contig_bytes(0),
-  _cached_max_contig_age_ns(0)
+  _empty_region_array(NEW_C_HEAP_ARRAY(size_t, max_regions / 2 + 1, mtGC))
 {
   clear_internal();
 }
@@ -2377,8 +2376,6 @@ void ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t old_
   _total_global_regions = _heap->num_regions();
   establish_old_collector_alloc_bias();
 
-  update_max_contig_cache(mutator_free_stats_locked().max_contig_empty_bytes);
-
   // Release the rebuild lock now.  What remains in this function is read-only
   rebuild_lock()->unlock();
   _partitions.assert_bounds();
@@ -2839,23 +2836,28 @@ ShenandoahFreeSet::MutatorFreeStats ShenandoahFreeSet::mutator_free_stats_locked
   return stats;
 }
 
-void ShenandoahFreeSet::update_max_contig_cache(size_t bytes) {
+size_t ShenandoahFreeSet::build_empty_region_array() {
   shenandoah_assert_heaplocked();
-  _cached_max_contig_bytes.store_relaxed(bytes);
-  _cached_max_contig_age_ns.store_relaxed(os::javaTimeNanos());
-}
+  const idx_t leftmost = _partitions.leftmost_empty(ShenandoahFreeSetPartitionId::Mutator);
+  const idx_t rightmost = _partitions.rightmost_empty(ShenandoahFreeSetPartitionId::Mutator);
 
-size_t ShenandoahFreeSet::max_humongous_allocatable() {
-  // TODO: Maybe move ShenandoahMaxContigRegionMaxAgeMiliSec to a constant in the code rather than in shenandoah_globals.hpp?
-  // The max age is not refreshed at a fixed frequency, but only when it's needed for calculation.
-  const jlong max_age_ns = (jlong) ShenandoahMaxContigRegionMaxAgeMiliSec * NANOSECS_PER_MILLISEC;
-  // use nanos since javaTimeMillis doesn't increase monotonically
-  if (os::javaTimeNanos() - _cached_max_contig_age_ns.load_relaxed() > max_age_ns) {
-    ShenandoahHeapLocker locker(_heap->lock());
-    update_max_contig_cache(mutator_free_stats_locked().max_contig_empty_bytes);
+  size_t region_span = 0;
+  size_t cluster_count = 0;
+  for (idx_t i = leftmost; i <= rightmost; i++) {
+    if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, i)
+          && _heap->get_region(i)->is_empty_or_trash()) {
+      region_span++;
+    } else {
+      if (region_span > 1) {
+        _empty_region_array[cluster_count++] = region_span;
+      }
+      region_span = 0;
+    }
   }
-
-  return _cached_max_contig_bytes.load_relaxed();
+  if (region_span > 1) {
+    _empty_region_array[cluster_count++] = region_span;
+  }
+  return cluster_count;
 }
 
 void ShenandoahFreeSet::log_status() {
@@ -2935,7 +2937,6 @@ void ShenandoahFreeSet::log_status() {
     LogStream ls(lt);
 
     const MutatorFreeStats stats = mutator_free_stats_locked();
-    update_max_contig_cache(stats.max_contig_empty_bytes);
     const size_t max_humongous = stats.max_contig_empty_bytes;
     const size_t total_free_ext = stats.total_free_ext;
     const size_t total_used_in_freeset = stats.used_in_freeset;
