@@ -143,6 +143,12 @@ void VM_Version::initialize() {
   _ic_ivau_trapped = false;
 
   get_os_cpu_info();
+
+  // This is common to all OS-aarch64 combinations
+  if (_cpu == CPU_ARM && model_is(CPU_MODEL_ARM_CORTEX_A53)) {
+    set_feature(CPU_A53MAC);
+  }
+
   _cpu_features = _features;
 
   apply_aot_cache_cpu_features();
