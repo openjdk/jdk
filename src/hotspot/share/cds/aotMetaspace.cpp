@@ -528,7 +528,7 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   AOTHeap::serialize_tables(soc);
   AOTSystemDictionary::serialize_dictionary_headers(soc);
   AOTLinkedClassBulkLoader::serialize(soc);
-  AOTMetsapceRecipes::serialize(soc);
+  AOTMetaspaceRecipes::serialize(soc);
   TrainingData::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
 
@@ -753,7 +753,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
   cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
   AOTClassLinker::write_to_archive();
   if (CDSConfig::is_dumping_aot_configuration()) {
-    AOTMetsapceRecipes::record_recipes();
+    AOTMetaspaceRecipes::record_recipes();
   }
 
   TrainingData::dump_training_data();
@@ -933,11 +933,11 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
     //   initialized in the training run.
     // - Perform per-class optimization such as AOT-resolution of
     //   constant pool entries that were resolved during the training run.
-    AOTMetsapceRecipes::apply_recipes(CHECK);
+    AOTMetaspaceRecipes::apply_recipes(CHECK);
 
     // Because the AOT assembly phase does not run the same exact code as in the
     // training run (e.g., we use different lambda form invoker classes;
-    // generated lambda form classes are not recorded in AOTMetsapceRecipes),
+    // generated lambda form classes are not recorded in AOTMetaspaceRecipes),
     // the recipes do not cover all classes that have been loaded so far. As
     // a result, we might have some unlinked classes at this point. Since we
     // require cached classes to be linked, all such classes will be linked

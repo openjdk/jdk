@@ -39,18 +39,18 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
-static AOTMetsapceRecipes* _aot_metaspace_recipes = nullptr;
+static AOTMetaspaceRecipes* _aot_metaspace_recipes = nullptr;
 
-void* AOTMetsapceRecipes::operator new(size_t size) throw() {
+void* AOTMetaspaceRecipes::operator new(size_t size) throw() {
   return ArchiveBuilder::current()->ro_region_alloc(size);
 }
 
-void AOTMetsapceRecipes::record_all_classes() {
+void AOTMetaspaceRecipes::record_all_classes() {
   _all_klasses = ArchiveUtils::archive_array(ArchiveBuilder::current()->klasses());
   ArchivePtrMarker::mark_pointer(&_all_klasses);
 }
 
-void AOTMetsapceRecipes::record_recipes_for_constantpool() {
+void AOTMetaspaceRecipes::record_recipes_for_constantpool() {
   ResourceMark rm;
 
   // The recipes are recorded regardless of CDSConfig::is_dumping_{invokedynamic,dynamic_proxies,reflection_data}().
@@ -152,7 +152,7 @@ void AOTMetsapceRecipes::record_recipes_for_constantpool() {
   ArchivePtrMarker::mark_pointer(&_flags);
 }
 
-void AOTMetsapceRecipes::apply_recipes_for_constantpool(JavaThread* current) {
+void AOTMetaspaceRecipes::apply_recipes_for_constantpool(JavaThread* current) {
   assert(CDSConfig::is_dumping_aot_cache(), "must be");
 
   for (int i = 0; i < _all_klasses->length(); i++) {
@@ -181,7 +181,7 @@ void AOTMetsapceRecipes::apply_recipes_for_constantpool(JavaThread* current) {
   }
 }
 
-void AOTMetsapceRecipes::load_all_classes(TRAPS) {
+void AOTMetaspaceRecipes::load_all_classes(TRAPS) {
   assert(CDSConfig::is_dumping_aot_cache(), "sanity");
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
   for (int i = 0; i < _all_klasses->length(); i++) {
@@ -214,14 +214,14 @@ void AOTMetsapceRecipes::load_all_classes(TRAPS) {
   }
 }
 
-void AOTMetsapceRecipes::record_recipes() {
+void AOTMetaspaceRecipes::record_recipes() {
   assert(CDSConfig::is_dumping_aot_configuration(), "must be");
-  _aot_metaspace_recipes = new AOTMetsapceRecipes();
+  _aot_metaspace_recipes = new AOTMetaspaceRecipes();
   _aot_metaspace_recipes->record_all_classes();
   _aot_metaspace_recipes->record_recipes_for_constantpool();
 }
 
-void AOTMetsapceRecipes::apply_recipes(TRAPS) {
+void AOTMetaspaceRecipes::apply_recipes(TRAPS) {
   assert(CDSConfig::is_dumping_aot_cache(), "must be");
   if (_aot_metaspace_recipes != nullptr) {
     _aot_metaspace_recipes->apply_recipes_impl(THREAD);
@@ -237,11 +237,11 @@ void AOTMetsapceRecipes::apply_recipes(TRAPS) {
   _aot_metaspace_recipes = nullptr;
 }
 
-void AOTMetsapceRecipes::apply_recipes_impl(TRAPS) {
+void AOTMetaspaceRecipes::apply_recipes_impl(TRAPS) {
   load_all_classes(CHECK);
   apply_recipes_for_constantpool(THREAD);
 }
 
-void AOTMetsapceRecipes::serialize(SerializeClosure* soc) {
+void AOTMetaspaceRecipes::serialize(SerializeClosure* soc) {
   soc->do_ptr((void**)&_aot_metaspace_recipes);
 }

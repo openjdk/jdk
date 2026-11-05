@@ -42,7 +42,7 @@ template <typename T> class Array;
 // The following information are recorded:
 //   - The list of all classes that are stored in the AOTConfiguration file.
 //   - The list of all classes that require AOT resolution of invokedynamic call sites.
-class AOTMetsapceRecipes {
+class AOTMetaspaceRecipes {
   static constexpr int CP_RESOLVE_CLASS            = 0x1 << 0; // CP has preresolved class entries
   static constexpr int CP_RESOLVE_FIELD_AND_METHOD = 0x1 << 1; // CP has preresolved field/method entries
   static constexpr int CP_RESOLVE_INDY             = 0x1 << 2; // CP has preresolved indy entries
@@ -57,7 +57,7 @@ class AOTMetsapceRecipes {
   Array<Array<int>*>* _cp_recipes;
   Array<int>* _flags;
 
-  AOTMetsapceRecipes() : _all_klasses(nullptr), _cp_recipes(nullptr), _flags(nullptr) {}
+  AOTMetaspaceRecipes() : _all_klasses(nullptr), _cp_recipes(nullptr), _flags(nullptr) {}
 
   void* operator new(size_t size) throw();
 
