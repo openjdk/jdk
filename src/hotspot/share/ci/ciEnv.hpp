@@ -71,6 +71,17 @@ private:
   CompileLog*      _log;            // faster access to CompilerThread::log
   void*            _compiler_data;  // compiler-specific stuff, if any
 
+  // When CHA makes a speculation that is invalidated due to concurrent class loading/unloading,
+  // the compiler may need to abort compilation to avoid encountering issues arising from this
+  // inconsistency. For example, after P->unique_concrete_subklass() has returned C1, if we
+  // encounter a class C2 unrelated to C1 that is also a subklass of P, the compiler may be
+  // confused when a Phi is a pointer to a C1 but one of its inputs is a pointer to a C2.
+  // Note that this is different from the VM invalidating an assumption made by the compiled code.
+  // Such invalidations happen during code installation or afterwards. This value is about whether
+  // the compiler can observe a paradoxical hierarchy, and we should abort the compilation right
+  // away to avoid issues from observing the inconsistencies in the class hierarchy.
+  bool _paradoxical_hierarchy;
+
   char* _name_buffer;
   int   _name_buffer_len;
 
@@ -491,6 +502,15 @@ public:
   // Per-compiler data.  (Used by C2 to publish the Compile* pointer.)
   void* compiler_data() const { return _compiler_data; }
   void set_compiler_data(void* x) { _compiler_data = x; }
+
+  bool paradoxical_hierarchy() const {
+    return _paradoxical_hierarchy;
+  }
+
+  void record_paradoxical_hierarchy() {
+    _paradoxical_hierarchy = true;
+    record_failure("paradoxical hierarchy");
+  }
 
   // Notice that a method has been inlined in the current compile;
   // used only for statistics.

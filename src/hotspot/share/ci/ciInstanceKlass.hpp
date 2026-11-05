@@ -55,7 +55,6 @@ private:
   InstanceKlass::ClassState _init_state;           // state of class
   bool                   _is_shared;
   bool                   _has_finalizer;
-  SubklassValue          _has_subklass;
   bool                   _has_nonstatic_fields;
   bool                   _has_nonstatic_concrete_methods;
   bool                   _is_hidden;
@@ -64,10 +63,8 @@ private:
   bool                   _has_trusted_loader;
 
   ciFlags                _flags;
-
-  // Lazy fields get filled in only upon request.
   ciInstanceKlass*       _super;
-  ciInstance*            _java_mirror;
+  ciInstance*            _java_mirror;  // Lazy field, initialized on demand
 
   ciConstantPoolCache*   _field_cache;  // cached map index->field
 
@@ -84,18 +81,12 @@ private:
   // JavaFieldStream order).
   const GrowableArray<ciField*>* _nonstatic_fields;
 
-  int                    _has_injected_fields; // any non static injected fields? lazily initialized.
-
-  // The possible values of the _implementor fall into following three cases:
-  //   null: no implementor.
-  //   A ciInstanceKlass that's not itself: one implementor.
-  //   Itself: more than one implementor.
-  ciInstanceKlass*       _implementor;
+  int _has_injected_fields; // any non static injected fields? lazily initialized.
   GrowableArray<ciInstanceKlass*>* _transitive_interfaces;
 
   void compute_injected_fields();
   bool compute_injected_fields_helper();
-  void compute_transitive_interfaces();
+  GrowableArray<ciInstanceKlass*>* compute_transitive_interfaces(Arena* arena, InstanceKlass* ik);
 
   ciField* get_nonstatic_field_by_offset(int field_offset);
 
@@ -121,7 +112,6 @@ protected:
   bool is_shared() { return _is_shared; }
 
   InstanceKlass::ClassState compute_init_state();
-  bool compute_shared_has_subklass();
   void compute_nonstatic_fields();
   void compute_nonstatic_fields_impl(const GrowableArray<ciField*>* super_declared_fields, const GrowableArray<ciField*>* super_fields);
   bool compute_has_trusted_loader();
@@ -166,20 +156,6 @@ public:
   bool                   has_finalizer()  {
     assert(is_loaded(), "must be loaded");
     return _has_finalizer; }
-  bool                   has_subklass()   {
-    assert(is_loaded(), "must be loaded");
-    // Ignore cached subklass_false case.
-    // It could be invalidated by concurrent class loading and
-    // can result in type paradoxes during compilation when
-    // a subclass is observed, but has_subklass() returns false.
-    if (_has_subklass == subklass_true) {
-      return true;
-    }
-    if (flags().is_final()) {
-      return false;
-    }
-    return compute_shared_has_subklass();
-  }
 
   jint                   layout_helper_size_in_bytes()  {
     return Klass::layout_helper_size_in_bytes(layout_helper());
@@ -190,20 +166,13 @@ public:
   }
   jint                   has_nonstatic_fields()  {
     assert(is_loaded(), "must be loaded");
-    return _has_nonstatic_fields; }
-  ciInstanceKlass*       super();
-  jint                   nof_implementors() {
-    ciInstanceKlass* impl;
-    assert(is_loaded(), "must be loaded");
-    impl = implementor();
-    if (impl == nullptr) {
-      return 0;
-    } else if (impl != this) {
-      return 1;
-    } else {
-      return 2;
-    }
+    return _has_nonstatic_fields;
   }
+
+  ciInstanceKlass*       super() const {
+    return _super;
+  }
+
   bool has_nonstatic_concrete_methods()  {
     assert(is_loaded(), "must be loaded");
     return _has_nonstatic_concrete_methods;
@@ -269,7 +238,6 @@ public:
   int number_of_nonoop_entries_in_acmp_map() const;
   AcmpMapSegment get_nonoop_segment_of_acmp_map(int i) const;
 
-  ciInstanceKlass* unique_concrete_subklass();
   bool has_finalizable_subclass();
 
   bool has_class_initializer();
@@ -291,16 +259,6 @@ public:
   ciMethod* find_method(ciSymbol* name, ciSymbol* signature);
   // Note:  To find a method from name and type strings, use ciSymbol::make,
   // but consider adding to vmSymbols.hpp instead.
-
-  bool is_leaf_type();
-  ciInstanceKlass* implementor();
-
-  ciInstanceKlass* unique_implementor() {
-    assert(is_loaded(), "must be loaded");
-    assert(is_interface(), "must be");
-    ciInstanceKlass* impl = implementor();
-    return (impl != this ? impl : nullptr);
-  }
 
   virtual bool can_be_value_klass(bool is_exact = false);
 
@@ -337,7 +295,93 @@ public:
   bool has_trusted_loader() const {
     return _has_trusted_loader;
   }
+
   GrowableArray<ciInstanceKlass*>* transitive_interfaces() const;
+
+private:
+  // The compiler takes advantage of class hierarchy analysis to optimize the value sets of the
+  // nodes in the graph. For example, when a value declares that it is a j.u.AbstractList, the
+  // compiler can infer that its runtime type must be j.u.ArrayList if j.u.ArrayList is the only
+  // concrete subklass of j.u.AbstractList. This is useful for various optimizations such as method
+  // devirtualization, or acmp expansion. However, the VM does not freeze when a compilation
+  // happens, so concurrent class loading/unloading can change the result of the analysis
+  // mid-compilation. For example:
+  // - When a Phi is parsed, its declared type P has a unique concrete subklass C1, so we
+  //   optimistically assume that the Phi must be a pointer to a C1. However, afterwards, it turns
+  //   out that an input of that Phi is a pointer to a C2, which is also a subklass of P but is
+  //   only loaded later. This leads to a paradoxical case when the input of a Phi has an unrelated
+  //   type to that Phi.
+  // - When a call is parsed, its result type P has a single concrete subklass C1, so we
+  //   optimistically assume that the output of that call must be a pointer to a C1. However,
+  //   afterwards, the call is inlined and the result turns out to be a pointer to a C2, which is
+  //   also a subklass of P but is only loaded later. This can lead to various issues as the
+  //   nodes consuming the pre-inlining result may see their input type changes unexpectedly.
+  //
+  // Sometimes, the compiler still works fine, and the compiled code gets discarded due to
+  // dependency invalidation, so there is no observable issue. However, this is not always the
+  // case:
+  // - The compiler might crash due to paradoxical graph shape; method invalidation only happens
+  //   after the compilation finishes, which is too late.
+  // - CHA result invalidation may not actually result in dependency invalidation, so the
+  //   incorrectly compiled code may get executed, and lead to incorrect results. This can happen
+  //   when compilation optimizations transform a field access to C1.v incorrectly to a field
+  //   access to P.v, which may correspond to a non-existent field. This leads to incorrect
+  //   anti-dependence computation, and incorrect scheduling. This case can arise either due to the
+  //   compiler not using CHA in a monotonic way, or concurrent class unloading; neither
+  //   necessarily causes dependency invalidation.
+  //
+  // As a result, CHA computation needs to ensure that the compiler has a consistent view of the
+  // class hierarchy. The most important invariant is that compatible types need to stay compatible
+  // after the compiler uses CHA to optimize them. Less formally, if A is a subklass of B, then
+  // TypeOopPtr::make_from_klass(A) should also be a subset of TypeOopPtr::make_from_klass(B). This
+  // means:
+  // - TypeOopPtr::make_from_klass(A) should return the same value throughout the compilation.
+  // - If A says that it has no non-interface subklass, then there should be no non-interface
+  //   ciInstanceKlass B subklassing it. Otherwise, TypeOopPtr::make_from_klass(A) would return a
+  //   Type representing the set of pointers to an exact A, which does not include
+  //   TypeOopPtr::make_from_klass(B).
+  // - If A says that all of its concrete implementors are subklasses of A1, B says that all of its
+  //   concrete implementors are subklasses of B1, A is a subklass of B, then A1 must be a subklass
+  //   of B1.
+  //   + This also means that for all klasses C such that A1 is a subklass of C and C is a subklass
+  //     of A, C must say that all of its concrete implementors are subklasses of A1.
+  //
+  // Limitation:
+  // - While InstanceKlass::up_cast_abstract takes into account abstract subklasses that do not
+  //   have concrete subklasses of their own, InstanceKlass::implementor does not take into account
+  //   subinterfaces that do not have non-interface subklasses.
+  //   + This means that we cannot use CHA to improve a pointer to an interface, because otherwise,
+  //     for a Phi of type I and its input of type J, we may optimize it into a Phi of type C with
+  //     an input of unrelated type J, which is paradoxical.
+  //   + Note that it is fine to use InstanceKlass::implementor to devirtualize a method call,
+  //     because that optimization transforms a virtual call into a guarded direct call with a
+  //     receiver type check, which does not undermine the graph integrity regardless of the
+  //     optimized type.
+  bool _cha_info_computed;
+
+  // Whether this ciInstanceKlass has a proper subklass (a subklass that is not itself) that is not
+  // an interface
+  SubklassValue _has_subklass;
+
+  // _implementor is the result of trying to find a bound of all concrete subklasses of a class or
+  // interface. In addition, it must ensure the invariant that if A is a subklass of B, then
+  // A->_implementor must also be a subklass of B->_implementor. The exception is when B is an
+  // interface and A is a subinterface of B, see the Limitation section above for more details.
+  // This value can be either:
+  //   == nullptr: no concrete subklass.
+  //   != nullptr: each concrete subklass of this must be a subklass of this value.
+  ciInstanceKlass* _implementor;
+
+  void compute_cha_info();
+  void update_cha_info_upon_creation();
+  bool check_cha_consistency(InstanceKlass* ik);
+  static bool verify_superklass_or_interface(ciInstanceKlass* super, InstanceKlass* sub);
+
+public:
+  bool has_subklass();
+  bool is_leaf_type();
+  ciInstanceKlass* unique_concrete_subklass();
+  ciInstanceKlass* unique_implementor();
 
   // Replay support
 

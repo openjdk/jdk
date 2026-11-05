@@ -79,7 +79,6 @@ bool ciKlass::is_subtype_of(ciKlass* that) {
 
   // Ensure consistency with ciInstanceKlass::has_subklass().
   assert(!that->is_instance_klass() || // array klasses are irrelevant
-          that->is_interface()      || // has_subklass is always false for interfaces
          !is_subtype || that->as_instance_klass()->has_subklass(), "inconsistent");
 
   return is_subtype;
