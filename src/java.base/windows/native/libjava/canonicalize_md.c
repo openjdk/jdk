@@ -166,10 +166,14 @@ WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
                            NULL);
 
     if (h != INVALID_HANDLE_VALUE) {
+        WCHAR* newFinalPath = NULL;
         DWORD len = GetFinalPathNameByHandleW(h, finalPath, size, 0);
         if (len >= size) {
-            if ((finalPath = (WCHAR*)malloc(len * sizeof(WCHAR))) == NULL)
+            if ((finalPath = (WCHAR*)malloc(len * sizeof(WCHAR))) == NULL) {
+                CloseHandle(h);
                 return NULL;
+            }
+            newFinalPath = finalPath;
             len = GetFinalPathNameByHandleW(h, finalPath, len, 0);
         }
         CloseHandle(h);
@@ -190,6 +194,8 @@ WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
             }
 
             return finalPath;
+        } else { // GetFinalPathNameByHandleW failed
+            if (newFinalPath != NULL) free(newFinalPath);
         }
     }
 
