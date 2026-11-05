@@ -1484,7 +1484,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
   unsigned      i;
 
   // Generate Expand function header
-  fprintf(fp, "MachNode* %sNode::Expand(State* state, Node_List& proj_list, Node* mem) {\n", node->_ident);
+  fprintf(fp, "MachNode* %sNode::Expand(State* state, Node_List<MachProjNode>& proj_list, Node* mem) {\n", node->_ident);
   fprintf(fp, "  Compile* C = Compile::current();\n");
   // Generate expand code
   if( node->expands() ) {

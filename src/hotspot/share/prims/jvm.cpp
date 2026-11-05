@@ -113,7 +113,7 @@
 #include "utilities/utf8.hpp"
 #include "utilities/zipLibrary.hpp"
 #if INCLUDE_CDS
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -567,10 +567,10 @@ JVM_ENTRY(jboolean, JVM_IsAtomicArray(JNIEnv *env, jarray array))
 
   if (klass->is_flatArray_klass()) {
     FlatArrayKlass* fak = FlatArrayKlass::cast(klass);
-    if (LayoutKindHelper::is_atomic_flat(fak->layout_kind())) {
+    if (fak->flat_layout().is_atomic()) {
       return true;
     }
-    bool is_null_free = !LayoutKindHelper::is_nullable_flat(fak->layout_kind());
+    bool is_null_free = !fak->flat_layout().is_nullable();
     if (fak->element_klass()->is_naturally_atomic(is_null_free)) {
       return true;
     }
@@ -1059,7 +1059,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
 #if INCLUDE_CDS
   if (CDSConfig::is_preserving_verification_constraints() && from_class->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(from_class);
-    SystemDictionaryShared::add_old_verification_constraint(THREAD, ik, h_name);
+    AOTSystemDictionary::add_old_verification_constraint(THREAD, ik, h_name);
   }
 #endif
 
@@ -1301,7 +1301,7 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
   if (k == nullptr) {
     // If the class is not already loaded, try to see if it's in the shared
     // archive for the current classloader (h_loader).
-    k = SystemDictionaryShared::find_or_load_shared_class(klass_name, h_loader, CHECK_NULL);
+    k = AOTSystemDictionary::find_or_load_shared_class(klass_name, h_loader, CHECK_NULL);
   }
 #endif
   return (k == nullptr) ? nullptr :

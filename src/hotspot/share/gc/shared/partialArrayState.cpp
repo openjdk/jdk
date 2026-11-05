@@ -35,23 +35,16 @@
 
 PartialArrayState::PartialArrayState(objArrayOop array,
                                      size_t index, size_t length,
-                                     size_t chunk_size,
-                                     size_t initial_refcount)
+                                     size_t chunk_size)
   : _array(array),
     _length(length),
     _chunk_size(chunk_size),
     _index(index),
-    _refcount(initial_refcount)
+    _num_remaining_chunks((length - index) / chunk_size)
 {
-  assert(index <= length, "precondition");
+  assert(index < length, "precondition");
   assert(chunk_size > 0, "precondition");
   assert((length - index) % chunk_size == 0, "whole chunks remain");
-  assert(initial_refcount > 0, "must have a task reference");
-}
-
-void PartialArrayState::add_references(size_t count) {
-  size_t new_count = _refcount.add_then_fetch(count, memory_order_relaxed);
-  assert(new_count >= count, "reference count overflow");
 }
 
 class PartialArrayStateAllocator::FreeListEntry {
@@ -81,8 +74,7 @@ PartialArrayStateAllocator::~PartialArrayStateAllocator() {
 PartialArrayState* PartialArrayStateAllocator::allocate(objArrayOop array,
                                                         size_t index,
                                                         size_t length,
-                                                        size_t chunk_size,
-                                                        size_t initial_refcount) {
+                                                        size_t chunk_size) {
   void* p;
   FreeListEntry* head = _free_list;
   if (head == nullptr) {
@@ -92,13 +84,13 @@ PartialArrayState* PartialArrayStateAllocator::allocate(objArrayOop array,
     head->~FreeListEntry();
     p = head;
   }
-  return ::new (p) PartialArrayState(array, index, length, chunk_size, initial_refcount);
+  return ::new (p) PartialArrayState(array, index, length, chunk_size);
 }
 
 void PartialArrayStateAllocator::release(PartialArrayState* state) {
-  size_t refcount = state->_refcount.sub_then_fetch(1u, memory_order_release);
-  if (refcount != 0) {
-    assert(refcount + 1 != 0, "refcount underflow");
+  size_t num_remaining_chunks = state->_num_remaining_chunks.sub_then_fetch(1u, memory_order_release);
+  if (num_remaining_chunks != 0) {
+    assert(num_remaining_chunks + 1 != 0, "remaining chunk count underflow");
   } else {
     OrderAccess::acquire();
     // Don't need to call destructor; can't if not destructible.

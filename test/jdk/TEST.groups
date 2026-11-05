@@ -175,7 +175,8 @@ jdk_util = \
 valhalla_adopted = \
     java/util/Collections/AddAll.java \
     java/util/Arrays \
-    java/util/Collections
+    java/util/Collections \
+    java/util/HashMap
 
 # All util components not part of some other util category
 jdk_util_other = \

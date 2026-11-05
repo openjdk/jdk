@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.OptionalDataException;
 import java.io.Reader;
 import java.io.Serial;
 import java.io.StringReader;
@@ -1320,19 +1319,7 @@ public class DataFlavor implements Externalizable, Cloneable {
             }
         }
 
-        try {
-            representationClass = (Class)is.readObject();
-        } catch (OptionalDataException ode) {
-            if (!ode.eof || ode.length != 0) {
-                throw ode;
-            }
-            // Ensure backward compatibility.
-            // Old versions didn't write the representation class to the stream.
-            if (rcn != null) {
-                representationClass =
-                    DataFlavor.tryToLoadClass(rcn, getClass().getClassLoader());
-            }
-        }
+        representationClass = (Class)is.readObject();
     }
 
     /**

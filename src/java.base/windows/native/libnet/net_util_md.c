@@ -283,17 +283,7 @@ JNIEXPORT int JNICALL
 NET_GetSockOpt(int s, int level, int optname, void *optval,
                int *optlen)
 {
-    int rv;
-
-    if (level == IPPROTO_IPV6 && optname == IPV6_TCLASS) {
-        int *intopt = (int *)optval;
-        *intopt = 0;
-        *optlen = sizeof(*intopt);
-        return 0;
-    }
-
-    rv = getsockopt(s, level, optname, optval, optlen);
-
+    int rv = getsockopt(s, level, optname, optval, optlen);
 
     /*
      * IPPROTO_IP/IP_TOS is not supported on some Windows

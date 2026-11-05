@@ -314,6 +314,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   Thread(mem_tag),
   // Initialize fields
   _on_thread_list(false),
+  _smr_delete_is_safe(false),
   DEBUG_ONLY(_java_call_counter(0) COMMA)
   _entry_point(nullptr),
   _deopt_mark(nullptr),

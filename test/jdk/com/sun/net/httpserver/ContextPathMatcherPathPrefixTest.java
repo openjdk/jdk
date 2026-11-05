@@ -222,8 +222,7 @@ public class ContextPathMatcherPathPrefixTest {
 
                     // Write the request
                     byte[] requestBytes = String
-                            // `Connection: close` is required for `BufferedReader::readLine` to work.
-                            .format("%s HTTP/1.1\r\nConnection: close\r\n\r\n", requestLinePrefix)
+                            .format("%s HTTP/1.0\r\n\r\n", requestLinePrefix)
                             .getBytes(CHARSET);
                     outputStream.write(requestBytes);
                     outputStream.flush();

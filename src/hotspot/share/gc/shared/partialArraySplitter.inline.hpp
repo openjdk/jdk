@@ -54,7 +54,7 @@ PartialArraySplitter::start(Queue* queue,
   if (end < length) {
     TASKQUEUE_STATS_ONLY(_stats.inc_split();)
     PartialArrayState* state =
-      _allocator.allocate(array, end, length, chunk_size, 1);
+      _allocator.allocate(array, end, length, chunk_size);
     enqueue(queue, state, 1);
   }
   return Claim{array, 0, end};
@@ -72,14 +72,11 @@ PartialArraySplitter::claim(PartialArrayState* state, Queue* queue, bool stolen)
   size_t chunk_size = state->_chunk_size;
   uint count = _stepper.continuation_tasks(start, state->_length, chunk_size);
   if (count > 0) {
-    // Increment the ref-count for all new tasks before publication.  A thief
-    // may immediately claim and release any task we push.
-    state->add_references(count);
     enqueue(queue, state, count);
   }
   Claim result{state->array(), start, start + chunk_size};
   // Capture everything needed for scanning before decrementing the state's
-  // ref-count.
+  // remaining chunk count.
   _allocator.release(state);
   return result;
 }

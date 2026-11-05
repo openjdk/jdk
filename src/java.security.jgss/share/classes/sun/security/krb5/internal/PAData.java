@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,13 +188,13 @@ public class PAData {
      * </ol>
      * (This is useful when PA-DATAs from KRB-ERROR and AS-REP are combined).
      *
-     * @return the etype, or defaultEType if not enough info
+     * @return the etype, or requestedETypes[0] if not enough info
      * @throws Asn1Exception|IOException if there is an encoding error
      */
-    public static int getPreferredEType(PAData[] pas, int defaultEType)
+    public static int getPreferredEType(PAData[] pas, int[] requestedETypes)
             throws IOException, Asn1Exception {
 
-        if (pas == null) return defaultEType;
+        if (pas == null) return requestedETypes[0];
 
         DerValue d = null, d2 = null;
         for (PAData p: pas) {
@@ -209,23 +209,34 @@ public class PAData {
             }
         }
         if (d2 != null) {
+            ArrayList<Integer> offered = new ArrayList<>();
             while (d2.data.available() > 0) {
                 DerValue value = d2.data.getDerValue();
                 ETypeInfo2 tmp = new ETypeInfo2(value);
-                if (EType.isNewer(tmp.getEType()) || tmp.getParams() == null) {
+                if (EType.isNewer(tmp.getEType()) || !tmp.hasParams()) {
                     // we don't support non-null s2kparams for old etypes
-                    return tmp.getEType();
+                    offered.add(tmp.getEType());
+                }
+            }
+            for (int etype : requestedETypes) {
+                if (offered.contains(etype)) {
+                    return etype;
                 }
             }
         }
         if (d != null) {
+            ArrayList<Integer> offered = new ArrayList<>();
             while (d.data.available() > 0) {
                 DerValue value = d.data.getDerValue();
-                ETypeInfo tmp = new ETypeInfo(value);
-                return tmp.getEType();
+                offered.add(new ETypeInfo(value).getEType());
+            }
+            for (int etype : requestedETypes) {
+                if (offered.contains(etype)) {
+                    return etype;
+                }
             }
         }
-        return defaultEType;
+        return requestedETypes[0];
     }
 
     /**
@@ -280,7 +291,7 @@ public class PAData {
                 DerValue value = d2.data.getDerValue();
                 ETypeInfo2 tmp = new ETypeInfo2(value);
                 if (tmp.getEType() == eType &&
-                        (EType.isNewer(eType) || tmp.getParams() == null)) {
+                        (EType.isNewer(eType) || !tmp.hasParams())) {
                     // we don't support non-null s2kparams for old etypes
                     return new SaltAndParams(tmp.getSalt(), tmp.getParams());
                 }

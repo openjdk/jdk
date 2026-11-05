@@ -27,6 +27,7 @@
  * @summary Test the clhsdb commands 'printall', 'jstack' on a CDS enabled corefile.
  * @requires vm.hasSA
  * @requires !vm.ubsan
+ * @requires !vm.asan
  * @requires vm.gc != "Z"
  * @requires vm.cds
  * @requires vm.flavor == "server"

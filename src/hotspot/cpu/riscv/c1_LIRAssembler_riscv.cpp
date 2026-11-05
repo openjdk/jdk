@@ -636,6 +636,11 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   }
 }
 
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  assert(UseCompressedOops, "should only be used with compressed oops");
+  __ decode_heap_oop(dest->as_pointer_register(), src->as_pointer_register());
+}
+
 void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   precond(src->is_register() && dest->is_stack());
 
@@ -1704,6 +1709,7 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   __ zext(crc, crc, 32);
   __ update_byte_crc32(crc, val, res);
   __ notr(res, crc); // ~crc
+  __ sext(res, res, 32);
 }
 
 void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
