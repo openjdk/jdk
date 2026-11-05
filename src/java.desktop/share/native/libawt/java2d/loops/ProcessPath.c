@@ -1705,6 +1705,9 @@ jboolean ProcessPath(ProcessHandler* hnd,
 
                 break;
         }
+        if (hnd->resultCode != 0) {
+            return JNI_FALSE;
+        }
     }
 
     /* Performing closing of the unclosed segments */
@@ -2214,7 +2217,7 @@ doFillPath(DrawHandler* dhnd,
     FD_INIT(&fillData);
     res = ProcessPath(&hnd, (jfloat)transX, (jfloat)transY,
                       coords, maxCoords, types, numTypes);
-    if (!res || hnd.resultCode != 0) { /* maybe check resultCode already earlier ??? */
+    if (!res) {
         FD_FREE_POINTS(&fillData);
         return JNI_FALSE;
     }
@@ -2255,7 +2258,7 @@ doDrawPath(DrawHandler* dhnd,
         stubEndSubPath : pProcessEndSubPath;
     res = ProcessPath(&hnd, (jfloat)transX, (jfloat)transY, coords, maxCoords,
                       types, numTypes);
-    if (!res || hnd.resultCode != 0) { /* maybe check resultCode already earlier ??? */
+    if (!res) {
         return JNI_FALSE;
     }
     return JNI_TRUE;
