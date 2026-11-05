@@ -704,7 +704,7 @@ bool ValueTypeNode::can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, 
     return true;
   }
 
-  if (!lhs->is_ValueType() && (rhs == nullptr || !rhs->is_ValueType())) {
+  if (!lhs->is_ValueType() && !is<ValueTypeNode>(rhs)) {
     return false;
   }
 
@@ -713,7 +713,7 @@ bool ValueTypeNode::can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, 
   }
 
   ValueTypeNode* lhs_value = lhs->as_ValueType();
-  ValueTypeNode* rhs_value = rhs != nullptr ? rhs->isa_ValueType() : nullptr;
+  ValueTypeNode* rhs_value = isa<ValueTypeNode>(rhs);
   if (rhs_value != nullptr && lhs_value->type()->value_klass() != rhs_value->type()->value_klass()) {
     // Dead code, can skip the substitutability check
     return true;
@@ -1405,8 +1405,7 @@ static void replace_allocation(PhaseIterGVN* igvn, Node* res, Node* dom) {
 
 Node* ValueTypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* oop = get_oop();
-  if (oop->isa_ValueType() && !phase->type(oop)->maybe_null()) {
-    ValueTypeNode* vtptr = oop->as_ValueType();
+  if (ValueTypeNode* vtptr = oop->isa_ValueType(); vtptr != nullptr && !phase->type(oop)->maybe_null()) {
     assert(value_klass() == vtptr->value_klass(), "inconsistent types");
     set_oop(*phase, vtptr->get_oop());
     set_is_buffered(*phase);
@@ -1449,7 +1448,7 @@ Node* ValueTypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         if (alloc != nullptr && alloc->in(AllocateNode::ValueType) == this && !alloc->_is_scalar_replaceable) {
           // Found a re-allocation
           Node* res = alloc->result_cast();
-          if (res != nullptr && res->is_CheckCastPP()) {
+          if (is<CheckCastPPNode>(res)) {
             // Replace allocation by oop and unlink AllocateNode
             replace_allocation(igvn, res, oop);
             igvn->replace_input_of(alloc, AllocateNode::ValueType, igvn->C->top());
@@ -1943,7 +1942,7 @@ void ValueTypeNode::remove_redundant_allocations(PhaseIdealLoop* phase) const {
     AllocateNode* alloc = fast_out(i)->isa_Allocate();
     if (alloc != nullptr && alloc->in(AllocateNode::ValueType) == this && !alloc->_is_scalar_replaceable) {
       Node* res = alloc->result_cast();
-      if (res == nullptr || !res->is_CheckCastPP()) {
+      if (!is<CheckCastPPNode>(res)) {
         break; // No unique CheckCastPP
       }
       // Search for a dominating allocation of the same value type
@@ -1952,7 +1951,7 @@ void ValueTypeNode::remove_redundant_allocations(PhaseIdealLoop* phase) const {
         AllocateNode* alloc_other = fast_out(j)->isa_Allocate();
         if (alloc_other != nullptr && alloc_other->in(AllocateNode::ValueType) == this && !alloc_other->_is_scalar_replaceable) {
           Node* res_other = alloc_other->result_cast();
-          if (res_other != nullptr && res_other->is_CheckCastPP() && res_other != res_dom &&
+          if (is<CheckCastPPNode>(res_other) && res_other != res_dom &&
               phase->is_dominator(res_other->in(0), res_dom->in(0))) {
             res_dom = res_other;
           }

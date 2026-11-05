@@ -368,7 +368,7 @@ void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines
 }
 
 void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead) {
-  assert(dead != nullptr && dead->is_Call(), "sanity");
+  assert(Node::is<CallNode>(dead), "sanity");
   int found = 0;
   for (int i = 0; i < inlines->length(); i++) {
     if (inlines->at(i)->call_node() == dead) {
@@ -2240,13 +2240,13 @@ void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
 }
 
 void Compile::add_flat_access(Node* n) {
-  assert(n != nullptr && (n->Opcode() == Op_LoadFlat || n->Opcode() == Op_StoreFlat), "unexpected node %s", n == nullptr ? "nullptr" : n->Name());
+  assert(Node::is<Op_LoadFlat>(n) || Node::is<Op_StoreFlat>(n), "unexpected node %s", n == nullptr ? "nullptr" : n->Name());
   assert(!_flat_access_nodes.contains(n), "duplicate insertion");
   _flat_access_nodes.push(n);
 }
 
 void Compile::remove_flat_access(Node* n) {
-  assert(n != nullptr && (n->Opcode() == Op_LoadFlat || n->Opcode() == Op_StoreFlat), "unexpected node %s", n == nullptr ? "nullptr" : n->Name());
+  assert(Node::is<Op_LoadFlat>(n) || Node::is<Op_StoreFlat>(n), "unexpected node %s", n == nullptr ? "nullptr" : n->Name());
   _flat_access_nodes.remove_if_existing(n);
 }
 
@@ -3076,7 +3076,7 @@ void Compile::remove_root_to_sfpts_edges(PhaseIterGVN& igvn) {
   if (r != nullptr) {
     for (uint i = r->req(); i < r->len(); ++i) {
       Node *n = r->in(i);
-      if (n != nullptr && n->is_SafePoint()) {
+      if (Node::is<SafePointNode>(n)) {
         r->rm_prec(i);
         if (n->outcnt() == 0) {
           igvn.remove_dead_node(n, PhaseIterGVN::NodeOrigin::Graph);
@@ -4316,12 +4316,12 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
           // Otherwise we will run into the assertion above when visiting that guy.
           for (uint i = 0; i < n->outcnt(); ++i) {
             Node *out_i = n->raw_out(i);
-            if (out_i && out_i->is_AddP() && out_i->in(AddPNode::Base) == addp) {
+            if (Node::is<AddPNode>(out_i) && out_i->in(AddPNode::Base) == addp) {
               out_i->set_req(AddPNode::Base, nn);
 #ifdef ASSERT
               for (uint j = 0; j < out_i->outcnt(); ++j) {
                 Node *out_j = out_i->raw_out(j);
-                assert(out_j == nullptr || !out_j->is_AddP() || out_j->in(AddPNode::Base) != addp,
+                assert(!Node::is<AddPNode>(out_j) || out_j->in(AddPNode::Base) != addp,
                        "more than 2 AddP nodes in a chain (out_j %u)", out_j->_idx);
               }
 #endif
@@ -4992,7 +4992,7 @@ bool Compile::final_graph_reshaping() {
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }
-    } else if (n->is_PCTable() && n->in(0) && n->in(0)->in(0) && n->in(0)->in(0)->is_Call()) {
+    } else if (n->is_PCTable() && n->in(0) && Node::is<CallNode>(n->in(0)->in(0))) {
       CallNode* call = n->in(0)->in(0)->as_Call();
       if (call->entry_point() == OptoRuntime::new_array_Java() ||
           call->entry_point() == OptoRuntime::new_array_nozero_Java()) {

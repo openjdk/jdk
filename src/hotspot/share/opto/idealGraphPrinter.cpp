@@ -957,8 +957,8 @@ ciField* IdealGraphPrinter::find_source_field_of_array_access(const Node* node, 
 Node* IdealGraphPrinter::get_load_node(const Node* node) {
   Node* load = nullptr;
   Node* addr = node->as_Mem()->in(MemNode::Address);
-  if (addr != nullptr && addr->is_AddP()) {
-    Node* base = addr->as_AddP()->base_node();
+  if (AddPNode* addr_add = Node::isa<AddPNode>(addr)) {
+    Node* base = addr_add->base_node();
     if (base != nullptr) {
       base = base->uncast();
       if (base->is_Load()) {

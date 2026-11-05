@@ -43,8 +43,8 @@
 // i.e. will grab into the base of the heap if it represents null.
 static bool accesses_heap_base_zone(Node *val) {
   if (CompressedOops::base() != nullptr) { // Implies UseCompressedOops.
-    if (val && val->is_Mach()) {
-      if (val->as_Mach()->ideal_Opcode() == Op_DecodeN) {
+    if (MachNode* val_mach = Node::isa<MachNode>(val)) {
+      if (val_mach->ideal_Opcode() == Op_DecodeN) {
         // This assumes all Decodes with TypePtr::NotNull are matched to nodes that
         // decode null to point to the heap base (Decode_NN).
         if (val->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull) {
@@ -465,7 +465,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   // Move any MachTemp inputs to the end of the test block.
   for (uint i = 0; i < best->req(); i++) {
     Node* n = best->in(i);
-    if (n == nullptr || !n->is_MachTemp()) {
+    if (!Node::is<MachTempNode>(n)) {
       continue;
     }
     ensure_node_is_at_block_or_above(n, block);

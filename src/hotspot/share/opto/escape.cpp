@@ -683,7 +683,7 @@ bool ConnectionGraph::can_reduce_phi(PhiNode* ophi) const {
   // If there was an error attempting to reduce allocation merges for this
   // method we might have disabled the compilation and be retrying with RAM
   // disabled.
-  if (!_compile->do_reduce_allocation_merges() || ophi->region() == nullptr || ophi->region()->Opcode() != Op_Region) {
+  if (!_compile->do_reduce_allocation_merges() || !Node::is<Op_Region>(ophi->region())) {
     return false;
   }
 
@@ -1089,7 +1089,7 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
   assert(data_phi != previous_load, "Output of split_through_phi is same as input.");
   assert(data_phi->is_Phi(), "Output of split_through_phi isn't a Phi.");
 
-  if (data_phi == nullptr || !data_phi->is_Phi()) {
+  if (!Node::is<PhiNode>(data_phi)) {
     // Make this a retry?
     return ;
   }
@@ -1555,7 +1555,7 @@ void ConnectionGraph::verify_ram_nodes(Compile* C, Node* root) {
         if (sfpt->is_SafePoint()) {
           int merge_idx = merge->merge_pointer_idx(sfpt->as_SafePoint()->jvms());
 
-          if (sfpt->in(merge_idx) != nullptr && sfpt->in(merge_idx)->is_SafePointScalarMerge()) {
+          if (Node::is<SafePointScalarMergeNode>(sfpt->in(merge_idx))) {
             assert(false, "SafePointScalarMerge nodes can't be nested.");
             C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
           }
@@ -4531,15 +4531,15 @@ PhiNode* ConnectionGraph::split_memory_phi(PhiNode* orig_phi, int alias_idx, Uni
   bool finished = false;
   while(!finished) {
     while (idx < phi->req()) {
-      Node *mem = find_inst_mem(phi->in(idx), alias_idx, orig_phi_worklist, rec_depth + 1);
-      if (mem != nullptr && mem->is_Phi()) {
-        PhiNode *newphi = create_split_phi(mem->as_Phi(), alias_idx, orig_phi_worklist, new_phi_created);
+      Node* mem = find_inst_mem(phi->in(idx), alias_idx, orig_phi_worklist, rec_depth + 1);
+      if (PhiNode* mem_phi = Node::isa<PhiNode>(mem)) {
+        PhiNode* newphi = create_split_phi(mem_phi, alias_idx, orig_phi_worklist, new_phi_created);
         if (new_phi_created) {
-          // found an phi for which we created a new split, push current one on worklist and begin
+          // found a phi for which we created a new split, push current one on worklist and begin
           // processing new one
           phi_list.push(phi);
           cur_input.push(idx);
-          phi = mem->as_Phi();
+          phi = mem_phi;
           result = newphi;
           idx = 1;
           continue;
@@ -5461,7 +5461,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node*>& alloc_worklist,
                n->Opcode() == Op_EncodeISOArray) {
       // get the memory projection
       n = n->find_out_with(Op_SCMemProj);
-      assert(n != nullptr && n->Opcode() == Op_SCMemProj, "memory projection required");
+      assert(Node::is<Op_SCMemProj>(n), "memory projection required");
     } else if (n->is_CallLeaf() && n->as_CallLeaf()->_name != nullptr &&
                strcmp(n->as_CallLeaf()->_name, "store_unknown_value") == 0) {
       n = n->as_CallLeaf()->proj_out(TypeFunc::Memory);
@@ -5496,7 +5496,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node*>& alloc_worklist,
       } else if (n->is_LoadStore()) {
         // get the memory projection
         n = n->find_out_with(Op_SCMemProj);
-        assert(n != nullptr && n->Opcode() == Op_SCMemProj, "memory projection required");
+        assert(Node::is<Op_SCMemProj>(n), "memory projection required");
       }
     }
     // push user on appropriate worklist

@@ -184,7 +184,7 @@ static bool is_hidden_merge(Node* reg) {
     reg = reg->in(0);
     if (reg == nullptr)  return false;
   }
-  return reg->is_Region() && reg->in(0) != nullptr && reg->in(0)->is_Root();
+  return reg->is_Region() && Node::is<RootNode>(reg->in(0));
 }
 
 void GraphKit::verify_map() const {
@@ -2543,8 +2543,7 @@ Node* GraphKit::uncommon_trap(int trap_request,
 
   // Make sure any guarding test views this path as very unlikely
   Node *i0 = control()->in(0);
-  if (i0 != nullptr && i0->is_If()) {        // Found a guarding if test?
-    IfNode *iff = i0->as_If();
+  if (IfNode* iff = Node::isa<IfNode>(i0)) {  // Found a guarding if test?
     float f = iff->_prob;   // Get prob
     if (control()->Opcode() == Op_IfTrue) {
       if (f > PROB_UNLIKELY_MAG(4))
@@ -2599,9 +2598,9 @@ Node* GraphKit::just_allocated_object(Node* current_control) {
   // Object::<init> is invoked after allocation, most of invoke nodes
   // will be reduced, but a region node is kept in parse time, we check
   // the pattern and skip the region node if it degraded to a copy.
-  if (ctrl != nullptr && ctrl->is_Region() && ctrl->req() == 2 &&
-      ctrl->as_Region()->is_copy()) {
-    ctrl = ctrl->as_Region()->is_copy();
+  if (RegionNode* region = Node::isa<RegionNode>(ctrl);
+      region != nullptr && ctrl->req() == 2 && region->is_copy()) {
+    ctrl = region->is_copy();
   }
   if (C->recent_alloc_ctl() == ctrl) {
    return C->recent_alloc_obj();
@@ -4743,8 +4742,8 @@ AllocateNode* AllocateNode::Ideal_allocation(Node* ptr) {
   // to keep more precise type from last cast.
   if (ptr->is_Proj()) {
     Node* allo = ptr->in(0);
-    if (allo != nullptr && allo->is_Allocate()) {
-      return allo->as_Allocate();
+    if (AllocateNode* allocate = isa<AllocateNode>(allo)) {
+      return allocate;
     }
   }
   // Report failure to match.

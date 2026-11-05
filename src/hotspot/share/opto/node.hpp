@@ -27,6 +27,7 @@
 #define SHARE_OPTO_NODE_HPP
 
 #include "libadt/vectset.hpp"
+#include "metaprogramming/dependentAlwaysFalse.hpp"
 #include "opto/compile.hpp"
 #include "opto/type.hpp"
 #include "utilities/copy.hpp"
@@ -920,167 +921,179 @@ public:
   // Virtual inherited Node size
   virtual uint size_of() const;
 
+  template <typename T> static bool is(const Node*);
+  template <typename T> static T* isa(Node*);
+  template <typename T> static const T* isa(const Node*);
+  template <typename T> static T* isa(std::nullptr_t);
+  template <int Op> static bool is(const Node* n) {
+    if (n == nullptr) return false;
+    return n->Opcode() == Op;
+  }
+
+#define NODE_METHODS(do_node) \
+  do_node(AbstractLock) \
+  do_node(Add) \
+  do_node(AddP) \
+  do_node(Allocate) \
+  do_node(AllocateArray) \
+  do_node(ArrayCopy) \
+  do_node(BaseCountedLoop) \
+  do_node(BaseCountedLoopEnd) \
+  do_node(Blackhole) \
+  do_node(Bool) \
+  do_node(BoxLock) \
+  do_node(Call) \
+  do_node(CallDynamicJava) \
+  do_node(CallJava) \
+  do_node(CallLeaf) \
+  do_node(CallLeafNoFP) \
+  do_node(CallLeafPure) \
+  do_node(CallRuntime) \
+  do_node(CallStaticJava) \
+  do_node(Catch) \
+  do_node(CatchProj) \
+  do_node(CheckCastPP) \
+  do_node(CastII) \
+  do_node(CastLL) \
+  do_node(CastFF) \
+  do_node(ConI) \
+  do_node(CastPP) \
+  do_node(ConstraintCast) \
+  do_node(ClearArray) \
+  do_node(CMove) \
+  do_node(Cmp) \
+  do_node(Convert) \
+  do_node(CountedLoop) \
+  do_node(CountedLoopEnd) \
+  do_node(CreateEx) \
+  do_node(DecodeNarrowPtr) \
+  do_node(DecodeN) \
+  do_node(DecodeNKlass) \
+  do_node(DivModInteger) \
+  do_node(EncodeNarrowPtr) \
+  do_node(EncodeP) \
+  do_node(EncodePKlass) \
+  do_node(FastLock) \
+  do_node(FastUnlock) \
+  do_node(FlatArrayCheck) \
+  do_node(Halt) \
+  do_node(If) \
+  do_node(RangeCheck) \
+  do_node(IfProj) \
+  do_node(IfFalse) \
+  do_node(IfTrue) \
+  do_node(Initialize) \
+  do_node(Jump) \
+  do_node(JumpProj) \
+  do_node(LongCountedLoop) \
+  do_node(LongCountedLoopEnd) \
+  do_node(Load) \
+  do_node(LoadStore) \
+  do_node(LoadStoreConditional) \
+  do_node(Lock) \
+  do_node(Loop) \
+  do_node(LShift) \
+  do_node(Mach) \
+  do_node(MachBranch) \
+  do_node(MachCall) \
+  do_node(MachCallDynamicJava) \
+  do_node(MachCallJava) \
+  do_node(MachCallLeaf) \
+  do_node(MachCallRuntime) \
+  do_node(MachCallStaticJava) \
+  do_node(MachConstantBase) \
+  do_node(MachConstant) \
+  do_node(MachGoto) \
+  do_node(MachIf) \
+  do_node(MachJump) \
+  do_node(MachNullCheck) \
+  do_node(MachProj) \
+  do_node(MachProlog) \
+  do_node(MachReturn) \
+  do_node(MachSafePoint) \
+  do_node(MachUncommonTrap) \
+  do_node(MachSpillCopy) \
+  do_node(MachTemp) \
+  do_node(MachMemBar) \
+  do_node(MachMerge) \
+  do_node(MachVEP) \
+  do_node(Mem) \
+  do_node(MemBar) \
+  do_node(MemBarStoreStore) \
+  do_node(MergeMem) \
+  do_node(MinMax) \
+  do_node(Move) \
+  do_node(Mul) \
+  do_node(Multi) \
+  do_node(MultiBranch) \
+  do_node(MulVL) \
+  do_node(NarrowMemProj) \
+  do_node(Neg) \
+  do_node(NegV) \
+  do_node(NeverBranch) \
+  do_node(Opaque1) \
+  do_node(OpaqueConstantBool) \
+  do_node(OpaqueInitializedAssertionPredicate) \
+  do_node(OpaqueTemplateAssertionPredicate) \
+  do_node(OpaqueLoopInit) \
+  do_node(OpaqueLoopStride) \
+  do_node(OpaqueMultiversioning) \
+  do_node(OpaqueZeroTripGuard) \
+  do_node(OuterStripMinedLoop) \
+  do_node(OuterStripMinedLoopEnd) \
+  do_node(Parm) \
+  do_node(ParsePredicate) \
+  do_node(PCTable) \
+  do_node(Phi) \
+  do_node(Proj) \
+  do_node(ReachabilityFence) \
+  do_node(Reduction) \
+  do_node(Region) \
+  do_node(Root) \
+  do_node(SafePoint) \
+  do_node(SafePointScalarObject) \
+  do_node(SafePointScalarMerge) \
+  do_node(Start) \
+  do_node(Store) \
+  do_node(Sub) \
+  do_node(SubTypeCheck) \
+  do_node(Type) \
+  do_node(ValueType) \
+  do_node(LoadFlat) \
+  do_node(StoreFlat) \
+  do_node(Vector) \
+  do_node(VectorMaskCmp) \
+  do_node(VectorUnbox) \
+  do_node(VectorReinterpret) \
+  do_node(CompressV) \
+  do_node(ExpandV) \
+  do_node(CompressM) \
+  do_node(LoadVector) \
+  do_node(LoadVectorGather) \
+  do_node(LoadVectorMasked) \
+  do_node(LoadVectorGatherMasked) \
+  do_node(StoreVector) \
+  do_node(StoreVectorScatter) \
+  do_node(StoreVectorMasked) \
+  do_node(StoreVectorScatterMasked) \
+  do_node(SaturatingVector) \
+  do_node(ShiftV) \
+  do_node(Unlock) \
+
   // Other interesting Node properties
   #define DEFINE_CLASS_QUERY(type)                           \
   bool is_##type() const {                                   \
     return ((_class_id & ClassMask_##type) == Class_##type); \
   }                                                          \
-  type##Node *as_##type() const {                            \
+  type##Node* as_##type() const {                            \
     assert(is_##type(), "invalid node class: %s", Name());   \
     return (type##Node*)this;                                \
   }                                                          \
   type##Node* isa_##type() const {                           \
     return (is_##type()) ? as_##type() : nullptr;            \
-  }
+  }                                                          \
 
-  DEFINE_CLASS_QUERY(AbstractLock)
-  DEFINE_CLASS_QUERY(Add)
-  DEFINE_CLASS_QUERY(AddP)
-  DEFINE_CLASS_QUERY(Allocate)
-  DEFINE_CLASS_QUERY(AllocateArray)
-  DEFINE_CLASS_QUERY(ArrayCopy)
-  DEFINE_CLASS_QUERY(BaseCountedLoop)
-  DEFINE_CLASS_QUERY(BaseCountedLoopEnd)
-  DEFINE_CLASS_QUERY(Blackhole)
-  DEFINE_CLASS_QUERY(Bool)
-  DEFINE_CLASS_QUERY(BoxLock)
-  DEFINE_CLASS_QUERY(Call)
-  DEFINE_CLASS_QUERY(CallDynamicJava)
-  DEFINE_CLASS_QUERY(CallJava)
-  DEFINE_CLASS_QUERY(CallLeaf)
-  DEFINE_CLASS_QUERY(CallLeafNoFP)
-  DEFINE_CLASS_QUERY(CallLeafPure)
-  DEFINE_CLASS_QUERY(CallRuntime)
-  DEFINE_CLASS_QUERY(CallStaticJava)
-  DEFINE_CLASS_QUERY(Catch)
-  DEFINE_CLASS_QUERY(CatchProj)
-  DEFINE_CLASS_QUERY(CheckCastPP)
-  DEFINE_CLASS_QUERY(CastII)
-  DEFINE_CLASS_QUERY(CastLL)
-  DEFINE_CLASS_QUERY(CastFF)
-  DEFINE_CLASS_QUERY(ConI)
-  DEFINE_CLASS_QUERY(CastPP)
-  DEFINE_CLASS_QUERY(ConstraintCast)
-  DEFINE_CLASS_QUERY(ClearArray)
-  DEFINE_CLASS_QUERY(CMove)
-  DEFINE_CLASS_QUERY(Cmp)
-  DEFINE_CLASS_QUERY(Convert)
-  DEFINE_CLASS_QUERY(CountedLoop)
-  DEFINE_CLASS_QUERY(CountedLoopEnd)
-  DEFINE_CLASS_QUERY(CreateEx)
-  DEFINE_CLASS_QUERY(DecodeNarrowPtr)
-  DEFINE_CLASS_QUERY(DecodeN)
-  DEFINE_CLASS_QUERY(DecodeNKlass)
-  DEFINE_CLASS_QUERY(DivModInteger)
-  DEFINE_CLASS_QUERY(EncodeNarrowPtr)
-  DEFINE_CLASS_QUERY(EncodeP)
-  DEFINE_CLASS_QUERY(EncodePKlass)
-  DEFINE_CLASS_QUERY(FastLock)
-  DEFINE_CLASS_QUERY(FastUnlock)
-  DEFINE_CLASS_QUERY(FlatArrayCheck)
-  DEFINE_CLASS_QUERY(Halt)
-  DEFINE_CLASS_QUERY(If)
-  DEFINE_CLASS_QUERY(RangeCheck)
-  DEFINE_CLASS_QUERY(IfProj)
-  DEFINE_CLASS_QUERY(IfFalse)
-  DEFINE_CLASS_QUERY(IfTrue)
-  DEFINE_CLASS_QUERY(Initialize)
-  DEFINE_CLASS_QUERY(Jump)
-  DEFINE_CLASS_QUERY(JumpProj)
-  DEFINE_CLASS_QUERY(LongCountedLoop)
-  DEFINE_CLASS_QUERY(LongCountedLoopEnd)
-  DEFINE_CLASS_QUERY(Load)
-  DEFINE_CLASS_QUERY(LoadStore)
-  DEFINE_CLASS_QUERY(LoadStoreConditional)
-  DEFINE_CLASS_QUERY(Lock)
-  DEFINE_CLASS_QUERY(Loop)
-  DEFINE_CLASS_QUERY(LShift)
-  DEFINE_CLASS_QUERY(Mach)
-  DEFINE_CLASS_QUERY(MachBranch)
-  DEFINE_CLASS_QUERY(MachCall)
-  DEFINE_CLASS_QUERY(MachCallDynamicJava)
-  DEFINE_CLASS_QUERY(MachCallJava)
-  DEFINE_CLASS_QUERY(MachCallLeaf)
-  DEFINE_CLASS_QUERY(MachCallRuntime)
-  DEFINE_CLASS_QUERY(MachCallStaticJava)
-  DEFINE_CLASS_QUERY(MachConstantBase)
-  DEFINE_CLASS_QUERY(MachConstant)
-  DEFINE_CLASS_QUERY(MachGoto)
-  DEFINE_CLASS_QUERY(MachIf)
-  DEFINE_CLASS_QUERY(MachJump)
-  DEFINE_CLASS_QUERY(MachNullCheck)
-  DEFINE_CLASS_QUERY(MachProj)
-  DEFINE_CLASS_QUERY(MachProlog)
-  DEFINE_CLASS_QUERY(MachReturn)
-  DEFINE_CLASS_QUERY(MachSafePoint)
-  DEFINE_CLASS_QUERY(MachUncommonTrap)
-  DEFINE_CLASS_QUERY(MachSpillCopy)
-  DEFINE_CLASS_QUERY(MachTemp)
-  DEFINE_CLASS_QUERY(MachMemBar)
-  DEFINE_CLASS_QUERY(MachMerge)
-  DEFINE_CLASS_QUERY(MachVEP)
-  DEFINE_CLASS_QUERY(Mem)
-  DEFINE_CLASS_QUERY(MemBar)
-  DEFINE_CLASS_QUERY(MemBarStoreStore)
-  DEFINE_CLASS_QUERY(MergeMem)
-  DEFINE_CLASS_QUERY(MinMax)
-  DEFINE_CLASS_QUERY(Move)
-  DEFINE_CLASS_QUERY(Mul)
-  DEFINE_CLASS_QUERY(Multi)
-  DEFINE_CLASS_QUERY(MultiBranch)
-  DEFINE_CLASS_QUERY(MulVL)
-  DEFINE_CLASS_QUERY(NarrowMemProj)
-  DEFINE_CLASS_QUERY(Neg)
-  DEFINE_CLASS_QUERY(NegV)
-  DEFINE_CLASS_QUERY(NeverBranch)
-  DEFINE_CLASS_QUERY(Opaque1)
-  DEFINE_CLASS_QUERY(OpaqueConstantBool)
-  DEFINE_CLASS_QUERY(OpaqueInitializedAssertionPredicate)
-  DEFINE_CLASS_QUERY(OpaqueTemplateAssertionPredicate)
-  DEFINE_CLASS_QUERY(OpaqueLoopInit)
-  DEFINE_CLASS_QUERY(OpaqueLoopStride)
-  DEFINE_CLASS_QUERY(OpaqueMultiversioning)
-  DEFINE_CLASS_QUERY(OpaqueZeroTripGuard)
-  DEFINE_CLASS_QUERY(OuterStripMinedLoop)
-  DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
-  DEFINE_CLASS_QUERY(Parm)
-  DEFINE_CLASS_QUERY(ParsePredicate)
-  DEFINE_CLASS_QUERY(PCTable)
-  DEFINE_CLASS_QUERY(Phi)
-  DEFINE_CLASS_QUERY(Proj)
-  DEFINE_CLASS_QUERY(ReachabilityFence)
-  DEFINE_CLASS_QUERY(Reduction)
-  DEFINE_CLASS_QUERY(Region)
-  DEFINE_CLASS_QUERY(Root)
-  DEFINE_CLASS_QUERY(SafePoint)
-  DEFINE_CLASS_QUERY(SafePointScalarObject)
-  DEFINE_CLASS_QUERY(SafePointScalarMerge)
-  DEFINE_CLASS_QUERY(Start)
-  DEFINE_CLASS_QUERY(Store)
-  DEFINE_CLASS_QUERY(Sub)
-  DEFINE_CLASS_QUERY(SubTypeCheck)
-  DEFINE_CLASS_QUERY(Type)
-  DEFINE_CLASS_QUERY(ValueType)
-  DEFINE_CLASS_QUERY(LoadFlat)
-  DEFINE_CLASS_QUERY(StoreFlat)
-  DEFINE_CLASS_QUERY(Vector)
-  DEFINE_CLASS_QUERY(VectorMaskCmp)
-  DEFINE_CLASS_QUERY(VectorUnbox)
-  DEFINE_CLASS_QUERY(VectorReinterpret)
-  DEFINE_CLASS_QUERY(CompressV)
-  DEFINE_CLASS_QUERY(ExpandV)
-  DEFINE_CLASS_QUERY(CompressM)
-  DEFINE_CLASS_QUERY(LoadVector)
-  DEFINE_CLASS_QUERY(LoadVectorGather)
-  DEFINE_CLASS_QUERY(LoadVectorMasked)
-  DEFINE_CLASS_QUERY(LoadVectorGatherMasked)
-  DEFINE_CLASS_QUERY(StoreVector)
-  DEFINE_CLASS_QUERY(StoreVectorScatter)
-  DEFINE_CLASS_QUERY(StoreVectorMasked)
-  DEFINE_CLASS_QUERY(StoreVectorScatterMasked)
-  DEFINE_CLASS_QUERY(SaturatingVector)
-  DEFINE_CLASS_QUERY(ShiftV)
-  DEFINE_CLASS_QUERY(Unlock)
+  NODE_METHODS(DEFINE_CLASS_QUERY)
 
   #undef DEFINE_CLASS_QUERY
 
@@ -1267,9 +1280,7 @@ public:
   bool for_merge_stores_igvn() const { return (_flags & Flag_for_merge_stores_igvn) != 0; }
 
   // Is 'n' possibly a loop entry (i.e. a Parse Predicate projection)?
-  static bool may_be_loop_entry(Node* n) {
-    return n != nullptr && n->is_IfProj() && n->in(0)->is_ParsePredicate();
-  }
+  static bool may_be_loop_entry(Node* n);
 
 //----------------- Optimization
 
@@ -1570,6 +1581,60 @@ public:
   static void create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str);
   void make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str);
 };
+
+template <typename T>
+bool Node::is(const Node*) {
+  static_assert(DependentAlwaysFalse<T>, "No Node::is<T>(const Node*) specialization found for this type");
+  return false;
+}
+
+template <typename T>
+T* Node::isa(Node*) {
+  static_assert(DependentAlwaysFalse<T>, "No Node::isa<T>(Node*) specialization found for this type");
+  return nullptr;
+}
+
+template <typename T>
+const T* Node::isa(const Node*) {
+  static_assert(DependentAlwaysFalse<T>, "No Node::isa<T>(const Node*) specialization found for this type");
+  return nullptr;
+}
+
+template <typename T>
+T* Node::isa(std::nullptr_t) {
+  static_assert(DependentAlwaysFalse<T>, "No Node::isa<T>(std::nullptr_t) specialization found for this type");
+  return nullptr;
+}
+
+#define DEFINE_CLASS_TEMPLATED_QUERY(type)                        \
+template <>                                                       \
+inline bool Node::is<type##Node>(const Node* n) {                 \
+  if (n == nullptr) return false;                                 \
+  return n->is_##type();                                          \
+}                                                                 \
+template <>                                                       \
+inline type##Node* Node::isa<type##Node>(Node* n) {               \
+  if (n == nullptr) return nullptr;                               \
+  return n->isa_##type();                                         \
+}                                                                 \
+template <>                                                       \
+inline const type##Node* Node::isa<type##Node>(const Node* n) {   \
+  if (n == nullptr) return nullptr;                               \
+  return n->isa_##type();                                         \
+}                                                                 \
+template <>                                                       \
+inline type##Node* Node::isa<type##Node>(std::nullptr_t) {        \
+  return nullptr;                                                 \
+}                                                                 \
+
+NODE_METHODS(DEFINE_CLASS_TEMPLATED_QUERY)
+
+#undef DEFINE_CLASS_TEMPLATED_QUERY
+#undef NODE_METHODS
+
+inline bool Node::may_be_loop_entry(Node* n) {
+  return is<IfProjNode>(n) && n->in(0)->is_ParsePredicate();
+}
 
 inline bool not_a_node(const Node* n) {
   if (n == nullptr)                return true;

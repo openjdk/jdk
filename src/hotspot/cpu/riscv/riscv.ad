@@ -2209,10 +2209,10 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   assert_cond(addp != nullptr);
   for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
     Node* u = addp->fast_out(i);
-    if (u != nullptr && u->is_Mem()) {
-      int opsize = u->as_Mem()->memory_size();
+    if (MemNode* u_mem = Node::isa<MemNode>(u)) {
+      int opsize = u_mem->memory_size();
       assert(opsize > 0, "unexpected memory operand size");
-      if (u->as_Mem()->memory_size() != (1 << shift)) {
+      if (u_mem->memory_size() != (1 << shift)) {
         return false;
       }
     }
@@ -2222,11 +2222,7 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
 
 // Binary src (Replicate scalar/immediate)
 static bool is_vector_scalar_binary_pattern(Node* n, Node* m) {
-  if (n == nullptr || m == nullptr) {
-    return false;
-  }
-
-  if (m->Opcode() != Op_Replicate) {
+  if (n == nullptr || !Node::is<Op_Replicate>(m)) {
     return false;
   }
 
@@ -2256,11 +2252,8 @@ static bool is_vector_scalar_binary_pattern(Node* n, Node* m) {
 // (XorV src (Replicate m1))
 // (XorVMask src (MaskAll m1))
 static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
-  if (n != nullptr && m != nullptr) {
-    return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
-           VectorNode::is_all_ones_vector(m);
-  }
-  return false;
+  return (Node::is<Op_XorV>(n) || Node::is<Op_XorVMask>(n)) &&
+         m != nullptr && VectorNode::is_all_ones_vector(m);
 }
 
 // 'n' is the current user of input 'm', which is being considered for cloning.

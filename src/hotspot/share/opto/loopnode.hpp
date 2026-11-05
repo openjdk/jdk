@@ -435,9 +435,7 @@ public:
     Node* tmp = incr();
     if (tmp && tmp->req() == 3) {
       Node* phi = tmp->in(1);
-      if (phi->is_Phi()) {
-        return phi->as_Phi();
-      }
+      return isa<PhiNode>(phi);
     }
     return nullptr;
   }
@@ -450,14 +448,14 @@ public:
     if (iv_phi == nullptr) {
       return nullptr;
     }
-    Node* ln = iv_phi->in(0);
-    if (!ln->is_BaseCountedLoop() || ln->as_BaseCountedLoop()->loopexit_or_null() != this) {
+    BaseCountedLoopNode* ln = isa<BaseCountedLoopNode>(iv_phi->in(0));
+    if (ln == nullptr || ln->loopexit_or_null() != this) {
       return nullptr;
     }
-    if (ln->as_BaseCountedLoop()->bt() != bt()) {
+    if (ln->bt() != bt()) {
       return nullptr;
     }
-    return ln->as_BaseCountedLoop();
+    return ln;
   }
 
   BoolTest::mask test_trip() const  { return in(TestValue)->as_Bool()->_test._test; }

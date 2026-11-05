@@ -1053,10 +1053,10 @@ bool BarrierSetC2::is_allocation(const Node* node) {
   }
   intptr_t offset;
   const Node* const base = get_base_and_offset(fast_mach, offset);
-  if (base == nullptr || !base->is_Mach() || !is_concrete(offset)) {
+  const MachNode* const base_mach = Node::isa<MachNode>(base);
+  if (base_mach == nullptr || !is_concrete(offset)) {
     return false;
   }
-  const MachNode* const base_mach = base->as_Mach();
   if (base_mach->ideal_Opcode() != Op_ThreadLocal) {
     return false;
   }
@@ -1121,7 +1121,7 @@ void BarrierSetC2::elide_dominated_barriers(const Node_List<MachNode>& accesses,
       if (access_block == mem_block) {
         // Earlier accesses in the same block
         if (mem_index < access_index && !block_has_safepoint(mem_block, mem_index + 1, access_index)) {
-          elide_dominated_barrier(access, mem->is_Mach() ? mem->as_Mach() : nullptr);
+          elide_dominated_barrier(access, mem->isa_Mach());
         }
       } else if (mem_block->dominates(access_block)) {
         // Dominating block? Look around for safepoints
@@ -1151,7 +1151,7 @@ void BarrierSetC2::elide_dominated_barriers(const Node_List<MachNode>& accesses,
         }
 
         if (!safepoint_found) {
-          elide_dominated_barrier(access, mem->is_Mach() ? mem->as_Mach() : nullptr);
+          elide_dominated_barrier(access, mem->isa_Mach());
         }
       }
     }

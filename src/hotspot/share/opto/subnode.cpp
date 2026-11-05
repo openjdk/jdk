@@ -1634,8 +1634,7 @@ Node* BoolNode::fold_cmpI(PhaseGVN* phase, SubNode* cmp, Node* cmp1, int cmp_op,
 
 static bool is_counted_loop_cmp(Node *cmp) {
   Node *n = cmp->in(1)->in(1);
-  return n != nullptr &&
-         n->is_Phi() &&
+  return Node::is<PhiNode>(n) &&
          n->in(0) != nullptr &&
          n->in(0)->is_CountedLoop() &&
          n->in(0)->as_CountedLoop()->phi() == n;
@@ -2008,7 +2007,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // in BoolNode::Ideal since we create a new non-constant node (see [CMPU_MASK]).
 const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
   Node* cmp = in(1);
-  if (cmp != nullptr && cmp->Opcode() == Op_CmpU) {
+  if (is<Op_CmpU>(cmp)) {
     Node* cmp1 = cmp->in(1);
     Node* cmp2 = cmp->in(2);
 

@@ -1277,8 +1277,7 @@ public:
   // Return null if no allocation is recognized.
   static AllocateArrayNode* Ideal_array_allocation(Node* ptr) {
     AllocateNode* allo = Ideal_allocation(ptr);
-    return (allo == nullptr || !allo->is_AllocateArray())
-           ? nullptr : allo->as_AllocateArray();
+    return isa<AllocateArrayNode>(allo);
   }
 };
 

@@ -2702,7 +2702,7 @@ static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
   } else {
     ldk = n;
   }
-  assert(ldk != nullptr && ldk->is_Load(), "should have found a LoadKlass or LoadNKlass node");
+  assert(Node::is<LoadNode>(ldk), "should have found a LoadKlass or LoadNKlass node");
 
   Node* adr = ldk->in(MemNode::Address);
   intptr_t off = 0;
