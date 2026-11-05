@@ -191,8 +191,7 @@ public class IntrinsicPredicates {
             }
             return () -> WHITE_BOX.isIntrinsicAvailable(m, (int) IntrinsicPredicates.TIERED_MAX_LEVEL);
         } catch (Exception e) {
-            System.out.println("Exception: " + e);
-            throw new RuntimeException("Intrinsified method " +  klass + "::" + method + " not found!");
+            throw new RuntimeException("Intrinsified method " +  klass + "::" + method + " not found!", e);
         }
     };
 }

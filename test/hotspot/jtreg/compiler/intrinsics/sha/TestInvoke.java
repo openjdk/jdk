@@ -96,8 +96,7 @@ public class TestInvoke {
                 throw new Exception("TestInvoke Error");
             }
         } catch (Exception e) {
-            System.out.println("Exception: " + e);
-            throw new Exception(e);
+            throw new Exception("Exception: " + e, e);
         }
     }
 }
