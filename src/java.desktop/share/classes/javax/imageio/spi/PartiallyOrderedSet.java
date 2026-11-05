@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,12 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
      */
     public PartiallyOrderedSet() {}
 
+    @Override
     public int size() {
         return poNodes.size();
     }
 
+    @Override
     public boolean contains(Object o) {
         return poNodes.containsKey(o);
     }
@@ -77,6 +79,7 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
      * collection, with an ordering that respects the orderings set
      * by the {@code setOrdering} method.
      */
+    @Override
     public Iterator<E> iterator() {
         return new PartialOrderIterator<>(poNodes.values().iterator());
     }
@@ -85,6 +88,7 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
      * Adds an {@code Object} to this
      * {@code PartiallyOrderedSet}.
      */
+    @Override
     public boolean add(E o) {
         if (poNodes.containsKey(o)) {
             return false;
@@ -99,6 +103,7 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
      * Removes an {@code Object} from this
      * {@code PartiallyOrderedSet}.
      */
+    @Override
     public boolean remove(Object o) {
         DigraphNode<E> node = poNodes.get(o);
         if (node == null) {
@@ -110,6 +115,7 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
         return true;
     }
 
+    @Override
     public void clear() {
         poNodes.clear();
     }
@@ -175,10 +181,12 @@ class PartialOrderIterator<E> implements Iterator<E> {
         }
     }
 
+    @Override
     public boolean hasNext() {
         return !zeroList.isEmpty();
     }
 
+    @Override
     public E next() {
         DigraphNode<E> first = zeroList.removeFirst();
 
@@ -198,6 +206,7 @@ class PartialOrderIterator<E> implements Iterator<E> {
         return first.getData();
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

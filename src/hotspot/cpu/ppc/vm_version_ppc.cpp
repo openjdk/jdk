@@ -80,7 +80,7 @@ void VM_Version::initialize() {
   guarantee(PowerArchitecturePPC64_ok, "PowerArchitecturePPC64 cannot be set to "
             "%zu on this machine", PowerArchitecturePPC64);
 
-  // Power 8: Configure Data Stream Control Register.
+  // Configure Data Stream Control Register.
   if (VM_Version::has_mfdscr()) {
     config_dscr();
   }
@@ -192,7 +192,7 @@ void VM_Version::initialize() {
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
               );
-  _cpu_info_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf, mtInternal);
   if (Verbose) {
     print_features();
   }
@@ -233,26 +233,16 @@ void VM_Version::initialize() {
     ContendedPaddingWidth = cache_line_size;
   }
 
-  // If running on Power8 or newer hardware, the implementation uses the available vector instructions.
-  // In all other cases, the implementation uses only generally available instructions.
-  if (!UseCRC32Intrinsics) {
-    if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
-      FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
-    }
+  if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+    FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
   }
 
-  // Implementation does not use any of the vector instructions available with Power8.
-  // Their exploitation is still pending (aka "work in progress").
-  if (!UseCRC32CIntrinsics) {
-    if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
-      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
-    }
+  if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
   }
 
-  // TODO: Provide implementation.
-  if (UseAdler32Intrinsics) {
-    warning("Adler32Intrinsics not available on this CPU.");
-    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
   }
 
   // The AES intrinsic stubs require AES instruction support.
@@ -541,7 +531,7 @@ void VM_Version::determine_features() {
          "processors with smaller cache line size are no longer supported");
 }
 
-// Power 8: Configure Data Stream Control Register.
+// Configure Data Stream Control Register.
 void VM_Version::config_dscr() {
   // 7 InstWords for each call (function descriptor + blr instruction).
   const int code_size = (2+2*7)*BytesPerInstWord;

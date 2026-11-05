@@ -22,14 +22,15 @@
 *
 */
 
-#ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTERCLASSCLOSURE_HPP
-#define SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTERCLASSCLOSURE_HPP
+#ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRCLASSFILTERCLOSURE_HPP
+#define SHARE_JFR_SUPPORT_METHODTRACER_JFRCLASSFILTERCLOSURE_HPP
 
 #include "jfr/support/methodtracer/jfrInstrumentedClass.hpp"
 #include "jfr/utilities/jfrRelation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jni.h"
 #include "memory/iterator.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 class InstanceKlass;
 class JavaThread;
@@ -37,11 +38,6 @@ class JfrFilter;
 class Klass;
 
 template<typename T> class GrowableArray;
-
-template<typename K, typename V,
-         AnyObj::allocation_type, MemTag,
-         unsigned (*HASH)  (K const&),
-         bool (*EQUALS)(K const&, K const&)> class ResizeableHashTable;
 
 // Knuth multiplicative hashing.
 inline uint32_t knuth_hash(const traceid& id) {
@@ -86,4 +82,4 @@ class JfrFilterClassClosure : public KlassClosure {
   bool do_entry(const traceid& id, const InstanceKlass*& ik);
 };
 
-#endif // SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTERCLASSCLOSURE_HPP
+#endif // SHARE_JFR_SUPPORT_METHODTRACER_JFRCLASSFILTERCLOSURE_HPP

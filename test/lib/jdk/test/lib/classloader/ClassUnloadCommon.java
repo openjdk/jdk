@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
 public class ClassUnloadCommon {
@@ -89,24 +90,36 @@ public class ClassUnloadCommon {
     public static Set<String> triggerUnloading(List<String> classNames) {
         WhiteBox wb = WhiteBox.getWhiteBox();
         Set<String> aliveClasses = new HashSet<>(classNames);
-        int attempt = 0;
-        while (!aliveClasses.isEmpty() && attempt < 20) {
-            ClassUnloadCommon.triggerUnloading();
-            for (String className : classNames) {
-                if (aliveClasses.contains(className)) {
-                    if (wb.isClassAlive(className)) {
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException ex) {
-                        }
-                    } else {
-                        aliveClasses.remove(className);
-                    }
-                }
-            }
-            attempt++;
-        }
+        triggerUnloadingUntil(() -> {
+            aliveClasses.removeIf(className -> !wb.isClassAlive(className));
+            return aliveClasses.isEmpty();
+        }, 2000);
         return aliveClasses;
+    }
+
+    /**
+     * Calls triggerUnloading() and checks {@code unloaded}, sleeping 100ms
+     * between attempts, until it returns true or the timeout expires.
+     *
+     * @param unloaded the condition that holds once the expected unloading happened
+     * @param timeoutMs how long to keep trying, in milliseconds
+     * @return whether {@code unloaded} returned true
+     */
+    public static boolean triggerUnloadingUntil(BooleanSupplier unloaded, long timeoutMs) {
+        long deadline = System.nanoTime() + timeoutMs * 1_000_000L;
+        while (true) {
+            triggerUnloading();
+            if (unloaded.getAsBoolean()) {
+                return true;
+            }
+            if (System.nanoTime() >= deadline) {
+                return false;
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+            }
+        }
     }
 
     /**

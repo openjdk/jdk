@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, IBM Corp. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +45,19 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   // 3) only bits in C: a 4GB-aligned address that is lower than 16TB.
   // 4) only bits in D: a 16TB-aligned address.
 
-  // First, attempt to allocate < 4GB. We do this unconditionally:
-  // - if can_optimize_for_zero_base, a <4GB mapping start would allow us to run unscaled (base = 0, shift = 0)
-  // - if !can_optimize_for_zero_base, a <4GB mapping start is still good, the resulting immediate can be encoded
-  //   with one instruction (2)
-  result = reserve_address_space_for_unscaled_encoding(size, aslr);
+  // First, attempt to reserve below 4GB, regardless of CDS or COH:
+  // - With neither CDS nor COH, this permits unscaled encoding (base = 0, shift = 0).
+  // - With CDS, when the VM includes archived-heap support or COH is enabled,
+  //   the base must match the archive mapping start (including the protection zone),
+  //   and the shift must preserve the precomputed narrow Klass IDs.
+  // - With COH, unscaled encoding spans only 4MB (22-bit narrowKlass).
+  //   Without CDS, we choose the klass range start as the base to avoid
+  //   unnecessarily large shifts, rather than attempting zero-based encoding.
+  // In the nonzero-base cases, low addresses keep base materialization cheap,
+  // though not necessarily a single instruction: on RV64, a nonzero page-aligned
+  // base below 2GB needs only LUI, while bases in [2GB, 4GB) require additional
+  // instructions because LUI sign-extends its result.
+  result = reserve_address_space_below_4G(size, aslr);
 
   // Failing that, optimize for case (3) - a base with only bits set between [32-44)
   if (result == nullptr) {

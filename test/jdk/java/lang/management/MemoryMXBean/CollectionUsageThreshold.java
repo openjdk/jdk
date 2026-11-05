@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,11 @@ public class CollectionUsageThreshold {
      */
     public static void main(String a[]) throws Throwable {
         final String main = "CollectionUsageThreshold$TestMain";
-        RunUtil.runTestKeepGcOpts(main);
+        // CollectionUsageThreshold$TestMain expects only System.gc() triggered
+        // GCs. ZGC's Adaptive Heap Sizing thus requires some buffer to not
+        // trigger heuristic GCs. Similarly this test is incompatible with any
+        // period GC heuristics / options like ZCollectionInterval.
+        RunUtil.runTestKeepGcOpts(main, "-Xms128m", "-Xmx512m");
         RunUtil.runTestClearGcOpts(main, "-XX:+UseSerialGC");
         RunUtil.runTestClearGcOpts(main, "-XX:+UseParallelGC");
         RunUtil.runTestClearGcOpts(main, "-XX:+UseG1GC");
@@ -259,9 +263,11 @@ public class CollectionUsageThreshold {
         }
 
         private void fail(String msg) {
-            // reset the barrier to cause BrokenBarrierException to avoid hanging
-            barrier.reset();
-            throw new RuntimeException(msg);
+            System.out.println("Checker failed: " + msg);
+            // We cannot simply do a barrier.reset() here as the main thread may
+            // not yet have reached the barrier yet. For example in the case we
+            // got an unexpected GC.
+            System.exit(-1);
         }
     }
 }

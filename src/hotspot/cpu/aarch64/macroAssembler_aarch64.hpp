@@ -980,8 +980,6 @@ public:
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
-  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_layout_info);
-
   // value type data payload offsets...
   void payload_offset(Register value_klass, Register offset);
   void payload_address(Register oop, Register data, Register value_klass);
@@ -1054,8 +1052,6 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   void verify_tlab();
-
-  void value_field_layout_info(Register holder_klass, Register index, Register layout_info);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -1581,24 +1577,28 @@ public:
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);
 
 // Ensure that the inline code and the stub use the same registers.
-#define ARRAYS_HASHCODE_REGISTERS \
-  do {                      \
-    assert(result == r0  && \
-           ary    == r1  && \
-           cnt    == r2  && \
-           vdata0 == v3  && \
-           vdata1 == v2  && \
-           vdata2 == v1  && \
-           vdata3 == v0  && \
-           vmul0  == v4  && \
-           vmul1  == v5  && \
-           vmul2  == v6  && \
-           vmul3  == v7  && \
-           vpow   == v12 && \
-           vpowm  == v13, "registers must match aarch64.ad"); \
+#define ARRAYS_HASHCODE_REGISTERS   \
+  do {                              \
+    assert(result   == r0  &&       \
+           ary      == r1  &&       \
+           cnt      == r2  &&       \
+           blocks   == r3  &&       \
+           tail     == r4  &&       \
+           sum      == r5  &&       \
+           v_block0 == v0  &&       \
+           v_block1 == v1  &&       \
+           v_block2 == v2  &&       \
+           v_block3 == v3  &&       \
+           v_p0     == v4  &&       \
+           v_p1     == v5  &&       \
+           v_p2     == v6  &&       \
+           v_p3     == v7  &&       \
+           v_input1 == v12 &&       \
+           v_input2 == v13,         \
+           "registers must match aarch64.ad"); \
   } while (0)
 
-  void string_equals(Register a1, Register a2, Register result, Register cnt1);
+  void string_equals(Register a1, Register a2, Register result, Register cnt1, Register a1_hi, Register a2_hi);
 
   void fill_words(Register base, Register cnt, Register value);
   void fill_words(Register base, uint64_t cnt, Register value);

@@ -967,9 +967,55 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   return entry;
 }
 
-// Not supported
-address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
+/**
+ * Method entry for static method:
+ *    java.lang.Float.float16ToFloat(short floatBinary16)
+ */
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
+  assert(VM_Version::supports_float16_float_conversion(), "this intrinsic is not supported");
+  if (StubRoutines::hf2f_adr() == nullptr) {
+    return nullptr;
+  }
+
+  // x19_sender_sp: sender sp
+  // stack:
+  //        [ arg ] <-- esp
+  // retaddr in ra
+  // result in f10
+
+  address entry_point = __ pc();
+  __ lh(c_rarg0, Address(esp)); // Load and sign-extend the low 16 bits of the argument
+  __ andi(sp, x19_sender_sp, -16); // Restore caller's SP
+  // The stub is a leaf which returns through 'ra', so it returns straight
+  // back to our caller: this is a tail call.
+  __ far_jump(RuntimeAddress(StubRoutines::hf2f_adr()));
+  return entry_point;
+}
+
+/**
+ * Method entry for static method:
+ *    java.lang.Float.floatToFloat16(float value)
+ */
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
+  assert(VM_Version::supports_float16_float_conversion(), "this intrinsic is not supported");
+  if (StubRoutines::f2hf_adr() == nullptr) {
+    return nullptr;
+  }
+
+  // x19_sender_sp: sender sp
+  // stack:
+  //        [ arg ] <-- esp
+  // retaddr in ra
+  // result in x10
+
+  address entry_point = __ pc();
+  __ flw(f10, Address(esp));
+  __ andi(sp, x19_sender_sp, -16); // Restore caller's SP
+  // The stub is a leaf which returns through 'ra', so it returns straight
+  // back to our caller: this is a tail call.
+  __ far_jump(RuntimeAddress(StubRoutines::f2hf_adr()));
+  return entry_point;
+}
 
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // See more discussion in stackOverflow.hpp.
@@ -1205,8 +1251,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // Change state to native
   __ mv(t1, _thread_in_native);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
+  __ la(t0, Address(xthread, JavaThread::thread_state_offset()));
+  __ sw_release(t1, t0);
 
   __ push_cont_fastpath();
 
@@ -1234,8 +1280,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // change thread state
   __ mv(t1, _thread_in_Java);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
+  __ la(t0, Address(xthread, JavaThread::thread_state_offset()));
+  __ sw_release(t1, t0);
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {

@@ -22,6 +22,7 @@
  *
  */
 
+#include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
@@ -44,7 +45,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/valueKlass.inline.hpp"
 #include "oops/valuePayload.inline.hpp"
@@ -592,9 +592,9 @@ class ClassFieldDescriptor: public CHeapObj<mtServiceability> {
     if (fld.is_flat()) {
       const fieldDescriptor& fd = fld.field_descriptor();
       InstanceKlass* holder_klass = fd.field_holder();
-      ValueFieldLayoutInfo* layout_info = holder_klass->value_field_layout_info_adr(fd.index());
-      _value_klass = layout_info->klass();
-      _layout_kind = layout_info->kind();
+      ValueFieldInfo* vfi = holder_klass->value_field_info_adr(fd.index());
+      _value_klass = vfi->klass();
+      _layout_kind = vfi->kind();
     } else {
       _value_klass = nullptr;
       _layout_kind = LayoutKind::REFERENCE;
@@ -1276,78 +1276,74 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
 }
 
 void IterateThroughHeapObjectClosure::visit_object(const JvmtiHeapwalkObject& obj) {
-  // apply class filter
-  if (is_filtered_by_klass_filter(obj, klass())) return;
-
-  // prepare for callback
-  CallbackWrapper wrapper(tag_map(), obj);
-
-  // check if filtered by the heap filter
-  if (is_filtered_by_heap_filter(wrapper.obj_tag(), wrapper.klass_tag(), heap_filter())) {
-    return;
-  }
-
-  // for arrays we need the length, otherwise -1
   bool is_array = obj.klass()->is_array_klass();
-  int len = is_array ? arrayOop(obj.obj())->length() : -1;
 
-  // invoke the object callback (if callback is provided)
-  if (callbacks()->heap_iteration_callback != nullptr) {
-    jvmtiHeapIterationCallback cb = callbacks()->heap_iteration_callback;
-    jint res = (*cb)(wrapper.klass_tag(),
-                     wrapper.obj_size(),
-                     wrapper.obj_tag_p(),
-                     (jint)len,
-                     (void*)user_data());
-    if (check_flags_for_abort(res)) return;
-  }
+  if (!is_filtered_by_klass_filter(obj, klass())) { // apply class filter
+    // prepare for callback
+    CallbackWrapper wrapper(tag_map(), obj);
 
-  // for objects and classes we report primitive fields if callback provided
-  if (callbacks()->primitive_field_callback != nullptr && obj.klass()->is_instance_klass()) {
-    jint res;
-    jvmtiPrimitiveFieldCallback cb = callbacks()->primitive_field_callback;
-    if (obj.klass() == vmClasses::Class_klass()) {
-      assert(!obj.is_flat(), "Class object cannot be flattened");
-      res = invoke_primitive_field_callback_for_static_fields(&wrapper,
-                                                              obj.obj(),
-                                                              cb,
-                                                              (void*)user_data());
-    } else {
-      res = invoke_primitive_field_callback_for_instance_fields(&wrapper,
-                                                                obj,
-                                                                cb,
-                                                                (void*)user_data());
+    // check if filtered by the heap filter
+    if (!is_filtered_by_heap_filter(wrapper.obj_tag(), wrapper.klass_tag(), heap_filter())) {
+      // for arrays we need the length, otherwise -1
+      int len = is_array ? arrayOop(obj.obj())->length() : -1;
+
+      // invoke the object callback (if callback is provided)
+      if (callbacks()->heap_iteration_callback != nullptr) {
+        jvmtiHeapIterationCallback cb = callbacks()->heap_iteration_callback;
+        jint res = (*cb)(wrapper.klass_tag(),
+                         wrapper.obj_size(),
+                         wrapper.obj_tag_p(),
+                         (jint)len,
+                         (void*)user_data());
+        if (check_flags_for_abort(res)) return;
+      }
+
+      // for objects and classes we report primitive fields if callback provided
+      if (callbacks()->primitive_field_callback != nullptr && obj.klass()->is_instance_klass()) {
+        jint res;
+        jvmtiPrimitiveFieldCallback cb = callbacks()->primitive_field_callback;
+        if (obj.klass() == vmClasses::Class_klass()) {
+          assert(!obj.is_flat(), "Class object cannot be flattened");
+          res = invoke_primitive_field_callback_for_static_fields(&wrapper,
+                                                                  obj.obj(),
+                                                                  cb,
+                                                                  (void*)user_data());
+        } else {
+          res = invoke_primitive_field_callback_for_instance_fields(&wrapper,
+                                                                    obj,
+                                                                    cb,
+                                                                    (void*)user_data());
+        }
+        if (check_flags_for_abort(res)) return;
+      }
+
+      // string callback
+      if (!is_array &&
+          callbacks()->string_primitive_value_callback != nullptr &&
+          obj.klass() == vmClasses::String_klass()) {
+        jint res = invoke_string_value_callback(
+                    callbacks()->string_primitive_value_callback,
+                    &wrapper,
+                    obj,
+                    (void*)user_data());
+        if (check_flags_for_abort(res)) return;
+      }
+
+      // array callback
+      if (is_array &&
+          callbacks()->array_primitive_value_callback != nullptr &&
+          obj.klass()->is_typeArray_klass()) {
+        jint res = invoke_array_primitive_value_callback(
+                   callbacks()->array_primitive_value_callback,
+                   &wrapper,
+                   obj,
+                   (void*)user_data());
+        if (check_flags_for_abort(res)) return;
+      }
     }
-    if (check_flags_for_abort(res)) return;
   }
-
-  // string callback
-  if (!is_array &&
-      callbacks()->string_primitive_value_callback != nullptr &&
-      obj.klass() == vmClasses::String_klass()) {
-    jint res = invoke_string_value_callback(
-                callbacks()->string_primitive_value_callback,
-                &wrapper,
-                obj,
-                (void*)user_data());
-    if (check_flags_for_abort(res)) return;
-  }
-
-  // array callback
-  if (is_array &&
-      callbacks()->array_primitive_value_callback != nullptr &&
-      obj.klass()->is_typeArray_klass()) {
-    jint res = invoke_array_primitive_value_callback(
-               callbacks()->array_primitive_value_callback,
-               &wrapper,
-               obj,
-               (void*)user_data());
-    if (check_flags_for_abort(res)) return;
-  }
-
-  // All info for the object is reported.
-
-  // If the object has flat fields, report them as heap objects.
+  // If the object has flattened fields, report them as heap objects
+  // even though this object was not reported.
   if (obj.klass()->is_instance_klass()) {
     if (InstanceKlass::cast(obj.klass())->has_flat_fields()) {
       visit_flat_fields(obj);
@@ -1861,6 +1857,7 @@ class CallbackInvoker : AllStatic {
 
   // functions to report references
   static inline bool report_array_element_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree, jint index);
+  static inline bool report_other_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
   static inline bool report_class_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
   static inline bool report_class_loader_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
   static inline bool report_signers_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
@@ -2464,6 +2461,15 @@ inline bool CallbackInvoker::report_field_reference(const JvmtiHeapwalkObject& r
   }
 }
 
+inline bool CallbackInvoker::report_other_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree) {
+  // Reporting classes from the class loader is not supported for old Heap 1.0 functions.
+  if (is_basic_heap_walk()) {
+    return true;
+  } else {
+    return invoke_advanced_object_reference_callback(JVMTI_HEAP_REFERENCE_OTHER, referrer, referree, -1);
+  }
+}
+
 // report an array referencing an element object
 inline bool CallbackInvoker::report_constant_pool_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree, jint index) {
   if (is_basic_heap_walk()) {
@@ -2790,7 +2796,10 @@ class VM_HeapWalkOperation: public VM_Operation {
   inline bool iterate_over_flat_array(const JvmtiHeapwalkObject& o);
   inline bool iterate_over_type_array(const JvmtiHeapwalkObject& o);
   inline bool iterate_over_class(const JvmtiHeapwalkObject& o);
+  inline bool iterate_over_class_loader(const JvmtiHeapwalkObject& o);
   inline bool iterate_over_object(const JvmtiHeapwalkObject& o);
+
+  class CollectDeclaredKlasses;
 
   // root collection
   inline bool collect_simple_roots();
@@ -3091,6 +3100,43 @@ inline bool VM_HeapWalkOperation::iterate_over_class(const JvmtiHeapwalkObject& 
   return true;
 }
 
+class VM_HeapWalkOperation::CollectDeclaredKlasses : public KlassClosure {
+  GrowableArray<Klass*>* _klasses;
+ public:
+  CollectDeclaredKlasses(GrowableArray<Klass*>* klasses) : _klasses(klasses) {}
+  void do_klass(Klass* k) {
+    if (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded() && !k->is_hidden()) {
+      _klasses->push(k);
+    }
+  }
+};
+
+inline bool VM_HeapWalkOperation::iterate_over_class_loader(const JvmtiHeapwalkObject& o) {
+  assert(!o.is_flat(), "ClassLoaderKlass object cannot be flattened");
+  bool res = iterate_over_object(o);
+  // For a class loader, iterate over the loaded classes also to maintain compatibility
+  // for when ClassLoader had a vector of loaded classes.
+  ClassLoaderData* data = java_lang_ClassLoader::loader_data_acquire(o.obj());
+
+  if (res && data != nullptr) {
+    ResourceMark rm;
+    GrowableArray<Klass*>* klasses = new GrowableArray<Klass*>(10);
+    CollectDeclaredKlasses itr(klasses);
+    data->classes_do(&itr);
+
+    for (int i = 0; i < klasses->length(); i++) {
+      Klass* k = klasses->at(i);
+      JvmtiHeapwalkObject m(k->java_mirror());
+      // Pretend the classes are referred indirectly by the class loader. They are
+      // root objects, so make them other references.
+      if (!CallbackInvoker::report_other_reference(o, m)) {
+        return false;
+      }
+    }
+  }
+  return res;
+}
+
 // an object references a class and its instance fields
 // (static fields are ignored here as we report these as
 // references from the class).
@@ -3329,6 +3375,8 @@ bool VM_HeapWalkOperation::visit(const JvmtiHeapwalkObject& o) {
         // a java.lang.Class
         return iterate_over_class(o);
       }
+    } else if (java_lang_ClassLoader::is_instance(o.obj())) {
+      return iterate_over_class_loader(o);
     } else {
       // we report stack references only when initial object is not specified
       // (in the case we start from heap roots which include platform thread stack references)

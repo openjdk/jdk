@@ -132,16 +132,16 @@ class LayoutRawBlock : public ResourceObj {
 
 // A Field group represents a set of fields that have to be allocated together,
 // this is the way the @Contended annotation is supported.
-// Inside a FieldGroup, fields are sorted based on their kind: primitive,
-// oop, or flat.
+// Fields are separated into oop fields and non-oop field blocks.
+// Non-oop blocks include primitive fields and flat fields.
+// Flat fields can themselves contain embedded oops.
 //
 class FieldGroup : public ResourceObj {
 
  private:
   FieldGroup* _next;
 
-  GrowableArray<LayoutRawBlock*>* _small_primitive_fields;
-  GrowableArray<LayoutRawBlock*>* _big_primitive_fields;
+  GrowableArray<LayoutRawBlock*>* _non_oop_fields;
   GrowableArray<LayoutRawBlock*>* _oop_fields;
   int _contended_group;
   static const int INITIAL_LIST_SIZE = 16;
@@ -151,10 +151,11 @@ class FieldGroup : public ResourceObj {
 
   FieldGroup* next() const { return _next; }
   void set_next(FieldGroup* next) { _next = next; }
-  GrowableArray<LayoutRawBlock*>* small_primitive_fields() const { return _small_primitive_fields; }
-  GrowableArray<LayoutRawBlock*>* big_primitive_fields() const { return _big_primitive_fields; }
+  GrowableArray<LayoutRawBlock*>* non_oop_fields() const { return _non_oop_fields; }
   GrowableArray<LayoutRawBlock*>* oop_fields() const { return _oop_fields; }
   int contended_group() const { return _contended_group; }
+  // Requires the non-oop fields to be sorted in decreasing size order.
+  int first_small_field_index() const;
 
   void add_primitive_field(int idx, BasicType type);
   void add_oop_field(int idx);
@@ -162,8 +163,7 @@ class FieldGroup : public ResourceObj {
   void add_block(LayoutRawBlock** list, LayoutRawBlock* block);
   void sort_by_size();
  private:
-  void add_to_small_primitive_list(LayoutRawBlock* block);
-  void add_to_big_primitive_list(LayoutRawBlock* block);
+  void add_to_non_oop_list(LayoutRawBlock* block);
 };
 
 // The FieldLayout class represents a set of fields organized
@@ -185,7 +185,7 @@ class FieldGroup : public ResourceObj {
 class FieldLayout : public ResourceObj {
  private:
   GrowableArray<FieldInfo>* _field_info;
-  Array<ValueFieldLayoutInfo>* _value_field_layout_info_array;
+  Array<ValueFieldInfo>* _value_field_info_array;
   ConstantPool* _cp;
   LayoutRawBlock* _blocks;  // the layout being computed
   LayoutRawBlock* _start;   // points to the first block where a field can be inserted
@@ -199,7 +199,7 @@ class FieldLayout : public ResourceObj {
   bool _has_inherited_fields;
 
  public:
-  FieldLayout(GrowableArray<FieldInfo>* field_info, Array<ValueFieldLayoutInfo>* value_field_layout_info_array, ConstantPool* cp);
+  FieldLayout(GrowableArray<FieldInfo>* field_info, Array<ValueFieldInfo>* value_field_info_array, ConstantPool* cp);
   void initialize_static_layout();
   void initialize_instance_layout(const InstanceKlass* ik, bool& super_ends_with_oop);
 
@@ -232,6 +232,8 @@ class FieldLayout : public ResourceObj {
 
   LayoutRawBlock* first_field_block();
   void add(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start = nullptr);
+  // Add the fields in the half-open range [from, to).
+  void add_range(GrowableArray<LayoutRawBlock*>* list, int from, int to, LayoutRawBlock* start = nullptr);
   void add_field_at_offset(LayoutRawBlock* blocks, int offset, LayoutRawBlock* start = nullptr);
   void add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start = nullptr);
   LayoutRawBlock* insert_field_block(LayoutRawBlock* slot, LayoutRawBlock* block);
@@ -242,7 +244,7 @@ class FieldLayout : public ResourceObj {
   void shift_fields(int shift);
   LayoutRawBlock* find_null_marker();
   void remove_null_marker();
-  void print(outputStream* output, bool is_static, const InstanceKlass* super, Array<ValueFieldLayoutInfo>* value_fields, bool dummy_field_is_reused_as_null_marker);
+  void print(outputStream* output, bool is_static, const InstanceKlass* super, Array<ValueFieldInfo>* value_fields, bool dummy_field_is_reused_as_null_marker);
 };
 
 
@@ -278,7 +280,7 @@ class FieldLayoutBuilder : public ResourceObj {
   ConstantPool* _constant_pool;
   GrowableArray<FieldInfo>* _field_info;
   FieldLayoutInfo* _info;
-  Array<ValueFieldLayoutInfo>* _value_field_layout_info_array;
+  Array<ValueFieldInfo>* _value_field_info_array;
   FieldGroup* _root_group;
   GrowableArray<FieldGroup*> _contended_groups;
   FieldGroup* _static_fields;
@@ -316,7 +318,7 @@ class FieldLayoutBuilder : public ResourceObj {
  public:
   FieldLayoutBuilder(const Symbol* classname, ClassLoaderData* loader_data, const InstanceKlass* super_klass, ConstantPool* constant_pool,
                      GrowableArray<FieldInfo>* field_info, bool is_contended, bool is_concrete_value, bool is_abstract_value,
-                     bool must_be_atomic, FieldLayoutInfo* info, Array<ValueFieldLayoutInfo>* value_field_layout_info_array);
+                     bool must_be_atomic, FieldLayoutInfo* info, Array<ValueFieldInfo>* value_field_info_array);
 
   int  payload_offset() const                  { assert(_payload_offset != -1, "Uninitialized"); return _payload_offset; }
   int  payload_layout_size_in_bytes() const    { return _payload_size_in_bytes; }

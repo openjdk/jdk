@@ -70,7 +70,6 @@
 #include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -823,7 +822,7 @@ private:
           if (_cm->has_aborted()) {
             return true;
           }
-          // Re-read end. The region might have been uncommitted.
+          // Re-read end. The region might have been deactivated.
           end = region_clear_limit(r);
         }
       }
@@ -854,7 +853,7 @@ public:
 void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers, bool may_yield) {
   assert(may_yield || SafepointSynchronize::is_at_safepoint(), "Non-yielding bitmap clear only allowed at safepoint.");
 
-  size_t const num_bytes_to_clear = (G1HeapRegion::GrainBytes * _g1h->num_committed_regions()) / G1CMBitMap::heap_map_factor();
+  size_t const num_bytes_to_clear = (G1HeapRegion::GrainBytes * _g1h->num_active_regions()) / G1CMBitMap::heap_map_factor();
   size_t const num_chunks = align_up(num_bytes_to_clear, G1ClearBitMapTask::chunk_size()) / G1ClearBitMapTask::chunk_size();
 
   uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
@@ -1406,19 +1405,19 @@ void G1ConcurrentMark::remark() {
       GCTraceTime(Debug, gc, phases) debug("Select For Rebuild and Reclaim Empty Regions", _gc_timer_cm);
 
       G1UpdateRegionLivenessAndSelectForRebuildTask cl(_g1h, this, _g1h->workers()->active_workers());
-      uint const num_workers = MIN2(G1UpdateRegionLivenessAndSelectForRebuildTask::desired_num_workers(_g1h->num_committed_regions()),
+      uint const num_workers = MIN2(G1UpdateRegionLivenessAndSelectForRebuildTask::desired_num_workers(_g1h->num_active_regions()),
                                     _g1h->workers()->active_workers());
-      log_debug(gc,ergo)("Running %s using %u workers for %u regions in heap", cl.name(), num_workers, _g1h->num_committed_regions());
+      log_debug(gc,ergo)("Running %s using %u workers for %u regions in heap", cl.name(), num_workers, _g1h->num_active_regions());
       _g1h->workers()->run_task(&cl, num_workers);
 
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
-                                      _g1h->num_committed_regions(), cl.total_selected_for_rebuild());
+                                      _g1h->num_active_regions(), cl.total_selected_for_rebuild());
 
       _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
 
       if (_needs_remembered_set_rebuild) {
         GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected = cl.sort_and_prune_old_selected();
-        _g1h->policy()->candidates()->set_candidates_from_marking(selected);
+        _g1h->collection_set_candidates()->set_candidates_from_marking(selected);
       }
     }
 
@@ -1961,7 +1960,7 @@ public:
 
   void operator()(G1TaskQueueEntry task_entry) const {
     oop obj = task_entry.is_partial_array_state()
-            ? task_entry.to_partial_array_state()->source()
+            ? task_entry.to_partial_array_state()->array()
             : task_entry.to_oop();
     guarantee(oopDesc::is_oop(obj),
               "Non-oop " PTR_FORMAT ", location: %s, index: %d",
@@ -2451,26 +2450,25 @@ size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
   process_klass(obj->klass());
 
   size_t array_length = obj->length();
-  size_t initial_chunk_size = _partial_array_splitter.start(_task_queue, obj, nullptr, array_length, ObjArrayMarkingStride);
+  PartialArraySplitter::Claim chunk = _partial_array_splitter.start(_task_queue, obj, array_length, ObjArrayMarkingStride);
 
-  process_array_chunk(obj, 0, initial_chunk_size);
+  process_array_chunk(chunk._array, chunk._start, chunk._end);
 
+  const size_t chunk_len = chunk._end - chunk._start;
   // Include object header size
   if (obj->is_refArray()) {
-    return refArrayOopDesc::object_size(checked_cast<int>(initial_chunk_size));
+    return refArrayOopDesc::object_size(checked_cast<int>(chunk_len));
   } else {
     FlatArrayKlass* fak = FlatArrayKlass::cast(obj->klass());
-    return flatArrayOopDesc::object_size(fak->layout_helper(), checked_cast<int>(initial_chunk_size));
+    return flatArrayOopDesc::object_size(fak->layout_helper(), checked_cast<int>(chunk_len));
   }
 }
 
 size_t G1CMTask::process_partial_array(const G1TaskQueueEntry& task, bool stolen) {
   PartialArrayState* state = task.to_partial_array_state();
-  // Access state before release by claim().
-  objArrayOop obj = oop_cast<objArrayOop>(state->source());
-
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, _task_queue, stolen);
+  objArrayOop obj = claim._array;
 
   process_array_chunk(obj, claim._start, claim._end);
 
@@ -3266,9 +3264,9 @@ void G1PrintRegionLivenessInfoClosure::log_card_set_groups() {
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  log_card_set_group_add_total(g1h->young_regions_card_set_group(), "Y");
+  log_card_set_group_add_total(g1h->collection_set()->young_regions_card_set_group(), "Y");
 
-  G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
+  G1CollectionSetCandidates* candidates = g1h->collection_set_candidates();
   log_card_set_group_list(candidates->from_marking_groups(), "M");
   log_card_set_group_list(candidates->retained_groups(), "R");
 }
