@@ -55,6 +55,7 @@ class PhaseStringOpts : public Phase {
 
   // Replace all the SB calls in concat with an optimization String allocation
   void replace_string_concat(StringConcat* concat);
+  bool bailout_if_node_limit_reached();
 
   // Compute the number of characters required to represent the int value
   Node* int_stringSize(GraphKit& kit, Node* value);
@@ -102,15 +103,7 @@ class PhaseStringOpts : public Phase {
 
   enum {
     // max length of constant string copy unrolling in copy_string
-    unroll_string_copy_length = 6,
-    // Estimated worst-case number of IR nodes a single concat argument can expand to.
-    // Used to estimate whether expanding a concat would exceed the node limit.
-    // The most expensive argument kind is an int (or char) appended to a concat
-    // whose coder is not known at compile time: int_getChars() then emits both
-    // the Latin1 and the UTF16 digit conversion loops. Measured with fastdebug
-    // and -Xcomp, the marginal cost of such an argument is ~329 nodes (see
-    // TestWorstCaseIntConcat.java), which is rounded up to 330.
-    estimated_nodes_per_concat_arg = 330
+    unroll_string_copy_length = 6
   };
 
  public:

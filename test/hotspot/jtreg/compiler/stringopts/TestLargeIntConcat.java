@@ -26,6 +26,7 @@
  * @test
  * @bug 8387067
  * @summary C2 should not crash with node limit exceeded for large int string concatenations
+ * @key randomness
  * @library /test/lib /
  * @run main/othervm -Xbatch compiler.stringopts.TestLargeIntConcat
  * @run main/othervm -Xcomp -XX:-TieredCompilation
@@ -35,46 +36,58 @@
 
 package compiler.stringopts;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import compiler.lib.compile_framework.CompileFramework;
 import compiler.lib.template_framework.Template;
+import jdk.test.lib.Utils;
 
 import static compiler.lib.template_framework.Template.*;
 
 public class TestLargeIntConcat {
     private static final String GENERATED_CLASS_NAME = "GeneratedTest";
 
-    // Number of int appends per concat. Small counts are expanded by stringopts,
-    // large ones exceed the estimated node budget and must bail out gracefully.
-    // The appends must form a single fluent chain to be recognized as one concat,
-    // and javac cannot compile chains much longer than this.
-    private static final List<Integer> APPEND_COUNTS = List.of(1, 10, 100, 200, 500);
+    // The node limit is hit somewhere in this range. javac cannot compile
+    // much longer append chains.
+    private static final int MIN_RANDOM_COUNT = 100;
+    private static final int MAX_RANDOM_COUNT = 500;
 
     public static void main(String[] args) {
+        Random random = Utils.getRandomInstance();
+        List<Integer> counts = new ArrayList<>(List.of(1, MAX_RANDOM_COUNT));
+        for (int i = 0; i < 4; i++) {
+            counts.add(MIN_RANDOM_COUNT + random.nextInt(MAX_RANDOM_COUNT - MIN_RANDOM_COUNT));
+        }
+        System.out.println("Append counts: " + counts);
+
         CompileFramework compileFramework = new CompileFramework();
-        compileFramework.addJavaSourceCode(GENERATED_CLASS_NAME, generate());
+        compileFramework.addJavaSourceCode(GENERATED_CLASS_NAME, generate(counts));
         compileFramework.compile();
         compileFramework.invoke(GENERATED_CLASS_NAME, "main", new Object[] {new String[] {}});
     }
 
-    static String generate() {
-        var testTemplate = Template.make("count", (Integer count) -> scope(
+    static String generate(List<Integer> counts) {
+        // The prefix is not a constant, so the coder of the result is unknown at
+        // compile time and every int argument takes the most expensive path.
+        var testTemplate = Template.make("index", "count", (Integer index, Integer count) -> scope(
             """
-                public static String test#count(int i) {
+                public static String test#index(String prefix, int i) {
                     return new StringBuilder()
+                        .append(prefix)
             """,
             repeat(count, scope("            .append(i)\n")),
             """
                         .toString();
                 }
 
-                static void run#count() {
+                static void run#index(String prefix) {
                     for (int i = 0; i < 20_000; i++) {
-                        String expected = String.valueOf(i).repeat(#count);
-                        String actual = test#count(i);
+                        String expected = prefix + String.valueOf(i).repeat(#count);
+                        String actual = test#index(prefix, i);
                         if (!expected.equals(actual)) {
-                            throw new RuntimeException("test#count(" + i + ") returned wrong result: " + actual);
+                            throw new RuntimeException("test#index with #count appends returned wrong result for " + i);
                         }
                     }
                 }
@@ -82,18 +95,26 @@ public class TestLargeIntConcat {
             """
         ));
 
+        List<Object> calls = new ArrayList<>();
+        List<Object> methods = new ArrayList<>();
+        for (int i = 0; i < counts.size(); i++) {
+            calls.add("        run" + i + "(prefix);\n");
+            methods.add(testTemplate.asToken(i, counts.get(i)));
+        }
+
         var classTemplate = Template.make(() -> scope(
             let("className", GENERATED_CLASS_NAME),
             """
             public class #className {
                 public static void main(String[] args) {
+                    String prefix = args.length > 0 ? args[0] : "x";
             """,
-            APPEND_COUNTS.stream().map(n -> "        run" + n + "();\n").toList(),
+            calls,
             """
                 }
 
             """,
-            APPEND_COUNTS.stream().map(n -> testTemplate.asToken(n)).toList(),
+            methods,
             """
             }
             """
