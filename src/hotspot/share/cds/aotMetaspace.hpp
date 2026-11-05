@@ -53,6 +53,7 @@ enum MapArchiveResult {
 class AOTMetaspace : AllStatic {
   static ReservedSpace _symbol_rs;  // used only during -Xshare:dump
   static VirtualSpace _symbol_vs;   // used only during -Xshare:dump
+  static bool _archive_invalid;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
   static void* _aot_metaspace_static_top;
@@ -95,6 +96,11 @@ public:
   static void get_aot_code_region_size() NOT_CDS_RETURN;
 
   static void print_on(outputStream* st);
+
+  static void mark_archive_invalid() {
+    _archive_invalid = true;
+  }
+  static bool is_archive_marked_invalid() { return _archive_invalid; }
 
   static void set_archive_loading_failed() {
     _archive_loading_failed = true;
@@ -196,6 +202,7 @@ private:
                                    FileMapInfo* map_info,
                                    AOTMappedHeapInfo* mapped_heap_info,
                                    AOTStreamedHeapInfo* streamed_heap_info);
+  static FileMapInfo* get_static_archive();
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
   // use_requested_addr: If true (default), attempt to map at the address the

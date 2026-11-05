@@ -1885,6 +1885,7 @@ bool FileMapInfo::open_as_input() {
       } else {
         AOTMetaspace::report_loading_error("Loading static archive failed.");
       }
+      AOTMetaspace::mark_archive_invalid();
       return false;
     } else {
       AOTMetaspace::report_loading_error("Loading dynamic archive failed.");
