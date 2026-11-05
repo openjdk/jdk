@@ -53,7 +53,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractTypeVisitor14
  * @since 23
  */
-@SupportedSourceVersion(RELEASE_28)
+@SupportedSourceVersion(RELEASE_29)
 @PreviewFeature(feature=PreviewFeature.Feature.PREVIEW_SUPPORT, reflective=true)
 public abstract class AbstractTypeVisitorPreview<R, P> extends AbstractTypeVisitor14<R, P> {
     /**
