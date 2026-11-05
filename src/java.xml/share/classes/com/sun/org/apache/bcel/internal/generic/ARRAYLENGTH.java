@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,10 +25,10 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
 /**
  * ARRAYLENGTH - Get length of array
  *
- * <PRE>
+ * <pre>
  * Stack: ..., arrayref -&gt; ..., length
- * </PRE>
- * @LastModified: Sept 2025
+ * </pre>
+ * @LastModified: Nov 2026
  */
 public class ARRAYLENGTH extends Instruction implements ExceptionThrower, StackProducer, StackConsumer /* since 6.0 */ {
 
@@ -41,9 +41,9 @@ public class ARRAYLENGTH extends Instruction implements ExceptionThrower, StackP
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -53,7 +53,7 @@ public class ARRAYLENGTH extends Instruction implements ExceptionThrower, StackP
     }
 
     /**
-     * @return exceptions this instruction may cause
+     * @return exceptions this instruction may cause.
      */
     @Override
     public Class<?>[] getExceptions() {

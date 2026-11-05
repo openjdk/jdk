@@ -48,14 +48,16 @@ public final class ConstantClass extends Constant implements ConstantObject {
     /**
      * Constructs an instance from file data.
      *
-     * @param dataInput Input stream
-     * @throws IOException if an I/O error occurs reading from the given {@code dataInput}.
+     * @param dataInput Input stream.
+     * @throws IOException Thrown if an I/O error occurs reading from the given {@code dataInput}.
      */
     ConstantClass(final DataInput dataInput) throws IOException {
         this(dataInput.readUnsignedShort());
     }
 
     /**
+     * Constructs a ConstantClass.
+     *
      * @param nameIndex Name index in constant pool. Should refer to a ConstantUtf8.
      */
     public ConstantClass(final int nameIndex) {
@@ -67,7 +69,7 @@ public final class ConstantClass extends Constant implements ConstantObject {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -77,8 +79,8 @@ public final class ConstantClass extends Constant implements ConstantObject {
     /**
      * Dumps constant class to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs writing to the DataOutputStream.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs writing to the DataOutputStream.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -87,14 +89,20 @@ public final class ConstantClass extends Constant implements ConstantObject {
     }
 
     /**
-     * @return dereferenced string
+     * Gets the dereferenced string.
+     *
+     * @param cp The constant pool.
+     * @return dereferenced string.
      */
     public String getBytes(final ConstantPool cp) {
         return (String) getConstantValue(cp);
     }
 
     /**
-     * @return String object
+     * Gets the String object.
+     *
+     * @param cp The constant pool.
+     * @return String object.
      */
     @Override
     public Object getConstantValue(final ConstantPool cp) {
@@ -102,6 +110,8 @@ public final class ConstantClass extends Constant implements ConstantObject {
     }
 
     /**
+     * Gets the name index in constant pool of class name.
+     *
      * @return Name index in constant pool of class name.
      */
     public int getNameIndex() {
@@ -109,7 +119,9 @@ public final class ConstantClass extends Constant implements ConstantObject {
     }
 
     /**
-     * @param nameIndex the name index in the constant pool of this Constant Class
+     * Sets the name index in the constant pool.
+     *
+     * @param nameIndex The name index in the constant pool of this Constant Class.
      */
     public void setNameIndex(final int nameIndex) {
         this.nameIndex = nameIndex;

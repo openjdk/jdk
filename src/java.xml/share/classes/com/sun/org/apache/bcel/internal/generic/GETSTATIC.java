@@ -27,15 +27,15 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
 /**
  * GETSTATIC - Fetch static field from class
  *
- * <PRE>
+ * <pre>
  * Stack: ..., -&gt; ..., value
- * </PRE>
+ * </pre>
  *
  * OR
  *
- * <PRE>
+ * <pre>
  * Stack: ..., -&gt; ..., value.word1, value.word2
- * </PRE>
+ * </pre>
  */
 public class GETSTATIC extends FieldInstruction implements PushInstruction, ExceptionThrower {
 
@@ -45,15 +45,20 @@ public class GETSTATIC extends FieldInstruction implements PushInstruction, Exce
     GETSTATIC() {
     }
 
+    /**
+     * Constructs a GETSTATIC instruction.
+     *
+     * @param index The constant pool index.
+     */
     public GETSTATIC(final int index) {
         super(Const.GETSTATIC, index);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {

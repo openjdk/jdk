@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,7 +25,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 
 import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.Repository;
@@ -44,13 +43,14 @@ import com.sun.org.apache.bcel.internal.generic.ArrayType;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.MethodGen;
 import com.sun.org.apache.bcel.internal.generic.Type;
+import jdk.xml.internal.Utils;
 
 /**
  * This class takes a given JavaClass object and converts it to a Java program that creates that very class using BCEL.
  * This gives new users of BCEL a useful example showing how things are done with BCEL. It does not cover all features
  * of BCEL, but tries to mimic hand-written code as close as possible.
  *
- * @LastModified: Sept 2025
+ * @LastModified: Nov 2026
  */
 public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyVisitor {
 
@@ -58,13 +58,63 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
      * Enum corresponding to flag source.
      */
     public enum FLAGS {
-        UNKNOWN, CLASS, METHOD,
+
+        /** Unknown flag source. */
+        UNKNOWN,
+
+        /** Class flag source. */
+        CLASS,
+
+        /** Method flag source. */
+        METHOD,
     }
 
     // The base package name for imports; assumes Const is at the top level
     // N.B we use the class so renames will be detected by the compiler/IDE
     private static final String BASE_PACKAGE = Const.class.getPackage().getName();
     private static final String CONSTANT_PREFIX = Const.class.getSimpleName() + ".";
+
+    /**
+     * Checks that a name from the parsed class file is a dotted sequence of valid Java identifiers before it is
+     * emitted in identifier position of the generated source. The class file format allows characters in names (for
+     * example braces, parentheses or newlines) that the Java language does not, so an unchecked name from a crafted
+     * class file could inject arbitrary code into the generated program.
+     *
+     * @param name the class or package name to check.
+     * @return {@code name} if it is safe to emit as a Java identifier.
+     * @throws IllegalArgumentException Thrown if the name is not a dotted sequence of valid Java identifiers.
+     */
+    private static String checkJavaName(final String name) {
+        boolean expectStart = true;
+        for (int i = 0; i < name.length(); i++) {
+            final char ch = name.charAt(i);
+            if (expectStart) {
+                if (!Character.isJavaIdentifierStart(ch)) {
+                    throw new IllegalArgumentException("Invalid Java identifier in class file: " + Utility.convertString(name));
+                }
+                expectStart = false;
+            } else if (ch == '.') {
+                expectStart = true;
+            } else if (!Character.isJavaIdentifierPart(ch)) {
+                throw new IllegalArgumentException("Invalid Java identifier in class file: " + Utility.convertString(name));
+            }
+        }
+        if (expectStart) {
+            throw new IllegalArgumentException("Invalid Java identifier in class file: " + Utility.convertString(name));
+        }
+        return name;
+    }
+
+    private static String[] escape(final String[] names) {
+        if (names == null) {
+            return null;
+        }
+        final String[] escaped = new String[names.length];
+        for (int i = 0; i < names.length; i++) {
+            escaped[i] = names[i] == null ? null : Utility.convertString(names[i]);
+        }
+        return escaped;
+    }
 
     // Needs to be accessible from unit test code
     static JavaClass getJavaClass(final String name) throws ClassNotFoundException, IOException {
@@ -76,9 +126,12 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
     }
 
     /**
-     * Default main method
+     * Default main method.
+     *
+     * @param argv command line arguments.
+     * @throws Exception Thrown if an error occurs.
      */
-    public static void main(final String[] argv) throws Exception {
+    public static void _main(final String[] argv) throws Exception {
         if (argv.length != 1) {
             System.out.println("Usage: BCELifier className");
             System.out.println("\tThe class must exist on the classpath");
@@ -109,9 +162,9 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
     /**
      * Return a string with the flag settings
      *
-     * @param flags the flags field to interpret
-     * @param location the item type
-     * @return the formatted string
+     * @param flags The flags field to interpret.
+     * @param location The item type.
+     * @return The formatted string.
      * @since 6.0 made public
      */
     public static String printFlags(final int flags, final FLAGS location) {
@@ -128,7 +181,7 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
                 } else if (pow == Const.ACC_TRANSIENT && location == FLAGS.METHOD) {
                     buf.append(CONSTANT_PREFIX).append("ACC_VARARGS | ");
                 } else if (i < Const.ACCESS_NAMES_LENGTH) {
-                    buf.append(CONSTANT_PREFIX).append("ACC_").append(Const.getAccessName(i).toUpperCase(Locale.ENGLISH)).append(" | ");
+                    buf.append(CONSTANT_PREFIX).append("ACC_").append(Utils.toUpperCase(Const.getAccessName(i))).append(" | ");
                 } else {
                     buf.append(String.format(CONSTANT_PREFIX + "ACC_BIT %x | ", pow));
                 }
@@ -143,7 +196,7 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
         final Type type = Type.getType(signature);
         final byte t = type.getType();
         if (t <= Const.T_VOID) {
-            return "Type." + Const.getTypeName(t).toUpperCase(Locale.ENGLISH);
+            return "Type." + Utils.toUpperCase(Const.getTypeName(t));
         }
         if (type.toString().equals("java.lang.String")) {
             return "Type.STRING";
@@ -199,10 +252,10 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
     }
 
     private void printMain() {
-        final String className = clazz.getClassName();
+        final String className = checkJavaName(clazz.getClassName());
         printWriter.println("  public static void main(String[] args) throws Exception {");
         printWriter.println("    " + className + "Creator creator = new " + className + "Creator();");
-        printWriter.println("    creator.create(new FileOutputStream(\"" + className + ".class\"));");
+        printWriter.println("    creator.create(new FileOutputStream(\"" + Utility.convertString(className) + ".class\"));");
         printWriter.println("  }");
     }
 
@@ -217,8 +270,8 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
     @Override
     public void visitField(final Field field) {
         printWriter.println();
-        printWriter.println(
-            "    field = new FieldGen(" + printFlags(field.getAccessFlags()) + ", " + printType(field.getSignature()) + ", \"" + field.getName() + "\", _cp);");
+        printWriter.println("    field = new FieldGen(" + printFlags(field.getAccessFlags()) + ", " + printType(field.getSignature()) + ", \""
+            + Utility.convertString(field.getName()) + "\", _cp);");
         final ConstantValue cv = field.getConstantValue();
         if (cv != null) {
             printWriter.print("    field.setInitValue(");
@@ -248,11 +301,11 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
 
     @Override
     public void visitJavaClass(final JavaClass clazz) {
-        String className = clazz.getClassName();
+        String className = checkJavaName(clazz.getClassName());
         final String superName = clazz.getSuperclassName();
         final String packageName = clazz.getPackageName();
-        final String inter = Utility.printArray(clazz.getInterfaceNames(), false, true);
-        if (packageName != null && !packageName.trim().isEmpty()) {
+        final String inter = Utility.printArray(escape(clazz.getInterfaceNames()), false, true);
+        if (Utils.isNotEmpty(packageName)) {
             className = className.substring(packageName.length() + 1);
             printWriter.println("package " + packageName + ";");
             printWriter.println();
@@ -268,8 +321,9 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
         printWriter.println("  private ClassGen           _cg;");
         printWriter.println();
         printWriter.println("  public " + className + "Creator() {");
-        printWriter.println("    _cg = new ClassGen(\"" + (packageName.isEmpty() ? className : packageName + "." + className) + "\", \"" + superName
-            + "\", " + "\"" + clazz.getSourceFileName() + "\", " + printFlags(clazz.getAccessFlags(), FLAGS.CLASS) + ", " + "new String[] { " + inter + " });");
+        printWriter.println("    _cg = new ClassGen(\"" + Utility.convertString(packageName.isEmpty() ? className : packageName + "." + className) + "\", \""
+            + Utility.convertString(superName) + "\", \"" + Utility.convertString(clazz.getSourceFileName()) + "\", "
+            + printFlags(clazz.getAccessFlags(), FLAGS.CLASS) + ", " + "new String[] { " + inter + " });");
         printWriter.println("    _cg.setMajor(" + clazz.getMajor() + ");");
         printWriter.println("    _cg.setMinor(" + clazz.getMinor() + ");");
         printWriter.println();
@@ -304,14 +358,14 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
         final MethodGen mg = new MethodGen(method, clazz.getClassName(), constantPoolGen);
         printWriter.println("    InstructionList il = new InstructionList();");
         printWriter.println("    MethodGen method = new MethodGen(" + printFlags(method.getAccessFlags(), FLAGS.METHOD) + ", " + printType(mg.getReturnType())
-            + ", " + printArgumentTypes(mg.getArgumentTypes()) + ", " + "new String[] { " + Utility.printArray(mg.getArgumentNames(), false, true) + " }, \""
-            + method.getName() + "\", \"" + clazz.getClassName() + "\", il, _cp);");
+            + ", " + printArgumentTypes(mg.getArgumentTypes()) + ", new String[] { " + Utility.printArray(escape(mg.getArgumentNames()), false, true) + " }, \""
+            + Utility.convertString(method.getName()) + "\", \"" + Utility.convertString(clazz.getClassName()) + "\", il, _cp);");
         final ExceptionTable exceptionTable = method.getExceptionTable();
         if (exceptionTable != null) {
             final String[] exceptionNames = exceptionTable.getExceptionNames();
             for (final String exceptionName : exceptionNames) {
                 printWriter.print("    method.addException(\"");
-                printWriter.print(exceptionName);
+                printWriter.print(Utility.convertString(exceptionName));
                 printWriter.println("\");");
             }
         }
@@ -336,7 +390,7 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
         super.visitStackMap(stackMap);
         printWriter.print("    method.addCodeAttribute(");
         printWriter.print("new StackMap(_cp.addUtf8(\"");
-        printWriter.print(stackMap.getName());
+        printWriter.print(Utility.convertString(stackMap.getName()));
         printWriter.print("\"), ");
         printWriter.print(stackMap.getLength());
         printWriter.print(", ");
@@ -370,7 +424,8 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
 
     /**
      * Visits a {@link StackMapType} object.
-     * @param stackMapType object to visit
+     *
+     * @param stackMapType object to visit.
      * @since 6.7.1
      */
     @Override
@@ -381,7 +436,7 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
         printWriter.print(", ");
         if (stackMapType.hasIndex()) {
             printWriter.print("_cp.addClass(\"");
-            printWriter.print(stackMapType.getClassName());
+            printWriter.print(Utility.convertString(stackMapType.getClassName()));
             printWriter.print("\")");
         } else {
             printWriter.print("-1");

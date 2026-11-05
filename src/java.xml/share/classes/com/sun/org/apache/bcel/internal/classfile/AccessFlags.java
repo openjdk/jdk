@@ -22,10 +22,7 @@ package com.sun.org.apache.bcel.internal.classfile;
 import com.sun.org.apache.bcel.internal.Const;
 
 /**
- * Super class for all objects that have modifiers like private, final, ... I.e.
- * classes, fields, and methods.
- *
- * @LastModified: Sept 2025
+ * Super class for all objects that have modifiers like private, final, ... I.e. classes, fields, and methods.
  */
 public abstract class AccessFlags {
 
@@ -105,6 +102,7 @@ public abstract class AccessFlags {
     public final void isAnnotation(final boolean flag) {
         setFlag(Const.ACC_ANNOTATION, flag);
     }
+
     /**
      * Tests whether the enum bit is on.
      *
@@ -388,7 +386,7 @@ public abstract class AccessFlags {
     /**
      * Tests whether the bit is on.
      *
-     * @param test the bit to test.
+     * @param test The bit to test.
      * @return whether the bit is on.
      */
     private boolean test(final short test) {
