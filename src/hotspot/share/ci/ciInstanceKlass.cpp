@@ -949,7 +949,7 @@ bool ciInstanceKlass::has_subklass() {
     return res == subklass_true;
   }
 
-  compute_cha_info();
+  GUARDED_VM_ENTRY(compute_cha_info();)
   return _has_subklass == subklass_true;
 }
 
@@ -974,7 +974,7 @@ ciInstanceKlass* ciInstanceKlass::unique_concrete_subklass() {
     return res == this ? nullptr : res;
   }
 
-  compute_cha_info();
+  GUARDED_VM_ENTRY(compute_cha_info();)
   ciInstanceKlass* res = _implementor;
   return res == this ? nullptr : res;
 }
@@ -988,7 +988,7 @@ ciInstanceKlass* ciInstanceKlass::unique_implementor() {
     return res == this ? nullptr : res;
   }
 
-  compute_cha_info();
+  GUARDED_VM_ENTRY(compute_cha_info();)
   ciInstanceKlass* res = _implementor;
   return res == this ? nullptr : res;
 }
@@ -1002,7 +1002,7 @@ void ciInstanceKlass::compute_cha_info() {
   assert(!_cha_info_computed, "must not have been computed yet for %s", name()->as_utf8());
   assert(_implementor == nullptr, "must not have been computed yet for %s", name()->as_utf8());
 
-  VM_ENTRY_MARK;
+  ASSERT_IN_VM;
   InstanceKlass* ik = get_instanceKlass();
   InstanceKlass* implementor_k;
   if (is_interface()) {
