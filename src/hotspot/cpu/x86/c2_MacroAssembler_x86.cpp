@@ -1418,6 +1418,7 @@ void C2_MacroAssembler::varshiftbw(int opcode, XMMRegister dst, XMMRegister src,
 void C2_MacroAssembler::vshiftb_gfni(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift,
                                      Register rtmp, Register rbase, int vlen_enc) {
   assert(VM_Version::supports_gfni(), "required");
+  assert_different_registers(dst, src);
   int kind = 0;
   if (opcode == Op_URShiftVB) {
     kind = 1;
@@ -1430,11 +1431,12 @@ void C2_MacroAssembler::vshiftb_gfni(int opcode, XMMRegister dst, XMMRegister sr
   andl(rtmp, 31);
   // One matrix per count in 0..31.
   const int mats_per_kind = 32;
-  lea(rbase, ExternalAddress(StubRoutines::x86::vector_byte_shift_gfni_matrix() + kind * mats_per_kind * BytesPerLong));
+  lea(rbase, ExternalAddress(StubRoutines::x86::vector_byte_shift_gfni_matrix()));
+  Address matrix(rbase, rtmp, Address::times_8, kind * mats_per_kind * BytesPerLong);
   if (vlen_enc == Assembler::AVX_128bit) {
-    movddup(dst, Address(rbase, rtmp, Address::times_8));
+    movddup(dst, matrix);
   } else {
-    vpbroadcastq(dst, Address(rbase, rtmp, Address::times_8), vlen_enc);
+    vpbroadcastq(dst, matrix, vlen_enc);
   }
   vgf2p8affineqb(dst, src, dst, 0, vlen_enc);
 }
