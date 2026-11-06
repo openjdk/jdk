@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,20 +30,21 @@
 #define DEFAULT_RANGE NSMakeRange(0, 0)
 #define DEFAULT_RECT NSMakeRect(0, 0, 0, 0)
 
-static jclass sjc_CAccessibility = NULL;
-static jmethodID sjm_getAccessibleText = NULL;
+DECLARE_CLASS_ONLY(sjc_CAccessibility);
+
+DECLARE_METHOD_ONLY(sjm_getAccessibleText);
 #define GET_ACCESSIBLETEXT_METHOD_RETURN(ret) \
     GET_CACCESSIBILITY_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(sjm_getAccessibleText, sjc_CAccessibility, "getAccessibleText", \
               "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleText;", ret);
 
-static jclass sjc_CAccessibleText = NULL;
+DECLARE_CLASS_ONLY(sjc_CAccessibleText);
 #define GET_CACCESSIBLETEXT_CLASS() \
     GET_CLASS(sjc_CAccessibleText, "sun/lwawt/macosx/CAccessibleText");
 #define GET_CACCESSIBLETEXT_CLASS_RETURN(ret) \
     GET_CLASS_RETURN(sjc_CAccessibleText, "sun/lwawt/macosx/CAccessibleText", ret);
 
-static jmethodID sjm_getAccessibleEditableText = NULL;
+DECLARE_METHOD_ONLY(sjm_getAccessibleEditableText);
 #define GET_ACCESSIBLEEDITABLETEXT_METHOD_RETURN(ret) \
     GET_CACCESSIBLETEXT_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(sjm_getAccessibleEditableText, sjc_CAccessibleText, "getAccessibleEditableText", \

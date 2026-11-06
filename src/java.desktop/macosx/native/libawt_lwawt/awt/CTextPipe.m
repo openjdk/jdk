@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,7 +321,7 @@ static void DrawTextContext
 
 -----------------------------------*/
 
-static jclass jc_StandardGlyphVector = NULL;
+DECLARE_CLASS_ONLY(jc_StandardGlyphVector);
 #define GET_SGV_CLASS() GET_CLASS(jc_StandardGlyphVector, "sun/font/StandardGlyphVector");
 
 // Checks the GlyphVector Java object for any transforms that were applied to individual characters. If none are present,
