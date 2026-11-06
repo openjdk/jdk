@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2024, 2026, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class TestArrLenCheckOptimization {
     }
 
     @Test
-    @IR(counts = {IRNode.CBZ_LS, "1"})
+    @IR(counts = {IRNode.CBZW_LS, "1"})
     void test_le_long(int ia[]) {
         if (Long.compareUnsigned(ia.length, 0) > 0) {
             result += 0x80;
@@ -66,7 +66,7 @@ public class TestArrLenCheckOptimization {
     }
 
     @Test
-    @IR(counts = {IRNode.CBZ_HI, "1"})
+    @IR(counts = {IRNode.CBNZW_HI, "1"})
     void test_gt_long(int ia[]) {
         if (Long.compareUnsigned(ia.length, 0) > 0) {
             result += 0x82;
