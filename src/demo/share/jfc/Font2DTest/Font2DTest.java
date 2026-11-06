@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -184,6 +184,7 @@ public final class Font2DTest extends JPanel
         if(canDisplayCheck) {
             fireRangeChanged();
         }
+        setUseFamilyAndStyle();
     }
 
     private void addFontMenuToGBL(String labelText,
@@ -375,7 +376,7 @@ public final class Font2DTest extends JPanel
         for (int i = 0; i < fontList.length; i++ ) {
            fontNameMenu.addItem( fontList[i] );
         }
-        fontNameMenu.setSelectedItem("Dialog");
+        fontNameMenu.setSelectedItem("Dialog.plain");
 
         styleMenu.addItem( "Plain" );
         styleMenu.addItem( "Bold" );
@@ -918,7 +919,7 @@ public final class Font2DTest extends JPanel
     static final int FAMILY_AND_STYLE     = 1;
     static final int FONT_NAME            = 2;
     static final int FAMILY_AND_SUBFAMILY = 3;
-    static int fontSelectionType = FAMILY_AND_STYLE;
+    static int fontSelectionType = 0; // set at end of constructor
 
     static final String FAMILY_LABEL_TEXT = "Font Family:";
     static final String NAME_LABEL_TEXT = "Font Name:";
@@ -1401,11 +1402,17 @@ public final class Font2DTest extends JPanel
          FontFamily family = FontFamily.getFontFamily(name);
          fontSubFamilyMenu.removeAllItems();
 
+         int indexToUse = 0;
          String [] sfNames = family.getSubFamilyNames();
          for (int i=0; i<sfNames.length; i++) {
+             String sf = sfNames[i];
              fontSubFamilyMenu.addItem(sfNames[i]);
+             if (sf.equalsIgnoreCase("Regular") ||
+                 sf.equalsIgnoreCase(".plain")) {
+                 indexToUse = i;
+             }
          }
-         fontSubFamilyMenu.setSelectedIndex(0); // better be at least one !
+         fontSubFamilyMenu.setSelectedIndex(indexToUse); // better be at least one !
     }
 
     static String[] getAllFontNames() {
