@@ -49,6 +49,7 @@
   flags(ELIMINATE_VBOX_ALLOC,           "Eliminate VectorBoxAllocate") \
   flags(ITER_GVN_BEFORE_EA,             "Iter GVN before EA") \
   flags(ITER_GVN_AFTER_VECTOR,          "Iter GVN after Vector Box Elimination") \
+  flags(SPLIT_INLINES_ARRAY,            "Split inlines array") \
   flags(BEFORE_LOOP_OPTS,               "Before Loop Optimizations") \
   flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
   flags(EA_AFTER_INITIAL_CONGRAPH,          "EA: 1. Intial Connection Graph") \
@@ -145,8 +146,6 @@
   flags(FINAL_CODE,                     "Final Code") \
   flags(END,                            "End") \
   flags(FAILURE,                        "Failure") \
-  flags(SPLIT_INLINES_ARRAY,            "Split inlines array") \
-  flags(SPLIT_INLINES_ARRAY_IGVN,       "IGVN after split inlines array") \
   flags(ALL,                            "All") \
   flags(DEBUG,                          "Debug")
 
