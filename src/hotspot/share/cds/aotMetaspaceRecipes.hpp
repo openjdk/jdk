@@ -49,7 +49,7 @@ class AOTMetaspaceRecipes {
   static constexpr int WAS_INITED                  = 0x1 << 3; // Class was initialized during training run
 
   // A list of all the archived classes from the AOT configuration. We want to transfer all of these
-  // into the final image.
+  // into the AOT cache.
   Array<Klass*>* _all_klasses;
 
   // For each klass k _all_klasses->at(i): _cp_recipes->at(i) lists all the {klass,field,method,indy}
@@ -65,7 +65,7 @@ class AOTMetaspaceRecipes {
   void record_all_classes();
   void record_recipes_for_constantpool();
 
-  // Called when dumping final image
+  // Called when dumping AOT cache
   void apply_recipes_impl(TRAPS);
   void load_all_classes(TRAPS);
   void link_all_classes(TRAPS);
