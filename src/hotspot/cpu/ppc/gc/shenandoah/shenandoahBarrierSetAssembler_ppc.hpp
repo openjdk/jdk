@@ -138,8 +138,13 @@ public:
   // Entry points from Matcher
   void load_c2(const MachNode* node, MacroAssembler* masm, Register dst, Register addr, int disp, Register tmp1, Register tmp2, bool narrow, bool acquire);
 
+  void load_c2_special(const MachNode* node, MacroAssembler* masm, Register dst, Register addr, int offset, Register tmp1, Register tmp2, Register tmp3);
+
   void store_c2(const MachNode* node, MacroAssembler* masm,
                 Register dst, int disp, bool dst_narrow, Register src, bool src_narrow, Register tmp1, Register tmp2, Register tmp3);
+
+  void store_c2_special(const MachNode* node, MacroAssembler* masm,
+                        Register dst, Register src, int offset, Register tmp1, Register tmp2, Register tmp3);
 
   void compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr, Register oldval,
                           Register newval, Register tmp1, Register tmp2, bool exchange, bool narrow, bool weak, bool acquire);

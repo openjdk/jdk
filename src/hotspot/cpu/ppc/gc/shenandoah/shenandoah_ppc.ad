@@ -132,6 +132,28 @@ instruct loadP_acq_shenandoah(iRegPdst dst, memoryAlg4 mem, iRegPdstNoScratch tm
   ins_pipe(pipe_class_memory);
 %}
 
+instruct loadLSpecial_shenandoah(iRegLdst dst, indirect mem, immI off, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set dst (LoadLSpecial mem off));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  predicate(UseShenandoahGC);
+  // The main load is a candidate to implement implicit null checks.
+  ins_is_late_expanded_null_check_candidate(true);
+  format %{ "shenandoah_load_special $dst, $mem" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->load_c2_special(this, masm,
+      $dst$$Register,
+      $mem$$base$$Register,
+      $off$$constant,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register
+    );
+  %}
+  ins_cost(MEMORY_REF_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
+
 // ---------------------------------- STORES ---------------------------------------
 //
 
@@ -197,6 +219,45 @@ instruct encodePAndStoreN_shenandoah(memory dst, iRegPsrc src, iRegPdstNoScratch
   ins_cost(MEMORY_REF_COST);
   ins_pipe(pipe_class_memory);
 %}
+
+instruct storeLSpecial_both_shenandoah(indirect dst, iRegLsrc src, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set dst (StoreLSpecial dst src));
+  predicate(UseShenandoahGC);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  format %{ "shenandoah_store_special $dst, $src" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2_special(this, masm,
+      $dst$$base$$Register,
+      $src$$Register,
+      -1,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register
+    );
+  %}
+  ins_cost(MEMORY_REF_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeLSpecial_single_shenandoah(indirect dst, iRegLsrc src, immI off, iRegPdstNoScratch tmp1, iRegPdstNoScratch tmp2, iRegPdstNoScratch tmp3, flagsRegCR0 cr0) %{
+  match(Set dst (StoreLSpecial dst (Binary src off)));
+  predicate(UseShenandoahGC);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr0);
+  format %{ "shenandoah_store_special $dst, $src" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2_special(this, masm,
+      $dst$$base$$Register,
+      $src$$Register,
+      (int)$off$$constant,
+      $tmp1$$Register,
+      $tmp2$$Register,
+      $tmp3$$Register
+    );
+  %}
+  ins_cost(MEMORY_REF_COST);
+  ins_pipe(pipe_class_memory);
+%}
+
 
 // ---------------------- LOAD-STORES -----------------------------------
 //

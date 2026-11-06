@@ -50,7 +50,9 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
 
   // Fast path: delegate to base class for small arrays or no-zero case.
   // In no-zero case(_do_zero is false), the content of the array won't be zeroed, therefore no need to fall into slow-path.
-  if (!_do_zero || _word_size <= THRESHOLD) {
+  // For flat arrays containing oops, we cannot fill the array efficiently.
+  if (!_do_zero || _word_size <= THRESHOLD ||
+      (_klass->is_flatArray_klass() && FlatArrayKlass::cast(_klass)->contains_oops())) {
     return ObjArrayAllocator::initialize(mem);
   }
 
@@ -72,8 +74,8 @@ oop ShenandoahObjArrayAllocator::initialize(HeapWord* mem) const {
   // For obj array, the header will be corrected to object array after clearing the memory.
   Klass* filling_klass = _klass;
 
-  // Flat arrays containing oops are not supported and only contain primitives
-  // from here on out.
+  assert(!_klass->is_flatArray_klass() || !FlatArrayKlass::cast(_klass)->contains_oops(),
+         "Flat arrays containing oops are not supported");
   const bool is_ref_type = (element_type != T_FLAT_ELEMENT) && is_reference_type(element_type);
 
   if (is_ref_type) {
