@@ -63,7 +63,17 @@
 
   void unlock_object(Register hdr, Register obj, Register basic_lock, Label& slow_case);
 
+  // Randomized profile capture
+  void step_random(Register state, Register temp, Register data = Rtemp);
+  void save_profile_rng();
+  void restore_profile_rng();
+
+  void increment_mdp_data_at(Address data,
+                             Register bumped_count,
+                             RegisterOrConstant increment);
+
   // This platform only uses signal-based null checks. The Label is not needed.
   void null_check(Register r, Label *Lnull = nullptr) { MacroAssembler::null_check(r); }
+  void remove_frame(int frame_size_in_bytes);
 
 #endif // CPU_ARM_C1_MACROASSEMBLER_ARM_HPP

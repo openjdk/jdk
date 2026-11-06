@@ -189,6 +189,7 @@
 
   static int nof_caller_save_cpu_regs() { return pd_nof_caller_save_cpu_regs_frame_map; }
   static int last_cpu_reg()             { return pd_last_cpu_reg; }
+  static int last_fpu_reg()             { return pd_last_fpu_reg; }
 
   // Registers which need to be saved in the frames (e.g. for GC).
   // Register usage:
