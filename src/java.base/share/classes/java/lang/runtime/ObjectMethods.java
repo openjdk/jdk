@@ -267,6 +267,15 @@ public final class ObjectMethods {
             }
         }
 
+        getters.sort((mh1, mh2) -> {
+            var rt1 = mh1.type().returnType();
+            var rt2 = mh2.type().returnType();
+            return Integer.compare(
+                    rt1.isPrimitive() || rt1.isEnum() || rt1.isArray() ? 1 : Iterable.class.isAssignableFrom(rt1) ? -1 : 0,
+                    rt2.isPrimitive() || rt2.isEnum() || rt2.isArray() ? 1 : Iterable.class.isAssignableFrom(rt2) ? -1 : 0
+            );
+        });
+
         for (int i = 0; i < size; i++) {
             var getter = getters.get(i);
             MethodHandle equalator = equalators[i]; // (TT)Z

@@ -28,12 +28,14 @@
  * @run junit ObjectMethodsTest
  */
 
+import java.util.ArrayList;
 import java.util.List;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.runtime.ObjectMethods;
+import java.util.concurrent.TimeUnit;
 import static java.lang.invoke.MethodType.methodType;
 
 import org.junit.jupiter.api.Test;
@@ -145,8 +147,46 @@ public class ObjectMethodsTest {
         assertEquals("Empty[]", (String)handle.invokeExact(new Empty()));
     }
 
+    @Test
+    public void testRearrangeEquals() {
+        class ThrowingList extends ArrayList<Object> {
+            public boolean equals(Object o) {
+                throw new IllegalStateException("Shouldn't be called");
+            }
+        }
+
+        class ThrowingObject {
+            public boolean equals(Object obj) {
+                throw new IllegalStateException("Shouldn't be called");
+            }
+        }
+
+        record TestRecord1(List<Object> list, byte[] bytes, long id){}
+        record TestRecord2(Object object, TimeUnit timeUnit, int id){}
+
+        var obj1 = new TestRecord1(new ThrowingList(), new byte[0], 1);
+        var obj2 = new TestRecord1(new ThrowingList(), new byte[0], -1);
+
+        //check exception is not thrown because false is returned before calling ThrowingList.equals()
+        assertNotEquals(obj1, obj2);
+        //verify List.equals() is called
+        assertThrows(ISE, () -> {
+            byte[] sameArray = new byte[0];
+            new TestRecord1(new ThrowingList(), sameArray, 1).equals(new TestRecord1(new ThrowingList(), sameArray, 1));
+        });
+
+        var obj3 = new TestRecord2(new ThrowingObject(), TimeUnit.DAYS, 1);
+        var obj4 = new TestRecord2(new ThrowingObject(), TimeUnit.HOURS, 1);
+
+        //check exception is not thrown because false is returned before calling ThrowingObject.equals()
+        assertNotEquals(obj3, obj4);
+        //verify Object.equals() is called
+        assertThrows(ISE, () -> new TestRecord2(new ThrowingObject(), TimeUnit.DAYS, 1).equals(new TestRecord2(new ThrowingObject(), TimeUnit.DAYS, 1)));
+    }
+
     private static final Class<NullPointerException> NPE = NullPointerException.class;
     private static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+    private static final Class<IllegalStateException> ISE = IllegalStateException.class;
 
     @Test
     public void exceptions()  {
