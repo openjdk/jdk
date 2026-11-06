@@ -192,12 +192,18 @@ extern struct revival_data* rdata;
 void exitForRetry(); // exit process using above exit code to signal a retry
 
 /**
+ * Return true if two address ranges (start, end) are not in conflict.
+ */
+bool ranges_distinct(uint64_t start1, uint64_t end1, uint64_t start2, uint64_t end2);
+
+/**
  * Return true if two address ranges (start, end) are in conflict.
  */
 bool clash_range(uint64_t v1, uint64_t v2, uint64_t t1, uint64_t t2);
 
 /**
  * Return true if an address range (start, end) conflicts with a pointer.
+ * Aligns pointer to create a range to check.
  */
 bool clash_addr(uint64_t v1, uint64_t v2, uint64_t xaddr);
 

@@ -1756,6 +1756,18 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
     if (_first_error_tid.load_relaxed() != mytid) {
+
+      if (Thread::is_revived()) {
+        jio_vsnprintf(_detail_msg, sizeof(_detail_msg), detail_fmt, detail_args);
+        if (strlen(_detail_msg) > 0) {
+          out.print_raw_cr(_detail_msg);
+        } else if (strlen(message) > 0) {
+          out.print_raw_cr(message);
+        } else {
+          out.print_raw_cr("Error in revived VM.");
+        }
+        os::abort(CreateCoredumpOnCrash);
+      }
       if (!SuppressFatalErrorMessage) {
         char msgbuf[64];
         jio_snprintf(msgbuf, sizeof(msgbuf),

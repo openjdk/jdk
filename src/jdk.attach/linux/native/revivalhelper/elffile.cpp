@@ -35,19 +35,10 @@
 
 /**
  * Return bool for whether a Program Header is obviously unnecessary.
- * We have Segment::is_relevant() but can avoid getting as far as creating a Segment.
+ * We have Segment::is_relevant() but can avoid creating a Segment.
  */
 bool is_unwanted_phdr(Elf64_Phdr* phdr) {
     return (phdr->p_memsz == 0 || phdr->p_filesz == 0);
-}
-
-bool is_inside(Elf64_Addr from, Elf64_Addr x, Elf64_Addr to) {
-    return from <= x && x < to;
-}
-
-bool is_inside(Elf64_Phdr* phdr, Elf64_Addr start, Elf64_Addr end) {
-    return is_inside(start, phdr->p_vaddr, end)
-           || is_inside(start, phdr->p_vaddr + phdr->p_memsz, end);
 }
 
 bool should_relocate_addend(Elf64_Rela* rela) {
@@ -435,7 +426,7 @@ void ELFFile::read_bytes(ssize_t bytes, char* buffer) {
 char* ELFFile::find_note_by_type(Elf64_Phdr* notes_ph, Elf64_Word type) {
     // Read NOTES.  p_filesz is limit.
     Elf64_Nhdr* nhdr = (Elf64_Nhdr*) ((uint64_t) m + notes_ph->p_offset);
-    Elf64_Nhdr* end  = nhdr + notes_ph->p_filesz;
+    Elf64_Nhdr* end  = (Elf64_Nhdr*) ((uint64_t) nhdr + notes_ph->p_filesz);
 
     while (nhdr < end) {
         logd("NOTE at %p type 0x%x namesz %x descsz %x", nhdr, nhdr->n_type, nhdr->n_namesz, nhdr->n_descsz);
@@ -703,8 +694,9 @@ void ELFFile::write_mem_mappings(int mappings_fd) {
             std::list<Segment>::iterator iter;
             for (iter = file_mappings.begin(); iter != file_mappings.end(); iter++) {
                 Segment lib = *iter;
-                if (is_inside(phdr, lib.start(), lib.end())) {
-                    logd("Skipping core PH 0x%lx - 0x%lx due to overlap with %s", phdr->p_vaddr, phdr->p_vaddr + phdr->p_memsz, lib.name);
+                if (!ranges_distinct(phdr->p_vaddr, phdr->p_vaddr + phdr->p_memsz, lib.start(), lib.end())) {
+                    logd("Skipping core PH 0x%lx - 0x%lx due to overlap with %s (0x%lx - 0x%lx)",
+                         phdr->p_vaddr, phdr->p_vaddr + phdr->p_memsz, lib.name, lib.start(), lib.end());
                     n_skipped++;
                     skip = true;
                     break;

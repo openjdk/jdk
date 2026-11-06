@@ -26,11 +26,13 @@
 #include "segment.hpp"
 
 bool Segment::contains(Segment* seg) {
+    // Equal end address permitted.
     return seg->start() >= this->start() && seg->end() <= this->end();
 }
 
 bool Segment::contains(uint64_t addr) {
-    return addr >= this->start() && addr <= this->end();
+    // Non-inclusive addr param comparison with end.
+    return addr >= this->start() && addr < this->end();
 }
 
 bool Segment::is_relevant() {

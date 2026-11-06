@@ -223,8 +223,18 @@ unsigned long long file_time(const char* filename) {
 }
 
 
+bool ranges_distinct(uint64_t start1, uint64_t end1, uint64_t start2, uint64_t end2) {
+    if (end1 < start1) {
+        error("ranges_distinct: range error 1");
+    }
+    if (end2 < start2) {
+        error("ranges_distinct: range error 2");
+    }
+    return end1 <= start2 || start1 > end2;
+}
+
 bool clash_range(uint64_t v1, uint64_t v2, uint64_t t1, uint64_t t2) {
-    // Region v1, v2 surrounds region t1,t2:
+    // Region v1, v2 surrounds or equals region t1, t2:
     if (v1 <= t1 && v2 >= t2) {
         return true;
     }
@@ -241,9 +251,9 @@ bool clash_range(uint64_t v1, uint64_t v2, uint64_t t1, uint64_t t2) {
     return false;
 }
 
-bool clash_addr(uint64_t v1, uint64_t v2, uint64_t xaddr) {
-    uint64_t t1 = align_down(xaddr, vaddr_alignment_pd());
-    uint64_t t2 = align_up(xaddr, vaddr_alignment_pd());
+bool clash_addr(uint64_t v1, uint64_t v2, uint64_t addr) {
+    uint64_t t1 = align_down(addr, vaddr_alignment_pd());
+    uint64_t t2 = align_up(addr, vaddr_alignment_pd());
     if (clash_range(v1, v2, t1, t2)) {
         return true;
     }
