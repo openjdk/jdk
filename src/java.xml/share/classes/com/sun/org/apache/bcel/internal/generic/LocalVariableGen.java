@@ -44,11 +44,11 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
      * Generate a local variable that with index 'index'. Note that double and long variables need two indexs. Index indices
      * have to be provided by the user.
      *
-     * @param index index of local variable
-     * @param name its name
-     * @param type its type
-     * @param start from where the instruction is valid (null means from the start)
-     * @param end until where the instruction is valid (null means to the end)
+     * @param index index of local variable.
+     * @param name its name.
+     * @param type its type.
+     * @param start from where the instruction is valid (null means from the start).
+     * @param end until where the instruction is valid (null means to the end).
      */
     public LocalVariableGen(final int index, final String name, final Type type, final InstructionHandle start, final InstructionHandle end) {
         if (index < 0 || index > Const.MAX_SHORT) {
@@ -67,12 +67,12 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
      * Generates a local variable that with index 'index'. Note that double and long variables need two indexs. Index
      * indices have to be provided by the user.
      *
-     * @param index index of local variable
-     * @param name its name
-     * @param type its type
-     * @param start from where the instruction is valid (null means from the start)
-     * @param end until where the instruction is valid (null means to the end)
-     * @param origIndex index of local variable prior to any changes to index
+     * @param index index of local variable.
+     * @param name its name.
+     * @param type its type.
+     * @param start from where the instruction is valid (null means from the start).
+     * @param end until where the instruction is valid (null means to the end).
+     * @param origIndex index of local variable prior to any changes to index.
      */
     public LocalVariableGen(final int index, final String name, final Type type, final InstructionHandle start, final InstructionHandle end,
         final int origIndex) {
@@ -90,7 +90,7 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
     }
 
     /**
-     * @return true, if ih is target of this variable
+     * @return true, if ih is target of this variable.
      */
     @Override
     public boolean containsTarget(final InstructionHandle ih) {
@@ -117,14 +117,29 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
         return l.index == index && l.start == start && l.end == end;
     }
 
+    /**
+     * Gets the end instruction handle.
+     *
+     * @return The end instruction handle.
+     */
     public InstructionHandle getEnd() {
         return end;
     }
 
+    /**
+     * Gets the index.
+     *
+     * @return The index.
+     */
     public int getIndex() {
         return index;
     }
 
+    /**
+     * Gets whether the variable lives to the end.
+     *
+     * @return true if the variable lives to the end.
+     */
     public boolean getLiveToEnd() {
         return liveToEnd;
     }
@@ -139,7 +154,8 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
      * between a live range that ends BEFORE the last insturction of the method or a live range that ends AFTER the last
      * instruction of the method. Hence the liveToEnd flag to differentiate between these two cases.
      *
-     * @param cp constant pool
+     * @param cp constant pool.
+     * @return The local variable.
      */
     public LocalVariable getLocalVariable(final ConstantPoolGen cp) {
         int startPc = 0;
@@ -161,10 +177,20 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
         return name;
     }
 
+    /**
+     * Gets the original index.
+     *
+     * @return The original index.
+     */
     public int getOrigIndex() {
         return origIndex;
     }
 
+    /**
+     * Gets the start instruction handle.
+     *
+     * @return The start instruction handle.
+     */
     public InstructionHandle getStart() {
         return start;
     }
@@ -177,19 +203,34 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
     @Override
     public int hashCode() {
         // If the user changes the name or type, problems with the targeter hashmap will occur.
-        // Note: index cannot be part of hash as it may be changed by the user.
+        // Note: Index cannot be part of hash as it may be changed by the user.
         return name.hashCode() ^ type.hashCode();
     }
 
+    /**
+     * Sets the end instruction handle.
+     *
+     * @param end The end instruction handle.
+     */
     public void setEnd(final InstructionHandle end) { // TODO could be package-protected?
         BranchInstruction.notifyTarget(this.end, end, this);
         this.end = end;
     }
 
+    /**
+     * Sets the index.
+     *
+     * @param index The index.
+     */
     public void setIndex(final int index) {
         this.index = index;
     }
 
+    /**
+     * Sets whether the variable lives to the end.
+     *
+     * @param liveToEnd true if the variable lives to the end.
+     */
     public void setLiveToEnd(final boolean liveToEnd) {
         this.liveToEnd = liveToEnd;
     }
@@ -199,6 +240,11 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
         this.name = name;
     }
 
+    /**
+     * Sets the start instruction handle.
+     *
+     * @param start The start instruction handle.
+     */
     public void setStart(final InstructionHandle start) { // TODO could be package-protected?
         BranchInstruction.notifyTarget(this.start, start, this);
         this.start = start;
@@ -215,8 +261,8 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
     }
 
     /**
-     * @param oldIh old target, either start or end
-     * @param newIh new target
+     * @param oldIh old target, either start or end.
+     * @param newIh new target.
      */
     @Override
     public void updateTarget(final InstructionHandle oldIh, final InstructionHandle newIh) {

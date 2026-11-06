@@ -24,21 +24,24 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * LSHR - Arithmetic shift right long
  *
- * <PRE>
+ * <pre>
  * Stack: ..., value1.word1, value1.word2, value2 -&gt; ..., result.word1, result.word2
- * </PRE>
+ * </pre>
  */
 public class LSHR extends ArithmeticInstruction {
 
+    /**
+     * Constructs an LSHR instruction.
+     */
     public LSHR() {
         super(com.sun.org.apache.bcel.internal.Const.LSHR);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {

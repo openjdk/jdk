@@ -33,14 +33,19 @@ public abstract class StackInstruction extends Instruction {
     }
 
     /**
-     * @param opcode instruction opcode
+     * Constructs a StackInstruction.
+     *
+     * @param opcode instruction opcode.
      */
     protected StackInstruction(final short opcode) {
         super(opcode, (short) 1);
     }
 
     /**
-     * @return Type.UNKNOWN
+     * Gets the type.
+     *
+     * @param cp The constant pool.
+     * @return Type.UNKNOWN.
      */
     public Type getType(final ConstantPoolGen cp) {
         return Type.UNKNOWN;
