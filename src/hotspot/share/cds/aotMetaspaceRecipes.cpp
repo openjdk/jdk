@@ -55,7 +55,7 @@ void AOTMetaspaceRecipes::record_recipes_for_constantpool() {
 
   // The recipes are recorded regardless of CDSConfig::is_dumping_{invokedynamic,dynamic_proxies,reflection_data}().
   // If some of these options are not enabled, the corresponding recipes will be
-  // ignored during the final image assembly.
+  // ignored during the AOT cache assembly.
 
   GrowableArray<Array<int>*> tmp_cp_recipes;
   GrowableArray<int> tmp_flags;
@@ -186,7 +186,6 @@ void AOTMetaspaceRecipes::load_all_classes(TRAPS) {
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
   for (int i = 0; i < _all_klasses->length(); i++) {
     Klass* k = _all_klasses->at(i);
-    int flags = _flags->at(i);
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (ik->defined_by_other_loaders()) {
@@ -201,8 +200,32 @@ void AOTMetaspaceRecipes::load_all_classes(TRAPS) {
           AOTMetaspace::unrecoverable_writing_error();
         }
         assert(ik->is_loaded(), "must be");
-        ik->link_class(CHECK);
+      }
+    }
+  }
+}
 
+void AOTMetaspaceRecipes::link_all_classes(TRAPS) {
+  for (int i = 0; i < _all_klasses->length(); i++) {
+    Klass* k = _all_klasses->at(i);
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      if (!ik->defined_by_other_loaders() && !ik->is_hidden()) {
+        assert(ik->is_loaded(), "must be");
+        ik->link_class(CHECK);
+      }
+    }
+  }
+}
+
+void AOTMetaspaceRecipes::initialize_all_safe_classes(TRAPS) {
+  for (int i = 0; i < _all_klasses->length(); i++) {
+    Klass* k = _all_klasses->at(i);
+    int flags = _flags->at(i);
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      if (!ik->defined_by_other_loaders() && !ik->is_hidden()) {
+        assert(ik->is_linked(), "must be");
         if (ik->has_aot_safe_initializer() && (flags & WAS_INITED) != 0) {
           assert(ik->class_loader() == nullptr, "supported only for boot classes for now");
           ResourceMark rm(THREAD);
@@ -233,12 +256,16 @@ void AOTMetaspaceRecipes::apply_recipes(TRAPS) {
     }
   }
 
-  // Set it to null as we don't need to write this table into the final image.
+  // Set it to null as we don't need to write this table into the AOT cache
   _aot_metaspace_recipes = nullptr;
 }
 
+// Follow the same class processing phases as during production run
 void AOTMetaspaceRecipes::apply_recipes_impl(TRAPS) {
+  assert(CDSConfig::is_dumping_aot_cache(), "sanity");
   load_all_classes(CHECK);
+  link_all_classes(CHECK);
+  initialize_all_safe_classes(CHECK);
   apply_recipes_for_constantpool(THREAD);
 }
 

@@ -189,7 +189,8 @@ public class TestMaskedStoreIdealization {
                     let("boxedTy", vec.elementType.boxedTypeName()),
                     let("species", vec.speciesName),
                     "        VectorMask<#boxedTy> mask = VectorMask.fromLong(#species, ",
-                    testCaseRandom.nextInt(0, 10) == 0 ? testCaseRandom.nextLong() : "-1 - (1 << #idx)",
+                    testCaseRandom.nextInt(0, 10) == 0 ? testCaseRandom.nextLong() : "-1", // All bits or random mask.
+                    " & ~(1 << #idx)", // Regardless of the mask, we must clear the idx bit. Otherwise, IR-verification fails.
                     ");\n"
                 ));
 

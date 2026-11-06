@@ -47,6 +47,54 @@ source %{
     }
   }
 
+  static void gatherScatter32(C2_MacroAssembler* masm, bool is_store,
+                              VectorRegister reg, VectorRegister idx, VectorRegister offsets,
+                              BasicType bt, Register base, uint vector_length,
+                              Assembler::VectorMask vm = Assembler::unmasked) {
+    assert(type2aelembytes(bt) == 4, "32-bit vector elements required");
+    // Scale indices by 4 to obtain byte offsets for 32-bit elements.
+    const uint shift = 2;
+    __ vsetvli_helper(bt, vector_length);
+    __ vsll_vi(offsets, idx, shift);
+
+    if (is_store) {
+      __ vsuxei32_v(reg, base, offsets, vm);
+    } else {
+      if (vm == Assembler::v0_t) {
+        __ vmv_v_i(reg, 0);
+      }
+      __ vluxei32_v(reg, base, offsets, vm);
+    }
+  }
+
+  static void gatherScatter64(C2_MacroAssembler* masm, bool is_store,
+                              VectorRegister reg, VectorRegister idx, VectorRegister offsets,
+                              BasicType bt, Register base, uint vector_length,
+                              Assembler::VectorMask vm = Assembler::unmasked) {
+    assert(type2aelembytes(bt) == 8, "64-bit vector elements required");
+    // Scale indices by 8 to obtain byte offsets for 64-bit elements.
+    const uint shift = 3;
+    if (UseZvbb) {
+      __ vsetvli_helper(T_INT, vector_length, Assembler::mf2);
+      __ vwsll_vi(offsets, idx, shift);
+      // Indexed accesses use SEW for data width; e64,m1 preserves VLMAX.
+      __ vsetvli_helper(bt, vector_length);
+    } else {
+      __ vsetvli_helper(bt, vector_length);
+      __ vzext_vf2(offsets, idx);
+      __ vsll_vi(offsets, offsets, shift);
+    }
+
+    if (is_store) {
+      __ vsuxei64_v(reg, base, offsets, vm);
+    } else {
+      if (vm == Assembler::v0_t) {
+        __ vmv_v_i(reg, 0);
+      }
+      __ vluxei64_v(reg, base, offsets, vm);
+    }
+  }
+
   // test_predicate selects the mask reduction; cmpcode selects the outer eq/ne condition.
   static void vectorTestCMove(C2_MacroAssembler* masm, int cmpcode, Register dst, Register src,
                               VectorRegister mask, BasicType bt, uint vector_length, BoolTest::mask test_predicate) {
@@ -5723,12 +5771,10 @@ instruct gather_loadS(vReg dst, indirect mem, vReg idx) %{
   effect(TEMP_DEF dst);
   format %{ "gather_loadS $dst, $mem, $idx" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vsll_vi(as_VectorRegister($dst$$reg), as_VectorRegister($idx$$reg), (int)sew);
-    __ vluxei32_v(as_VectorRegister($dst$$reg), as_Register($mem$$base),
-                  as_VectorRegister($dst$$reg));
+    VectorRegister dst_reg = as_VectorRegister($dst$$reg);
+    gatherScatter32(masm, false, dst_reg, as_VectorRegister($idx$$reg), dst_reg,
+                    Matcher::vector_element_basic_type(this), as_Register($mem$$base),
+                    Matcher::vector_length(this));
  %}
   ins_pipe(pipe_slow);
 %}
@@ -5739,13 +5785,10 @@ instruct gather_loadD(vReg dst, indirect mem, vReg idx) %{
   effect(TEMP_DEF dst);
   format %{ "gather_loadD $dst, $mem, $idx" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vzext_vf2(as_VectorRegister($dst$$reg), as_VectorRegister($idx$$reg));
-    __ vsll_vi(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), (int)sew);
-    __ vluxei64_v(as_VectorRegister($dst$$reg), as_Register($mem$$base),
-                  as_VectorRegister($dst$$reg));
+    VectorRegister dst_reg = as_VectorRegister($dst$$reg);
+    gatherScatter64(masm, false, dst_reg, as_VectorRegister($idx$$reg), dst_reg,
+                    Matcher::vector_element_basic_type(this), as_Register($mem$$base),
+                    Matcher::vector_length(this));
  %}
   ins_pipe(pipe_slow);
 %}
@@ -5756,13 +5799,9 @@ instruct gather_loadS_masked(vReg dst, indirect mem, vReg idx, vRegMask_V0 v0, v
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "gather_loadS_masked $dst, $mem, $idx, $v0\t# KILL $tmp" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vsll_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg), (int)sew);
-    __ vmv_v_i(as_VectorRegister($dst$$reg), 0);
-    __ vluxei32_v(as_VectorRegister($dst$$reg), as_Register($mem$$base),
-                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
+    gatherScatter32(masm, false, as_VectorRegister($dst$$reg), as_VectorRegister($idx$$reg),
+                    as_VectorRegister($tmp$$reg), Matcher::vector_element_basic_type(this),
+                    as_Register($mem$$base), Matcher::vector_length(this), Assembler::v0_t);
  %}
   ins_pipe(pipe_slow);
 %}
@@ -5773,14 +5812,9 @@ instruct gather_loadD_masked(vReg dst, indirect mem, vReg idx, vRegMask_V0 v0, v
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "gather_loadD_masked $dst, $mem, $idx, $v0\t# KILL $tmp" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vzext_vf2(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg));
-    __ vsll_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($tmp$$reg), (int)sew);
-    __ vmv_v_i(as_VectorRegister($dst$$reg), 0);
-    __ vluxei64_v(as_VectorRegister($dst$$reg), as_Register($mem$$base),
-                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
+    gatherScatter64(masm, false, as_VectorRegister($dst$$reg), as_VectorRegister($idx$$reg),
+                    as_VectorRegister($tmp$$reg), Matcher::vector_element_basic_type(this),
+                    as_Register($mem$$base), Matcher::vector_length(this), Assembler::v0_t);
  %}
   ins_pipe(pipe_slow);
 %}
@@ -5793,12 +5827,9 @@ instruct scatter_storeS(indirect mem, vReg src, vReg idx, vReg tmp) %{
   effect(TEMP tmp);
   format %{ "scatter_storeS $mem, $idx, $src\t# KILL $tmp" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    __ vsetvli_helper(bt, Matcher::vector_length(this, $src));
-    __ vsll_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg), (int)sew);
-    __ vsuxei32_v(as_VectorRegister($src$$reg), as_Register($mem$$base),
-                  as_VectorRegister($tmp$$reg));
+    gatherScatter32(masm, true, as_VectorRegister($src$$reg), as_VectorRegister($idx$$reg),
+                    as_VectorRegister($tmp$$reg), Matcher::vector_element_basic_type(this, $src),
+                    as_Register($mem$$base), Matcher::vector_length(this, $src));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -5809,13 +5840,9 @@ instruct scatter_storeD(indirect mem, vReg src, vReg idx, vReg tmp) %{
   effect(TEMP tmp);
   format %{ "scatter_storeD $mem, $idx, $src\t# KILL $tmp" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    __ vsetvli_helper(bt, Matcher::vector_length(this, $src));
-    __ vzext_vf2(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg));
-    __ vsll_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($tmp$$reg), (int)sew);
-    __ vsuxei64_v(as_VectorRegister($src$$reg), as_Register($mem$$base),
-                  as_VectorRegister($tmp$$reg));
+    gatherScatter64(masm, true, as_VectorRegister($src$$reg), as_VectorRegister($idx$$reg),
+                    as_VectorRegister($tmp$$reg), Matcher::vector_element_basic_type(this, $src),
+                    as_Register($mem$$base), Matcher::vector_length(this, $src));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -5826,12 +5853,9 @@ instruct scatter_storeS_masked(indirect mem, vReg src, vReg idx, vRegMask_V0 v0,
   effect(TEMP tmp);
   format %{ "scatter_storeS_masked $mem, $idx, $src, $v0\t# KILL $tmp" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    __ vsetvli_helper(bt, Matcher::vector_length(this, $src));
-    __ vsll_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg), (int)sew);
-    __ vsuxei32_v(as_VectorRegister($src$$reg), as_Register($mem$$base),
-                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
+    gatherScatter32(masm, true, as_VectorRegister($src$$reg), as_VectorRegister($idx$$reg),
+                    as_VectorRegister($tmp$$reg), Matcher::vector_element_basic_type(this, $src),
+                    as_Register($mem$$base), Matcher::vector_length(this, $src), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -5842,13 +5866,9 @@ instruct scatter_storeD_masked(indirect mem, vReg src, vReg idx, vRegMask_V0 v0,
   effect(TEMP tmp);
   format %{ "scatter_storeD_masked $mem, $idx, $src, $v0\t# KILL $tmp" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    __ vsetvli_helper(bt, Matcher::vector_length(this, $src));
-    __ vzext_vf2(as_VectorRegister($tmp$$reg), as_VectorRegister($idx$$reg));
-    __ vsll_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($tmp$$reg), (int)sew);
-    __ vsuxei64_v(as_VectorRegister($src$$reg), as_Register($mem$$base),
-                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
+    gatherScatter64(masm, true, as_VectorRegister($src$$reg), as_VectorRegister($idx$$reg),
+                    as_VectorRegister($tmp$$reg), Matcher::vector_element_basic_type(this, $src),
+                    as_Register($mem$$base), Matcher::vector_length(this, $src), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}

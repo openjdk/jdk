@@ -2214,6 +2214,9 @@ enum VectorMask {
   INSN(vnsra_wi, 0b1010111, 0b011, 0b101101);
   INSN(vnsrl_wi, 0b1010111, 0b011, 0b101100);
 
+  // Vector Widening Shift Left Logical (Zvbb) Extension
+  INSN(vwsll_vi, 0b1010111, 0b011, 0b110101);
+
 #undef INSN
 
 #define INSN(NAME, op, funct3, funct6)                                                             \

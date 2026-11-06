@@ -874,6 +874,8 @@ class AdapterHandlerEntry : public MetaspaceObj {
 
   uint id() const { return _id; }
   AdapterFingerPrint* fingerprint() const { return _fingerprint; }
+  int fingerprint_size() const;
+  bool fingerprint_equals(AdapterFingerPrint* fp) const;
 
 #ifdef ASSERT
   // Used to verify that code generated for shared adapters is equivalent
