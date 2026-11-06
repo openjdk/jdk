@@ -71,7 +71,10 @@ final class CAccessible extends CFRetainedResource implements Accessible {
      */
     private static CAccessible getCAccessible(final Accessible a, final boolean createIfUndefined) {
         if (a == null) return null;
+    private static CAccessible getCAccessible(final Accessible a, final boolean createIfUndefined, final boolean returnNullOnNullContext) {
+        if (a == null) return null;
         AccessibleContext context = a.getAccessibleContext();
+        if (returnNullOnNullContext && context == null) return null;
         AWTAccessor.AccessibleContextAccessor accessor
                 = AWTAccessor.getAccessibleContextAccessor();
         final CAccessible cachedCAX = (CAccessible) accessor.getNativeAXResource(context);
