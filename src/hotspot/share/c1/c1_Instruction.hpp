@@ -455,7 +455,7 @@ class Instruction: public CompilationResourceObj {
   void set_needs_null_check(bool f)              { set_flag(NeedsNullCheckFlag, f); }
   bool needs_null_check() const                  { return check_flag(NeedsNullCheckFlag); }
   void set_null_free(bool f)                     { set_flag(NeverNullFlag, f); }
-  bool is_null_free() const                      { return check_flag(NeverNullFlag); }
+  bool is_null_free() const                      { return check_flag(NeverNullFlag) || (type()->is_constant() && !type()->as_ObjectType()->constant_value()->is_null_object()); }
   bool is_linked() const                         { return check_flag(IsLinkedInBlockFlag); }
   bool can_be_linked()                           { return as_Local() == nullptr && as_Phi() == nullptr; }
 

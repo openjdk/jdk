@@ -53,6 +53,8 @@ class MemReporterBase : public StackObj {
   static size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm);
   static size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm);
 
+  static void report_detail_failure(outputStream* out, const char* action = "Falling back to summary output");
+
  protected:
   inline outputStream* output() const {
     return _output;
