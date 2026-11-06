@@ -428,7 +428,7 @@
           "Heuristic threshold for compile time check that decides if a"    \
           "loop accesses sufficient bytes so that automatic alignment is"   \
           "profitable. Loops that access fewer bytes are too small, and"    \
-          "the overheads of alignment probably outweight the performance"   \
+          "the overheads of alignment probably outweigh the performance"    \
           "gained by making sure the accesses are aligned."                 \
           "0 = Always align.")                                              \
                                                                             \
