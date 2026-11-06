@@ -213,10 +213,18 @@ class OptionalFlatLayout {
   friend class VMStructs;
 
   bool           _is_flat;
+
+  // Paddings to ensure deterministic content in AOT cache. They prevent
+  // the C++ compiler from potentially inserting random values in unused gaps.
+  bool           _padding1;
+  bool           _padding2;
+  bool           _padding3;
+
   FlatLayoutSlot _flat_layout;
 
   OptionalFlatLayout(bool is_flat, FlatLayoutSlot flat_layout)
     : _is_flat(is_flat),
+      _padding1(0), _padding2(0), _padding3(0),
       _flat_layout(flat_layout) {}
 
 public:
