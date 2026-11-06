@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4225317 6969651 8277422
+ * @bug 4225317 6969651 8277422 8395823
  * @modules jdk.jartool
  * @library /test/lib
  * @summary Check extracted files have date as per those in the .jar file
@@ -63,6 +63,12 @@ public class JarEntryTime {
 
     private static void jar(boolean useExtractionTime, String... args) throws Throwable {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jar");
+        // The ZIP file local timestamp format cannot be unambiguously
+        // translated to "milliseconds since epoch" on systems with a timezone
+        // that has daylight savings time. Explicitly set the timezone
+        // to UTC, which doesn't have DST, to avoid issues with the timestamp
+        // comparisons in this test when the test is run around the time
+        // of a DST change.
         launcher.addVMArg("-Duser.timezone=UTC");
         if (useExtractionTime) {
             launcher.addVMArg("-Dsun.tools.jar.useExtractionTime=true");
