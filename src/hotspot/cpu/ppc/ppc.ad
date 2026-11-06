@@ -9015,8 +9015,7 @@ instruct moveF2I_reg_reg(iRegIdst dst, regF src, regF tmp) %{
             "MFVSRWZ   $dst, $tmp" %}
   size(8);
   ins_encode %{
-    __ xscvdpspn($tmp$$FloatRegister->to_vsr(), $src$$FloatRegister->to_vsr());
-    __ mfvsrwz($dst$$Register, $tmp$$FloatRegister->to_vsr());
+    __ floatToIntBits($dst$$Register, $src$$FloatRegister, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9024,14 +9023,11 @@ instruct moveF2I_reg_reg(iRegIdst dst, regF src, regF tmp) %{
 instruct moveI2F_reg_reg(regF dst, iRegIorL2I src) %{
   match(Set dst (MoveI2F src));
 
-  format %{ "MTVSRWZ   $dst, $src \t// MoveI2F\n\t"
-            "XXSPLTW   $dst, $dst, 1\n\t"
+  format %{ "MTVSRWS   $dst, $src \t// MoveI2F (Power9), else MTVSRWZ + XXSPLTW\n\t"
             "XSCVSPDPN $dst, $dst" %}
-  size(12);
+  size((PowerArchitecturePPC64 >= 9 ? 8 : 12));
   ins_encode %{
-    __ mtvsrwz($dst$$FloatRegister->to_vsr(), $src$$Register);
-    __ xxspltw($dst$$FloatRegister->to_vsr(), $dst$$FloatRegister->to_vsr(), 1);
-    __ xscvspdpn($dst$$FloatRegister->to_vsr(), $dst$$FloatRegister->to_vsr());
+    __ intBitsToFloat($dst$$FloatRegister, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}

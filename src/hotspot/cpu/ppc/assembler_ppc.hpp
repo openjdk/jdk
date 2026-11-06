@@ -546,6 +546,7 @@ class Assembler : public AbstractAssembler {
     MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
     MTVSRDD_OPCODE = (31u << OPCODE_SHIFT |  435u << 1),
     MTVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  243u << 1),
+    MTVSRWS_OPCODE = (31u << OPCODE_SHIFT |  403u << 1),
     MFVSRD_OPCODE  = (31u << OPCODE_SHIFT |   51u << 1),
     MFVSRLD_OPCODE = (31u << OPCODE_SHIFT |  307u << 1),
     MTVSRWA_OPCODE = (31u << OPCODE_SHIFT |  211u << 1),
@@ -2421,6 +2422,7 @@ class Assembler : public AbstractAssembler {
   inline void mfvsrld(  Register        d, VectorSRegister a); // Requires Power9.
   inline void mtvsrdd(  VectorSRegister d, Register a, Register b);
   inline void mtvsrwz(  VectorSRegister d, Register a);
+  inline void mtvsrws(  VectorSRegister d, Register a); // Requires Power9.
   inline void mfvsrwz(  Register        d, VectorSRegister a);
   inline void xxspltw(  VectorSRegister d, VectorSRegister b, int ui2);
   inline void xxlor(    VectorSRegister d, VectorSRegister a, VectorSRegister b);
@@ -2481,6 +2483,8 @@ class Assembler : public AbstractAssembler {
   // Vector-Scalar (VSX) instructions.
   inline void mtfprd(   FloatRegister   d, Register a);
   inline void mtfprwa(  FloatRegister   d, Register a);
+  inline void mtfprwz(  FloatRegister   d, Register a);
+  inline void mtfprws(  FloatRegister   d, Register a); // Requires Power9.
   inline void mffprd(   Register        a, FloatRegister d);
 
   // Deliver A Random Number (introduced with POWER9)
