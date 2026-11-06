@@ -31,13 +31,14 @@ import com.sun.tools.attach.spi.AttachProvider;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringBufferInputStream;
 import java.io.PrintStream;
+import java.io.StringBufferInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -121,7 +122,6 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
     private static final int HELPER_TRIES = 100; // Default attempts to run helper
     private static final int HELPER_ERROR = 2;   // revivalhelper exit value for error
     private static final int HELPER_RETRY = 7;   // revivalhelper exit value hint to retry due to e.g. address space clash
-    private static final int TIMEOUT_RUN_HELPER = 60;
     private static final int TIMEOUT_GET_OUTPUT = 10;
 
     /**
@@ -193,38 +193,28 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
                 Future<String> stdout = executor.submit(() -> drain(p.getInputStream()));
 
                 try {
-                    boolean hasExited = p.waitFor(TIMEOUT_RUN_HELPER, TimeUnit.SECONDS);
-                    if (!hasExited) {
-                        System.err.println("Error: jcmd helper not completed");
-                        if (debug) {
-                            int e = p.waitFor(); // Expected to hang to enable external analysis
-                        }
-                        p.destroyForcibly();
-                        out = stdout.get(TIMEOUT_GET_OUTPUT, TimeUnit.SECONDS);
+                    int e = p.waitFor();
+                    out = stdout.get(TIMEOUT_GET_OUTPUT, TimeUnit.SECONDS);
+                    if (e == 0) {
+                        ok = true; // Success, will leave loop.
+                    } else if (e == 1 || e == HELPER_ERROR || e >= 128 || e < 0) {
+                        // Error from JCmd, e.g. Exception thrown by command implementation,
+                        // or non-retryable error from helper, e.g. file not found, signal from revived VM.
+                        // Will leave loop, and print and throw because !ok
                     } else {
-                        int e = p.exitValue();
-                        out = stdout.get(TIMEOUT_GET_OUTPUT, TimeUnit.SECONDS);
-
-                        if (e == 0) {
-                            ok = true; // Success, will leave loop.
-                        } else if (e == 1 || e == HELPER_ERROR) {
-                            // Error from JCmd, e.g. Exception thrown by command implementation,
-                            // or non-retryable error from helper, e.g. file not found.
-                            // Will leave loop, print and throw because !ok
-                        } else {
-                            // Other errors: we expect occasional requests to retry the helper.
-                            // Always show other errors, or show if we are repeating ourself, or verbose is set:
-                            if (e != HELPER_RETRY || i > 1 || verbose) {
-                                System.out.println(out);
-                                System.err.println("jcmd: revivalhelper pid " + pid + " failed, exit with: " + e + ". tries=" + i);
-                                System.err.println("(Retrying process revival.)");
-                            }
-                            if (!debug) {
-                                continue; // retry
-                            }
+                        // Other errors: we expect occasional requests to retry the helper.
+                        // Always show other errors, or show if we are repeating ourself, or verbose is set:
+                        if (e != HELPER_RETRY || i > 1 || verbose) {
+                            System.out.println(out);
+                            System.err.println("jcmd: revivalhelper pid " + pid + " failed, exit with: " + e + ". tries=" + i);
+                            System.err.println("(Retrying process revival.)");
+                        }
+                        if (!debug) {
+                            continue; // retry
                         }
                     }
                 } catch (InterruptedException | ExecutionException | TimeoutException ex) {
+                    System.err.println("Error: jcmd helper not completed: " + ex);
                     // Destroy before the close of executor.
                     if (p.isAlive()) {
                         p.destroyForcibly();
@@ -244,7 +234,7 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
             System.out.println(out);
             throw new AttachOperationFailedException("jcmd returned an error");  // JCmd caller will call System.exit(1)
         }
-        return new StringBufferInputStream(out);
+        return new ByteArrayInputStream(out.getBytes(UTF_8));
     }
 
     private static String drain(InputStream is) throws IOException {

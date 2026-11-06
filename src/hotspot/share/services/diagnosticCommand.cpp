@@ -578,8 +578,10 @@ void ThreadDumpDCmd::execute(DCmdSource source, TRAPS) {
   VMThread::execute(&op1);
 
   // Deadlock detection
-  VM_FindDeadlocks op2(output());
-  VMThread::execute(&op2);
+  if (!Thread::is_revived()) {
+    VM_FindDeadlocks op2(output());
+    VMThread::execute(&op2);
+  }
 
   if (Thread::is_revived() && _locks.value()) {
     Heap_lock->unlock();
