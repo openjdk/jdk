@@ -33,6 +33,9 @@
  * @run driver TrainingRun AOT
  */
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -94,7 +97,7 @@ public class TrainingRun {
 class MyTestApp {
     volatile static int x = 0;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String args[]) throws Throwable {
         Thread t = new Thread(() -> {
                 x = 1;
         });
@@ -105,7 +108,22 @@ class MyTestApp {
             throw new RuntimeException("x should be 1 but is " + x);
         }
         System.out.println("Hello: x is " + x);
+
+        testInvoke();
+
         System.out.println("I am calling System.exit(2)");
         System.exit(2);
+    }
+
+    static void testInvoke() throws Throwable {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodType mt = MethodType.methodType(void.class, float.class, double.class, int.class,
+                                              boolean.class, Object.class, long.class, double.class);
+        MethodHandle mh = lookup.findStatic(MyTestApp.class, "callme", mt);
+        mh.invokeExact(4.0f, 5.0, 6, true, (Object)null, 7L, 8.0);
+    }
+
+    private static void callme(float f, double d, int i, boolean b, Object o, long l, double d2) {
+        System.out.println("called");
     }
 }
