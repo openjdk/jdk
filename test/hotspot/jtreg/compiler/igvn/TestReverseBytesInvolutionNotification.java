@@ -26,8 +26,7 @@
  * @bug 8396445
  * @summary Test that the two-hop notification for the ReverseBytes(U)S involution happens.
  * @library /test/lib
- * @requires vm.compiler2.enabled
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:VerifyIterativeGVN=1110
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
  *                   ${test.main.class}
  * @run main ${test.main.class}
