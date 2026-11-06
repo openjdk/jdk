@@ -2660,8 +2660,6 @@ class Assembler : public AbstractAssembler {
   // 16 bit immediate offset. This is useful if the offset can be encoded in
   // a succeeding instruction.
   int load_const_optimized(Register d, long a,  Register tmp = noreg, bool return_simm16_rest = false);
-  // New inactive version to be gtested
-  int load_const_optimized_new(Register d, long a,  Register tmp = noreg, bool return_simm16_rest = false);
   inline int load_const_optimized(Register d, void* a, Register tmp = noreg, bool return_simm16_rest = false) {
     return load_const_optimized(d, (long)(unsigned long)a, tmp, return_simm16_rest);
   }

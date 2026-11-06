@@ -388,125 +388,6 @@ void Assembler::load_const(Register d, long x, Register tmp) {
   }
 }
 
-// Load a 64 bit constant, optimized, not identifiable.
-// Tmp can be used to increase ILP. Set return_simm16_rest=true to get a
-// 16 bit immediate offset.
-int Assembler::load_const_optimized(Register d, long x, Register tmp, bool return_simm16_rest) {
-  // Avoid accidentally trying to use R0 for indexed addressing.
-  assert_different_registers(d, tmp);
-
-  short xa, xb, xc, xd; // Four 16-bit chunks of const.
-  long rem = x;         // Remaining part of const.
-
-  xd = rem & 0xFFFF;    // Lowest 16-bit chunk.
-  rem = (rem >> 16) + ((unsigned short)xd >> 15); // Compensation for sign extend.
-
-  if (rem == 0) { // opt 1: simm16
-    li(d, xd);
-    return 0;
-  }
-
-  int retval = 0;
-  if (return_simm16_rest) {
-    retval = xd;
-    x = rem << 16;
-    xd = 0;
-  }
-
-  if (d == R0) { // Can't use addi.
-    if (is_simm(x, 32)) { // opt 2: simm32
-      lis(d, x >> 16);
-      if (xd) ori(d, d, (unsigned short)xd);
-    } else {
-      // 64-bit value: x = xa xb xc xd
-      xa = (x >> 48) & 0xffff;
-      xb = (x >> 32) & 0xffff;
-      xc = (x >> 16) & 0xffff;
-      bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
-      if (tmp == noreg || (xc == 0 && xd == 0)) {
-        if (xa_loaded) {
-          lis(d, xa);
-          if (xb) { ori(d, d, (unsigned short)xb); }
-        } else {
-          li(d, xb);
-        }
-        sldi(d, d, 32);
-        if (xc) { oris(d, d, (unsigned short)xc); }
-        if (xd) { ori( d, d, (unsigned short)xd); }
-      } else {
-        // Exploit instruction level parallelism if we have a tmp register.
-        bool xc_loaded = (xd & 0x8000) ? (xc != -1) : (xc != 0);
-        if (xa_loaded) {
-          lis(tmp, xa);
-        }
-        if (xc_loaded) {
-          lis(d, xc);
-        }
-        if (xa_loaded) {
-          if (xb) { ori(tmp, tmp, (unsigned short)xb); }
-        } else {
-          li(tmp, xb);
-        }
-        if (xc_loaded) {
-          if (xd) { ori(d, d, (unsigned short)xd); }
-        } else {
-          li(d, xd);
-        }
-        insrdi(d, tmp, 32, 0);
-      }
-    }
-    return retval;
-  }
-
-  xc = rem & 0xFFFF; // Next 16-bit chunk.
-  rem = (rem >> 16) + ((unsigned short)xc >> 15); // Compensation for sign extend.
-
-  if (rem == 0) { // opt 2: simm32
-    lis(d, xc);
-  } else { // High 32 bits needed.
-
-    if (tmp != noreg  && (int)x != 0) { // opt 3: We have a temp reg.
-      // No carry propagation between xc and higher chunks here (use logical instructions).
-      xa = (x >> 48) & 0xffff;
-      xb = (x >> 32) & 0xffff; // No sign compensation, we use lis+ori or li to allow usage of R0.
-      bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
-
-      if (xa_loaded) { lis(tmp, xa); }
-      if (xc) { lis(d, xc); }
-      if (xa_loaded) {
-        if (xb) { ori(tmp, tmp, (unsigned short)xb); } // No addi, we support tmp == R0.
-      } else {
-        li(tmp, xb);
-      }
-      if (xc) {
-        if (xd) { addi(d, d, xd); }
-      } else {
-        li(d, xd);
-      }
-      insrdi(d, tmp, 32, 0);
-      return retval;
-    }
-
-    xb = rem & 0xFFFF; // Next 16-bit chunk.
-    rem = (rem >> 16) + ((unsigned short)xb >> 15); // Compensation for sign extend.
-
-    xa = rem & 0xFFFF; // Highest 16-bit chunk.
-
-    // opt 4: avoid adding 0
-    if (xa) { // Highest 16-bit needed?
-      lis(d, xa);
-      if (xb) { addi(d, d, xb); }
-    } else {
-      li(d, xb);
-    }
-    sldi(d, d, 32);
-    if (xc) { addis(d, d, xc); }
-  }
-
-  if (xd) { addi(d, d, xd); }
-  return retval;
-}
-
 // Load a field of consecutive ones at an arbitrary position.
 // Works also if the field is wrapped around in x.
 bool Assembler::load_consec_ones(Register d, long x) {
@@ -565,7 +446,7 @@ bool Assembler::load_field16(Register d, long x) {
 //   - 16-bit field: 2 instructions
 //   - fallback to canocical algorithm: up to 5 instructions
 // NB comments in test/hotspot/gtest/ppc/test_assembler_ppc.cpp when making changes
-int Assembler::load_const_optimized_new(Register d, long x, Register tmp, bool return_simm16_rest) {
+int Assembler::load_const_optimized(Register d, long x, Register tmp, bool return_simm16_rest) {
   assert_different_registers(d, tmp);
 
   short xa, xb, xc, xd; // Four 16-bit chunks of const.
