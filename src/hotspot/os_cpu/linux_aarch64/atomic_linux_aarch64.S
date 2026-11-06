@@ -23,6 +23,25 @@
 
 #include "defs.S.inc"
 
+#define DEFAULT_ATOMIC_OP(OPNAME, SIZE, MEMORDER)                              \
+        .align 3;                                                              \
+        .globl aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl;    \
+        .hidden aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl;   \
+        .type aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl, %object; \
+        .size aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl, 8;  \
+                                                                               \
+aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl:                   \
+        .xword aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _default_impl
+
+#define ATOMIC_OPS_START                        \
+        .data;                                  \
+DECLARE_FUNC(aarch64_atomic_ops_start):
+#define ATOMIC_OPS_END                          \
+        .data;                                  \
+DECLARE_FUNC(aarch64_atomic_ops_end):
+
+#include "../../cpu/aarch64/atomic_aarch64.hpp"
+
         .text
 
 #ifdef __ARM_FEATURE_ATOMICS
@@ -113,7 +132,7 @@ DECLARE_FUNC(aarch64_atomic_xchg_8_default_impl):
 1:      MEMBAR                                  ;\
         mov     SZ ## 0, SZ ## 3                ;\
         ret
-#endif
+#endif 
 
 #define CMPB                              \
         eor     w8, w3, w1               ;\

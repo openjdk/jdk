@@ -12410,26 +12410,6 @@ class StubGenerator: public StubCodeGenerator {
       return;
     }
 
-    static aarch64_atomic_stub_t* const atomic_stubs[] = {
-      &aarch64_atomic_fetch_add_4_impl,
-      &aarch64_atomic_fetch_add_8_impl,
-      &aarch64_atomic_fetch_add_4_relaxed_impl,
-      &aarch64_atomic_fetch_add_8_relaxed_impl,
-      &aarch64_atomic_xchg_1_impl,
-      &aarch64_atomic_xchg_4_impl,
-      &aarch64_atomic_xchg_8_impl,
-      &aarch64_atomic_cmpxchg_1_impl,
-      &aarch64_atomic_cmpxchg_4_impl,
-      &aarch64_atomic_cmpxchg_8_impl,
-      &aarch64_atomic_cmpxchg_1_relaxed_impl,
-      &aarch64_atomic_cmpxchg_4_relaxed_impl,
-      &aarch64_atomic_cmpxchg_8_relaxed_impl,
-      &aarch64_atomic_cmpxchg_4_release_impl,
-      &aarch64_atomic_cmpxchg_8_release_impl,
-      &aarch64_atomic_cmpxchg_4_seq_cst_impl,
-      &aarch64_atomic_cmpxchg_8_seq_cst_impl,
-    };
-
     StubId stub_id = StubId::stubgen_atomic_entry_points_id;
     GrowableArray<address> entries;
     int entry_count = StubInfo::entry_count(stub_id);
@@ -12440,8 +12420,10 @@ class StubGenerator: public StubCodeGenerator {
       aarch64_atomic_fetch_add_4_impl = (aarch64_atomic_stub_t)start;
 
       int idx = 0;
-      for (size_t i = 1; i < ARRAY_SIZE(atomic_stubs); i++) {
-        *(atomic_stubs[i]) = (aarch64_atomic_stub_t)entries.at(idx++);
+      address *atomic_stubs = &aarch64_atomic_ops_start;
+      size_t len = &aarch64_atomic_ops_end - &aarch64_atomic_ops_start;
+      for (size_t i = 1; i < len; i++) {
+        atomic_stubs[i] = entries.at(idx++);
       }
       assert(idx == entries.length(), "sanity!");
 
@@ -12484,8 +12466,10 @@ class StubGenerator: public StubCodeGenerator {
            "atomic stub should be at start of buffer");
     // record the stub start and end plus all the entries saved by the
     // AtomicStubMark destructor
-    for (size_t i = 1; i < ARRAY_SIZE(atomic_stubs); i++) {
-      entries.append((address)*(atomic_stubs[i]));
+    address *atomic_stubs = &aarch64_atomic_ops_start;
+    int len = &aarch64_atomic_ops_end - &aarch64_atomic_ops_start;
+    for (int i = 1; i < len; i++) {
+      entries.append((address)atomic_stubs[i]);
     }
 
     assert(entries.length() == entry_count - 1,
@@ -14122,35 +14106,3 @@ void StubGenerator_init_AOTAddressTable(GrowableArray<address>& addresses) {
 }
 #endif // INCLUDE_CDS
 
-#if defined (LINUX)
-
-// Define pointers to atomic stubs and initialize them to point to the
-// code in atomic_aarch64.S.
-
-#define DEFAULT_ATOMIC_OP(OPNAME, SIZE, RELAXED)                                \
-  extern "C" uint64_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _default_impl \
-    (volatile void *ptr, uint64_t arg1, uint64_t arg2);                 \
-  aarch64_atomic_stub_t aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _impl \
-    = aarch64_atomic_ ## OPNAME ## _ ## SIZE ## RELAXED ## _default_impl;
-
-DEFAULT_ATOMIC_OP(fetch_add, 4, )
-DEFAULT_ATOMIC_OP(fetch_add, 8, )
-DEFAULT_ATOMIC_OP(fetch_add, 4, _relaxed)
-DEFAULT_ATOMIC_OP(fetch_add, 8, _relaxed)
-DEFAULT_ATOMIC_OP(xchg, 1, )
-DEFAULT_ATOMIC_OP(xchg, 4, )
-DEFAULT_ATOMIC_OP(xchg, 8, )
-DEFAULT_ATOMIC_OP(cmpxchg, 1, )
-DEFAULT_ATOMIC_OP(cmpxchg, 4, )
-DEFAULT_ATOMIC_OP(cmpxchg, 8, )
-DEFAULT_ATOMIC_OP(cmpxchg, 1, _relaxed)
-DEFAULT_ATOMIC_OP(cmpxchg, 4, _relaxed)
-DEFAULT_ATOMIC_OP(cmpxchg, 8, _relaxed)
-DEFAULT_ATOMIC_OP(cmpxchg, 4, _release)
-DEFAULT_ATOMIC_OP(cmpxchg, 8, _release)
-DEFAULT_ATOMIC_OP(cmpxchg, 4, _seq_cst)
-DEFAULT_ATOMIC_OP(cmpxchg, 8, _seq_cst)
-
-#undef DEFAULT_ATOMIC_OP
-
-#endif // LINUX
