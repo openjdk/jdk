@@ -522,23 +522,20 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public int skipBytes(int n) throws IOException {
-        long pos;
-        long len;
-        long newpos;
-
         if (n <= 0) {
             return 0;
         }
-        pos = getFilePointer();
-        len = length();
-        newpos = pos + n;
-        if (newpos > len) {
-            newpos = len;
+        long pos = getFilePointer();
+        long len = length();
+        if (pos >= len) {
+            return 0;
         }
-        seek(newpos);
+        long remaining = len - pos;
+        long newPos = remaining > n ? pos + n : len;
+        seek(newPos);
 
         /* return the actual number of bytes skipped */
-        return (int) (newpos - pos);
+        return (int) (newPos - pos);
     }
 
     // 'Write' primitives
