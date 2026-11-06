@@ -69,12 +69,15 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _tlab_allocs(0),
   _gclab_allocs(0),
   _plab_allocs(0),
+  _top_at_alloc_region_activation(nullptr),
+  _shared_cas_alloc_words(0),
   _live_data(0),
   _critical_pins(0),
   _mixed_candidate_garbage_words(0),
   _update_watermark(start),
   _age(0),
   _needs_bitmap_reset(false),
+  _alloc_region_type(_not_alloc_region),
   _humongous_start_region_index(UndefinedRegionIndex) {
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
@@ -376,13 +379,18 @@ void ShenandoahHeapRegion::make_committed_bypass() {
 }
 
 void ShenandoahHeapRegion::reset_alloc_metadata() {
+  assert(!is_atomic_alloc_region(), "Must not reset an active alloc region");
   _tlab_allocs = 0;
   _gclab_allocs = 0;
   _plab_allocs = 0;
 }
 
 size_t ShenandoahHeapRegion::get_shared_allocs() const {
-  return used() - (_tlab_allocs + _gclab_allocs + _plab_allocs) * HeapWordSize;
+  // Saturating: lab counters lag top during active CAS allocation, so lab total
+  // can momentarily exceed used(). Clamp to avoid unsigned underflow.
+  size_t lab_allocs = (_tlab_allocs + _gclab_allocs + _plab_allocs) * HeapWordSize;
+  size_t u = used();
+  return u > lab_allocs ? u - lab_allocs : 0;
 }
 
 size_t ShenandoahHeapRegion::get_tlab_allocs() const {
@@ -575,6 +583,7 @@ void ShenandoahHeapRegion::oop_iterate_humongous_slice_all(OopIterateClosure* cl
 
 void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
+  assert(!is_atomic_alloc_region(), "Must not be atomic alloc region");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   _top_at_evac_start = _bottom;
