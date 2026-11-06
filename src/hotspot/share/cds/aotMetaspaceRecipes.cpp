@@ -182,7 +182,6 @@ void AOTMetaspaceRecipes::apply_recipes_for_constantpool(JavaThread* current) {
 }
 
 void AOTMetaspaceRecipes::load_all_classes(TRAPS) {
-  assert(CDSConfig::is_dumping_aot_cache(), "sanity");
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
   for (int i = 0; i < _all_klasses->length(); i++) {
     Klass* k = _all_klasses->at(i);
