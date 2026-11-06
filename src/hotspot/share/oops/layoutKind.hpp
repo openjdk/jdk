@@ -232,12 +232,12 @@ public:
   }
 
   bool is_initialized() const {
-    return _flat_layout.is_initialized(is_flat());
+    return _flat_layout.is_initialized(_is_flat != 0);
   }
 
   bool is_flat() const {
     precond(is_initialized());
-    return _is_flat ? true : false;
+    return _is_flat != 0;
   }
 
   // Get the FlatLayout, assert if it isn't present.
