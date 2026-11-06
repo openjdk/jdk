@@ -202,6 +202,7 @@ void MutableSpace::object_iterate(ObjectClosure* cl) {
       p += obj->size();
     }
   }
+  guarantee(p == top(), "end of last object must match end of space");
 }
 
 void MutableSpace::print_short() const { print_short_on(tty); }
@@ -219,23 +220,11 @@ void MutableSpace::print_on(outputStream* st, const char* prefix) const {
 }
 
 void MutableSpace::verify() {
-  HeapWord* p = bottom();
-  HeapWord* t = top();
-  while (p < t) {
-    oop obj = cast_to_oop(p);
-    // When promotion-failure occurs during Young GC, eden/from space is not cleared,
-    // so we can encounter objects with "forwarded" markword.
-    // They are essentially dead, so skipping them is fine.
-    if (!obj->is_forwarded()) {
+  class VerifyObjectsClosure : public ObjectClosure {
+  public:
+    void do_object(oop obj) override {
       oopDesc::verify(obj);
-      p += obj->size();
-    } else {
-      assert(!obj->is_self_forwarded(), "must not be self-forwarded");
-      // It is safe to use the forwardee here. Parallel GC only uses
-      // header-based forwarding during promotion. Full GC doesn't
-      // use the object header for forwarding at all.
-      p += obj->forwardee()->size();
     }
-  }
-  guarantee(p == top(), "end of last object must match end of space");
+  } cl;
+  object_iterate(&cl);
 }
