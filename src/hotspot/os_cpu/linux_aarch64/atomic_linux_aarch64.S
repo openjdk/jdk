@@ -23,15 +23,17 @@
 
 #include "defs.S.inc"
 
-#define DEFAULT_ATOMIC_OP(OPNAME, SIZE, MEMORDER)                              \
-        .align 3;                                                              \
-        .globl aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl;    \
-        .hidden aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl;   \
-        .type aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl, %object; \
-        .size aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl, 8;  \
-                                                                               \
-aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl:                   \
-        .xword aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _default_impl
+#define DEFAULT_ATOMIC_OP_NAME(OPNAME, SIZE, MEMORDER) \
+aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl
+
+#define DEFAULT_ATOMIC_OP(OPNAME, SIZE, MEMORDER)                       \
+        .align 3;                                                       \
+        .globl DEFAULT_ATOMIC_OP_NAME(OPNAME, SIZE, MEMORDER);          \
+        .hidden DEFAULT_ATOMIC_OP_NAME(OPNAME, SIZE, MEMORDER);         \
+        .type DEFAULT_ATOMIC_OP_NAME(OPNAME, SIZE, MEMORDER), %object;  \
+        .size DEFAULT_ATOMIC_OP_NAME(OPNAME, SIZE, MEMORDER), 8;        \
+DEFAULT_ATOMIC_OP_NAME(OPNAME, SIZE, MEMORDER):                         \
+  .xword aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _default_impl;
 
 #define ATOMIC_OPS_START                        \
         .data;                                  \
