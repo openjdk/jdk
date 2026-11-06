@@ -57,7 +57,7 @@ import sun.awt.AWTAccessor;
 final class CAccessible extends CFRetainedResource implements Accessible {
 
     public static CAccessible getCAccessible(final Accessible a) {
-        return getCAccessible(a, true);
+        return getCAccessible(a, true, false);
     }
 
     /**
