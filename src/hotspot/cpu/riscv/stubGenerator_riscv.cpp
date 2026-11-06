@@ -2478,7 +2478,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter();
 
-    Label L_exit;
     if (UseRVV) {
       // Fill complete vector groups with a fixed VL, then strip-mine the tail
       // with m1 stores.
@@ -2486,9 +2485,8 @@ class StubGenerator: public StubCodeGenerator {
       Assembler::SEW sew = Assembler::elembytes_to_sew(1 << elem_shift);
       const Assembler::LMUL lmul = MacroAssembler::select_lmul_for_main_loop();
       const Register vl = cnt_words;
-      Label L_bulk_loop, L_tail, L_tail_loop;
+      Label L_bulk_loop, L_tail, L_tail_loop, L_exit;
 
-      __ beqz(count, L_exit);
       __ vsetvli(vl, x0, sew, lmul, Assembler::ma, Assembler::ta);
       __ vmv_v_x(v0, value);
       __ bltu(count, vl, L_tail);
@@ -2506,145 +2504,152 @@ class StubGenerator: public StubCodeGenerator {
       __ sub(count, count, vl);
       __ shift_left_add(to, vl, to, elem_shift, tmp_reg);
       __ bnez(count, L_tail_loop);
-    } else {
-      Label L_fill_elements;
 
-      int shift = -1;
+      __ bind(L_exit);
+      __ leave();
+      __ ret();
+
+      // Record the stub entry and end.
+      store_archive_data(stub_id, start, __ pc());
+      return start;
+    }
+
+    Label L_fill_elements;
+
+    int shift = -1;
+    switch (t) {
+      case T_BYTE:
+        shift = 0;
+        // Short arrays (< 8 bytes) fill by element
+        __ mv(tmp_reg, 8 >> shift);
+        __ bltu(count, tmp_reg, L_fill_elements);
+
+        // Zero extend value
+        // 8 bit -> 16 bit
+        __ zext(value, value, 8);
+        __ slli(tmp_reg, value, 8);
+        __ orr(value, value, tmp_reg);
+
+        // 16 bit -> 32 bit
+        __ slli(tmp_reg, value, 16);
+        __ orr(value, value, tmp_reg);
+        break;
+      case T_SHORT:
+        shift = 1;
+        // Short arrays (< 8 bytes) fill by element
+        __ mv(tmp_reg, 8 >> shift);
+        __ bltu(count, tmp_reg, L_fill_elements);
+
+        // Zero extend value
+        // 16 bit -> 32 bit
+        __ zext(value, value, 16);
+        __ slli(tmp_reg, value, 16);
+        __ orr(value, value, tmp_reg);
+        break;
+      case T_INT:
+        shift = 2;
+        // Short arrays (< 8 bytes) fill by element
+        __ mv(tmp_reg, 8 >> shift);
+        __ bltu(count, tmp_reg, L_fill_elements);
+        break;
+      default: ShouldNotReachHere();
+    }
+
+    // Align source address at 8 bytes address boundary.
+    Label L_skip_align1, L_skip_align2, L_skip_align4;
+    if (!aligned) {
       switch (t) {
         case T_BYTE:
-          shift = 0;
-          // Short arrays (< 8 bytes) fill by element
-          __ mv(tmp_reg, 8 >> shift);
-          __ bltu(count, tmp_reg, L_fill_elements);
-
-          // Zero extend value
-          // 8 bit -> 16 bit
-          __ zext(value, value, 8);
-          __ slli(tmp_reg, value, 8);
-          __ orr(value, value, tmp_reg);
-
-          // 16 bit -> 32 bit
-          __ slli(tmp_reg, value, 16);
-          __ orr(value, value, tmp_reg);
-          break;
+          // One byte misalignment happens only for byte arrays.
+          __ test_bit(tmp_reg, to, 0);
+          __ beqz(tmp_reg, L_skip_align1);
+          __ sb(value, Address(to, 0));
+          __ addi(to, to, 1);
+          __ subiw(count, count, 1);
+          __ bind(L_skip_align1);
+          // Fallthrough
         case T_SHORT:
-          shift = 1;
-          // Short arrays (< 8 bytes) fill by element
-          __ mv(tmp_reg, 8 >> shift);
-          __ bltu(count, tmp_reg, L_fill_elements);
-
-          // Zero extend value
-          // 16 bit -> 32 bit
-          __ zext(value, value, 16);
-          __ slli(tmp_reg, value, 16);
-          __ orr(value, value, tmp_reg);
-          break;
-        case T_INT:
-          shift = 2;
-          // Short arrays (< 8 bytes) fill by element
-          __ mv(tmp_reg, 8 >> shift);
-          __ bltu(count, tmp_reg, L_fill_elements);
-          break;
-        default: ShouldNotReachHere();
-      }
-
-      // Align source address at 8 bytes address boundary.
-      Label L_skip_align1, L_skip_align2, L_skip_align4;
-      if (!aligned) {
-        switch (t) {
-          case T_BYTE:
-            // One byte misalignment happens only for byte arrays.
-            __ test_bit(tmp_reg, to, 0);
-            __ beqz(tmp_reg, L_skip_align1);
-            __ sb(value, Address(to, 0));
-            __ addi(to, to, 1);
-            __ subiw(count, count, 1);
-            __ bind(L_skip_align1);
-            // Fallthrough
-          case T_SHORT:
-            // Two bytes misalignment happens only for byte and short (char) arrays.
-            __ test_bit(tmp_reg, to, 1);
-            __ beqz(tmp_reg, L_skip_align2);
-            __ sh(value, Address(to, 0));
-            __ addi(to, to, 2);
-            __ subiw(count, count, 2 >> shift);
-            __ bind(L_skip_align2);
-            // Fallthrough
-          case T_INT:
-            // Align to 8 bytes, we know we are 4 byte aligned to start.
-            __ test_bit(tmp_reg, to, 2);
-            __ beqz(tmp_reg, L_skip_align4);
-            __ sw(value, Address(to, 0));
-            __ addi(to, to, 4);
-            __ subiw(count, count, 4 >> shift);
-            __ bind(L_skip_align4);
-            break;
-          default: ShouldNotReachHere();
-        }
-      }
-
-      //
-      //  Fill large chunks
-      //
-      __ srliw(cnt_words, count, 3 - shift); // number of words
-
-      // 32 bit -> 64 bit
-      __ zext(value, value, 32);
-      __ slli(tmp_reg, value, 32);
-      __ orr(value, value, tmp_reg);
-
-      __ slli(tmp_reg, cnt_words, 3 - shift);
-      __ subw(count, count, tmp_reg);
-      {
-        __ fill_words(to, cnt_words, value);
-      }
-
-      // Handle copies less than 8 bytes.
-      // Address may not be heapword aligned.
-      Label L_fill_1, L_fill_2;
-      __ bind(L_fill_elements);
-      switch (t) {
-        case T_BYTE:
-          __ test_bit(tmp_reg, count, 2);
-          __ beqz(tmp_reg, L_fill_2);
-          __ sb(value, Address(to, 0));
-          __ sb(value, Address(to, 1));
-          __ sb(value, Address(to, 2));
-          __ sb(value, Address(to, 3));
-          __ addi(to, to, 4);
-
-          __ bind(L_fill_2);
-          __ test_bit(tmp_reg, count, 1);
-          __ beqz(tmp_reg, L_fill_1);
-          __ sb(value, Address(to, 0));
-          __ sb(value, Address(to, 1));
+          // Two bytes misalignment happens only for byte and short (char) arrays.
+          __ test_bit(tmp_reg, to, 1);
+          __ beqz(tmp_reg, L_skip_align2);
+          __ sh(value, Address(to, 0));
           __ addi(to, to, 2);
-
-          __ bind(L_fill_1);
-          __ test_bit(tmp_reg, count, 0);
-          __ beqz(tmp_reg, L_exit);
-          __ sb(value, Address(to, 0));
-          break;
-        case T_SHORT:
-          __ test_bit(tmp_reg, count, 1);
-          __ beqz(tmp_reg, L_fill_2);
-          __ sh(value, Address(to, 0));
-          __ sh(value, Address(to, 2));
-          __ addi(to, to, 4);
-
-          __ bind(L_fill_2);
-          __ test_bit(tmp_reg, count, 0);
-          __ beqz(tmp_reg, L_exit);
-          __ sh(value, Address(to, 0));
-          break;
+          __ subiw(count, count, 2 >> shift);
+          __ bind(L_skip_align2);
+          // Fallthrough
         case T_INT:
-          __ beqz(count, L_exit);
+          // Align to 8 bytes, we know we are 4 byte aligned to start.
+          __ test_bit(tmp_reg, to, 2);
+          __ beqz(tmp_reg, L_skip_align4);
           __ sw(value, Address(to, 0));
+          __ addi(to, to, 4);
+          __ subiw(count, count, 4 >> shift);
+          __ bind(L_skip_align4);
           break;
         default: ShouldNotReachHere();
       }
     }
 
+    //
+    //  Fill large chunks
+    //
+    __ srliw(cnt_words, count, 3 - shift); // number of words
+
+    // 32 bit -> 64 bit
+    __ zext(value, value, 32);
+    __ slli(tmp_reg, value, 32);
+    __ orr(value, value, tmp_reg);
+
+    __ slli(tmp_reg, cnt_words, 3 - shift);
+    __ subw(count, count, tmp_reg);
+    {
+      __ fill_words(to, cnt_words, value);
+    }
+
+    // Handle copies less than 8 bytes.
+    // Address may not be heapword aligned.
+    Label L_fill_1, L_fill_2, L_exit;
+    __ bind(L_fill_elements);
+    switch (t) {
+      case T_BYTE:
+        __ test_bit(tmp_reg, count, 2);
+        __ beqz(tmp_reg, L_fill_2);
+        __ sb(value, Address(to, 0));
+        __ sb(value, Address(to, 1));
+        __ sb(value, Address(to, 2));
+        __ sb(value, Address(to, 3));
+        __ addi(to, to, 4);
+
+        __ bind(L_fill_2);
+        __ test_bit(tmp_reg, count, 1);
+        __ beqz(tmp_reg, L_fill_1);
+        __ sb(value, Address(to, 0));
+        __ sb(value, Address(to, 1));
+        __ addi(to, to, 2);
+
+        __ bind(L_fill_1);
+        __ test_bit(tmp_reg, count, 0);
+        __ beqz(tmp_reg, L_exit);
+        __ sb(value, Address(to, 0));
+        break;
+      case T_SHORT:
+        __ test_bit(tmp_reg, count, 1);
+        __ beqz(tmp_reg, L_fill_2);
+        __ sh(value, Address(to, 0));
+        __ sh(value, Address(to, 2));
+        __ addi(to, to, 4);
+
+        __ bind(L_fill_2);
+        __ test_bit(tmp_reg, count, 0);
+        __ beqz(tmp_reg, L_exit);
+        __ sh(value, Address(to, 0));
+        break;
+      case T_INT:
+        __ beqz(count, L_exit);
+        __ sw(value, Address(to, 0));
+        break;
+      default: ShouldNotReachHere();
+    }
     __ bind(L_exit);
     __ leave();
     __ ret();
