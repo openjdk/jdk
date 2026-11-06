@@ -2414,6 +2414,43 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Generate the RVV fill body.
+  //   t:       element type (T_BYTE, T_SHORT, or T_INT)
+  //   to:      destination address
+  //   value:   fill value
+  //   count:   number of elements remaining to fill
+  //   vl:      temporary register holding the vector length in elements
+  //   tmp_reg: scratch register
+  void generate_fill_rvv(BasicType t, Register to, Register value,
+                         Register count, Register vl, Register tmp_reg) {
+    // Fill complete vector groups with a fixed VL, then strip-mine the tail
+    // with m1 stores.
+    const int elem_shift = (t == T_BYTE) ? 0 : ((t == T_SHORT) ? 1 : 2);
+    Assembler::SEW sew = Assembler::elembytes_to_sew(1 << elem_shift);
+    const Assembler::LMUL lmul = MacroAssembler::select_lmul_for_main_loop();
+    Label L_bulk_loop, L_tail, L_tail_loop, L_exit;
+
+    __ vsetvli(vl, x0, sew, lmul, Assembler::ma, Assembler::ta);
+    __ vmv_v_x(v0, value);
+    __ bltu(count, vl, L_tail);
+    __ bind(L_bulk_loop);
+    __ vsex_v(v0, to, sew);
+    __ sub(count, count, vl);
+    __ shift_left_add(to, vl, to, elem_shift, tmp_reg);
+    __ bgeu(count, vl, L_bulk_loop);
+
+    __ bind(L_tail);
+    __ beqz(count, L_exit);
+    __ bind(L_tail_loop);
+    __ vsetvli(vl, count, sew, Assembler::m1, Assembler::ma, Assembler::ta);
+    __ vsex_v(v0, to, sew);
+    __ sub(count, count, vl);
+    __ shift_left_add(to, vl, to, elem_shift, tmp_reg);
+    __ bnez(count, L_tail_loop);
+
+    __ bind(L_exit);
+  }
+
   //
   // Generate stub for array fill. If "aligned" is true, the
   // "to" address is assumed to be heapword aligned.
@@ -2479,33 +2516,7 @@ class StubGenerator: public StubCodeGenerator {
     __ enter();
 
     if (UseRVV) {
-      // Fill complete vector groups with a fixed VL, then strip-mine the tail
-      // with m1 stores.
-      const int elem_shift = (t == T_BYTE) ? 0 : ((t == T_SHORT) ? 1 : 2);
-      Assembler::SEW sew = Assembler::elembytes_to_sew(1 << elem_shift);
-      const Assembler::LMUL lmul = MacroAssembler::select_lmul_for_main_loop();
-      const Register vl = cnt_words;
-      Label L_bulk_loop, L_tail, L_tail_loop, L_exit;
-
-      __ vsetvli(vl, x0, sew, lmul, Assembler::ma, Assembler::ta);
-      __ vmv_v_x(v0, value);
-      __ bltu(count, vl, L_tail);
-      __ bind(L_bulk_loop);
-      __ vsex_v(v0, to, sew);
-      __ sub(count, count, vl);
-      __ shift_left_add(to, vl, to, elem_shift, tmp_reg);
-      __ bgeu(count, vl, L_bulk_loop);
-
-      __ bind(L_tail);
-      __ beqz(count, L_exit);
-      __ bind(L_tail_loop);
-      __ vsetvli(vl, count, sew, Assembler::m1, Assembler::ma, Assembler::ta);
-      __ vsex_v(v0, to, sew);
-      __ sub(count, count, vl);
-      __ shift_left_add(to, vl, to, elem_shift, tmp_reg);
-      __ bnez(count, L_tail_loop);
-
-      __ bind(L_exit);
+      generate_fill_rvv(t, to, value, count, cnt_words, tmp_reg);
       __ leave();
       __ ret();
 
