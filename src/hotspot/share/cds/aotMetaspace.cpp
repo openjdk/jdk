@@ -360,7 +360,11 @@ void AOTMetaspace::post_initialize(TRAPS) {
     stringStream ss;
     get_cpu_features_name_disabled_by_aot_cache(ss);
     if (!ss.is_empty()) {
-      log_warning(aot)("Some CPU features are turned off by UseAOTCacheCpuFeaturesOnly and it can impact the performance");
+      const char* ergo_msg = "";
+      if (FLAG_IS_ERGO(UseAOTCacheCpuFeaturesOnly)) {
+        ergo_msg = " (enabled ergonomically)";
+      }
+      log_warning(aot)("Some CPU features are turned off by UseAOTCacheCpuFeaturesOnly%s and it can impact the performance", ergo_msg);
       log_warning(aot)("CPU features disabled are: %s", ss.as_string());
     }
   }
