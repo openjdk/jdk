@@ -42,6 +42,7 @@
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/optimizationdelaynode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subtypenode.hpp"
@@ -2962,9 +2963,48 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
   return c;
 }
 
+
+
+// We insert OptimizationDelay nodes into the graph, so that they
+// can delay IGVN optimizations, which also can have effects on
+// other optimizations. This should not alter the behavior of the
+// compilation, as the OptimizationDelay node acts as an identity
+// function, and the OptimizationDelay node is eventually removed,
+// and replaced with its input.
+void Parse::maybe_insert_optimization_delay_nodes() {
+  // Insert a node for possibly every operand stack slot.
+  for (int i = 0; i < sp(); i++) {
+    Node* n = stack(i);
+    const Type* t = _gvn.type(n);
+    if (n->Opcode() != Op_OptimizationDelay &&
+        OptimizationDelayNode::can_delay_type(t) &&
+        C->optimization_delay_policy().should_insert()) {
+      Node* delay = _gvn.transform(new OptimizationDelayNode(C, n, t));
+
+      // Replace stack slot: n -> delay(n)
+      set_stack(i, delay);
+
+#ifdef ASSERT
+      if (TraceOptimizationDelay) {
+        tty->print_cr("[OptimizationDelay] bci=%d", bci());
+        n->dump();
+        t->dump();
+        tty->cr();
+        delay->dump();
+        tty->cr();
+      }
+#endif
+    }
+  }
+}
+
 //------------------------------do_one_bytecode--------------------------------
 // Parse this bytecode, and alter the Parsers JVM->Node mapping
 void Parse::do_one_bytecode() {
+  if (StressOptimizationDelay) {
+    maybe_insert_optimization_delay_nodes();
+  }
+
   Node *a, *b, *c, *d;          // Handy temps
   BoolTest::mask btest;
   int i;
