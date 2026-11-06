@@ -52,6 +52,7 @@ source %{
                               BasicType bt, Register base, uint vector_length,
                               Assembler::VectorMask vm = Assembler::unmasked) {
     assert(type2aelembytes(bt) == 4, "32-bit vector elements required");
+    // Scale indices by 4 to obtain byte offsets for 32-bit elements.
     const uint shift = 2;
     __ vsetvli_helper(bt, vector_length);
     __ vsll_vi(offsets, idx, shift);
