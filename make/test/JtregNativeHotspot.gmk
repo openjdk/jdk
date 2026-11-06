@@ -81,7 +81,8 @@ ifeq ($(call isTargetOs, linux), true)
   endif
 else
   HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c \
-      exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp
+      exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp \
+      libDebuginfoTest.c
 endif
 
 ifneq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64), true+true)
