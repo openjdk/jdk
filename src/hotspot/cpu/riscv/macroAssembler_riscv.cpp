@@ -117,11 +117,13 @@ bool MacroAssembler::is_load_pc_relative_at(address instr) {
 }
 
 bool MacroAssembler::is_movptr_at(address instr) {
-  switch (VM_Version::satp_mode.value()) {
-    case VM_Version::VM_SV39:
+  switch (VM_Version::movptr_mode()) {
+    case VM_Version::MovptrMode::sv39:
       return is_movptr_sv39_at(instr);
-    case VM_Version::VM_SV48:
+    case VM_Version::MovptrMode::sv48:
       return is_movptr1_sv48_at(instr) || is_movptr2_sv48_at(instr);
+    case VM_Version::MovptrMode::sv48_nop:
+      return is_movptr2_sv48_nop_at(instr) || is_movptr_sv48_nop_at(instr);
     default:
       ShouldNotReachHere();
       return false;
@@ -150,6 +152,26 @@ bool MacroAssembler::is_movptr1_sv48_at(address instr) {
          check_movptr1_sv48_data_dependency(instr);
 }
 
+bool MacroAssembler::is_movptr_sv48_nop_at(address instr) {
+  // The sv48_nop mode accepts both the original wide template and the
+  // sv39 calculation padded to six full-width instruction slots.
+  return is_movptr1_sv48_at(instr) ||
+         (is_lui_at(instr) &&
+          is_addi_at(instr + instruction_size) &&
+          is_slli_shift_at(instr + instruction_size * 2, 9) &&
+          Assembler::extract(Assembler::ld_instr(instr + instruction_size * 2), 31, 26) == 0 &&
+          Assembler::ld_instr(instr + instruction_size * 3) == 0x00000013 &&
+          Assembler::ld_instr(instr + instruction_size * 4) == 0x00000013 &&
+          (is_addi_at(instr + instruction_size * 5) ||
+           is_jalr_at(instr + instruction_size * 5) ||
+           is_load_at(instr + instruction_size * 5)) &&
+          extract_rs1(instr + instruction_size) == extract_rd(instr) &&
+          extract_rd(instr + instruction_size) == extract_rd(instr) &&
+          extract_rs1(instr + instruction_size * 2) == extract_rd(instr) &&
+          extract_rd(instr + instruction_size * 2) == extract_rd(instr) &&
+          extract_rs1(instr + instruction_size * 5) == extract_rd(instr));
+}
+
 bool MacroAssembler::is_movptr2_sv48_at(address instr) {
   return is_lui_at(instr) && // lui
          is_lui_at(instr + MacroAssembler::instruction_size) && // lui
@@ -159,6 +181,25 @@ bool MacroAssembler::is_movptr2_sv48_at(address instr) {
           is_jalr_at(instr + MacroAssembler::instruction_size * 4) ||
           is_load_at(instr + MacroAssembler::instruction_size * 4)) && // Addi/Jalr/Load
          check_movptr2_sv48_data_dependency(instr);
+}
+
+bool MacroAssembler::is_movptr2_sv48_nop_at(address instr) {
+  // The first LUI retains tmp even in the short form, so a later patch can
+  // reconstruct the wide form without external register information.
+  return is_movptr2_sv48_at(instr) ||
+         (is_lui_at(instr) &&
+          is_addi_at(instr + instruction_size) &&
+          is_slli_shift_at(instr + instruction_size * 2, 9) &&
+          Assembler::extract(Assembler::ld_instr(instr + instruction_size * 2), 31, 26) == 0 &&
+          Assembler::ld_instr(instr + instruction_size * 3) == 0x00000013 &&
+          extract_rs1(instr + instruction_size) == extract_rd(instr) &&
+          extract_rd(instr + instruction_size) == extract_rd(instr) &&
+          extract_rs1(instr + instruction_size * 2) == extract_rd(instr) &&
+          extract_rd(instr + instruction_size * 2) != extract_rd(instr) &&
+          (is_addi_at(instr + instruction_size * 4) ||
+           is_jalr_at(instr + instruction_size * 4) ||
+           is_load_at(instr + instruction_size * 4)) &&
+          extract_rs1(instr + instruction_size * 4) == extract_rd(instr + instruction_size * 2));
 }
 
 bool MacroAssembler::is_li16u_at(address instr) {
@@ -3299,17 +3340,180 @@ struct Movptr2Sv48Parts {
   }
 };
 
+// The sv48_nop mode has two six-slot templates without a temporary register:
+//
+//   low address:  lui / addi / slli 9  / nop  / nop    / addi|jalr|load
+//   wide address: lui / addi / slli 11 / addi / slli 6 / addi|jalr|load
+//
+// Together these forms cover canonical Sv48 addresses and keep the final
+// consumer in the same slot. Only nonnegative addresses below 2^39 use the
+// padded form; negative canonical addresses retain the wide form. This policy
+// owns its splitting, decoding and patching independently of the legacy Parts.
+struct Movptr1Sv48NopParts {
+  int64_t lui_imm;     // full immediate passed to the first lui()
+  int64_t addi_imm;    // signed 12-bit immediate passed to the first addi()
+  int32_t middle_imm;  // unsigned 11-bit immediate, or zero for the padded form
+  int32_t offset;      // low 9 or 6 bits for the final addi/jalr/load
+  bool use_nops;
+
+  int first_shift() const { return use_nops ? 9 : 11; }
+
+  static Movptr1Sv48NopParts from_address(intptr_t addr) {
+    assert(VM_Version::is_canonical_address((address)addr),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const uintptr_t raw_addr = (uintptr_t)addr;
+    const bool use_nops = raw_addr < (1ull << 39);
+    const int upper_shift = use_nops ? 9 : 17;
+    const int offset_bits = use_nops ? 9 : 6;
+    const int64_t upper = addr >> upper_shift;
+    const int64_t addi_imm = Assembler::sextract((uint32_t)upper, 11, 0);
+    // Compensate for ADDI sign extension: lui_imm + addi_imm == upper.
+    const int64_t lui_imm = upper - addi_imm;
+    const int32_t middle_imm = use_nops ? 0 : (raw_addr >> 6) & 0x7ff;
+    const int32_t offset = raw_addr & ((1u << offset_bits) - 1);
+    return Movptr1Sv48NopParts{ lui_imm, addi_imm, middle_imm, offset, use_nops };
+  }
+
+  static address decode(address insn_addr) {
+    assert_cond(insn_addr != nullptr);
+    const int insn_size = MacroAssembler::instruction_size;
+    // The caller has validated the template. NOPs supply a zero immediate
+    // and a zero shift, so both forms share this decode. Sign-extend the LUI
+    // contribution before converting to unsigned for the left shifts.
+    uintptr_t target = (uintptr_t)(intptr_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12) << 12;
+    target += Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 1), 31, 20);
+    target <<= Assembler::extract(Assembler::ld_instr(insn_addr + insn_size * 2), 25, 20);
+    target += Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 3), 31, 20);
+    target <<= Assembler::extract(Assembler::ld_instr(insn_addr + insn_size * 4), 25, 20);
+    target += Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 5), 31, 20);
+    return (address)target;
+  }
+
+  static int patch(address patch_addr, address target) {
+    const int insn_size = MacroAssembler::instruction_size;
+    const Movptr1Sv48NopParts parts = from_address((intptr_t)target);
+    // The first ADDI has the same opcode and registers in both forms.
+    // SLLI differs only in funct3 here; rebuild the middle slots from the
+    // target parts without classifying the old form.
+    const uint32_t addi = Assembler::ld_instr(patch_addr + insn_size * 1) & 0x000fffff;
+    const uint32_t slli = addi | (0b001 << 12);
+    const uint32_t nop = 0x00000013;
+    const uint32_t middle[] = {
+      slli | ((uint32_t)parts.first_shift() << 20),
+      parts.use_nops ? nop : addi | ((uint32_t)parts.middle_imm << 20),
+      parts.use_nops ? nop : slli | (6u << 20)
+    };
+
+    // This multi-instruction update is NOT atomic: the caller must exclude
+    // execution (publication/safepoint/nmethod barrier protocol) and perform
+    // the usual instruction-cache synchronization afterwards.
+    Assembler::patch(patch_addr + insn_size * 0, 31, 12, (parts.lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 1, 31, 20, parts.addi_imm & 0xfff);
+    for (int i = 0; i < 3; i++) {
+      Assembler::sd_instr(patch_addr + insn_size * (i + 2), middle[i]);
+    }
+    // Preserve the final consumer's opcode and destination/base registers.
+    Assembler::patch(patch_addr + insn_size * 5, 31, 20, parts.offset);
+
+    assert(MacroAssembler::target_addr_for_insn(patch_addr) == target, "postcondition");
+    return MacroAssembler::movptr_sv48_nop_instruction_size;
+  }
+};
+
+// The sv48_nop mode retains five slots when a temporary register is supplied:
+//
+//   low:  lui tmp / addi tmp,tmp / slli Rd,tmp,9   / nop           / addi|jalr|load
+//   wide: lui tmp / lui Rd       / slli tmp,tmp,18 / add Rd,Rd,tmp / addi|jalr|load
+//
+// The first LUI's destination and the final consumer's base register identify
+// tmp and Rd in both forms. Only nonnegative addresses below 2^39 use the short
+// form. The consumer stays in the fifth slot across short/wide transitions.
+struct Movptr2Sv48NopParts {
+  int64_t upper_lui_imm;  // full immediate passed to the first LUI
+  int64_t middle_imm;     // signed ADDI immediate (short), or full LUI immediate (wide)
+  int32_t offset;        // low 9 bits (short), or signed low 12 bits (wide)
+  bool use_nop;
+
+  static Movptr2Sv48NopParts from_address(intptr_t addr) {
+    assert(VM_Version::is_canonical_address((address)addr),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const uintptr_t raw_addr = (uintptr_t)addr;
+    if (raw_addr < (1ull << 39)) {
+      const int64_t upper = addr >> 9;
+      const int64_t addi_imm = Assembler::sextract((uint32_t)upper, 11, 0);
+      return Movptr2Sv48NopParts{ upper - addi_imm, addi_imm, (int32_t)(raw_addr & 0x1ff), true };
+    }
+    const int64_t upper_lui_imm = (addr >> 30) * 0x1000;
+    const int32_t offset = Assembler::sextract((uint32_t)raw_addr, 11, 0);
+    const int64_t middle_lui_imm = (int64_t)(raw_addr & 0x3fffffff) - offset;
+    return Movptr2Sv48NopParts{ upper_lui_imm, middle_lui_imm, offset, false };
+  }
+
+  static address decode(address insn_addr) {
+    assert_cond(insn_addr != nullptr);
+    const int insn_size = MacroAssembler::instruction_size;
+    uintptr_t target = (uintptr_t)(intptr_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12) << 12;
+    const uint32_t middle = Assembler::ld_instr(insn_addr + insn_size);
+    if (MacroAssembler::is_addi_at(insn_addr + insn_size)) {
+      target += Assembler::sextract(middle, 31, 20);
+      target <<= 9;
+    } else {
+      target <<= 18;
+      target += (uintptr_t)(intptr_t)Assembler::sextract(middle, 31, 12) << 12;
+    }
+    target += Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 4), 31, 20);
+    return (address)target;
+  }
+
+  static int patch(address patch_addr, address target) {
+    const int insn_size = MacroAssembler::instruction_size;
+    const Movptr2Sv48NopParts parts = from_address((intptr_t)target);
+    // These register fields survive either encoding. In particular, a load or
+    // JALR may write a register other than Rd: use the consumer's base, not rd.
+    const uint32_t tmp = Assembler::extract(Assembler::ld_instr(patch_addr), 11, 7);
+    const uint32_t rd = Assembler::extract(Assembler::ld_instr(patch_addr + insn_size * 4), 19, 15);
+    const uint32_t addi_tmp = 0x13 | (tmp << 7) | (tmp << 15) | (((uint32_t)parts.middle_imm & 0xfff) << 20);
+    const uint32_t lui_rd = 0x37 | (rd << 7) | ((uint32_t)parts.middle_imm & 0xfffff000);
+    const uint32_t slli = 0x1013 | (tmp << 15) |
+                           ((parts.use_nop ? rd : tmp) << 7) | ((parts.use_nop ? 9u : 18u) << 20);
+    const uint32_t add_rd = 0x33 | (rd << 7) | (rd << 15) | (tmp << 20);
+    const uint32_t middle[] = {
+      parts.use_nop ? addi_tmp : lui_rd,
+      slli,
+      parts.use_nop ? 0x00000013u : add_rd
+    };
+
+    // As with the six-slot template, the caller must exclude execution during
+    // this non-atomic rewrite and synchronize the instruction cache afterwards.
+    Assembler::patch(patch_addr, 31, 12, (parts.upper_lui_imm >> 12) & 0xfffff);
+    for (int i = 0; i < 3; i++) {
+      Assembler::sd_instr(patch_addr + insn_size * (i + 1), middle[i]);
+    }
+    // Preserve the final consumer's opcode and destination/base registers.
+    Assembler::patch(patch_addr + insn_size * 4, 31, 20, (uint32_t)parts.offset & 0xfff);
+
+    assert(MacroAssembler::target_addr_for_insn(patch_addr) == target, "postcondition");
+    return MacroAssembler::movptr2_sv48_nop_instruction_size;
+  }
+};
+
 static int patch_addr_in_movptr(address instruction_address, address target) {
   assert(MacroAssembler::is_movptr_at(instruction_address), "must be a movptr");
-  switch (VM_Version::satp_mode.value()) {
-    case VM_Version::VM_SV39:
+  switch (VM_Version::movptr_mode()) {
+    case VM_Version::MovptrMode::sv39:
       return MovptrSv39Parts::patch(instruction_address, target);
-    case VM_Version::VM_SV48:
+    case VM_Version::MovptrMode::sv48:
       if (MacroAssembler::is_movptr1_sv48_at(instruction_address)) {
         return Movptr1Sv48Parts::patch(instruction_address, target);
       }
       assert(MacroAssembler::is_movptr2_sv48_at(instruction_address), "must be movptr2_sv48");
       return Movptr2Sv48Parts::patch(instruction_address, target);
+    case VM_Version::MovptrMode::sv48_nop:
+      if (MacroAssembler::is_movptr2_sv48_nop_at(instruction_address)) {
+        return Movptr2Sv48NopParts::patch(instruction_address, target);
+      }
+      assert(MacroAssembler::is_movptr_sv48_nop_at(instruction_address), "must be movptr_sv48_nop");
+      return Movptr1Sv48NopParts::patch(instruction_address, target);
     default:
       ShouldNotReachHere();
       return 0;
@@ -3368,15 +3572,21 @@ static long get_offset_of_pc_relative(address insn_addr) {
 
 static address get_target_of_movptr(address insn_addr) {
   assert(MacroAssembler::is_movptr_at(insn_addr), "must be a movptr");
-  switch (VM_Version::satp_mode.value()) {
-    case VM_Version::VM_SV39:
+  switch (VM_Version::movptr_mode()) {
+    case VM_Version::MovptrMode::sv39:
       return MovptrSv39Parts::decode(insn_addr);
-    case VM_Version::VM_SV48:
+    case VM_Version::MovptrMode::sv48:
       if (MacroAssembler::is_movptr1_sv48_at(insn_addr)) {
         return Movptr1Sv48Parts::decode(insn_addr);
       }
       assert(MacroAssembler::is_movptr2_sv48_at(insn_addr), "must be movptr2_sv48");
       return Movptr2Sv48Parts::decode(insn_addr);
+    case VM_Version::MovptrMode::sv48_nop:
+      if (MacroAssembler::is_movptr2_sv48_nop_at(insn_addr)) {
+        return Movptr2Sv48NopParts::decode(insn_addr);
+      }
+      assert(MacroAssembler::is_movptr_sv48_nop_at(insn_addr), "must be movptr_sv48_nop");
+      return Movptr1Sv48NopParts::decode(insn_addr);
     default:
       ShouldNotReachHere();
       return nullptr;
@@ -3456,15 +3666,14 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
 
 int MacroAssembler::patch_metadata(address insn_addr, address metadata) {
   // Metadata is either a narrow klass (32 bits, materialized by set_narrow_klass()
-  // with li32) or a full 48-bit pointer (materialized by mov_metadata() with movptr).
+  // with li32) or a full-width pointer (materialized by mov_metadata() with movptr).
   if (MacroAssembler::is_li32_at(insn_addr)) {
     // Move narrow klass
     Metadata* value = reinterpret_cast<Metadata*>(metadata);
     assert(value != nullptr && value->is_klass(), "narrow metadata must be a klass");
     narrowKlass nk = CompressedKlassPointers::encode(static_cast<Klass*>(value));
     return patch_imm_in_li32(insn_addr, static_cast<int32_t>(nk));
-  } else if (MacroAssembler::is_movptr1_at(insn_addr) ||
-             MacroAssembler::is_movptr2_at(insn_addr)) {
+  } else if (MacroAssembler::is_movptr_at(insn_addr)) {
     // Move wide metadata
     return pd_patch_instruction_size(insn_addr, metadata);
   }
@@ -3511,15 +3720,22 @@ void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register
   }
 #endif
 
-  switch (VM_Version::satp_mode.value()) {
-    case VM_Version::VM_SV39:
+  switch (VM_Version::movptr_mode()) {
+    case VM_Version::MovptrMode::sv39:
       movptr_sv39(Rd, uimm64, offset);
       break;
-    case VM_Version::VM_SV48:
+    case VM_Version::MovptrMode::sv48:
       if (temp == noreg) {
         movptr1_sv48(Rd, uimm64, offset);
       } else {
         movptr2_sv48(Rd, uimm64, offset, temp);
+      }
+      break;
+    case VM_Version::MovptrMode::sv48_nop:
+      if (temp == noreg) {
+        movptr_sv48_nop(Rd, uimm64, offset);
+      } else {
+        movptr2_sv48_nop(Rd, uimm64, offset, temp);
       }
       break;
     default:
@@ -3528,12 +3744,15 @@ void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register
 }
 
 int MacroAssembler::movptr_instruction_size(bool use_temp) {
-  switch (VM_Version::satp_mode.value()) {
-    case VM_Version::VM_SV39:
+  switch (VM_Version::movptr_mode()) {
+    case VM_Version::MovptrMode::sv39:
       return movptr_sv39_instruction_size;
-    case VM_Version::VM_SV48:
+    case VM_Version::MovptrMode::sv48:
       return use_temp ? movptr2_sv48_instruction_size
                       : movptr1_sv48_instruction_size;
+    case VM_Version::MovptrMode::sv48_nop:
+      return use_temp ? movptr2_sv48_nop_instruction_size
+                      : movptr_sv48_nop_instruction_size;
     default:
       ShouldNotReachHere();
       return 0;
@@ -3569,6 +3788,40 @@ void MacroAssembler::movptr2_sv48(Register Rd, uint64_t addr, int32_t &offset, R
   slli(tmp, tmp, 18);
   add(Rd, Rd, tmp);
 
+  offset = parts.offset;
+}
+
+void MacroAssembler::movptr_sv48_nop(Register Rd, uint64_t addr, int32_t &offset) {
+  const Movptr1Sv48NopParts parts = Movptr1Sv48NopParts::from_address((intptr_t)addr);
+  lui(Rd, parts.lui_imm);
+  addi(Rd, Rd, parts.addi_imm);
+  slli(Rd, Rd, parts.first_shift());
+  if (parts.use_nops) {
+    // Relocatable callers use IncompressibleScope for the entire template,
+    // keeping the final ADDI/load/JALR (and any return PC) in the sixth slot.
+    nop();
+    nop();
+  } else {
+    addi(Rd, Rd, parts.middle_imm);
+    slli(Rd, Rd, 6);
+  }
+  offset = parts.offset;
+}
+
+void MacroAssembler::movptr2_sv48_nop(Register Rd, uint64_t addr, int32_t &offset, Register tmp) {
+  assert_different_registers(Rd, tmp, noreg);
+  const Movptr2Sv48NopParts parts = Movptr2Sv48NopParts::from_address((intptr_t)addr);
+  lui(tmp, parts.upper_lui_imm);
+  if (parts.use_nop) {
+    addi(tmp, tmp, parts.middle_imm);
+    slli(Rd, tmp, 9);
+    // Relocatable callers keep this NOP full-width and the consumer at +16.
+    nop();
+  } else {
+    lui(Rd, parts.middle_imm);
+    slli(tmp, tmp, 18);
+    add(Rd, Rd, tmp);
+  }
   offset = parts.offset;
 }
 

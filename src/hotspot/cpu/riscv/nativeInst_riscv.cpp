@@ -45,17 +45,24 @@
 // NativeInstruction
 
 static int current_mode_movptr_size_at(address addr) {
-  switch (VM_Version::satp_mode.value()) {
-    case VM_Version::VM_SV39:
+  switch (VM_Version::movptr_mode()) {
+    case VM_Version::MovptrMode::sv39:
       if (MacroAssembler::is_movptr_sv39_at(addr)) {
         return MacroAssembler::movptr_sv39_instruction_size;
       }
       return 0;
-    case VM_Version::VM_SV48:
+    case VM_Version::MovptrMode::sv48:
       if (MacroAssembler::is_movptr1_sv48_at(addr)) {
         return MacroAssembler::movptr1_sv48_instruction_size;
       } else if (MacroAssembler::is_movptr2_sv48_at(addr)) {
         return MacroAssembler::movptr2_sv48_instruction_size;
+      }
+      return 0;
+    case VM_Version::MovptrMode::sv48_nop:
+      if (MacroAssembler::is_movptr2_sv48_nop_at(addr)) {
+        return MacroAssembler::movptr2_sv48_nop_instruction_size;
+      } else if (MacroAssembler::is_movptr_sv48_nop_at(addr)) {
+        return MacroAssembler::movptr_sv48_nop_instruction_size;
       }
       return 0;
     default:

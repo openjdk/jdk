@@ -559,6 +559,7 @@ public:
   do_var(bool,  UseZabha)                               /* narrow cmpxchg selection in nmethods */ \
   do_var(bool,  UsePopCountInstruction)                 /* other platforms record it in CPU features */ \
   do_fun(int,   SatpMode,                               (int)VM_Version::satp_mode.value()) \
+  do_fun(int,   MovptrMode,                             (int)VM_Version::movptr_mode()) \
   // END
 #else
 #define AOTCODECACHE_CONFIGS_RISCV_DO(do_var, do_fun)

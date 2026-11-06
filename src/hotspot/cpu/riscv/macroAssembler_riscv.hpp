@@ -951,19 +951,23 @@ public:
     }
   }
 
-  // Generates a load of an address constant for the active satp mode.
+  // Generates a load of an address constant for the active movptr mode.
   // If common case supply additional temp register
   // to shorten the instruction sequence.
   void movptr(Register Rd, const Address &addr, Register tmp = noreg);
   void movptr(Register Rd, address addr, Register tmp = noreg);
   void movptr(Register Rd, address addr, int32_t &offset, Register tmp = noreg);
 
+  // Size of the incompressible template, including the final addi/load/jalr.
+  // Both sv48_nop templates retain their capacity even for low addresses.
   static int movptr_instruction_size(bool use_temp);
 
  private:
   void movptr_sv39(Register Rd, uintptr_t addr, int32_t &offset);
   void movptr1_sv48(Register Rd, uintptr_t addr, int32_t &offset);
   void movptr2_sv48(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
+  void movptr_sv48_nop(Register Rd, uintptr_t addr, int32_t &offset);
+  void movptr2_sv48_nop(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
 
  public:
   // float imm move
@@ -1790,6 +1794,8 @@ public:
     movptr_sv39_instruction_size = 4 * MacroAssembler::instruction_size, // lui, addi, slli, addi.  See movptr_sv39().
     movptr1_sv48_instruction_size = 6 * MacroAssembler::instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1_sv48().
     movptr2_sv48_instruction_size = 5 * MacroAssembler::instruction_size, // lui, lui, slli, add, addi.  See movptr2_sv48().
+    movptr_sv48_nop_instruction_size = 6 * MacroAssembler::instruction_size, // Short + NOP padding, or wide. See movptr_sv48_nop().
+    movptr2_sv48_nop_instruction_size = 5 * MacroAssembler::instruction_size, // Short + NOP padding, or wide. See movptr2_sv48_nop().
     load_pc_relative_instruction_size = 2 * MacroAssembler::instruction_size // auipc, ld
   };
 
@@ -1828,6 +1834,8 @@ public:
   static bool is_movptr_sv39_at(address instr);
   static bool is_movptr1_sv48_at(address instr);
   static bool is_movptr2_sv48_at(address instr);
+  static bool is_movptr_sv48_nop_at(address instr);
+  static bool is_movptr2_sv48_nop_at(address instr);
   static bool is_movptr_at(address instr);
 
   static bool is_lwu_to_zr(address instr);

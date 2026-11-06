@@ -98,6 +98,8 @@ define_pd_global(bool, ValueTypeReturnedAsFields, false);
   product(bool, UseRVA20U64, true, "Use RVA20U64 profile")                       \
   product(bool, UseRVA22U64, false, EXPERIMENTAL, "Use RVA22U64 profile")        \
   product(bool, UseRVA23U64, false, EXPERIMENTAL, "Use RVA23U64 profile")        \
+  product(bool, UseSv48Nop, true, DIAGNOSTIC,                                    \
+          "Use NOP-padded short address templates on Sv48")                      \
   product(bool, UseRVC, false, DIAGNOSTIC, "Use RVC instructions")               \
   product(bool, UseRVV, false, DIAGNOSTIC, "Use RVV instructions")               \
   product(bool, UseZba, false, DIAGNOSTIC, "Use Zba instructions")               \
