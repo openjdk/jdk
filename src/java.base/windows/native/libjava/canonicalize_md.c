@@ -168,13 +168,19 @@ WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
     if (h != INVALID_HANDLE_VALUE) {
         WCHAR* newFinalPath = NULL;
         DWORD len = GetFinalPathNameByHandleW(h, finalPath, size, 0);
-        if (len >= size) {
-            if ((finalPath = (WCHAR*)malloc(len * sizeof(WCHAR))) == NULL) {
+        if (len != 0 && len >= size) {
+            DWORD pathBufferSize = len;
+            finalPath = (WCHAR*)malloc((size_t)pathBufferSize * sizeof(WCHAR));
+            if (finalPath == NULL) {
                 CloseHandle(h);
                 return NULL;
             }
-            newFinalPath = finalPath;
-            len = GetFinalPathNameByHandleW(h, finalPath, len, 0);
+            len = GetFinalPathNameByHandleW(h, finalPath, pathBufferSize, 0);
+            if (len == 0 || len >= pathBufferSize) {
+                CloseHandle(h);
+                free(finalPath);
+                return NULL;
+            }
         }
         CloseHandle(h);
         if (len != 0) {
@@ -192,10 +198,7 @@ WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
                 int amountToCopy = len - prefixLen + 1;
                 wmemmove(finalPath + startIdx, finalPath + prefixLen, amountToCopy);
             }
-
             return finalPath;
-        } else { // GetFinalPathNameByHandleW failed
-            if (newFinalPath != NULL) free(newFinalPath);
         }
     }
 
