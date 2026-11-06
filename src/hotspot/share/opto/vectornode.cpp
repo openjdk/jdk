@@ -1921,9 +1921,14 @@ static Node* convertFromLongToMaskAll(PhaseGVN* phase, const TypeLong* bits_type
 
   if (VectorNode::is_maskall_type(bits_type, vlen) &&
       Matcher::match_rule_supported_vector(Op_Replicate, vlen, maskall_bt)) {
-    int con_value = bits_type->get_con() == 0L ? 0 : -1;
-    Node* res = VectorNode::make_con(phase, vlen, maskall_bt, con_value,
-                                     vt->isa_pvectmask() != nullptr);
+    Node* con = nullptr;
+    jlong con_value = bits_type->get_con() == 0L ? 0L : -1L;
+    if (maskall_bt == T_LONG) {
+      con = phase->longcon(con_value);
+    } else {
+      con = phase->intcon(con_value);
+    }
+    Node* res = VectorNode::scalar2vector(con, vlen, maskall_bt, vt->isa_pvectmask() != nullptr);
     // Convert back to the original floating-point data type.
     if (is_floating_point_type(bt)) {
       res = new VectorMaskCastNode(phase->transform(res), vt);
@@ -2245,17 +2250,23 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
 
     int subVopc = 0;
     int addVopc = 0;
+    Node* shift_mask_node = nullptr;
+    Node* const_one_node = nullptr;
 
     assert(cnt->bottom_type()->isa_vect(), "Unexpected shift");
     if (bt == T_LONG) {
+      shift_mask_node = phase->longcon(shift_mask);
+      const_one_node = phase->longcon(1L);
       subVopc = VectorNode::opcode(Op_SubL, bt);
       addVopc = VectorNode::opcode(Op_AddL, bt);
     } else {
+      shift_mask_node = phase->intcon(shift_mask);
+      const_one_node = phase->intcon(1);
       subVopc = VectorNode::opcode(Op_SubI, bt);
       addVopc = VectorNode::opcode(Op_AddI, bt);
     }
-    Node* vector_mask = phase->transform(VectorNode::make_con(phase, vlen, bt, shift_mask));
-    Node* vector_one = phase->transform(VectorNode::make_con(phase, vlen, bt, 1));
+    Node* vector_mask = phase->transform(VectorNode::scalar2vector(shift_mask_node, vlen, bt));
+    Node* vector_one = phase->transform(VectorNode::scalar2vector(const_one_node, vlen, bt));
 
     shiftRCnt = cnt;
     shiftRCnt = phase->transform(VectorNode::make(Op_AndV, shiftRCnt, vector_mask, vt));
@@ -2547,17 +2558,29 @@ Node* FmaVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 Node* NegVNode::degenerate_integral_negate(PhaseGVN* phase, bool is_predicated) {
   const TypeVect* vt = vect_type();
   BasicType bt = vt->element_basic_type();
+  uint vlen = length();
 
   // Transformation for predicated NegVI/L
   if (is_predicated) {
       // (NegVI/L src m) ==> (AddVI/L (XorV src (ReplicateI/L -1) m) (ReplicateI/L 1) m)
-      int add_opc = (bt == T_LONG) ? Op_AddL : Op_AddI;
-      Node* const_minus_one = phase->transform(VectorNode::make_con(phase, vt->length(), bt, -1));
+      Node* const_minus_one = nullptr;
+      Node* const_one = nullptr;
+      int add_opc;
+      if (bt == T_LONG) {
+        const_minus_one = phase->longcon(-1L);
+        const_one = phase->longcon(1L);
+        add_opc = Op_AddL;
+      } else {
+        const_minus_one = phase->intcon(-1);
+        const_one = phase->intcon(1);
+        add_opc = Op_AddI;
+      }
+      const_minus_one = phase->transform(VectorNode::scalar2vector(const_minus_one, vlen, bt));
       Node* xorv = VectorNode::make(Op_XorV, in(1), const_minus_one, vt);
       xorv->add_req(in(2));
       xorv->add_flag(Node::Flag_is_predicated_vector);
       phase->transform(xorv);
-      Node* const_one = phase->transform(VectorNode::make_con(phase, vt->length(), bt, 1));
+      const_one = phase->transform(VectorNode::scalar2vector(const_one, vlen, bt));
       Node* addv = VectorNode::make(VectorNode::opcode(add_opc, bt), xorv, const_one, vt);
       addv->add_req(in(2));
       addv->add_flag(Node::Flag_is_predicated_vector);
@@ -2565,8 +2588,16 @@ Node* NegVNode::degenerate_integral_negate(PhaseGVN* phase, bool is_predicated) 
   }
 
   // NegVI/L ==> (SubVI/L (ReplicateI/L 0) src)
-  int sub_opc = (bt == T_LONG) ? Op_SubL : Op_SubI;
-  Node* const_zero = phase->transform(VectorNode::make_con(phase, vt->length(), bt, 0));
+  Node* const_zero = nullptr;
+  int sub_opc;
+  if (bt == T_LONG) {
+    const_zero = phase->longcon(0L);
+    sub_opc = Op_SubL;
+  } else {
+    const_zero = phase->intcon(0);
+    sub_opc = Op_SubI;
+  }
+  const_zero = phase->transform(VectorNode::scalar2vector(const_zero, vlen, bt));
   return VectorNode::make(VectorNode::opcode(sub_opc, bt), const_zero, in(1), vt);
 }
 
@@ -2884,7 +2915,7 @@ Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_resha
 }
 
 // Optimizations shared by XorV and XorVMask.
-Node* XorVNode::Ideal_common(PhaseGVN* phase, bool can_reshape) {
+Node* XorVNode::Ideal_Common(PhaseGVN* phase, bool can_reshape) {
   // (XorV src src)      => (Replicate zero)
   // (XorVMask src src)  => (MaskAll zero)
   //
@@ -2902,7 +2933,7 @@ Node* XorVNode::Ideal_common(PhaseGVN* phase, bool can_reshape) {
 }
 
 Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* res = Ideal_common(phase, can_reshape);
+  Node* res = Ideal_Common(phase, can_reshape);
   if (res != nullptr) {
     return res;
   }
@@ -2921,7 +2952,7 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 Node* XorVMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* res = Ideal_common(phase, can_reshape);
+  Node* res = Ideal_Common(phase, can_reshape);
   if (res != nullptr) {
     return res;
   }
@@ -3088,7 +3119,7 @@ Node* VectorSliceNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         Matcher::match_rule_supported_vector(add_vopc, num_elem, elem_bt)) {
       jint elem_origin = byte_origin / type2aelembytes(elem_bt);
       Node* iota  = phase->transform(new VectorLoadConstNode(phase->makecon(TypeInt::ZERO), vt));
-      Node* shift = phase->transform(VectorNode::make_con(phase, num_elem, elem_bt, elem_origin));
+      Node* shift = phase->transform(VectorNode::scalar2vector(phase->intcon(elem_origin), num_elem, elem_bt));
       Node* index = phase->transform(VectorNode::make(add_vopc, iota, shift, vt));
       return new SelectFromTwoVectorNode(index, vec1(), vec2(), vt);
     }

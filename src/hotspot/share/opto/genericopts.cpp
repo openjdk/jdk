@@ -48,7 +48,7 @@ template<typename NodeClass>
 struct NodeType;
 
 template<NodeTypeCon NT>
-struct NodeOps;
+class NodeOps;
 
 template<>
 struct NodeType<XorVNode> {
@@ -61,85 +61,95 @@ struct NodeType<XorVMaskNode> {
 };
 
 template<>
-struct NodeOps<NodeTypeCon::VECTOR> {
+class NodeOps<NodeTypeCon::VECTOR> : public StackObj {
+ public:
+  explicit NodeOps(PhaseGVN* phase) : _phase(phase) {}
+
   // Unpredicated AndV.
-  static bool is_and(const Node* n) {
+  bool is_and(const Node* n) const {
     return n->Opcode() == Op_AndV && !n->is_predicated_vector();
   }
 
   // Unpredicated XorV.
-  static bool is_xor(const Node* n) {
+  bool is_xor(const Node* n) const {
     return n->Opcode() == Op_XorV && !n->is_predicated_vector();
   }
 
-  static Node* make_and(Node* in1, Node* in2) {
+  Node* make_and(Node* in1, Node* in2) const {
     return new AndVNode(in1, in2, in1->bottom_type()->is_vect());
   }
 
-  static Node* make_xor(Node* in1, Node* in2) {
+  Node* make_xor(Node* in1, Node* in2) const {
     return new XorVNode(in1, in2, in1->bottom_type()->is_vect());
   }
 
   // XorV with a Replicate -1.
-  static Node* make_not(PhaseGVN* phase, Node* in) {
-    const TypeVect* vt = in->bottom_type()->is_vect();
+  Node* make_not(Node* n) const {
+    const TypeVect* vt = n->bottom_type()->is_vect();
     uint vlen = vt->length();
     BasicType bt = vt->element_basic_type();
-    Node* all_ones = phase->transform(VectorNode::make_con(phase, vlen, bt,
-                                                           -1, false));
-    return make_xor(in, all_ones);
+    Node* all_ones = _phase->transform(VectorNode::make_con(_phase, vlen, bt, -1));
+    return make_xor(n, all_ones);
   }
+
+ private:
+  PhaseGVN* _phase;
 };
 
 template<>
-struct NodeOps<NodeTypeCon::PVECTMASK> {
+class NodeOps<NodeTypeCon::PVECTMASK> : public StackObj {
+ public:
+  explicit NodeOps(PhaseGVN* phase) : _phase(phase) {}
+
   // Unpredicated AndVMask.
-  static bool is_and(const Node* n) {
+  bool is_and(const Node* n) const {
     return n->Opcode() == Op_AndVMask && !n->is_predicated_vector();
   }
 
   // Unpredicated XorVMask.
-  static bool is_xor(const Node* n) {
+  bool is_xor(const Node* n) const {
     return n->Opcode() == Op_XorVMask && !n->is_predicated_vector();
   }
 
-  static Node* make_and(Node* in1, Node* in2) {
+  Node* make_and(Node* in1, Node* in2) const {
     return new AndVMaskNode(in1, in2, in1->bottom_type()->is_pvectmask());
   }
 
-  static Node* make_xor(Node* in1, Node* in2) {
+  Node* make_xor(Node* in1, Node* in2) const {
     return new XorVMaskNode(in1, in2, in1->bottom_type()->is_pvectmask());
   }
 
   // XorVMask with a MaskAll -1.
-  static Node* make_not(PhaseGVN* phase, Node* in) {
+  Node* make_not(Node* in) const {
     const TypeVect* vt = in->bottom_type()->is_pvectmask();
     uint vlen = vt->length();
     BasicType bt = vt->element_basic_type();
-    Node* all_ones = phase->transform(VectorNode::make_con(phase, vlen, bt,
-                                                           -1, true));
+    Node* all_ones = _phase->transform(VectorNode::make_con(_phase, vlen, bt, -1, true));
     return make_xor(in, all_ones);
   }
+
+ private:
+  PhaseGVN* _phase;
 };
 
 // Canonicalize `(A & B) ^ B` to `~A & B`.
 template<typename NodeClass>
 Node* GenericOpts::Ideal_XorAnd_to_AndNot(NodeClass* n, PhaseGVN* phase) {
   constexpr NodeTypeCon nt = NodeType<NodeClass>::value;
-  using T = NodeOps<nt>;
+  NodeOps<nt> ops(phase);
 
-  if (!T::is_xor(n)) {
+  if (!ops.is_xor(n)) {
     return nullptr;
   }
 
   Node* and_node = n->in(1);
   Node* shared = n->in(2);
-  if (!T::is_and(and_node)) {
+  if (!ops.is_and(and_node)) {
     and_node = n->in(2);
     shared = n->in(1);
   }
 
-  if (!T::is_and(and_node)) {
+  if (!ops.is_and(and_node)) {
     return nullptr;
   }
 
@@ -164,8 +174,8 @@ Node* GenericOpts::Ideal_XorAnd_to_AndNot(NodeClass* n, PhaseGVN* phase) {
     return nullptr;
   }
 
-  Node* not_other = phase->transform(T::make_not(phase, other));
-  return T::make_and(shared, not_other);
+  Node* not_other = phase->transform(ops.make_not(other));
+  return ops.make_and(shared, not_other);
 }
 
 template Node* GenericOpts::Ideal_XorAnd_to_AndNot<XorVNode>(XorVNode* n, PhaseGVN* phase);
