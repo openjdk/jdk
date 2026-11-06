@@ -31,7 +31,8 @@
  * @compile ../lib/ir_framework/TestFramework.java
  * @compile ../lib/generators/Generators.java
  * @compile ../lib/verify/Verify.java
- * @run driver ${test.main.class}
+ * @run driver ${test.main.class} int
+ * @run driver ${test.main.class} long
  */
 
 package compiler.rangechecks;
@@ -57,6 +58,7 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
 /**
  * For more basic examples, see:
  * - TestFoldCompares.java
+ * - TestFoldLongCompares.java
  * - TestOptimizeTrichotomy.java
  *
  * I'm only covering some basic cases to test the fundamental
@@ -74,15 +76,37 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  * - TestMethodGeneratorTrichotomy targets shapes of RegionNode::optimize_trichotomy
  *
  * In the future, we could add more cases:
- * - Extend to long - though the optimization does not yet cover longs anyway.
  * - More IR rules: difficult to make stable. Not all permutations are covered
  *   by the optimizations, edge-cases could make IR rules brittle.
  */
 public class TestFoldComparesFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
     private static final RestrictableGenerator<Integer> INT_GEN = Generators.G.ints();
+    private static final RestrictableGenerator<Long> LONG_GEN = Generators.G.longs();
+    private static boolean isLong;
+
+    private static long nextValue() {
+        return isLong ? LONG_GEN.next() : INT_GEN.next();
+    }
+
+    private static String literal(long value) {
+        return value + (isLong ? "L" : "");
+    }
+
+    private static long minValue() {
+        return isLong ? Long.MIN_VALUE : Integer.MIN_VALUE;
+    }
+
+    private static long maxValue() {
+        return isLong ? Long.MAX_VALUE : Integer.MAX_VALUE;
+    }
+
+    private static long offset(long value, int delta) {
+        return isLong ? value + delta : (int)(value + delta);
+    }
 
     public static void main(String[] args) {
+        isLong = args[0].equals("long");
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
@@ -216,7 +240,7 @@ public class TestFoldComparesFuzzer {
         public String toString() {
             return cmp.isSigned()
                 ? ((negated ? "!" : "") + "(" + lhs + " "+ cmp.getToken() + " " + rhs + ")")
-                : ((negated ? "!" : "") + "(Integer.compareUnsigned(" + lhs + ", " + rhs + ")" + cmp.getToken() + ")");
+                : ((negated ? "!" : "") + "(" + (isLong ? "Long" : "Integer") + ".compareUnsigned(" + lhs + ", " + rhs + ")" + cmp.getToken() + ")");
         }
 
         // Keep the same semantics of the test, but change its form.
@@ -246,11 +270,14 @@ public class TestFoldComparesFuzzer {
 
         default Template.ZeroArgs getInputTemplate() {
             return Template.make(() -> scope(
+                let("type", isLong ? "long" : "int"),
+                let("boxedType", isLong ? "Long" : "Integer"),
+                let("generator", isLong ? "longs" : "ints"),
                 """
-                RestrictableGenerator<Integer> gen = Generators.G.ints();
-                int n = gen.next();
-                int a = gen.next();
-                int b = gen.next();
+                RestrictableGenerator<#boxedType> gen = Generators.G.#generator();
+                #type n = gen.next();
+                #type a = gen.next();
+                #type b = gen.next();
                 """
             ));
         };
@@ -260,21 +287,22 @@ public class TestFoldComparesFuzzer {
     // This should test some basic correctness, and also covers the case
     // of bug JDK-8135069.
     static class TestMethodGeneratorConst implements TestMethodGenerator {
-        private final int con1 = INT_GEN.next();
-        private final int con2 = INT_GEN.next();
+        private final long con1 = nextValue();
+        private final long con2 = nextValue();
 
         private final Comparison c1 = new Comparison("n", Comparator.random(), "con1").permuteRandom();
         private final Comparison c2 = new Comparison("n", Comparator.random(), "con2").permuteRandom();
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
-            let("con1", con1),
-            let("con2", con2),
+            let("type", isLong ? "long" : "int"),
+            let("con1", literal(con1)),
+            let("con2", literal(con2)),
             let("c1", c1),
             let("c2", c2),
             """
-            static boolean #methodName(int n, int a, int b) {
-                int con1 = #con1;
-                int con2 = #con2;
+            static boolean #methodName(#type n, #type a, #type b) {
+                #type con1 = #con1;
+                #type con2 = #con2;
                 if (#c1 || #c2) {
                     return true;
                 }
@@ -286,7 +314,7 @@ public class TestFoldComparesFuzzer {
         public Template.OneArg<String> getTestTemplate() { return testTemplate; }
     }
 
-    // Cases where a and b are ranges that touch min_int/max_int.
+    // Cases where a and b are ranges that touch the minimum/maximum values.
     // Note: if con1=0 and con2=1 then this is like the cases:
     // - test_Case3a_LTLE_overflow
     // - test_Case3b_LTLE_overflow
@@ -295,23 +323,24 @@ public class TestFoldComparesFuzzer {
     // Hence, I think this test gives us quite good coverage for the kinds of bugs
     // such as JDK-8346420.
     static class TestMethodGeneratorWithIf implements TestMethodGenerator {
-        private final int con1 = INT_GEN.next();
-        private final int con2 = INT_GEN.next();
-        private final String m1 = RANDOM.nextBoolean() ? "Integer.MIN_VALUE" : "Integer.MAX_VALUE";
-        private final String m2 = RANDOM.nextBoolean() ? "Integer.MIN_VALUE" : "Integer.MAX_VALUE";
+        private final long con1 = nextValue();
+        private final long con2 = nextValue();
+        private final String m1 = literal(RANDOM.nextBoolean() ? minValue() : maxValue());
+        private final String m2 = literal(RANDOM.nextBoolean() ? minValue() : maxValue());
 
         private final Comparison c1 = new Comparison("n", Comparator.random(), "a").permuteRandom();
         private final Comparison c2 = new Comparison("n", Comparator.random(), "b").permuteRandom();
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
-            let("con1", con1),
-            let("con2", con2),
+            let("type", isLong ? "long" : "int"),
+            let("con1", literal(con1)),
+            let("con2", literal(con2)),
             let("m1", m1),
             let("m2", m2),
             let("c1", c1),
             let("c2", c2),
             """
-            static boolean #methodName(int n, int a, int b) {
+            static boolean #methodName(#type n, #type a, #type b) {
                 if (a < b) {
                     a = #con1;
                     b = #con2;
@@ -332,27 +361,28 @@ public class TestFoldComparesFuzzer {
 
     // Just for good practice: add some case where the ranges are more free.
     static class TestMethodGeneratorRanges implements TestMethodGenerator {
-        private final int n_hi = INT_GEN.next();
-        private final int n_lo = INT_GEN.next();
-        private final int a_hi = INT_GEN.next();
-        private final int a_lo = INT_GEN.next();
-        private final int b_hi = INT_GEN.next();
-        private final int b_lo = INT_GEN.next();
+        private final long n_hi = nextValue();
+        private final long n_lo = nextValue();
+        private final long a_hi = nextValue();
+        private final long a_lo = nextValue();
+        private final long b_hi = nextValue();
+        private final long b_lo = nextValue();
 
         private final Comparison c1 = new Comparison("n", Comparator.random(), "a").permuteRandom();
         private final Comparison c2 = new Comparison("n", Comparator.random(), "b").permuteRandom();
 
         private final Template.OneArg<String> template = Template.make("methodName", (String methodName) -> scope(
-            let("n_hi", n_hi),
-            let("n_lo", n_lo),
-            let("a_hi", a_hi),
-            let("a_lo", a_lo),
-            let("b_hi", b_hi),
-            let("b_lo", b_lo),
+            let("type", isLong ? "long" : "int"),
+            let("n_hi", literal(n_hi)),
+            let("n_lo", literal(n_lo)),
+            let("a_hi", literal(a_hi)),
+            let("a_lo", literal(a_lo)),
+            let("b_hi", literal(b_hi)),
+            let("b_lo", literal(b_lo)),
             let("c1", c1),
             let("c2", c2),
             """
-            static boolean #methodName(int n, int a, int b) {
+            static boolean #methodName(#type n, #type a, #type b) {
                 n = Math.min(#n_hi, Math.max(#n_lo, n));
                 a = Math.min(#a_hi, Math.max(#a_lo, a));
                 b = Math.min(#b_hi, Math.max(#b_lo, b));
@@ -371,34 +401,34 @@ public class TestFoldComparesFuzzer {
 
     // Generate some more constrained cases, but with IR rules
     static class TestMethodGeneratorConstIR implements TestMethodGenerator {
-        private final int lo;
-        private final int hi;
+        private final long lo;
+        private final long hi;
         { // instance initializer
             // We want to cover all cases for lo and hi combinations. But the
-            // critical cases happen around int_min and int_max, and when
+            // critical cases happen around the minimum and maximum values, and when
             // lo and hi are close to each other.
             switch (RANDOM.nextInt(3)) {
                 case 0 -> {
                     // Full freedom, will eventually cover all cases
-                    lo = INT_GEN.next();
-                    hi = INT_GEN.next();
+                    lo = nextValue();
+                    hi = nextValue();
                 }
                 case 1 -> {
                     // Pick cases around overflow and underflow
-                    lo = Integer.MAX_VALUE - 5 + RANDOM.nextInt(10);
-                    hi = Integer.MAX_VALUE - 5 + RANDOM.nextInt(10);
+                    lo = offset(maxValue(), RANDOM.nextInt(10) - 5);
+                    hi = offset(maxValue(), RANDOM.nextInt(10) - 5);
                 }
                 default -> {
                     // Pick cases where lo and hi are close to each other
-                    lo = INT_GEN.next();
-                    hi = lo - 5 + RANDOM.nextInt(10);
+                    lo = nextValue();
+                    hi = offset(lo, RANDOM.nextInt(10) - 5);
                 }
             }
         }
 
         // Since we are using constants for lo and hi, the checks should get canonicalized,
         // so that n is always in the lhs. We only create cases that are covered by the
-        // 4 cases of "2 CmpI -> 1 CmpU" optimization in IfNode::fold_compares_helper.
+        // 4 cases of "2 CmpI -> 1 CmpU" or "2 CmpL -> 1 CmpUL" optimization in IfNode::fold_compares_helper.
         private final Comparison c_lo = new Comparison("n", Comparator.randomGreater(), "lo");
         private final Comparison c_hi = new Comparison("n", Comparator.randomLess(), "hi");
         private final boolean swap = RANDOM.nextBoolean();
@@ -412,15 +442,16 @@ public class TestFoldComparesFuzzer {
         private final Comparison c2 = withAnd ? c2Permuted : c2Permuted.negateCmp();
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
-            let("lo", lo),
-            let("hi", hi),
+            let("type", isLong ? "long" : "int"),
+            let("lo", literal(lo)),
+            let("hi", literal(hi)),
             let("c1", c1),
             let("c2", c2),
             let("op", operator),
             """
-            static boolean #methodName(int n, int a, int b) {
-                int lo = #lo;
-                int hi = #hi;
+            static boolean #methodName(#type n, #type a, #type b) {
+                #type lo = #lo;
+                #type hi = #hi;
                 if (#c1 #op #c2) {
                     return true;
                 }
@@ -440,14 +471,17 @@ public class TestFoldComparesFuzzer {
                 // we can know very precisely what happens in each case.
                 if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LT) {
                     // a)   (n >  lo && n <  hi)
-                    if (lo == Integer.MAX_VALUE || hi == Integer.MIN_VALUE) {
+                    if (lo == maxValue() || hi == minValue()) {
                         cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
                         comment = "a) one or both checks fold at parse time";
                     } else if (lo < hi && lo+2 == hi) {
                         // Not yet folded at parsing, because lo != hi
                         // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
-                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
-                        comment = "a) replace with CmpU (single element) -> CmpI eq";
+                        cmpIParse = "= 2"; cmpUParse = "= 0";
+                        // BoolNode::Ideal only converts CmpU, not CmpUL, to a signed equality.
+                        cmpIFinal = isLong ? "= 0" : "= 1";
+                        cmpUFinal = isLong ? "= 1" : "= 0";
+                        comment = "a) single element: unsigned compare, or signed equality for int";
                     } else if (lo < hi && lo+1 == hi) {
                         // Not yet folded at parsing, because lo != hi
                         cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
@@ -465,13 +499,16 @@ public class TestFoldComparesFuzzer {
                     }
                 } else if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LE) {
                     // b)   (n >  lo && n <= hi)
-                    if (lo == Integer.MAX_VALUE || hi == Integer.MAX_VALUE) {
+                    if (lo == maxValue() || hi == maxValue()) {
                         cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
                         comment = "b) one or both checks fold at parse time";
                     } else if (lo < hi && lo+1 == hi) {
                         // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
-                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
-                        comment = "b) replace with CmpU (single element) -> CmpI eq";
+                        cmpIParse = "= 2"; cmpUParse = "= 0";
+                        // BoolNode::Ideal only converts CmpU, not CmpUL, to a signed equality.
+                        cmpIFinal = isLong ? "= 0" : "= 1";
+                        cmpUFinal = isLong ? "= 1" : "= 0";
+                        comment = "b) single element: unsigned compare, or signed equality for int";
                     } else if (lo < hi && lo+1 < hi) {
                         cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
                         comment = "b) replace with CmpU (non-empty)";
@@ -484,13 +521,16 @@ public class TestFoldComparesFuzzer {
                     }
                 } else if (c_lo.cmp() == Comparator.GE && c_hi.cmp() == Comparator.LT) {
                     // c)   (n >= lo && n <  hi)
-                    if (lo == Integer.MIN_VALUE || hi == Integer.MIN_VALUE) {
+                    if (lo == minValue() || hi == minValue()) {
                         cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
                         comment = "c) one or both checks fold at parse time";
                     } else if (lo < hi && lo+1 == hi) {
                         // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
-                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 1"; cmpUFinal = "= 0";
-                        comment = "c) replace with CmpU (single element) -> CmpI eq";
+                        cmpIParse = "= 2"; cmpUParse = "= 0";
+                        // BoolNode::Ideal only converts CmpU, not CmpUL, to a signed equality.
+                        cmpIFinal = isLong ? "= 0" : "= 1";
+                        cmpUFinal = isLong ? "= 1" : "= 0";
+                        comment = "c) single element: unsigned compare, or signed equality for int";
                     } else if (lo < hi && lo+1 < hi) {
                         cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
                         comment = "c) replace with CmpU (non-empty)";
@@ -504,7 +544,7 @@ public class TestFoldComparesFuzzer {
                     }
                 } else if (c_lo.cmp() == Comparator.GE && c_hi.cmp() == Comparator.LE) {
                     // d)   (n >= lo && n <= hi)
-                    if (lo == Integer.MIN_VALUE || hi == Integer.MAX_VALUE) {
+                    if (lo == minValue() || hi == maxValue()) {
                         cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
                         comment = "d) one or both checks fold at parse time";
                     } else if (lo == hi) {
@@ -544,6 +584,10 @@ public class TestFoldComparesFuzzer {
                 }
 
                 return scope(
+                    // CMP_L also matches CmpL3 retained in uncommon-trap debug information.
+                    // So use CmpL here instead of IRNode.CMP_L.
+                    let("cmpSigned", isLong ? "\"CmpL\\\\b\"" : "IRNode.CMP_I"),
+                    let("cmpUnsigned", isLong ? "CMP_UL" : "CMP_U"),
                     let("IP", cmpIParse),
                     let("UP", cmpUParse),
                     let("IF", cmpIFinal),
@@ -551,8 +595,8 @@ public class TestFoldComparesFuzzer {
                     let("comment", comment),
                     """
                     // #comment
-                    @IR(counts = {IRNode.CMP_I, "#IP", IRNode.CMP_U, "#UP"}, phase = CompilePhase.AFTER_PARSING)
-                    @IR(counts = {IRNode.CMP_I, "#IF", IRNode.CMP_U, "#UF"})
+                    @IR(counts = {#cmpSigned, "#IP", IRNode.#cmpUnsigned, "#UP"}, phase = CompilePhase.AFTER_PARSING)
+                    @IR(counts = {#cmpSigned, "#IF", IRNode.#cmpUnsigned, "#UF"}, phase = CompilePhase.PRINT_IDEAL)
                     """
                 );
             });
@@ -561,28 +605,31 @@ public class TestFoldComparesFuzzer {
         @Override
         public Template.ZeroArgs getInputTemplate() {
             return Template.make(() -> scope(
-                let("lo", lo),
-                let("hi", hi),
+                let("type", isLong ? "long" : "int"),
+                let("boxedType", isLong ? "Long" : "Integer"),
+                let("generator", isLong ? "longs" : "ints"),
+                let("lo", literal(lo)),
+                let("hi", literal(hi)),
                 """
                 Random r = Utils.getRandomInstance();
-                RestrictableGenerator<Integer> gen = Generators.G.ints();
-                int a = gen.next();
-                int b = gen.next();
+                RestrictableGenerator<#boxedType> gen = Generators.G.#generator();
+                #type a = gen.next();
+                #type b = gen.next();
                 """,
                 switch (RANDOM.nextInt(9)) {
                     // Random values
-                    case 0 -> "int n = gen.next();\n";
+                    case 0 -> "#type n = gen.next();\n";
                     // Fuzz around specific values
-                    case 1 -> "int n = r.nextInt(10) - 5 + #lo;\n";
-                    case 2 -> "int n = r.nextInt(10) - 5 + #hi;\n";
-                    case 3 -> "int n = r.nextInt(10) - 5 + (r.nextBoolean() ? #lo : #hi);\n";
-                    case 4 -> "int n = r.nextInt(10) - 5 + Integer.MAX_VALUE;\n";
+                    case 1 -> "#type n = r.nextInt(10) - 5 + #lo;\n";
+                    case 2 -> "#type n = r.nextInt(10) - 5 + #hi;\n";
+                    case 3 -> "#type n = r.nextInt(10) - 5 + (r.nextBoolean() ? #lo : #hi);\n";
+                    case 4 -> "#type n = r.nextInt(10) - 5 + #boxedType.MAX_VALUE;\n";
                     // Only very low or very high values, or in the middle
-                    case 5 -> "int n = r.nextInt(10) - 10 + Integer.MAX_VALUE;\n";
-                    case 6 -> "int n = r.nextInt(10) + Integer.MIN_VALUE;\n";
-                    case 7 -> "int n = r.nextInt(10) - 5 + #lo/2 + #hi/2;\n";
+                    case 5 -> "#type n = r.nextInt(10) - 10 + #boxedType.MAX_VALUE;\n";
+                    case 6 -> "#type n = r.nextInt(10) + #boxedType.MIN_VALUE;\n";
+                    case 7 -> "#type n = r.nextInt(10) - 5 + #lo/2 + #hi/2;\n";
                     // Always the same constant
-                    default -> "int n = " + INT_GEN.next() + ";\n";
+                    default -> "#type n = " + literal(nextValue()) + ";\n";
                 }
             ));
         };
@@ -601,8 +648,9 @@ public class TestFoldComparesFuzzer {
         }
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
+            let("type", isLong ? "long" : "int"),
             """
-            static boolean #methodName(int n, int a, int b) {
+            static boolean #methodName(#type n, #type a, #type b) {
                 switch((short)n) {
             """,
             cases.stream().map(i -> scope(
@@ -647,6 +695,7 @@ public class TestFoldComparesFuzzer {
         private final Comparison c2 = withAnd ? c2Permuted : c2Permuted.negateCmp();
 
         private final Template.OneArg<String> testTemplate = Template.make("methodName", (String methodName) -> scope(
+            let("type", isLong ? "long" : "int"),
             let("n_hi", n_hi),
             let("n_lo", n_lo),
             let("a_hi", a_hi),
@@ -656,7 +705,7 @@ public class TestFoldComparesFuzzer {
             let("c2", c2),
             let("op", operator),
             """
-            static boolean #methodName(int n, int a, int b) {
+            static boolean #methodName(#type n, #type a, #type b) {
                 int[] arr = $arr;
                 n = Math.min(#n_hi, Math.max(#n_lo, n));
                 a = Math.min(#a_hi, Math.max(#a_lo, a));
@@ -678,10 +727,10 @@ public class TestFoldComparesFuzzer {
     // To catch bugs like found in JDK-8385157, where we accidentally confused CmpU and CmpI.
     // This pattern seems to only have miscompiled without warmup.
     static class TestMethodGeneratorTrichotomy implements TestMethodGenerator {
-        private final int a_hi = INT_GEN.next();
-        private final int a_lo = INT_GEN.next();
-        private final int b_hi = INT_GEN.next();
-        private final int b_lo = INT_GEN.next();
+        private final long a_hi = nextValue();
+        private final long a_lo = nextValue();
+        private final long b_hi = nextValue();
+        private final long b_lo = nextValue();
 
         private final Comparison c1 = new Comparison("a", Comparator.random(), "b").permuteRandom();
         private final Comparison c2 = new Comparison("a", Comparator.random(), "b").permuteRandom();
@@ -690,15 +739,16 @@ public class TestFoldComparesFuzzer {
         private final String operator = withAnd ? "&&" : "||";
 
         private final Template.OneArg<String> template = Template.make("methodName", (String methodName) -> scope(
-            let("a_hi", a_hi),
-            let("a_lo", a_lo),
-            let("b_hi", b_hi),
-            let("b_lo", b_lo),
+            let("type", isLong ? "long" : "int"),
+            let("a_hi", literal(a_hi)),
+            let("a_lo", literal(a_lo)),
+            let("b_hi", literal(b_hi)),
+            let("b_lo", literal(b_lo)),
             let("c1", c1),
             let("c2", c2),
             let("op", operator),
             """
-            static boolean #methodName(int n, int a, int b) {
+            static boolean #methodName(#type n, #type a, #type b) {
                 a = Math.min(#a_hi, Math.max(#a_lo, a));
                 b = Math.min(#b_hi, Math.max(#b_lo, b));
                 if (#c1 #op #c2) {
@@ -715,14 +765,15 @@ public class TestFoldComparesFuzzer {
     }
 
     public static TemplateToken generateTest(int warmup) {
-        TestMethodGenerator tg = switch(RANDOM.nextInt(7)) {
+        // Switch and array-length checks below are specific to int.
+        TestMethodGenerator tg = switch(RANDOM.nextInt(isLong ? 5 : 7)) {
             case 0 -> new TestMethodGeneratorConst();
             case 1 -> new TestMethodGeneratorWithIf();
             case 2 -> new TestMethodGeneratorRanges();
             case 3 -> new TestMethodGeneratorConstIR();
-            case 4 -> new TestMethodGeneratorSwitch();
-            case 5 -> new TestMethodGeneratorArrLength();
-            case 6 -> new TestMethodGeneratorTrichotomy();
+            case 4 -> new TestMethodGeneratorTrichotomy();
+            case 5 -> new TestMethodGeneratorSwitch();
+            case 6 -> new TestMethodGeneratorArrLength();
             default -> throw new RuntimeException("not expected");
         };
         Template.ZeroArgs testInputTemplate = tg.getInputTemplate();

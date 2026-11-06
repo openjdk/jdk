@@ -31,7 +31,6 @@ import java.nio.file.Path;
 
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
-import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.management.EventByteStream;
 import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.management.ManagementSupport;

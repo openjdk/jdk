@@ -42,9 +42,12 @@ public class MetaspaceAllocGaps {
     public static void main(String[] args) throws Exception {
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
         for (int i = 0; i < 2; i++) {
+            // Exclude AOT training data for consistency.
             String compressedOops = "-XX:" + (i == 0 ? "-" : "+") + "UseCompressedOops";
             SimpleCDSAppTester.of("MetaspaceAllocGaps" + i)
                 .addVmArgs("-Xlog:aot=debug,aot+alloc=trace",
+                           "-XX:+UnlockDiagnosticVMOptions",
+                           "-XX:-AOTRecordTraining",
                            "-XX:+UseCompactObjectHeaders")
                 .classpath(appJar)
                 .appCommandLine("Hello")

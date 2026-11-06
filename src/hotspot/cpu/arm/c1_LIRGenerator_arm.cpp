@@ -297,14 +297,6 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
 }
 
 
-void LIRGenerator::increment_counter(address counter, BasicType type, int step) {
-  LIR_Opr pointer = new_pointer_register();
-  __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, type);
-  increment_counter(addr, step);
-}
-
-
 void LIRGenerator::increment_counter(LIR_Address* addr, int step) {
   LIR_Opr temp = new_register(addr->type());
   __ move(addr, temp);
@@ -956,6 +948,9 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   // Evaluate state_for() first, because it can emit code
   // with the same fixed registers that are used here (R1, R2)
   CodeEmitInfo* info = state_for(x, x->state());
+
+  deoptimize_vmalloc_for_jvmti(!x->zero_array(), info);
+
   LIRItem length(x->length(), this);
 
   length.load_item_force(FrameMap::R2_opr);      // R2 is required by runtime call in NewTypeArrayStub::emit_code
@@ -990,7 +985,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIR_Opr len = length.result();
 
   CodeEmitInfo* patching_info = nullptr;
-  if (!x->klass()->is_loaded() || PatchALot) {
+  ciMetadata* obj = ciObjArrayKlass::make(x->klass());
+  if (!x->klass()->is_loaded() || !obj->is_loaded() || PatchALot) {
     patching_info = state_for(x, x->state_before());
   }
 
@@ -1003,8 +999,8 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIR_Opr tmp4 = LIR_OprFact::illegalOpr;
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info);
-  ciMetadata* obj = ciObjArrayKlass::make(x->klass());
-  if (obj == ciEnv::unloaded_ciobjarrayklass()) {
+
+  if (x->klass()->is_loaded() && !obj->is_loaded()) {
     BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
   }
   klass2reg_with_patching(klass_reg, obj, patching_info);

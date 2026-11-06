@@ -58,6 +58,7 @@ public class TestBadFormat {
         expectTestFormatException(BadRunTests.class);
         expectTestFormatException(BadSetupTest.class);
         expectTestFormatException(BadCheckTest.class);
+        expectTestFormatException(BadSkip.class);
         expectTestFormatException(BadIRAnnotationBeforeFlagVM.class);
         expectTestFormatException(BadIRAnnotations.class);
         expectTestFormatException(BadIRAnnotationsAfterTestVM.class);
@@ -777,6 +778,43 @@ class BadCheckTest {
     public void invalidRunWithArgAnnotation(TestInfo info) {}
 }
 
+class BadSkip {
+    @NoFail
+    @Test
+    public void test() {}
+
+    @NoFail
+    @Test
+    public void test2() {}
+
+    @Skip
+    public void noTest() {}
+
+    @Run(test = "test")
+    @Skip
+    public void noTest2() {}
+
+    @Check(test = "test2")
+    @Skip
+    public void noTest3() {}
+
+    @Setup
+    @Skip
+    public void noTest4() {}
+
+    @NoFail
+    @Test
+    @Skip
+    public static void testSkipOnlyOneTestWithRunMultiple1() {}
+
+    @FailCount(0) // Combined with runTestSkipOnlyOneTestWithRunMultiple() below
+    @Test
+    public static void testSkipOnlyOneTestWithRunMultiple2() {}
+
+    @Run(test = {"testSkipOnlyOneTestWithRunMultiple1",
+                 "testSkipOnlyOneTestWithRunMultiple2"})
+    public static void runTestSkipOnlyOneTestWithRunMultiple() {}
+}
 
 class BadIRAnnotationBeforeFlagVM {
 

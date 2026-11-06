@@ -271,9 +271,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Valhalla support for flat fields
   void read_flat_field(Register entry, Register obj);
-  void write_flat_field(Register entry, Register field_offset,
-                        Register tmp1, Register tmp2,
-                        Register obj);
+  void write_flat_field(Register entry, Register tmp1,
+                        Register tmp2, Register obj);
 
   // Interpreter profiling operations
   void set_method_data_pointer_for_bcp();

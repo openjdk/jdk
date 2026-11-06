@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,6 +387,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Override
     public boolean printDialog() throws HeadlessException {
 
         if (GraphicsEnvironment.isHeadless()) {
@@ -477,6 +478,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * this method is called to mark the start of a
      * document.
      */
+    @Override
     protected void startDoc() throws PrinterException {
 
         // A security check has been performed in the
@@ -720,6 +722,7 @@ public class PSPrinterJob extends RasterPrinterJob {
     /**
      * Invoked if the application cancelled the printjob.
      */
+    @Override
     protected void abortDoc() {
         if (mPSStream != null && mDestType != RasterPrinterJob.STREAM) {
             mPSStream.close();
@@ -734,6 +737,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * this method is called after that last page
      * has been imaged.
      */
+    @Override
     protected void endDoc() throws PrinterException {
         if (mPSStream != null) {
             mPSStream.println(EOF_COMMENT);
@@ -778,6 +782,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * The RasterPrintJob super class calls this method
      * at the start of each page.
      */
+    @Override
     protected void startPage(PageFormat pageFormat, Printable painter,
                              int index, boolean paperChanged)
         throws PrinterException
@@ -828,6 +833,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * The RasterPrintJob super class calls this method
      * at the end of each page.
      */
+    @Override
     protected void endPage(PageFormat format, Printable painter,
                            int index)
         throws PrinterException
@@ -934,6 +940,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * specified by the caller. Currently the data
      * is 24 bits per pixel in BGR format.
      */
+    @Override
     protected void printBand(byte[] bgrData, int x, int y,
                              int width, int height)
         throws PrinterException
@@ -999,6 +1006,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * causes the print job to be rasterized.
      */
 
+    @Override
     protected Graphics2D createPathGraphics(PeekGraphics peekGraphics,
                                             PrinterJob printerJob,
                                             Printable painter,
@@ -1433,6 +1441,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * Return the x resolution of the coordinates
      * to be rendered.
      */
+    @Override
     protected double getXRes() {
         return xres;
     }
@@ -1440,6 +1449,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * Return the y resolution of the coordinates
      * to be rendered.
      */
+    @Override
     protected double getYRes() {
         return yres;
     }
@@ -1447,6 +1457,7 @@ public class PSPrinterJob extends RasterPrinterJob {
     /**
      * Set the resolution at which to print.
      */
+    @Override
     protected void setXYRes(double x, double y) {
         xres = x;
         yres = y;
@@ -1456,6 +1467,7 @@ public class PSPrinterJob extends RasterPrinterJob {
      * For PostScript the origin is in the upper-left of the
      * paper not at the imageable area corner.
      */
+    @Override
     protected double getPhysicalPrintableX(Paper p) {
         return 0;
 
@@ -1465,22 +1477,27 @@ public class PSPrinterJob extends RasterPrinterJob {
      * For PostScript the origin is in the upper-left of the
      * paper not at the imageable area corner.
      */
+    @Override
     protected double getPhysicalPrintableY(Paper p) {
         return 0;
     }
 
+    @Override
     protected double getPhysicalPrintableWidth(Paper p) {
         return p.getImageableWidth();
     }
 
+    @Override
     protected double getPhysicalPrintableHeight(Paper p) {
         return p.getImageableHeight();
     }
 
+    @Override
     protected double getPhysicalPageWidth(Paper p) {
         return p.getWidth();
     }
 
+    @Override
     protected double getPhysicalPageHeight(Paper p) {
         return p.getHeight();
     }
@@ -1491,10 +1508,12 @@ public class PSPrinterJob extends RasterPrinterJob {
      * If the printer makes copies itself then this
      * method should return 1.
      */
+    @Override
     protected int getNoncollatedCopies() {
         return 1;
     }
 
+    @Override
     protected int getCollatedCopies() {
         return 1;
     }

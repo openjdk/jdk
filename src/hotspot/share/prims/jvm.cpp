@@ -23,12 +23,13 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/classFileStream.hpp"
@@ -66,7 +67,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/recordComponent.hpp"
 #include "oops/refArrayOop.inline.hpp"
 #include "oops/valueKlass.inline.hpp"
@@ -113,7 +113,7 @@
 #include "utilities/utf8.hpp"
 #include "utilities/zipLibrary.hpp"
 #if INCLUDE_CDS
-#include "classfile/systemDictionaryShared.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -567,10 +567,10 @@ JVM_ENTRY(jboolean, JVM_IsAtomicArray(JNIEnv *env, jarray array))
 
   if (klass->is_flatArray_klass()) {
     FlatArrayKlass* fak = FlatArrayKlass::cast(klass);
-    if (LayoutKindHelper::is_atomic_flat(fak->layout_kind())) {
+    if (fak->flat_layout().is_atomic()) {
       return true;
     }
-    bool is_null_free = !LayoutKindHelper::is_nullable_flat(fak->layout_kind());
+    bool is_null_free = !fak->flat_layout().is_nullable();
     if (fak->element_klass()->is_naturally_atomic(is_null_free)) {
       return true;
     }
@@ -857,6 +857,7 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   Handle obj(THREAD, JNIHandles::resolve_non_null(handle));
   Klass* klass = obj->klass();
   JvmtiVMObjectAllocEventCollector oam;
+  JvmtiSampledObjectAllocEventCollector soam;
 
 #ifdef ASSERT
   // Just checking that the cloneable flag is set correct
@@ -1059,7 +1060,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
 #if INCLUDE_CDS
   if (CDSConfig::is_preserving_verification_constraints() && from_class->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(from_class);
-    SystemDictionaryShared::add_old_verification_constraint(THREAD, ik, h_name);
+    AOTSystemDictionary::add_old_verification_constraint(THREAD, ik, h_name);
   }
 #endif
 
@@ -1301,7 +1302,7 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
   if (k == nullptr) {
     // If the class is not already loaded, try to see if it's in the shared
     // archive for the current classloader (h_loader).
-    k = SystemDictionaryShared::find_or_load_shared_class(klass_name, h_loader, CHECK_NULL);
+    k = AOTSystemDictionary::find_or_load_shared_class(klass_name, h_loader, CHECK_NULL);
   }
 #endif
   return (k == nullptr) ? nullptr :
@@ -1346,7 +1347,7 @@ JVM_END
 JVM_ENTRY(void, JVM_DefineArchivedModules(JNIEnv *env, jobject platform_loader, jobject system_loader))
   Handle h_platform_loader (THREAD, JNIHandles::resolve(platform_loader));
   Handle h_system_loader (THREAD, JNIHandles::resolve(system_loader));
-  Modules::define_archived_modules(h_platform_loader, h_system_loader, CHECK);
+  AOTModules::define_archived_modules(h_platform_loader, h_system_loader, CHECK);
 JVM_END
 
 // Reflection support //////////////////////////////////////////////////////////////////////////////
@@ -3492,7 +3493,6 @@ JVM_ENTRY(jobject, JVM_InvokeMethod(JNIEnv *env, jobject method, jobject obj, jo
     method_handle = Handle(THREAD, JNIHandles::resolve(method));
     Handle receiver(THREAD, JNIHandles::resolve(obj));
     objArrayHandle args(THREAD, (objArrayOop)JNIHandles::resolve(args0));
-    assert(args() == nullptr || !args->is_flatArray(), "args are never flat");
 
     oop result = Reflection::invoke_method(method_handle(), receiver, args, CHECK_NULL);
     jobject res = JNIHandles::make_local(THREAD, result);
@@ -3514,7 +3514,6 @@ JVM_END
 
 JVM_ENTRY(jobject, JVM_NewInstanceFromConstructor(JNIEnv *env, jobject c, jobjectArray args0))
   objArrayHandle args(THREAD, (objArrayOop)JNIHandles::resolve(args0));
-  assert(args() == nullptr || !args->is_flatArray(), "args are never flat");
   oop constructor_mirror = JNIHandles::resolve(c);
   oop result = Reflection::invoke_constructor(constructor_mirror, args, CHECK_NULL);
   jobject res = JNIHandles::make_local(THREAD, result);
@@ -3526,7 +3525,7 @@ JVM_END
 
 JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
-  HeapShared::initialize_from_archived_subgraph(THREAD, k);
+  AOTHeap::initialize_from_archived_subgraph(THREAD, k);
 JVM_END
 
 JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,

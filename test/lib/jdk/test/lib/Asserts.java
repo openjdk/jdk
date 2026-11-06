@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,9 +98,9 @@ public class Asserts {
      * @throws RuntimeException if the assertion is not true.
      */
     public static <T extends Comparable<T>>void assertLessThan(T lhs, T rhs, String msg) {
+        msg = Objects.toString(msg, "assertLessThan");
         if (!(compare(lhs, rhs, msg) < 0)) {
-            msg = Objects.toString(msg, "assertLessThan")
-                    + ": expected that " + Objects.toString(lhs)
+            msg += ": expected that " + Objects.toString(lhs)
                     + " < " + Objects.toString(rhs);
             fail(msg);
         }
@@ -153,9 +153,9 @@ public class Asserts {
      * @throws RuntimeException if the assertion is not true.
      */
     public static <T extends Comparable<T>> void assertLessThanOrEqual(T lhs, T rhs, String msg) {
+        msg = Objects.toString(msg, "assertLessThanOrEqual");
         if (!(compare(lhs, rhs, msg) <= 0)) {
-            msg = Objects.toString(msg, "assertLessThanOrEqual")
-                    + ": expected that " + Objects.toString(lhs)
+            msg += ": expected that " + Objects.toString(lhs)
                     + " <= " + Objects.toString(rhs);
             fail(msg);
         }
@@ -272,8 +272,8 @@ public class Asserts {
     public static void assertEqualsByteArray(byte[] expected, byte[] actual, String msg) {
         if (!Arrays.equals(expected, actual)) {
             msg = Objects.toString(msg, "assertEqualsByteArray")
-                    + ": expected " + HexFormat.of().formatHex(expected)
-                    + " but was " + HexFormat.of().formatHex(actual);
+                    + ": expected " + formatBytes(expected)
+                    + " but was " + formatBytes(actual);
             fail(msg);
         }
     }
@@ -289,9 +289,13 @@ public class Asserts {
     public static void assertNotEqualsByteArray(byte[] unexpected, byte[] actual, String msg) {
         if (Arrays.equals(unexpected, actual)) {
             msg = Objects.toString(msg, "assertNotEqualsByteArray")
-                    + ": expected not equals but was " + HexFormat.of().formatHex(actual);
+                    + ": expected not equals but was " + formatBytes(actual);
             fail(msg);
         }
+    }
+
+    private static String formatBytes(byte[] bytes) {
+        return bytes == null ? "null" : HexFormat.of().formatHex(bytes);
     }
 
     /**
@@ -341,9 +345,9 @@ public class Asserts {
      * @throws RuntimeException if the assertion is not true.
      */
     public static <T extends Comparable<T>> void assertGreaterThanOrEqual(T lhs, T rhs, String msg) {
+        msg = Objects.toString(msg, "assertGreaterThanOrEqual");
         if (!(compare(lhs, rhs, msg) >= 0)) {
-            msg = Objects.toString(msg, "assertGreaterThanOrEqual")
-                    + ": expected " + Objects.toString(lhs)
+            msg += ": expected " + Objects.toString(lhs)
                     + " >= " + Objects.toString(rhs);
             fail(msg);
         }
@@ -396,9 +400,9 @@ public class Asserts {
      * @throws RuntimeException if the assertion is not true.
      */
     public static <T extends Comparable<T>> void assertGreaterThan(T lhs, T rhs, String msg) {
+        msg = Objects.toString(msg, "assertGreaterThan");
         if (!(compare(lhs, rhs, msg) > 0)) {
-            msg = Objects.toString(msg, "assertGreaterThan")
-                    + ": expected " + Objects.toString(lhs)
+            msg += ": expected " + Objects.toString(lhs)
                     + " > " + Objects.toString(rhs);
             fail(msg);
         }
@@ -472,7 +476,11 @@ public class Asserts {
      * @throws RuntimeException if the assertion is not true.
      */
     public static void assertNull(Object o, String msg) {
-        assertEquals(o, null, msg);
+        if (o != null) {
+            msg = Objects.toString(msg, "assertNull")
+                    + ": expected null but was " + Objects.toString(o);
+            fail(msg);
+        }
     }
 
     /**
@@ -493,7 +501,11 @@ public class Asserts {
      * @throws RuntimeException if the assertion is not true.
      */
     public static void assertNotNull(Object o, String msg) {
-        assertNotEquals(o, null, msg);
+        if (o == null) {
+            msg = Objects.toString(msg, "assertNotNull")
+                    + ": expected non-null but was null";
+            fail(msg);
+        }
     }
 
     /**

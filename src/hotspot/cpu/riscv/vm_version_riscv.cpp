@@ -114,17 +114,9 @@ void VM_Version::common_initialize() {
     useRVA23U64Profile();
   }
 
-  if (UseZic64b) {
-    if (CacheLineSize != 64) {
-      assert(!FLAG_IS_DEFAULT(CacheLineSize), "default cache line size should be 64 bytes");
-      warning("CacheLineSize is assumed to be 64 bytes because Zic64b is enabled");
-      FLAG_SET_DEFAULT(CacheLineSize, 64);
-    }
-  } else {
-    if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
-      warning("CacheLineSize must be a power of 2");
-      FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
-    }
+  if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
+    warning("CacheLineSize must be a power of 2");
+    FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
   }
 
   if (FLAG_IS_DEFAULT(UseFMA)) {
@@ -222,19 +214,6 @@ void VM_Version::common_initialize() {
     }
   } else {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
-  }
-
-  if (UseZicboz && zicboz_block_size.value() > 0) {
-    assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
-    if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
-      FLAG_SET_DEFAULT(UseBlockZeroing, true);
-    }
-    if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * zicboz_block_size.value());
-    }
-  } else if (UseBlockZeroing) {
-    warning("Block zeroing is not available");
-    FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
   if (UseRVV) {
