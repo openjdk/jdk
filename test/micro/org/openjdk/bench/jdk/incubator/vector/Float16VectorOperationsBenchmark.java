@@ -44,6 +44,7 @@ public class Float16VectorOperationsBenchmark {
     short [] vector4;
     short [] vector5;
     boolean [] vectorPredicate;
+    VectorMask<Float16> compressExpandMask;
 
     static final short f16_one = Float.floatToFloat16(1.0f);
     static final short f16_two = Float.floatToFloat16(2.0f);
@@ -82,6 +83,8 @@ public class Float16VectorOperationsBenchmark {
                 }
             }
         );
+        IntStream.range(0, vectorDim).forEach(i -> {vectorPredicate[i] = (i & 0x1) == 0;});
+        compressExpandMask = VectorMask.fromArray(HSPECIES, vectorPredicate, 0);
     }
 
     static final VectorSpecies<Float16> HSPECIES = Float16Vector.SPECIES_PREFERRED;
@@ -227,6 +230,38 @@ public class Float16VectorOperationsBenchmark {
             VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
             Float16Vector.fromArray(HSPECIES, vector1, i, mask)
                          .lanewise(VectorOperators.SQRT)
+                         .intoArray(vectorRes, i, mask);
+        }
+    }
+
+    @Benchmark
+    public void compressBenchmark() {
+        int i = 0;
+        for (; i < HSPECIES.loopBound(vectorDim); i +=  HSPECIES.length()) {
+            Float16Vector.fromArray(HSPECIES, vector1, i)
+                         .compress(compressExpandMask)
+                         .intoArray(vectorRes, i);
+        }
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector.fromArray(HSPECIES, vector1, i, mask)
+                         .compress(mask)
+                         .intoArray(vectorRes, i, mask);
+        }
+    }
+
+    @Benchmark
+    public void expandBenchmark() {
+        int i = 0;
+        for (; i < HSPECIES.loopBound(vectorDim); i +=  HSPECIES.length()) {
+            Float16Vector.fromArray(HSPECIES, vector1, i)
+                         .expand(compressExpandMask)
+                         .intoArray(vectorRes, i);
+        }
+        if (i < vectorDim) {
+            VectorMask<Float16> mask = HSPECIES.indexInRange(i, vectorDim);
+            Float16Vector.fromArray(HSPECIES, vector1, i, mask)
+                         .expand(mask)
                          .intoArray(vectorRes, i, mask);
         }
     }
