@@ -182,17 +182,13 @@ void FinalImageRecipes::apply_recipes_for_constantpool(JavaThread* current) {
 }
 
 void FinalImageRecipes::load_all_classes(TRAPS) {
-  assert(CDSConfig::is_dumping_final_static_archive(), "sanity");
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
   for (int i = 0; i < _all_klasses->length(); i++) {
     Klass* k = _all_klasses->at(i);
-    int flags = _flags->at(i);
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (ik->defined_by_other_loaders()) {
-        AOTSystemDictionary::init_dumptime_info(ik);
-        AOTSystemDictionary::add_unregistered_class(THREAD, ik);
-        AOTSystemDictionary::copy_unregistered_class_size_and_crc32(ik);
+        AOTSystemDictionary::copy_unregistered_class(THREAD, ik);
       } else if (!ik->is_hidden()) {
         Klass* actual = SystemDictionary::resolve_or_fail(ik->name(), class_loader, true, CHECK);
         if (actual != ik) {
@@ -203,8 +199,32 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
           AOTMetaspace::unrecoverable_writing_error();
         }
         assert(ik->is_loaded(), "must be");
-        ik->link_class(CHECK);
+      }
+    }
+  }
+}
 
+void FinalImageRecipes::link_all_classes(TRAPS) {
+  for (int i = 0; i < _all_klasses->length(); i++) {
+    Klass* k = _all_klasses->at(i);
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      if (!ik->defined_by_other_loaders() && !ik->is_hidden()) {
+        assert(ik->is_loaded(), "must be");
+        ik->link_class(CHECK);
+      }
+    }
+  }
+}
+
+void FinalImageRecipes::initialize_all_safe_classes(TRAPS) {
+  for (int i = 0; i < _all_klasses->length(); i++) {
+    Klass* k = _all_klasses->at(i);
+    int flags = _flags->at(i);
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      if (!ik->defined_by_other_loaders() && !ik->is_hidden()) {
+        assert(ik->is_linked(), "must be");
         if (ik->has_aot_safe_initializer() && (flags & WAS_INITED) != 0) {
           assert(ik->class_loader() == nullptr, "supported only for boot classes for now");
           ResourceMark rm(THREAD);
@@ -239,8 +259,12 @@ void FinalImageRecipes::apply_recipes(TRAPS) {
   _final_image_recipes = nullptr;
 }
 
+// Follow the same class processing phases as during production run
 void FinalImageRecipes::apply_recipes_impl(TRAPS) {
+  assert(CDSConfig::is_dumping_final_static_archive(), "sanity");
   load_all_classes(CHECK);
+  link_all_classes(CHECK);
+  initialize_all_safe_classes(CHECK);
   apply_recipes_for_constantpool(THREAD);
 }
 

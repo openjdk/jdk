@@ -34,13 +34,13 @@
 
 // Each worker uses its own splitter to scan arrays in parallel.
 // Queued tasks share an atomic progress record; each claim returns a
-// disjoint, self-contained chunk and decrements the record's ref-count.
+// disjoint, self-contained chunk and decrements the record's remaining chunk count.
 class PartialArraySplitter {
   PartialArrayStateAllocator _allocator;
   PartialArrayTaskStepper _stepper;
   TASKQUEUE_STATS_ONLY(PartialArrayTaskStats _stats;)
 
-  // The state's ref-count must already include these tasks before publication.
+  // References for all chunks are reserved when the state is allocated.
   template<typename Queue>
   void enqueue(Queue* queue, PartialArrayState* state, uint count);
 
@@ -73,7 +73,7 @@ public:
   // the queue if needed, permitting other workers to steal and process them
   // even while the caller is processing this claim.
   //
-  // Decrements the state's ref-count for the current task.  Callers must not
+  // Decrements the state's remaining chunk count.  Callers must not
   // use state after this call; it may have been recycled and reused.
   //
   // stolen indicates whether the state task was obtained from this queue or

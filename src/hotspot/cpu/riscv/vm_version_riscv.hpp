@@ -40,6 +40,14 @@ class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend RiscvHwprobe;
+
+ public:
+  enum class AtomicCasMode : uint8_t {
+    BASELINE,
+    ZACAS,
+    ZACAS_ZABHA
+  };
+
  private:
 
   // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
@@ -277,8 +285,6 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zfhmin      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfhmin))                                 \
   /* Zicbop Cache Block Prefetch Operations */                                                            \
   decl(Zicbop      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbop))                                 \
-  /* Zicboz Cache Block Zero Operations */                                                                \
-  decl(Zicboz      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicboz))                                 \
   /* Ziccid Instruction/Data Coherence and Consistency */                                                 \
   decl(Ziccid      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZiccid))                                 \
   /* Base Counters and Timers */                                                                          \
@@ -287,8 +293,6 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zicond      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicond))                                 \
   /* Zicsr Control and Status Register (CSR) Instructions */                                              \
   decl(Zicsr       ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
-  /* Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space. */             \
-  decl(Zic64b      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZic64b))                                 \
   /* Zifencei Instruction-Fetch Fence */                                                                  \
   decl(Zifencei    ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
   /* Zihintpause Pause instruction HINT */                                                                \
@@ -334,7 +338,6 @@ class VM_Version : public Abstract_VM_Version {
   decl(unaligned_scalar  ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   /* Performance of misaligned vector accesses (unknown, unspported, slow, fast) */            \
   decl(unaligned_vector  ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
-  decl(zicboz_block_size ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
 
   #define DECLARE_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)            \
   struct PRETTY##RVNonExtFeatureValue : public RVNonExtFeatureValue {              \
@@ -443,9 +446,7 @@ private:
     RV_ENABLE_EXTENSION(UseZba)                      \
     RV_ENABLE_EXTENSION(UseZbb)                      \
     RV_ENABLE_EXTENSION(UseZbs)                      \
-    RV_ENABLE_EXTENSION(UseZic64b)                   \
     RV_ENABLE_EXTENSION(UseZicbop)                   \
-    RV_ENABLE_EXTENSION(UseZicboz)                   \
     RV_ENABLE_EXTENSION(UseZihintpause)              \
 
   static void useRVA22U64Profile();
@@ -461,9 +462,7 @@ private:
     RV_ENABLE_EXTENSION(UseZcb)                     \
     RV_ENABLE_EXTENSION(UseZfa)                     \
     RV_ENABLE_EXTENSION(UseZfhmin)                  \
-    RV_ENABLE_EXTENSION(UseZic64b)                  \
     RV_ENABLE_EXTENSION(UseZicbop)                  \
-    RV_ENABLE_EXTENSION(UseZicboz)                  \
     RV_ENABLE_EXTENSION(UseZicond)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
     RV_ENABLE_EXTENSION(UseZvfhmin)                 \
@@ -529,6 +528,9 @@ private:
   // atomics mapping. This flag is false by default and is latched to the final
   // UseZalasr value after all validation completes.
   static bool _use_zalasr_atomics;
+  // Keep native CAS on the baseline ISA until CPU feature initialization
+  // completes, then latch the final Zacas/Zabha configuration.
+  static AtomicCasMode _atomic_cas_mode;
 
   static void common_initialize();
 
@@ -541,7 +543,10 @@ private:
   static void initialize();
   static void initialize_cpu_information();
 
+  static uint32_t initial_vector_length() { return _initial_vector_length; }
+
   static bool use_zalasr_atomics() { return _use_zalasr_atomics; }
+  static AtomicCasMode atomic_cas_mode() { return _atomic_cas_mode; }
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 

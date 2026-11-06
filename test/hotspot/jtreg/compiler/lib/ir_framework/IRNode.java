@@ -343,6 +343,12 @@ public class IRNode {
         superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
     }
 
+    public static final String ARRAY_COPY = PREFIX + "ARRAY_COPY" + POSTFIX;
+    static {
+        String regex = START + "ArrayCopy" + MID + END;
+        macroNodes(ARRAY_COPY, regex);
+    }
+
     public static final String OPAQUE_MULTIVERSIONING = PREFIX + "OPAQUE_MULTIVERSIONING" + POSTFIX;
     static {
         beforeMatchingNameRegex(OPAQUE_MULTIVERSIONING, "OpaqueMultiversioning");
@@ -542,6 +548,11 @@ public class IRNode {
     public static final String VECTORAPI_INSERT_OP = PREFIX + "VECTORAPI_INSERT_OP" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTORAPI_INSERT_OP, "CallStaticJava(?=.*VectorSupport::insert instptr:)");
+    }
+
+    public static final String VECTORAPI_SLICE_OP = PREFIX + "VECTORAPI_SLICE_OP" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTORAPI_SLICE_OP, "CallStaticJava(?=.*VectorSupport::sliceOp instptr:)");
     }
 
     public static final String CAST_II = PREFIX + "CAST_II" + POSTFIX;

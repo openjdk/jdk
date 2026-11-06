@@ -502,7 +502,8 @@ class IfNode : public MultiBranchNode {
   virtual uint size_of() const { return sizeof(*this); }
 
   // Helper methods for fold_compares
-  bool cmpi_folds(PhaseIterGVN* igvn, bool fold_ne = false);
+  static const TypeInteger* filtered_integer_type(PhaseGVN* phase, Node* val, Node* if_proj, BasicType bt);
+  bool cmp_folds(PhaseIterGVN* igvn, bool fold_ne = false);
   bool is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn);
   bool has_shared_region(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail) const;
   bool has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail, PhaseIterGVN* igvn) const;
@@ -643,6 +644,8 @@ public:
 
   bool same_condition(const Node* dom, PhaseIterGVN* igvn) const;
   void mark_projections_unsafe_for_fold_compare() const;
+
+  static void pin_nodes_dependent_on(Node* ctrl, int old_iff_opcode, PhaseIterGVN* igvn, PhaseIdealLoop* loop);
 };
 
 class RangeCheckNode : public IfNode {

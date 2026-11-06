@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2214,6 +2214,9 @@ enum VectorMask {
   INSN(vnsra_wi, 0b1010111, 0b011, 0b101101);
   INSN(vnsrl_wi, 0b1010111, 0b011, 0b101100);
 
+  // Vector Widening Shift Left Logical (Zvbb) Extension
+  INSN(vwsll_vi, 0b1010111, 0b011, 0b110101);
+
 #undef INSN
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
@@ -2834,6 +2837,16 @@ enum Nf {
   INSN(vaesdm_vv,   0b1110111, 0b010, 0b00000, 0b101000);
   INSN(vaesdf_vv,   0b1110111, 0b010, 0b00001, 0b101000);
 
+  // Vector AES instructions - scalar form (Zvkned extension)
+  // .vs broadcasts vs2 element group 0 to all element groups in vd,
+  // allowing an m1 round key to be applied to a VL>4 data group
+  // without key splat.
+  INSN(vaesz_vs,   0b1110111, 0b010, 0b00111, 0b101001);
+  INSN(vaesem_vs,  0b1110111, 0b010, 0b00010, 0b101001);
+  INSN(vaesef_vs,  0b1110111, 0b010, 0b00011, 0b101001);
+  INSN(vaesdm_vs,  0b1110111, 0b010, 0b00000, 0b101001);
+  INSN(vaesdf_vs,  0b1110111, 0b010, 0b00001, 0b101001);
+
   INSN(vclz_v,  0b1010111, 0b010, 0b01100, 0b010010); // count leading zeros
   INSN(vctz_v,  0b1010111, 0b010, 0b01101, 0b010010); // count trailing zeros
 
@@ -2896,6 +2909,10 @@ enum Nf {
   INSN(andn,      0b0110011, 0b111, 0b0100000);
   INSN(orn,       0b0110011, 0b110, 0b0100000);
   INSN(xnor,      0b0110011, 0b100, 0b0100000);
+  INSN(bset,      0b0110011, 0b001, 0b0010100);
+  INSN(bclr,      0b0110011, 0b001, 0b0100100);
+  INSN(binv,      0b0110011, 0b001, 0b0110100);
+  INSN(bext,      0b0110011, 0b101, 0b0100100);
   INSN(max,       0b0110011, 0b110, 0b0000101);
   INSN(maxu,      0b0110011, 0b111, 0b0000101);
   INSN(min,       0b0110011, 0b100, 0b0000101);
@@ -2946,6 +2963,9 @@ enum Nf {
 
   INSN(rori,    0b0010011, 0b101, 0b011000);
   INSN(slli_uw, 0b0011011, 0b001, 0b000010);
+  INSN(bseti,   0b0010011, 0b001, 0b001010);
+  INSN(bclri,   0b0010011, 0b001, 0b010010);
+  INSN(binvi,   0b0010011, 0b001, 0b011010);
   INSN(bexti,   0b0010011, 0b101, 0b010010);
 
 #undef INSN
@@ -3905,19 +3925,6 @@ public:
     _lui(Rd, imm);
   }
 
-
-// Cache Management Operations
-// These instruction may be turned off for user space.
-  // Zicboz
-  void cbo_zero(Register Rs1) {
-    assert(UseZicboz, "sanity");
-    unsigned insn = 0;
-    patch((address)&insn, 6,  0, 0b0001111);
-    patch((address)&insn, 14, 12, 0b010);
-    patch_reg((address)&insn, 15, Rs1);
-    patch((address)&insn, 31, 20, 0b0000000000100);
-    emit(insn);
-  }
 
  private:
   enum PREFETCH_FUNCT : unsigned int {
