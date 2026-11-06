@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 import java.nio.*;
 import java.util.concurrent.TimeUnit;
 import static java.nio.ByteOrder.*;
@@ -77,6 +78,9 @@ public class $Type$Buffers {
     public double doubleValue;
 #end[byte]
     public $type$[] $type$Array;
+#if[char]
+    public CharSequence charSeq;
+#end[char]
 
     public $Type$Buffer heap$Type$Buffer;
     public $Type$Buffer heap$Type$BufferRO;
@@ -101,6 +105,9 @@ public class $Type$Buffers {
     @Setup
     public void setup() {
         $type$Array = new $type$[size / CARRIER_BYTE_WIDTH];
+#if[char]
+        charSeq = "x".repeat(size / CARRIER_BYTE_WIDTH);
+#end[char]
 
         // explicitly allocated heap carrier buffer
         heap$Type$Buffer = $Type$Buffer.allocate(size / CARRIER_BYTE_WIDTH);
@@ -147,3 +154,39 @@ public class $Type$Buffers {
         }
     }
 #end[byte]
+
+    // -- Heap `wrap($type$[] array, int offset, int length)`
+
+    @Benchmark
+    public $Type$Buffer testHeapArrayWrapValidRange() {
+        return $Type$Buffer.wrap($type$Array, 1, $type$Array.length - 1);
+    }
+
+    @Benchmark
+    public void testHeapArrayWrapBogusRange(Blackhole bh) {
+        try {
+            bh.consume($Type$Buffer.wrap($type$Array, -1, $type$Array.length));
+            throw new AssertionError();
+        } catch (IndexOutOfBoundsException ioobe) {
+            bh.consume(ioobe);
+        }
+    }
+#if[char]
+
+    // -- Heap `wrap(CharSequence csq, int start, int end)`
+
+    @Benchmark
+    public $Type$Buffer testHeapCharSeqWrapValidRange() {
+        return $Type$Buffer.wrap(charSeq, 1, charSeq.length() - 1);
+    }
+
+    @Benchmark
+    public void testHeapCharSeqWrapBogusRange(Blackhole bh) {
+        try {
+            bh.consume($Type$Buffer.wrap(charSeq, -1, charSeq.length()));
+            throw new AssertionError();
+        } catch (IndexOutOfBoundsException ioobe) {
+            bh.consume(ioobe);
+        }
+    }
+#end[char]
