@@ -1517,10 +1517,14 @@ source %{
     case Op_CompareAndSwapN:
     case Op_CompareAndSwapB:
     case Op_CompareAndSwapS:
+    case Op_GetAndSetB:
+    case Op_GetAndSetS:
     case Op_GetAndSetI:
     case Op_GetAndSetL:
     case Op_GetAndSetP:
     case Op_GetAndSetN:
+    case Op_GetAndAddB:
+    case Op_GetAndAddS:
     case Op_GetAndAddI:
     case Op_GetAndAddL:
       return true;
@@ -4429,6 +4433,18 @@ operand immHDupV()
 operand immBAddSubV()
 %{
   predicate(n->get_int() <= 255 && n->get_int() >= -255);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 16 bit integer valid for add sub immediate
+operand immSAddSub()
+%{
+  predicate(Assembler::operand_valid_for_add_sub_immediate((int64_t)n->get_int()) &&
+            Assembler::is_uimm(g_uabs((jlong)n->get_int()), 16));
   match(ConI);
 
   op_cost(0);
