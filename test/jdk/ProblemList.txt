@@ -466,6 +466,8 @@ javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
 
 # jdk_imageio
 
+javax/imageio/plugins/gif/GIFLoopAnimationTest.java#five-frames-loop5 8396534 generic-all
+
 ############################################################################
 
 # jdk_swing
