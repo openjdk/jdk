@@ -106,9 +106,8 @@ final class CAccessible extends CFRetainedResource implements Accessible {
                         disposeRecursively(child);
                     }
                 }
-                if (c instanceof Accessible ax &&
-                        ax.getAccessibleContext() != null) {
-                    CAccessible ca = getCAccessible(ax, false);
+                if (c instanceof Accessible ax) {
+                    CAccessible ca = getCAccessible(ax, false, true);
                     if (ca != null) {
                         ca.dispose();
                     }
