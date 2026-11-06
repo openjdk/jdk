@@ -1188,7 +1188,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
     return n;
   }
 
-  if (n->isa_FlatArrayCheck()) {
+  if (n->is_FlatArrayCheck()) {
     move_flat_array_check_out_of_loop(n);
     return n;
   }

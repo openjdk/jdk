@@ -1011,7 +1011,7 @@ static bool is_array_allocation(const Node* phi) {
   while (true) {
     const Node* next = nullptr;
     for (DUIterator_Fast imax, i = current->fast_outs(imax); i < imax; i++) {
-      if (!current->fast_out(i)->isa_Mach()) {
+      if (!current->fast_out(i)->is_Mach()) {
         continue;
       }
       const MachNode* succ = current->fast_out(i)->as_Mach();

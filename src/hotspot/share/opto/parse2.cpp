@@ -2773,7 +2773,7 @@ static bool match_type_check(PhaseGVN& gvn,
     RegionNode* diamond = val->in(0)->as_Region();
     IfNode* if1 = diamond->in(1)->in(0)->as_If();
     BoolNode* b1 = if1->in(1)->isa_Bool();
-    if (b1 != nullptr && b1->in(1)->isa_SubTypeCheck()) {
+    if (b1 != nullptr && b1->in(1)->is_SubTypeCheck()) {
       assert(b1->_test._test == BoolTest::eq ||
              b1->_test._test == BoolTest::ne, "%d", b1->_test._test);
 

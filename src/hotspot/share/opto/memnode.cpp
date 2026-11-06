@@ -1489,7 +1489,7 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
         }
       } else {
         // TODO: materialize all-zero vector constant
-        assert(!isa_Load() || as_Load()->type()->isa_vect(), "");
+        assert(!is_Load() || as_Load()->type()->isa_vect(), "");
       }
     }
 

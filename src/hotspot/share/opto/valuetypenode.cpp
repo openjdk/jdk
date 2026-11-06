@@ -380,7 +380,7 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
     }
   } else {
     use_oop = allow_oop && is_allocated(igvn) &&
-              (oop->is_Con() || oop->is_Parm() || oop->is_Load() || (oop->isa_DecodeN() && oop->in(1)->is_Load()));
+              (oop->is_Con() || oop->is_Parm() || oop->is_Load() || (oop->is_DecodeN() && oop->in(1)->is_Load()));
   }
 
   ResourceMark rm;
@@ -1776,11 +1776,11 @@ Node* ValueTypeNode::is_loaded(PhaseGVN* phase, ciValueKlass* vk, Node* base, in
         }
       }
     }
-    if (value->isa_DecodeN()) {
+    if (value->is_DecodeN()) {
       // Skip DecodeN
       value = value->in(1);
     }
-    if (value->isa_Load()) {
+    if (value->is_Load()) {
       // Check if base and offset of field load matches value type layout
       intptr_t loffset = 0;
       Node* lbase = AddPNode::Ideal_base_and_offset(value->in(MemNode::Address), phase, loffset);

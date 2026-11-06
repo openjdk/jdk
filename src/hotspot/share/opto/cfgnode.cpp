@@ -909,7 +909,7 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   if (req() == 3 && in(1) != nullptr && in(2) != nullptr) {
     // Shape 1: Check if one of the inputs is a region that merges two control
     // inputs and has no other users (especially no Phi users).
-    region = in(1)->isa_Region() ? in(1) : in(2)->isa_Region();
+    region = in(1)->is_Region() ? in(1) : in(2)->isa_Region();
     if (region == nullptr || region->outcnt() != 2 || region->req() != 3) {
       return false; // No suitable region input found
     }
