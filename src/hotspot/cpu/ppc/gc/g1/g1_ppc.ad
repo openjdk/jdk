@@ -115,17 +115,13 @@ instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLsrc src, immI_0 off, iRegP
 
     if ((barrier_data() & G1C2BarrierPost) != 0) {
       extract_narrow_oop(masm, $tmp1$$Register, $src$$Register, 0);
-      if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
-        __ decode_heap_oop($tmp1$$Register);
-      } else {
-        __ decode_heap_oop_not_null($tmp1$$Register);
-      }
+      post_write_barrier(masm, this,
+                         $mem$$Register /* store_addr */,
+                         $tmp1$$Register /* new_val */,
+                         $tmp2$$Register /* tmp1 */,
+                         $tmp3$$Register /* tmp2 */,
+                         true /* decode_new_val */);
     }
-    post_write_barrier(masm, this,
-                       $mem$$Register /* store_addr */,
-                       $tmp1$$Register /* new_val */,
-                       $tmp2$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -151,17 +147,13 @@ instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegLsrc src, immI_4 off, iRegP
 
     if ((barrier_data() & G1C2BarrierPost) != 0) {
       extract_narrow_oop(masm, $tmp1$$Register, $src$$Register, 4);
-      if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
-        __ decode_heap_oop($tmp1$$Register);
-      } else {
-        __ decode_heap_oop_not_null($tmp1$$Register);
-      }
+      post_write_barrier(masm, this,
+                         $tmp4$$Register /* store_addr */,
+                         $tmp1$$Register /* new_val */,
+                         $tmp2$$Register /* tmp1 */,
+                         $tmp3$$Register /* tmp2 */,
+                         true /* decode_new_val */);
     }
-    post_write_barrier(masm, this,
-                       $tmp4$$Register /* store_addr */,
-                       $tmp1$$Register /* new_val */,
-                       $tmp2$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -193,31 +185,21 @@ instruct g1StoreLSpecialTwoOops(indirect mem, iRegLsrc src, iRegPdst tmp1, iRegP
 
     if ((barrier_data() & G1C2BarrierPost) != 0) {
       extract_narrow_oop(masm, $tmp1$$Register, $src$$Register, 0);
-      if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
-        __ decode_heap_oop($tmp1$$Register);
-      } else {
-        __ decode_heap_oop_not_null($tmp1$$Register);
-      }
-    }
-    post_write_barrier(masm, this,
-                       $mem$$Register /* store_addr */,
-                       $tmp1$$Register /* new_val */,
-                       $tmp2$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
+      post_write_barrier(masm, this,
+                         $mem$$Register /* store_addr */,
+                         $tmp1$$Register /* new_val */,
+                         $tmp2$$Register /* tmp1 */,
+                         $tmp3$$Register /* tmp2 */,
+                         true /* decode_new_val */);
 
-    if ((barrier_data() & G1C2BarrierPost) != 0) {
       extract_narrow_oop(masm, $tmp1$$Register, $src$$Register, 4);
-      if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
-        __ decode_heap_oop($tmp1$$Register);
-      } else {
-        __ decode_heap_oop_not_null($tmp1$$Register);
-      }
+      post_write_barrier(masm, this,
+                         $tmp4$$Register /* store_addr */,
+                         $tmp1$$Register /* new_val */,
+                         $tmp2$$Register /* tmp1 */,
+                         $tmp3$$Register /* tmp2 */,
+                         true /* decode_new_val */);
     }
-    post_write_barrier(masm, this,
-                       $tmp4$$Register /* store_addr */,
-                       $tmp1$$Register /* new_val */,
-                       $tmp2$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
   %}
   ins_pipe(pipe_class_default);
 %}
