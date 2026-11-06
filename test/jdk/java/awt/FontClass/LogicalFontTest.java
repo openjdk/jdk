@@ -54,7 +54,8 @@ public class LogicalFontTest {
 
        /* This tests a couple of things
         * 1. A particular style of a font must differ from all the other styles of the font.
-        * 2. No font must be the same as DIALOG PLAIN, except for SANS_SERIF PLAIN,
+        * 2. A particular style of a font must differ from the same style of other fonts.
+        * 3. No font must be the same as DIALOG PLAIN, except for SANS_SERIF PLAIN,
         *    because Dialog is typically an alias for SansSerif, so that's expected.
         *
         * The test uses just 'ABC' to try to be safe. For many writing systems there is
@@ -72,8 +73,18 @@ public class LogicalFontTest {
                    if (j == k) {
                        continue;
                    }
-                   System.out.println("compare " + FONTS[i] + "." + STYLES[j] + " vs ." + STYLES[k]);
+                   System.out.println("compare " + FONTS[i] + "." + STYLES[j] +
+                                          " vs " + FONTS[i] + "." + STYLES[k]);
                    compare(img, fonts[i][k]);
+               }
+               for (int l = 0 ; l < FONTS.length; l++ ) {
+                   if (i == l) {
+                       continue;
+                   }
+                   System.out.println("compare " + FONTS[i] + "." + STYLES[j] +
+                                          " vs " + FONTS[l] + "." + STYLES[j]);
+                   compare(img, fonts[l][j]);
+
                }
                if (!SANS_SERIF.equals(FONTS[i])) {
                    System.out.println("compare " + FONTS[i] + "." + STYLES[j] + " vs Dialog");
@@ -84,11 +95,11 @@ public class LogicalFontTest {
    }
 
    static BufferedImage createImage(String fname, int style) {
-       int w = 50, h = 50;
+       int w = 100, h = 50;
        BufferedImage bi = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
        Graphics2D g2d = bi.createGraphics();
        g2d.setColor(Color.white);
-       g2d.fillRect(0, 0, 50, 50);
+       g2d.fillRect(0, 0, w, h);
        g2d.setColor(Color.black);
        Font f = new Font(fname, style, 20);
        g2d.setFont(f);

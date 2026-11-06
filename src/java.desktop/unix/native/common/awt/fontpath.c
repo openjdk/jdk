@@ -979,8 +979,6 @@ Java_sun_font_FontConfigManager_getFontConfig
             continue;
         }
         pattern = (*FcNameParse)((FcChar8 *)fcName);
-        (*FcPatternGetInteger)(pattern, FC_WEIGHT, 0, &expectedWeight);
-        (*FcPatternGetInteger)(pattern, FC_SLANT, 0, &expectedSlant);
         (*env)->ReleaseStringUTFChars(env, fcNameStr, (const char*)fcName);
         (*env)->DeleteLocalRef(env, fcNameStr);
         if (pattern == NULL) {
@@ -1054,6 +1052,10 @@ Java_sun_font_FontConfigManager_getFontConfig
             }
         }
 
+        expectedWeight = 80;
+        expectedSlant = 0;
+        (*FcPatternGetInteger)(pattern, FC_WEIGHT, 0, &expectedWeight);
+        (*FcPatternGetInteger)(pattern, FC_SLANT, 0, &expectedSlant);
         skippedVarFont = 0;
         for (j=0; j<nfonts; j++) {
             FcPattern *fontPattern = fontset->fonts[j];
@@ -1098,6 +1100,8 @@ Java_sun_font_FontConfigManager_getFontConfig
              * For weight, allow some "slack".
              */
             if (fontCount == 0 && skippedVarFont && (j < (nfonts / 2))) {
+                weight = expectedWeight;
+                slant = expectedSlant;
                 (*FcPatternGetInteger)(fontPattern, FC_WEIGHT, 0, &weight);
                 (*FcPatternGetInteger)(fontPattern, FC_SLANT, 0, &slant);
                 if ((expectedWeight == 80) && ((weight < 60 || weight > 100))) {
