@@ -388,121 +388,199 @@ void Assembler::load_const(Register d, long x, Register tmp) {
   }
 }
 
+// Load a field of consecutive ones at an arbitrary position.
+// Works also if the field is wrapped around in x.
+bool Assembler::load_consec_ones(Register d, long x) {
+  precond(x != 0);
+  precond(x != -1);
+  uint64_t ux = (uint64_t)x;
+  bool ones = has_consecutive_ones(ux);
+  bool wrap = has_consecutive_ones(~ux); // then ~ux is the non-wrapping run
+  if (!ones && !wrap) {
+    return false;
+  }
+  int sh, mb;
+  if (ones) {
+    // Non-wrapping run of ones in ux.
+    int lo = count_trailing_zeros(ux);
+    int hi = 63 - count_leading_zeros(ux);
+    sh = lo;
+    mb = 63 - hi;
+  } else {
+    // ux wraps; we can still load it since rldic supports wrapping mask, i.e. mb > me (= 63 - sh)
+    uint64_t z = ~ux;
+    int zlo = count_trailing_zeros(z);
+    int zhi = 63 - count_leading_zeros(z);
+    int me = (63 - zhi - 1) & 63; // == 63 - sh
+    mb = (63 - zlo + 1) & 63;
+    sh = (63 - me) & 63;
+  }
+  li(d, -1);
+  rldic(d, d, sh, mb);
+  return true;
+}
+
+// Load a constant with a field of at most 16 bits at an arbitrary position
+bool Assembler::load_field16(Register d, long x) {
+  precond(x != 0); // should have been handled already
+  uint64_t ux = (uint64_t)x;
+  int lo = count_trailing_zeros(ux);     // field's lowest set bit (LE)
+  int hi = 63 - count_leading_zeros(ux); // field's highest set bit (LE)
+  if (hi - lo + 1 > 16) {
+    return false;
+  }
+  int16_t fd = (int16_t)(ux >> lo); // field value, fits in 16 bits
+  int sh = lo;
+  int mb = 63 - hi;
+  li(d, fd);
+  rldic(d, d, sh, mb);
+  return true;
+}
+
 // Load a 64 bit constant, optimized, not identifiable.
 // Tmp can be used to increase ILP. Set return_simm16_rest=true to get a
 // 16 bit immediate offset.
+// Cases handle in this order
+//   - simm16, simm32: 1 or 2 instructions
+//   - (wrapped) field of ones: 2 instructions
+//   - 16-bit field: 2 instructions
+//   - fallback to canocical algorithm: up to 5 instructions
+// Impl. is covered by test/hotspot/gtest/ppc/test_assembler_ppc.cpp
 int Assembler::load_const_optimized(Register d, long x, Register tmp, bool return_simm16_rest) {
-  // Avoid accidentally trying to use R0 for indexed addressing.
   assert_different_registers(d, tmp);
 
   short xa, xb, xc, xd; // Four 16-bit chunks of const.
   long rem = x;         // Remaining part of const.
 
   xd = rem & 0xFFFF;    // Lowest 16-bit chunk.
+
+  // Let constant x = rem | xd, where | is concatenation.
+  // xd is sign extended to xd' iff materialized by addi/addis.
+  // xd' = 0xff..ff | xd, if xd is negativ.
+  // The sign extension 0xff..ff in the higher part of xd' can be seen as -1
+  // which is added by the addi/addis. It needs to be neutralized by adding 1 to rem.
   rem = (rem >> 16) + ((unsigned short)xd >> 15); // Compensation for sign extend.
 
-  if (rem == 0) { // opt 1: simm16
+  if (rem == 0) { // x is simm16 and can be loaded with a single li
     li(d, xd);
     return 0;
   }
 
   int retval = 0;
   if (return_simm16_rest) {
-    retval = xd;
-    x = rem << 16;
+    retval = xd;    // assignment with sign extension
+    x = rem << 16;  // x needs to be sign compensated
     xd = 0;
   }
 
-  if (d == R0) { // Can't use addi.
-    if (is_simm(x, 32)) { // opt 2: simm32
-      lis(d, x >> 16);
-      if (xd) ori(d, d, (unsigned short)xd);
-    } else {
-      // 64-bit value: x = xa xb xc xd
-      xa = (x >> 48) & 0xffff;
-      xb = (x >> 32) & 0xffff;
-      xc = (x >> 16) & 0xffff;
-      bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
-      if (tmp == noreg || (xc == 0 && xd == 0)) {
-        if (xa_loaded) {
-          lis(d, xa);
-          if (xb) { ori(d, d, (unsigned short)xb); }
-        } else {
-          li(d, xb);
-        }
-        sldi(d, d, 32);
-        if (xc) { oris(d, d, (unsigned short)xc); }
-        if (xd) { ori( d, d, (unsigned short)xd); }
-      } else {
-        // Exploit instruction level parallelism if we have a tmp register.
-        bool xc_loaded = (xd & 0x8000) ? (xc != -1) : (xc != 0);
-        if (xa_loaded) {
-          lis(tmp, xa);
-        }
-        if (xc_loaded) {
-          lis(d, xc);
-        }
-        if (xa_loaded) {
-          if (xb) { ori(tmp, tmp, (unsigned short)xb); }
-        } else {
-          li(tmp, xb);
-        }
-        if (xc_loaded) {
-          if (xd) { ori(d, d, (unsigned short)xd); }
-        } else {
-          li(d, xd);
-        }
-        insrdi(d, tmp, 32, 0);
-      }
+  // Handle easy 1 or 2 instruction cases first
+  if (is_simm(x, 32)) {
+    lis(d, x >> 16);
+    if (xd != 0) {
+      ori(d, d, (unsigned short)xd);
     }
     return retval;
   }
 
-  xc = rem & 0xFFFF; // Next 16-bit chunk.
-  rem = (rem >> 16) + ((unsigned short)xc >> 15); // Compensation for sign extend.
+  // Field of consecutive ones || field that is limited to 16 bits.
+  // These can be loaded with 2 instructions.
+  if (load_consec_ones(d, x) || load_field16(d, x)) {
+    return retval;
+  }
 
-  if (rem == 0) { // opt 2: simm32
-    lis(d, xc);
-  } else { // High 32 bits needed.
+  // Canonical algorithm to load x in 16 bit chunks (variant d == R0)
 
-    if (tmp != noreg  && (int)x != 0) { // opt 3: We have a temp reg.
-      // No carry propagation between xc and higher chunks here (use logical instructions).
-      xa = (x >> 48) & 0xffff;
-      xb = (x >> 32) & 0xffff; // No sign compensation, we use lis+ori or li to allow usage of R0.
-      bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
-
-      if (xa_loaded) { lis(tmp, xa); }
-      if (xc) { lis(d, xc); }
+  if (d == R0) { // Can't use addi.
+    // 64-bit value: x = xa xb xc xd
+    xa = (x >> 48) & 0xffff;
+    xb = (x >> 32) & 0xffff;
+    xc = (x >> 16) & 0xffff;
+    bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
+    if (tmp == noreg || (xc == 0 && xd == 0)) {
       if (xa_loaded) {
-        if (xb) { ori(tmp, tmp, (unsigned short)xb); } // No addi, we support tmp == R0.
+        lis(d, xa);
+        if (xb) { ori(d, d, (unsigned short)xb); }
+      } else {
+        li(d, xb);
+      }
+      sldi(d, d, 32);
+      if (xc) { oris(d, d, (unsigned short)xc); }
+      if (xd) { ori( d, d, (unsigned short)xd); }
+    } else {
+      // Exploit instruction level parallelism if we have a tmp register.
+      bool xc_loaded = (xd & 0x8000) ? (xc != -1) : (xc != 0);
+      if (xa_loaded) {
+        lis(tmp, xa);
+      }
+      if (xc_loaded) {
+        lis(d, xc);
+      }
+      if (xa_loaded) {
+        if (xb) { ori(tmp, tmp, (unsigned short)xb); }
       } else {
         li(tmp, xb);
       }
-      if (xc) {
-        if (xd) { addi(d, d, xd); }
+      if (xc_loaded) {
+        if (xd) { ori(d, d, (unsigned short)xd); }
       } else {
         li(d, xd);
       }
       insrdi(d, tmp, 32, 0);
-      return retval;
     }
-
-    xb = rem & 0xFFFF; // Next 16-bit chunk.
-    rem = (rem >> 16) + ((unsigned short)xb >> 15); // Compensation for sign extend.
-
-    xa = rem & 0xFFFF; // Highest 16-bit chunk.
-
-    // opt 4: avoid adding 0
-    if (xa) { // Highest 16-bit needed?
-      lis(d, xa);
-      if (xb) { addi(d, d, xb); }
-    } else {
-      li(d, xb);
-    }
-    sldi(d, d, 32);
-    if (xc) { addis(d, d, xc); }
+    return retval;
   }
 
+  // Canonical algorithm to load x in 16 bit chunks (variant d != R0)
+
+  // Sign compensation might flip the sign bit in xc/xd making rem simm32 even if x isn't.
+  // Example: x = 0xffffffff7fff8000 rem = -1 with xd compensation
+  //          x = 0xffff7fff80000000 rem = -1 with xc compensation
+  xc = rem & 0xFFFF; // Next 16-bit chunk.
+  rem = (rem >> 16) + ((unsigned short)xc >> 15); // Compensation for sign extend.
+  if (rem == 0) {
+    assert(xd != 0, "xd == 0 implies is_simm(x, 32) above");
+    lis(d, xc);
+    addi(d, d, xd);  // requires d != R0
+    return retval;
+  }
+
+  assert(rem != 0, "simm32 should have been handled above");
+  if (tmp != noreg  && (int)x != 0) { // opt 3: We have a temp reg.
+    // No carry propagation between xc and higher chunks here (use logical instructions).
+    xa = (x >> 48) & 0xffff;
+    xb = (x >> 32) & 0xffff; // No sign compensation, we use lis+ori or li to allow usage of R0.
+    bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
+
+    if (xa_loaded) { lis(tmp, xa); }
+    if (xc) { lis(d, xc); }
+    if (xa_loaded) {
+      if (xb) { ori(tmp, tmp, (unsigned short)xb); } // No addi, we support tmp == R0.
+    } else {
+      li(tmp, xb);
+    }
+    if (xc) {
+      if (xd) { addi(d, d, xd); }
+    } else {
+      li(d, xd);
+    }
+    insrdi(d, tmp, 32, 0);
+    return retval;
+  }
+
+  xb = rem & 0xFFFF; // Next 16-bit chunk.
+  rem = (rem >> 16) + ((unsigned short)xb >> 15); // Compensation for sign extend.
+
+  xa = rem & 0xFFFF; // Highest 16-bit chunk.
+
+  // opt 4: avoid adding 0
+  if (xa) { // Highest 16-bit needed?
+    lis(d, xa);
+    if (xb) { addi(d, d, xb); }
+  } else {
+    li(d, xb);
+  }
+  sldi(d, d, 32);
+  if (xc) { addis(d, d, xc); }
   if (xd) { addi(d, d, xd); }
   return retval;
 }
