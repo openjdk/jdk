@@ -1917,6 +1917,7 @@ bool FileMapInfo::open_as_input() {
       } else {
         AOTMetaspace::report_loading_error("Loading static archive failed.");
       }
+      AOTMetaspace::set_static_archive_validation_failed();
       return false;
     } else {
       AOTMetaspace::report_loading_error("Loading dynamic archive failed.");

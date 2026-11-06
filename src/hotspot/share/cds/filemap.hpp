@@ -112,6 +112,7 @@ public:
   f(UseNullableAtomicValueFlattening) \
   f(UseNullableNonAtomicValueFlattening) \
   f(FlatteningBudget) \
+  f(FlatArrayElementMaxOops) \
   f(RestrictReservedStack) \
   f(DiagnoseSyncOnValueBasedClasses)
 

@@ -114,6 +114,7 @@
 
 ReservedSpace AOTMetaspace::_symbol_rs;
 VirtualSpace AOTMetaspace::_symbol_vs;
+bool AOTMetaspace::_static_archive_validation_failed = false;
 bool AOTMetaspace::_archive_loading_failed = false;
 bool AOTMetaspace::_remapped_readwrite = false;
 void* AOTMetaspace::_aot_metaspace_static_top = nullptr;
@@ -1043,11 +1044,7 @@ void AOTMetaspace::init_heap_settings() {
       //
       FLAG_SET_ERGO_IF_DEFAULT(AOTCompatibleOopCompression, true);
     } else if (CDSConfig::is_using_archive()) {
-      FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive();
-      // may have been opened by get_aot_code_region_size()
-      if (static_mapinfo == nullptr) {
-        static_mapinfo = open_static_archive();
-      }
+      FileMapInfo* static_mapinfo = get_static_archive();
       if (static_mapinfo != nullptr && static_mapinfo->header()->compatible_oop_compression()) {
         // Use the same setting as recorded in the archive.
         FLAG_SET_ERGO(AOTCompatibleOopCompression, true);
@@ -1565,10 +1562,7 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
   assert(CDSConfig::is_using_archive(), "Must be called when UseSharedSpaces is enabled");
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
 
-  FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive(); // may have been opened by init_heap_settings()
-  if (static_mapinfo == nullptr) {
-    static_mapinfo = open_static_archive();
-  }
+  FileMapInfo* static_mapinfo = get_static_archive(); // may have been opened by init_heap_settings()
   FileMapInfo* dynamic_mapinfo = nullptr;
 
   if (static_mapinfo != nullptr) {
@@ -1652,7 +1646,7 @@ void AOTMetaspace::get_aot_code_region_size() {
   } else if (CDSConfig::is_using_archive()) { // production run with AOT code cache
     precond(FileMapInfo::static_input_archive() == nullptr);
     precond(CodeCache::max_capacity() == 0);
-    FileMapInfo* static_mapinfo = open_static_archive();
+    FileMapInfo* static_mapinfo = get_static_archive();
     if (static_mapinfo != nullptr) {
       FileMapRegion* aot_code_region = static_mapinfo->region_at(AOTMetaspace::ac);
       AOTCacheAccess::set_aot_code_region_size(aot_code_region->used_aligned());
@@ -1662,16 +1656,24 @@ void AOTMetaspace::get_aot_code_region_size() {
 
 char* AOTMetaspace::get_archived_cpu_features() {
   char* cpu_features = nullptr;
-  FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive();
-  // may have been opened by get_aot_code_region_size()
-  if (static_mapinfo == nullptr) {
-    static_mapinfo = open_static_archive();
-  }
+  FileMapInfo* static_mapinfo = get_static_archive();
   if ((static_mapinfo != nullptr) &&
       (static_mapinfo->cpu_features_size() == VM_Version::cpu_features_size())) {
     cpu_features = (char *)static_mapinfo->archived_cpu_features();
   }
   return cpu_features;
+}
+
+FileMapInfo* AOTMetaspace::get_static_archive() {
+  if (has_static_archive_validation_failed()) {
+    return nullptr;
+  }
+  FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive();
+  // may have already been opened; if not, open it now
+  if (static_mapinfo == nullptr) {
+    static_mapinfo = open_static_archive();
+  }
+  return static_mapinfo;
 }
 
 FileMapInfo* AOTMetaspace::open_static_archive() {

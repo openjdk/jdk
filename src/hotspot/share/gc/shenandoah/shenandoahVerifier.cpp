@@ -562,6 +562,26 @@ private:
         ShouldNotReachHere();
     }
 
+    uint32_t start_index = r->humongous_start_region();
+    if (r->is_humongous()) {
+      verify(r, start_index != ShenandoahHeapRegion::UndefinedRegionIndex,
+             "Humongous region must have a valid start region index");
+
+      if (r->is_humongous_start()) {
+        verify(r, start_index == r->index(),
+               "Humongous start region must identify itself as its own start");
+      } else {
+        for (size_t i = start_index + 1; i <= r->index(); i++) {
+          ShenandoahHeapRegion* chain = _heap->get_region(i);
+          verify(chain, chain->is_humongous_continuation(),
+                 "Humongous start must belong to same humongous chain");
+        }
+      }
+    } else {
+      verify(r, start_index == ShenandoahHeapRegion::UndefinedRegionIndex,
+             "Non-humongous region should have an undefined region index");
+    }
+
     verify(r, r->capacity() == ShenandoahHeapRegion::region_size_bytes(),
            "Capacity should match region size");
 
@@ -1111,7 +1131,7 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
       if (r->is_humongous()) {
         // For humongous objects, test if start region is marked live, and if so,
         // all humongous regions in that chain have live data equal to their "used".
-        juint start_live = ld[r->humongous_start_region()->index()].load_relaxed();
+        juint start_live = ld[r->humongous_start_region()].load_relaxed();
         if (start_live > 0) {
           verf_live = (juint)(r->used() / HeapWordSize);
         }

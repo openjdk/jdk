@@ -243,12 +243,6 @@ void AOTCodeCache::enable_caching() {
   load_info_log().print_cr("AOT Code Cache is not supported on this platform");
   disable_caching();
 #else
-  if (Arguments::is_valhalla_enabled()) {
-    // Disable AOT code caching when Valhalla is enabled.
-    load_info_log().print_cr("AOT Code Caching is not supported with Valhalla");
-    disable_caching();
-    return;
-  }
   FLAG_SET_ERGO_IF_DEFAULT(AOTCodeCaching, true);
   FLAG_SET_ERGO_IF_DEFAULT(AOTStubCaching, true);
   FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
@@ -306,11 +300,6 @@ void AOTCodeCache::initialize() {
     return;
   }
   assert(!FLAG_IS_DEFAULT(AOTCache), "AOTCache should be specified");
-
-  if (VerifyOops && ValueTypePassFieldsAsArgs) {
-    load_info_log().print_cr("AOT Adapter Caching is not supported with VerifyOops + ValueTypePassFieldsAsArgs.");
-    FLAG_SET_ERGO(AOTAdapterCaching, false);
-  }
 
   bool is_dumping = false;
   bool is_using   = false;
@@ -2615,7 +2604,8 @@ void AOTCodeCache::publish_stub_addresses(CodeBlob &code_blob, BlobId blob_id, A
   }
 }
 
-AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, AbstractCompiler* compiler, bool for_preload) {
+AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, GrowableArray<ciMethod*>* java_callees,
+                                          AbstractCompiler* compiler, bool for_preload) {
   if (!is_dumping_code()) {
     return nullptr;
   }
@@ -2635,7 +2625,7 @@ AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, AbstractCompiler* compile
   assert(comp_level == CompLevel_simple || comp_level == CompLevel_limited_profile || comp_level == CompLevel_full_optimization, "must be");
 
   TraceTime t1("Total time to store AOT code", &_t_totalStore, enable_timers(), false);
-  AOTCodeEntry* entry = cache->write_nmethod(nm, for_preload);
+  AOTCodeEntry* entry = cache->write_nmethod(nm, java_callees, for_preload);
   {
     ResourceMark rm;
     const char* name = nm->method()->name_and_sig_as_C_string();
@@ -2648,7 +2638,7 @@ AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, AbstractCompiler* compile
   return entry;
 }
 
-AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, bool for_preload) {
+AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, GrowableArray<ciMethod*>* java_callees, bool for_preload) {
   assert(!nm->has_clinit_barriers() || (ClassInitBarrierMode > 0), "sanity");
   _compile_id = nm->compile_id();
   _comp_level = nm->comp_level();
@@ -2721,6 +2711,39 @@ AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, bool for_preload) {
       return nullptr;
     }
   }
+
+  if (ValueTypePassFieldsAsArgs) {
+    // Record method fingerprint to match it on load.
+    if (!write_fingerprint(method)) {
+      if (lookup_failed() && !failed()) {
+        // Skip this method and reposition file
+        set_write_position(entry_position);
+      }
+      return nullptr;
+    }
+    // Record not inlined Java callee fingerprints
+    int callee_cnt = java_callees == nullptr ? 0 : java_callees->length();
+    if (!write_int(callee_cnt)) {
+      return nullptr;
+    }
+    for (int i = 0; i < callee_cnt; i++) {
+      Method* m = java_callees->at(i)->get_Method();
+      if (!write_method(m)) {
+        if (lookup_failed() && !failed()) {
+          // Skip this method and reposition file
+          set_write_position(entry_position);
+        }
+        return nullptr;
+      }
+      if (!write_fingerprint(m)) {
+        if (lookup_failed() && !failed()) {
+          // Skip this method and reposition file
+          set_write_position(entry_position);
+        }
+        return nullptr;
+      }
+    }
+  } // ValueTypePassFieldsAsArgs
 
   // Write nmethod's code blob
   if (!align_write()) {
@@ -2854,6 +2877,7 @@ bool AOTCodeCache::load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, Abs
 // Cached nmethod layout
 // - id (encoded Method*)
 // - name of method
+// - method's adapter fingerprint
 // - copy of nmethod
 // - relocation_size
 // - relocations
@@ -2904,6 +2928,39 @@ bool AOTCodeReader::compile_nmethod(ciEnv* env, ciMethod* target, AbstractCompil
     log_info(aot, codecache, nmethod)("%d (A%s%d) '%s' AOT nmethod id: " UINT32_FORMAT_X_0 "%s: %sloading from AOT Code Cache",
              compile_id(), (preload ? "P" : ""), comp_level(), target_name, id,
              (clinit_brs ? ", has clinit barriers" : ""), (preload ? "pre" : ""));
+
+    if (ValueTypePassFieldsAsArgs) {
+      // Verify recorded method fingerprint.
+      if (!verify_fingerprint(method())) {
+        return false;
+      }
+      // Verify recorded not inlined Java callee fingerprints
+      int callee_cnt;
+      if (!read_int(&callee_cnt)) {
+        return false;
+      }
+      if (callee_cnt < 0) {
+        set_lookup_failed("Damaged AOT code: negative callee count");
+        return false;
+      }
+      for (int i = 0; i < callee_cnt; i++) {
+        DataKind kind;
+        if (!read_kind(&kind)) {
+          return false;
+        }
+        if (kind != DataKind::Method) {
+          set_lookup_failed("Invalid DataKind when Method is expected");
+          return false;
+        }
+        Method* m = read_method();
+        if (m == nullptr) {
+          return false;
+        }
+        if (!verify_fingerprint(m)) {
+          return false;
+        }
+      }
+    } // ValueTypePassFieldsAsArgs
   }
 
   if (!align_read_position(DATA_ALIGNMENT)) {
@@ -3584,6 +3641,52 @@ Metadata* AOTCodeReader::read_metadata(JavaThread* thread) {
   return m;
 }
 
+bool AOTCodeCache::write_fingerprint(Method* method) {
+  if (method->adapter() == nullptr) {
+    ResourceMark rm;
+    log_debug(aot, codecache, metadata)("%d (A%d): Method is missing adapter: %s",
+              compile_id(), comp_level(), method->name_and_sig_as_C_string());
+    set_lookup_failed();
+    return false;
+  }
+  AdapterFingerPrint* fp = method->adapter()->fingerprint();
+  int sz = BytesPerWord * method->adapter()->fingerprint_size();
+  if (!write_int(sz)) {
+    return false;
+  }
+  if (!align_write_bytes(BytesPerWord)) {
+    return false;
+  }
+  if (!write_bytes((address)fp, sz)) {
+    return false;
+  }
+  return true;
+}
+
+bool AOTCodeReader::verify_fingerprint(Method* method) {
+  int fp_size = BytesPerWord * method->adapter()->fingerprint_size();
+  int archived_fp_size;
+  if (!read_int(&archived_fp_size)) {
+    return false;
+  }
+  if (archived_fp_size != fp_size) {
+    set_lookup_failed("Cached method's adapter fingerprint size is different from the expected");
+    return false; // Skip this nmethod
+  }
+  if (!align_read_position(BytesPerWord)) {
+    return false;
+  }
+  AdapterFingerPrint* archived_fp;
+  if (!get_set_read_position((address*)&archived_fp, (uint)fp_size)) {
+    return false;
+  }
+  if (!method->adapter()->fingerprint_equals(archived_fp)) {
+    set_lookup_failed("Cached method's adapter fingerprint is different from the expected");
+    return false; // Skip this nmethod
+  }
+  return true;
+}
+
 bool AOTCodeCache::write_method(Method* method) {
   ResourceMark rm; // To method's name printing
   if (AOTCacheAccess::can_generate_aot_code(method)) {
@@ -3659,18 +3762,11 @@ bool AOTCodeCache::write_klass(Klass* klass) {
     can_write = AOTCacheAccess::can_generate_aot_code(klass);
     ObjArrayKlass* oak = ObjArrayKlass::cast(klass);
     array_dim = oak->dimension();
-    if (klass->is_refined_objArray_klass()) {
-      // Preserve property of object array
-      Klass::KlassKind kind;
-      LayoutKind layout;
-      if (klass->is_flatArray_klass()) {
-        kind = Klass::FlatArrayKlassKind;
-        layout = FlatArrayKlass::cast(klass)->layout_kind();
-      } else {
-        kind = Klass::RefArrayKlassKind;
-        layout = LayoutKind::REFERENCE;
-      }
-      array_desc = ArrayDescription(kind, oak->properties(), layout).value();
+    // Preserve property of object array
+    if (klass->is_flatArray_klass()) {
+      array_desc = ArrayDescription::flat(oak->properties(), FlatArrayKlass::cast(klass)->layout_kind()).value();
+    } else if (klass->is_refArray_klass()) {
+      array_desc = ArrayDescription::reference(oak->properties()).value();
     }
     klass = oak->bottom_klass(); // overwrites klass
   }
