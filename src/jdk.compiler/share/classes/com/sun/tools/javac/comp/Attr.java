@@ -3966,14 +3966,27 @@ public class Attr extends JCTree.Visitor {
      */
     private void setFunctionalInfo(final Env<AttrContext> env, final JCFunctionalExpression fExpr,
             final Type pt, final Type descriptorType, final Type primaryTarget, final CheckContext checkContext) {
-        if (checkContext.inferenceContext().free(descriptorType)) {
-            checkContext.inferenceContext().addFreeTypeListener(List.of(pt, descriptorType),
+        if (checkContext.inferenceContext().free(descriptorType) ||
+                checkContext.inferenceContext().free(primaryTarget)) {
+            checkContext.inferenceContext().addFreeTypeListener(List.of(pt, descriptorType, primaryTarget),
                     inferenceContext -> setFunctionalInfo(env, fExpr, pt, inferenceContext.asInstType(descriptorType),
                     inferenceContext.asInstType(primaryTarget), checkContext));
         } else {
             fExpr.owner = env.info.scope.owner;
             if (pt.hasTag(CLASS)) {
                 fExpr.target = primaryTarget;
+            }
+            if (pt != Type.recoveryType) {
+                List<Type> targets = primaryTarget.isIntersection()
+                        ? ((IntersectionClassType)primaryTarget).getExplicitComponents()
+                        : List.of(primaryTarget);
+                for (Type target : targets) {
+                    if (!chk.checkValidGenericType(target)) {
+                        checkContext.report(fExpr,
+                                diags.fragment(Fragments.NoSuitableFunctionalIntfInst(primaryTarget)));
+                        return;
+                    }
+                }
             }
             if (checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK &&
                     pt != Type.recoveryType) {
