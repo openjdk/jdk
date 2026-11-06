@@ -4532,7 +4532,7 @@ PhiNode* ConnectionGraph::split_memory_phi(PhiNode* orig_phi, int alias_idx, Uni
   while(!finished) {
     while (idx < phi->req()) {
       Node* mem = find_inst_mem(phi->in(idx), alias_idx, orig_phi_worklist, rec_depth + 1);
-      if (PhiNode* mem_phi = Node::isa<PhiNode>(mem)) {
+      if (PhiNode* mem_phi = Node::isa<PhiNode>(mem); mem_phi != nullptr) {
         PhiNode* newphi = create_split_phi(mem_phi, alias_idx, orig_phi_worklist, new_phi_created);
         if (new_phi_created) {
           // found a phi for which we created a new split, push current one on worklist and begin

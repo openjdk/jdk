@@ -347,7 +347,7 @@ bool RegionNode::is_possible_unsafe_loop() const {
   uint i;
   for (i = 0; i < max; i++) {
     Node* n = raw_out(i);
-    if (PhiNode* phi = isa<PhiNode>(n)) {
+    if (PhiNode* phi = isa<PhiNode>(n); phi != nullptr) {
       assert(phi->in(0) == this, "sanity check phi");
       if (phi->outcnt() == 0) {
         continue; // Safe case - no loops

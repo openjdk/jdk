@@ -743,7 +743,7 @@ Node* LoadNode::find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node
     // The load could be out-of-bounds. It must not be hoisted but must remain
     // dependent on the runtime range check. This is achieved by returning null.
   } else if (mem->is_Proj()) {
-    if (ArrayCopyNode* ac = isa<ArrayCopyNode>(mem->in(0))) {
+    if (ArrayCopyNode* ac = isa<ArrayCopyNode>(mem->in(0)); ac != nullptr) {
       if (ac->is_arraycopy_validated() ||
           ac->is_copyof_validated() ||
           ac->is_copyofrange_validated()) {
@@ -782,7 +782,7 @@ ArrayCopyNode* MemNode::find_array_copy_clone(Node* ld_alloc, Node* mem) const {
       // Check if there is an array copy for a clone
       Node* mb = mem->in(0);
       ArrayCopyNode* ac = nullptr;
-      if (ProjNode* control_proj_ac = isa<ProjNode>(mb->in(0))) {
+      if (ProjNode* control_proj_ac = isa<ProjNode>(mb->in(0)); control_proj_ac != nullptr) {
         ac = isa<ArrayCopyNode>(control_proj_ac->in(0));
       }
 
@@ -6149,7 +6149,7 @@ MergeMemNode::MergeMemNode(Node *new_base) : Node(1+Compile::AliasIdxRaw) {
   }
   assert(empty_memory() == empty_mem, "");
 
-  if (MergeMemNode* mdef = isa<MergeMemNode>(new_base)) {
+  if (MergeMemNode* mdef = isa<MergeMemNode>(new_base); mdef != nullptr) {
     assert(mdef->empty_memory() == empty_mem, "consistent sentinels");
     for (MergeMemStream mms(this, mdef); mms.next_non_empty2(); ) {
       mms.set_memory(mms.memory2());

@@ -2209,7 +2209,7 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   assert_cond(addp != nullptr);
   for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
     Node* u = addp->fast_out(i);
-    if (MemNode* u_mem = Node::isa<MemNode>(u)) {
+    if (MemNode* u_mem = Node::isa<MemNode>(u); u_mem != nullptr) {
       int opsize = u_mem->memory_size();
       assert(opsize > 0, "unexpected memory operand size");
       if (u_mem->memory_size() != (1 << shift)) {

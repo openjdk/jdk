@@ -2543,7 +2543,7 @@ Node* GraphKit::uncommon_trap(int trap_request,
 
   // Make sure any guarding test views this path as very unlikely
   Node *i0 = control()->in(0);
-  if (IfNode* iff = Node::isa<IfNode>(i0)) {  // Found a guarding if test?
+  if (IfNode* iff = Node::isa<IfNode>(i0); iff != nullptr) {  // Found a guarding if test?
     float f = iff->_prob;   // Get prob
     if (control()->Opcode() == Op_IfTrue) {
       if (f > PROB_UNLIKELY_MAG(4))
@@ -4742,7 +4742,7 @@ AllocateNode* AllocateNode::Ideal_allocation(Node* ptr) {
   // to keep more precise type from last cast.
   if (ptr->is_Proj()) {
     Node* allo = ptr->in(0);
-    if (AllocateNode* allocate = isa<AllocateNode>(allo)) {
+    if (AllocateNode* allocate = isa<AllocateNode>(allo); allocate != nullptr) {
       return allocate;
     }
   }

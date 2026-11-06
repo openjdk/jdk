@@ -1097,7 +1097,7 @@ void CallJavaNode::copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt
   for (uint i = old_dbg_start; i < sfpt->req(); i++) {
     Node* old_in = sfpt->in(i);
     // Clone old SafePointScalarObjectNodes, adjusting their field contents.
-    if (SafePointScalarObjectNode* old_sosn = isa<SafePointScalarObjectNode>(old_in)) {
+    if (SafePointScalarObjectNode* old_sosn = isa<SafePointScalarObjectNode>(old_in); old_sosn != nullptr) {
       bool new_node;
       Node* new_in = old_sosn->clone(sosn_map, new_node);
       if (new_node) { // New node?
@@ -2336,7 +2336,7 @@ bool AbstractLockNode::find_matching_unlock(const Node* ctrl, LockNode* lock,
   ProjNode* ctrl_proj = ctrl->isa_Proj();
   if (ctrl_proj != nullptr && ctrl_proj->_con == TypeFunc::Control) {
     Node* n = ctrl_proj->in(0);
-    if (UnlockNode* unlock = isa<UnlockNode>(n)) {
+    if (UnlockNode* unlock = isa<UnlockNode>(n); unlock != nullptr) {
       Node* lock_obj = lock->obj_node();
       Node* unlock_obj = unlock->obj_node();
       if (lock_obj->eqv_uncast(unlock_obj) &&
@@ -2371,7 +2371,7 @@ bool AbstractLockNode::find_lock_and_unlock_through_if(Node* node, LockNode* loc
           lock1_node = proj->unique_out();
         }
       }
-      if (LockNode* lock1 = isa<LockNode>(lock1_node)) {
+      if (LockNode* lock1 = isa<LockNode>(lock1_node); lock1 != nullptr) {
         Node* lock_obj = lock->obj_node();
         Node* lock1_obj = lock1->obj_node();
         if (lock_obj->eqv_uncast(lock1_obj) &&

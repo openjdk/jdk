@@ -184,7 +184,7 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
   if (block_index < 2 || block->get_node(block_index - 2) != inst1) {
     return false;
   }
-  if (MachNode* prevNode = Node::isa<MachNode>(inst1)) {
+  if (MachNode* prevNode = Node::isa<MachNode>(inst1); prevNode != nullptr) {
     // Includes other flags as well, but that doesn't matter here
     juint all_node_flags = prevNode->flags();
     if (all_node_flags == 0) {

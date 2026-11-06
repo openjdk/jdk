@@ -3095,13 +3095,13 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   if (is_reference_type(type)) {
     decorators |= IN_HEAP | ON_UNKNOWN_OOP_REF;
 
-    if (ValueTypeNode* oldval_vt = Node::isa<ValueTypeNode>(oldval)) {
+    if (ValueTypeNode* oldval_vt = Node::isa<ValueTypeNode>(oldval); oldval_vt != nullptr) {
       // Re-execute the unsafe access if allocation triggers deoptimization.
       PreserveReexecuteState preexecs(this);
       jvms()->set_should_reexecute(true);
       oldval = oldval_vt->buffer(this)->get_oop();
     }
-    if (ValueTypeNode* newval_vt = Node::isa<ValueTypeNode>(newval)) {
+    if (ValueTypeNode* newval_vt = Node::isa<ValueTypeNode>(newval); newval_vt != nullptr) {
       // Re-execute the unsafe access if allocation triggers deoptimization.
       PreserveReexecuteState preexecs(this);
       jvms()->set_should_reexecute(true);

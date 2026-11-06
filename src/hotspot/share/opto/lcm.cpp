@@ -43,7 +43,7 @@
 // i.e. will grab into the base of the heap if it represents null.
 static bool accesses_heap_base_zone(Node *val) {
   if (CompressedOops::base() != nullptr) { // Implies UseCompressedOops.
-    if (MachNode* val_mach = Node::isa<MachNode>(val)) {
+    if (MachNode* val_mach = Node::isa<MachNode>(val); val_mach != nullptr) {
       if (val_mach->ideal_Opcode() == Op_DecodeN) {
         // This assumes all Decodes with TypePtr::NotNull are matched to nodes that
         // decode null to point to the heap base (Decode_NN).

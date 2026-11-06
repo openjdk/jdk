@@ -698,9 +698,9 @@ const TypeInteger* IfNode::filtered_integer_type(PhaseGVN* gvn, Node* val, Node*
   const jlong min_value = bt == T_INT ? min_jint : min_jlong;
   const jlong max_value = bt == T_INT ? max_jint : max_jlong;
   assert(is<IfProjNode>(if_proj), "expecting an if projection");
-  if (IfNode* iff = isa<IfNode>(if_proj->in(0))) {
-    if (BoolNode* bol = isa<BoolNode>(iff->in(1))) {
-      if (const CmpNode* cmp = isa<CmpNode>(bol->in(1))) {
+  if (IfNode* iff = isa<IfNode>(if_proj->in(0)); iff != nullptr) {
+    if (BoolNode* bol = isa<BoolNode>(iff->in(1)); bol != nullptr) {
+      if (const CmpNode* cmp = isa<CmpNode>(bol->in(1)); cmp != nullptr) {
         // Val is always the lhs of the comparison: val CmpI/CmpL cmp2
         if (cmp->Opcode() == (bt == T_INT ? Op_CmpI : Op_CmpL) && cmp->in(1) == val) {
           // Only CmpI/CmpL allowed, assumed by signed logic below.
