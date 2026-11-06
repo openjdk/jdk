@@ -23,6 +23,11 @@
 
 #include "defs.S.inc"
 
+#define DECLARE_LOCAL_FUNC(func) \
+    .local func ; \
+    .type func, %function ; \
+    func
+
 #define DEFAULT_ATOMIC_OP_NAME(OPNAME, SIZE, MEMORDER) \
 aarch64_atomic_ ## OPNAME ## _ ## SIZE ## MEMORDER ## _impl
 
@@ -70,17 +75,17 @@ DECLARE_FUNC(aarch64_atomic_ops_end):
         dmb ish                          ;
 
         .align 5
-DECLARE_FUNC(aarch64_atomic_fetch_add_8_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_fetch_add_8_default_impl):
         ATOMIC_OP(ldaxr, add, stlxr, x, DMB, ldaddal)
         .align 5
-DECLARE_FUNC(aarch64_atomic_fetch_add_4_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_fetch_add_4_default_impl):
         ATOMIC_OP(ldaxr, add, stlxr, w, DMB, ldaddal)
 
         .align 5
-DECLARE_FUNC(aarch64_atomic_fetch_add_8_relaxed_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_fetch_add_8_relaxed_default_impl):
         ATOMIC_OP(ldxr, add, stxr, x, , ldadd)
         .align 5
-DECLARE_FUNC(aarch64_atomic_fetch_add_4_relaxed_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_fetch_add_4_relaxed_default_impl):
         ATOMIC_OP(ldxr, add, stxr, w, , ldadd)
 
 
@@ -106,11 +111,11 @@ DECLARE_FUNC(aarch64_atomic_fetch_add_4_relaxed_default_impl):
 #endif
 
         .align 5
-DECLARE_FUNC(aarch64_atomic_xchg_1_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_xchg_1_default_impl):
         ATOMIC_OP(ldaxrb, stlxrb, w, swpalb)
-DECLARE_FUNC(aarch64_atomic_xchg_4_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_xchg_4_default_impl):
         ATOMIC_OP(ldaxr, stlxr, w, swpal)
-DECLARE_FUNC(aarch64_atomic_xchg_8_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_xchg_8_default_impl):
         ATOMIC_OP(ldaxr, stlxr, x, swpal)
 
 #undef ATOMIC_OP
@@ -134,7 +139,7 @@ DECLARE_FUNC(aarch64_atomic_xchg_8_default_impl):
 1:      MEMBAR                                  ;\
         mov     SZ ## 0, SZ ## 3                ;\
         ret
-#endif 
+#endif
 
 #define CMPB                              \
         eor     w8, w3, w1               ;\
@@ -148,37 +153,37 @@ DECLARE_FUNC(aarch64_atomic_xchg_8_default_impl):
         b.ne    1f
 
         .align 5
-DECLARE_FUNC(aarch64_atomic_cmpxchg_1_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_1_default_impl):
         ATOMIC_OP(ldxrb, stxrb, w, CMPB, DMB, casalb)
         .align 5
-DECLARE_FUNC(aarch64_atomic_cmpxchg_4_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_4_default_impl):
         ATOMIC_OP(ldxr, stxr, w, CMPW, DMB, casal)
         .align 5
-DECLARE_FUNC(aarch64_atomic_cmpxchg_8_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_8_default_impl):
         ATOMIC_OP(ldxr, stxr, x, CMPX, DMB, casal)
 
         .align 5
-DECLARE_FUNC(aarch64_atomic_cmpxchg_4_release_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_4_release_default_impl):
         ATOMIC_OP(ldxr, stlxr, w, CMPW, , casl)
         .align 5
-DECLARE_FUNC(aarch64_atomic_cmpxchg_8_release_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_8_release_default_impl):
         ATOMIC_OP(ldxr, stlxr, x, CMPX, , casl)
 
        .align 5
-DECLARE_FUNC(aarch64_atomic_cmpxchg_4_seq_cst_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_4_seq_cst_default_impl):
         ATOMIC_OP(ldaxr, stlxr, w, CMPW, , casl)
         .align 5
-DECLARE_FUNC(aarch64_atomic_cmpxchg_8_seq_cst_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_8_seq_cst_default_impl):
         ATOMIC_OP(ldaxr, stlxr, x, CMPX, , casl)
 
         .align 5
-DECLARE_FUNC(aarch64_atomic_cmpxchg_1_relaxed_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_1_relaxed_default_impl):
         ATOMIC_OP(ldxrb, stxrb, w, CMPB, , casb)
         .align 5
-DECLARE_FUNC(aarch64_atomic_cmpxchg_4_relaxed_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_4_relaxed_default_impl):
         ATOMIC_OP(ldxr, stxr, w, CMPW, , casl)
         .align 5
-DECLARE_FUNC(aarch64_atomic_cmpxchg_8_relaxed_default_impl):
+DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_8_relaxed_default_impl):
         ATOMIC_OP(ldxr, stxr, x, CMPX, , casl)
 
 /* Emit .note.gnu.property section in case of PAC or BTI being enabled.
