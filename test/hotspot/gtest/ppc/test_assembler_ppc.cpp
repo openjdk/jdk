@@ -31,7 +31,7 @@
 
 #include <vector>
 
-#define DEVELOPMENT_WIP 0
+#define DEVELOPMENT_WIP 1
 
 // Format a 64-bit value as "0x..." into a caller-owned buffer, for messages.
 static const char* hex64(uint64_t x, char* buf, size_t len) {
