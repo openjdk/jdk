@@ -227,7 +227,6 @@ static bool get_build_id(const char *filename, int fd, ELF_EHDR* ehdr, unsigned 
 #ifdef NT_GNU_BUILD_ID
   ELF_PHDR *phbuf, *php;
   int i;
-  unsigned char *buf = NULL;
 
   *buildid = NULL;
   *buildid_sz = 0;
@@ -237,9 +236,10 @@ static bool get_build_id(const char *filename, int fd, ELF_EHDR* ehdr, unsigned 
     return false;
   }
 
-  for (php = phbuf, i = 0; i < ehdr->e_phnum; i++, php++) {
+  bool loop_exit = false;
+  for (php = phbuf, i = 0; i < ehdr->e_phnum && !loop_exit; i++, php++) {
     if (php->p_type == PT_NOTE) {
-      unsigned char *p;
+      unsigned char *buf, *p;
       if (lseek(fd, php->p_offset, SEEK_SET) == (off_t)-1) {
         print_error("failed to lseek to PT_NOTE data in %s\n", filename);
         break;
@@ -260,7 +260,8 @@ static bool get_build_id(const char *filename, int fd, ELF_EHDR* ehdr, unsigned 
         unsigned char *descdata = p + sizeof(ELF_NHDR) + ROUNDUP(notep->n_namesz, 4);
         if (descdata + notep->n_descsz > end) {
           print_error("Build ID of %s: out of range\n", filename);
-          goto loop_end;
+          loop_exit = true;
+          break;
         }
 
         if (notep->n_type == NT_GNU_BUILD_ID) {
@@ -271,19 +272,14 @@ static bool get_build_id(const char *filename, int fd, ELF_EHDR* ehdr, unsigned 
           } else {
             print_error("failed to allocate memory for Build ID of %s\n", filename);
           }
-          goto loop_end;
+          loop_exit = true;
         }
         p = descdata + ROUNDUP(notep->n_descsz, 4);
       }
       free(buf);
-      buf = NULL;
     }
   }
 
-loop_end:
-  if (buf != NULL) {
-    free(buf);
-  }
   free(phbuf);
   return *buildid != NULL;
 #else
