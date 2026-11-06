@@ -166,7 +166,6 @@ WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
                            NULL);
 
     if (h != INVALID_HANDLE_VALUE) {
-        WCHAR* newFinalPath = NULL;
         DWORD len = GetFinalPathNameByHandleW(h, finalPath, size, 0);
         if (len != 0 && len >= size) {
             DWORD pathBufferSize = len;
