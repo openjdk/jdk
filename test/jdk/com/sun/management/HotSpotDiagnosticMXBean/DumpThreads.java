@@ -751,6 +751,14 @@ class DumpThreads {
         var thread = Thread.ofPlatform().name(threadName).start(LockSupport::park);
         try {
             long tid = thread.threadId();
+
+            // plain text thread dump
+            List<String> lines = dumpThreadsToPlainText();
+            ThreadFields fields = findThread(tid, lines);
+            assertNotNull(fields, "thread not found");
+            assertEquals(threadName, fields.name());
+
+            // JSON thread dump
             ThreadDump threadDump = dumpThreadsToJson();
             ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
                     .findThread(tid)
@@ -905,17 +913,54 @@ class DumpThreads {
         // #3 "main" java.lang.Thread@6d06d69c RUNNABLE cpuTime=1190000 2025-04-18T15:22:12.012450Z
         // #36 "" virtual java.lang.VirtualThread@7852e922 WAITING cpuTime=-1 2025-04-18T15:22:12.012450Z
         Pattern pattern = Pattern.compile(
-                "#(\\d+)\\s+\"([^\"]*)\"\\s+(virtual\\s+)?"
-                        + "(\\S+@[0-9a-f]+)\\s+(\\w+)"
-                        + "\\s+cpuTime=(-?\\d+)\\s+(\\S+)");
+                "#(\\d+)\\s+\"((?:\\\\.|[^\"\\\\])*)\"\\s+(virtual\\s+)?"
+                + "(\\S+@[0-9a-f]+)\\s+(\\w+)"
+                + "\\s+cpuTime=(-?\\d+)\\s+(\\S+)");
         Matcher matcher = pattern.matcher(line);
         assertTrue(matcher.matches(), line);
-        String name = matcher.group(2);
+        String threadName = unescapeThreadName(matcher.group(2));
         boolean isVirtual = (matcher.group(3) != null);
         String threadObj = matcher.group(4);
         String state = matcher.group(5);
         long cpuTime = Long.parseLong(matcher.group(6));
-        return new ThreadFields(tid, name, isVirtual, threadObj, state, cpuTime);
+        return new ThreadFields(tid, threadName, isVirtual, threadObj, state, cpuTime);
+    }
+
+    /**
+     * Decodes escape sequences in a thread name from a plain text thread dump.
+     */
+    private static String unescapeThreadName(String value) {
+        StringBuilder result = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c != '\\') {
+                result.append(c);
+                continue;
+            }
+            i++;
+            if (i == value.length()) {
+                throw new IllegalArgumentException("Trailing escape");
+            }
+            switch (value.charAt(i)) {
+                case '"'  -> result.append('"');
+                case '\\' -> result.append('\\');
+                case 'b'  -> result.append('\b');
+                case 'f'  -> result.append('\f');
+                case 'n'  -> result.append('\n');
+                case 'r'  -> result.append('\r');
+                case 't'  -> result.append('\t');
+                case 'u'  -> {
+                    if (i + 4 >= value.length()) {
+                        throw new IllegalArgumentException("Incomplete Unicode escape");
+                    }
+                    result.append((char) Integer.parseInt(
+                            value.substring(i + 1, i + 5), 16));
+                    i += 4;
+                }
+                default -> throw new IllegalArgumentException("Unknown escape");
+            }
+        }
+        return result.toString();
     }
 
     /**

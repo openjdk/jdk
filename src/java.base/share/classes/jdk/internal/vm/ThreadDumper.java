@@ -184,7 +184,7 @@ public class ThreadDumper {
         }
         Instant now = Instant.now();
         Thread.State state = snapshot.threadState();
-        writer.println("#" + thread.threadId() + " \"" + snapshot.threadName()
+        writer.println("#" + thread.threadId() + " \"" + escape(snapshot.threadName())
                 + "\" " + (thread.isVirtual() ? "virtual " : "")
                 + Objects.toIdentityString(thread) +
                 " " + state
@@ -569,33 +569,33 @@ public class ThreadDumper {
         void endArray() {
             endObject(true);
         }
+    }
 
-        /**
-         * Escape any characters that need to be escape in the JSON output.
-         */
-        private static String escape(String value) {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < value.length(); i++) {
-                char c = value.charAt(i);
-                switch (c) {
-                    case '"'  -> sb.append("\\\"");
-                    case '\\' -> sb.append("\\\\");
-                    case '\b' -> sb.append("\\b");
-                    case '\f' -> sb.append("\\f");
-                    case '\n' -> sb.append("\\n");
-                    case '\r' -> sb.append("\\r");
-                    case '\t' -> sb.append("\\t");
-                    default -> {
-                        if (c <= 0x1f) {
-                            sb.append(String.format("\\u%04x", (int) c));
-                        } else {
-                            sb.append(c);
-                        }
+    /**
+     * Escapes characters for JSON strings and quoted thread names in plain text dumps.
+     */
+    private static String escape(String value) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '"'  -> sb.append("\\\"");
+                case '\\' -> sb.append("\\\\");
+                case '\b' -> sb.append("\\b");
+                case '\f' -> sb.append("\\f");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c <= 0x1f) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
                     }
                 }
             }
-            return sb.toString();
         }
+        return sb.toString();
     }
 
     /**
