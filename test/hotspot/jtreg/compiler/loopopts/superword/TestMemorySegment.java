@@ -326,6 +326,8 @@ class TestMemorySegmentImpl {
         tests.put("testIntLoop_longIndex_intInvar_byte",           () -> testIntLoop_longIndex_intInvar_byte(copy(a), 0));
         tests.put("testIntLoop_longIndex_longInvar_byte",          () -> testIntLoop_longIndex_longInvar_byte(copy(a), 0));
         tests.put("testIntLoop_intIndex_intInvar_byte",            () -> testIntLoop_intIndex_intInvar_byte(copy(a), 0));
+        tests.put("testIntLoop_iv_int_long_limit",                 () -> testIntLoop_iv_int_long_limit(copy(a)));
+        tests.put("testIntLoop_getAtIndex_int_long_limit",         () -> testIntLoop_getAtIndex_int_long_limit(copy(a)));
         tests.put("testIntLoop_iv_int",                            () -> testIntLoop_iv_int(copy(a)));
         tests.put("testIntLoop_longIndex_intInvar_sameAdr_int",    () -> testIntLoop_longIndex_intInvar_sameAdr_int(copy(a), 0));
         tests.put("testIntLoop_longIndex_longInvar_sameAdr_int",   () -> testIntLoop_longIndex_longInvar_sameAdr_int(copy(a), 0));
@@ -485,6 +487,8 @@ class TestMemorySegmentImpl {
                  "testIntLoop_longIndex_intInvar_byte",
                  "testIntLoop_longIndex_longInvar_byte",
                  "testIntLoop_intIndex_intInvar_byte",
+                 "testIntLoop_iv_int_long_limit",
+                 "testIntLoop_getAtIndex_int_long_limit",
                  "testIntLoop_iv_int",
                  "testIntLoop_longIndex_intInvar_sameAdr_int",
                  "testIntLoop_longIndex_longInvar_sameAdr_int",
@@ -624,6 +628,42 @@ class TestMemorySegmentImpl {
             int int_index = i + invar;
             byte v = a.get(ValueLayout.JAVA_BYTE, int_index);
             a.set(ValueLayout.JAVA_BYTE, int_index, (byte)(v + 1));
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Exit check: iv < long_limit -> (long)iv < long_limit, with scaled byte-offset addressing.
+    // Same as testIntLoop_iv_int, but with a long limit which is speculatively narrowed to an int
+    // limit (JDK-8336759), making this a counted loop auto-vectorized.
+    static Object[] testIntLoop_iv_int_long_limit(MemorySegment a) {
+        for (int i = 0; i < a.byteSize()/4; i++) {
+            long adr = 4L * i;
+            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr);
+            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr, v + 1);
+        }
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Exit check: iv < long_limit -> (long)iv < long_limit, with element-index addressing. The long
+    // limit is speculatively narrowed to an int limit, making this a counted loop auto-vectorized.
+    static Object[] testIntLoop_getAtIndex_int_long_limit(MemorySegment a) {
+        for (int i = 0; i < a.byteSize()/4; i++) {
+            int v = a.getAtIndex(ValueLayout.JAVA_INT_UNALIGNED, i);
+            a.setAtIndex(ValueLayout.JAVA_INT_UNALIGNED, i, v + 1);
         }
         return new Object[]{ a };
     }
