@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ class SymbolTable : public AllStatic {
 public:
   // The symbol table
   static size_t table_size();
-  static TableStatistics get_table_statistics();
+  static bool get_table_statistics(TableStatistics& st);
 
   enum {
     symbol_alloc_batch_size = 8,

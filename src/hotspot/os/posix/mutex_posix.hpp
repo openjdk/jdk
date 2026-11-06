@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,11 @@ class PlatformMutex : public CHeapObj<mtSynchronizer> {
   void lock();
   void unlock();
   bool try_lock();
+
+  void clear_for_revive() {
+    memset(mutex(), 0, sizeof(pthread_mutex_t));
+    pthread_mutex_init(mutex(), nullptr);
+  }
 };
 
 class PlatformMonitor : public PlatformMutex {
