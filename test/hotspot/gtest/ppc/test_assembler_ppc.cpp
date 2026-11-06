@@ -65,19 +65,20 @@ static long run_load_const(long x, Register d, bool have_tmp, bool return_simm16
   }
 
   Register tmp = have_tmp ? R4_ARG2 : noreg;
-  address start = _masm.pc();
+  address entry = _masm.function_entry();
+  address load_const_pc = _masm.pc();
   int simm16_rest =
 #if DEVELOPMENT_WIP
     use_new ? _masm.load_const_optimized_new(d, x, tmp, return_simm16_rest) :
 #endif
     _masm.load_const_optimized(d, x, tmp, return_simm16_rest);
-  out_insns = (int)((_masm.pc() - start) / BytesPerInstWord);
+  out_insns = (int)((_masm.pc() - load_const_pc) / BytesPerInstWord);
   _masm.mr_if_needed(R3_RET, d);
   _masm.blr();
 
   _masm.invalidate_icache();
 
-  long result_base = ((load_const_func)start)();
+  long result_base = ((load_const_func)entry)();
   long result = result_base + simm16_rest;
 
   if (Verbose) {
