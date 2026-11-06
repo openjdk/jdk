@@ -97,6 +97,9 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(ShenandoahAllocRequest& req, boo
       // success
       req.set_actual_size(size);
       ready_to_replenish = pointer_delta(end(), new_top) < min_free_words;
+      if (UseTLAB) {
+        _shared_cas_alloc_words.add_then_fetch(size, memory_order_relaxed);
+      }
       return obj;
     }
     // Retry with the current top returned by the failed CAS
@@ -264,25 +267,27 @@ inline bool ShenandoahHeapRegion::is_affiliated() const {
 }
 
 inline void ShenandoahHeapRegion::unset_active_alloc_region() {
-  shenandoah_assert_heaplocked();
   assert(is_atomic_alloc_region(), "Must be an atomic alloc region");
   HeapWord* const current_top = top();
-  HeapWord* const top_at_activation = _top_at_alloc_region_activation;
+  HeapWord* const top_at_activation = _top_at_alloc_region_activation.load_relaxed();
   if (current_top > top_at_activation) {
     reset_age();
     if (UseTLAB) {
-      // Attribute this activation's growth, including any shared CAS allocations, to the
+      // Attribute this activation's growth, excluding shared CAS allocations, to the
       // LAB type of the region's role. Must run before affiliation or role is cleared.
       size_t* lab_allocs = is_young() ? (is_gc_alloc_region() ? &_gclab_allocs : &_tlab_allocs)
                                       : &_plab_allocs;
-      *lab_allocs += pointer_delta(current_top, top_at_activation);
+      const size_t delta  = pointer_delta(current_top, top_at_activation);
+      const size_t shared = _shared_cas_alloc_words.load_relaxed();
+      assert(shared <= delta, "Shared CAS words (%zu) exceed activation growth (%zu)", shared, delta);
+      *lab_allocs += delta - shared;
     }
   }
   if (is_gc_alloc_region()) {
     // Update watermark must be visible before the alloc region type is cleared, see need_bulk_update().
     set_update_watermark(current_top);
   }
-  _top_at_alloc_region_activation = nullptr;
+  _top_at_alloc_region_activation.store_relaxed(nullptr);
   _alloc_region_type.release_store(_not_alloc_region);
 }
 

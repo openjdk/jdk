@@ -27,11 +27,9 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
-#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPartitionAllocator.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "logging/log.hpp"
 
 template<ShenandoahFreeSetPartitionId PARTITION>
 ShenandoahPartitionAllocator<PARTITION>::ShenandoahPartitionAllocator(ShenandoahFreeSet* free_set, uint32_t alloc_region_count)
@@ -80,7 +78,8 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in_alloc_regions
       HeapWord* obj = try_atomic_allocate_in(r, req, in_new_region, ready_to_replenish);
       if (ready_to_replenish) {
         slots_ready_to_replenish++;
-        if constexpr (HEAP_LOCKED) {
+        // The last thread successfully allocating in the region needs to uninstall the region
+        if (obj != nullptr) {
           uninstall_alloc_region(i, r);
         }
       }
@@ -96,10 +95,13 @@ HeapWord* ShenandoahPartitionAllocator<PARTITION>::try_allocate_in_alloc_regions
 }
 
 template<ShenandoahFreeSetPartitionId PARTITION>
-void ShenandoahPartitionAllocator<PARTITION>::uninstall_alloc_region(const uint32_t slot, ShenandoahHeapRegion* occupant) {
-  assert(occupant != nullptr && _alloc_regions[slot].load_relaxed() == occupant, "Must be sane");
-  _alloc_regions[slot].release_store(nullptr);
-  occupant->unset_active_alloc_region();
+bool ShenandoahPartitionAllocator<PARTITION>::uninstall_alloc_region(const uint32_t slot, ShenandoahHeapRegion* occupant) {
+  assert(occupant != nullptr, "Must not be nullptr");
+  if (_alloc_regions[slot].compare_exchange(occupant, nullptr, memory_order_release) == occupant) {
+    occupant->unset_active_alloc_region();
+    return true;
+  }
+  return false;
 }
 
 template<ShenandoahFreeSetPartitionId PARTITION>
@@ -259,7 +261,8 @@ uint32_t ShenandoahPartitionAllocator<PARTITION>::replenish_alloc_regions(uint32
     if (r == nullptr) {
       empty_slots[empty_slots_count++] = i;
     } else if (r->free_words() < ShenandoahHeap::plab_min_size()) {
-      uninstall_alloc_region(i, r);
+      bool uninstalled = uninstall_alloc_region(i, r);
+      assert(uninstalled || _alloc_regions[i].load_relaxed() == nullptr, "Only the lock-free path may clear a slot");
       empty_slots[empty_slots_count++] = i;
     }
   }
@@ -342,7 +345,8 @@ void ShenandoahPartitionAllocator<PARTITION>::release_alloc_region(uint32_t slot
     return;
   }
 
-  uninstall_alloc_region(slot, alloc_region);
+  const bool uninstalled = uninstall_alloc_region(slot, alloc_region);
+  assert(uninstalled, "No lock-free allocator may race release (safepoint or evac off)");
   if (alloc_region->free_words() >= ShenandoahHeap::plab_min_size()) {
     _free_set->unretire_alloc_region(PARTITION, alloc_region);
   }

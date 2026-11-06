@@ -61,7 +61,7 @@ private:
   HeapWord* try_allocate_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region,
                                           uint32_t start_slot, uint32_t count, uint32_t& slots_ready_to_replenish);
 
-  void uninstall_alloc_region(uint32_t slot, ShenandoahHeapRegion* occupant);
+  bool uninstall_alloc_region(uint32_t slot, ShenandoahHeapRegion* occupant);
 
   HeapWord* allocate_in(ShenandoahHeapRegion* r,
                         ShenandoahAllocRequest& req,

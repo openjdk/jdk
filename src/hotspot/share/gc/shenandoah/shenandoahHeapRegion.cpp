@@ -70,6 +70,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _gclab_allocs(0),
   _plab_allocs(0),
   _top_at_alloc_region_activation(nullptr),
+  _shared_cas_alloc_words(0),
   _live_data(0),
   _critical_pins(0),
   _mixed_candidate_garbage_words(0),

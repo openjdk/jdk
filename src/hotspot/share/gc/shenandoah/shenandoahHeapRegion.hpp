@@ -269,8 +269,11 @@ private:
   size_t _gclab_allocs;
   size_t _plab_allocs;
 
-  // Top when the region was activated as a CAS alloc region; protected by the heap lock.
-  HeapWord* _top_at_alloc_region_activation;
+  // Top when the region was activated as a CAS alloc region.
+  // It's written under the heap lock at activation, and read and cleared by whichever thread wins the slot CAS.
+  Atomic<HeapWord*> _top_at_alloc_region_activation;
+  // Shared (non-LAB) CAS alloc words in the current activation, only maintained with UseTLAB.
+  Atomic<size_t> _shared_cas_alloc_words;
 
   Atomic<size_t> _live_data;
   Atomic<size_t> _critical_pins;
@@ -573,7 +576,10 @@ public:
   inline void set_active_alloc_region(bool is_gc_alloc_region) {
     shenandoah_assert_heaplocked();
     assert(!is_atomic_alloc_region(), "Must not be an atomic alloc region");
-    _top_at_alloc_region_activation = top();
+    _top_at_alloc_region_activation.store_relaxed(top());
+    if (UseTLAB) {
+      _shared_cas_alloc_words.store_relaxed(0);
+    }
     _alloc_region_type.release_store(is_gc_alloc_region ? _gc_alloc_region : _mutator_alloc_region);
   }
 
