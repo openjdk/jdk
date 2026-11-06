@@ -223,7 +223,7 @@ static char* build_id_to_debug_filename (size_t size, unsigned char* data) {
 
 #define ROUNDUP(x, y)  ((((x)+((y)-1))/(y))*(y))
 
-static bool get_build_id(const char *filename, int fd, ELF_EHDR* ehdr, unsigned char **buildid, int *buildid_sz) {
+static bool get_build_id(const char *filename, int fd, ELF_EHDR* ehdr, unsigned char **buildid, size_t *buildid_sz) {
 #ifdef NT_GNU_BUILD_ID
   ELF_PHDR *phbuf, *php;
   int i;
@@ -254,9 +254,15 @@ static bool get_build_id(const char *filename, int fd, ELF_EHDR* ehdr, unsigned 
       }
 
       p = buf;
-      while (p < buf + php->p_filesz) {
+      unsigned char *end = buf + php->p_filesz;
+      while (p < end - sizeof(ELF_NHDR) /* Needs to read ELF_NHDR */ ) {
         ELF_NHDR *notep = (ELF_NHDR*)p;
         unsigned char *descdata = p + sizeof(ELF_NHDR) + ROUNDUP(notep->n_namesz, 4);
+        if (descdata + notep->n_descsz > end) {
+          print_error("Build ID of %s: out of range\n", filename);
+          goto loop_end;
+        }
+
         if (notep->n_type == NT_GNU_BUILD_ID) {
           *buildid_sz = notep->n_descsz;
           *buildid = (unsigned char*)malloc(*buildid_sz);
@@ -269,6 +275,8 @@ static bool get_build_id(const char *filename, int fd, ELF_EHDR* ehdr, unsigned 
         }
         p = descdata + ROUNDUP(notep->n_descsz, 4);
       }
+      free(buf);
+      buf = NULL;
     }
   }
 
@@ -276,6 +284,7 @@ loop_end:
   if (buf != NULL) {
     free(buf);
   }
+  free(phbuf);
   return *buildid != NULL;
 #else
   return false;
@@ -284,7 +293,7 @@ loop_end:
 
 static int open_debuginfo_from_build_id(const char *filename, int fd, ELF_EHDR* ehdr) {
   unsigned char *buildid = NULL;
-  int buildid_sz;
+  size_t buildid_sz;
   if (!get_build_id(filename, fd, ehdr, &buildid, &buildid_sz)) {
     return -1;
   }
