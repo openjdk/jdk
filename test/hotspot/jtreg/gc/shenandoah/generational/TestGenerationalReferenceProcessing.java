@@ -229,29 +229,54 @@ public class TestGenerationalReferenceProcessing {
     private static void assertReferencesCleared(int referenceGen, int referentGen, Set<WeakReference<?>> references) {
         final int MaxReferences = 10;
         int referencesShown = 0;
+        int referentsSkipped = 0;
+        int referencesCleared = 0;
         boolean allClear = true;
         for (var reference : references) {
-            if (reference.get() != null) {
-                if (referencesShown >= MaxReferences) {
-                    break;
-                }
-
-                printReference(referenceGen, referentGen, reference);
-                ++referencesShown;
-                allClear = false;
+            var referent = reference.get();
+            if (referent == null) {
+                // This is what we expect
+                ++referencesCleared;
+                continue;
             }
+
+            if (referentGen == YOUNG && !inGeneration(referent, referentGen)) {
+                // Referent may have been promoted out of young by an unsolicited heuristics triggered cycle
+                ++referentsSkipped;
+                continue;
+            }
+
+            if (referencesShown >= MaxReferences) {
+                // We are done showing errors
+                break;
+            }
+
+            printReference(referenceGen, referentGen, reference, referent);
+            ++referencesShown;
+            allClear = false;
         }
 
         if (!allClear) {
             throw new AssertionError(name(referenceGen) + " to " + name(referentGen) + " referents should have been cleared");
         }
+
+        if (referentsSkipped > 0) {
+            System.out.println("Skipped " + referentsSkipped + " referents because they were not in: " + name(referentGen));
+            if (referencesCleared == 0) {
+              throw new AssertionError("No references cleared: no referents in " + name(referentGen) + ", test conditions not met");
+            }
+        }
     }
 
-    private static void printReference(int referenceGen, int referentGen, WeakReference<?> reference) {
+    private static boolean inGeneration(Object object, int generation) {
+        return (generation == OLD) == WB.isObjectInOldGen(object);
+    }
+
+    private static void printReference(int referenceGen, int referentGen, WeakReference<?> reference, Object referent) {
         // Addresses here could be relocated and may not match logs from old gen collection
         System.out.printf("reference: 0x%x (%d) in %s refers to 0x%x (%d) in %s\n",
-                          WB.getObjectAddress(reference), reference.hashCode(), name(referenceGen),
-                          WB.getObjectAddress(reference.get()), reference.get().hashCode(), name(referentGen));
+                          WB.getObjectAddress(reference), reference.hashCode(), WB.isObjectInOldGen(reference) ? "OLD" : "YOUNG",
+                          WB.getObjectAddress(referent),  referent.hashCode(),  WB.isObjectInOldGen(referent) ? "OLD" : "YOUNG");
     }
 
     private static void drainReferenceQueueAndClearReferents() {
