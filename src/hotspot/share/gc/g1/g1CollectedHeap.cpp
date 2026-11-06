@@ -1451,6 +1451,18 @@ jint G1CollectedHeap::initialize() {
   Universe::check_alignment(reserved_byte_size, G1HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(reserved_byte_size, HeapAlignment, "g1 heap");
 
+  // Ensure that the maximum region count (based on the max region index) we allow can fit the reservation.
+  const size_t max_region_count = (1u << (sizeof(RegionIdx_t) * BitsPerByte - 1));
+  size_t num_regions_for_reservation = reserved_byte_size / G1HeapRegion::GrainBytes;
+
+  if (num_regions_for_reservation > max_region_count) {
+    vm_exit_during_initialization(err_msg("Requested heap size (%zu%s) would exceed maximum region count %zu at region size %zu. Decrease maximum heap size.",
+                                          byte_size_in_proper_unit(reserved_byte_size),
+                                          proper_unit_for_byte_size(reserved_byte_size),
+                                          max_region_count,
+                                          G1HeapRegion::GrainBytes));
+  }
+
   // Reserve the maximum.
 
   // When compressed oops are enabled, the preferred heap base
@@ -1528,11 +1540,6 @@ jint G1CollectedHeap::initialize() {
     satbqs.set_process_completed_buffers_threshold(G1SATBProcessCompletedThreshold);
     satbqs.set_buffer_enqueue_threshold_percentage(G1SATBBufferEnqueueingThresholdPercent);
   }
-
-  // 6843694 - ensure that the maximum region index can fit
-  // in the remembered set structures.
-  const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
-  guarantee((max_num_regions() - 1) <= max_region_idx, "too many regions");
 
   // Also create a G1 rem set.
   _rem_set = new G1RemSet(this);
