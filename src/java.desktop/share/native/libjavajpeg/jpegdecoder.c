@@ -169,6 +169,7 @@ struct sun_jpeg_source_mgr {
 
   jobject hInputStream;
   int suspendable;
+  int invalid_input;
   unsigned long remaining_skip;
 
   JOCTET *inbuf;
@@ -351,7 +352,8 @@ sun_jpeg_fill_suspended_buffer(j_decompress_ptr cinfo)
     RELEASE_ARRAYS(env, src);
     buflen = (*env)->GetArrayLength(env, src->hInputBuffer);
     if (offset > buflen) {
-        cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
+        src->invalid_input = 1;
+        return;
     }
     buflen -= offset;
     if (buflen == 0) {
@@ -370,7 +372,8 @@ sun_jpeg_fill_suspended_buffer(j_decompress_ptr cinfo)
         /* Silently accept truncated JPEG files */
         WARNMS(cinfo, JWRN_JPEG_EOF);
         if (buflen < 2) {
-            cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
+            src->invalid_input = 1;
+            return;
         }
         src->inbuf[offset] = (JOCTET) 0xFF;
         src->inbuf[offset + 1] = (JOCTET) JPEG_EOI;
@@ -564,6 +567,7 @@ Java_sun_awt_image_JPEGImageDecoder_readImage(JNIEnv *env,
   jsrc.hOutputBuffer = 0;
   jsrc.suspendable = FALSE;
   jsrc.remaining_skip = 0;
+  jsrc.invalid_input = 0;
   jsrc.inbufoffset = -1;
   jsrc.pub.init_source = sun_jpeg_init_source;
   jsrc.pub.fill_input_buffer = sun_jpeg_fill_input_buffer;
@@ -646,6 +650,13 @@ Java_sun_awt_image_JPEGImageDecoder_readImage(JNIEnv *env,
       if (buffered_mode) {
           do {
               sun_jpeg_fill_suspended_buffer(&cinfo);
+              if (jsrc.invalid_input) {
+                  RELEASE_ARRAYS(env, &jsrc);
+                  jpeg_destroy_decompress(&cinfo);
+                  JNU_ThrowByName(env, "sun/awt/image/ImageFormatException",
+                                  "Invalid JPEG input buffer");
+                  return;
+              }
               jsrc.suspendable = TRUE;
               ret = jpeg_consume_input(&cinfo);
               jsrc.suspendable = FALSE;
@@ -660,6 +671,13 @@ Java_sun_awt_image_JPEGImageDecoder_readImage(JNIEnv *env,
           if (! final_pass) {
               do {
                   sun_jpeg_fill_suspended_buffer(&cinfo);
+                  if (jsrc.invalid_input) {
+                      RELEASE_ARRAYS(env, &jsrc);
+                      jpeg_destroy_decompress(&cinfo);
+                      JNU_ThrowByName(env, "sun/awt/image/ImageFormatException",
+                                      "Invalid JPEG input buffer");
+                      return;
+                  }
                   jsrc.suspendable = TRUE;
                   ret = jpeg_consume_input(&cinfo);
                   jsrc.suspendable = FALSE;
