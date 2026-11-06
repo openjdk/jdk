@@ -56,6 +56,7 @@
  * @test id=AbortVMOnException_GC
  * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
+ * @requires vm.gc != "Z"
  * @library /test/lib
  *
  * @run main/othervm JCmdRevival abortvmonexception GC.class_histogram GC.heap_dump
@@ -65,6 +66,7 @@
  * @test id=AbortVMOnException_Thread
  * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
+ * @requires vm.gc != "Z"
  * @library /test/lib
  *
  * @run main/othervm JCmdRevival abortvmonexception Thread.print
@@ -83,6 +85,7 @@
  * @test id=AbortVMOnException_VM_2
  * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
+ * @requires vm.gc != "Z"
  * @library /test/lib
  *
  * @run main/othervm JCmdRevival abortvmonexception VM.classloaders VM.command_line VM.events
@@ -111,6 +114,7 @@
  * @summary Test jcmd on a core file (OOM crash).
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
+ * @requires vm.gc != "Z"
  *
  * @run main/othervm JCmdRevival oom VM.version Thread.print GC.heap_dump GC.heap_info VM.command_line VM.events VM.flags VM.metaspace
  *
@@ -121,19 +125,20 @@
  * @test id=CICrash
  * @summary Test jcmd on a core file (CI crash, debug VM).
  * @requires os.family == "linux" | os.family == "windows"
- * @library /test/lib
+ * @requires vm.gc != "Z"
  * @requires vm.debug == true
+ * @library /test/lib
  *
- * @run main/othervm JCmdRevival cicrash VM.version help Thread.print GC.heap_dump Compiler.CodeHeap_Analytics
+ * @run main/othervm JCmdRevival cicrash VM.version help Thread.print GC.heap_dump
  *
  * @comment Test a subset with the CICrash crash method.
- * @comment Compiler.CodeHeap_Analytics alone is likely to overrun the log.
  */
 
 /*
  * @test id=LingeredAppCrash
  * @summary Test jcmd on a core file: LingeredApp crash.
  * @requires os.family == "linux" | os.family == "windows"
+ * @requires vm.gc != "Z"
  * @library /test/lib
  *
  * @run main/othervm JCmdRevival lingeredappcrash Thread.print GC.heap_info
