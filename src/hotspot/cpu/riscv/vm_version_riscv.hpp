@@ -439,7 +439,7 @@ private:
       return true;
     }
 
-    // Returns features present in this but not is features_to_test
+    // Returns features present in this but not in features_to_test
     RVExtFeatures features_not_in(RVExtFeatures* features_to_test) {
       RVExtFeatures result;
       for (int i = 0; i < element_count(); i++) {

@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @summary CjdkPU feature compatibility test for AOT Code Cache
+ * @summary CPU feature compatibility test for AOT Code Cache
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.compMode != "Xcomp" & vm.compMode != "Xint"
  * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64"

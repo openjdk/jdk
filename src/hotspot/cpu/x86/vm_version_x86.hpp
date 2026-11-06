@@ -527,7 +527,7 @@ protected:
       return true;
     }
 
-    // Returns features present in this VM_Features but not is features_to_test
+    // Returns features present in this VM_Features but not in features_to_test
     VM_Features features_not_in(VM_Features* features_to_test) {
       VM_Features result;
       for (int i = 0; i < features_bitmap_element_count(); i++) {
