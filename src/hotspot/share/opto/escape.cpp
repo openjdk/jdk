@@ -540,9 +540,19 @@ bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
 
   for (uint i = 1; i < ophi->req(); i++) {
     JavaObjectNode* ptn = unique_java_object(ophi->in(i));
-    if (ptn != nullptr && ptn->scalar_replaceable()) {
-      AllocateNode* alloc = ptn->ideal_node()->as_Allocate();
-
+    if (ptn == nullptr || !ptn->ideal_node()->is_Allocate()) {
+      continue;
+    }
+    AllocateNode* alloc = ptn->ideal_node()->as_Allocate();
+    // Check NoEscape state instead of SR here otherwise later
+    // can_reduce_phi() call can skip SR protected input and
+    // add the Phi through another SR input.
+    if (ptn->escape_state() == PointsToNode::NoEscape &&
+        PhaseMacroExpand::allocation_oome_is_caught(alloc, _compile->env())) {
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can't reduce Phi %d: allocation %d has OOME handler.", ophi->_idx, alloc->_idx);)
+      return false;
+    }
+    if (ptn->scalar_replaceable()) {
       // Don't handle arrays.
       if (alloc->Opcode() != Op_Allocate) {
         assert(alloc->Opcode() == Op_AllocateArray, "Unexpected type of allocation.");

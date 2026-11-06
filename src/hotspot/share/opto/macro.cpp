@@ -24,6 +24,7 @@
 
 #include "ci/ciFlatArrayKlass.hpp"
 #include "ci/ciInstanceKlass.hpp"
+#include "ci/ciStreams.hpp"
 #include "ci/ciValueKlass.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -740,6 +741,29 @@ Node* PhaseMacroExpand::value_type_from_mem(ciValueKlass* vk, const TypeAryPtr* 
   return vt;
 }
 
+// Rematerialization of a scalar-replaced object can fail with OOME
+// during deoptimization. If the original allocation is protected by
+// an OOME handler, popping the affected (inlined) frames
+// by the deoptimizer would bypass such handler. Don't scalarize
+// such allocations.
+bool PhaseMacroExpand::allocation_oome_is_caught(AllocateNode* alloc, ciEnv* env) {
+  for (JVMState* jvms = alloc->jvms(); jvms != nullptr; jvms = jvms->caller()) {
+    // InvocationEntryBci = -1 may represent method entry JVMState.
+    // No exception handler can cover this pseudo-BCI.
+    if (jvms->has_method() && jvms->bci() >= 0 &&
+        jvms->method()->has_exception_handlers()) {
+      // determine potential exception handlers
+      ciExceptionHandlerStream handlers(jvms->method(), jvms->bci(),
+                                        env->OutOfMemoryError_klass(),
+                                        true /* is_exact */);
+      if (!handlers.is_done() && !handlers.handler()->is_rethrow()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Check the possibility of scalar replacement.
 bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode* alloc, Unique_Node_List<SafePointNode>* safepoints) {
   //  Scan the uses of the allocation to check for anything that would
@@ -902,6 +926,11 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
     }
   }
 
+  if (can_eliminate && safepoints != nullptr && safepoints->size() > 0 &&
+      allocation_oome_is_caught(alloc, igvn->C->env())) {
+    NOT_PRODUCT(fail_eliminate = "Allocation is protected by OOME handler";)
+    can_eliminate = false;
+  }
 #ifndef PRODUCT
   if (PrintEliminateAllocations && safepoints != nullptr) {
     if (can_eliminate) {

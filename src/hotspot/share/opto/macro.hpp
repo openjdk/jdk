@@ -248,7 +248,7 @@ public:
 
   SafePointScalarObjectNode* create_scalarized_object_description(AllocateNode* alloc, SafePointNode* sfpt, Unique_Node_List<ValueTypeNode>* value_worklist);
   static bool can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode* alloc, Unique_Node_List<SafePointNode>* safepoints);
-
+  static bool allocation_oome_is_caught(AllocateNode* alloc, ciEnv* env);
 
   PhaseIterGVN &igvn() const { return _igvn; }
 
