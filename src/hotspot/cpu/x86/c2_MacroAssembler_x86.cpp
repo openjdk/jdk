@@ -1428,7 +1428,13 @@ void C2_MacroAssembler::vshiftb_gfni(int opcode, XMMRegister dst, XMMRegister sr
     assert(opcode == Op_LShiftVB, "%s", NodeClassNames[opcode]);
   }
   movdl(rtmp, shift);
-  andl(rtmp, 31);
+#ifdef ASSERT
+  Label count_in_range;
+  cmpl(rtmp, 31);
+  jccb(Assembler::belowEqual, count_in_range);
+  stop("byte shift count out of 0..31");
+  bind(count_in_range);
+#endif
   // One matrix per count in 0..31.
   const int mats_per_kind = 32;
   lea(rbase, ExternalAddress(StubRoutines::x86::vector_byte_shift_gfni_matrix()));

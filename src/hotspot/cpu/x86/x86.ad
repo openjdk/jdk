@@ -21226,14 +21226,14 @@ instruct vshift64B_avx(vec dst, vec src, vec shift, vec tmp1, vec tmp2) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vshiftB_gfni(vec dst, vec src, vec shift, rRegL rtmp, rRegL rbase, rFlagsReg cr) %{
+instruct vshiftB_gfni(vec dst, vec src, vec shift, rRegL rtmp, rRegL rbase) %{
   predicate(!n->as_ShiftV()->is_var_shift() &&
             VM_Version::supports_gfni() && UseAVX > 0 &&
             Matcher::vector_length(n) >= 16);
   match(Set dst ( LShiftVB src shift));
   match(Set dst ( RShiftVB src shift));
   match(Set dst (URShiftVB src shift));
-  effect(TEMP dst, TEMP rtmp, TEMP rbase, KILL cr);
+  effect(TEMP dst, TEMP rtmp, TEMP rbase);
   format %{ "vector_byte_shift_gfni $dst,$src,$shift\t! using $rtmp and $rbase as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
