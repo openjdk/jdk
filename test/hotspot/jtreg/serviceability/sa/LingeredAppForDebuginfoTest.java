@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2026, NTT DATA
