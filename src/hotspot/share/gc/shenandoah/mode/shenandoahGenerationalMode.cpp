@@ -58,4 +58,11 @@ void ShenandoahGenerationalMode::initialize_flags() const {
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahSATBBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCardBarrier);
+
+  if (ShenandoahHeuristicsFlag::value() != ShenandoahHeuristicsFlag::Heuristic::ADAPTIVE) {
+    log_warning(gc)("Ignoring -XX:ShenandoahGCHeuristics input: %s, because generational shenandoah only"
+      " supports adaptive heuristics", ShenandoahGCHeuristics);
+    // This changes nothing downstream, but is here so that PrintFlagsFinal shows the effective value
+    FLAG_SET_ERGO(ShenandoahGCHeuristics, "adaptive");
+  }
 }

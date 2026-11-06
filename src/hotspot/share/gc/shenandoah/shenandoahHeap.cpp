@@ -518,19 +518,20 @@ void ShenandoahHeap::print_init_logger() const {
 }
 
 void ShenandoahHeap::initialize_mode() {
-  if (ShenandoahGCMode != nullptr) {
-    if (strcmp(ShenandoahGCMode, "satb") == 0) {
-      _gc_mode = new ShenandoahSATBMode();
-    } else if (strcmp(ShenandoahGCMode, "passive") == 0) {
-      _gc_mode = new ShenandoahPassiveMode();
-    } else if (strcmp(ShenandoahGCMode, "generational") == 0) {
+  switch (ShenandoahModeFlag::value()) {
+    case ShenandoahModeFlag::Mode::GENERATIONAL:
       _gc_mode = new ShenandoahGenerationalMode();
-    } else {
-      vm_exit_during_initialization("Unknown -XX:ShenandoahGCMode option");
-    }
-  } else {
-    vm_exit_during_initialization("Unknown -XX:ShenandoahGCMode option (null)");
+      break;
+    case ShenandoahModeFlag::Mode::SATB:
+      _gc_mode = new ShenandoahSATBMode();
+      break;
+    case ShenandoahModeFlag::Mode::PASSIVE:
+      _gc_mode = new ShenandoahPassiveMode();
+      break;
+    default:
+      ShouldNotReachHere();
   }
+
   _gc_mode->initialize_flags();
   if (_gc_mode->is_diagnostic() && !UnlockDiagnosticVMOptions) {
     vm_exit_during_initialization(
