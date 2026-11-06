@@ -53,6 +53,7 @@ static constexpr bool toolchain_uses_psabi_atomics() {
 
 uint32_t VM_Version::_initial_vector_length = 0;
 VM_Version::AtomicAccessMode VM_Version::_atomic_access_mode = AtomicAccessMode::RVWMO;
+VM_Version::AtomicCasMode VM_Version::_atomic_cas_mode = AtomicCasMode::BASELINE;
 
 #define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
 VM_Version::ext_##PRETTY##RVExtFeatureValue VM_Version::ext_##PRETTY;
@@ -114,17 +115,9 @@ void VM_Version::common_initialize() {
     useRVA23U64Profile();
   }
 
-  if (UseZic64b) {
-    if (CacheLineSize != 64) {
-      assert(!FLAG_IS_DEFAULT(CacheLineSize), "default cache line size should be 64 bytes");
-      warning("CacheLineSize is assumed to be 64 bytes because Zic64b is enabled");
-      FLAG_SET_DEFAULT(CacheLineSize, 64);
-    }
-  } else {
-    if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
-      warning("CacheLineSize must be a power of 2");
-      FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
-    }
+  if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
+    warning("CacheLineSize must be a power of 2");
+    FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
   }
 
   if (FLAG_IS_DEFAULT(UseFMA)) {
@@ -220,6 +213,14 @@ void VM_Version::common_initialize() {
     _atomic_access_mode = AtomicAccessMode::ZTSO;
   } else {
     _atomic_access_mode = AtomicAccessMode::RVWMO;
+  }
+
+  if (UseZacas && UseZabha) {
+    _atomic_cas_mode = AtomicCasMode::ZACAS_ZABHA;
+  } else if (UseZacas) {
+    _atomic_cas_mode = AtomicCasMode::ZACAS;
+  } else {
+    _atomic_cas_mode = AtomicCasMode::BASELINE;
   }
 
   if (UseZbb) {
