@@ -962,7 +962,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     }
 
     if (result == nullptr && is_humongous) {
-      _failed_humongous_request_count_since_gc_end.add_then_fetch(1, memory_order_relaxed);
+      _failed_humongous_request_count_since_gc_end.add_then_fetch(1u, memory_order_relaxed);
     }
     // Check that gc overhead is not exceeded.
     //
@@ -1805,7 +1805,7 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
         empty_region_array_size,
         0.8 // TODO: define recency_weight
       );
-      const bool need_gc = _humongous_allocation_history.sample_count() >= 4 && prob_failure >= 0.5; // TODO: define in shen_globals
+      const bool need_gc = _humongous_allocation_history.sample_count() >= 4 && prob_failure >= 0.15; // TODO: define in shen_globals
       _need_conc_gc_for_humongous.store_relaxed(need_gc);
       log_info(gc, ergo)("Humongous allocation failure probability: %.1f%%, %zu epochs in history%s",
                     prob_failure * 100, _humongous_allocation_history.sample_count(),
