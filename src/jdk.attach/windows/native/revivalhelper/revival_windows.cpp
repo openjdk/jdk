@@ -210,7 +210,7 @@ void init_pd() {
     heap_test = (uint64_t) malloc(1);
 }
 
-void dump() {
+void create_minidump() {
     char filename[PATH_MAX];
     snprintf(filename, PATH_MAX - 1, "revival_dump_%ld.mdmp", _getpid());
     MINIDUMP_TYPE dumpType =  (MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithHandleData | MiniDumpWithFullMemoryInfo | MiniDumpWithThreadInfo | MiniDumpWithUnloadedModules);
@@ -271,27 +271,29 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
             return EXCEPTION_CONTINUE_EXECUTION;
         }
     }
-    warn("revival: handler: PID %ld thread: 0x%lx pc 0x%llx address 0x%llx: not handled. ", _getpid(), GetCurrentThreadId(), pc, addr);
-    warn("rsp = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rsp);
-    warn("rbp = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rbp);
-    warn("rax = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rax);
-    warn("rbx = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rbx);
-    warn("rcx = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rcx);
-    warn("rdx = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rdx);
-    warn("r8  = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R8);
-    warn("r9  = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R9);
-    warn("r10 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R10);
-    warn("r11 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R11);
-    warn("r12 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R12);
-    warn("r13 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R13);
-    warn("r14 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R14);
-    warn("r15 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R15);
-    diagWait();
     if (logLevel >= LOG_DEBUG) {
-        dump();
+        warn("revival: handler: PID %ld thread: 0x%lx pc 0x%llx address 0x%llx: not handled. ", _getpid(), GetCurrentThreadId(), pc, addr);
+        warn("rsp = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rsp);
+        warn("rbp = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rbp);
+        warn("rax = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rax);
+        warn("rbx = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rbx);
+        warn("rcx = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rcx);
+        warn("rdx = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->Rdx);
+        warn("r8  = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R8);
+        warn("r9  = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R9);
+        warn("r10 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R10);
+        warn("r11 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R11);
+        warn("r12 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R12);
+        warn("r13 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R13);
+        warn("r14 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R14);
+        warn("r15 = 0x%llx", (uint64_t) exceptionInfo->ContextRecord->R15);
+        diagWait();
+        create_minidump();
+        error("(bad address: %p)", addr);
+    } else {
+        error("(bad address: %p)", addr);
     }
-    exitForRetry(); // Letting this process fail would send the wrong return code back to JCmd.
-    abort(); // Not reached.
+    return EXCEPTION_CONTINUE_SEARCH; // Not reached
 }
 
 void install_handler_pd() {
@@ -473,9 +475,9 @@ char* readstring_at_offset_pd(const char* filename, uint64_t offset) {
         warn("cannot open %s", filename);
         return (char*) -1;
     }
-    off_t pos = lseek(fd, (long) offset, SEEK_SET);
+    uint64_t pos = _lseeki64(fd, offset, SEEK_SET);
     if (pos < 0) {
-        warn("readstring_at_pd: %s: lseek(%ld) fails %d : %s", filename, offset, errno, strerror(errno));
+        warn("readstring_at_pd: %s: seek(%ld) fails %d : %s", filename, offset, errno, strerror(errno));
         close(fd);
         return (char*) -1;
     }
@@ -495,9 +497,9 @@ uint64_t read_pointer_at_offset_pd(const char* filename, uint64_t offset) {
         warn("cannot open %s", filename);
         return 0;
     }
-    off_t pos = lseek(fd, (long) offset, SEEK_SET);
+    uint64_t pos = _lseeki64(fd, offset, SEEK_SET);
     if (pos < 0) {
-        warn("read_pointer_at_pd: %s: lseek(%ld) fails %d : %s", filename, offset, errno, strerror(errno));
+        warn("read_pointer_at_pd: %s: seek(%ld) fails %d : %s", filename, offset, errno, strerror(errno));
         close(fd);
         return 0;
     }
@@ -606,13 +608,12 @@ void write_mem_mappings(MiniDump* dump, int fd, const char* corename, uint64_t d
             // Skip, and skip further segments until the library/module address after ReadOnlySharedMemBase.
             uint64_t resume_address = dump->get_library_mapping_after(dump_ReadOnlySharedMemBase);
             do {
-                logv("create_mappings_pd: avoid 0x%llx: seg 0x%llx", dump_ReadOnlySharedMemBase, d.StartOfMemoryRange);
+                logv("create_mappings_pd: avoid ReadOnlySharedMemBase 0x%llx: seg 0x%llx", dump_ReadOnlySharedMemBase, d.StartOfMemoryRange);
                 seg = dump->readSegment(&d, &currentRVA, true);
                 if (seg == nullptr) {
                     break; // Not expected.  Usually two or three Segments, then modules start.
                 }
             } while ((uint64_t) seg->vaddr <= resume_address);
-            continue;
         }
         // We have something in seg, but consider the next region also:
         segNext = dump->readSegment(&d, &currentRVA, true);
