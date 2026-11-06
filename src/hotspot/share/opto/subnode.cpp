@@ -1637,8 +1637,8 @@ static bool is_counted_loop_cmp(Node *cmp) {
   return n != nullptr &&
          n->is_Phi() &&
          n->in(0) != nullptr &&
-         n->in(0)->is_CountedLoop() &&
-         n->in(0)->as_CountedLoop()->phi() == n;
+         n->in(0)->is_BaseCountedLoop() &&
+         n->in(0)->as_BaseCountedLoop()->phi() == n;
 }
 
 //------------------------------Ideal------------------------------------------
@@ -1744,6 +1744,21 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  // Remove long subtraction or constant addition from equality comparisons with zero.
+  if (cop == Op_CmpL &&
+      (_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
+      phase->type(cmp2) == TypeLong::ZERO) {
+    if (cmp1_op == Op_SubL) {
+      Node* ncmp = phase->transform(new CmpLNode(cmp1->in(1), cmp1->in(2)));
+      return new BoolNode(ncmp, _test._test);
+    }
+    if (cmp1_op == Op_AddL && cmp1->in(2)->is_Con() && !is_counted_loop_cmp(cmp)) {
+      Node* limit = phase->longcon(java_negate(cmp1->in(2)->get_long()));
+      Node* ncmp = phase->transform(new CmpLNode(cmp1->in(1), limit));
+      return new BoolNode(ncmp, _test._test);
+    }
+  }
+
   // Change "cmp (add X min_jlong) (add Y min_jlong)" into "cmpu X Y"
   // and    "cmp (add X min_jlong) c" into "cmpu X (c + min_jlong)"
   if (cop == Op_CmpL &&
@@ -1759,6 +1774,19 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
                !is_cloop_condition(this)) {
       Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);
+    }
+  }
+
+  // Change x u< 1 or x u<= 0 to x == 0
+  // and    x u> 0 or u>= 1   to x != 0
+  if ((cop == Op_CmpU || cop == Op_CmpUL) && cmp1_op != Op_LoadRange) {
+    const BasicType bt = cop == Op_CmpU ? T_INT : T_LONG;
+    const jlong limit = bt == T_INT ? cmp2->find_int_con(-1) : cmp2->find_long_con(-1);
+    if (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) && limit == 1) ||
+        ((_test._test == BoolTest::le || _test._test == BoolTest::gt) && limit == 0)) {
+      Node* zero = phase->integercon(0, bt);
+      Node* ncmp = phase->transform(CmpNode::make(cmp1, zero, bt));
+      return new BoolNode(ncmp, _test.is_less() ? BoolTest::eq : BoolTest::ne);
     }
   }
 
@@ -1792,18 +1820,6 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         return new BoolNode(m_cmpu_0, BoolTest::gt);
       }
     }
-  }
-
-  // Change x u< 1 or x u<= 0 to x == 0
-  // and    x u> 0 or u>= 1   to x != 0
-  if (cop == Op_CmpU &&
-      cmp1_op != Op_LoadRange &&
-      (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) &&
-        cmp2->find_int_con(-1) == 1) ||
-       ((_test._test == BoolTest::le || _test._test == BoolTest::gt) &&
-        cmp2->find_int_con(-1) == 0))) {
-    Node* ncmp = phase->transform(new CmpINode(cmp1, phase->intcon(0)));
-    return new BoolNode(ncmp, _test.is_less() ? BoolTest::eq : BoolTest::ne);
   }
 
   // Change (arraylength <= 0) or (arraylength == 0)
