@@ -1340,7 +1340,9 @@ public class Gen extends JCTree.Visitor {
                     stackBeforeSwitchExpression = stackBeforeSwitchExpression.prepend(item);
                     item.store();
                 }
-                switchResult = makeTemp(pt);
+                if (!inCondSwitchExpression) {
+                    switchResult = makeTemp(pt);
+                } //if inCondSwitchExpression is true, the switchResult variable is not used in visitYield
             }
             int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
             try {
