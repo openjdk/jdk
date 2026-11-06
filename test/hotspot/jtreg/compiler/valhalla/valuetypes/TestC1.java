@@ -27,6 +27,7 @@ import compiler.lib.ir_framework.CompLevel;
 import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.Scenario;
 import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.TestFramework;
 import jdk.test.lib.Asserts;
 
 import jdk.internal.value.ValueClass;
@@ -37,14 +38,74 @@ import static compiler.valhalla.valuetypes.ValueTypes.rI;
 import static compiler.valhalla.valuetypes.ValueTypes.rL;
 
 /*
- * @test
+ * @test id=vanilla
  * @key randomness
  * @summary Various tests that are specific to C1.
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @run driver/timeout=300 ${test.main.class}
+ * @run main/timeout=300 ${test.main.class} vanilla
+ */
+
+/*
+ * @test id=c1
+ * @key stress randomness
+ * @summary Various tests that are specific to C1.
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run driver/timeout=300 ${test.main.class} 0
+ */
+
+/*
+ * @test id=c2
+ * @key stress randomness
+ * @summary Various tests that are specific to C1.
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run driver/timeout=300 ${test.main.class} 1
+ */
+
+/*
+ * @test id=interpreter
+ * @key stress randomness
+ * @summary Various tests that are specific to C1.
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run driver/timeout=300 ${test.main.class} 2
+ */
+
+/*
+ * @test id=xcomp-c1
+ * @key stress randomness
+ * @summary Various tests that are specific to C1.
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run driver/timeout=300 ${test.main.class} 3
+ */
+
+/*
+ * @test id=xcomp-c2
+ * @key stress randomness
+ * @summary Various tests that are specific to C1.
+ * @library /test/lib /
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @run driver/timeout=300 ${test.main.class} 4
  */
 
 public class TestC1 {
@@ -62,17 +123,19 @@ public class TestC1 {
                 new Scenario(4, "-XX:TieredStopAtLevel=4", "-XX:-TieredCompilation", "-Xcomp")
         };
 
-        ValueTypes.getFramework()
-                   .addScenarios(scenarios)
-                   .addFlags("--enable-preview",
-                             "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
-                             "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED")
-                   .addHelperClasses(MyValue1.class,
-                                     MyValue2.class,
-                                     MyValue2Inline.class,
-                                     MyValue3.class,
-                                     MyValue3Inline.class)
-                   .start();
+        TestFramework framework = ValueTypes.getFramework()
+                                            .addFlags("--enable-preview",
+                                                      "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED",
+                                                      "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED")
+                                            .addHelperClasses(MyValue1.class,
+                                                              MyValue2.class,
+                                                              MyValue2Inline.class,
+                                                              MyValue3.class,
+                                                              MyValue3Inline.class);
+        if (!args[0].equals("vanilla")) {
+            framework.addScenarios(scenarios[Integer.parseInt(args[0])]);
+        }
+        framework.start();
     }
 
     // JDK-8229799

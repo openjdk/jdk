@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,27 @@
 #ifndef SHARE_GC_G1_G1REMSETTRACKINGPOLICY_HPP
 #define SHARE_GC_G1_G1REMSETTRACKINGPOLICY_HPP
 
-#include "gc/g1/g1HeapRegion.hpp"
-#include "gc/g1/g1HeapRegionType.hpp"
 #include "memory/allocation.hpp"
 
-// The remembered set tracking policy determines for a given region the state of
-// the remembered set, ie. when it should be tracked, and if/when the remembered
-// set is complete.
+class G1CardSetGroup;
+class G1HeapRegion;
+
 class G1RemSetTrackingPolicy : public CHeapObj<mtGC> {
+  void log_card_set_group_after_rebuild(G1CardSetGroup* gr);
+
 public:
-  // Update remembered set tracking state at allocation of the region. May be
-  // called at any time. The caller makes sure that the changes to the remembered
-  // set state are visible to other threads.
-  void update_at_allocate(G1HeapRegion* r);
-  // Update remembered set tracking state for humongous regions before we are going to
-  // rebuild remembered sets. Called at safepoint in the remark pause.
-  bool update_humongous_before_rebuild(G1HeapRegion* r);
-  // Update remembered set tracking state for old regions before we are going
-  // to rebuild remembered sets. Called at safepoint in the remark pause.
-  bool update_old_before_rebuild(G1HeapRegion* r);
-  // Update remembered set tracking state after rebuild is complete, i.e. the cleanup
-  // pause. Called at safepoint.
-  void update_after_rebuild(G1HeapRegion* r);
-  // Update remembered set tracking state when the region is freed.
-  void update_at_free(G1HeapRegion* r);
+  // Return whether the given humongous (starts) region's card set group should be rebuilt after the
+  // Remark pause.
+  bool should_rebuild_humongous(G1HeapRegion* r);
+  // Return whether the given old region's card set group should be rebuilt after the Remark pause.
+  bool should_rebuild_old(G1HeapRegion* r);
+  // Update remembered set tracking state after rebuild is complete, i.e. the Cleanup
+  // pause. Returns true if the card set group should be kept, false if not. In the latter case the
+  // caller is responsible for deleting it. Called at safepoint.
+  bool update_humongous_after_rebuild(G1CardSetGroup* gr);
+  // Set the card set group state to complete after rebuilding.
+  void update_old_after_rebuild(G1CardSetGroup* gr);
+
 };
 
 #endif // SHARE_GC_G1_G1REMSETTRACKINGPOLICY_HPP

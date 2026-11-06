@@ -160,11 +160,6 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_DEFAULT(ShenandoahUncommit, false);
   }
 
-  // If class unloading is disabled, no unloading for concurrent cycles as well.
-  if (!ClassUnloading) {
-    FLAG_SET_DEFAULT(ClassUnloadingWithConcurrentMark, false);
-  }
-
   // TLAB sizing policy makes resizing decisions before each GC cycle. It averages
   // historical data, assigning more recent data the weight according to TLABAllocationWeight.
   // Current default is good for generational collectors that run frequent young GCs.
@@ -240,11 +235,17 @@ void ShenandoahArguments::initialize_alignments() {
   }
 }
 
+void ShenandoahArguments::initialize_heap_flags_and_sizes() {
+  GCArguments::initialize_heap_flags_and_sizes();
+
+  FLAG_SET_ERGO_IF_DEFAULT(SoftMaxHeapSize, MaxHeapSize);
+}
+
 CollectedHeap* ShenandoahArguments::create_heap() {
   if (strcmp(ShenandoahGCMode, "generational") != 0) {
     // Not generational
-    return new ShenandoahHeap(new ShenandoahCollectorPolicy());
+    return new ShenandoahHeap();
   } else {
-    return new ShenandoahGenerationalHeap(new ShenandoahCollectorPolicy());
+    return new ShenandoahGenerationalHeap();
   }
 }

@@ -33,8 +33,8 @@ inline bool G1CommittedRegionMap::is_active(uint index) const {
   return _active.par_at(index);
 }
 
-inline bool G1CommittedRegionMap::is_inactive(uint index) const {
-  return _inactive.at(index);
+inline bool G1CommittedRegionMap::is_pending_uncommit(uint index) const {
+  return _pending_uncommit.at(index);
 }
 
 #endif // SHARE_GC_G1_G1COMMITTEDREGIONMAP_INLINE_HPP

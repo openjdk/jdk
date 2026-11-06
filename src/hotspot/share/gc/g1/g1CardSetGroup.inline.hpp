@@ -90,8 +90,15 @@ inline void G1CardSetGroup::iterate_for_merge(CardOrRangeVisitor& cl) {
 
 template<typename Func>
 void G1CardSetGroupList::iterate(Func&& f) const {
-  for (G1CardSetGroup* group : _groups) {
-    for (G1CardSetGroupItem ci : *group) {
+  for (G1CardSetGroup* gr : _groups) {
+    f(gr);
+  }
+}
+
+template<typename Func>
+void G1CardSetGroupList::iterate_regions(Func&& f) const {
+  for (G1CardSetGroup* gr : _groups) {
+    for (G1CardSetGroupItem ci : *gr) {
       G1HeapRegion* r = ci._r;
       f(r);
     }
