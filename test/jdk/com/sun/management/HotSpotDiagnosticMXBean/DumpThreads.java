@@ -780,13 +780,24 @@ class DumpThreads {
             started.await();
             long tid = thread.threadId();
 
+            boolean cpuTimeSupported = ManagementFactory.getThreadMXBean().isThreadCpuTimeSupported();
+
+            // plain text thread dump
+            List<String> lines = dumpThreadsToPlainText();
+            ThreadFields fields = findThread(tid, lines);
+            assertNotNull(fields, "thread not found");
+            if (fields.isVirtual() || !cpuTimeSupported) {
+                assertEquals(-1L, fields.cpuTime());
+            } else {
+                assertTrue(fields.cpuTime() != -1L);
+            }
+
+            // JSON thread dump
             ThreadDump threadDump = dumpThreadsToJson();
             ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
                     .findThread(tid)
                     .orElse(null);
             assertNotNull(ti, "thread not found");
-
-            boolean cpuTimeSupported = ManagementFactory.getThreadMXBean().isThreadCpuTimeSupported();
             if (thread.isVirtual() || !cpuTimeSupported) {
                 assertFalse(ti.cpuTime().isPresent());
             } else {
@@ -876,7 +887,8 @@ class DumpThreads {
                                 String name,
                                 boolean isVirtual,
                                 String threadObj,
-                                String state) { }
+                                String state,
+                                long cpuTime) { }
 
     /**
      * Find a thread in the lines of a plain text thread dump.
@@ -890,17 +902,20 @@ class DumpThreads {
             return null;
         }
 
-        // #3 "main" java.lang.Thread@1234abcd RUNNABLE 2026-10-18T15:22:12.012450Z
-        // #36 "" virtual java.lang.VirtualThread@5678abcd WAITING 2026-10-18T15:22:12.012450Z
-        var pattern = Pattern.compile(
-                "#(\\d+)\\s+\"([^\"]*)\"\\s+(virtual\\s+)?(\\S+@[0-9a-fA-F]+)\\s+(\\w+)\\s+.*");
+        // #3 "main" java.lang.Thread@6d06d69c RUNNABLE cpuTime=1190000 2025-04-18T15:22:12.012450Z
+        // #36 "" virtual java.lang.VirtualThread@7852e922 WAITING cpuTime=-1 2025-04-18T15:22:12.012450Z
+        Pattern pattern = Pattern.compile(
+                "#(\\d+)\\s+\"([^\"]*)\"\\s+(virtual\\s+)?"
+                        + "(\\S+@[0-9a-f]+)\\s+(\\w+)"
+                        + "\\s+cpuTime=(-?\\d+)\\s+(\\S+)");
         Matcher matcher = pattern.matcher(line);
-        assertTrue(matcher.matches());
+        assertTrue(matcher.matches(), line);
         String name = matcher.group(2);
-        boolean isVirtual = "virtual ".equals(matcher.group(3));
+        boolean isVirtual = (matcher.group(3) != null);
         String threadObj = matcher.group(4);
         String state = matcher.group(5);
-        return new ThreadFields(tid, name, isVirtual, threadObj, state);
+        long cpuTime = Long.parseLong(matcher.group(6));
+        return new ThreadFields(tid, name, isVirtual, threadObj, state, cpuTime);
     }
 
     /**

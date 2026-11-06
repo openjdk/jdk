@@ -186,7 +186,10 @@ public class ThreadDumper {
         Thread.State state = snapshot.threadState();
         writer.println("#" + thread.threadId() + " \"" + snapshot.threadName()
                 + "\" " + (thread.isVirtual() ? "virtual " : "")
-                + Objects.toIdentityString(thread) + " " + state + " " + now);
+                + Objects.toIdentityString(thread) +
+                " " + state
+                + " cpuTime=" + snapshot.cpuTime()
+                + " " + now);
         StackTraceElement[] stackTrace = snapshot.stackTrace();
         int depth = 0;
         while (depth < stackTrace.length) {
