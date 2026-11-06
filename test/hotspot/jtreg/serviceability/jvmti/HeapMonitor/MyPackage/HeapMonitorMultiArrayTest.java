@@ -26,13 +26,46 @@ package MyPackage;
 
 import java.util.List;
 
-/**
- * @test
+/*
+ * @test id=expand
  * @summary Verifies the JVMTI Heap Monitor API when allocating a multi-array.
  * @requires vm.jvmti
  * @build Frame HeapMonitor
  * @compile HeapMonitorMultiArrayTest.java
- * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorMultiArrayTest
+ * @run main/othervm/native -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeALot
+ *      -agentlib:HeapMonitorTest MyPackage.HeapMonitorMultiArrayTest
+ */
+
+/*
+ * @test id=expand-deopt
+ * @summary Verifies the JVMTI Heap Monitor API when allocating a multi-array.
+ * @requires vm.jvmti & vm.debug
+ * @build Frame HeapMonitor
+ * @compile HeapMonitorMultiArrayTest.java
+ * @run main/othervm/native -XX:+DeoptimizeALot
+ *      -agentlib:HeapMonitorTest MyPackage.HeapMonitorMultiArrayTest mayRepeat
+ */
+
+/*
+ * @test id=noexpand
+ * @summary Verifies the JVMTI Heap Monitor API when allocating a multi-array.
+ * @requires vm.jvmti
+ * @build Frame HeapMonitor
+ * @compile HeapMonitorMultiArrayTest.java
+ * @run main/othervm/native -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeALot
+ *      -XX:MultiArrayExpandLimit=0
+ *      -agentlib:HeapMonitorTest MyPackage.HeapMonitorMultiArrayTest
+ */
+
+/*
+ * @test id=noexpand-deopt
+ * @summary Verifies the JVMTI Heap Monitor API when allocating a multi-array.
+ * @requires vm.jvmti & vm.debug
+ * @build Frame HeapMonitor
+ * @compile HeapMonitorMultiArrayTest.java
+ * @run main/othervm/native -XX:+IgnoreUnrecognizedVMOptions -XX:+DeoptimizeALot
+ *      -XX:MultiArrayExpandLimit=0
+ *      -agentlib:HeapMonitorTest MyPackage.HeapMonitorMultiArrayTest
  */
 public class HeapMonitorMultiArrayTest {
 
@@ -52,11 +85,14 @@ public class HeapMonitorMultiArrayTest {
     int sampledEvents = HeapMonitor.sampledEvents();
     int expectedNumber = iterations * allocationsPerIteration;
 
-    // Other allocations in the window get sampled too.
-    if (sampledEvents < expectedNumber ||
-        !HeapMonitor.statsHaveExpectedNumberSamples(expectedNumber, 10)) {
-      throw new RuntimeException("Number of samples (" + sampledEvents + ") not within 10% of the expected ("
-          + expectedNumber + ")");
+    // A deopt between the six allocations C2 expands inline redoes all six,
+    // at most six extra samples per iteration.
+    boolean mayRepeat = args.length > 0 && args[0].equals("mayRepeat");
+    int maxNumber = mayRepeat ? 2 * expectedNumber : expectedNumber;
+    System.out.println("Number of samples: " + sampledEvents);
+    if (sampledEvents < expectedNumber || sampledEvents > maxNumber) {
+      throw new RuntimeException("Number of samples (" + sampledEvents + ") not the expected ("
+          + expectedNumber + (mayRepeat ? " to " + maxNumber : "") + ")");
     }
   }
 }
