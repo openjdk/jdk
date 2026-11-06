@@ -44,6 +44,7 @@
 #include "interpreter/bytecode.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
@@ -1838,6 +1839,17 @@ void GraphBuilder::copy_value_content(ciValueKlass* vk, Value src, int src_off, 
   }
 }
 
+Value GraphBuilder::load_null_reset_value(ciValueKlass* vk) {
+  if (compilation()->env()->is_aot_compile()) {
+    // Null-reset value is stored in the class mirror.
+    Value mirror = append(new Constant(new InstanceConstant(vk->java_mirror()))); // Creates oop relocation
+    Value offset = append(new Constant(new LongConstant(vk->get_null_reset_value_offset())));
+    return append(new UnsafeGet(T_OBJECT, mirror, offset, /*is_volatile*/false,/*is_raw*/false));
+  } else {
+    return append(new Constant(new ObjectConstant(vk->get_null_reset_value().as_object())));
+  }
+}
+
 void GraphBuilder::access_field(Bytecodes::Code code) {
   bool will_link;
   ciField* field = stream()->get_field(will_link);
@@ -2168,7 +2180,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
 
           // Store the subfields when field is a nullable non-atomic field
           Value object_null = append(new Constant(objectNull));
-          Value null_reset_value = append(new Constant(new ObjectConstant(value_klass->get_null_reset_value().as_object())));
+          Value null_reset_value = load_null_reset_value(value_klass);
           Value src = append(new IfOp(val, Instruction::neq, object_null, val, null_reset_value, state_before, false));
           copy_value_content(value_klass, src, value_klass->payload_offset(), obj, offset, state_before, null_checks);
           assert(!null_checks.needs_src && !null_checks.needs_dst, "null checks should have been emitted");

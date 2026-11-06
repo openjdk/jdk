@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,9 +85,7 @@ typedef struct {
     struct in6_addr netmask;
 } AllowedPeerInfo;
 
-#define STR(x) #x
 #define MAX_PEER_ENTRIES 32
-#define MAX_PEERS_STR STR(MAX_PEER_ENTRIES)
 static AllowedPeerInfo _peers[MAX_PEER_ENTRIES];
 static int _peers_cnt = 0;
 
