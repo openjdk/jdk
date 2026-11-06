@@ -25,7 +25,6 @@
 
 
 #include "gc/shared/satbMarkQueue.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
@@ -35,8 +34,8 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
-#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "gc/shenandoah/shenandoahTaskTerminator.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -47,10 +46,10 @@ template <ShenandoahGenerationType GENERATION>
 class ShenandoahConcurrentMarkingTask : public WorkerTask {
 private:
   ShenandoahConcurrentMark* const _cm;
-  TaskTerminator* const           _terminator;
+  ShenandoahTaskTerminator* const _terminator;
 
 public:
-  ShenandoahConcurrentMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator, uint eligible_workers) :
+  ShenandoahConcurrentMarkingTask(ShenandoahConcurrentMark* cm, ShenandoahTaskTerminator* terminator, uint eligible_workers) :
     WorkerTask("Shenandoah Concurrent Mark"), _cm(cm), _terminator(terminator) {
     _cm->set_eligible_workers(eligible_workers);
   }
@@ -65,10 +64,10 @@ template <ShenandoahGenerationType GENERATION>
 class ShenandoahFinalMarkingTask : public WorkerTask {
 private:
   ShenandoahConcurrentMark* _cm;
-  TaskTerminator*           _terminator;
+  ShenandoahTaskTerminator*           _terminator;
 
 public:
-  ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator) :
+  ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, ShenandoahTaskTerminator* terminator) :
     WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator) {}
 
   void work(uint worker_id) {
@@ -179,25 +178,25 @@ void ShenandoahConcurrentMark::concurrent_mark() {
   for (uint flushes = 0; flushes < ShenandoahMaxSATBBufferFlushes; flushes++) {
     switch (gen_type) {
       case YOUNG: {
-        TaskTerminator terminator(nworkers, task_queues());
+        ShenandoahTaskTerminator terminator(nworkers, task_queues());
         ShenandoahConcurrentMarkingTask<YOUNG> task(this, &terminator, heap->eligible_workers());
         workers->run_task(&task);
         break;
       }
       case OLD: {
-        TaskTerminator terminator(nworkers, task_queues());
+        ShenandoahTaskTerminator terminator(nworkers, task_queues());
         ShenandoahConcurrentMarkingTask<OLD> task(this, &terminator, heap->eligible_workers());
         workers->run_task(&task);
         break;
       }
       case GLOBAL: {
-        TaskTerminator terminator(nworkers, task_queues());
+        ShenandoahTaskTerminator terminator(nworkers, task_queues());
         ShenandoahConcurrentMarkingTask<GLOBAL> task(this, &terminator, heap->eligible_workers());
         workers->run_task(&task);
         break;
       }
       case NON_GEN: {
-        TaskTerminator terminator(nworkers, task_queues());
+        ShenandoahTaskTerminator terminator(nworkers, task_queues());
         ShenandoahConcurrentMarkingTask<NON_GEN> task(this, &terminator, heap->eligible_workers());
         workers->run_task(&task);
         break;
@@ -264,7 +263,7 @@ void ShenandoahConcurrentMark::finish_mark_work() {
 
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::finish_mark);
 
-    TaskTerminator terminator(nworkers, task_queues());
+    ShenandoahTaskTerminator terminator(nworkers, task_queues());
     switch (_generation->type()) {
       case YOUNG:{
         ShenandoahFinalMarkingTask<YOUNG> task(this, &terminator);

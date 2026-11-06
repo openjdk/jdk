@@ -322,15 +322,4 @@ public:
   void clear();
 };
 
-class ShenandoahTerminatorTerminator : public TerminatorTerminator {
-  ShenandoahHeap* _heap;
-  bool _cancellable;
-public:
-  ShenandoahTerminatorTerminator(ShenandoahHeap* const heap, bool cancellable)
-    : _heap(heap), _cancellable(cancellable) { }
-
-  bool can_work() const override;
-  bool should_exit_termination() override;
-};
-
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP

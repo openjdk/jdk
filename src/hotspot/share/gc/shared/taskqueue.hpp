@@ -557,9 +557,6 @@ uint GenericTaskQueueSet<T, MT>::tasks() const {
 class TerminatorTerminator: public CHeapObj<mtGC> {
 public:
   virtual bool should_exit_termination() = 0;
-  virtual bool can_work() const {
-    return true;
-  }
 };
 
 class ObjArrayTask

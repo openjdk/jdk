@@ -25,13 +25,13 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHELASTICTASK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHELASTICTASK_HPP
 
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "runtime/mutex.hpp"
 
 class ShenandoahHeap;
 class ShenandoahController;
+class ShenandoahTaskTerminator;
 
 /*
  * The code here provides an abstraction over a coordinated termination
@@ -55,7 +55,7 @@ enum class ShenandoahWorkResult {
 
 // Runs WorkFn on a variable number of threads. Only used for marking.
 template<bool Cancellable, typename WorkFn>
-void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, WorkFn work);
+void shenandoah_elastic_loop(ShenandoahHeap* heap, ShenandoahTaskTerminator* terminator, WorkFn work);
 
 // Holds fields to be shared by elastic tasks, needs to be
 // reachable by shController so that _admitted can be increased.

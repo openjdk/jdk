@@ -28,12 +28,12 @@
 #include "gc/shenandoah/shenandoahElasticTask.hpp"
 
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahTaskTerminator.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 
 template<bool Cancellable, typename WorkFn>
-void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, WorkFn work) {
+void shenandoah_elastic_loop(ShenandoahHeap* heap, ShenandoahTaskTerminator* terminator, WorkFn work) {
   // The TerminatorTerminator is responsible for controlling when a thread
   // should withdraw its termination offer and resume the loop here. The
   // terminator component is responsible for holding excess threads in reserve.

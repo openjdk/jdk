@@ -58,7 +58,7 @@ ShenandoahMark::ShenandoahMark(ShenandoahGeneration* generation, bool bootstrapp
 }
 
 template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
-void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, StringDedup::Requests* const req) {
+void ShenandoahMark::mark_loop_prework(uint w, ShenandoahTaskTerminator *t, StringDedup::Requests* const req) {
   ShenandoahObjToScanQueue* q = get_queue(w);
   ShenandoahObjToScanQueue* old_q = _bootstrapping ? get_old_queue(w) : nullptr;
   ShenandoahReferenceProcessor *rp = _generation->ref_processor();
@@ -80,7 +80,7 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, StringDedup::R
 }
 
 template<bool CANCELLABLE, bool STRING_DEDUP>
-void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator,
+void ShenandoahMark::mark_loop(uint worker_id, ShenandoahTaskTerminator* terminator,
                                ShenandoahGenerationType generation_type, StringDedup::Requests* const req) {
   switch (generation_type) {
     case YOUNG:
@@ -100,7 +100,7 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator,
   }
 }
 
-void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
+void ShenandoahMark::mark_loop(uint worker_id, ShenandoahTaskTerminator* terminator, ShenandoahGenerationType generation_type,
                                bool cancellable) {
   if (_string_dedup) {
     StringDedup::Requests req;
@@ -119,7 +119,7 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, Shena
 }
 
 template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
-bool ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator* terminator,
+bool ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, ShenandoahTaskTerminator* terminator,
                                     StringDedup::Requests* const req) {
   const uintx stride = ShenandoahMarkLoopStride;
 

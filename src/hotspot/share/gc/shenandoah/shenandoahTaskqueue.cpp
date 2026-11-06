@@ -150,13 +150,3 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
   assert(total == total_after, "Lost elements: %zu vs %zu", total, total_after);
 #endif
 }
-
-bool ShenandoahTerminatorTerminator::can_work() const {
-  // Can work if the thread cannot be cancelled (i.e., STW worker) or the thread is not being held in reserve.
-  return !_cancellable || WorkerThread::worker_id() < _heap->control_thread()->concurrent_worker_count();
-}
-
-// Return true means: withdraw offer to terminate, go back and look for work.
-bool ShenandoahTerminatorTerminator::should_exit_termination() {
-  return _heap->cancelled_gc();
-}
