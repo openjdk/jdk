@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -392,7 +392,11 @@ public final class UCharacterProperty
     /**
      * Script_Extensions: mask includes Script
      */
-    public static final int SCRIPT_X_MASK = 0x00f000ff;
+    public static final int SCRIPT_X_MASK = 0x00000fff;
+    // SCRIPT_X_WITH_COMMON must be the lowest value that involves Script_Extensions.
+    public static final int SCRIPT_X_WITH_OTHER = 0xc00;
+    public static final int SCRIPT_X_WITH_INHERITED = 0x800;
+    public static final int SCRIPT_X_WITH_COMMON = 0x400;
     //private static final int SCRIPT_X_SHIFT = 22;
 
     // The UScriptCode or Script_Extensions index is split across two bit fields.
