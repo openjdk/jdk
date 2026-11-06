@@ -112,6 +112,8 @@ const size_t minimumStringTableSize = 128;
 const size_t defaultSymbolTableSize = 32768; // 2^15
 const size_t minimumSymbolTableSize = 1024;
 
+const size_t defaultMetaspaceSize = NOT_LP64(16 * M) LP64_ONLY(21 * M);
+
 #ifdef _LP64
 #define LP64_RUNTIME_FLAGS(develop,                                         \
                            develop_pd,                                      \
@@ -1393,16 +1395,16 @@ const int ObjectAlignmentInBytes = 8;
           "Force inlining of throwing methods smaller than this")           \
           range(0, max_jint)                                                \
                                                                             \
-  product(size_t, MetaspaceSize, NOT_LP64(16 * M) LP64_ONLY(21 * M),        \
+  product(size_t, MetaspaceSize, defaultMetaspaceSize,                      \
           "Initial threshold (in bytes) at which a garbage collection "     \
           "is done to reduce Metaspace usage")                              \
           constraint(MetaspaceSizeConstraintFunc,AtParse)                   \
                                                                             \
   product(size_t, MaxMetaspaceSize, max_uintx,                              \
           "Maximum size of Metaspaces (in bytes)")                          \
-          /* Zero is unreasonable, but perhaps we shouldn't allow a */      \
-          /* value less than the default value for MetaspaceSize. */        \
-          range(1, max_uintx)                                               \
+          /* 0 is unreasonable; JEP-387 modified a negative test to */      \
+          /* use 4K to force an OutOfMemory condition. */                   \
+          range(4 * K, max_uintx)                                           \
           constraint(MaxMetaspaceSizeConstraintFunc,AtParse)                \
                                                                             \
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
