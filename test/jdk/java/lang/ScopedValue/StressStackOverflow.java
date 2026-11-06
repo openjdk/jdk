@@ -28,6 +28,19 @@
  */
 
 /*
+ * @test id=default-diagnostic
+ * @requires os.family == "windows"
+ * @summary Stress ScopedValue stack overflow with diagnostic
+ * @run main/othervm/timeout=300
+ *      -Xlog:os+cpu=info
+ *      -XX:+ErrorFileToStderr
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+ErrorLogSecondaryErrorDetails
+ *      -XX:+CreateCoredumpOnCrash
+ *      ${test.main.class}
+ */
+
+/*
  * @test id=no-TieredCompilation
  * @run main/othervm/timeout=300 -XX:-TieredCompilation ${test.main.class}
  */

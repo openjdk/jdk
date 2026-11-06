@@ -233,7 +233,7 @@ jobs:
 
           if [[ -d build/run-test-prebuilt/test-support ]]; then
             cd build/run-test-prebuilt/test-support/
-            zip -r -9 "$GITHUB_WORKSPACE/results/test-support.zip" . -i *.jtr -i */hs_err*.log -i */replay*.log
+            zip -r -9 "$GITHUB_WORKSPACE/results/test-support.zip" . -i *.jtr -i */hs_err*.mdmp -i */hs_err*.log -i */replay*.log
             cd $GITHUB_WORKSPACE
           else
             echo '::warning ::Missing test-support directory'
