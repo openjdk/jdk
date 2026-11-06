@@ -221,29 +221,83 @@ static char* build_id_to_debug_filename (size_t size, unsigned char* data) {
   return filename;
 }
 
-static int open_debuginfo_from_build_id(ELF_SHDR* shbuf, ELF_EHDR* ehdr, struct elf_section* scn_cache) {
-#ifdef NT_GNU_BUILD_ID
-  int cnt = 0;
-  ELF_SHDR* cursct = NULL;
+#define ROUNDUP(x, y)  ((((x)+((y)-1))/(y))*(y))
 
-  // First we look for a Build ID
-  for (cursct = shbuf, cnt = 0; cnt < ehdr->e_shnum; cnt++) {
-    if (cursct->sh_type == SHT_NOTE) {
-      Elf64_Nhdr *note = (Elf64_Nhdr *)scn_cache[cnt].c_data;
-      if (note->n_type == NT_GNU_BUILD_ID) {
-        unsigned char *bytes = (unsigned char*)(note+1) + note->n_namesz;
-        char *filename = build_id_to_debug_filename(note->n_descsz, bytes);
-        if (filename != NULL) {
-          int fd = pathmap_open(filename);
-          free(filename);
-          return fd;
+static bool get_build_id(const char *filename, int fd, ELF_EHDR* ehdr, unsigned char **buildid, int *buildid_sz) {
+#ifdef NT_GNU_BUILD_ID
+  ELF_PHDR *phbuf, *php;
+  int i;
+  unsigned char *buf = NULL;
+
+  *buildid = NULL;
+  *buildid_sz = 0;
+
+  if ((phbuf = read_program_header_table(fd, ehdr)) == NULL) {
+    print_error("failed to read program header table from %s\n", filename);
+    return false;
+  }
+
+  for (php = phbuf, i = 0; i < ehdr->e_phnum; i++, php++) {
+    if (php->p_type == PT_NOTE) {
+      unsigned char *p;
+      if (lseek(fd, php->p_offset, SEEK_SET) == (off_t)-1) {
+        print_error("failed to lseek to PT_NOTE data in %s\n", filename);
+        break;
+      }
+      if ((buf = (unsigned char*)malloc(php->p_filesz)) == NULL) {
+        print_error("failed to allocate memory for PT_NOTE data in %s\n", filename);
+        break;
+      }
+      if (read(fd, buf, php->p_filesz) != php->p_filesz) {
+        print_error("failed to read PT_NOTE data in %s\n", filename);
+        break;
+      }
+
+      p = buf;
+      while (p < buf + php->p_filesz) {
+        ELF_NHDR *notep = (ELF_NHDR*)p;
+        unsigned char *descdata = p + sizeof(ELF_NHDR) + ROUNDUP(notep->n_namesz, 4);
+        if (notep->n_type == NT_GNU_BUILD_ID) {
+          *buildid_sz = notep->n_descsz;
+          *buildid = (unsigned char*)malloc(*buildid_sz);
+          if (*buildid != NULL) {
+            memcpy(*buildid, descdata, *buildid_sz);
+          } else {
+            print_error("failed to allocate memory for Build ID of %s\n", filename);
+          }
+          goto loop_end;
         }
+        p = descdata + ROUNDUP(notep->n_descsz, 4);
       }
     }
-    cursct++;
   }
+
+loop_end:
+  if (buf != NULL) {
+    free(buf);
+  }
+  return *buildid != NULL;
+#else
+  return false;
 #endif
-  return -1;
+}
+
+static int open_debuginfo_from_build_id(const char *filename, int fd, ELF_EHDR* ehdr) {
+  unsigned char *buildid = NULL;
+  int buildid_sz;
+  if (!get_build_id(filename, fd, ehdr, &buildid, &buildid_sz)) {
+    return -1;
+  }
+
+  char *debug_filename = build_id_to_debug_filename(buildid_sz, buildid);
+  int debug_fd = -1;
+  if (debug_filename != NULL) {
+    debug_fd = pathmap_open(debug_filename);
+    free(debug_filename);
+  }
+
+  free(buildid);
+  return debug_fd;
 }
 
 int open_debuginfo(const char* filename, int fd) {
@@ -288,7 +342,7 @@ int open_debuginfo(const char* filename, int fd) {
     debug_fd = open_debuginfo_from_debug_link(filename, fd, &ehdr, scn_cache);
     if (debug_fd == -1) {
       // try again with build id.
-      debug_fd = open_debuginfo_from_build_id(shbuf, &ehdr, scn_cache);
+      debug_fd = open_debuginfo_from_build_id(filename, fd, &ehdr);
     }
   }
 

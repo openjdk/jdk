@@ -51,6 +51,8 @@ NSK_SHARE_DIR := $(VM_TESTBASE_DIR)/nsk/share
 # Optimization -O3 needed, HIGH == -O3
 HOTSPOT_JTREG_LIBRARIES_OPTIMIZATION_libNoFramePointer := HIGH
 
+HOTSPOT_JTREG_LIBRARIES_OPTIMIZATION_libDebuginfoTest := NONE
+
 HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exesigtest := java.base:libjvm
 HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exedaemonDestroy := java.base:libjvm
 
@@ -69,6 +71,11 @@ ifeq ($(call isTargetOs, linux), true)
   HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit += -ldl
   HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
   HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libfast-math := -ffast-math
+  BUILD_TEST_libDebuginfoTest_COMPILE_WITH_DEBUG_SYMBOLS := true
+  BUILD_TEST_libDebuginfoTest_FORCE_COPY_DEBUG_SYMBOLS := true
+  BUILD_TEST_libDebuginfoTest_ZIP_EXTERNAL_DEBUG_SYMBOLS := false
+  HOTSPOT_JTREG_LIBRARIES_STRIP_SYMBOLS_libDebuginfoTest := true
+  BUILD_TEST_libDebuginfoTest_STRIPFLAGS := --strip-all -R .note.gnu.build-id
   ifeq ($(call isTargetCpuBits, 32), true)
     HOTSPOT_JTREG_LIBRARIES_LIBS_libSuspendInCritical += -latomic
   endif
