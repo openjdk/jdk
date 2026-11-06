@@ -59,6 +59,8 @@ HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exedaemonDestroy := java.base:libjvm
 
 ifeq ($(call isTargetOs, linux), true)
   HOTSPOT_JTREG_LIBRARIES_CFLAGS_libNoFramePointer := -fomit-frame-pointer
+  HOTSPOT_JTREG_LIBRARIES_CFLAGS_libNoEhFrame := -fno-unwind-tables -fno-asynchronous-unwind-tables
+  HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libNoEhFrame := -nostartfiles
   HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rw := -z noexecstack
   HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
   HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeinvoke := java.base:libjvm
@@ -78,7 +80,7 @@ else
 endif
 
 ifneq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64), true+true)
-  HOTSPOT_JTREG_EXCLUDE += libTestSVEWithJNI.c
+  HOTSPOT_JTREG_EXCLUDE += libTestSVEWithJNI.c libNoEhFrame.c
 endif
 
 ifeq ($(call isTargetOs, windows), true)
