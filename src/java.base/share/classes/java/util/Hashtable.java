@@ -293,16 +293,12 @@ public class Hashtable<K,V>
     }
 
     /**
-     * Tests if some key maps into the specified value in this hashtable.
-     * This operation is more expensive than the {@link #containsKey
-     * containsKey} method.
+     * Equivalent to {@link #containsValue(Object) containsValue}.
      *
      * @deprecated
-     * This method predates the collections framework; the method name,
-     * {@code contains}, is highly misleading with {@link #containsKey(Object)
-     * containsKey}. It is recommended to call the identical {@link
-     * #containsValue(Object) containsValue} (which is part of the
-     * {@link Map} interface in the collections framework) instead.
+     * This method is potentially confusing because its name does not indicate
+     * whether it checks for the presence of a key or a value. Use {@link
+     * #containsValue(Object) containsValue} instead.
      *
      * @param      value   a value to search for
      * @return     {@code true} if and only if some key maps to the

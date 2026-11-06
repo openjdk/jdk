@@ -1323,14 +1323,13 @@ public class Properties extends Hashtable<Object,Object> {
      * {@inheritDoc}
      *
      * @deprecated
-     * This method predates the collections framework; the method name,
-     * {@code contains}, is highly misleading with {@link #containsKey(Object)
-     * containsKey}. It is recommended to call the identical {@link
-     * #containsValue(Object) containsValue} (which is part of the
-     * {@link Map} interface in the collections framework) instead.
+     * This method is potentially confusing because its name does not indicate
+     * whether it checks for the presence of a key or a value. Use {@link
+     * #containsValue(Object) containsValue} instead.
      *
      * @param value {@inheritDoc}
      * @return {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
      */
     @Override
     @Deprecated(since = "28")
