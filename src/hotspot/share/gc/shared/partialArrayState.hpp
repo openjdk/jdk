@@ -92,14 +92,11 @@ public:
 // because of a full marking queue, the queue doesn't need to be searched for
 // tasks referring to states to allow releasing them.  Instead the queue
 // contents can just be discarded, and the memory for the no longer referenced
-// states will eventually be reclaimed when the allocator is reset or destroyed.
+// states will be reclaimed when the allocator is reset or destroyed.
 //
 // The allocators each provide a free-list of states.  When a state is
 // released and its remaining chunk count has reached zero, it is added to the
-// allocator's free-list, for use by future allocation requests.  This causes
-// the maximum number of allocated states to be based on the number of
-// in-progress arrays, rather than the total number of arrays that need to be
-// processed.
+// allocator's free-list, for use by future allocation requests.
 //
 // A state may be allocated from one allocator's arena and recycled on another
 // allocator's free-list after work stealing.  Reclamation follows the owning
@@ -110,23 +107,21 @@ public:
 // entries may belong to an already reclaimed arena.
 //
 // An allocator object is not thread-safe.
-class PartialArrayStateAllocator : public CHeapObj<mtGC> {
-  friend class PartialArraySplitter;
-
+class PartialArrayStateAllocator {
   class FreeListEntry;
 
   FreeListEntry* _free_list;
   Arena _arena;
-
-  // Reclaim states and reconstruct the arena.  Called only by the owning
-  // splitter after all workers have stopped using states.
-  void reset();
 
 public:
   PartialArrayStateAllocator();
   ~PartialArrayStateAllocator() = default;
 
   NONCOPYABLE(PartialArrayStateAllocator);
+
+  // Reclaim states and reconstruct the arena.  Called only by the owning
+  // splitter after all workers have stopped using states.
+  void reset();
 
   PartialArrayState* allocate(objArrayOop array,
                               size_t index, size_t length,

@@ -58,7 +58,7 @@ public:
   NONCOPYABLE(PartialArraySplitter);
 
   // Reclaim states and reset statistics.  Requires the worker quiescence and
-  // coordinated cleanup described above; never use for a marking restart.
+  // coordinated cleanup described above.
   void reset();
 
   // A chunk remains valid after its progress record has been recycled.  It
