@@ -163,7 +163,7 @@ char *getMacOSXLocale(int cat) {
 const char * convertToPOSIXLocale(const char* src) {
     char* scriptRegion = strchr(src, '-');
     if (scriptRegion != NULL) {
-        int length = strlen(scriptRegion);
+        size_t length = strlen(scriptRegion);
         char* region = strchr(scriptRegion + 1, '-');
         char* atMark = NULL;
 
