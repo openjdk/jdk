@@ -1117,6 +1117,77 @@ bool LibraryCallKit::inline_string_compareTo(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
+Node* LibraryCallKit::inline_string_constant_equals(Node* arg, int offset, ciTypeArray* ary) {
+  int total_size = ary->length();
+  int remaining_size = total_size - offset;
+  assert(remaining_size > 0, "At least one byte must be read");
+
+  int read_address = arrayOopDesc::base_offset_in_bytes(T_BYTE) + offset;
+
+  // Pick the largest possible type to read. Longs need extra care for alignment, as the first array element can start
+  // at a non-long aligned position with compact object headers. For the others, no alignment check is needed since the
+  // first element is always aligned to 4 bytes.
+  BasicType read_type;
+  if (remaining_size >= 8 && is_aligned(read_address, BytesPerLong)) {
+    read_type = T_LONG;
+  } else if (remaining_size >= 4) {
+    read_type = T_INT;
+  } else if (remaining_size >= 2) {
+    read_type = T_SHORT;
+  } else {
+    read_type = T_BYTE;
+  }
+
+  // Regardless of the type that was chosen, the read should be aligned.
+  assert(is_aligned(read_address, type2aelembytes(read_type)), "Must be aligned");
+
+  Node* arg_adr = basic_plus_adr(arg, read_address);
+  // The load is not aligned as we have proven above, and is mismatched as we are reading larger integral types out of a byte array.
+  Node* load = make_load(control(), arg_adr, Type::get_const_basic_type(read_type), read_type, MemNode::unordered,
+    LoadNode::DependsOnlyOnTest, /* atomic */ false, /* unaligned */ false, /* mismatched */ true);
+
+  // Build the constant to compare with by reading from the constant array.
+  Node* con;
+  switch (read_type) {
+    case T_BYTE:  con = _gvn.intcon(ary->read_integral_bytes<jbyte>(offset));  break;
+    case T_SHORT: con = _gvn.intcon(ary->read_integral_bytes<jshort>(offset)); break;
+    case T_INT:   con = _gvn.intcon(ary->read_integral_bytes<jint>(offset));   break;
+    case T_LONG:  con = _gvn.longcon(ary->read_integral_bytes<jlong>(offset)); break;
+    default: ShouldNotReachHere();
+  }
+
+  // CmpNode::make is not implemented for subword types, use T_INT for those cases.
+  Node* cmp = _gvn.transform(CmpNode::make(load, con, read_type == T_LONG ? T_LONG : T_INT));
+  Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::ne));
+
+  RegionNode* region = new RegionNode(3);
+  Node* phi = new PhiNode(region, TypeInt::BOOL);
+
+  Node* if_ne = generate_slow_guard(bol, nullptr);
+  if (if_ne != nullptr) {
+    phi->init_req(2, intcon(0));
+    region->init_req(2, if_ne);
+  }
+
+  int next_offset = offset + type2aelembytes(read_type);
+  if (next_offset < total_size) {
+    // If there are still more bytes, we need to build the next comparison and depend on the result.
+    Node* result = inline_string_constant_equals(arg, next_offset, ary);
+
+    phi->init_req(1, _gvn.transform(result));
+  } else {
+    // If there are no more bytes, the comparison has been successful and we can return true.
+    phi->init_req(1, _gvn.intcon(1));
+  }
+  // If we recursed, the control will be the inner region. Otherwise, it'll be the true path from the if guard.
+  region->init_req(1, control());
+
+  set_control(_gvn.transform(region));
+  record_for_igvn(region);
+
+  return _gvn.transform(phi);
+}
+
 //------------------------------inline_string_equals------------------------
 bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
   Node* arg1 = argument(0);
@@ -1148,10 +1219,37 @@ bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
       region->init_req(2, if_ne);
     }
 
-    // Check for count == 0 is done by assembler code for StrEquals.
-
     if (!stopped()) {
-      Node* equals = make_string_method_node(Op_StrEquals, arg1_start, arg1_cnt, arg2_start, arg2_cnt, ae);
+      auto get_constant_array = [](const Node* node) {
+        assert(node->is_Con(), "Expected constant");
+        const TypeAryPtr* t = node->bottom_type()->isa_aryptr();
+
+        assert(t != nullptr && t->const_oop() != nullptr, "Expected constant node to have a constant type and oop");
+        return t->const_oop()->as_type_array();
+      };
+
+      // Try to identify a constant argument
+      Node* variable_arg = nullptr;
+      ciTypeArray* ary = nullptr;
+      if (arg1->is_Con()) {
+        variable_arg = arg2;
+        ary = get_constant_array(arg1);
+      } else if (arg2->is_Con()) {
+        variable_arg = arg1;
+        ary = get_constant_array(arg2);
+      }
+
+      Node* equals;
+      if (variable_arg != nullptr && ary->length() == 0) {
+        // If we're checking against "", then the string length check suffices.
+        equals = _gvn.intcon(1);
+      } else if (variable_arg != nullptr && ary->length() <= 16) {
+        // If we're checking against a small string constant, inline the comparisons directly.
+        equals = inline_string_constant_equals(variable_arg, 0, ary);
+      } else {
+        equals = make_string_method_node(Op_StrEquals, arg1_start, arg1_cnt, arg2_start, arg2_cnt, ae);
+      }
+
       phi->init_req(1, equals);
       region->init_req(1, control());
     }
