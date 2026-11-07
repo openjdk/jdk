@@ -1206,6 +1206,9 @@ public class Check {
                     // private
                     implicit = PRIVATE;
                     mask = PRIVATE;
+                } else if ((sym.owner.flags_field & SINGLEOBJECT) != 0) {
+                    implicit = PRIVATE;
+                    mask = PRIVATE;
                 } else
                     mask = ConstructorFlags;
             }  else if ((sym.owner.flags_field & INTERFACE) != 0) {
@@ -1256,7 +1259,7 @@ public class Check {
                     log.error(pos, Errors.StaticDeclarationNotAllowedInInnerClasses);
                 }
                 // Nested interfaces and enums are always STATIC (Spec ???)
-                if ((flags & (INTERFACE | ENUM | RECORD)) != 0 ) implicit = STATIC;
+                if ((flags & (INTERFACE | ENUM | RECORD | SINGLEOBJECT)) != 0 ) implicit = STATIC;
             } else {
                 mask = ExtendedClassFlags;
             }
@@ -1279,6 +1282,10 @@ public class Check {
             if ((flags & RECORD) != 0) {
                 // records can't be declared abstract
                 mask &= ~ABSTRACT;
+                implicit |= FINAL;
+            }
+            if ((flags & SINGLEOBJECT) != 0) {
+                mask &= ~(ABSTRACT | INTERFACE | SEALED | NON_SEALED | VALUE_CLASS);
                 implicit |= FINAL;
             }
             if ((flags & STRICTFP) != 0) {
@@ -1351,7 +1358,10 @@ public class Check {
                                 ANNOTATION)
                 && checkDisjoint(pos, flags,
                                 VALUE_CLASS,
-                                INTERFACE) ) {
+                                INTERFACE)
+                && checkDisjoint(pos, flags,
+                                SINGLEOBJECT,
+                                ABSTRACT | INTERFACE | SEALED | NON_SEALED | ANNOTATION | VALUE_CLASS) ) {
             // skip
         }
         return flags & (mask | ~ExtendedStandardFlags) | implicit;
