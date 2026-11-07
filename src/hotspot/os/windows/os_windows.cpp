@@ -2686,6 +2686,29 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
+static bool grow_windows_stack_to(address target) {
+  PNT_TIB tib = (PNT_TIB)NtCurrentTeb();
+
+  // Touch the page immediately below the current stack limit. Windows handles
+  // this as ordinary stack growth: it commits more stack, lowers StackLimit,
+  // and installs a new moving guard.  Re-read StackLimit after every touch
+  // because Windows may grow the stack by more than one page at a time.
+  while (target < (address)tib->StackLimit) {
+    address old_limit = (address)tib->StackLimit;
+    volatile char* probe = reinterpret_cast<volatile char*>(
+        old_limit - os::vm_page_size());
+
+    // Dummy write to trigger an update to the stack limit.
+    *probe = 0;
+
+    if ((address)tib->StackLimit >= old_limit) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 //-----------------------------------------------------------------------------
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
@@ -2784,10 +2807,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         }
         // If it's a legal stack address map the entire region in
         if (thread->is_in_usable_stack(addr)) {
-          addr = (address)((uintptr_t)addr &
-                            (~((uintptr_t)os::vm_page_size() - (uintptr_t)1)));
-          os::commit_memory((char *)addr, thread->stack_base() - addr,
-                            !ExecMem);
+          grow_windows_stack_to(align_down(addr, os::vm_page_size()));
           return EXCEPTION_CONTINUE_EXECUTION;
         }
         // Null pointer exception.
