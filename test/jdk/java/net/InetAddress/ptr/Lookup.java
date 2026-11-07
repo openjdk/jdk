@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,9 @@ public class Lookup {
         String[] strs = tmp.split(":");
         addr = strs[0];
         ipv4Name = strs[1];
+        if (addr.equals(ipv4Name)) {
+            throw new SkippedException(addr + " can't reverse resolved to host - test skipped.");
+        }
 
         // check that the reverse lookup of the IPv4 address
         // will succeed with the IPv4 only stack
@@ -108,7 +111,11 @@ public class Lookup {
         }
 
         strs = tmp.split(":");
+        addr = strs[0];
         ipv4Reversed = strs[1];
+        if (addr.equals(ipv4Reversed)) {
+            throw new SkippedException(addr + " can't reverse resolved to host - test skipped.");
+        }
 
         // Now check that a reverse lookup will succeed with the dual stack.
         InetAddress ia = InetAddress.getByName(addr);
