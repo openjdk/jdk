@@ -6210,7 +6210,7 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
          "start offset must be 8-byte-aligned or be the klass offset");
   assert(base_offset != start_offset, "must include the length field");
   extra_length = extra_length / elem_size; // We count in elements, not bytes.
-  int stubBytesThreshold = 3 * 64 + (UseSIMDForArrayEquals ? 0 : 16);
+  int stubBytesThreshold = 96;
 
   assert(elem_size == 1 || elem_size == 2, "must be char or byte");
   assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
@@ -6323,7 +6323,7 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     cmp(cnt1, (u1)elem_per_word);
     br(LE, SHORT); // short or same
     ldr(tmp3, Address(pre(a1, start_offset)));
-    subs(zr, cnt1, stubBytesThreshold);
+    subs(zr, cnt1, stubBytesThreshold >> log_elem_size);
     br(GE, STUB);
     ldr(tmp4, Address(pre(a2, start_offset)));
     sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
@@ -6374,10 +6374,6 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     }
     b(DONE);
 
-    // (a1 != null && a2 == null) || (a1 != null && a2 != null && a1 == a2)
-    // so, if a2 == null => return false(0), else return true, so we can return a2
-    mov(result, a2);
-    b(DONE);
     bind(SHORT);
     sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
     ldr(tmp3, Address(a1, start_offset));
