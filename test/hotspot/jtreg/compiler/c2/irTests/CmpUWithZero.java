@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +25,7 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
 
 /*
  * @test
@@ -57,6 +59,91 @@ public class CmpUWithZero {
     private void testRunner() {
         test(0);
         test(42);
+    }
+
+    @Test
+    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.CMP_UL }, phase = CompilePhase.PRINT_IDEAL)
+    public static boolean testLongLT(long x) {
+        return Long.compareUnsigned(x, 1) < 0;
+    }
+
+    @Test
+    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.CMP_UL }, phase = CompilePhase.PRINT_IDEAL)
+    public static boolean testLongLE(long x) {
+        return Long.compareUnsigned(x, 0) <= 0;
+    }
+
+    @Test
+    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.CMP_UL }, phase = CompilePhase.PRINT_IDEAL)
+    public static boolean testLongGT(long x) {
+        return Long.compareUnsigned(x, 0) > 0;
+    }
+
+    @Test
+    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.CMP_UL }, phase = CompilePhase.PRINT_IDEAL)
+    public static boolean testLongGE(long x) {
+        return Long.compareUnsigned(x, 1) >= 0;
+    }
+
+    @Run(test = { "testLongLT", "testLongLE", "testLongGT", "testLongGE" })
+    @Warmup(0)
+    public static void testLongRunner() {
+        for (long x : new long[] { Long.MIN_VALUE, -1, 0, 1, 2, 1L << 32, Long.MAX_VALUE }) {
+            Asserts.assertEQ(testLongLT(x), x == 0);
+            Asserts.assertEQ(testLongLE(x), x == 0);
+            Asserts.assertEQ(testLongGT(x), x != 0);
+            Asserts.assertEQ(testLongGE(x), x != 0);
+        }
+    }
+
+    @Test
+    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.ADD_L, IRNode.SUB_L, IRNode.CMP_UL },
+        phase = CompilePhase.PRINT_IDEAL)
+    public static boolean testLongSubEQ(long x, long y) {
+        return x - y == 0;
+    }
+
+    @Test
+    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.ADD_L, IRNode.SUB_L, IRNode.CMP_UL },
+        phase = CompilePhase.PRINT_IDEAL)
+    public static boolean testLongSubNE(long x, long y) {
+        return x - y != 0;
+    }
+
+    @Test
+    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.ADD_L, IRNode.SUB_L, IRNode.CMP_UL },
+        phase = CompilePhase.PRINT_IDEAL)
+    public static boolean testLongAddEQ(long x) {
+        return x + 1 == 0;
+    }
+
+    @Test
+    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.ADD_L, IRNode.SUB_L, IRNode.CMP_UL },
+        phase = CompilePhase.PRINT_IDEAL)
+    public static boolean testLongAddNE(long x) {
+        return x + 1 != 0;
+    }
+
+    @Test
+    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.ADD_L, IRNode.SUB_L, IRNode.CMP_UL },
+        phase = CompilePhase.PRINT_IDEAL)
+    public static boolean testLongSingleton(long x) {
+        return x >= -1 && x <= -1;
+    }
+
+    @Run(test = { "testLongSubEQ", "testLongSubNE", "testLongAddEQ", "testLongAddNE", "testLongSingleton" })
+    @Warmup(0)
+    public static void testLongArithmeticRunner() {
+        long[] values = { -(1L << 32), -2, -1, 0, 1, 1L << 32 };
+        for (long x : values) {
+            for (long y : values) {
+                Asserts.assertEQ(testLongSubEQ(x, y), x == y);
+                Asserts.assertEQ(testLongSubNE(x, y), x != y);
+            }
+            Asserts.assertEQ(testLongAddEQ(x), x == -1);
+            Asserts.assertEQ(testLongAddNE(x), x != -1);
+            Asserts.assertEQ(testLongSingleton(x), x == -1);
+        }
     }
 
 }
