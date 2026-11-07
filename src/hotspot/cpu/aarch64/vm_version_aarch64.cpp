@@ -559,7 +559,7 @@ void VM_Version::initialize() {
     // Enable ROP-protection if
     // 1) this code has been built with branch-protection and
     // 2) the CPU/OS supports it
-#ifdef __ARM_FEATURE_PAC_DEFAULT
+#if defined(__ARM_FEATURE_PAC_DEFAULT) || defined(MSVC_ENABLE_BRANCH_PROTECTION)
     if (!supports_paca()) {
       // Disable PAC to prevent illegal instruction crashes.
       warning("ROP-protection specified, but not supported on this CPU. Disabling ROP-protection.");
