@@ -118,7 +118,6 @@ public:
   static bool map_aot_code_region(ReservedSpace rs) NOT_CDS_RETURN_(false);
   static void unmap_aot_code_region() NOT_CDS_RETURN;
 
-
   static bool is_aot_code_region_empty() NOT_CDS_RETURN_(true);
 
   template <typename T>

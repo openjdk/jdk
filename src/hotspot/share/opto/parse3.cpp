@@ -140,6 +140,9 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
     }
     pop();
     push_node(field->layout_type(), value);
+    if (is_reference_type(bt) && !field->type()->is_loaded()) {
+      null_assert_for_unloaded_type(peek(), field->type(), "field", true);
+    }
     return;
   }
 
@@ -224,17 +227,7 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
     // not need to mention the class index, since the class will
     // already have been loaded if we ever see a non-null value.)
     // uncommon_trap(iter().get_field_signature_index());
-    if (PrintOpto && (Verbose || WizardMode)) {
-      method()->print_name(); tty->print_cr(" asserting nullness of field at bci: %d", bci());
-    }
-    if (C->log() != nullptr) {
-      C->log()->elem("assert_null reason='field' klass='%d'",
-                     C->log()->identify(field_klass));
-    }
-    // If there is going to be a trap, put it at the next bytecode:
-    set_bci(iter().next_bci());
-    null_assert(peek());
-    set_bci(iter().cur_bci()); // put it back
+    null_assert_for_unloaded_type(peek(), field_klass, "field", true);
   }
 }
 

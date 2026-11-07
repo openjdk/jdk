@@ -1320,6 +1320,11 @@ public:
   // Some nodes have specific Ideal subgraph transformations only if they are
   // unique users of specific nodes. Such nodes should be put on IGVN worklist
   // for the transformations to happen.
+  //
+  // Returning true also makes that notification reachable from
+  // remove_globally_dead_node(), which clears inputs through replace_edge()
+  // and set_req_X() while the dead node is only partly disconnected. Code
+  // reached from here must accept null required inputs.
   bool has_special_unique_user() const;
 
   // Some nodes can be processed when one of its outputs is disconnected
