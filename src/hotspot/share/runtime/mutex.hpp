@@ -285,4 +285,28 @@ class RecursiveMutex : public CHeapObj<mtThread> {
   bool holds_lock(Thread* current) { return _owner == current; }
 };
 
+class StripedMutex : public CHeapObj<mtSynchronizer> {
+  const uint32_t _num_stripes;
+  const uint32_t _stripe_mask; // _num_stripes - 1
+  char*          _stripes_base;
+  PaddedMutex*   _stripes;
+
+  inline static uintptr_t hash(const uintptr_t key) {
+    return key ^ (key >> 20) ^ (key >> 9);
+  }
+
+  NONCOPYABLE(StripedMutex);
+
+public:
+  explicit StripedMutex(const Mutex::Rank rank, const char* name);
+  ~StripedMutex();
+
+  template <typename T>
+  Mutex* get(T* key) {
+    const uintptr_t h = StripedMutex::hash((uintptr_t) key);
+    const uint32_t index = static_cast<uint32_t>(h) & _stripe_mask;
+    return &_stripes[index];
+  }
+};
+
 #endif // SHARE_RUNTIME_MUTEX_HPP
