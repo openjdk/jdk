@@ -5474,7 +5474,7 @@ instruct replicateF(vReg dst, vRegF src) %{
       __ dup($dst$$FloatRegister, get_arrangement(this), $src$$FloatRegister);
     } else {
       assert(UseSVE > 0, "must be sve");
-      __ sve_cpy($dst$$FloatRegister, __ S, ptrue, $src$$FloatRegister);
+      __ sve_dup($dst$$FloatRegister, __ S, $src$$FloatRegister, 0);
     }
   %}
   ins_pipe(pipe_slow);
@@ -5489,24 +5489,23 @@ instruct replicateD(vReg dst, vRegD src) %{
       __ dup($dst$$FloatRegister, get_arrangement(this), $src$$FloatRegister);
     } else {
       assert(UseSVE > 0, "must be sve");
-      __ sve_cpy($dst$$FloatRegister, __ D, ptrue, $src$$FloatRegister);
+      __ sve_dup($dst$$FloatRegister, __ D, $src$$FloatRegister, 0);
     }
   %}
   ins_pipe(pipe_slow);
 %}
 
-// Replicate a half-precision float value held in a floating point register
 instruct replicateHF(vReg dst, vRegF src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (Replicate src));
-  format %{ "replicateHF $dst, $src\t# replicate half-precision float" %}
+  format %{ "replicateHF $dst, $src" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     if (VM_Version::use_neon_for_vector(length_in_bytes)) {
       __ dup($dst$$FloatRegister, get_arrangement(this), $src$$FloatRegister);
-    } else { // length_in_bytes must be > 16 and SVE should be enabled
+    } else {
       assert(UseSVE > 0, "must be sve");
-      __ sve_cpy($dst$$FloatRegister, __ H, ptrue, $src$$FloatRegister);
+      __ sve_dup($dst$$FloatRegister, __ H, $src$$FloatRegister, 0);
     }
   %}
   ins_pipe(pipe_slow);
