@@ -1769,18 +1769,45 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_DivVD:
     case Op_SqrtVD:
     case Op_RoundDoubleModeV:
+    case Op_AbsVB:
+    case Op_AbsVS:
+    case Op_AbsVI:
+    case Op_AbsVL:
+    case Op_AbsVD:
+    case Op_NegVD:
+    case Op_MaxV:
+    case Op_MinV:
+    case Op_UMaxV:
+    case Op_UMinV:
+    case Op_AndV:
+    case Op_OrV:
+    case Op_XorV:
+    case Op_LShiftCntV:
+    case Op_RShiftCntV:
+    case Op_LShiftVI:
+    case Op_LShiftVL:
+    case Op_RShiftVI:
+    case Op_RShiftVL:
+    case Op_URShiftVI:
+    case Op_URShiftVL:
       return SuperwordUseVX;
     case Op_AddVF:
     case Op_SubVF:
     case Op_MulVF:
     case Op_DivVF:
     case Op_SqrtVF:
+    case Op_AbsVF:
+    case Op_NegVF:
     //PopCountVI supported by z14 onwards.
     case Op_PopCountVI:
       return (SuperwordUseVX && UseSFPV);
     case Op_FmaF:
     case Op_FmaD:
       return UseFMA;
+    case Op_FmaVD:
+      return (SuperwordUseVX && UseFMA);
+    case Op_FmaVF:
+      return (SuperwordUseVX && UseSFPV && UseFMA);
   }
 
   return true; // Per default match rules are supported.
@@ -11690,11 +11717,416 @@ instruct vsqrt2D_reg(vecX dst, vecX src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+instruct vabs(vecX dst, vecX src) %{
+  match(Set dst (AbsVF src));
+  match(Set dst (AbsVD src));
+  match(Set dst (AbsVB src));
+  match(Set dst (AbsVS src));
+  match(Set dst (AbsVI src));
+  match(Set dst (AbsVL src));
+  size(6);
+  ins_cost(DEFAULT_COST);
+  format %{ "VABS $dst,$src\t// absolute packed" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ z_vlpb($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      case T_SHORT:
+        __ z_vlph($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      case T_INT:
+        __ z_vlpf($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      case T_LONG:
+        __ z_vlpg($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      case T_FLOAT:
+        __ z_vflpsb($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      case T_DOUBLE:
+        __ z_vflpdb($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vneg(vecX dst, vecX src) %{
+  match(Set dst (NegVF src));
+  match(Set dst (NegVD src));
+  size(6);
+  ins_cost(DEFAULT_COST);
+  format %{ "VFLN $dst,$src\t// negate packed" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_FLOAT:
+        __ z_vflnsb($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      case T_DOUBLE:
+        __ z_vflndb($dst$$VectorRegister, $src$$VectorRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vmax_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MaxV src1 src2));
+  size(6);
+  ins_cost(DEFAULT_COST);
+  format %{ "VMAX  $dst,$src1,$src2\t// vector max" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ z_vmxb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_SHORT:
+        __ z_vmxh($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_INT:
+        __ z_vmxf($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_LONG:
+        __ z_vmxg($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_FLOAT:
+        __ z_vfmaxsb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_DOUBLE:
+        __ z_vfmaxdb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vmin_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MinV src1 src2));
+  ins_cost(DEFAULT_COST);
+  size(6);
+  format %{ "VMIN  $dst,$src1,$src2\t// vector max" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ z_vmnb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_SHORT:
+        __ z_vmnh($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_INT:
+        __ z_vmnf($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_LONG:
+        __ z_vmng($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_FLOAT:
+        __ z_vfminsb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_DOUBLE:
+        __ z_vfmindb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vmaxu_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (UMaxV src1 src2));
+  ins_cost(DEFAULT_COST);
+  size(6);
+  format %{ "VMAXU  $dst,$src1,$src2\t// vector unsigned max" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ z_vmxlb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_SHORT:
+        __ z_vmxlh($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_INT:
+        __ z_vmxlf($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_LONG:
+        __ z_vmxlg($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vminu_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (UMinV src1 src2));
+  ins_cost(DEFAULT_COST);
+  size(6);
+  format %{ "VMINU  $dst,$src1,$src2\t// vector unsigned max" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ z_vmnlb($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_SHORT:
+        __ z_vmnlh($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_INT:
+        __ z_vmnlf($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_LONG:
+        __ z_vmnlg($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vand(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AndV src1 src2));
+  ins_cost(DEFAULT_COST);
+  size(6);
+  format %{ "VAND   $dst,$src1,$src2\t// and vectors" %}
+  ins_encode %{
+    __ z_vn($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vor(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (OrV src1 src2));
+  ins_cost(DEFAULT_COST);
+  size(6);
+  format %{ "VOR   $dst,$src1,$src2\t// or vectors" %}
+  ins_encode %{
+    __ z_vo($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vxor(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (XorV src1 src2));
+  ins_cost(DEFAULT_COST);
+  size(6);
+  format %{ "VXOR   $dst,$src1,$src2\t// xor vectors" %}
+  ins_encode %{
+    __ z_vx($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// --------------------------------- FMA --------------------------------------
+// src1 * src2 + dst
+instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVF dst (Binary src1 src2)));
+  predicate(n->as_Vector()->length() == 4);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_vfmasb($dst$$VectorRegister,  $src1$$VectorRegister,
+                $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * (-src2) + dst
+// "(-src1) * src2 + dst" has been idealized to "src2 * (-src1) + dst"
+instruct vfnms4F(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVF dst (Binary src1 (NegVF src2))));
+  predicate(n->as_Vector()->length() == 4);
+  size(6);
+  ins_cost(DEFAULT_COST);
+  ins_encode %{
+    __ z_vfnmssb($dst$$VectorRegister,  $src1$$VectorRegister,
+                 $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * src2 - dst
+instruct vfms4F(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVF (NegVF dst) (Binary src1 src2)));
+  predicate(n->as_Vector()->length() == 4);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_vfmssb($dst$$VectorRegister,  $src1$$VectorRegister,
+                $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vfnma4F(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVF (NegVF dst) (Binary src1 (NegVF src2))));
+  predicate(n->as_Vector()->length() == 4);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_vfnmasb($dst$$VectorRegister,  $src1$$VectorRegister,
+                 $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vfma2D(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVD  dst (Binary src1 src2)));
+  predicate(n->as_Vector()->length() == 2);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_vfmadb($dst$$VectorRegister,  $src1$$VectorRegister,
+                $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vfnms2D(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVD dst (Binary src1 (NegVD src2))));
+  predicate(n->as_Vector()->length() == 2);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_vfnmsdb($dst$$VectorRegister,  $src1$$VectorRegister,
+                 $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vfms2D(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVD (NegVD dst) (Binary src1 src2)));
+  predicate(n->as_Vector()->length() == 2);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_vfmsdb($dst$$VectorRegister,  $src1$$VectorRegister,
+                $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vfnma2D(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (FmaVD (NegVD dst) (Binary src1 (NegVD src2))));
+  predicate(n->as_Vector()->length() == 2);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_vfnmadb($dst$$VectorRegister,  $src1$$VectorRegister,
+                 $src2$$VectorRegister, $dst$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// Vector Shift Instructions
+
+instruct vshiftcntL(vecX dst, iRegI cnt) %{
+  match(Set dst (LShiftCntV cnt));
+  ins_cost(2 * DEFAULT_COST);
+  size(12);
+  ins_encode %{
+    __ z_vlvgf($dst$$VectorRegister, $cnt$$Register, 0); // insert into byte element 0
+    __ z_vrepf($dst$$VectorRegister, $dst$$VectorRegister, 0); // replicate to all 16 bytes
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vshiftcntR(vecX dst, iRegI cnt) %{
+  match(Set dst (RShiftCntV cnt));
+  ins_cost(DEFAULT_COST);
+  size(12);
+  ins_encode %{
+    __ z_vlvgf($dst$$VectorRegister, $cnt$$Register, 0);
+    __ z_vrepf($dst$$VectorRegister, $dst$$VectorRegister, 0);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vlShift4I(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (LShiftVI src shift));
+  predicate(n->as_Vector()->length() == 4);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_veslvf($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vlShift2L(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (LShiftVL src shift));
+  predicate(n->as_Vector()->length() == 2);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_veslvg($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vrShift4I(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (RShiftVI src shift));
+  predicate(n->as_Vector()->length() == 4);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_vesravf($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vrShift2L(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (RShiftVL src shift));
+  predicate(n->as_Vector()->length() == 2);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_vesravg($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vurShift4I(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (URShiftVI src shift));
+  predicate(n->as_Vector()->length() == 4);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_vesrlvf($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct vurShift2L(vecX dst, vecX src, vecX shift) %{
+  match(Set dst (URShiftVL src shift));
+  predicate(n->as_Vector()->length() == 2);
+  ins_cost(DEFAULT_COST);
+  size(6);
+  ins_encode %{
+    __ z_vesrlvg($dst$$VectorRegister, $src$$VectorRegister, $shift$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
 // Vector Population Count Instructions
 
 instruct vpopcnt_reg(vecX dst, vecX src) %{
   match(Set dst (PopCountVI src));
   format %{ "VPOPCT $dst,$src\t// pop count packed" %}
+  ins_cost(DEFAULT_COST);
   size(6);
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -11723,6 +12155,7 @@ instruct vround2D_reg(vecX dst, vecX src, immI8 rmode) %{
   match(Set dst (RoundDoubleModeV src rmode));
   predicate(n->as_Vector()->length() == 2);
   format %{ "RoundDoubleModeV $src,$rmode" %}
+  ins_cost(DEFAULT_COST);
   size(6);
   ins_encode %{
     switch ($rmode$$constant) {

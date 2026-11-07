@@ -26,7 +26,7 @@
  * @test
  * @summary Vectorization test on basic long operations
  * @library /test/lib /
- * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") | (os.simpleArch == "riscv64")
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") | (os.simpleArch == "riscv64") | (os.simpleArch == "s390x")
  * @requires vm.compiler2.enabled
  *
  * @run driver ${test.main.class}
