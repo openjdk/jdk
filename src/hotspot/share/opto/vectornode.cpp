@@ -28,6 +28,7 @@
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
+#include "opto/genericopts.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
@@ -918,6 +919,17 @@ VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, BasicType bt, bool is_
 
   const TypeVect* vt = TypeVect::make(bt, vlen);
   return new ReplicateNode(s, vt);
+}
+
+// Build an integer constant vector, or a vector mask when is_mask is true,
+// with vlen lanes of element type bt.
+VectorNode* VectorNode::make_con(PhaseGVN* phase, uint vlen, BasicType bt,
+                                 jlong value, bool is_mask) {
+  assert(is_integral_type(bt), "expected an integral type");
+  Node* const_node = bt == T_LONG
+                      ? (Node*)phase->longcon(value)
+                      : (Node*)phase->intcon((jint)value);
+  return scalar2vector(const_node, vlen, bt, is_mask);
 }
 
 VectorNode* VectorNode::shift_count(int opc, Node* cnt, uint vlen, BasicType bt) {
@@ -2902,7 +2914,8 @@ Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_resha
   return new VectorBlendNode(a, blend, in(3));
 }
 
-Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+// Optimizations shared by XorV and XorVMask.
+Node* XorVNode::Ideal_Common(PhaseGVN* phase, bool can_reshape) {
   // (XorV src src)      => (Replicate zero)
   // (XorVMask src src)  => (MaskAll zero)
   //
@@ -2916,12 +2929,36 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return VectorNode::scalar2vector(zero, length(), bt, bottom_type()->isa_pvectmask() != nullptr);
   }
 
-  Node* res = Ideal_XorV_VectorMaskCmp(phase, can_reshape);
+  return Ideal_XorV_VectorMaskCmp(phase, can_reshape);
+}
+
+Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* res = Ideal_Common(phase, can_reshape);
   if (res != nullptr) {
     return res;
   }
 
   res = Ideal_XorV_to_VectorBitwiseBlend(phase, can_reshape);
+  if (res != nullptr) {
+    return res;
+  }
+
+  // (XorV (AndV A B) B) => (AndV B (XorV A (Replicate -1)))
+  res = GenericOpts::Ideal_XorAnd_to_AndNot(this, phase);
+  if (res != nullptr) {
+    return res;
+  }
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
+Node* XorVMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* res = Ideal_Common(phase, can_reshape);
+  if (res != nullptr) {
+    return res;
+  }
+
+  // (XorVMask (AndVMask A B) B) => (AndVMask B (XorVMask A (MaskAll -1)))
+  res = GenericOpts::Ideal_XorAnd_to_AndNot(this, phase);
   if (res != nullptr) {
     return res;
   }
