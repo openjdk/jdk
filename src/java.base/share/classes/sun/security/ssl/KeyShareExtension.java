@@ -607,7 +607,7 @@ final class KeyShareExtension {
                             String name = ((NamedParameterSpec)
                                     ng.keAlgParamSpec).getName();
                             KAKeyDerivation handshakeKD = new KAKeyDerivation(
-                                    name, ng, shc, null, null,
+                                    name, shc, null, null,
                                     kcred.getKeyShare());
                             var encaped = handshakeKD.encapsulate(
                                     "TlsHandshakeSecret", xp.getRandom());
