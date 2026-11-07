@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4312961
+ * @bug 4312961 8395702
  * @summary Verify that an instance filter on a MethodEntryRequest works
  *  properly.
  * @author Robert Field/Jim Holmlund
@@ -43,6 +43,7 @@ class InstanceFilterTarg {
 
     public static void main(String args[]) {
         start();
+        second.done(); // This has to be done on the instance we are filtering on.
     }
 
     static void start() {
@@ -54,6 +55,7 @@ class InstanceFilterTarg {
     void go() {
         one();
         two();
+        staticCall();
         three();
     }
 
@@ -65,6 +67,12 @@ class InstanceFilterTarg {
 
     void three() {
     }
+
+    static void staticCall() {
+    }
+
+    void done() {
+    }
 }
 
 public class InstanceFilter extends TestScaffold {
@@ -72,6 +80,7 @@ public class InstanceFilter extends TestScaffold {
 
     ObjectReference theInstance;
     MethodEntryRequest methodEntryRequest;
+    ObjectReference mainThread;
     int methodCount = 0;
     // These are the methods for which we expect to get MethodEntryEvents.
     String[] expectedMethods = new String[] { "go", "one", "two", "three"};
@@ -96,36 +105,58 @@ public class InstanceFilter extends TestScaffold {
         // Find the instance and verify that it is
         // the one we want.
         ObjectReference theThis;
+        StackFrame frame;
+        String methodName;
         try {
-            theThis = event.thread().frame(0).thisObject();
+            frame = event.thread().frame(0);
+            theThis = frame.thisObject();
+            println(frame.toString());
+            methodName = event.location().method().name();
         } catch (IncompatibleThreadStateException ee) {
+            methodEntryRequest.disable();
             failure("FAILED: Exception occured in methodEntered: " + ee);
             return;
         }
+
+        println("Method: " + methodName);
+
         if (theThis == null) {
-            // This happens when the thread has exited or when a
-            // static method is called. Setting an instance
-            // filter does not prevent this event from being
-            // emitted with a this that is null.
+            // "this" can only be null for a static method call, which should
+            // always be filtered out when using an InstanceFilter.
             methodEntryRequest.disable();
+            failure("FAILED: somehow got event on static method");
             return;
         }
 
+        if (event.thread() != mainThread) {
+            methodEntryRequest.disable();
+            failure("FAILED: somehow got event not on main thread");
+            return;
+        } else {
+            if ("done".equals(methodName)) {
+                methodEntryRequest.disable();
+                return;
+            }
+        }
+
         if (!theThis.equals(theInstance)) {
+            methodEntryRequest.disable();
             failure("FAILED: Got a hit on a non-selected instance");
+            return;
         }
 
         // fail if we don't get called for each of the expected methods
         {
-            String methodStr = event.location().method().name();
-
             if (methodCount >= expectedMethods.length) {
+                methodEntryRequest.disable();
                 failure("FAILED: Got too many methodEntryEvents");
-            } else if (methodStr.indexOf(expectedMethods[methodCount]) == -1) {
+                return;
+            } else if (methodName.indexOf(expectedMethods[methodCount]) == -1) {
+                methodEntryRequest.disable();
                 failure("FAILED: Expected method: " + expectedMethods[methodCount]);
+                return;
             }
             methodCount++;
-            println("Method: " + methodStr);
         }
     }
 
@@ -133,6 +164,7 @@ public class InstanceFilter extends TestScaffold {
 
         BreakpointEvent bpe = startTo("InstanceFilterTarg", "go", "()V");
         targetClass = bpe.location().declaringType();
+        mainThread = bpe.thread();
 
         Field field = targetClass.fieldByName("second");
         theInstance = (ObjectReference)(targetClass.getValue(field));
@@ -140,10 +172,6 @@ public class InstanceFilter extends TestScaffold {
         EventRequestManager mgr = vm().eventRequestManager();
         methodEntryRequest = mgr.createMethodEntryRequest();
         methodEntryRequest.addInstanceFilter(theInstance);
-        // Thread filter is needed to prevent MethodEntry events
-        // to be emitted by the debugee when a static method
-        // is called on any thread.
-        methodEntryRequest.addThreadFilter(bpe.thread());
         methodEntryRequest.enable();
 
         listenUntilVMDisconnect();
