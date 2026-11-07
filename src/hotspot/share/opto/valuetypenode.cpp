@@ -2383,17 +2383,22 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
 
   int oop_off_1 = -1;
   int oop_off_2 = -1;
-  Node* payload = convert_to_payload(igvn, kit.control(), value, _null_free, oop_off_1, oop_off_2);
+  Node* oop_1 = igvn.C->top();
+  Node* oop_2 = igvn.C->top();
+  Node* payload = convert_to_payload(igvn, kit.control(), value, _null_free, oop_off_1, oop_1, oop_off_2, oop_2);
 
   ciValueKlass* vk = igvn.type(value)->value_klass();
   // convert_to_payload should give us the offsets of up to 2 oops of vk in oop_off_1 and oop_off_2. The following holds:
   // - they must be valid offsets for oops (0 or 4) or -1 (no oop)
   // - if there is at least one oop, oop_off_1 != oop_off_2, i.e. oop_off_1 == oop_off_2 only if they are both -1, i.e. offsets are distincts
   // - in case there is only one oop, its offset is stored in oop_off_1, and oop_off_2 == -1
+  // - oop_off_{i} == -1 <=> oop_{i} == nullptr;
   assert(oop_off_1 == -1 || oop_off_1 == 0 || oop_off_1 == 4, "invalid layout for %s, first oop at offset %d", vk->name()->as_utf8(), oop_off_1);
   assert(oop_off_2 == -1 || oop_off_2 == 0 || oop_off_2 == 4, "invalid layout for %s, second oop at offset %d", vk->name()->as_utf8(), oop_off_2);
   assert(oop_off_1 != oop_off_2 || oop_off_1 == -1, "we should have: oop_off_1 == oop_off_2 => oop_off_1 == -1. But oop_off_1=oop_off_2=%d", oop_off_1);
   assert(oop_off_1 != -1 || oop_off_2 == -1, "we should have: oop_off_1 == -1 => oop_off_2 == -1. But oop_off_1=%d, oop_off_2=%d", oop_off_1, oop_off_2);
+  assert((oop_off_1 == -1) == oop_1->is_top(), "oop_off_1 == -1 iff. oop_1 is top, but oop_off_1=%d, is oop_1 top=%d", oop_off_1, oop_1->is_top());
+  assert((oop_off_2 == -1) == oop_2->is_top(), "oop_off_2 == -1 iff. oop_2 is top, but oop_off_2=%d, is oop_2 top=%d", oop_off_2, oop_2->is_top());
   BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
   kit.insert_mem_bar(Op_MemBarCPUOrder);
   if (!UseG1GC || oop_off_1 == -1) {
@@ -2406,12 +2411,15 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
     // Contains oops and requires late barrier expansion. Emit a special store node that allows to emit GC barriers in the backend.
     assert(UseG1GC, "Unexpected GC");
     assert(payload_bt == T_LONG, "Unexpected payload type");
+    Node* store_special = kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, TypeLong::LONG, T_LONG, _decorators | C2_MISMATCHED | C2_STORE_SPECIAL, true, value);
+    assert(store_special->Opcode() == Op_StoreLSpecial, "must be special");
+
     // If one oop, set the offset (if no offset is set, two oops are assumed by the backend)
-    Node* oop_offset = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : nullptr;
-    Node* mem = kit.reset_memory();
-    kit.set_all_memory(mem);
-    Node* store = igvn.transform(new StoreLSpecialNode(kit.control(), mem, ptr, TypeRawPtr::BOTTOM, payload, oop_offset, MemNode::unordered));
-    kit.set_memory(store, TypeRawPtr::BOTTOM);
+    Node* oop_offset = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : igvn.C->top();
+    store_special->add_req(oop_offset);
+    assert(!oop_1->is_top(), "if no oop, the store shouldn't be special");
+    store_special->add_req(oop_1);
+    store_special->add_req(oop_2);
   }
   kit.insert_mem_bar(Op_MemBarCPUOrder);
 
@@ -2427,9 +2435,11 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
 }
 
 // Convert the field values to a payload value of type 'bt'
-Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTypeNode* value, bool null_free, int& oop_off_1, int& oop_off_2) {
+Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTypeNode* value, bool null_free, int& oop_off_1, Node*& oop_1, int& oop_off_2, Node*& oop_2) {
   oop_off_1 = -1;
+  oop_1 = igvn.C->top();
   oop_off_2 = -1;
+  oop_2 = igvn.C->top();
   ciValueKlass* vk = igvn.type(value)->value_klass();
   BasicType payload_bt = vk->atomic_size_to_basic_type(null_free);
   Node* payload = igvn.zerocon(payload_bt);
@@ -2463,6 +2473,12 @@ Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTyp
       }
 
       field_value = igvn.transform(new EncodePNode(field_value, val_type));
+      if (oop_1->is_top()) {
+        oop_1 = field_value;
+      } else {
+        assert(oop_2->is_top(), "already set");
+        oop_2 = field_value;
+      }
       field_value = igvn.transform(new CastP2XNode(ctrl, field_value));
       field_value = igvn.transform(new ConvL2INode(field_value));
       field_bt = T_INT;

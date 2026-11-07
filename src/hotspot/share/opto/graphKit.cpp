@@ -1722,19 +1722,24 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
   return ld;
 }
 
-Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
+Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt, MemNode::MemOrd mo) {
+  return store_to_memory(ctl, adr, val, bt, mo, false, false, false, false, false, 0);
+}
+
+Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
                                 MemNode::MemOrd mo,
                                 bool require_atomic_access,
                                 bool unaligned,
                                 bool mismatched,
                                 bool unsafe,
+                                bool store_special,
                                 int barrier_data) {
   int adr_idx = C->get_alias_index(_gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
   const TypePtr* adr_type = nullptr;
   DEBUG_ONLY(adr_type = C->get_adr_type(adr_idx));
   Node *mem = memory(adr_idx);
-  Node* st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo, require_atomic_access);
+  Node* st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo, require_atomic_access, store_special);
   if (unaligned) {
     st->as_Store()->set_unaligned_access();
   }
@@ -1753,6 +1758,16 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
     record_for_igvn(st);
 
   return st;
+}
+
+Node* GraphKit::access_store_at(Node* obj,
+                                Node* adr,
+                                const TypePtr* adr_type,
+                                Node* val,
+                                const Type* val_type,
+                                BasicType bt,
+                                DecoratorSet decorators) {
+  return access_store_at(obj, adr, adr_type, val, val_type, bt, decorators, true, nullptr);
 }
 
 Node* GraphKit::access_store_at(Node* obj,
@@ -5024,7 +5039,7 @@ void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* coun
   Node* ch = load_array_element(src, i_byte, TypeAryPtr::BYTES, /* set_ctrl */ true);
   Node* st = store_to_memory(control(), array_element_address(dst, i_char, T_BYTE),
                              AndI(ch, intcon(0xff)), T_CHAR, MemNode::unordered, false,
-                             false, true /* mismatched */);
+                             false, true /* mismatched */, false, false, 0);
 
   IfNode* iff = create_and_map_if(head, Bool(CmpI(i_byte, count), BoolTest::lt), PROB_FAIR, COUNT_UNKNOWN);
   head->init_req(2, IfTrue(iff));

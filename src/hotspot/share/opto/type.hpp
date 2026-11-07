@@ -1284,6 +1284,7 @@ public:
   Offset join_offset(int offset) const;
 
   // meet and join over pointer equivalence sets
+  static PTR meet_ptr(const PTR lhs, const PTR rhs) { return ptr_meet[lhs][rhs]; }
   PTR meet_ptr(const PTR in_ptr) const { return ptr_meet[in_ptr][ptr()]; }
   PTR join_ptr(const PTR in_ptr) const { return ptr_join[in_ptr][ptr()]; }
 

@@ -3109,7 +3109,7 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
 //=============================================================================
 //---------------------------StoreNode::make-----------------------------------
 // Polymorphic factory method:
-StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt, MemOrd mo, bool require_atomic_access) {
+StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt, MemOrd mo, bool require_atomic_access, bool store_special) {
   assert((mo == unordered || mo == release), "unexpected");
   Compile* C = gvn.C;
   assert(adr_type == nullptr || adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "adr and adr_type must agree");
@@ -3122,7 +3122,12 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
   case T_INT:     return new StoreINode(ctl, mem, adr, adr_type, val, mo);
   case T_CHAR:
   case T_SHORT:   return new StoreCNode(ctl, mem, adr, adr_type, val, mo);
-  case T_LONG:    return new StoreLNode(ctl, mem, adr, adr_type, val, mo, require_atomic_access);
+  case T_LONG: {
+    if (store_special) {
+      return new StoreLSpecialNode(ctl, mem, adr, adr_type, val, mo);
+    }
+    return new StoreLNode(ctl, mem, adr, adr_type, val, mo, require_atomic_access);
+  }
   case T_FLOAT:   return new StoreFNode(ctl, mem, adr, adr_type, val, mo);
   case T_DOUBLE:  return new StoreDNode(ctl, mem, adr, adr_type, val, mo, require_atomic_access);
   case T_METADATA:
@@ -5429,7 +5434,6 @@ Node* InitializeNode::make_raw_address(intptr_t offset,
                                        PhaseGVN* phase) {
   Node* addr = in(RawAddress);
   if (offset != 0) {
-    Compile* C = phase->C;
     addr = phase->transform(AddPNode::make_off_heap(addr, phase->MakeConX(offset)));
   }
   return addr;

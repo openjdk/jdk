@@ -73,9 +73,6 @@ static void write_barrier_post(MacroAssembler* masm,
 
 %}
 
-// TODO 8350865 (same applies to g1StoreLSpecialTwoOops)
-// - Do not set/overwrite barrier data here, also handle G1C2BarrierPostNotNull
-// - Move this into the .m4?
 instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLNoSp src, immI0 off, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC);
@@ -84,7 +81,6 @@ instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLNoSp src, immI0 off, iRegP
   ins_cost(INSN_COST);
   format %{ "str  $src, $mem\t# g1StoreLSpecialOneOopOff0" %}
   ins_encode %{
-    ((MachNode*)this)->set_barrier_data(G1C2BarrierPre | G1C2BarrierPost);
     write_barrier_pre(masm, this,
                       $mem$$Register /* obj */,
                       $tmp1$$Register /* pre_val */,
@@ -95,8 +91,15 @@ instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLNoSp src, immI0 off, iRegP
     __ str($src$$Register, $mem$$Register);
 
     // Extract the narrow oop field value
-    __ ubfm($tmp1$$Register, $src$$Register, 0, 31);
-    __ decode_heap_oop($tmp1$$Register, $tmp1$$Register);
+    if ((barrier_data() & G1C2BarrierPost) != 0) {
+      __ ubfm($tmp1$$Register, $src$$Register, 0, 31);
+      if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
+        __ decode_heap_oop($tmp1$$Register, $tmp1$$Register);
+      } else {
+        __ decode_heap_oop_not_null($tmp1$$Register, $tmp1$$Register);
+      }
+    }
+
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
                        $tmp1$$Register /* new_val */,
@@ -114,8 +117,6 @@ instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegLNoSp src, immI_4 off, iReg
   ins_cost(INSN_COST);
   format %{ "str  $src, $mem\t# g1StoreLSpecialOneOopOff4" %}
   ins_encode %{
-    ((MachNode*)this)->set_barrier_data(G1C2BarrierPre | G1C2BarrierPost);
-
     // Adjust address to point to narrow oop
     __ add($tmp4$$Register, $mem$$Register, 4);
     write_barrier_pre(masm, this,
@@ -128,8 +129,14 @@ instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegLNoSp src, immI_4 off, iReg
     __ str($src$$Register, $mem$$Register);
 
     // Shift long value to extract the narrow oop field value
-    __ lsr($tmp1$$Register, $src$$Register, 32);
-    __ decode_heap_oop($tmp1$$Register, $tmp1$$Register);
+    if ((barrier_data() & G1C2BarrierPost) != 0) {
+      __ lsr($tmp1$$Register, $src$$Register, 32);
+      if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
+        __ decode_heap_oop($tmp1$$Register, $tmp1$$Register);
+      } else {
+        __ decode_heap_oop_not_null($tmp1$$Register, $tmp1$$Register);
+      }
+    }
     write_barrier_post(masm, this,
                        $tmp4$$Register /* store_addr */,
                        $tmp1$$Register /* new_val */,
@@ -147,8 +154,6 @@ instruct g1StoreLSpecialTwoOops(indirect mem, iRegLNoSp src, iRegPNoSp tmp1, iRe
   ins_cost(INSN_COST);
   format %{ "str  $src, $mem\t# g1StoreLSpecialTwoOops" %}
   ins_encode %{
-    ((MachNode*)this)->set_barrier_data(G1C2BarrierPre | G1C2BarrierPost);
-
     write_barrier_pre(masm, this,
                       $mem$$Register /* obj */,
                       $tmp1$$Register /* pre_val */,
@@ -167,8 +172,14 @@ instruct g1StoreLSpecialTwoOops(indirect mem, iRegLNoSp src, iRegPNoSp tmp1, iRe
     __ str($src$$Register, $mem$$Register);
 
     // Zero-extend first narrow oop to long
-    __ ubfm($tmp1$$Register, $src$$Register, 0, 31);
-    __ decode_heap_oop($tmp1$$Register, $tmp1$$Register);
+    if ((barrier_data() & G1C2BarrierPost) != 0) {
+      __ ubfm($tmp1$$Register, $src$$Register, 0, 31);
+      if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
+        __ decode_heap_oop($tmp1$$Register, $tmp1$$Register);
+      } else {
+        __ decode_heap_oop_not_null($tmp1$$Register, $tmp1$$Register);
+      }
+    }
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
                        $tmp1$$Register /* new_val */,
@@ -176,8 +187,14 @@ instruct g1StoreLSpecialTwoOops(indirect mem, iRegLNoSp src, iRegPNoSp tmp1, iRe
                        $tmp3$$Register /* tmp2 */);
 
     // Shift long value to extract the second narrow oop field value
-    __ lsr($tmp1$$Register, $src$$Register, 32);
-    __ decode_heap_oop($tmp1$$Register, $tmp1$$Register);
+    if ((barrier_data() & G1C2BarrierPost) != 0) {
+      __ lsr($tmp1$$Register, $src$$Register, 32);
+      if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
+        __ decode_heap_oop($tmp1$$Register, $tmp1$$Register);
+      } else {
+        __ decode_heap_oop_not_null($tmp1$$Register, $tmp1$$Register);
+      }
+    }
     write_barrier_post(masm, this,
                        $tmp4$$Register /* store_addr */,
                        $tmp1$$Register /* new_val */,

@@ -57,6 +57,8 @@ const DecoratorSet C2_TIGHTLY_COUPLED_ALLOC  = DECORATOR_LAST << 9;
 const DecoratorSet C2_ARRAY_COPY             = DECORATOR_LAST << 10;
 // Loads from immutable memory
 const DecoratorSet C2_IMMUTABLE_MEMORY       = DECORATOR_LAST << 11;
+// We are building a special store, that contains at least one oop, but is not reduced to one oop. At the moment, it's only StoreLSpecial.
+const DecoratorSet C2_STORE_SPECIAL          = DECORATOR_LAST << 12;
 
 class Compile;
 class ConnectionGraph;
@@ -124,7 +126,7 @@ public:
   Node* base() const              { return _base; }
   C2AccessValuePtr& addr() const  { return _addr; }
   BasicType type() const          { return _type; }
-  bool is_oop() const             { return is_reference_type(_type); }
+  bool is_oop() const             { return is_reference_type(_type) || (_decorators & C2_STORE_SPECIAL) != 0; }
   bool is_raw() const             { return (_decorators & AS_RAW) != 0; }
   Node* raw_access() const        { return _raw_access; }
 
@@ -166,8 +168,8 @@ public:
   Node* control() const;
   const ValueTypeNode* vt() const { return _vt; }
 
-  virtual PhaseGVN& gvn() const;
-  virtual bool is_parse_access() const { return true; }
+  PhaseGVN& gvn() const override;
+  bool is_parse_access() const override { return true; }
 };
 
 // This class wraps a bunch of context parameters that are passed around in the
