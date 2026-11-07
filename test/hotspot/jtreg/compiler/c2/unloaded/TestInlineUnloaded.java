@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8294609
+ * @bug 8294609 8329260
  * @requires vm.compiler2.enabled & vm.flagless
  *
  * @library /test/lib
@@ -143,7 +143,12 @@ public class TestInlineUnloaded {
 
     public static class Callee {
         public static class TestNull implements Parent.Invoker {
-            public void invokeArg(Parent.U obj) {}
+            public void invokeArg(Parent.U obj) {
+                invokeStatic(0L, 0.0, obj);
+            }
+
+            // Include two-slot parameters before the unloaded type.
+            public static void invokeStatic(long l, double d, Parent.U obj) {}
 
             public Parent.U invokeRet() {
                 return null;
@@ -206,23 +211,13 @@ public class TestInlineUnloaded {
     }
 
     public static void main(String[] args) throws Exception {
-        run("TestUnloaded", output -> {
-            output.shouldMatch("TestNull::testArg .* unloaded signature classes");
-            output.shouldMatch("TestNull::testRet .* unloaded signature classes");
-            output.shouldMatch("TestNull::test .* unloaded signature classes");
-
-            output.shouldMatch("TestNull::testArg .* failed to inline");
-            output.shouldMatch("TestNull::testRet .* failed to inline");
-            output.shouldMatch("TestNull::test .* failed to inline");
-        });
-        run("TestLoadedRemotely", output -> {
-            output.shouldMatch("TestNull::testArg .* inline");
-            output.shouldMatch("TestNull::testRet .* inline");
-            output.shouldMatch("TestNull::test .* inline");
-
-            output.shouldNotMatch("TestNull::testArg .* unloaded signature classes");
-            output.shouldNotMatch("TestNull::testRet .* unloaded signature classes");
-            output.shouldNotMatch("TestNull::test .* unloaded signature classes");
-        });
+        for (String testCase : new String[] { "TestUnloaded", "TestLoadedRemotely" }) {
+            run(testCase, output -> {
+                for (String method : new String[] { "testArg", "testRet", "test", "invokeStatic" }) {
+                    output.shouldMatch("TestNull::" + method + " \\(\\d+ bytes\\)\\s+(?:inline|force inline)");
+                    output.shouldNotMatch("TestNull::" + method + " \\(\\d+ bytes\\)\\s+failed to inline");
+                }
+            });
+        }
     }
 }

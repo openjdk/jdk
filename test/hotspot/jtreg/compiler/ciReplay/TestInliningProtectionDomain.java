@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8275868
+ * @bug 8275868 8329260
  * @library / /test/lib
  * @summary Testing that ciReplay inlining does not fail with unresolved signature classes.
  * @requires vm.flightRecorder != true & vm.compMode != "Xint" & vm.compMode != "Xcomp" & vm.debug == true & vm.compiler2.enabled
@@ -61,20 +61,14 @@ public class TestInliningProtectionDomain extends InliningBase {
     public void testAction() {
         positiveTest(commandLineReplay);
         String entryString = getTestClass() + " " + "test";
-        boolean inlineFails = testClass == ProtectionDomainTestNoOtherCompilationPrivate.class;
-        int inlineeCount = inlineFails ? 1 : 5;
+        int inlineeCount = 5;
 
         List<InlineEntry> inlineesNormal = parseLogFile(LOG_FILE_NORMAL, entryString, "compile_id='" + getCompileIdFromFile(getReplayFileName()) + "'", inlineeCount);
         List<InlineEntry> inlineesReplay = parseLogFile(LOG_FILE_REPLAY, entryString, "test ()V", inlineeCount);
         verifyLists(inlineesNormal, inlineesReplay, inlineeCount);
 
-        if (inlineFails) {
-            Asserts.assertTrue(inlineesNormal.get(0).compare("compiler.ciReplay.ProtectionDomainTestNoOtherCompilationPrivate", "bar", inlineesNormal.get(0).isUnloadedSignatureClasses()));
-            Asserts.assertTrue(inlineesReplay.get(0).compare("compiler.ciReplay.ProtectionDomainTestNoOtherCompilationPrivate", "bar", inlineesReplay.get(0).isUnloadedSignatureClasses()));
-        } else {
-            Asserts.assertTrue(inlineesNormal.get(4).compare("compiler.ciReplay.InliningBar", "bar2", inlineesNormal.get(4).isNormalInline()));
-            Asserts.assertTrue(inlineesReplay.get(4).compare("compiler.ciReplay.InliningBar", "bar2", inlineesReplay.get(4).isForcedByReplay() || inlineesReplay.get(4).isForcedIncrementalInlineByReplay()));
-        }
+        Asserts.assertTrue(inlineesNormal.get(4).compare("compiler.ciReplay.InliningBar", "bar2", inlineesNormal.get(4).isNormalInline()));
+        Asserts.assertTrue(inlineesReplay.get(4).compare("compiler.ciReplay.InliningBar", "bar2", inlineesReplay.get(4).isForcedByReplay() || inlineesReplay.get(4).isForcedIncrementalInlineByReplay()));
     }
 }
 
@@ -134,8 +128,8 @@ class ProtectionDomainTestNoOtherCompilationPrivate {
     // SigType should be unresolved for the protection domain of this class even though getDeclaredMethods is called in normal
     // run when validating main() method. In this process, only public methods of this class are visited and its signature
     // classes are resolved. Since this method is private, the signature classes are not resolved for this protection domain.
-    // Inlining of bar() should fail in normal run with "unresolved signature classes". Therefore, replay compilation should
-    // also not inline bar().
+    // The unresolved return type no longer prevents inlining of bar(), which returns null.
+    // Both normal and replay compilation should inline it.
     private static SigType bar() {
         InliningFoo.foo();
         return null;
