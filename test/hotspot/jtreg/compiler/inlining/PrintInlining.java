@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8255742
+ * @bug 8255742 8393699
  * @summary PrintInlining as compiler directive doesn't print virtual calls
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -34,19 +34,26 @@
 
 package compiler.inlining;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class PrintInlining {
 
-    static void test(String option) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+    static void test(String option, boolean bimorphic) throws Exception {
+        List<String> options = new ArrayList<>(List.of(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-server", "-XX:-TieredCompilation", "-Xbatch", "-XX:-UseOnStackReplacement",
-                "-XX:CompileCommand=dontinline,*::bar",
                 "-XX:CompileCommand=compileonly,*::foo",
-                "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", option,
-                Launcher.class.getName());
+                "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", option));
+        if (!bimorphic) {
+            options.add("-XX:CompileCommand=dontinline,*::bar");
+        }
+        options.add(Launcher.class.getName());
+        options.add(Boolean.toString(bimorphic));
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(options);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
@@ -55,7 +62,13 @@ public class PrintInlining {
         // The test is applicable only to C2 (present in Server VM).
         if (analyzer.getStderr().contains("Server VM")) {
             analyzer.outputTo(System.out);
-            if (analyzer.asLines().stream()
+            if (bimorphic) {
+                analyzer.shouldMatch("(?m)^\\h*@ \\d+\\h+.*\\$B::bar .*inline \\(hot\\)\\h*$");
+                analyzer.shouldMatch("(?m)^\\h*@ \\d+\\h+.*\\$C::bar .*inline \\(hot\\)\\h*$");
+                analyzer.shouldMatch("(?m)^\\h+\\\\-> TypeProfile .* = .*\\$B\\h*$");
+                analyzer.shouldMatch("(?m)^\\h+\\\\-> TypeProfile .* = .*\\$C\\h*$");
+                analyzer.shouldNotContain("callee changed to");
+            } else if (analyzer.asLines().stream()
                 .filter(s -> s.matches(".*A::bar.+virtual call.*"))
                 .count() != 1) {
                 throw new Exception("'" + option + "' didn't print virtual call.");
@@ -64,8 +77,10 @@ public class PrintInlining {
     }
 
     public static void main(String[] args) throws Exception {
-        test("-XX:+PrintInlining");
-        test("-XX:CompileCommand=option,*::foo,PrintInlining");
+        for (boolean bimorphic : new boolean[] { false, true }) {
+            test("-XX:+PrintInlining", bimorphic);
+            test("-XX:CompileCommand=option,*::foo,PrintInlining", bimorphic);
+        }
     }
 
     static class A {
@@ -90,9 +105,10 @@ public class PrintInlining {
 
     static class Launcher {
         public static void main(String[] args) throws Exception {
-            A[] as = { new B(), new C(), new D() };
+            A[] as = Boolean.parseBoolean(args[0]) ? new A[] { new B(), new C() }
+                                                 : new A[] { new B(), new C(), new D() };
             for (int i = 0; i < 20_000; i++) {
-                foo(as[i % 3]);
+                foo(as[i % as.length]);
             }
         }
     }
