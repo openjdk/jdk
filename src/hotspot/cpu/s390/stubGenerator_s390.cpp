@@ -1229,17 +1229,20 @@ class StubGenerator: public StubCodeGenerator {
 
       Label countLoop1;
       Label copyLoop1;
+      Label vec_count;
+      Label vec_copy;
       Label skipBY;
       Label skipHW;
-      int   stride = -8;
+      const int stride     = -8;
+      const int vec_stride = -32;
 
       __ load_const_optimized(stride_reg, stride); // Prepare for DW copy loop.
 
       if (element_size == 8)    // Nothing to do here.
-        __ z_bru(countLoop1);
+        __ z_bru(vec_count);
       else {                    // Do not generate dead code.
         __ z_tmll(ix_reg, 7);   // Check the "odd" bits.
-        __ z_bre(countLoop1);   // There are none, very good!
+        __ z_bre(vec_count);   // There are none, very good!
       }
 
       if (log2_size == 0) {     // Handle leftover Byte.
@@ -1259,26 +1262,43 @@ class StubGenerator: public StubCodeGenerator {
         __ add2reg(ix_reg, -2); // Decrement delayed to avoid AGI.
         __ bind(skipHW);
         __ z_tmll(ix_reg, 4);
-        __ z_bre(countLoop1);
+        __ z_bre(vec_count);
         // fallthru
       }
       if (log2_size <= 2) {     // There are just 4 bytes (left) that need to be copied.
         __ z_ly(data_reg,  -4, ix_reg, src_reg);
         __ z_sty(data_reg, -4, ix_reg, dst_reg);
         __ add2reg(ix_reg, -4); // Decrement delayed to avoid AGI.
-        __ z_bru(countLoop1);
+        __ z_bru(vec_count);
       }
 
-      // Control can never get to here. Never! Never ever!
+      // Control should not reach here.
       __ z_illtrap(0x99);
+      __ align(32);
+      __ bind(vec_copy);
+
+      __ add2reg(ix_reg, vec_stride);
+
+      __ z_vl(Z_V0, 0, ix_reg, src_reg);
+      __ z_vl(Z_V1, 16, ix_reg, src_reg);
+
+      __ z_vst(Z_V0, 0, ix_reg, dst_reg);
+      __ z_vst(Z_V1, 16, ix_reg, dst_reg);
+
+      __ bind(vec_count);
+      __ compare64_and_branch(ix_reg, -vec_stride, Assembler::bcondNotLow, vec_copy);
+      __ branch_optimized(Assembler::bcondAlways, countLoop1);
+
+      // scalar copy for tail
       __ bind(copyLoop1);
       __ z_lg(data_reg,  0, ix_reg, src_reg);
       __ z_stg(data_reg, 0, ix_reg, dst_reg);
       __ bind(countLoop1);
       __ z_brxhg(ix_reg, stride_reg, copyLoop1);
 
-      if (!branchToEnd)
+      if (!branchToEnd) {
         __ z_br(Z_R14);
+      }
 
       switch (element_size) {
         case 1:  BLOCK_COMMENT("} ARRAYCOPY CONJOINT byte "); break;
