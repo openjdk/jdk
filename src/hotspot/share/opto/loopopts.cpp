@@ -418,7 +418,7 @@ void PhaseIdealLoop::rewire_safe_outputs_to_dominator(Node* source, Node* domina
           out = clone;
         }
       }
-      set_early_ctrl(out, false);
+      optimize_and_set_early_ctrl(out, false);
       IdealLoopTree* new_loop = get_loop(get_ctrl(out));
       if (old_loop != new_loop) {
         if (!old_loop->_child) {
