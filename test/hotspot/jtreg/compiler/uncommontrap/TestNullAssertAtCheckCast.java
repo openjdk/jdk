@@ -42,7 +42,7 @@
  * @bug 8257594
  * @summary Test that failing checkcast does not trigger repeated recompilation until cutoff is hit.
  * @requires vm.compiler2.enabled
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox

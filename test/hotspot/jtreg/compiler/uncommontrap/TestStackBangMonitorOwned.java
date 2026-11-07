@@ -37,7 +37,7 @@
  * @bug 8032410
  * @summary Stack overflow at deoptimization doesn't release owned monitors
  *
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:-BackgroundCompilation -Xss512K -XX:-UseOnStackReplacement
  *      -XX:CompileCommand=dontinline,compiler.uncommontrap.TestStackBangMonitorOwned::m1

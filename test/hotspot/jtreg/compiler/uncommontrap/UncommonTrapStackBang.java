@@ -34,7 +34,7 @@
  * @bug 8026775
  * @summary Uncommon trap blob did not bang all the stack shadow pages
  *
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @requires vm.compiler2.enabled
  * @run main/othervm
  *            -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
