@@ -887,7 +887,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
             case VECTOR_OP_RSHIFT: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> (byte)(a >> n));
             case VECTOR_OP_URSHIFT: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, n) -> (byte)((a & LSHR_SETUP_MASK) >>> n));
+                    v0.bOp(v1, vm, (i, a, n) -> (byte)((a & ALL_BITS_MASK) >>> n));
             case VECTOR_OP_LROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateLeft(a, (int)n));
             case VECTOR_OP_RROTATE: return (v0, v1, vm) ->
@@ -904,6 +904,10 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
                     v0.bOp(v1, vm, (i, a, b) -> (byte)(VectorMath.addSaturatingUnsigned(a, b)));
             case VECTOR_OP_SUSUB: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, b) -> (byte)(VectorMath.subSaturatingUnsigned(a, b)));
+            case VECTOR_OP_COMPRESS_BITS: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, n) -> (byte)Integer.compress(a & ALL_BITS_MASK, n & ALL_BITS_MASK));
+            case VECTOR_OP_EXPAND_BITS: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, n) -> (byte)Integer.expand(a & ALL_BITS_MASK, n & ALL_BITS_MASK));
             default: return null;
         }
     }
@@ -1076,7 +1080,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
             case VECTOR_OP_RSHIFT: return (v, n, m) ->
                     v.uOp(m, (i, a) -> (byte)(a >> n));
             case VECTOR_OP_URSHIFT: return (v, n, m) ->
-                    v.uOp(m, (i, a) -> (byte)((a & LSHR_SETUP_MASK) >>> n));
+                    v.uOp(m, (i, a) -> (byte)((a & ALL_BITS_MASK) >>> n));
             case VECTOR_OP_LROTATE: return (v, n, m) ->
                     v.uOp(m, (i, a) -> rotateLeft(a, (int)n));
             case VECTOR_OP_RROTATE: return (v, n, m) ->
@@ -1092,7 +1096,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
     // up ints.
     private static final int SHIFT_MASK = (Byte.SIZE - 1);
     // Also simulate >>> on sub-word variables with a mask.
-    private static final int LSHR_SETUP_MASK = ((1 << Byte.SIZE) - 1);
+    private static final int ALL_BITS_MASK = ((1 << Byte.SIZE) - 1);
 
     // Ternary lanewise support
 
