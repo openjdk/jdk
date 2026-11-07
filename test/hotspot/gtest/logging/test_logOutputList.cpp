@@ -26,7 +26,7 @@
 #include "logging/logLevel.hpp"
 #include "logging/logOutput.hpp"
 #include "logging/logOutputList.hpp"
-#include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "unittest.hpp"
 
 // Count the outputs in the given list, starting from the specified level
@@ -76,7 +76,6 @@ TEST(LogOutputList, set_output_level_update) {
   size_t outputs_on_level[LogLevel::Count];
   LogLevelType expected_level_for_output[TestOutputCount];
 
-  os::init_random(0x4711);
   for (size_t i = 0; i < LogLevel::Count; i++) {
     outputs_on_level[i] = 0;
   }
@@ -86,8 +85,8 @@ TEST(LogOutputList, set_output_level_update) {
   }
 
   for (size_t iteration = 0; iteration < TestIterations; iteration++) {
-    size_t output_idx = os::random() % TestOutputCount;
-    size_t levelnum = os::random() % LogLevel::Count;
+    size_t output_idx = GtestRandom::random() % TestOutputCount;
+    size_t levelnum = GtestRandom::random() % LogLevel::Count;
     LogLevelType level = static_cast<LogLevelType>(levelnum);
 
     // Update the expectations

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
  */
 
 #include "memory/resourceArea.hpp"
-#include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/ostream.hpp"
@@ -40,8 +40,8 @@ static size_t print_lorem(outputStream* st) {
       "orci sagittis eu volutpat odio facilisis mauris sit. Erat velit scelerisque in dictum non.";
   static const size_t len_lorem = strlen(lorem);
   // Randomly alternate between short and long writes at a ratio of 9:1.
-  const bool short_write = (os::random() % 10) > 0;
-  const size_t len = os::random() % (short_write ? 10 : len_lorem);
+  const bool short_write = (GtestRandom::random() % 10) > 0;
+  const size_t len = GtestRandom::random() % (short_write ? 10 : len_lorem);
   st->write(lorem, len);
   return len;
 }

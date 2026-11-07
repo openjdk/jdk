@@ -27,7 +27,7 @@
 #include "nmt/memTracker.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
-#include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "unittest.hpp"
 
 using Tree = VMATree;
@@ -950,8 +950,8 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
 
   const int operation_count = 100000; // One hundred thousand
   for (int i = 0; i < operation_count; i++) {
-    size_t page_start = (size_t)(os::random() % SimpleVMATracker::num_pages);
-    size_t page_end = (size_t)(os::random() % (SimpleVMATracker::num_pages));
+    size_t page_start = (size_t)(GtestRandom::random() % SimpleVMATracker::num_pages);
+    size_t page_end = (size_t)(GtestRandom::random() % (SimpleVMATracker::num_pages));
 
     if (page_end < page_start) {
       const size_t temp = page_start;
@@ -967,13 +967,13 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
     const size_t start = page_start * page_size;
     const size_t size = num_pages * page_size;
 
-    const MemTag mem_tag = candidate_tags[os::random() % candidates_len_tags];
-    const NativeCallStack stack = candidate_stacks[os::random() % candidates_len_stacks];
+    const MemTag mem_tag = candidate_tags[GtestRandom::random() % candidates_len_tags];
+    const NativeCallStack stack = candidate_stacks[GtestRandom::random() % candidates_len_stacks];
 
     const NCS::StackIndex si = ncss.push(stack);
     VMATree::RegionData data(si, mem_tag);
 
-    const SimpleVMATracker::Kind kind = (SimpleVMATracker::Kind)(os::random() % 3);
+    const SimpleVMATracker::Kind kind = (SimpleVMATracker::Kind)(GtestRandom::random() % 3);
 
     VMATree::SummaryDiff tree_diff;
     VMATree::SummaryDiff simple_diff;
