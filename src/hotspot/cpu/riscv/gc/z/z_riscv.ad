@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+// Copyright (c) 2020, 2026, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,25 @@ static void z_uncolor(MacroAssembler* masm, Register ref) {
   __ srli(ref, ref, ZPointerLoadShift);
 }
 
-static void check_color(MacroAssembler* masm, Register ref, bool on_non_strong, Register result) {
+static void check_color(MacroAssembler* masm, Register ref, bool on_non_strong, Register result, Label& good) {
   int format = on_non_strong ? ZBarrierRelocationFormatMarkBadMask
                              : ZBarrierRelocationFormatLoadBadMask;
+  if (!on_non_strong) {
+    // The load bad mask is a single bit; shift it into the sign bit so the good check is a plain
+    // bgez. The GC patches the shamt field when the remapped bit changes. The raw _slli form must
+    // be used: for the zero unpatched shamt the slli wrapper emits a register move, leaving no
+    // shamt field for the patcher.
+    __ relocate(barrier_Relocation::spec(), [&] {
+      __ _slli(result, ref, barrier_Relocation::unpatched);
+    }, format);
+    __ bgez(result, good);
+    return;
+  }
   __ relocate(barrier_Relocation::spec(), [&] {
     __ li16u(result, barrier_Relocation::unpatched);
   }, format);
   __ andr(result, ref, result);
+  __ beqz(result, good);
 }
 
 static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref, Register tmp) {
@@ -69,8 +81,7 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
 
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
   Label good;
-  check_color(masm, ref, on_non_strong, tmp);
-  __ beqz(tmp, good);
+  check_color(masm, ref, on_non_strong, tmp, good);
   __ j(*stub->entry());
 
   __ bind(good);
