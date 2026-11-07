@@ -431,7 +431,7 @@ void VM_Version::c2_initialize() {
   }
 
   // SHA-3 uses scalar Zbb instructions.
-  if (UseSHA && UseZbb) {
+  if (UseSHA && UseZbb && !AvoidUnalignedAccesses) {
     if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
     }
