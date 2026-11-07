@@ -804,7 +804,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
     HandleMark hm(self);
     GrowableArray<Handle> return_values;
     ValueKlass* vk = nullptr;
-    if (ValueTypeReturnedAsFields && return_oop) {
+    if (ValueTypeReturnedAsFields && method->scalarized_return()) {
       // Check if a value type is returned as fields
       vk = ValueKlass::returned_value_klass(map, &return_oop, method);
       if (vk != nullptr) {

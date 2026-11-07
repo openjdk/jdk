@@ -2772,7 +2772,7 @@ CompiledEntrySignature::CompiledEntrySignature(Method* method) :
   _method(method), _num_value_args(0), _has_value_recv(false),
   _regs(nullptr), _regs_cc(nullptr), _regs_cc_ro(nullptr),
   _args_on_stack(0), _args_on_stack_cc(0), _args_on_stack_cc_ro(0),
-  _needs_stack_repair(false), _supers(nullptr) {
+  _needs_stack_repair(false) {
   _sig = new GrowableArray<SigEntry>((method != nullptr) ? method->size_of_parameters() : 1);
   _sig_cc = new GrowableArray<SigEntry>((method != nullptr) ? method->size_of_parameters() : 1);
   _sig_cc_ro = new GrowableArray<SigEntry>((method != nullptr) ? method->size_of_parameters() : 1);
@@ -2821,101 +2821,6 @@ int CompiledEntrySignature::max_stack_slots_cc() {
   return UseShenandoahGC ? 64 : 128;
 }
 
-// Returns all super methods (transitive) in classes and interfaces that are overridden by the current method.
-GrowableArray<Method*>* CompiledEntrySignature::get_supers() {
-  if (_supers != nullptr) {
-    return _supers;
-  }
-  _supers = new GrowableArray<Method*>();
-  // Skip private, static, and <init> methods
-  if (_method->is_private() || _method->is_static() || _method->is_object_constructor()) {
-    return _supers;
-  }
-  Symbol* name = _method->name();
-  Symbol* signature = _method->signature();
-  const Klass* holder = _method->method_holder()->super();
-  Symbol* holder_name = holder->name();
-  JavaThread* current = JavaThread::current();
-  HandleMark hm(current);
-  Handle loader(current, _method->method_holder()->class_loader());
-
-  // Walk up the class hierarchy and search for super methods
-  while (holder != nullptr) {
-    Method* super_method = holder->lookup_method(name, signature);
-    if (super_method == nullptr) {
-      break;
-    }
-    if (!super_method->is_static() && !super_method->is_private() &&
-        (!super_method->is_package_private() ||
-         super_method->method_holder()->is_same_class_package(loader(), holder_name))) {
-      _supers->push(super_method);
-    }
-    holder = super_method->method_holder()->super();
-  }
-  // Search interfaces for super methods
-  Array<InstanceKlass*>* interfaces = _method->method_holder()->transitive_interfaces();
-  for (int i = 0; i < interfaces->length(); ++i) {
-    Method* m = interfaces->at(i)->lookup_method(name, signature);
-    if (m != nullptr && !m->is_static() && m->is_public()) {
-      _supers->push(m);
-    }
-  }
-  return _supers;
-}
-
-bool CompiledEntrySignature::check_supers_and_deoptimize(int arg_num) {
-  assert(JavaThread::current()->thread_state() == _thread_in_vm, "must be in vm state");
-
-  bool scalar_super = false;
-  bool non_scalar = _method->is_native();
-
-  GrowableArray<Method*>* supers = get_supers();
-  for (int i = 0; i < supers->length(); ++i) {
-    Method* super_method = supers->at(i);
-    if (super_method->is_scalarized_arg(arg_num)) {
-      scalar_super = true;
-    } else {
-      non_scalar = true;
-    }
-  }
-#ifdef ASSERT
-  // Randomly enable below code paths for stress testing
-  bool stress = StressCallingConvention;
-  if (stress && (os::random() & 1) == 1) {
-    non_scalar = true;
-    if ((os::random() & 1) == 1) {
-      scalar_super = true;
-    }
-  }
-#endif
-  if (non_scalar) {
-    // Found a super method with a non-scalarized argument. Fall back to the non-scalarized calling convention.
-    if (scalar_super) {
-      // Found non-scalar *and* scalar super methods. We can't handle both.
-      // Mark the scalar method as mismatch and re-compile call sites to use non-scalarized calling convention.
-      for (int i = 0; i < supers->length(); ++i) {
-        Method* super_method = supers->at(i);
-        if (super_method->is_scalarized_arg(arg_num) DEBUG_ONLY(|| (stress && (os::random() & 1) == 1))) {
-          JavaThread* thread = JavaThread::current();
-          HandleMark hm(thread);
-          methodHandle mh(thread, super_method);
-          DeoptimizationScope deopt_scope;
-          {
-            // Keep the lock scope minimal. Prevent interference with other
-            // dependency checks by setting mismatch and marking within the lock.
-            MutexLocker ml(Compile_lock, Mutex::_safepoint_check_flag);
-            super_method->set_mismatch();
-            CodeCache::mark_for_deoptimization(&deopt_scope, mh());
-          }
-          deopt_scope.deoptimize_marked();
-        }
-      }
-    }
-  }
-
-  return non_scalar;
-}
-
 // Iterate over arguments and compute scalarized and non-scalarized signatures
 void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
   assert(JavaThread::current()->thread_state() != _thread_in_native, "must not be in native");
@@ -2946,7 +2851,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
         ValueKlass* vk = ss.as_value_klass(holder);
         if (vk != nullptr && vk->can_be_passed_as_fields() && (link_time || _method->is_scalarized_arg(arg_num))) {
           // Check for a calling convention mismatch with super method(s)
-          if (link_time && check_supers_and_deoptimize(arg_num)) {
+          if (link_time && _method->check_arg_supers_and_deoptimize(arg_num)) {
             // Fall back to non-scalarized calling convention
             SigEntry::add_entry(_sig_cc, T_OBJECT, ss.as_symbol());
             SigEntry::add_entry(_sig_cc_ro, T_OBJECT, ss.as_symbol());
@@ -3016,7 +2921,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
 
 #ifdef ASSERT
     if (link_time) {
-      GrowableArray<Method*>* supers = get_supers();
+      GrowableArray<Method*>* supers = _method->get_supers();
       for (int i = 0; i < supers->length(); ++i) {
         Method* super_method = supers->at(i);
         assert(super_method->mismatch() || !super_method->has_scalarized_args(),

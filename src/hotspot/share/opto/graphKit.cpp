@@ -2135,6 +2135,7 @@ Node* GraphKit::set_results_for_java_call(CallJavaNode* call, bool separate_io_p
     // slot to store it on the stack. Unfortunately, we only know if stack slot is needed
     // when matching the call (see Matcher::return_values_mask), so we are conservative here.
     C->set_needs_nm_slot(true);
+    C->dependencies()->assert_mismatch_calling_convention(call->method());
   } else {
     ret = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
     ciType* t = call->method()->return_type();

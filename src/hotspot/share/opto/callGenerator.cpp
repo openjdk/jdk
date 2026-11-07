@@ -803,8 +803,7 @@ void CallGenerator::do_late_inline_helper() {
     // deoptimization at an allocation safepoint and an invoke-BCI state for exceptions like OOME. The
     // pre-call state can safely execute the call if allocation deoptimizes.
     bool needs_return_buffer = !call->tf()->returns_value_type_as_fields() &&
-                               return_type->is_value_klass() &&
-                               return_type->as_value_klass()->can_be_returned_as_fields();
+                               inline_method->scalarized_return();
     // A non-null scalarized return would require a buffer. Since allocating that buffer could
     // initialize the value class, speculate that the result is null and deoptimize otherwise.
     bool assert_null_return = needs_return_buffer && !return_type->as_value_klass()->is_initialized();

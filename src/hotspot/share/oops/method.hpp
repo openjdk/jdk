@@ -890,6 +890,13 @@ public:
   // Inlined elements
   address* native_function_addr() const          { assert(is_native(), "must be native"); return (address*) (this+1); }
   address* signature_handler_addr() const        { return native_function_addr() + 1; }
+
+  GrowableArray<Method*>* _supers;
+  template <class Predicate> bool check_supers_and_deoptimize(Predicate predicate);
+public:
+  GrowableArray<Method*>* get_supers();
+  bool check_arg_supers_and_deoptimize(int arg_num);
+  bool check_ret_supers_and_deoptimize();
 };
 
 

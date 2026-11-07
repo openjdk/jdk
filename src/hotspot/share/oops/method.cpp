@@ -127,6 +127,7 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name) {
   NOT_PRODUCT(set_compiled_invocation_count(0);)
   // Name is very useful for debugging.
   NOT_PRODUCT(_name = name;)
+  _supers = nullptr;
 }
 
 // Release Method*.  The nmethod will be gone when we get here because
@@ -775,9 +776,6 @@ int Method::extra_stack_words() {
 // locations the GC is unaware of.
 ValueKlass* Method::returns_value_type() const {
   assert(ValueTypeReturnedAsFields, "Value types should never be returned as fields");
-  if (is_native()) {
-    return nullptr;
-  }
   NoSafepointVerifier nsv;
   SignatureStream ss(signature());
   ss.skip_to_return_type();
@@ -1293,6 +1291,7 @@ void Method::unlink_method() {
   clear_is_not_c2_compilable();
   clear_is_not_c2_osr_compilable();
   clear_queued_for_compilation();
+  _supers = nullptr;
 
   remove_unshareable_flags();
 }
@@ -1314,6 +1313,7 @@ void Method::remove_unshareable_flags() {
   // the current VM. Recompute it when the method is linked and
   // its adapter is selected.
   set_has_scalarized_args(false);
+  set_scalarized_return(false);
   if (CDSConfig::is_dumping_preimage_static_archive()) {
     // These flags may reflect class linking state during training run.
     // Recompute them during assembly phase and preserve the results
@@ -1391,6 +1391,17 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
       assert(_from_interpreted_entry == get_i2c_entry(), "invariant");
     }
   }
+
+  if (ValueTypeReturnedAsFields) {
+    ValueKlass* vk = returns_value_type();
+    if (vk != nullptr && vk->can_be_returned_as_fields()) {
+      ResourceMark rm;
+      if (!check_ret_supers_and_deoptimize()) {
+        set_scalarized_return();
+      }
+    }
+  }
+
 }
 
 void Method::make_adapters(const methodHandle& mh, TRAPS) {
@@ -2490,4 +2501,106 @@ void Method::verify_on(outputStream* st) {
   MethodData* md = method_data();
   guarantee(md == nullptr ||
       md->is_methodData(), "should be method data");
+}
+
+// Returns all super methods (transitive) in classes and interfaces that are overridden by the current method.
+GrowableArray<Method*>* Method::get_supers() {
+  if (_supers != nullptr) {
+    return _supers;
+  }
+  _supers = new GrowableArray<Method*>();
+  // Skip private, static, and <init> methods
+  if (is_private() || is_static() || is_object_constructor()) {
+    return _supers;
+  }
+  Symbol* name = this->name();
+  Symbol* signature = this->signature();
+  const Klass* holder = method_holder()->super();
+  Symbol* holder_name = holder->name();
+  JavaThread* current = JavaThread::current();
+  HandleMark hm(current);
+  Handle loader(current, method_holder()->class_loader());
+
+  // Walk up the class hierarchy and search for super methods
+  while (holder != nullptr) {
+    Method* super_method = holder->lookup_method(name, signature);
+    if (super_method == nullptr) {
+      break;
+    }
+    if (!super_method->is_static() && !super_method->is_private() &&
+        (!super_method->is_package_private() ||
+         super_method->method_holder()->is_same_class_package(loader(), holder_name))) {
+      _supers->push(super_method);
+    }
+    holder = super_method->method_holder()->super();
+  }
+  // Search interfaces for super methods
+  Array<InstanceKlass*>* interfaces = method_holder()->transitive_interfaces();
+  for (int i = 0; i < interfaces->length(); ++i) {
+    Method* m = interfaces->at(i)->lookup_method(name, signature);
+    if (m != nullptr && !m->is_static() && m->is_public()) {
+      _supers->push(m);
+    }
+  }
+  return _supers;
+}
+
+template<class Predicate> bool Method::check_supers_and_deoptimize(Predicate predicate) {
+  assert(JavaThread::current()->thread_state() == _thread_in_vm, "must be in vm state");
+
+  bool scalar_super = false;
+  bool non_scalar = is_native();
+
+  GrowableArray<Method*>* supers = get_supers();
+  for (int i = 0; i < supers->length(); ++i) {
+    Method* super_method = supers->at(i);
+    if (predicate(super_method)) {
+      scalar_super = true;
+    } else {
+      non_scalar = true;
+    }
+  }
+#ifdef ASSERT
+  // Randomly enable below code paths for stress testing
+  bool stress = StressCallingConvention;
+  if (stress && (os::random() & 1) == 1) {
+    non_scalar = true;
+    if ((os::random() & 1) == 1) {
+      scalar_super = true;
+    }
+  }
+#endif
+  if (non_scalar) {
+    // Found a super method with a non-scalarized argument. Fall back to the non-scalarized calling convention.
+    if (scalar_super) {
+      // Found non-scalar *and* scalar super methods. We can't handle both.
+      // Mark the scalar method as mismatch and re-compile call sites to use non-scalarized calling convention.
+      for (int i = 0; i < supers->length(); ++i) {
+        Method* super_method = supers->at(i);
+        if (predicate(super_method) DEBUG_ONLY(|| (stress && (os::random() & 1) == 1))) {
+          JavaThread* thread = JavaThread::current();
+          HandleMark hm(thread);
+          methodHandle mh(thread, super_method);
+          DeoptimizationScope deopt_scope;
+          {
+            // Keep the lock scope minimal. Prevent interference with other
+            // dependency checks by setting mismatch and marking within the lock.
+            MutexLocker ml(Compile_lock, Mutex::_safepoint_check_flag);
+            super_method->set_mismatch();
+            CodeCache::mark_for_deoptimization(&deopt_scope, mh());
+          }
+          deopt_scope.deoptimize_marked();
+        }
+      }
+    }
+  }
+
+  return non_scalar;
+}
+
+bool Method::check_arg_supers_and_deoptimize(int arg_num) {
+  return check_supers_and_deoptimize([&](Method* m) { return m->is_scalarized_arg(arg_num); });
+}
+bool Method::check_ret_supers_and_deoptimize() {
+  return check_supers_and_deoptimize([&](Method* m) { return m->scalarized_return(); });
 }

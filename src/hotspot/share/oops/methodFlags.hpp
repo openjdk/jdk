@@ -61,6 +61,7 @@ class MethodFlags {
    status(has_scalarized_args         , 1 << 17) \
    status(needs_stack_repair          , 1 << 18) \
    status(mismatch                    , 1 << 19) \
+   status(scalarized_return           , 1 << 20) \
    /* end of list */
 
 #define M_STATUS_ENUM_NAME(name, value)    _misc_##name = value,
