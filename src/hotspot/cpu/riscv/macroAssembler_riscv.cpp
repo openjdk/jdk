@@ -5965,8 +5965,8 @@ address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_
   // Make sure the address of destination 8-byte aligned.
   align(wordSize, 0);
 
-  RelocationHolder rh = trampoline_stub_Relocation::spec(code()->insts()->start() +
-                                                         insts_call_instruction_offset);
+  RelocationHolder rh = address_stub_Relocation::spec(code()->insts()->start() +
+                                                      insts_call_instruction_offset);
   const int stub_start_offset = offset();
   relocate(rh, [&] {
     assert(offset() - stub_start_offset == 0,
