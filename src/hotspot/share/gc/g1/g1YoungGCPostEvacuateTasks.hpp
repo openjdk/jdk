@@ -56,7 +56,7 @@ public:
 // Second set of post evacuate collection set tasks containing (s means serial):
 // - Eagerly Reclaim Humongous Objects (s)
 // - Update Derived Pointers (s)
-// - Destroy PSS (s) + Reset the reusable PartialArrayStateManager
+// - Destroy PSS (s)
 // - Clear Retained Region Data (on evacuation failure)
 // - Free Collection Set
 // - Resize TLABs and Swap Card Table
