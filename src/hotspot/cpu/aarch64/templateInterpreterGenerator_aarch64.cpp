@@ -682,13 +682,13 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
   __ b(do_continue);
 }
 
-// See if we've got enough room on the stack for locals plus overhead
-// below JavaThread::stack_overflow_limit(). If not, throw a StackOverflowError
-// without going through the signal handler, i.e., reserved and yellow zones
-// will not be made usable. The shadow zone must suffice to handle the
-// overflow.
-// The expression stack grows down incrementally, so the normal guard
-// page mechanism will work for that.
+// See if we've got enough room on the stack for locals plus overhead plus the
+// expression stack below JavaThread::stack_overflow_limit(). If not, throw a
+// StackOverflowError without going through the signal handler, i.e., reserved
+// and yellow zones will not be made usable. The shadow zone must suffice to
+// handle the overflow.
+// The expression stack size is included because the expression stack does
+// not grow down incrementally. The max required size is reserved upfront.
 //
 // NOTE: Since the additional locals are also always pushed (wasn't
 // obvious in generate_method_entry) so the guard should work for them
@@ -730,7 +730,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   // compute rsp as if this were going to be the last frame on
   // the stack before the red zone
 
-  // locals + overhead, in bytes
+  // locals + overhead + max_stack, in bytes
   __ mov(r0, overhead_size);
   __ add(r0, r0, r3, Assembler::LSL, Interpreter::logStackElementSize);  // 2 slots per parameter.
 
@@ -907,8 +907,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ asr(rscratch2, rscratch2, Interpreter::logStackElementSize);
     // Store extended SP and mirror
     __ stp(r10, rscratch2, Address(sp, 4 * wordSize));
-    // Move SP out of the way
-    __ mov(sp, rscratch1);
   } else {
     // Make sure there is room for the exception oop pushed in case method throws
     // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
@@ -916,8 +914,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ sub(rscratch2, rscratch1, rfp);
     __ asr(rscratch2, rscratch2, Interpreter::logStackElementSize);
     __ stp(r10, rscratch2, Address(sp, 4 * wordSize));
-    __ mov(sp, rscratch1);
   }
+  // Leave SP at the header until `bang_stack_shadow_pages()` probes the shadow space.
 }
 
 // End of helpers
@@ -1148,24 +1146,68 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 
   Label L_done;
 
-  __ ldr(rscratch1, Address(rthread, JavaThread::shadow_zone_growth_watermark()));
-  __ cmp(sp, rscratch1);
+  // Reconstruct the prospective SP.
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ add(rscratch1, rfp, rscratch1, Assembler::LSL, Interpreter::logStackElementSize);
+
+  // Compare the prospective SP with the already-probed watermark.
+  __ ldr(rscratch2, Address(rthread, JavaThread::shadow_zone_growth_watermark()));
+  __ cmp(rscratch1, rscratch2);
+
+  // If prospective SP is above the watermark, then skip probing.
   __ br(Assembler::HI, L_done);
 
-  for (int p = 1; p <= n_shadow_pages; p++) {
-    __ sub(rscratch2, sp, p*page_size);
+  if (native_call && n_shadow_pages <= 8) {
+    // Just below the header, `generate_fixed_frame()` for a native call
+    // reserves 2 * wordSize, which, on AArch64, equates to 16 bytes.  We first
+    // touch that address (which may access the same or the immediately adjacent
+    // page), after which we probe the shadow zone with an unrolled sequence.
+    __ str(zr, Address(rscratch1));
+    for (int p = 1; p <= n_shadow_pages; p++) {
+      __ sub(rscratch2, rscratch1, p*page_size);
+      __ str(zr, Address(rscratch2));
+    }
+  } else {
+    Label L_loop, L_start_selected;
+
+    // Start at the lower of the stack pointer and the watermark, so that we
+    // skip the space already covered by the watermark.
+    __ cmp(sp, rscratch2);
+    __ br(Assembler::HS, L_start_selected);
+    __ mov(rscratch2, sp);
+    __ bind(L_start_selected);
+
+    // Set rscratch1 to the lowest probe address (prospective_sp - shadow_size).
+    __ sub(rscratch1, rscratch1, shadow_zone_size);
+
+    // Align the pointer in `rscratch2` so we have an integral number of pages
+    // between `rscratch2` and `rscratch1`.
+    __ sub(rscratch2, rscratch2, rscratch1);        // rscratch2 = start - end
+    __ add(rscratch2, rscratch2, page_size - 1);    // rscratch2 += page_size-1
+    __ andr(rscratch2, rscratch2, -page_size);      // rscratch2 &= -page_size
+    __ add(rscratch2, rscratch1, rscratch2);        // rscratch2 = end + rscratch2
+
+    __ bind(L_loop);
+    __ sub(rscratch2, rscratch2, page_size);
     __ str(zr, Address(rscratch2));
+    __ cmp(rscratch2, rscratch1);
+    __ br(Assembler::HI, L_loop);
+
+    // Restore the prospective SP into `rscratch1`.
+    __ add(rscratch1, rscratch1, shadow_zone_size);
   }
 
   // Record the new watermark, but only if the update is above the safe limit.
   // Otherwise, the next time around the check above would pass the safe limit.
-  __ ldr(rscratch1, Address(rthread, JavaThread::shadow_zone_safe_limit()));
-  __ cmp(sp, rscratch1);
+  __ ldr(rscratch2, Address(rthread, JavaThread::shadow_zone_safe_limit()));
+  __ cmp(rscratch1, rscratch2);
   __ br(Assembler::LS, L_done);
-  __ mov(rscratch1, sp);
   __ str(rscratch1, Address(rthread, JavaThread::shadow_zone_growth_watermark()));
 
   __ bind(L_done);
+
+  // Commit the prospective SP, now that we have validated the stack headroom.
+  __ mov(sp, rscratch1);
 }
 
 // Interpreter stub for calling a native method. (asm interpreter)
@@ -1641,24 +1683,24 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, b
   // rscratch1: sender sp
   address entry_point = __ pc();
 
-  const Address constMethod(rmethod, Method::const_offset());
   const Address access_flags(rmethod, Method::access_flags_offset());
-  const Address size_of_parameters(r3,
-                                   ConstMethod::size_of_parameters_offset());
-  const Address size_of_locals(r3, ConstMethod::size_of_locals_offset());
 
   // get parameter size (always needed)
   // need to load the const method first
-  __ ldr(r3, constMethod);
-  __ load_unsigned_short(r2, size_of_parameters);
+  __ ldr(r5, Address(rmethod, Method::const_offset()));
 
   // r2: size of parameters
+  __ load_unsigned_short(r2, Address(r5, ConstMethod::size_of_parameters_offset()));
+  __ load_unsigned_short(r3, Address(r5, ConstMethod::size_of_locals_offset())); // get size of locals in words
+  __ load_unsigned_short(rscratch1, Address(r5, ConstMethod::max_stack_offset()));
+  __ sub(r5, r3, r2); // r5 = no. of additional locals
 
-  __ load_unsigned_short(r3, size_of_locals); // get size of locals in words
-  __ sub(r3, r3, r2); // r3 = no. of additional locals
+  __ add(r3, r5, rscratch1);  // r3 = no. of additional locals + max expression stack size
 
   // see if we've got enough room on the stack for locals plus overhead.
   generate_stack_overflow_check();
+
+  __ mov(r3, r5); // r3 = no. of additional locals
 
   // compute beginning of parameters (rlocals)
   __ add(rlocals, esp, r2, ext::uxtx, 3);
