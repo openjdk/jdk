@@ -236,6 +236,13 @@ public class Properties extends Hashtable<Object,Object> {
      * Reads a property list (key and element pairs) from the input
      * character stream in a simple line-oriented format.
      * <p>
+     * If a key in the loaded property list already exists in this
+     * {@code Properties} object, the associated element is replaced with the
+     * value loaded from the list.
+     * <p>
+     * If a key occurs more than once in the loaded property list, the
+     * associated element is set to the value of the last occurrence.
+     * <p>
      * Properties are processed in terms of lines. There are two
      * kinds of lines, <i>natural lines</i> and <i>logical lines</i>.
      * A natural line is defined as a line of
@@ -386,7 +393,16 @@ public class Properties extends Hashtable<Object,Object> {
 
     /**
      * Reads a property list (key and element pairs) from the input
-     * byte stream. The input stream is in a simple line-oriented
+     * byte stream.
+     * <p>
+     * If a key in the loaded property list already exists in this
+     * {@code Properties} object, the associated element is replaced with the
+     * value loaded from the list.
+     * <p>
+     * If a key occurs more than once in the loaded property list, the
+     * associated element is set to the value of the last occurrence.
+     * <p>
+     * The input stream is in a simple line-oriented
      * format as specified in
      * {@link #load(java.io.Reader) load(Reader)} and is assumed to use
      * the ISO 8859-1 character encoding; that is each byte is one Latin1
