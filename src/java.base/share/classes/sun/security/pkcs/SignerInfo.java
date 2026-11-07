@@ -333,8 +333,15 @@ public class SignerInfo implements DerEncoder {
             }
 
             String digestAlgName = digestAlgorithmId.getName();
-            algorithms.put(digestAlgorithmId,
-                new AlgorithmInfo("SignerInfo digestAlgorithm field", false));
+            if (authenticatedAttributes == null
+                    && digestEncryptionAlgorithmId.getName().startsWith("ML-DSA-")) {
+                // RFC 9882 Section 3.3:
+                // if no signed attributes are present, implementations MUST
+                // ignore the content of the digestAlgorithm field.
+            } else {
+                algorithms.put(digestAlgorithmId,
+                        new AlgorithmInfo("SignerInfo digestAlgorithm field", false));
+            }
 
             byte[] dataSigned;
 
@@ -550,7 +557,8 @@ public class SignerInfo implements DerEncoder {
             case "ML-DSA-44":
                 // Following 3 from Table 1 inside
                 // https://datatracker.ietf.org/doc/html/rfc9882#name-signerinfo-content
-                if (!digAlgId.equalsOID(AlgorithmId.SHA256_oid)
+                if (!directSign
+                        && !digAlgId.equalsOID(AlgorithmId.SHA256_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHA384_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHA512_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHA3_256_oid)
@@ -562,7 +570,8 @@ public class SignerInfo implements DerEncoder {
                 }
                 break;
             case "ML-DSA-65":
-                if (!digAlgId.equalsOID(AlgorithmId.SHA384_oid)
+                if (!directSign
+                        && !digAlgId.equalsOID(AlgorithmId.SHA384_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHA512_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHA3_384_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHA3_512_oid)
@@ -571,7 +580,8 @@ public class SignerInfo implements DerEncoder {
                 }
                 break;
             case "ML-DSA-87":
-                if (!digAlgId.equalsOID(AlgorithmId.SHA512_oid)
+                if (!directSign
+                        && !digAlgId.equalsOID(AlgorithmId.SHA512_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHA3_512_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHAKE256_512_oid)) {
                     throw new NoSuchAlgorithmException("Incompatible digest algorithm " + digAlgId);
