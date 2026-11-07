@@ -355,15 +355,6 @@ class StubGenerator: public StubCodeGenerator {
   void aesgcm_avx2(Register in, Register len, Register ct, Register out, Register key,
                    Register state, Register subkeyHtbl, Register counter);
 
- // Vector AES Counter implementation
-  address generate_counterMode_VectorAESCrypt();
-  void aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
-                      Register len_reg, Register used, Register used_addr, Register saved_encCounter_start);
-
-  // This is a version of CTR/AES crypt which does 6 blocks in a loop at a time
-  // to hide instruction latency
-  address generate_counterMode_AESCrypt_Parallel();
-
   address generate_cipherBlockChaining_decryptVectorAESCrypt();
 
   address generate_key_shuffle_mask();
@@ -413,10 +404,6 @@ class StubGenerator: public StubCodeGenerator {
   void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
   void load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch);
 
-  // Utility routine for increase 128bit counter (iv in CTR mode)
-  void inc_counter(Register reg, XMMRegister xmmdst, int inc_delta, Label& next_block);
-  void ev_add128(XMMRegister xmmdst, XMMRegister xmmsrc1, XMMRegister xmmsrc2,
-                 int vector_len, KRegister ktmp, XMMRegister ones);
   void generate_aes_stubs();
 
 
