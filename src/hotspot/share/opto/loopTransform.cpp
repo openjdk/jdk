@@ -288,22 +288,22 @@ void IdealLoopTree::compute_profile_trip_cnt(PhaseIdealLoop *phase) {
   float trip_cnt = (float)max_jint; // default is big
 
   Node* back = head->in(LoopNode::LoopBackControl);
+  IfNode* back_if = nullptr;
   while (back != head) {
-    if ((back->Opcode() == Op_IfTrue || back->Opcode() == Op_IfFalse) &&
-        back->in(0) &&
-        back->in(0)->is_If() &&
-        back->in(0)->as_If()->_fcnt != COUNT_UNKNOWN &&
-        back->in(0)->as_If()->_prob != PROB_UNKNOWN &&
-        (back->Opcode() == Op_IfTrue ? 1-back->in(0)->as_If()->_prob : back->in(0)->as_If()->_prob) > PROB_MIN) {
-      break;
+    if (back->Opcode() == Op_IfTrue || back->Opcode() == Op_IfFalse) {
+      back_if = Node::isa<IfNode>(back->in(0));
+      if (back_if != nullptr &&
+          back_if->_fcnt != COUNT_UNKNOWN &&
+          back_if->_prob != PROB_UNKNOWN &&
+          (back->Opcode() == Op_IfTrue ? 1 - back_if->_prob : back_if->_prob) > PROB_MIN) {
+        break;
+      }
     }
     back = phase->idom(back);
   }
   if (back != head) {
-    assert((back->Opcode() == Op_IfTrue || back->Opcode() == Op_IfFalse) &&
-           back->in(0), "if-projection exists");
-    IfNode* back_if = back->in(0)->as_If();
-    float loop_back_cnt = back_if->_fcnt * (back->Opcode() == Op_IfTrue ? back_if->_prob : (1 - back_if->_prob));
+    assert(back_if != nullptr, "if-projection exists");
+    float loop_back_cnt = back_if->_fcnt * (back->Opcode() == Op_IfTrue ? back_if->_prob : 1 - back_if->_prob);
 
     // Now compute a loop exit count
     float loop_exit_cnt = 0.0f;
@@ -1620,12 +1620,12 @@ void PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNo
 void PhaseIdealLoop::ensure_zero_trip_guard_proj(Node* node, bool is_main_loop) {
   assert(node->is_IfProj(), "must be the zero trip guard If node");
   Node* zer_bol = node->in(0)->in(1);
-  assert(zer_bol != nullptr && zer_bol->is_Bool(), "must be Bool");
+  assert(Node::is<BoolNode>(zer_bol), "must be Bool");
   Node* zer_cmp = zer_bol->in(1);
-  assert(zer_cmp != nullptr && zer_cmp->Opcode() == Op_CmpI, "must be CmpI");
+  assert(Node::is<Op_CmpI>(zer_cmp), "must be CmpI");
   // For the main loop, the opaque node is the second input to zer_cmp, for the post loop it's the first input node
   Node* zer_opaq = zer_cmp->in(is_main_loop ? 2 : 1);
-  assert(zer_opaq != nullptr && zer_opaq->Opcode() == Op_OpaqueZeroTripGuard, "must be OpaqueZeroTripGuard");
+  assert(Node::is<Op_OpaqueZeroTripGuard>(zer_opaq), "must be OpaqueZeroTripGuard");
 }
 #endif
 
@@ -1906,7 +1906,7 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree* loop, Node_List<Node
 }
 
 Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop) {
-  assert(store != nullptr && store->is_Store(), "starting point should be a store node");
+  assert(Node::is<StoreNode>(store), "starting point should be a store node");
   // Follow the memory uses until we get out of the loop.
   // Store nodes in the outer loop body were moved by PhaseIdealLoop::try_move_store_after_loop.
   // Because of the conditions in try_move_store_after_loop (no other usage in the loop body

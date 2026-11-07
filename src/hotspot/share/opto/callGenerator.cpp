@@ -71,8 +71,7 @@ void CallGenerator::mark_projs_not_dead_loop_safe(Node* ret) const {
   CallNode* call = call_node();
   if (ret->is_Proj() && ret->in(0) == call) {
     ret->mark_not_dead_loop_safe();
-  } else if (ret->isa_ValueType()) {
-    ValueTypeNode* vt = ret->as_ValueType();
+  } else if (ValueTypeNode* vt = ret->isa_ValueType()) {
     Node* oop = vt->get_oop();
     if (oop->is_Proj() && oop->in(0) == call) {
       oop->mark_not_dead_loop_safe();

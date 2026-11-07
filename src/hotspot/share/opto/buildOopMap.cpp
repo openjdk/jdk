@@ -213,7 +213,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
               memset(dup_check,0,OptoReg::stack0()) );
 
   OopMap *omap = new OopMap( framesize,  max_inarg_slot );
-  MachCallNode *mcall = n->is_MachCall() ? n->as_MachCall() : nullptr;
+  MachCallNode* mcall = n->isa_MachCall();
   JVMState* jvms = n->jvms();
 
   // For all registers do...
@@ -485,7 +485,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
         if( OptoReg::is_valid(first) ) clr_live_bit(tmp_live,first);
         if( OptoReg::is_valid(second) ) clr_live_bit(tmp_live,second);
 
-        MachNode *m = n->is_Mach() ? n->as_Mach() : nullptr;
+        MachNode* m = n->isa_Mach();
 
         // Check if m is potentially a CISC alternate instruction (i.e, possibly
         // synthesized by RegAlloc from a conventional instruction and a

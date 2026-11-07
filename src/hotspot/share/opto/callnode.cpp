@@ -983,7 +983,7 @@ CallProjections* CallNode::extract_projections(bool separate_io_proj, bool do_as
         // For Control (fallthrough) and I_O (catch_all_index) we have CatchProj -> Catch -> Proj
         projs->fallthrough_proj = pn;
         const Node* cn = pn->unique_ctrl_out_or_null();
-        if (cn != nullptr && cn->is_Catch()) {
+        if (is<CatchNode>(cn)) {
           for (DUIterator_Fast kmax, k = cn->fast_outs(kmax); k < kmax; k++) {
             CatchProjNode* cpn = cn->fast_out(k)->as_CatchProj();
             assert(allow_handlers || !cpn->is_handler_proj(), "not allowed");
@@ -1097,8 +1097,7 @@ void CallJavaNode::copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt
   for (uint i = old_dbg_start; i < sfpt->req(); i++) {
     Node* old_in = sfpt->in(i);
     // Clone old SafePointScalarObjectNodes, adjusting their field contents.
-    if (old_in != nullptr && old_in->is_SafePointScalarObject()) {
-      SafePointScalarObjectNode* old_sosn = old_in->as_SafePointScalarObject();
+    if (SafePointScalarObjectNode* old_sosn = isa<SafePointScalarObjectNode>(old_in); old_sosn != nullptr) {
       bool new_node;
       Node* new_in = old_sosn->clone(sosn_map, new_node);
       if (new_node) { // New node?
@@ -1267,7 +1266,7 @@ int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
 // Parse::array_load) to end in an uncommon trap. In that case, the call to
 // 'load_unknown_value' is useless. Replace it with an uncommon trap with the same JVMState.
 bool CallStaticJavaNode::remove_unknown_flat_array_load(PhaseIterGVN* igvn, Node* ctl, Node* mem, Node* unc_arg) {
-  if (ctl == nullptr || ctl->is_top() || mem == nullptr || mem->is_top() || !mem->is_MergeMem()) {
+  if (ctl == nullptr || ctl->is_top() || !is<MergeMemNode>(mem) || mem->is_top()) {
     return false;
   }
   if (ctl->is_Region()) {
@@ -2334,11 +2333,10 @@ static Node *next_control(Node *ctrl) {
 //
 bool AbstractLockNode::find_matching_unlock(const Node* ctrl, LockNode* lock,
                                             GrowableArray<AbstractLockNode*> &lock_ops) {
-  ProjNode *ctrl_proj = (ctrl->is_Proj()) ? ctrl->as_Proj() : nullptr;
+  ProjNode* ctrl_proj = ctrl->isa_Proj();
   if (ctrl_proj != nullptr && ctrl_proj->_con == TypeFunc::Control) {
-    Node *n = ctrl_proj->in(0);
-    if (n != nullptr && n->is_Unlock()) {
-      UnlockNode *unlock = n->as_Unlock();
+    Node* n = ctrl_proj->in(0);
+    if (UnlockNode* unlock = isa<UnlockNode>(n); unlock != nullptr) {
       Node* lock_obj = lock->obj_node();
       Node* unlock_obj = unlock->obj_node();
       if (lock_obj->eqv_uncast(unlock_obj) &&
@@ -2373,8 +2371,7 @@ bool AbstractLockNode::find_lock_and_unlock_through_if(Node* node, LockNode* loc
           lock1_node = proj->unique_out();
         }
       }
-      if (lock1_node != nullptr && lock1_node->is_Lock()) {
-        LockNode *lock1 = lock1_node->as_Lock();
+      if (LockNode* lock1 = isa<LockNode>(lock1_node); lock1 != nullptr) {
         Node* lock_obj = lock->obj_node();
         Node* lock1_obj = lock1->obj_node();
         if (lock_obj->eqv_uncast(lock1_obj) &&

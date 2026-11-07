@@ -128,8 +128,8 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   Node *cmp = b->in(1);
   if( !cmp->is_Cmp() ) return nullptr;
   i1 = cmp->in(1);
-  if( i1 == nullptr || !i1->is_Phi() ) return nullptr;
-  PhiNode *phi = i1->as_Phi();
+  PhiNode* phi = Node::isa<PhiNode>(i1);
+  if (phi == nullptr) return nullptr;
   Node *con2 = cmp->in(2);
   if( !con2->is_Con() ) return nullptr;
   // See that the merge point contains some constants
@@ -526,11 +526,10 @@ IfProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) co
     return nullptr;
   }
   Node* b = in(1);
-  if (b == nullptr || !b->is_Bool())  return nullptr;
-  BoolNode* bn = b->as_Bool();
+  BoolNode* bn = isa<BoolNode>(b);
+  if (bn == nullptr)  return nullptr;
   Node* cmp = bn->in(1);
-  if (cmp == nullptr)  return nullptr;
-  if (cmp->Opcode() != Op_CmpU)  return nullptr;
+  if (!is<Op_CmpU>(cmp))  return nullptr;
 
   l = cmp->in(1);
   r = cmp->in(2);
@@ -677,7 +676,7 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
     if( din4->is_Call() &&      // Handle a slow-path call on either arm
         (din4 = din4->in(0)) )
       din4 = din4->in(0);
-    if (din3 != nullptr && din3 == din4 && din3->is_If()) // Regions not degraded to a copy
+    if (is<IfNode>(din3) && din3 == din4) // Regions not degraded to a copy
       return din3;              // Skip around diamonds
   }
 
@@ -698,14 +697,10 @@ const TypeInteger* IfNode::filtered_integer_type(PhaseGVN* gvn, Node* val, Node*
   assert(bt == T_INT || bt == T_LONG, "expected int or long");
   const jlong min_value = bt == T_INT ? min_jint : min_jlong;
   const jlong max_value = bt == T_INT ? max_jint : max_jlong;
-  assert(if_proj &&
-         (if_proj->Opcode() == Op_IfTrue || if_proj->Opcode() == Op_IfFalse), "expecting an if projection");
-  if (if_proj->in(0) && if_proj->in(0)->is_If()) {
-    IfNode* iff = if_proj->in(0)->as_If();
-    if (iff->in(1) && iff->in(1)->is_Bool()) {
-      BoolNode* bol = iff->in(1)->as_Bool();
-      if (bol->in(1) && bol->in(1)->is_Cmp()) {
-        const CmpNode* cmp  = bol->in(1)->as_Cmp();
+  assert(is<IfProjNode>(if_proj), "expecting an if projection");
+  if (IfNode* iff = isa<IfNode>(if_proj->in(0)); iff != nullptr) {
+    if (BoolNode* bol = isa<BoolNode>(iff->in(1)); bol != nullptr) {
+      if (const CmpNode* cmp = isa<CmpNode>(bol->in(1)); cmp != nullptr) {
         // Val is always the lhs of the comparison: val CmpI/CmpL cmp2
         if (cmp->Opcode() == (bt == T_INT ? Op_CmpI : Op_CmpL) && cmp->in(1) == val) {
           // Only CmpI/CmpL allowed, assumed by signed logic below.
@@ -824,24 +819,21 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
 
 // Is the comparison for this If suitable for folding?
 bool IfNode::cmp_folds(PhaseIterGVN* igvn, bool fold_ne) {
-  return in(1) != nullptr &&
-    in(1)->is_Bool() &&
-    in(1)->in(1) != nullptr &&
-    (in(1)->in(1)->Opcode() == Op_CmpI || in(1)->in(1)->Opcode() == Op_CmpL) &&
+  BoolNode* in1_b = isa<BoolNode>(in(1));
+  return in1_b != nullptr &&
+    (is<Op_CmpI>(in(1)->in(1)) || is<Op_CmpL>(in(1)->in(1))) &&
     in(1)->in(1)->in(2) != nullptr &&
     in(1)->in(1)->in(2) != igvn->C->top() &&
-    (in(1)->as_Bool()->_test.is_less() ||
-     in(1)->as_Bool()->_test.is_greater() ||
-     (fold_ne && in(1)->as_Bool()->_test._test == BoolTest::ne));
+    (in1_b->_test.is_less() ||
+     in1_b->_test.is_greater() ||
+     (fold_ne && in1_b->_test._test == BoolTest::ne));
 }
 
 // Is a dominating control suitable for folding with this if?
 bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
-  return ctrl != nullptr &&
-    ctrl->is_IfProj() &&
+  return is<IfProjNode>(ctrl) &&
     ctrl->outcnt() == 1 && // No side-effects
-    ctrl->in(0) != nullptr &&
-    ctrl->in(0)->Opcode() == Op_If &&
+    is<Op_If>(ctrl->in(0)) &&
     ctrl->in(0)->outcnt() == 2 &&
     ctrl->in(0)->as_If()->cmp_folds(igvn, true) &&
     // Must compare same value
@@ -854,7 +846,7 @@ bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
 bool IfNode::has_shared_region(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail) const {
   IfProjNode* otherproj = proj->other_if_proj();
   Node* otherproj_ctrl_use = otherproj->unique_ctrl_out_or_null();
-  RegionNode* region = (otherproj_ctrl_use != nullptr && otherproj_ctrl_use->is_Region()) ? otherproj_ctrl_use->as_Region() : nullptr;
+  RegionNode* region = isa<RegionNode>(otherproj_ctrl_use);
   success = nullptr;
   fail = nullptr;
 
@@ -1636,10 +1628,8 @@ bool IfNode::is_cmp_with_loadrange(IfProjNode* proj) const {
     if (other->Opcode() == Op_LoadRange &&
         ((other->in(0) != nullptr && other->in(0) == proj) ||
          (other->in(0) == nullptr &&
-          other->in(2) != nullptr &&
-          other->in(2)->is_AddP() &&
-          other->in(2)->in(1) != nullptr &&
-          other->in(2)->in(1)->Opcode() == Op_CastPP &&
+          is<AddPNode>(other->in(2)) &&
+          is<Op_CastPP>(other->in(2)->in(1)) &&
           other->in(2)->in(1)->in(0) == proj))) {
       return true;
     }
@@ -1650,10 +1640,8 @@ bool IfNode::is_cmp_with_loadrange(IfProjNode* proj) const {
 bool IfNode::is_null_check(IfProjNode* proj, PhaseIterGVN* igvn) const {
   Node* other = in(1)->in(1)->in(2);
   if (other->in(MemNode::Address) != nullptr &&
-      proj->in(0)->in(1) != nullptr &&
-      proj->in(0)->in(1)->is_Bool() &&
-      proj->in(0)->in(1)->in(1) != nullptr &&
-      proj->in(0)->in(1)->in(1)->Opcode() == Op_CmpP &&
+      is<BoolNode>(proj->in(0)->in(1)) &&
+      is<Op_CmpP>(proj->in(0)->in(1)->in(1)) &&
       proj->in(0)->in(1)->in(1)->in(2) != nullptr &&
       proj->in(0)->in(1)->in(1)->in(1) == other->in(MemNode::Address)->in(AddPNode::Address)->uncast() &&
       igvn->type(proj->in(0)->in(1)->in(1)->in(2)) == TypePtr::NULL_PTR) {
@@ -1670,7 +1658,7 @@ bool IfNode::is_flat_array_check(PhaseTransform* phase, Node** array) {
     return false;
   }
   Node* cmp = bol->in(1);
-  if (cmp->isa_FlatArrayCheck()) {
+  if (cmp->is_FlatArrayCheck()) {
     if (array != nullptr) {
       *array = cmp->in(FlatArrayCheckNode::ArrayOrKlass);
     }
@@ -2059,8 +2047,7 @@ bool IfNode::same_condition(const Node* dom, PhaseIterGVN* igvn) const {
     return true;
   }
 
-  if (dom_bool == nullptr || !dom_bool->is_Bool() ||
-      this_bool == nullptr || !this_bool->is_Bool()) {
+  if (!is<BoolNode>(dom_bool) || !is<BoolNode>(this_bool)) {
     return false;
   }
   Node* dom_cmp = dom_bool->in(1);
@@ -2068,8 +2055,7 @@ bool IfNode::same_condition(const Node* dom, PhaseIterGVN* igvn) const {
 
   // If the comparison is a subtype check, then SubTypeCheck nodes may have profile data attached to them and may be
   // different nodes even-though they perform the same subtype check
-  if (dom_cmp == nullptr || !dom_cmp->is_SubTypeCheck() ||
-      this_cmp == nullptr || !this_cmp->is_SubTypeCheck()) {
+  if (!is<SubTypeCheckNode>(dom_cmp) || !is<SubTypeCheckNode>(this_cmp)) {
     return false;
   }
 
@@ -2277,7 +2263,7 @@ Node* IfProjNode::Identity(PhaseGVN* phase) {
       // CountedLoopEndNode may be eliminated by if subsuming, replace CountedLoopNode with LoopNode to
       // avoid mismatching between CountedLoopNode and CountedLoopEndNode in the following optimization.
       Node* head = unique_ctrl_out_or_null();
-      if (head != nullptr && head->is_BaseCountedLoop() && head->in(LoopNode::LoopBackControl) == this) {
+      if (is<BaseCountedLoopNode>(head) && head->in(LoopNode::LoopBackControl) == this) {
         Node* new_head = new LoopNode(head->in(LoopNode::EntryControl), this);
         phase->is_IterGVN()->register_new_node_with_optimizer(new_head);
         phase->is_IterGVN()->replace_node(head, new_head);

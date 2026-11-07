@@ -2626,11 +2626,7 @@ Assembler::Condition to_assembler_cond(BoolTest::mask cond) {
 
 // Binary src (Replicate con)
 static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
-  if (n == nullptr || m == nullptr) {
-    return false;
-  }
-
-  if (UseSVE == 0 || m->Opcode() != Op_Replicate) {
+  if (n == nullptr || UseSVE == 0 || !Node::is<Op_Replicate>(m)) {
     return false;
   }
 
@@ -2666,11 +2662,7 @@ static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
 
 // (XorV src (Replicate m1))
 static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
-  if (n != nullptr && m != nullptr) {
-    return n->Opcode() == Op_XorV &&
-           VectorNode::is_all_ones_vector(m);
-  }
-  return false;
+  return Node::is<Op_XorV>(n) && m != nullptr && VectorNode::is_all_ones_vector(m);
 }
 
 // Returns true if (n, m) matches "(XorVMask vm2 (MaskAll m1))" and that XorVMask
@@ -2681,12 +2673,9 @@ static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
 // Limitation: the "andNot" rule still cannot be matched if "m" has other
 // uses outside this pattern.
 static bool is_vector_mask_not_operand_in_andnot_pattern(Node* n, Node* m) {
-  if (n == nullptr || m == nullptr) {
-    return false;
-  }
-
-  if (VectorNode::is_all_ones_vector(m) &&
-      n->Opcode() == Op_XorVMask &&
+  if (m != nullptr &&
+      Node::is<Op_XorVMask>(n) &&
+      VectorNode::is_all_ones_vector(m) &&
       n->outcnt() == 1 &&
       n->unique_out()->Opcode() == Op_AndVMask) {
     // If another input of the AndVMask is also a mask-not pattern that would
