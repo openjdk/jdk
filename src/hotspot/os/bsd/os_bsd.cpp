@@ -1596,6 +1596,10 @@ void os::print_memory_info(outputStream* st) {
     }
   }
 
+  st->print_cr("User Address Space: [" PTR_FORMAT "-" PTR_FORMAT "] (%u bits)",
+               os::vm_min_address(), os::vm_max_address(),
+               log2i_ceil(os::vm_max_address()));
+
   st->cr();
 }
 
@@ -1946,7 +1950,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return nullptr;
 }
 
-size_t os::vm_min_address() {
+uintptr_t os::vm_min_address() {
 #ifdef __APPLE__
   // On MacOS, the lowest 4G are denied to the application (see "PAGEZERO" resp.
   // -pagezero_size linker option).
@@ -1955,6 +1959,11 @@ size_t os::vm_min_address() {
   assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
   return _vm_min_address_default;
 #endif
+}
+
+uintptr_t os::vm_max_address() {
+  // 47 bit on MacOS Arm64
+  return right_n_bits<uintptr_t>(47);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
