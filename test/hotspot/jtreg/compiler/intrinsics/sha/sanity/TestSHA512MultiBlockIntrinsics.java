@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
  *                   -XX:+UseSHA512Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
  *                   -Dalgorithm=SHA-384
- *                   compiler.intrinsics.sha.sanity.TestSHA512MultiBlockIntrinsics
+ *                   ${test.main.class}
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
@@ -49,15 +49,16 @@
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA5::*
  *                   -XX:+UseSHA512Intrinsics -Dalgorithm=SHA-384
- *                   compiler.intrinsics.sha.sanity.TestSHA512MultiBlockIntrinsics
+ *                   ${test.main.class}
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_384.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
- *                   -XX:CompileOnly=sun.security.provider.SHA5::* -XX:-UseSHA
- *                   -Dalgorithm=SHA-384
- *                   compiler.intrinsics.sha.sanity.TestSHA1Intrinsics
+ *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
+ *                   -XX:CompileOnly=sun.security.provider.SHA5::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA-384
+ *                   ${test.main.class}
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
@@ -67,7 +68,7 @@
  *                   -XX:+UseSHA512Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
  *                   -Dalgorithm=SHA-512
- *                   compiler.intrinsics.sha.sanity.TestSHA512MultiBlockIntrinsics
+ *                   ${test.main.class}
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
@@ -75,15 +76,16 @@
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA5::*
  *                   -XX:+UseSHA512Intrinsics -Dalgorithm=SHA-512
- *                   compiler.intrinsics.sha.sanity.TestSHA512MultiBlockIntrinsics
+ *                   ${test.main.class}
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_512.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
- *                   -XX:CompileOnly=sun.security.provider.SHA5::* -XX:-UseSHA
- *                   -Dalgorithm=SHA-512
- *                   compiler.intrinsics.sha.sanity.TestSHA512MultiBlockIntrinsics
+ *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
+ *                   -XX:CompileOnly=sun.security.provider.SHA5::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA-512
+ *                   ${test.main.class}
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
  *                    compiler.testlibrary.intrinsics.Verifier positive_384.log positive_512.log
  *                    positive_384_def.log positive_512_def.log negative_384.log
@@ -96,7 +98,7 @@ import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 public class TestSHA512MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
-        new DigestSanityTestBase(IntrinsicPredicates.isSHA512IntrinsicAvailable(),
+        new DigestSanityTestBase(IntrinsicPredicates.isSHA512MultiBlockIntrinsicAvailable(),
                 DigestSanityTestBase.MB_INTRINSIC_ID).test();
     }
 }

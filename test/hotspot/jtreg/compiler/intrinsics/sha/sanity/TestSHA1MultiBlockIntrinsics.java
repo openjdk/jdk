@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,8 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
- *                   -XX:CompileOnly=sun.security.provider.SHA::* -XX:-UseSHA
- *                   -Dalgorithm=SHA-1
+ *                   -XX:CompileOnly=sun.security.provider.SHA::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA-1
  *                   compiler.intrinsics.sha.sanity.TestSHA1MultiBlockIntrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
  *                   compiler.testlibrary.intrinsics.Verifier positive.log positive_def.log
@@ -64,11 +64,12 @@
  */
 
 package compiler.intrinsics.sha.sanity;
+
 import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 public class TestSHA1MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
-        new DigestSanityTestBase(IntrinsicPredicates.isSHA1IntrinsicAvailable(),
+        new DigestSanityTestBase(IntrinsicPredicates.isSHA1MultiBlockIntrinsicAvailable(),
                 DigestSanityTestBase.MB_INTRINSIC_ID).test();
     }
 }
