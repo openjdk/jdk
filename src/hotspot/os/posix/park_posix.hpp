@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@
  * This is the platform-specific implementation underpinning
  * the ParkEvent class, which itself underpins Java-level monitor
  * operations. See park.hpp for details.
- * These event objects are type-stable and immortal - we never delete them.
- * Events are associated with a thread for the lifetime of the thread.
  */
 class PlatformEvent : public CHeapObj<mtSynchronizer> {
  private:
@@ -47,11 +45,9 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
   pthread_cond_t  _cond[1];  // Native condition variable for blocking
   double postPad[2];
 
- protected:       // TODO-FIXME: make dtor private
-  ~PlatformEvent() { guarantee(false, "invariant"); } // immortal so can't delete
-
  public:
   PlatformEvent();
+  ~PlatformEvent();
   void park();
   int  park(jlong millis);
   int  park_nanos(jlong nanos);
