@@ -917,8 +917,45 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
-  // TODO: Unimplemented generate_CRC32_update_entry
-  return nullptr;
+  assert(UseCRC32Intrinsics, "this intrinsic is not supported");
+  address entry = __ pc();
+
+  // xmethod: Method*
+  // x19_sender_sp: senderSP must preserved for slow path
+  // esp: args
+
+  Label slow_path;
+  // If we need a safepoint check, generate full interpreter entry.
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+
+  // No frame is needed because there is no safepoint on this path.
+
+  // Load parameters
+  const Register crc = c_rarg0;  // crc
+  const Register val = c_rarg1;  // source java byte value
+  const Register tbl = c_rarg2;  // scratch
+
+  // Arguments are reversed on java expression stack
+  __ lw(val, Address(esp, 0));            // byte value
+  __ lwu(crc, Address(esp, wordSize));    // Initial CRC
+
+  __ la(tbl, ExternalAddress(StubRoutines::crc_table_addr()));
+
+  __ notr(crc, crc); // ~crc
+  __ zext(crc, crc, 32);
+  __ update_byte_crc32(crc, val, tbl);
+  __ notr(crc, crc); // ~crc
+  __ sext(crc, crc, 32);
+
+  // result in c_rarg0
+
+  __ andi(sp, x19_sender_sp, -16);
+  __ ret();
+
+  // generate a vanilla native entry as the slow path
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
 }
 
 /**
@@ -927,8 +964,68 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  // TODO: Unimplemented generate_CRC32_updateBytes_entry
-  return nullptr;
+  assert(UseCRC32Intrinsics, "this intrinsic is not supported");
+  address entry = __ pc();
+
+  // xmethod: Method*
+  // x19_sender_sp: senderSP must preserved for slow path
+
+  Label slow_path;
+  // If we need a safepoint check, generate full interpreter entry.
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+
+  // We don't generate a local frame because there is no safepoint on this
+  // path. The interpreter uses the scalar CRC32 loop; the optimized stub
+  // remains available to compiled code.
+
+  // Load parameters
+  const Register crc = c_rarg0;  // crc
+  const Register buf = c_rarg1;  // source java byte array address
+  const Register len = c_rarg2;  // length
+  const Register off = len;     // reused for length after computing the buffer address
+
+  // Arguments are reversed on java expression stack
+  // Calculate address of start element
+  if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
+    __ ld(buf, Address(esp, 2 * wordSize));   // long buf
+    __ lwu(off, Address(esp, wordSize));      // offset
+    __ add(buf, buf, off);                    // + offset
+    __ lwu(crc, Address(esp, 4 * wordSize));  // Initial CRC
+  } else {
+    __ ld(buf, Address(esp, 2 * wordSize));   // byte[] array
+    __ addi(buf, buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
+    __ lwu(off, Address(esp, wordSize));      // offset
+    __ add(buf, buf, off);                    // + offset
+    __ lwu(crc, Address(esp, 3 * wordSize));  // Initial CRC
+  }
+  // Can now load 'len' since we're finished with 'off'
+  __ lw(len, Address(esp, 0));                // Length
+
+  const Register val = c_rarg3;
+  const Register tbl = c_rarg4;
+  Label loop, done;
+
+  __ la(tbl, ExternalAddress(StubRoutines::crc_table_addr()));
+  __ notr(crc, crc); // ~crc
+  __ zext(crc, crc, 32);
+  __ bind(loop);
+  __ beqz(len, done);
+  __ lbu(val, Address(buf));
+  __ update_byte_crc32(crc, val, tbl);
+  __ addi(buf, buf, 1);
+  __ addiw(len, len, -1);
+  __ j(loop);
+  __ bind(done);
+  __ notr(crc, crc); // ~crc
+  __ sext(crc, crc, 32);
+
+  __ andi(sp, x19_sender_sp, -16); // Restore the caller's SP
+  __ ret();
+
+  // generate a vanilla native entry as the slow path
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
 }
 
 /**
