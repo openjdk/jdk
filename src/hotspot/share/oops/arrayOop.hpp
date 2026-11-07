@@ -92,6 +92,9 @@ private:
   // Returns the offset of the first element.
   static int base_offset_in_bytes(BasicType type) {
     int hs = header_size_in_bytes();
+    if (AlignArrayElements) {
+      hs = align_up(hs, BytesPerWord);
+    }
     return element_type_should_be_aligned(type) ? align_up(hs, BytesPerLong) : hs;
   }
 
