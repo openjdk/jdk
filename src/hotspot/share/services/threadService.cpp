@@ -1414,6 +1414,7 @@ class jdk_internal_vm_ThreadSnapshot: AllStatic {
   static bool _inited;
   static int _name_offset;
   static int _threadStatus_offset;
+  static int _cpuTime_offset;
   static int _carrierThread_offset;
   static int _stackTrace_offset;
   static int _locks_offset;
@@ -1424,6 +1425,7 @@ class jdk_internal_vm_ThreadSnapshot: AllStatic {
   static void compute_offsets(InstanceKlass* klass, TRAPS) {
     JavaClasses::compute_offset(_name_offset, klass, "name", vmSymbols::string_signature(), false);
     JavaClasses::compute_offset(_threadStatus_offset, klass, "threadStatus", vmSymbols::int_signature(), false);
+    JavaClasses::compute_offset(_cpuTime_offset, klass, "cpuTime", vmSymbols::long_signature(), false);
     JavaClasses::compute_offset(_carrierThread_offset, klass, "carrierThread", vmSymbols::thread_signature(), false);
     JavaClasses::compute_offset(_stackTrace_offset, klass, "stackTrace", vmSymbols::java_lang_StackTraceElement_array(), false);
     JavaClasses::compute_offset(_locks_offset, klass, "locks", vmSymbols::jdk_internal_vm_ThreadLock_array(), false);
@@ -1451,6 +1453,9 @@ public:
   static void set_thread_status(oop snapshot, int status) {
     snapshot->int_field_put(_threadStatus_offset, status);
   }
+  static void set_cpu_time(oop snapshot, jlong cpu_time) {
+    snapshot->long_field_put(_cpuTime_offset, cpu_time);
+  }
   static void set_carrier_thread(oop snapshot, oop carrier_thread) {
     snapshot->obj_field_put(_carrierThread_offset, carrier_thread);
   }
@@ -1470,6 +1475,7 @@ public:
 bool jdk_internal_vm_ThreadSnapshot::_inited = false;
 int jdk_internal_vm_ThreadSnapshot::_name_offset;
 int jdk_internal_vm_ThreadSnapshot::_threadStatus_offset;
+int jdk_internal_vm_ThreadSnapshot::_cpuTime_offset;
 int jdk_internal_vm_ThreadSnapshot::_carrierThread_offset;
 int jdk_internal_vm_ThreadSnapshot::_stackTrace_offset;
 int jdk_internal_vm_ThreadSnapshot::_locks_offset;
@@ -1507,6 +1513,11 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
     return nullptr; // thread terminated
   }
   assert(cl._thread_status != JavaThreadStatus::NEW, "unstarted Thread");
+
+  jlong cpu_time = -1;
+  if (!is_virtual && os::is_thread_cpu_time_supported()) {
+    cpu_time = os::thread_cpu_time(java_thread, true);
+  }
 
   // StackTrace
   InstanceKlass* ste_klass = vmClasses::StackTraceElement_klass();
@@ -1549,6 +1560,7 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   Handle snapshot = jdk_internal_vm_ThreadSnapshot::allocate(InstanceKlass::cast(snapshot_klass), CHECK_NULL);
   jdk_internal_vm_ThreadSnapshot::set_name(snapshot(), cl._thread_name.resolve());
   jdk_internal_vm_ThreadSnapshot::set_thread_status(snapshot(), (int)cl._thread_status);
+  jdk_internal_vm_ThreadSnapshot::set_cpu_time(snapshot(), cpu_time);
   jdk_internal_vm_ThreadSnapshot::set_carrier_thread(snapshot(), cl._carrier_thread.resolve());
   jdk_internal_vm_ThreadSnapshot::set_stack_trace(snapshot(), trace());
   jdk_internal_vm_ThreadSnapshot::set_locks(snapshot(), locks());
