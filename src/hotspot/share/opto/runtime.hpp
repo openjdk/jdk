@@ -194,6 +194,8 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _intpoly_assign_Type;
   static const TypeFunc* _intpoly_mult_25519_Type;
   static const TypeFunc* _intpoly_square_25519_Type;
+  static const TypeFunc* _intpoly_mult_P384_Type;
+  static const TypeFunc* _intpoly_square_P384_Type;
   static const TypeFunc* _updateBytesCRC32_Type;
   static const TypeFunc* _updateBytesCRC32C_Type;
   static const TypeFunc* _updateBytesAdler32_Type;
@@ -703,6 +705,18 @@ private:
   static inline const TypeFunc* intpoly_square_25519_Type() {
     assert(_intpoly_square_25519_Type != nullptr, "should be initialized");
     return _intpoly_square_25519_Type;
+  }
+
+  // IntegerPolynomialP384 multiply function
+  static inline const TypeFunc* intpoly_mult_P384_Type() {
+    assert(_intpoly_mult_P384_Type != nullptr, "should be initialized");
+    return _intpoly_mult_P384_Type;
+  }
+
+  // IntegerPolynomialP384 square function
+  static inline const TypeFunc* intpoly_square_P384_Type() {
+    assert(_intpoly_square_P384_Type != nullptr, "should be initialized");
+    return _intpoly_square_P384_Type;
   }
 
   /**
