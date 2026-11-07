@@ -117,8 +117,8 @@ oop ModuleEntry::shared_protection_domain() {
 void ModuleEntry::set_shared_protection_domain(ClassLoaderData *loader_data,
                                                Handle pd_h) {
   // Create a handle for the shared ProtectionDomain and save it atomically.
-  // init_handle_locked checks if someone beats us setting the _shared_pd cache.
-  loader_data->init_handle_locked(_shared_pd, pd_h);
+  // init_handle checks if someone beats us setting the _shared_pd cache.
+  loader_data->init_handle(_shared_pd, pd_h);
 }
 
 // Returns true if this module can read module m

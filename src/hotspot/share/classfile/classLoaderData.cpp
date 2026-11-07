@@ -841,26 +841,37 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
 
 OopHandle ClassLoaderData::add_handle(Handle h) {
   MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  record_modified_oops();
-  return _handles.add(h());
+  return add_handle_locked(h);
+}
+
+OopHandle ClassLoaderData::add_handle_locked(Handle h) {
+  if (is_permanent_class_loader_data()) {
+    return OopHandle(Universe::vm_global(), h());
+  } else {
+    record_modified_oops();
+    return _handles.add(h());
+  }
 }
 
 void ClassLoaderData::remove_handle(OopHandle h) {
   assert(!is_unloading(), "Do not remove a handle for a CLD that is unloading");
   if (!h.is_empty()) {
-    assert(_handles.owner_of(h.ptr_raw()),
-           "Got unexpected handle " PTR_FORMAT, p2i(h.ptr_raw()));
-    h.replace(oop(nullptr));
+    if (is_permanent_class_loader_data()) {
+      h.release(Universe::vm_global());
+    } else {
+      assert(_handles.owner_of(h.ptr_raw()),
+             "Got unexpected handle " PTR_FORMAT, p2i(h.ptr_raw()));
+      h.replace(oop(nullptr));
+    }
   }
 }
 
-void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
+void ClassLoaderData::init_handle(OopHandle& dest, Handle h) {
   MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
   if (dest.resolve() != nullptr) {
     return;
   } else {
-    record_modified_oops();
-    dest = _handles.add(h());
+    dest = add_handle_locked(h);
   }
 }
 
