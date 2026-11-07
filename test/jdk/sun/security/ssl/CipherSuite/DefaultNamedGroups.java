@@ -32,7 +32,7 @@ import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
- * @bug 8370885
+ * @bug 8370885 8388484
  * @summary Default namedGroups values are not being filtered against
  *          algorithm constraints
  * @library /javax/net/ssl/templates
