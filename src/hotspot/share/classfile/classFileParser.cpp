@@ -159,6 +159,8 @@
 
 #define JAVA_28_VERSION                   72
 
+#define JAVA_29_VERSION                   73
+
 #define JDK_VERSION                       (7 + (JVM_CLASSFILE_MAJOR_VERSION - JAVA_7_VERSION))
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {

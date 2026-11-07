@@ -62,7 +62,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleTypeVisitor14
  * @since 23
  */
-@SupportedSourceVersion(RELEASE_28)
+@SupportedSourceVersion(RELEASE_29)
 @PreviewFeature(feature=PreviewFeature.Feature.PREVIEW_SUPPORT, reflective=true)
 public class SimpleTypeVisitorPreview<R, P> extends SimpleTypeVisitor14<R, P> {
     /**
