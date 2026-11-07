@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2026, IBM Inc. All rights reserved.
  * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -12392,7 +12393,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
   }
 
-  void gen_swpal_entry(Assembler::operand_size size) {
+  void gen_swpal_entry(Assembler::operand_size size, atomic_memory_order) {
     Register prev = r2, addr = c_rarg0, incr = c_rarg1;
     __ swpal(size, incr, prev, addr);
     __ membar(Assembler::StoreStore|Assembler::StoreLoad);
@@ -12408,6 +12409,27 @@ class StubGenerator: public StubCodeGenerator {
     if (! UseLSE) {
       return;
     }
+
+    static aarch64_atomic_stub_t* const atomic_stubs[] = {
+      &aarch64_atomic_fetch_add_4_impl,
+      &aarch64_atomic_fetch_add_8_impl,
+      &aarch64_atomic_fetch_add_4_relaxed_impl,
+      &aarch64_atomic_fetch_add_8_relaxed_impl,
+      &aarch64_atomic_xchg_1_impl,
+      &aarch64_atomic_xchg_4_impl,
+      &aarch64_atomic_xchg_8_impl,
+      &aarch64_atomic_cmpxchg_1_impl,
+      &aarch64_atomic_cmpxchg_4_impl,
+      &aarch64_atomic_cmpxchg_8_impl,
+      &aarch64_atomic_cmpxchg_1_relaxed_impl,
+      &aarch64_atomic_cmpxchg_4_relaxed_impl,
+      &aarch64_atomic_cmpxchg_8_relaxed_impl,
+      &aarch64_atomic_cmpxchg_4_release_impl,
+      &aarch64_atomic_cmpxchg_8_release_impl,
+      &aarch64_atomic_cmpxchg_4_seq_cst_impl,
+      &aarch64_atomic_cmpxchg_8_seq_cst_impl,
+    };
+
     StubId stub_id = StubId::stubgen_atomic_entry_points_id;
     GrowableArray<address> entries;
     int entry_count = StubInfo::entry_count(stub_id);
@@ -12416,129 +12438,64 @@ class StubGenerator: public StubCodeGenerator {
       assert(entries.length() == entry_count - 1,
              "unexpected extra entry count %d", entries.length());
       aarch64_atomic_fetch_add_4_impl = (aarch64_atomic_stub_t)start;
+
       int idx = 0;
-      aarch64_atomic_fetch_add_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_fetch_add_4_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_fetch_add_8_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_xchg_1_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_xchg_4_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_xchg_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_1_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_4_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_8_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_1_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_4_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_8_relaxed_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_4_release_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_8_release_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_4_seq_cst_impl = (aarch64_atomic_stub_t)entries.at(idx++);
-      aarch64_atomic_cmpxchg_8_seq_cst_impl = (aarch64_atomic_stub_t)entries.at(idx++);
+      for (size_t i = 1; i < ARRAY_SIZE(atomic_stubs); i++) {
+        *(atomic_stubs[i]) = (aarch64_atomic_stub_t)entries.at(idx++);
+      }
       assert(idx == entries.length(), "sanity!");
+
       return;
     }
+
+#define ATOMIC_STUB(NAME, KIND, SIZE, MEM_ORDER)                \
+    AtomicStubMark mark_ ## NAME(_masm, & aarch64_atomic_ ## NAME ## _impl);       \
+    gen_ ## KIND ## _entry(SIZE, memory_order_ ## MEM_ORDER);
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     start = __ pc();
     address end;
     {
-    // ADD, memory_order_conservative
-    AtomicStubMark mark_fetch_add_4(_masm, &aarch64_atomic_fetch_add_4_impl);
-    gen_ldadd_entry(Assembler::word, memory_order_conservative);
+      ATOMIC_STUB(fetch_add_4,         ldadd, Assembler::word,  conservative);
+      ATOMIC_STUB(fetch_add_8,         ldadd, Assembler::xword, conservative);
+      ATOMIC_STUB(fetch_add_4_relaxed, ldadd, Assembler::word,  relaxed);
+      ATOMIC_STUB(fetch_add_8_relaxed, ldadd, Assembler::xword, relaxed);
+      ATOMIC_STUB(xchg_1,              swpal, Assembler::byte,  conservative);
+      ATOMIC_STUB(xchg_4,              swpal, Assembler::word,  conservative);
+      ATOMIC_STUB(xchg_8,              swpal, Assembler::xword, conservative);
+      ATOMIC_STUB(cmpxchg_1,           cas,   Assembler::byte,  conservative);
+      ATOMIC_STUB(cmpxchg_4,           cas,   Assembler::word,  conservative);
+      ATOMIC_STUB(cmpxchg_8,           cas,   Assembler::xword, conservative);
+      ATOMIC_STUB(cmpxchg_4_relaxed,   cas,   Assembler::word,  relaxed);
+      ATOMIC_STUB(cmpxchg_8_relaxed,   cas,   Assembler::xword, relaxed);
+      ATOMIC_STUB(cmpxchg_4_release,   cas,   Assembler::word,  release);
+      ATOMIC_STUB(cmpxchg_8_release,   cas,   Assembler::xword, release);
+      ATOMIC_STUB(cmpxchg_4_seq_cst,   cas,   Assembler::word,  seq_cst);
+      ATOMIC_STUB(cmpxchg_8_seq_cst,   cas,   Assembler::xword, seq_cst);
 
-    AtomicStubMark mark_fetch_add_8(_masm, &aarch64_atomic_fetch_add_8_impl);
-    gen_ldadd_entry(Assembler::xword, memory_order_conservative);
+      end = __ pc();
 
-    // ADD, memory_order_relaxed
-    AtomicStubMark mark_fetch_add_4_relaxed
-      (_masm, &aarch64_atomic_fetch_add_4_relaxed_impl);
-    gen_ldadd_entry(Assembler::word, memory_order_relaxed);
-
-    AtomicStubMark mark_fetch_add_8_relaxed
-      (_masm, &aarch64_atomic_fetch_add_8_relaxed_impl);
-    gen_ldadd_entry(Assembler::xword, memory_order_relaxed);
-
-    // XCHG, memory_order_conservative
-    AtomicStubMark mark_xchg_1(_masm, &aarch64_atomic_xchg_1_impl);
-    gen_swpal_entry(Assembler::byte);
-
-    AtomicStubMark mark_xchg_4(_masm, &aarch64_atomic_xchg_4_impl);
-    gen_swpal_entry(Assembler::word);
-
-    AtomicStubMark mark_xchg_8(_masm, &aarch64_atomic_xchg_8_impl);
-    gen_swpal_entry(Assembler::xword);
-
-    // CAS, memory_order_conservative
-    AtomicStubMark mark_cmpxchg_1(_masm, &aarch64_atomic_cmpxchg_1_impl);
-    gen_cas_entry(Assembler::byte, memory_order_conservative);
-
-    AtomicStubMark mark_cmpxchg_4(_masm, &aarch64_atomic_cmpxchg_4_impl);
-    gen_cas_entry(Assembler::word, memory_order_conservative);
-
-    AtomicStubMark mark_cmpxchg_8(_masm, &aarch64_atomic_cmpxchg_8_impl);
-    gen_cas_entry(Assembler::xword, memory_order_conservative);
-
-    // CAS, memory_order_relaxed
-    AtomicStubMark mark_cmpxchg_1_relaxed
-      (_masm, &aarch64_atomic_cmpxchg_1_relaxed_impl);
-    gen_cas_entry(Assembler::byte, memory_order_relaxed);
-
-    AtomicStubMark mark_cmpxchg_4_relaxed
-      (_masm, &aarch64_atomic_cmpxchg_4_relaxed_impl);
-    gen_cas_entry(Assembler::word, memory_order_relaxed);
-
-    AtomicStubMark mark_cmpxchg_8_relaxed
-      (_masm, &aarch64_atomic_cmpxchg_8_relaxed_impl);
-    gen_cas_entry(Assembler::xword, memory_order_relaxed);
-
-    AtomicStubMark mark_cmpxchg_4_release
-      (_masm, &aarch64_atomic_cmpxchg_4_release_impl);
-    gen_cas_entry(Assembler::word, memory_order_release);
-
-    AtomicStubMark mark_cmpxchg_8_release
-      (_masm, &aarch64_atomic_cmpxchg_8_release_impl);
-    gen_cas_entry(Assembler::xword, memory_order_release);
-
-    AtomicStubMark mark_cmpxchg_4_seq_cst
-      (_masm, &aarch64_atomic_cmpxchg_4_seq_cst_impl);
-    gen_cas_entry(Assembler::word, memory_order_seq_cst);
-
-    AtomicStubMark mark_cmpxchg_8_seq_cst
-      (_masm, &aarch64_atomic_cmpxchg_8_seq_cst_impl);
-    gen_cas_entry(Assembler::xword, memory_order_seq_cst);
-
-    end = __ pc();
-
-    ICache::invalidate_range(start, end - start);
-    // exit block to force update of AtomicStubMark targets
+      ICache::invalidate_range(start, end - start);
+      // exit block to force update of AtomicStubMark targets
     }
 
     assert(start == (address)aarch64_atomic_fetch_add_4_impl,
            "atomic stub should be at start of buffer");
     // record the stub start and end plus all the entries saved by the
     // AtomicStubMark destructor
-    entries.append((address)aarch64_atomic_fetch_add_8_impl);
-    entries.append((address)aarch64_atomic_fetch_add_4_relaxed_impl);
-    entries.append((address)aarch64_atomic_fetch_add_8_relaxed_impl);
-    entries.append((address)aarch64_atomic_xchg_1_impl);
-    entries.append((address)aarch64_atomic_xchg_4_impl);
-    entries.append((address)aarch64_atomic_xchg_8_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_1_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_4_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_8_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_1_relaxed_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_4_relaxed_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_8_relaxed_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_4_release_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_8_release_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_4_seq_cst_impl);
-    entries.append((address)aarch64_atomic_cmpxchg_8_seq_cst_impl);
+    for (size_t i = 1; i < ARRAY_SIZE(atomic_stubs); i++) {
+      entries.append((address)*(atomic_stubs[i]));
+    }
 
     assert(entries.length() == entry_count - 1,
            "unexpected extra entry count %d", entries.length());
 
     store_archive_data(stub_id, start, end, &entries);
   }
+
+#undef ATOMIC_STUB
+
 #endif // LINUX
 
   static void save_return_registers(MacroAssembler* masm) {
