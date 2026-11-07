@@ -218,7 +218,7 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public final ByteBuffer asByteBuffer() {
-        checkArraySize("ByteBuffer", 1);
+        checkArraySize("ByteBuffer", 1, true);
         ByteBuffer _bb = makeByteBuffer();
         if (readOnly) {
             //session is IMMUTABLE - obtain a RO byte buffer
@@ -346,7 +346,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     private <Z> Z toArray(Class<Z> arrayClass, ValueLayout elemLayout, IntFunction<Z> arrayFactory, Function<Z, MemorySegment> segmentFactory) {
-        int size = checkArraySize(arrayClass.getSimpleName(), (int)elemLayout.byteSize());
+        int size = checkArraySize(arrayClass.getSimpleName(), (int)elemLayout.byteSize(), false);
         Z arr = arrayFactory.apply(size);
         MemorySegment arrSegment = segmentFactory.apply(arr);
         MemorySegment.copy(this, elemLayout, 0, arrSegment, elemLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
@@ -394,14 +394,20 @@ public abstract sealed class AbstractMemorySegmentImpl
         return (((unsafeGetOffset() + offset) | maxAlignMask()) & (byteAlignment - 1)) == 0;
     }
 
-    private int checkArraySize(String typeName, int elemSize) {
+    private int checkArraySize(String typeName, int elemSize, boolean uoeOnSizeOverflow) {
         // elemSize is guaranteed to be a power of two, so we can use an alignment check
         if (!Utils.isAligned(length, elemSize)) {
             throw new IllegalStateException(String.format("Segment size is not a multiple of %d. Size: %d", elemSize, length));
         }
         long arraySize = length / elemSize;
         if (arraySize > ArraysSupport.SOFT_MAX_ARRAY_LENGTH) { //conservative check
-            throw new IllegalStateException(String.format("Segment is too large to wrap as %s. Size: %d", typeName, length));
+            String msg = String.format("Segment is too large to wrap as %s. Size: %d", typeName, length);
+            if (uoeOnSizeOverflow) {
+                throw new UnsupportedOperationException(msg);
+            } else  {
+                throw new IllegalStateException(msg);
+            }
+
         }
         return (int)arraySize;
     }
