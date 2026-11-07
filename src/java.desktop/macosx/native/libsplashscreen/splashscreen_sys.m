@@ -146,41 +146,39 @@ jboolean SplashGetScaledImageName(const char* jar, const char* file,
         return JNI_FALSE;
     }
 
-    NSAutoreleasePool *pool = [NSAutoreleasePool new];
-    __block float screenScaleFactor = 1;
+    @autoreleasepool {
+        __block float screenScaleFactor = 1;
 
-    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        // initialize NSApplication and AWT stuff
-        [NSApplicationAWT sharedApplication];
-        screenScaleFactor = [SplashNSScreen() backingScaleFactor];
-    }];
+        [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+            // initialize NSApplication and AWT stuff
+            [NSApplicationAWT sharedApplication];
+            screenScaleFactor = [SplashNSScreen() backingScaleFactor];
+        }];
 
-    if (screenScaleFactor > 1) {
-        NSString *fileName = [NSString stringWithUTF8String: file];
-        NSUInteger length = [fileName length];
-        NSRange range = [fileName rangeOfString: @"."
+        if (screenScaleFactor > 1) {
+            NSString *fileName = [NSString stringWithUTF8String: file];
+            NSUInteger length = [fileName length];
+            NSRange range = [fileName rangeOfString: @"."
                                         options:NSBackwardsSearch];
-        NSUInteger dotIndex = range.location;
-        NSString *fileName2x = nil;
+            NSUInteger dotIndex = range.location;
+            NSString *fileName2x = nil;
 
-        fileName2x = findScaledImageName(fileName, dotIndex, @"@2x");
-        if(![[NSFileManager defaultManager]
-                fileExistsAtPath: fileName2x]) {
-            fileName2x = findScaledImageName(fileName, dotIndex, @"@200pct");
-        }
-        if (jar || [[NSFileManager defaultManager]
-                fileExistsAtPath: fileName2x]){
-            if (strlen([fileName2x UTF8String]) > scaledImageLength) {
-                [pool drain];
-                return JNI_FALSE;
+            fileName2x = findScaledImageName(fileName, dotIndex, @"@2x");
+            if(![[NSFileManager defaultManager]
+                    fileExistsAtPath: fileName2x]) {
+                fileName2x = findScaledImageName(fileName, dotIndex, @"@200pct");
             }
-            *scaleFactor = 2;
-            strcpy(scaledFile, [fileName2x UTF8String]);
-            [pool drain];
-            return JNI_TRUE;
+            if (jar || [[NSFileManager defaultManager]
+                    fileExistsAtPath: fileName2x]){
+                if (strlen([fileName2x UTF8String]) > scaledImageLength) {
+                    return JNI_FALSE;
+                }
+                *scaleFactor = 2;
+                strcpy(scaledFile, [fileName2x UTF8String]);
+                return JNI_TRUE;
+            }
         }
     }
-    [pool drain];
     return JNI_FALSE;
 }
 
@@ -239,16 +237,15 @@ SplashCleanupPlatform(Splash * splash) {
 
 void
 SplashDonePlatform(Splash * splash) {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-
-    pthread_mutex_destroy(&splash->lock);
-    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        if (splash->window) {
-            [splash->window orderOut:nil];
-            [splash->window release];
-        }
-    }];
-    [pool drain];
+    @autoreleasepool {
+        pthread_mutex_destroy(&splash->lock);
+        [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+            if (splash->window) {
+                [splash->window orderOut:nil];
+                [splash->window release];
+            }
+        }];
+    }
 }
 
 void
@@ -283,7 +280,7 @@ SplashCreateThread(Splash * splash) {
 
 void
 SplashRedrawWindow(Splash * splash) {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    @autoreleasepool {
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         // drop the reference to the old view and image
@@ -338,12 +335,11 @@ SplashRedrawWindow(Splash * splash) {
         [splash->window orderFrontRegardless];
     }];
 
-    [pool drain];
+    }
 }
 
 void SplashReconfigureNow(Splash * splash) {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-
+    @autoreleasepool {
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         SplashCenter(splash);
 
@@ -355,8 +351,7 @@ void SplashReconfigureNow(Splash * splash) {
         [splash->window setFrame: NSMakeRect(splash->x, splash->y, splash->width, splash->height)
                          display: NO];
     }];
-
-    [pool drain];
+    }
 
     SplashRedrawWindow(splash);
 }
@@ -424,42 +419,41 @@ SplashEventLoop(Splash * splash) {
 
 void *
 SplashScreenThread(void *param) {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    Splash *splash = (Splash *) param;
+    @autoreleasepool {
+        Splash *splash = (Splash *) param;
 
-    SplashLock(splash);
-    pipe(splash->controlpipe);
-    fcntl(splash->controlpipe[0], F_SETFL,
-        fcntl(splash->controlpipe[0], F_GETFL, 0) | O_NONBLOCK);
-    splash->time = SplashTime();
-    splash->currentFrame = 0;
-    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        SplashCenter(splash);
-
-        splash->window = (void*) [[NSWindow alloc]
-            initWithContentRect: NSMakeRect(splash->x, splash->y, splash->width, splash->height)
-                      styleMask: NSWindowStyleMaskBorderless
-                        backing: NSBackingStoreBuffered
-                          defer: NO
-                         screen: SplashNSScreen()];
-
-        [splash->window setOpaque: NO];
-        [splash->window setBackgroundColor: [NSColor clearColor]];
-    }];
-    fflush(stdout);
-    if (splash->window) {
+        SplashLock(splash);
+        pipe(splash->controlpipe);
+        fcntl(splash->controlpipe[0], F_SETFL,
+            fcntl(splash->controlpipe[0], F_GETFL, 0) | O_NONBLOCK);
+        splash->time = SplashTime();
+        splash->currentFrame = 0;
         [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-            [splash->window orderFrontRegardless];
+            SplashCenter(splash);
+
+            splash->window = (void*) [[NSWindow alloc]
+                initWithContentRect: NSMakeRect(splash->x, splash->y, splash->width, splash->height)
+                        styleMask: NSWindowStyleMaskBorderless
+                            backing: NSBackingStoreBuffered
+                            defer: NO
+                            screen: SplashNSScreen()];
+
+            [splash->window setOpaque: NO];
+            [splash->window setBackgroundColor: [NSColor clearColor]];
         }];
-        SplashRedrawWindow(splash);
-        SplashEventLoop(splash);
+        fflush(stdout);
+        if (splash->window) {
+            [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+                [splash->window orderFrontRegardless];
+            }];
+            SplashRedrawWindow(splash);
+            SplashEventLoop(splash);
+        }
+        SplashUnlock(splash);
+        SplashDone(splash);
+
+        splash->isVisible=-1;
     }
-    SplashUnlock(splash);
-    SplashDone(splash);
-
-    splash->isVisible=-1;
-
-    [pool drain];
 
     return 0;
 }
