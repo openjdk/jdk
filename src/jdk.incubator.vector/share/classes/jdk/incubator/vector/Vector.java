@@ -1886,27 +1886,23 @@ import java.util.Arrays;
  * <ul>
  *
  * <li> Intel x64 platforms supporting at least AVX2 up to AVX-512.
- * Masking using mask registers and mask accepting hardware
- * instructions on AVX-512 are not currently supported.
  *
- * <li> ARM AArch64 platforms supporting NEON.  Although the API has
- * been designed to ensure ARM SVE instructions can be supported
- * (vector sizes between 128 and 2048 bits) there is currently no
- * implementation of such instructions and the general masking
- * capability.
- *
+ * <li> Arm AArch64 platforms supporting Neon, SVE or SVE2.
  * </ul>
- * The implementation currently supports masked lane-wise operations
- * in a cross-platform manner by composing the unmasked lane-wise
- * operation with {@link #blend(Vector, VectorMask) blend} as in
+ *
+ * In the absence of hardware support, the implementation supports
+ * masked lane-wise operations by composing the unmasked lane-wise
+ * operations with {@link #blend(Vector, VectorMask) blend} as in
  * the expression {@code a.blend(a.lanewise(op, b), m)}, where
  * {@code a} and {@code b} are vectors, {@code op} is the vector
  * operation, and {@code m} is the mask.
  *
- * <p> The implementation does not currently support optimal
- * vectorized instructions for floating point transcendental
- * functions (such as operators {@link VectorOperators#SIN SIN}
- * and {@link VectorOperators#LOG LOG}).
+ * <p> The implementation includes optimal vectorized routines for
+ * transcendental and trigonometric lanewise operations on floating-point
+ * vectors (such as operators {@link VectorOperators#SIN SIN} and
+ * {@link VectorOperators#LOG LOG}).
+ * These are implemented for x64 platforms on Windows and Linux,
+ * and for AArch64 platforms on Linux and MacOS, and for RISC-V on Linux.
  *
  * <h2>No boxing of primitives</h2>
  *
