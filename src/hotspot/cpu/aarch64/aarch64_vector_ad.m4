@@ -325,6 +325,19 @@ source %{
           return false;
         }
         break;
+      case Op_VectorSlice:
+        if (length_in_bytes > 16) {
+          // EXT extracts the highest elements from the first register and the
+          // lower elements from the second register so we disable this operation
+          // when length_in_bytes < MaxVectorSize
+          if (UseSVE == 0 || length_in_bytes < MaxVectorSize) {
+            return false;
+          }
+        } else if (length_in_bytes != 8 && length_in_bytes != 16) {
+          // NEON EXT only supports vector lengths of 8 and 16 bytes
+          return false;
+        }
+        break;
       default:
         break;
     }
@@ -349,6 +362,7 @@ source %{
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
       case Op_VectorBitwiseBlend:
+      case Op_VectorSlice:
       // There is no native SVE divide for BYTE/SHORT elements (these are
       // emulated by widening to 32-bit), so the masked variants are handled
       // by an unpredicated divide combined with a VectorBlend.
@@ -5628,3 +5642,25 @@ SELECT_FROM_TWO_VECTORS(10, 11)
 SELECT_FROM_TWO_VECTORS(12, 13)
 SELECT_FROM_TWO_VECTORS(17, 18)
 SELECT_FROM_TWO_VECTORS(23, 24)
+
+// -------------------------------- VectorSlice --------------------------------
+
+instruct vslice(vReg dst, vReg src1, vReg src2, immI origin) %{
+  match(Set dst (VectorSlice (Binary src1 src2) origin));
+  effect(TEMP_DEF dst);
+  format %{ "vslice $dst, $src1, $src2, $origin" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
+      __ ext($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
+             $src1$$FloatRegister, $src2$$FloatRegister, $origin$$constant);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      assert(length_in_bytes == MaxVectorSize, "invalid vector length");
+      __ sve_movprfx($dst$$FloatRegister, $src1$$FloatRegister);
+      __ sve_ext($dst$$FloatRegister, $src2$$FloatRegister, $origin$$constant);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
