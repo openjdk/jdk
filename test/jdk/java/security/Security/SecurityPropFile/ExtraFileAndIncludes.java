@@ -114,7 +114,7 @@ public class ExtraFileAndIncludes {
         ex.assertSuccess();
         ex.getOutputAnalyzer()
                 .shouldContain("Security properties:")
-                .shouldContain("Security provider static configuration:")
+                .shouldContain("Currently registered security providers (in order of preference):")
                 .shouldContain("Security TLS configuration");
     }
 
