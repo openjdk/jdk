@@ -3915,6 +3915,25 @@ const Type* StoreNode::Value(PhaseGVN* phase) const {
   if( t2 == Type::TOP ) return Type::TOP;
   const Type *t3 = phase->type( in(MemNode::ValueIn) );
   if( t3 == Type::TOP ) return Type::TOP;
+  Node* addr = in(MemNode::Address);
+  // Writing to an oop header only happens during allocation as a raw memory Store. If that Store is to the header but
+  // not a raw memory Store, then it must be a dead Store.
+  const TypeOopPtr* addr_t = phase->type(addr)->isa_oopptr();
+  if (addr_t != nullptr) {
+    int offset = addr_t->offset();
+    if (offset != Type::OffsetBot) {
+      if (addr_t->isa_aryptr()) {
+        if (offset <= arrayOopDesc::length_offset_in_bytes()) {
+          return Type::TOP;
+        }
+      } else if (addr_t->isa_instptr()) {
+        if (offset < instanceOopDesc::base_offset_in_bytes()) {
+          return Type::TOP;
+        }
+      }
+    }
+  }
+
   return Type::MEMORY;
 }
 
