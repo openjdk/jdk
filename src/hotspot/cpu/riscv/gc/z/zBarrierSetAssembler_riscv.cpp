@@ -200,11 +200,14 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       __ bnez(rtmp, medium_path, /* is_far */ true);
     }
     __ bind(medium_path_continuation);
+    const Register color = rnew_zaddress == noreg ? rnew_zpointer : rtmp;
     __ relocate(barrier_Relocation::spec(), [&] {
-      __ li16u(rtmp, barrier_Relocation::unpatched);
+      __ li16u(color, barrier_Relocation::unpatched);
     }, ZBarrierRelocationFormatStoreGoodBits);
-    __ slli(rnew_zpointer, rnew_zaddress, ZPointerLoadShift);
-    __ orr(rnew_zpointer, rnew_zpointer, rtmp);
+    if (rnew_zaddress != noreg) {
+      __ slli(rnew_zpointer, rnew_zaddress, ZPointerLoadShift);
+      __ orr(rnew_zpointer, rnew_zpointer, rtmp);
+    }
   } else {
     assert(!is_atomic, "atomic outside of nmethods not supported");
     __ la(rtmp, ref_addr);
