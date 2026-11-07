@@ -34,7 +34,7 @@ import jdk.internal.vm.vector.VectorSupport;
 import static jdk.incubator.vector.VectorOperators.*;
 
 @SuppressWarnings("cast")
-abstract sealed class AbstractVector<E> extends Vector<E>
+abstract sealed /*value*/ class AbstractVector<E> extends Vector<E>
         permits ByteVector, DoubleVector, FloatVector, IntVector, LongVector, ShortVector, Float16Vector {
     /**
      * The order of vector bytes when stored in natural,

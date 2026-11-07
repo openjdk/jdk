@@ -41,7 +41,7 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 
 @SuppressWarnings("cast")  // warning: redundant cast
 @ValueBased
-final class IntVector512 extends IntVector {
+final /*value*/ class IntVector512 extends IntVector {
     static final IntSpecies VSPECIES =
         (IntSpecies) IntVector.SPECIES_512;
 
@@ -599,7 +599,7 @@ final class IntVector512 extends IntVector {
 
     // Mask
     @ValueBased
-    static final class IntMask512 extends AbstractMask<Integer> {
+    static final /*value*/ class IntMask512 extends AbstractMask<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
         static final Class<Integer> CTYPE = int.class; // used by the JVM
@@ -832,7 +832,7 @@ final class IntVector512 extends IntVector {
 
     // Shuffle
     @ValueBased
-    static final class IntShuffle512 extends AbstractShuffle<Integer> {
+    static final /*value*/ class IntShuffle512 extends AbstractShuffle<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
         static final Class<Integer> CTYPE = int.class; // used by the JVM

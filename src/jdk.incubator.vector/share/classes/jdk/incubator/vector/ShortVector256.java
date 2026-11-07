@@ -41,7 +41,7 @@ import static jdk.internal.vm.vector.VectorSupport.*;
 
 @SuppressWarnings("cast")  // warning: redundant cast
 @ValueBased
-final class ShortVector256 extends ShortVector {
+final /*value*/ class ShortVector256 extends ShortVector {
     static final ShortSpecies VSPECIES =
         (ShortSpecies) ShortVector.SPECIES_256;
 
@@ -599,7 +599,7 @@ final class ShortVector256 extends ShortVector {
 
     // Mask
     @ValueBased
-    static final class ShortMask256 extends AbstractMask<Short> {
+    static final /*value*/ class ShortMask256 extends AbstractMask<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
         static final Class<Short> CTYPE = short.class; // used by the JVM
@@ -832,7 +832,7 @@ final class ShortVector256 extends ShortVector {
 
     // Shuffle
     @ValueBased
-    static final class ShortShuffle256 extends AbstractShuffle<Short> {
+    static final /*value*/ class ShortShuffle256 extends AbstractShuffle<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
         static final Class<Short> CTYPE = short.class; // used by the JVM
