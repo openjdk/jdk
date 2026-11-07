@@ -281,6 +281,16 @@ public:
   // cisc-spillable instructions redefine for use by in_RegMask
   virtual const RegMask *cisc_RegMask() const { return nullptr; }
 
+#ifdef ASSERT
+  // Does this node's implementation cause some of its inputs to be killed?
+  virtual bool has_killed_inputs() const { return false; }
+  // If that's the case, is input i killed?
+  virtual bool is_killed_input(uint i) const {
+    ShouldNotReachHere();
+    return false;
+  }
+#endif
+
   // If this instruction is a 2-address instruction, then return the
   // index of the input which must match the output.  Not necessary
   // for instructions which bind the input and output register to the
@@ -830,6 +840,47 @@ public:
   virtual uint  size_of() const { return sizeof(MachProjNode); }
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
+#endif
+};
+
+// When a MachNode "mach" kills its "i"th input "in" and that input is not bound to a fixed register, during matching,
+// input "i" of "mach" is set to a MachKill that takes "in" as unique input. MachKill nodes behaves so register
+// allocation properly adds a spill when needed before the MachNode that kills one of its inputs.
+class MachKillNode : public MachNode {
+private:
+  const uint  _ideal_reg;
+
+public:
+  MachKillNode(Node* in, const RegMask &mask, uint ideal_reg) : _ideal_reg(ideal_reg), _mask(mask) {
+    add_req(nullptr);
+    add_req(in);
+    init_class_id(Class_MachKill);
+  }
+
+  RegMask _mask;
+  virtual uint rule() const { return 9999999; }
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
+    assert(req() == 2, "only one input");
+  }
+
+  virtual const Type *bottom_type() const {
+    return in(1)->bottom_type();
+  }
+  virtual const RegMask& in_RegMask(uint i) const {
+    assert(i == 1, "");
+    return _mask;
+  }
+  virtual const RegMask &out_RegMask() const {
+    return _mask;
+  }
+  virtual uint  ideal_reg() const { return _ideal_reg; }
+  virtual uint two_adr( ) const {
+    return 1;
+  }
+  virtual uint  size_of() const { return sizeof(MachKillNode); }
+
+#ifndef PRODUCT
+  virtual const char *Name() const { return "MachKill";}
 #endif
 };
 

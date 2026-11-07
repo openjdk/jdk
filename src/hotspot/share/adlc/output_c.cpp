@@ -1701,7 +1701,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
   } // done generating expand rule
 
   // Generate projections for instruction's additional DEFs and KILLs
-  if( ! node->expands() && (node->needs_projections() || node->has_temps())) {
+  if (!node->expands() && (node->needs_projections(*this) || node->has_temps())) {
     // Get string representing the MachNode that projections point at
     const char *machNode = "this";
     // Generate the projections
@@ -1715,6 +1715,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     int proj_no = 1;
     bool declared_def  = false;
     bool declared_kill = false;
+    bool declared_proj = false;
 
     while ((comp = node->_components.iter()) != nullptr) {
       // Lookup register class associated with operand type
@@ -1746,25 +1747,35 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
       } else if (comp->isa(Component::KILL)) {
         fprintf(fp, "  // DEF/KILL %s\n", comp->_name);
 
-        if (!declared_kill) {
-          // Define the variable "kill" to hold new MachProjNodes
-          fprintf(fp, "  MachProjNode *kill;\n");
-          declared_kill = true;
-        }
-
         assert(op, "Support additional KILLS for base operands");
         const char *regmask    = reg_mask(*op);
         const char *ideal_type = op->ideal_type(_globalNames, _register);
 
-        if (!op->is_bound_register()) {
-          syntax_err(node->_linenum, "In %s only bound registers can be killed: %s %s\n",
-                     node->_ident, comp->_type, comp->_name);
+        if (op->is_bound_register()) {
+          if (!declared_proj) {
+            // Define the variable "kill" to hold new MachProjNodes
+            fprintf(fp, "  MachProjNode* proj;\n");
+            declared_proj = true;
+          }
+
+          fprintf(fp, "  proj = ");
+          fprintf(fp, "new MachProjNode( %s, %d, (%s), Op_%s );\n",
+                  machNode, proj_no++, regmask, ideal_type);
+          fprintf(fp, "  proj_list.push(proj);\n");
+          continue;
+        }
+        assert(comp->isa(Component::USE), "must be used if not bound");
+
+        if (!declared_kill) {
+          // Define the variable "kill" to hold new MachKillNodes
+          fprintf(fp, "  MachKillNode* kill;\n");
+          declared_kill = true;
         }
 
-        fprintf(fp,"  kill = ");
-        fprintf(fp,"new MachProjNode( %s, %d, (%s), Op_%s );\n",
-                machNode, proj_no++, regmask, ideal_type);
-        fprintf(fp,"  proj_list.push(kill);\n");
+        fprintf(fp, "  kill = ");
+        fprintf(fp, "new MachKillNode(in(operand_index(%d) - oper_input_base() + 1), %s, Op_%s);\n",
+                node->_components.operand_position(comp->_name), regmask, ideal_type);
+        fprintf(fp, "  set_req(operand_index(%d) - oper_input_base() + 1, kill);\n", node->_components.operand_position(comp->_name));
       }
     }
   }
@@ -1857,6 +1868,41 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
   fprintf(fp, "\n");
 }
 
+void ArchDesc::defineIsKilledInput(FILE* fp, InstructForm* node) {
+  if (node->expands() || !node->kills_some_inputs(*this)) {
+    return;
+  }
+  fprintf(fp, "#ifdef ASSERT\n");
+  fprintf(fp, "bool %sNode::is_killed_input(uint idx) const {\n", node->_ident);
+  node->_components.reset();
+  Component* comp = nullptr;
+
+  int index = node->oper_input_base(_globalNames);
+  while ((comp = node->_components.iter()) != nullptr) {
+
+    if (comp->isa(Component::KILL)) {
+      Form *form = (Form*)_globalNames[comp->_type];
+      assert(form, "component type must be a defined form");
+      OperandForm *op = form->is_operand();
+      assert(op, "Support additional KILLS for base operands");
+      if (!op->is_bound_register()) {
+        assert(comp->isa(Component::USE), "must be an input");
+        fprintf(fp, "  if (operand_index(%d) == (int)idx) {\n", node->_components.operand_position(comp->_name));
+        fprintf(fp, "    return true;\n");
+        fprintf(fp, "  }\n");
+      }
+    }
+    OperandForm* operand = _globalNames[comp->_type]->is_operand();
+    if (operand != nullptr) {
+      index += operand->num_edges(_globalNames);
+    }
+  }
+
+  fprintf(fp, "  return false;\n");
+  fprintf(fp, "}\n");
+  fprintf(fp, "#endif\n");
+  fprintf(fp, "\n");
+}
 
 //------------------------------Emit Routines----------------------------------
 // Special classes and routines for defining node emit routines which output
@@ -3155,6 +3201,7 @@ void ArchDesc::defineClasses(FILE *fp) {
     if ( instr->ideal_only() ) continue;
 
     defineOut_RegMask(_CPP_MISC_file._fp, instr->_ident, reg_mask(*instr));
+    defineIsKilledInput(_CPP_MISC_file._fp, instr);
   }
 
   // Output the definitions for expand rules & peephole rules
@@ -3163,12 +3210,12 @@ void ArchDesc::defineClasses(FILE *fp) {
     // Ensure this is a machine-world instruction
     if ( instr->ideal_only() ) continue;
     // If there are multiple defs/kills, or an explicit expand rule, build rule
-    if( instr->expands() || instr->needs_projections() ||
+    if (instr->expands() || instr->needs_projections(*this) ||
         instr->has_temps() ||
         instr->is_mach_constant() ||
         instr->needs_constant_base() ||
         (instr->_matrule != nullptr &&
-         instr->num_opnds() != instr->num_unique_opnds()) )
+         instr->num_opnds() != instr->num_unique_opnds()))
       defineExpand(_CPP_EXPAND_file._fp, instr);
     // If there is an explicit peephole rule, build it
     if ( instr->peepholes() )
