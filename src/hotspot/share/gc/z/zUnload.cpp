@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "gc/z/zUnload.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "oops/access.inline.hpp"
 
@@ -153,6 +154,8 @@ void ZUnload::unlink() {
 
 void ZUnload::purge() {
   if (!ClassUnloading) {
+    // Process allocation requests even when class unloading is disabled.
+    Metaspace::purge(false);
     return;
   }
 
