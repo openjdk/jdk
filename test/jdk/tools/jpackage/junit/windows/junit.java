@@ -38,6 +38,14 @@
  */
 
 /* @test
+ * @summary Test mapping of Architecture to WiX Toolset "-arch" argument
+ * @requires (os.family == "windows")
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/WixPipelineTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.WixPipelineTest
+ */
+
+/* @test
  * @summary UiSpec unit tests
  * @requires (os.family == "windows")
  * @modules jdk.jpackage/jdk.jpackage.internal.wixui:open
