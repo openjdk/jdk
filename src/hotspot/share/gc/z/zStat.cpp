@@ -366,6 +366,9 @@ void ZStatValue::initialize() {
   // Allocation aligned memory
   const size_t size = _cpu_offset * ZCPU::count();
   _base = ZUtils::alloc_aligned_unfreeable(ZCacheLineSize, size);
+
+  // Sort before JFR registration and before the ZStat thread is started.
+  ZStatSampler::sort();
 }
 
 const char* ZStatValue::group() const {
@@ -1154,8 +1157,6 @@ void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const
 void ZStat::run_thread() {
   ZStatSamplerHistory* const history = new ZStatSamplerHistory[ZStatSampler::count()];
   LogTarget(Debug, gc, stats) log;
-
-  ZStatSampler::sort();
 
   // Main loop
   while (_metronome.wait_for_tick()) {
