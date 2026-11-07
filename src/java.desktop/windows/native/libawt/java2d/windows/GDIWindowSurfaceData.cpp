@@ -721,8 +721,7 @@ static void GDIWinSD_GetRasInfo(JNIEnv *env,
         }
         if (wsdo->bitmap != 0) {
             if (lockflags & SD_LOCK_NEED_PIXELS) {
-                int ret = ::BitBlt(wsdo->bmdc, 0, 0, w, h,
-                                   hDC, x, y, SRCCOPY);
+                ::BitBlt(wsdo->bmdc, 0, 0, w, h, hDC, x, y, SRCCOPY);
                 ::GdiFlush();
             }
             wsdo->x = x;
