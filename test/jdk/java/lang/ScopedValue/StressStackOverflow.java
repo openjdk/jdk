@@ -25,6 +25,7 @@
  * @test id=default
  * @summary Stress ScopedValue stack overflow recovery path
  * @run main/othervm/timeout=300 ${test.main.class}
+ * @run main/othervm/timeout=300 -XX:StackShadowPages=9 ${test.main.class}
  * @run main/othervm/timeout=300 -XX:StackShadowPages=12 ${test.main.class}
  * @run main/othervm/timeout=300 -XX:StackShadowPages=20 ${test.main.class}
  */
