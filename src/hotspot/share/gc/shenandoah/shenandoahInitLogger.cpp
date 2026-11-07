@@ -49,7 +49,6 @@ void ShenandoahInitLogger::print_heap() {
 void ShenandoahInitLogger::print_gc_specific() {
   GCInitLogger::print_gc_specific();
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  log_info(gc, init)("Mode: %s", heap->mode()->name());
-  log_info(gc, init)("Heuristics: %s", heap->heuristics()->name());
+  log_info(gc, init)("Mode: %s", ShenandoahGCMode);
+  log_info(gc, init)("Heuristics: %s", ShenandoahGCHeuristics);
 }
