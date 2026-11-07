@@ -1339,10 +1339,16 @@ public final class StackMapGenerator {
         }
 
         boolean hasUninitializedThis() {
-            int size = this.localsSize;
+            int localSize = this.localsSize;
             var localVars = this.locals;
-            for (int i = 0; i < size; i++) {
+            for (int i = 0; i < localSize; i++) {
                 if (localVars[i] == Type.UNITIALIZED_THIS_TYPE)
+                    return true;
+            }
+            int stackSize = this.stackSize;
+            var stackVars = this.stack;
+            for (int i = 0; i < stackSize; i++) {
+                if (stackVars[i] == Type.UNITIALIZED_THIS_TYPE)
                     return true;
             }
             return false;
