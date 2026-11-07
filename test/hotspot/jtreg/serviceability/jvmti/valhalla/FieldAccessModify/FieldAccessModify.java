@@ -41,12 +41,18 @@ public class FieldAccessModify {
         public int valueClass_fld1;
         public int valueClass_fld2;
 
-        public ValueClass(int v1, int v2) { valueClass_fld1 = v1; valueClass_fld2 = v2; }
+        public ValueClass(int v1, int v2) {
+            valueClass_fld1 = v1;
+            valueClass_fld2 = v2;
+        }
 
         public String toString() {
             return "ValueClass { fld1=" + valueClass_fld1 + ", fld2=" + valueClass_fld2 + "}";
         }
 
+        private int getFld1() {
+            return this.valueClass_fld1;
+        }
     }
 
     private static class InstanceHolder {
@@ -80,17 +86,6 @@ public class FieldAccessModify {
     }
 
     public static void main(String[] args) throws Exception {
-        try {
-            System.loadLibrary(agentLib);
-        } catch (UnsatisfiedLinkError ex) {
-            System.err.println("Failed to load " + agentLib + " lib");
-            System.err.println("java.library.path: " + System.getProperty("java.library.path"));
-            throw ex;
-        }
-
-        // create objects for access testing before setting watchers
-        TestHolder testHolder = new TestHolder();
-
         if (!initWatchers(ValueClass.class, ValueClass.class.getDeclaredField("valueClass_fld1"))) {
             throw new RuntimeException("Watcher initialization error (valueClass_fld1)");
         }
@@ -103,6 +98,10 @@ public class FieldAccessModify {
         if (!initWatchers(ValueHolder.class, ValueHolder.class.getDeclaredField("valueHolder_fld1"))) {
             throw new RuntimeException("Watcher initialization error (valueHolder_fld1)");
         }
+        // create objects for access testing before setting watchers
+        TestHolder testHolder = new TestHolder();
+
+        checkObjectMod(testHolder.valueObj);
 
         test("ValueClass (access)", () -> {
                 testHolder.valueObj.toString();     // should access both valueClass_fld1 and valueClass_fld2
@@ -153,7 +152,6 @@ public class FieldAccessModify {
                 public boolean valueClass_fld1_modify;
                 public boolean valueClass_fld2_modify;
             });
-
     }
 
     private static void log(String msg) {
@@ -212,6 +210,7 @@ public class FieldAccessModify {
     }
 
     private static native boolean initWatchers(Class cls, Field field);
+    private static native void checkObjectMod(Object obj);
     private static native boolean startTest(TestResult results);
     private static native void stopTest();
 

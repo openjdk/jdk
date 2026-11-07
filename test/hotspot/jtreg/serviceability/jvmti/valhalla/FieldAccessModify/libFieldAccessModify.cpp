@@ -27,6 +27,8 @@
 #include "jvmti.h"
 #include "jni.h"
 
+#include "jvmti_common.hpp"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,6 +42,8 @@ static jclass testResultClass = nullptr;
 // we log object values handling FieldModification event and this cause FieldAccess events are triggered.
 // The flag to disable FieldAccess handling.
 static bool disableAccessEvent = false;
+// Used to check that the modified object was cloned by the event posting code.
+static jobject mod_saved_obj = nullptr;
 
 static void reportError(const char *msg, int err) {
     printf("%s, error: %d\n", msg, err);
@@ -220,8 +224,13 @@ onFieldModification(jvmtiEnv *jvmti_env,
             char signature_type,
             jvalue new_value)
 {
-    disableAccessEvent = true;
+    bool is_val = is_value_object(jni_env, object);
+    if (is_val && mod_saved_obj == nullptr) {
+      mod_saved_obj = jni_env->NewGlobalRef(object);
+      LOG("onFieldModification: object: %p mod_saved_obj: %p\n", object, mod_saved_obj);
+    }
 
+    disableAccessEvent = true;
     handleNotification(jvmti_env, jni_env, method, object, field, field_klass, true, location);
 
     printJValue("new value", jni_env, signature_type, new_value);
@@ -304,6 +313,20 @@ Java_FieldAccessModify_initWatchers(JNIEnv *env, jclass thisClass, jclass cls, j
     return JNI_TRUE;
 }
 
+JNIEXPORT void JNICALL
+Java_FieldAccessModify_checkObjectMod(JNIEnv *env, jclass thisClass, jobject obj)
+{
+    LOG("checkObjectMod: obj: %p mod_saved_obj: %p\n", obj, mod_saved_obj);
+    if (mod_saved_obj == nullptr) {
+      fatal(env, "Error in checkObjectMod: mod_saved_obj is nullptr");
+    }
+    bool is_same_mod = env->IsSameObject(obj, mod_saved_obj);
+    LOG("checkObjectMod: is_same_mod: %d\n", is_same_mod);
+
+    if (is_same_mod) {
+      fatal(env, "Error in checkObjectMod: mod_saved_obj was not cloned");
+    }
+}
 
 JNIEXPORT jboolean JNICALL
 Java_FieldAccessModify_startTest(JNIEnv *env, jclass thisClass, jobject testResults)
