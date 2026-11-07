@@ -135,7 +135,7 @@ void StackOverflow::remove_stack_guard_pages() {
 }
 
 void StackOverflow::enable_stack_reserved_zone(bool check_if_disabled) {
-  if (check_if_disabled && _stack_guard_state == stack_guard_reserved_disabled) {
+  if (check_if_disabled && _stack_guard_state != stack_guard_reserved_disabled) {
     return;
   }
   assert(_stack_guard_state == stack_guard_reserved_disabled, "inconsistent state");

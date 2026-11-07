@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "runtime/os.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/stackOverflow.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -87,4 +88,23 @@ TEST_VM(StackOverflow, basics) {
   if (so.stack_reserved_zone_size() > 0) {
     ASSERT_TRUE(so.in_stack_reserved_zone(so.stack_reserved_zone_base() - 1));
   }
+}
+
+TEST_VM(StackOverflow, enable_reserved_zone_if_disabled) {
+  if (StackReservedPages == 0) {
+    return;
+  }
+
+  StackOverflow* overflow_state = JavaThread::current()->stack_overflow_state();
+  if (overflow_state->stack_guard_zone_unused()) {
+    return;
+  }
+
+  ASSERT_TRUE(overflow_state->stack_guards_enabled());
+
+  overflow_state->disable_stack_reserved_zone();
+  ASSERT_TRUE(overflow_state->stack_reserved_zone_disabled());
+
+  overflow_state->enable_stack_reserved_zone(/* check_if_disabled */ true);
+  ASSERT_TRUE(overflow_state->stack_guards_enabled());
 }
