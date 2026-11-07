@@ -25,6 +25,22 @@
  * @test id=default
  * @summary Stress ScopedValue stack overflow recovery path
  * @run main/othervm/timeout=300 ${test.main.class}
+ * @run main/othervm/timeout=300 -XX:StackShadowPages=9 ${test.main.class}
+ * @run main/othervm/timeout=300 -XX:StackShadowPages=12 ${test.main.class}
+ * @run main/othervm/timeout=300 -XX:StackShadowPages=20 ${test.main.class}
+ */
+
+/*
+ * @test id=default-diagnostic
+ * @requires os.family == "windows"
+ * @summary Stress ScopedValue stack overflow with diagnostic
+ * @run main/othervm/timeout=300
+ *      -Xlog:os+cpu=info
+ *      -XX:+ErrorFileToStderr
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+ErrorLogSecondaryErrorDetails
+ *      -XX:+CreateCoredumpOnCrash
+ *      ${test.main.class}
  */
 
 /*
@@ -40,7 +56,7 @@
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @run main/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ${test.main.class}
+ * @run main/othervm/timeout=300 XX:StackShadowPages=12 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ${test.main.class}
  */
 
 import java.lang.ScopedValue.CallableOp;
