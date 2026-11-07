@@ -125,10 +125,16 @@ public:
 
 // Umbrella static interface
 class HugePages : public AllStatic {
-
+  // OS support
   static ExplicitHugePageSupport _explicit_hugepage_support;
   static THPSupport _thp_support;
   static ShmemTHPSupport _shmem_thp_support;
+
+  // User request
+  static bool _is_requested_on;
+  static bool _is_requested_off;
+  static bool _is_thp_requested_on;
+  static bool _is_thp_requested_off;
 
 public:
 
@@ -148,7 +154,16 @@ public:
   static ShmemTHPMode shmem_thp_mode()          { return _shmem_thp_support.mode(); }
   static bool forced_shmem_thp()                { return _shmem_thp_support.is_forced(); }
 
-  static void initialize();
+  static void scan_os();
+
+  static void set_requested(bool requested)     { (requested ? _is_requested_on : _is_requested_off) = true; }
+  static bool is_requested_on()                 { return _is_requested_on; }
+  static bool is_requested_off()                { return _is_requested_off; }
+
+  static void set_thp_requested(bool requested) { (requested ? _is_thp_requested_on : _is_thp_requested_off) = true; }
+  static bool is_thp_requested_on()             { return _is_thp_requested_on; }
+  static bool is_thp_requested_off()            { return _is_thp_requested_off; }
+
   static void print_on(outputStream* os);
 };
 
