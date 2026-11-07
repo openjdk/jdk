@@ -625,6 +625,7 @@ private:
   Node* specialize_castpp(Node* castpp, Node* base, Node* current_control);
 
   bool can_reduce_cmp(PhiNode* n, Node* cmp) const;
+  bool can_reduce_klass_load(PhiNode* phi) const;
   bool has_been_reduced(PhiNode* n, SafePointNode* sfpt) const;
   bool can_reduce_phi(PhiNode* ophi) const;
   bool can_reduce_check_users(Node* n, uint nesting) const;
@@ -634,6 +635,7 @@ private:
   void reduce_phi_on_field_access(Node* previous_addp, GrowableArray<Node *>  &alloc_worklist);
   void reduce_phi_on_castpp_field_load(CastPPNode* castpp, GrowableArray<Node*> &alloc_worklist);
   void reduce_phi_on_cmp(Node* cmp);
+  Node* reduce_phi_on_klass_load(PhiNode* phi, Node* load);
   bool reduce_phi_on_safepoints(PhiNode* ophi);
   bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, const Unique_Node_List<SafePointNode>& safepoints) const;
   void reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_worklist);

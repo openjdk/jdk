@@ -120,7 +120,7 @@ public class AllocationMergesTests {
                  "testSRAndNSR_Trap_C2",
                  "testString_one_C2",
                  "testString_two_C2",
-                 "testLoadKlassFromCast_C2",
+                 "testLoadUnknownKlass_C2",
                  "testLoadKlassFromPhi_C2",
                  "testReReduce_C2"
                 })
@@ -177,7 +177,7 @@ public class AllocationMergesTests {
         Asserts.assertEQ(testSRAndNSR_NoTrap_Interp(cond1, x, y),                   testSRAndNSR_NoTrap_C2(cond1, x, y));
         Asserts.assertEQ(testString_one_Interp(cond1),                              testString_one_C2(cond1));
         Asserts.assertEQ(testString_two_Interp(cond1),                              testString_two_C2(cond1));
-        Asserts.assertEQ(testLoadKlassFromCast_Interp(cond1),                       testLoadKlassFromCast_C2(cond1));
+        Asserts.assertEQ(testLoadUnknownKlass_Interp(cond1),                        testLoadUnknownKlass_C2(cond1));
         Asserts.assertEQ(testLoadKlassFromPhi_Interp(cond1),                        testLoadKlassFromPhi_C2(cond1));
         Asserts.assertEQ(testReReduce_Interp(cond1, x, y),                          testReReduce_C2(cond1, x, y));
 
@@ -1287,23 +1287,26 @@ public class AllocationMergesTests {
     // -------------------------------------------------------------------------
 
     @ForceInline
-    Class testLoadKlassFromCast(boolean cond1) {
+    Class testLoadUnknownKlass(boolean cond1) {
         Object p = new Circle(10);
 
         if (cond1) {
             p = dummy(1, 2);
         }
 
+        // Since the `dummy()` call is opaque and since `Point` is not a final
+        // class, the exact runtime klass of `p` is not (and cannot be) known at
+        // compile time.  So EA doesn't rewrite this Phi and as a result, the
+        // allocation node remains.
         return p.getClass();
     }
 
     @Test
     @IR(counts = { IRNode.ALLOC, "1" })
-    // The allocation won't be reduced because we don't support [Narrow]Klass loads
-    Class testLoadKlassFromCast_C2(boolean cond1) { return testLoadKlassFromCast(cond1); }
+    Class testLoadUnknownKlass_C2(boolean cond1) { return testLoadUnknownKlass(cond1); }
 
     @DontCompile
-    Class testLoadKlassFromCast_Interp(boolean cond1) { return testLoadKlassFromCast(cond1); }
+    Class testLoadUnknownKlass_Interp(boolean cond1) { return testLoadUnknownKlass(cond1); }
 
     // -------------------------------------------------------------------------
 
@@ -1319,8 +1322,7 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "2" })
-    // The allocation won't be reduced because we don't support [Narrow]Klass loads
+    @IR(failOn = { IRNode.ALLOC })
     Class testLoadKlassFromPhi_C2(boolean cond1) { return testLoadKlassFromPhi(cond1); }
 
     @DontCompile
