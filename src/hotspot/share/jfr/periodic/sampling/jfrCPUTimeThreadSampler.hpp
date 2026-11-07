@@ -38,11 +38,24 @@ class JavaThread;
 struct JfrCPUTimeSampleRequest {
   JfrSampleRequest _request;
   Tickspan _cpu_time_period;
+  u4 _native_pc_count;
+  // unused array elements are not stored in JfrCPUTimeTraceQueue
+  address _native_pcs[MAX_NATIVE_STACK_DEPTH];
 
-  JfrCPUTimeSampleRequest() {}
+  JfrCPUTimeSampleRequest() : _native_pc_count(0) {}
+
+  // minimum size of the request, excluding native PCs
+  static constexpr u4 fixed_size() {
+    return offsetof(JfrCPUTimeSampleRequest, _native_pcs);
+  }
+
+  // total size in bytes, including variable part of _native_pcs array
+  u4 size() const {
+    return fixed_size() + _native_pc_count * sizeof(_native_pcs[0]);
+  }
 };
 
-// Fixed size async-signal-safe SPSC linear queue backed by an array.
+// Async-signal-safe SPSC queue backed by a byte buffer holding variable-size requests.
 // All accesses to the queue, with the exception of the atomic
 // lost-samples counters, are guarded by a tri-state lock:
 // - ENQUEUE: locked for enqueuing by a signal handler
@@ -57,16 +70,15 @@ class JfrCPUTimeTraceQueue {
   };
 
   volatile LockState _lock;
-  JfrCPUTimeSampleRequest* _data;
+  u1* _data;
   u4 _capacity;
-  // next unfilled index
-  u4 _head;
+  u4 _head;  // byte offset of the next empty slot
 
   volatile u4 _lost_samples;
   volatile u4 _lost_samples_due_to_queue_full;
 
-  static const u4 CPU_TIME_QUEUE_INITIAL_CAPACITY = 20;
-  static const u4 CPU_TIME_QUEUE_MAX_CAPACITY     = 2000;
+  static const u4 CPU_TIME_QUEUE_INITIAL_CAPACITY = 1 * K;
+  static const u4 CPU_TIME_QUEUE_MAX_CAPACITY     = 256 * K;
 
   LockState lock_state() const;
 
@@ -78,7 +90,8 @@ class JfrCPUTimeTraceQueue {
   // signal safe, but can't be interleaved with dequeue
   bool enqueue(JfrCPUTimeSampleRequest& trace);
 
-  JfrCPUTimeSampleRequest& at(u4 index);
+  // request at the given byte offset
+  JfrCPUTimeSampleRequest& at(u4 offset) const;
 
   u4 size() const;
 

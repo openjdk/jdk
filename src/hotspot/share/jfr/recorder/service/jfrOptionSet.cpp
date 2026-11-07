@@ -120,6 +120,14 @@ void JfrOptionSet::set_stackdepth(u4 depth) {
   }
 }
 
+u4 JfrOptionSet::native_stack_depth() {
+  return _native_stack_depth;
+}
+
+void JfrOptionSet::set_native_stack_depth(u4 depth) {
+  _native_stack_depth = MIN2(depth, MAX_NATIVE_STACK_DEPTH);
+}
+
 bool JfrOptionSet::can_retransform() {
   return _retransform == JNI_TRUE;
 }
@@ -165,6 +173,7 @@ const char* const default_thread_buffer_size = "8k";
 const char* const default_max_chunk_size = "12m";
 const char* const default_sample_threads = "true";
 const char* const default_stack_depth = "64";
+const char* const default_native_stack_depth = "0";
 const char* const default_retransform = "true";
 const char* const default_old_object_queue_size = "256";
 const char* const default_preserve_repository = "false";
@@ -250,6 +259,13 @@ static DCmdArgument<jlong> _dcmd_stackdepth(
   false,
   default_stack_depth);
 
+static DCmdArgument<jlong> _dcmd_nativestackdepth(
+  "nativestackdepth",
+  "Maximum number of native frames in stacktraces of CPU time samples (minimum 0, maximum 128)",
+  "INT",
+  false,
+  default_native_stack_depth);
+
 static DCmdArgument<bool> _dcmd_retransform(
   "retransform",
   "If event classes should be instrumented using JVMTI (by default true)",
@@ -289,6 +305,7 @@ static void register_parser_options() {
   _parser.add_dcmd_option(&_dcmd_numglobalbuffers);
   _parser.add_dcmd_option(&_dcmd_maxchunksize);
   _parser.add_dcmd_option(&_dcmd_stackdepth);
+  _parser.add_dcmd_option(&_dcmd_nativestackdepth);
   _parser.add_dcmd_option(&_dcmd_sample_threads);
   _parser.add_dcmd_option(&_dcmd_retransform);
   _parser.add_dcmd_option(&_dcmd_old_object_queue_size);
@@ -339,6 +356,7 @@ jlong JfrOptionSet::_memory_size = 0;
 jlong JfrOptionSet::_num_global_buffers = 0;
 jlong JfrOptionSet::_old_object_queue_size = 0;
 u4 JfrOptionSet::_stack_depth = STACK_DEPTH_DEFAULT;
+u4 JfrOptionSet::_native_stack_depth = 0;
 jboolean JfrOptionSet::_retransform = JNI_TRUE;
 #ifdef ASSERT
 jboolean JfrOptionSet::_sample_protection = JNI_FALSE;
@@ -406,6 +424,9 @@ bool JfrOptionSet::configure(TRAPS) {
 
   configure._stack_depth.set_is_set(_dcmd_stackdepth.is_set());
   configure._stack_depth.set_value(_dcmd_stackdepth.value());
+
+  configure._native_stack_depth.set_is_set(_dcmd_nativestackdepth.is_set());
+  configure._native_stack_depth.set_value(_dcmd_nativestackdepth.value());
 
   configure._thread_buffer_size.set_is_set(_dcmd_threadbuffersize.is_set());
   configure._thread_buffer_size.set_value(_dcmd_threadbuffersize.value());

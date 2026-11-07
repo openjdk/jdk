@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
+#include "jfr/recorder/stacktrace/jfrNativeFunctionRepository.hpp"
 #include "jfr/recorder/stacktrace/jfrStackFrame.hpp"
 #include "jfr/support/jfrMethodLookup.hpp"
 #include "oops/method.inline.hpp"
@@ -38,10 +39,18 @@ JfrStackFrame::JfrStackFrame(const traceid& id, int bci, u1 type, int lineno, co
 
 template <typename Writer>
 static void write_frame(Writer& w, traceid methodid, int line, int bci, u1 type) {
+  traceid native_function_id = 0;
+  if (type == JfrStackFrame::FRAME_NON_JAVA) {
+    // For native frames, methodid holds a raw pc. Translate it here, at serialization time.
+    native_function_id = JfrNativeFunctionRepository::id_for(methodid);
+    methodid = 0;
+  }
+
   w.write(methodid);
   w.write(static_cast<u4>(line));
   w.write(static_cast<u4>(bci));
   w.write(static_cast<u8>(type));
+  w.write(native_function_id);
 }
 
 void JfrStackFrame::write(JfrChunkWriter& cw) const {
@@ -57,6 +66,9 @@ bool JfrStackFrame::equals(const JfrStackFrame& rhs) const {
 }
 
 void JfrStackFrame::resolve_lineno() const {
+  if (_type == FRAME_NON_JAVA) {
+    return;
+  }
   assert(_klass, "no klass pointer");
   assert(_line == 0, "already have linenumber");
   const Method* const method = JfrMethodLookup::lookup(_klass, _methodid);
