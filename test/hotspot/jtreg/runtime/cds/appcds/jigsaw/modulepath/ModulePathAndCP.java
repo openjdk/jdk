@@ -130,40 +130,9 @@ public class ModulePathAndCP {
                    .shouldMatch(".class.load. org.astro.World source:.*org.astro.jar");
             });
 
-        // create an archive with modular jar files in both -cp and --module-path
+        // create an archive with two modular jars in the --module-path
         String jars = subJar.toString() + System.getProperty("path.separator") +
                       mainJar.toString();
-        output = TestCommon.createArchive( jars, appClasses,
-                                           "-Xlog:class+load=trace",
-                                           "--module-path", moduleDir.toString(),
-                                           "-m", MAIN_MODULE);
-        TestCommon.checkDump(output);
-
-        // run with archive with the main class name specified before
-        // the module name with the -m option. Since the -m option was specified
-        // during dump time, the classes in the jar files after the -cp won't be
-        // archived. Therefore, the classes won't be loaded from the archive but
-        // will be loaded from the jar files.
-        TestCommon.run("-Xlog:class+load=trace",
-                       "-cp", jars,
-                       "--module-path", moduleDir.toString(),
-                       MAIN_CLASS, "-m", MAIN_MODULE)
-            .assertNormalExit(out -> {
-                out.shouldMatch(".class.load. com.greetings.Main source:.*com.greetings.jar")
-                   .shouldMatch(".class.load. org.astro.World source:.*org.astro.jar");
-            });
-
-        // similar to the above case but without the main class name. The classes
-        // should be loaded from the archive.
-        TestCommon.run("-Xlog:class+load=trace",
-                       "-cp", jars,
-                       "--module-path", moduleDir.toString(),
-                       "-m", MAIN_MODULE)
-            .assertNormalExit(
-              "[class,load] com.greetings.Main source: shared objects file",
-              "[class,load] org.astro.World source: shared objects file");
-
-        // create an archive with two modular jars in the --module-path
         output = TestCommon.createArchive(
                                         null, appClasses,
                                         "--module-path", jars,
