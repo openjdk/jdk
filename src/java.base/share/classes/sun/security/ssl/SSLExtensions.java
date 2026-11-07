@@ -41,9 +41,10 @@ final class SSLExtensions {
     private final Map<SSLExtension, byte[]> extMap = new LinkedHashMap<>();
     private int encodedLength;
 
-    // Extension map for debug logging
+    // Capture is per message; later activation cannot recover skipped bytes.
     private final Map<Integer, byte[]> logMap =
             SSLLogger.isOn() ? new LinkedHashMap<>() : null;
+    private boolean hasUncapturedExtensions;
 
     SSLExtensions(HandshakeMessage handshakeMessage) {
         this.handshakeMessage = handshakeMessage;
@@ -163,6 +164,7 @@ final class SSLExtensions {
                     // ignore the extension
                     int pos = m.position() + extLen;
                     m.position(pos);
+                    hasUncapturedExtensions = true;
                 }
             }
 
@@ -365,7 +367,8 @@ final class SSLExtensions {
 
     @Override
     public String toString() {
-        if (extMap.isEmpty() && (logMap == null || logMap.isEmpty())) {
+        if (extMap.isEmpty() && (logMap == null || logMap.isEmpty())
+                && !hasUncapturedExtensions) {
             return "<no extension>";
         } else {
             StringBuilder builder = new StringBuilder(512);
@@ -395,6 +398,13 @@ final class SSLExtensions {
                                 ByteBuffer.wrap(en.getValue())));
                 }
 
+            }
+            if (hasUncapturedExtensions) {
+                if (builder.length() != 0) {
+                    builder.append(",\n");
+                }
+                builder.append("<unknown or unsupported extension data not captured: "
+                        + "logging was disabled at message creation>");
             }
             return builder.toString();
         }
