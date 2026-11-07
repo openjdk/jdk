@@ -262,9 +262,6 @@ class Dependencies: public ResourceObj {
   static void check_unique_method(ciKlass* ctxk, ciMethod* m) {
     assert(!m->can_be_statically_bound(ctxk->as_instance_klass()) || ctxk->is_interface(), "redundant");
   }
-  static void check_unique_implementor(ciInstanceKlass* ctxk, ciInstanceKlass* uniqk) {
-    assert(ctxk->implementor() == uniqk, "not a unique implementor");
-  }
 
   void assert_common_1(DepType dept, ciBaseObject* x);
   void assert_common_2(DepType dept, ciBaseObject* x0, ciBaseObject* x1);

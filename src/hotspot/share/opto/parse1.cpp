@@ -22,6 +22,7 @@
  *
  */
 
+#include "ci/ciEnv.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciSignature.hpp"
 #include "ci/ciTypeFlow.hpp"
@@ -566,6 +567,14 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     _flow = method()->get_flow_analysis();
   }
 
+  if (ciEnv::current()->paradoxical_hierarchy()) {
+    if (log != nullptr) {
+      log->done("parse");
+    }
+    return;
+  }
+
+  // No other failure mode is expected
   if (_flow->failing()) {
     assert(false, "type flow analysis failed during parsing");
     C->record_method_not_compilable(_flow->failure_reason());

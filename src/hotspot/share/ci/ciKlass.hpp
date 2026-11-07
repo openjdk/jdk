@@ -102,11 +102,6 @@ public:
     return false;
   }
 
-  // Does this type (array, class, interface) have no subtypes?
-  virtual bool is_leaf_type() {
-    return false;
-  }
-
   virtual bool can_be_value_array_klass() {
     return Arguments::is_valhalla_enabled() && is_java_lang_Object();
   }
