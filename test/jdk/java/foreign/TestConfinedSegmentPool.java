@@ -235,6 +235,52 @@ final class TestConfinedSegmentPool {
     }
 
     @Test
+    void rememberedCacheSlotOccupiedDuringClose() throws Throwable {
+        assumeTrue(TestConfinedSegmentPoolUtils.isPoolEnabled());
+        TestConfinedSegmentPoolUtils.runOn(Thread.ofPlatform(), () -> {
+            // State                          Cache             Arena-owned
+            // ------------------------------------------------------------
+            // Seed arena closed              [P1, ...]         -
+            // displacedArena acquires P1     [ 0, ...]         P1
+            // occupyingArena closes          [P2, ...]         P1
+            // displacedArena closes          [P2, P1, ...]     -
+            //
+            // With a single-slot cache, P1 is freed in the final step instead.
+            try (Arena seedArena = Arena.ofConfined()) {
+                seedArena.allocate(1);
+            }
+            Arena displacedArena = Arena.ofConfined();
+            MemorySegment displacedSegment = displacedArena.allocate(ValueLayout.JAVA_BYTE);
+            long displacedAddress = displacedSegment.address();
+            // Make sure this is cleared later on
+            displacedSegment.set(ValueLayout.JAVA_BYTE, 0, (byte) 42);
+
+            // No cached pool remains, so occupyingArena allocates a detached pool.
+            // Its generic release occupies displacedArena's remembered slot.
+            final long occupyingAddress;
+            try (Arena occupyingArena = Arena.ofConfined()) {
+                occupyingAddress = occupyingArena.allocate(1).address();
+            }
+
+            // displacedArena must fall back to searching another slot (or freeing its
+            // pool), without overwriting occupyingArena's cached pool.
+            displacedArena.close();
+            try (Arena verificationArena = Arena.ofConfined()) {
+                assertEquals(occupyingAddress, verificationArena.allocate(1).address());
+                // Only do this test if we have more than a single pool slot
+                if (THREAD_POOL_COUNT > 1) {
+                    try (Arena displacedPoolVerificationArena = Arena.ofConfined()) {
+                        MemorySegment displacedPoolVerificationSegment = displacedPoolVerificationArena.allocate(ValueLayout.JAVA_BYTE);
+                        assertEquals(displacedAddress, displacedPoolVerificationSegment.address());
+                        // Assert the 42 is cleared
+                        assertEquals((byte) 0, displacedPoolVerificationSegment.get(ValueLayout.JAVA_BYTE, 0));
+                    }
+                }
+            }
+        });
+    }
+
+    @Test
     void scopesAreUnique() {
         Arena firstArena = Arena.ofConfined();
         Arena secondArena = Arena.ofConfined();
@@ -559,7 +605,7 @@ final class TestConfinedSegmentPool {
         }
     }
 
-    static long confinedSessionSp(Arena arena) {
+    static int confinedSessionSp(Arena arena) {
 
         final class Holder {
 
@@ -580,7 +626,7 @@ final class TestConfinedSegmentPool {
         }
 
         try {
-            return Holder.getOrSet(arena).getLong(arena);
+            return Holder.getOrSet(arena).getInt(arena);
         } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }
