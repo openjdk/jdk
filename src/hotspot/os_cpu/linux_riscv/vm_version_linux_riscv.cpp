@@ -26,6 +26,7 @@
 
 #include "asm/register.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "os_linux.hpp"
 #include "riscv_hwprobe.hpp"
 #include "runtime/java.hpp"
@@ -120,6 +121,41 @@ void VM_Version::RVNonExtFeatureValue::log_enabled() {
   log_info(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
 }
 
+void VM_Version::apply_aot_cache_cpu_features() {
+  RVExtFeatures* archived_cpu_features = (RVExtFeatures*)get_aot_cache_cpu_features();
+  if (archived_cpu_features != nullptr) {
+    assert(is_aligned(archived_cpu_features, cpu_features_alignment()), "sanity check");
+    assert(UseAOTCacheCpuFeaturesOnly, "UseAOTCacheCpuFeaturesOnly must be true");
+    RVExtFeatures* runtime_cpu_features = RVExtFeatures::current();
+    if (!runtime_cpu_features->super_set_of(archived_cpu_features)) {
+      if (!FLAG_IS_DEFAULT(UseAOTCacheCpuFeaturesOnly)) {
+        warning("UseAOTCacheCpuFeaturesOnly is ignored: one or more cpu features recorded in AOT cache are not supported by this CPU");
+      }
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+      return;
+    }
+    _rv_ext_features_disabled_by_aot_cache = runtime_cpu_features->features_not_in(archived_cpu_features);
+    // Undetected extensions can still have flags enabled by command-line options or RVA profiles.
+    for (int i = 0; i < RVExtFeatures::MAX_CPU_FEATURE_INDEX; i++) {
+      if (!archived_cpu_features->support_feature(i)) {
+        _feature_list[i]->disable_feature();
+        // Normal flag initialization skips disabled extensions.
+        _feature_list[i]->update_flag();
+      }
+    }
+
+    LogTarget(Info, os, cpu) os_cpu_log;
+    if (os_cpu_log.is_enabled()) {
+      ResourceMark rm;
+      stringStream ss;
+      insert_features_names(&_rv_ext_features_disabled_by_aot_cache, ss);
+      if (!ss.is_empty()) {
+        os_cpu_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
+      }
+    }
+  }
+}
+
 void VM_Version::setup_cpu_available_features() {
 
   assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
@@ -138,6 +174,14 @@ void VM_Version::setup_cpu_available_features() {
 
   char* uarch = os_uarch_additional_features();
   vendor_features();
+
+  // Linux kernel require Zifencei
+  if (!ext_Zifencei.enabled()) {
+    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
+    ext_Zifencei.enable_feature();
+  }
+
+  apply_aot_cache_cpu_features();
 
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
@@ -189,12 +233,6 @@ void VM_Version::setup_cpu_available_features() {
       }
     }
     i++;
-  }
-
-  // Linux kernel require Zifencei
-  if (!ext_Zifencei.enabled()) {
-    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
-    ext_Zifencei.enable_feature();
   }
 
   if (UseCtxFencei) {
