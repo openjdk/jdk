@@ -888,6 +888,7 @@ inline void Assembler::xvnegdp( VectorSRegister d, VectorSRegister b)           
 inline void Assembler::xvsqrtsp(VectorSRegister d, VectorSRegister b)                    { emit_int32( XVSQRTSP_OPCODE| vsrt(d) | vsrb(b)); }
 inline void Assembler::xvsqrtdp(VectorSRegister d, VectorSRegister b)                    { emit_int32( XVSQRTDP_OPCODE| vsrt(d) | vsrb(b)); }
 inline void Assembler::xscvdpspn(VectorSRegister d, VectorSRegister b)                   { emit_int32( XSCVDPSPN_OPCODE | vsrt(d) | vsrb(b)); }
+inline void Assembler::xscvspdpn(VectorSRegister d, VectorSRegister b)                   { emit_int32( XSCVSPDPN_OPCODE | vsrt(d) | vsrb(b)); }
 inline void Assembler::xvadddp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVADDDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvsubdp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVSUBDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvmulsp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMULSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }

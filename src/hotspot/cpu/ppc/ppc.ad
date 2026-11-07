@@ -9016,52 +9016,33 @@ instruct regL_to_stkL(stackSlotL dst, iRegLsrc src) %{
 %}
 
 //----------Moves between int and float
-
-// Move float value from float stack-location to integer register.
-instruct moveF2I_stack_reg(iRegIdst dst, stackSlotF src) %{
+instruct moveF2I_reg_reg(iRegIdst dst, regF src, regF tmp) %{
   match(Set dst (MoveF2I src));
-  ins_cost(MEMORY_REF_COST);
+  effect(TEMP tmp);
 
-  format %{ "LWZ     $dst, $src \t// MoveF2I" %}
-  size(4);
-  ins_encode( enc_lwz(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Move float value from float register to integer stack-location.
-instruct moveF2I_reg_stack(stackSlotI dst, regF src) %{
-  match(Set dst (MoveF2I src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STFS    $src, $dst \t// MoveF2I" %}
-  size(4);
-  ins_encode( enc_stfs(src, dst) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Move integer value from integer stack-location to float register.
-instruct moveI2F_stack_reg(regF dst, stackSlotI src) %{
-  match(Set dst (MoveI2F src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LFS     $dst, $src \t// MoveI2F" %}
-  size(4);
+  format %{ "XSCVDPSPN $tmp, $src \t// MoveF2I\n\t"
+            "MFVSRWZ   $dst, $tmp" %}
+  size(8);
   ins_encode %{
-    int Idisp = $src$$disp + frame_slots_bias($src$$base, ra_);
-    __ lfs($dst$$FloatRegister, Idisp, $src$$base$$Register);
+    __ xscvdpspn($tmp$$FloatRegister->to_vsr(), $src$$FloatRegister->to_vsr());
+    __ mfvsrwz($dst$$Register, $tmp$$FloatRegister->to_vsr());
   %}
-  ins_pipe(pipe_class_memory);
+  ins_pipe(pipe_class_default);
 %}
 
-// Move integer value from integer register to float stack-location.
-instruct moveI2F_reg_stack(stackSlotF dst, iRegIorL2I src) %{
+instruct moveI2F_reg_reg(regF dst, iRegIorL2I src) %{
   match(Set dst (MoveI2F src));
-  ins_cost(MEMORY_REF_COST);
 
-  format %{ "STW     $src, $dst \t// MoveI2F" %}
-  size(4);
-  ins_encode( enc_stw(src, dst) );
-  ins_pipe(pipe_class_memory);
+  format %{ "MTVSRWZ   $dst, $src \t// MoveI2F\n\t"
+            "XXSPLTW   $dst, $dst, 1\n\t"
+            "XSCVSPDPN $dst, $dst" %}
+  size(12);
+  ins_encode %{
+    __ mtvsrwz($dst$$FloatRegister->to_vsr(), $src$$Register);
+    __ xxspltw($dst$$FloatRegister->to_vsr(), $dst$$FloatRegister->to_vsr(), 1);
+    __ xscvspdpn($dst$$FloatRegister->to_vsr(), $dst$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 //----------Register Move Instructions-----------------------------------------
@@ -12088,19 +12069,18 @@ instruct repl4I_immIminus1(vecX dst, immI_minus1 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Move float to int register via stack, replicate.
+// Move float to int register, replicate.
 instruct repl2F_reg_Ex(iRegLdst dst, regF src) %{
   match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 2 &&
             Matcher::vector_element_basic_type(n) == T_FLOAT);
-  ins_cost(2 * MEMORY_REF_COST + DEFAULT_COST);
+  ins_cost(2 * DEFAULT_COST);
   expand %{
-    stackSlotL tmpS;
     iRegIdst tmpI;
-    moveF2I_reg_stack(tmpS, src);   // Move float to stack.
-    moveF2I_stack_reg(tmpI, tmpS);  // Move stack to int reg.
-    moveReg(dst, tmpI);             // Move int to long reg.
-    repl32(dst);                    // Replicate bitpattern.
+    regF tmpF;
+    moveF2I_reg_reg(tmpI, src, tmpF); // Move float bits to int reg.
+    moveReg(dst, tmpI);               // Move int to long reg.
+    repl32(dst);                      // Replicate bitpattern.
   %}
 %}
 
