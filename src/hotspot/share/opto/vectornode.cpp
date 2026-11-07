@@ -1779,32 +1779,6 @@ int ReductionNode::opcode(int opc, BasicType bt) {
       assert(bt == T_DOUBLE, "must be");
       vopc = Op_MaxReductionV;
       break;
-    case Op_UMinV:
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR: return 0;
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-        case T_LONG:
-          vopc = Op_UMinReductionV;
-          break;
-        default: ShouldNotReachHere(); return 0;
-      }
-      break;
-    case Op_UMaxV:
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR: return 0;
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-        case T_LONG:
-          vopc = Op_UMaxReductionV;
-          break;
-        default: ShouldNotReachHere(); return 0;
-      }
-      break;
     case Op_AndI:
       switch (bt) {
       case T_BOOLEAN:
@@ -1859,15 +1833,9 @@ int ReductionNode::opcode(int opc, BasicType bt) {
   return vopc;
 }
 
-// Return the appropriate reduction node.
-ReductionNode* ReductionNode::make(int opc, Node* ctrl, Node* n1, Node* n2, BasicType bt,
+// Make a new reduction node for a vector reduction opcode.
+ReductionNode* ReductionNode::make(int vopc, Node* ctrl, Node* n1, Node* n2,
                                    bool requires_strict_order) {
-
-  int vopc = opcode(opc, bt);
-
-  // This method should not be called for unimplemented vectors.
-  guarantee(vopc != opc, "Vector for '%s' is not implemented", NodeClassNames[opc]);
-
   switch (vopc) {
   case Op_AddReductionVI: return new AddReductionVINode(ctrl, n1, n2);
   case Op_AddReductionVL: return new AddReductionVLNode(ctrl, n1, n2);
@@ -2036,10 +2004,8 @@ Node* VectorCastNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-Node* ReductionNode::make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType bt) {
-  int vopc = opcode(sopc, bt);
-  guarantee(vopc != sopc, "Vector reduction for '%s' is not implemented", NodeClassNames[sopc]);
-
+// Make an identity scalar node for a vector reduction opcode.
+Node* ReductionNode::make_identity_con_scalar(PhaseGVN& gvn, int vopc, BasicType bt) {
   switch (vopc) {
     case Op_AndReductionV:
       switch (bt) {
