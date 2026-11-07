@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,18 @@
 
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "logging/log.hpp"
 
 HeapWord* ShenandoahHeapRegion::allocate_fill(size_t size) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
   assert(size >= ShenandoahHeap::min_fill_size(), "Cannot fill unless min fill size");
 
-  HeapWord* obj = top();
+  HeapWord* obj = plain_top();
   HeapWord* new_top = obj + size;
   ShenandoahHeap::fill_with_object(obj, size);
   set_top(new_top);
@@ -52,35 +54,140 @@ HeapWord* ShenandoahHeapRegion::allocate_fill(size_t size) {
 
 HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocRequest& req) {
   shenandoah_assert_heaplocked_or_safepoint();
+  assert(!is_atomic_alloc_region(), "Must not");
   assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
 
-  HeapWord* obj = top();
-  if (pointer_delta(end(), obj) >= size) {
+  HeapWord* obj = plain_top();
+  HeapWord* new_top = obj + size;
+  if (new_top <= end()) {
     make_regular_allocation(req.affiliation());
     adjust_alloc_metadata(req, size);
 
-    HeapWord* new_top = obj + size;
     set_top(new_top);
 
     assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
     assert(is_object_aligned(obj),     "obj is not aligned: "       PTR_FORMAT, p2i(obj));
 
     return obj;
-  } else {
-    return nullptr;
   }
+  return nullptr;
+}
+
+template <bool HEAP_LOCKED>
+HeapWord* ShenandoahHeapRegion::allocate_atomic(ShenandoahAllocRequest& req, bool& ready_to_replenish) {
+  if constexpr (HEAP_LOCKED) {
+    shenandoah_assert_heaplocked();
+  }
+  const size_t size = req.size();
+  assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
+
+  HeapWord* obj = atomic_top_relaxed();
+  while (true) {
+    if constexpr (!HEAP_LOCKED) {
+      // the _atomic_top has been set to nullptr by other thread holding heap lock,
+      // no more alloc is allowed in this region
+      if (obj == nullptr) {
+        return nullptr;
+      }
+    }
+    HeapWord* new_top = obj + size;
+    if (new_top > end()) {
+      obj = nullptr;
+      break; // region is full, bail out
+    }
+    HeapWord* prev_top = _atomic_top.compare_exchange(obj, new_top, memory_order_relaxed);
+    if (prev_top == obj) {
+      // success
+      req.set_actual_size(size);
+      adjust_alloc_metadata_atomic(req, size);
+      ready_to_replenish = pointer_delta(end(), new_top) < ShenandoahHeap::plab_min_size();
+      break;
+    }
+    //Retry
+    obj = prev_top;
+    SpinPause(); // Contended, retry after spin pause
+  }
+  if (obj == nullptr) {
+    HeapWord* cur_top = atomic_top_relaxed();
+    ready_to_replenish = cur_top != nullptr &&
+                         pointer_delta(end(), cur_top) < ShenandoahHeap::plab_min_size();
+  }
+  return obj;
+}
+
+template <bool HEAP_LOCKED>
+HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(ShenandoahAllocRequest& req, bool& ready_to_replenish) {
+  if constexpr (HEAP_LOCKED) {
+    shenandoah_assert_heaplocked();
+  }
+  assert(req.is_lab_alloc(), "Only lab alloc");
+
+  HeapWord* obj = atomic_top_relaxed();
+  size_t actual_lab_size = req.size();
+  while (true) {
+    if constexpr (!HEAP_LOCKED) {
+      // the _atomic_top has been set to nullptr by other thread holding heap lock,
+      // no more alloc is allowed in this region
+      if (obj == nullptr) {
+        return nullptr;
+      }
+    }
+    HeapWord* new_top = obj + actual_lab_size;
+    if (new_top > end()) {
+      // shrink req lab size to fit
+      actual_lab_size = align_down(pointer_delta(end(), obj), MinObjAlignment);
+      if (actual_lab_size < req.min_size()) {
+        obj = nullptr; // region doesn't have enough space to fit the lab, bail
+        log_trace(gc, free)("Failed to shrink TLAB or GCLAB request (%zu) in region %zu to %zu"
+                    " because min_size() is %zu", req.size(), index(), actual_lab_size, req.min_size());
+        break;
+      }
+      new_top = obj + actual_lab_size;
+    }
+
+    HeapWord* prev_top = _atomic_top.compare_exchange(obj, new_top, memory_order_relaxed);
+    if (prev_top == obj) {
+      // success
+      req.set_actual_size(actual_lab_size);
+      ready_to_replenish = actual_lab_size < req.size() ||
+                           pointer_delta(end(), new_top) < ShenandoahHeap::plab_min_size();
+      break;
+    }
+
+    //Retry
+    obj = prev_top;
+    SpinPause(); // Contended, retry after spin pause
+  }
+
+  if (obj == nullptr) {
+    HeapWord* cur_top = atomic_top_relaxed();
+    ready_to_replenish = cur_top != nullptr &&
+                         pointer_delta(end(), cur_top) < ShenandoahHeap::plab_min_size();
+  }
+  return obj;
 }
 
 inline void ShenandoahHeapRegion::adjust_alloc_metadata(const ShenandoahAllocRequest &req, size_t size) {
-  // Only need to update alloc metadata for lab alloc, shared alloc is counted implicitly by tlab/gclab allocs
-  if (req.is_lab_alloc()) {
-    if (req.is_mutator_alloc()) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  switch (req.type()) {
+    case ShenandoahAllocRequest::_alloc_tlab:
       _tlab_allocs += size;
-    } else if (req.is_old()) {
-      _plab_allocs += size;
-    } else {
+      break;
+    case ShenandoahAllocRequest::_alloc_gclab:
       _gclab_allocs += size;
-    }
+      break;
+    case ShenandoahAllocRequest::_alloc_plab:
+      _plab_allocs += size;
+      break;
+    default:
+      assert(!req.is_lab_alloc(), "Unrecognized LAB allocation type");
+      break;
+  }
+}
+
+inline void ShenandoahHeapRegion::adjust_alloc_metadata_atomic(const ShenandoahAllocRequest &req, size_t size) {
+  if (UseTLAB && !req.is_lab_alloc()) {
+    _shared_atomic_allocs.add_then_fetch(size, memory_order_relaxed);
   }
 }
 
@@ -188,11 +295,52 @@ inline bool ShenandoahHeapRegion::is_affiliated() const {
   return affiliation() != FREE;
 }
 
+inline bool ShenandoahHeapRegion::unset_active_alloc_region() {
+  shenandoah_assert_heaplocked();
+  HeapWord* const top_before_sync = AtomicAccess::load(&_top);
+  HeapWord* prior_atomic_top = nullptr;
+  HeapWord* current_atomic_top = nullptr;
+  bool success = false;
+  while ((current_atomic_top = atomic_top()) != nullptr) {
+    AtomicAccess::store(&_top, current_atomic_top);
+    prior_atomic_top = _atomic_top.compare_exchange(current_atomic_top, (HeapWord*) nullptr, memory_order_release);
+    if (prior_atomic_top == current_atomic_top) {
+      success = true;
+      if (current_atomic_top > top_before_sync) {
+        reset_age();
+        if (UseTLAB) {
+          // Fold this activation's growth into lab/shared totals. Must run before
+          // affiliation or is_gc_alloc_region is cleared.
+          const size_t growth_words = pointer_delta(current_atomic_top, top_before_sync);
+          const size_t shared_words = _shared_atomic_allocs.exchange(0);
+          size_t* lab_allocs = is_young() ? (is_gc_alloc_region() ? &_gclab_allocs : &_tlab_allocs)
+                                : &_plab_allocs;
+          const size_t lab_words = growth_words > shared_words ? growth_words - shared_words : 0;
+          *lab_allocs += lab_words;
+          if (shared_words > growth_words) {
+            log_debug(gc, free)("Region %zu: shared_atomic_allocs (%zu words) exceeded "
+                                "activation growth (%zu words) at retirement",
+                                index(), shared_words, growth_words);
+          }
+        }
+      }
+      assert(plain_top() == current_atomic_top, "Value of _atomic_top must have synced to _top");
+      assert(!is_atomic_alloc_region(), "Must not");
+      break;
+    }
+  }
+  return success;
+}
+
 inline void ShenandoahHeapRegion::save_top_before_promote() {
-  _top_before_promoted = _top;
+  assert(!is_atomic_alloc_region(), "Must not");
+  assert(atomic_top() == nullptr, "Must be");
+  _top_before_promoted = plain_top();
 }
 
 inline void ShenandoahHeapRegion::restore_top_before_promote() {
+  assert(!is_atomic_alloc_region(), "Must not");
+  assert(atomic_top() == nullptr, "Must be");
   _top = _top_before_promoted;
   _top_before_promoted = nullptr;
 }
