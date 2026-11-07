@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack002.
+ * @summary Repeatedly provoke stack overflow in a worker thread until a timer stops it.
  * VM testbase keywords: [stress, quick, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
@@ -53,10 +53,10 @@
  *     4302288 the second stack overflow causes Classic VM to exit on win32
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 Stack002
+ * @run main/othervm/timeout=900 StackOverflowTimedRepeat
  */
 
-public class Stack002 {
+public class StackOverflowTimedRepeat {
     static final long timeout = 10000; // 10 seconds
 
     public static void main(String[] args) {

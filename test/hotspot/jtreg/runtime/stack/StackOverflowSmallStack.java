@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack019.
+ * @summary Repeated static recursion and recovery near the limit of a small stack.
  * VM testbase keywords: [stress, diehard, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
@@ -43,10 +43,10 @@
  *
  * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp" & vm.pageSize == 4096)
  * @requires os.family != "windows"
- * @run main/othervm/timeout=900 -Xss200K Stack019
+ * @run main/othervm/timeout=900 -Xss200K StackOverflowSmallStack
  */
 
-public class Stack019 {
+public class StackOverflowSmallStack {
     private final static int CYCLES = 50;
     private final static int PROBES = 50;
 
