@@ -538,6 +538,7 @@ public:
 
 #if defined(X86) && !defined(ZERO)
 #define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
+  do_var(uintx, ArrayCopyNonTemporalThreshold)          /* array copy stubs */ \
   do_var(int,   AVX3Threshold)                          /* array copy stubs and nmethods */ \
   do_var(int,   CopyAVX3Threshold) \
   do_var(bool,  EnableX86ECoreOpts)                     /* nmethods */ \

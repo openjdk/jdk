@@ -132,7 +132,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     bool use_evex = FLAG_IS_DEFAULT(UseAVX) || (UseAVX > 2);
 
     Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4, std_cpuid24, std_cpuid29;
-    Label sef_cpuid, sefsl1_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7;
+    Label sef_cpuid, sefsl1_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid6, ext_cpuid7;
     Label ext_cpuid8, done, wrapup, vector_save_restore, apx_save_restore_warning, apx_xstate;
     Label legacy_setup, save_restore_except, legacy_save_restore, start_simd_check;
 
@@ -258,7 +258,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ bind(std_cpuid4);
     __ movl(rax, 4);
     __ cmpl(rax, Address(rbp, in_bytes(VM_Version::std_cpuid0_offset()))); // Is cpuid(0x4) supported?
-    __ jccb(Assembler::greater, std_cpuid1);
+    __ jcc(Assembler::greater, std_cpuid1);
 
     __ xorl(rcx, rcx);   // L1 cache
     __ cpuid();
@@ -266,13 +266,41 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ andl(rax, 0x1f);  // Determine if valid cache parameters used
     __ orl(rax, rax);    // eax[4:0] == 0 indicates invalid cache
     __ pop(rax);
-    __ jccb(Assembler::equal, std_cpuid1);
+    __ jcc(Assembler::equal, std_cpuid1);
 
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::dcp_cpuid4_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
     __ movl(Address(rsi, 8), rcx);
     __ movl(Address(rsi,12), rdx);
+
+    // Enumerate cache subleaves instead of assuming a fixed L3 index.
+    // RSI is preserved by CPUID and was saved on entry to this stub.
+    Label L_cache_loop, L_cache_level, L_next_cache;
+    __ xorl(rsi, rsi);
+    __ bind(L_cache_loop);
+    __ movl(rcx, rsi);
+    __ movl(rax, 4);
+    __ cpuid();
+    __ movl(rdx, rax);
+    __ andl(rdx, 0x1f); // Cache type zero terminates enumeration.
+    __ jcc(Assembler::zero, std_cpuid1);
+    __ cmpl(rdx, 1); // Data cache.
+    __ jcc(Assembler::equal, L_cache_level);
+    __ cmpl(rdx, 3); // Unified cache.
+    __ jcc(Assembler::notEqual, L_next_cache);
+    __ bind(L_cache_level);
+    __ movl(rdx, rax);
+    __ andl(rdx, 0xe0); // EAX[7:5] is the cache level.
+    __ cmpl(rdx, 3 << 5);
+    __ jcc(Assembler::notEqual, L_next_cache);
+    __ movl(Address(rbp, in_bytes(VM_Version::l3_dcp_cpuid4_offset())), rax);
+    __ movl(Address(rbp, in_bytes(VM_Version::l3_dcp_cpuid4_offset()) + 4), rbx);
+    __ movl(Address(rbp, in_bytes(VM_Version::l3_dcp_cpuid4_offset()) + 8), rcx);
+    __ jmp(std_cpuid1);
+    __ bind(L_next_cache);
+    __ incrementl(rsi);
+    __ jmp(L_cache_loop);
 
     //
     // Standard cpuid(0x1)
@@ -361,12 +389,12 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::belowEqual, done);
     __ cmpl(rax, 0x80000004);     // Is cpuid(0x80000005) supported?
     __ jcc(Assembler::belowEqual, ext_cpuid1);
-    __ cmpl(rax, 0x80000006);     // Is cpuid(0x80000007) supported?
-    __ jccb(Assembler::belowEqual, ext_cpuid5);
-    __ cmpl(rax, 0x80000007);     // Is cpuid(0x80000008) supported?
-    __ jccb(Assembler::belowEqual, ext_cpuid7);
-    __ cmpl(rax, 0x80000008);     // Is cpuid(0x80000009 and above) supported?
-    __ jccb(Assembler::belowEqual, ext_cpuid8);
+    __ cmpl(rax, 0x80000006);     // Is cpuid(0x80000006) supported?
+    __ jccb(Assembler::below, ext_cpuid5);
+    __ cmpl(rax, 0x80000007);     // Is cpuid(0x80000007) supported?
+    __ jccb(Assembler::below, ext_cpuid6);
+    __ cmpl(rax, 0x80000008);     // Is cpuid(0x80000008) supported?
+    __ jccb(Assembler::below, ext_cpuid7);
     __ cmpl(rax, 0x8000001E);     // Is cpuid(0x8000001E) supported?
     __ jccb(Assembler::below, ext_cpuid8);
     //
@@ -399,6 +427,18 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(rax, 0x80000007);
     __ cpuid();
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid7_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rbx);
+    __ movl(Address(rsi, 8), rcx);
+    __ movl(Address(rsi,12), rdx);
+
+    //
+    // Extended cpuid(0x80000006) — AMD L2/L3 cache info
+    //
+    __ bind(ext_cpuid6);
+    __ movl(rax, 0x80000006);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid6_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
     __ movl(Address(rsi, 8), rcx);
@@ -1843,6 +1883,30 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize) &&
       (cache_line_size > AllocatePrefetchStepSize)) {
     FLAG_SET_DEFAULT(AllocatePrefetchStepSize, cache_line_size);
+  }
+
+  // Set ArrayCopyNonTemporalThreshold based on detected L3 cache size.
+  // AMD/Hygon use extended leaf 0x80000006; other x86 CPUs use standard leaf 4.
+  // Keep the compile-time default if detection fails.
+  if (FLAG_IS_DEFAULT(ArrayCopyNonTemporalThreshold)) {
+    uintx l3_size = 0;
+    if (is_amd_family()) {
+      uint32_t l3_edx = _cpuid_info.ext_cpuid6_edx;
+      l3_size = (uintx)(l3_edx >> 18) * 512 * 1024; // 512KB units
+    } else if (_cpuid_info.l3_dcp_cpuid4_eax.bits.cache_type != 0) {
+      // Deterministic cache size = line size * partitions * ways * sets.
+      // Every field is encoded as its actual value minus one.
+      const DcpCpuid4Ebx& cache = _cpuid_info.l3_dcp_cpuid4_ebx;
+      uint64_t size = ((uint64_t)cache.bits.L1_line_size + 1) *
+                      (cache.bits.partitions + 1) * (cache.bits.associativity + 1);
+      uint64_t sets = (uint64_t)_cpuid_info.l3_dcp_cpuid4_ecx + 1;
+      if (size <= max_uintx / sets) {
+        l3_size = (uintx)(size * sets);
+      }
+    }
+    if (l3_size > 0) {
+      FLAG_SET_DEFAULT(ArrayCopyNonTemporalThreshold, l3_size);
+    }
   }
 
   if ((AllocatePrefetchDistance == 0) && (AllocatePrefetchStyle != 0)) {

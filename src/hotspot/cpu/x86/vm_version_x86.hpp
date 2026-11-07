@@ -666,6 +666,18 @@ protected:
     uint32_t      ext_cpuid1E_ecx;
     uint32_t      ext_cpuid1E_edx; // unused currently
 
+    // cpuid function 0x80000006 // AMD L2/L3 cache info
+    uint32_t      ext_cpuid6_eax; // reserved
+    uint32_t      ext_cpuid6_ebx; // reserved
+    uint32_t      ext_cpuid6_ecx; // L2 cache info (size in KB, assoc, lines per tag)
+    uint32_t      ext_cpuid6_edx; // L3 cache info (size in 512KB units, assoc, lines per tag)
+
+    // cpuid function 4, subleaf describing an L3 data or unified cache
+    DcpCpuid4Eax l3_dcp_cpuid4_eax;
+    DcpCpuid4Ebx l3_dcp_cpuid4_ebx;
+    uint32_t     l3_dcp_cpuid4_ecx; // number of sets minus one
+    uint32_t     l3_dcp_cpuid4_edx; // reserved
+
     // extended control register XCR0 (the XFEATURE_ENABLED_MASK register)
     XemXcr0Eax   xem_xcr0_eax;
     uint32_t     xem_xcr0_edx; // reserved
@@ -738,10 +750,12 @@ public:
   static ByteSize std_cpuid24_offset() { return byte_offset_of(CpuidInfo, std_cpuid24_eax); }
   static ByteSize std_cpuid29_offset() { return byte_offset_of(CpuidInfo, std_cpuid29_ebx); }
   static ByteSize dcp_cpuid4_offset() { return byte_offset_of(CpuidInfo, dcp_cpuid4_eax); }
+  static ByteSize l3_dcp_cpuid4_offset() { return byte_offset_of(CpuidInfo, l3_dcp_cpuid4_eax); }
   static ByteSize sef_cpuid7_offset() { return byte_offset_of(CpuidInfo, sef_cpuid7_eax); }
   static ByteSize sefsl1_cpuid7_offset() { return byte_offset_of(CpuidInfo, sefsl1_cpuid7_eax); }
   static ByteSize ext_cpuid1_offset() { return byte_offset_of(CpuidInfo, ext_cpuid1_eax); }
   static ByteSize ext_cpuid5_offset() { return byte_offset_of(CpuidInfo, ext_cpuid5_eax); }
+  static ByteSize ext_cpuid6_offset() { return byte_offset_of(CpuidInfo, ext_cpuid6_eax); }
   static ByteSize ext_cpuid7_offset() { return byte_offset_of(CpuidInfo, ext_cpuid7_eax); }
   static ByteSize ext_cpuid8_offset() { return byte_offset_of(CpuidInfo, ext_cpuid8_eax); }
   static ByteSize ext_cpuid1E_offset() { return byte_offset_of(CpuidInfo, ext_cpuid1E_eax); }
