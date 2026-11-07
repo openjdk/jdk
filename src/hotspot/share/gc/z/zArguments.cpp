@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
+#include "gc/shared/jvmFlagConstraintsGC.hpp"
 #include "gc/z/zAdaptiveHeap.inline.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zArguments.hpp"
@@ -30,6 +31,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zHeuristics.hpp"
+#include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
@@ -259,22 +261,6 @@ void ZArguments::initialize() {
     }
   }
 
-  if (FLAG_IS_DEFAULT(MaxTenuringThreshold)) {
-    uint tenuring_threshold;
-    for (tenuring_threshold = 0; tenuring_threshold < MaxTenuringThreshold; ++tenuring_threshold) {
-      // Reduce the number of object ages, if the resulting garbage is too high
-      const size_t per_age_overhead = ZHeuristics::relocation_headroom();
-      if (per_age_overhead * tenuring_threshold >= ZHeuristics::significant_young_overhead()) {
-        break;
-      }
-    }
-    FLAG_SET_DEFAULT(MaxTenuringThreshold, tenuring_threshold);
-    if (tenuring_threshold == 0 && FLAG_IS_DEFAULT(AlwaysTenure)) {
-      // Some flag constraint function says AlwaysTenure must be true iff MaxTenuringThreshold == 0
-      FLAG_SET_DEFAULT(AlwaysTenure, true);
-    }
-  }
-
   if (!FLAG_IS_DEFAULT(ZTenuringThreshold) && NeverTenure) {
     vm_exit_during_initialization(err_msg("ZTenuringThreshold and NeverTenure are incompatible"));
   }
@@ -331,6 +317,31 @@ void ZArguments::initialize() {
     FLAG_SET_DEFAULT(VerifyDependencies, false);
   }
 #endif
+}
+
+void ZArguments::initialize_max_tenuring_threshold() {
+  if (FLAG_IS_DEFAULT(MaxTenuringThreshold)) {
+    assert(ZNUMA::count() > 0, "NUMA must be initialized");
+
+    uint tenuring_threshold;
+    for (tenuring_threshold = 0; tenuring_threshold < MaxTenuringThreshold; ++tenuring_threshold) {
+      // Reduce the number of object ages, if the resulting garbage is too high
+      const size_t per_age_overhead = ZHeuristics::relocation_headroom();
+      if (per_age_overhead * tenuring_threshold >= ZHeuristics::significant_young_overhead()) {
+        break;
+      }
+    }
+    FLAG_SET_DEFAULT(MaxTenuringThreshold, tenuring_threshold);
+    if (tenuring_threshold == 0 && FLAG_IS_DEFAULT(AlwaysTenure)) {
+      // Some flag constraint function says AlwaysTenure must be true iff MaxTenuringThreshold == 0
+      FLAG_SET_DEFAULT(AlwaysTenure, true);
+    }
+
+    // This value is computed after the AfterErgo constraint checks.
+    if (MaxTenuringThresholdConstraintFunc(MaxTenuringThreshold, true) != JVMFlag::SUCCESS) {
+      vm_exit_during_initialization("Inconsistent tenuring flags");
+    }
+  }
 }
 
 size_t ZArguments::conservative_max_heap_alignment() {
