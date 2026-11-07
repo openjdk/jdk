@@ -984,7 +984,7 @@ private:
   }
 
   void update_remset_promoted(zaddress to_addr) const {
-    ZIterator::basic_oop_iterate(to_oop(to_addr), update_remset_promoted_filter_and_remap_per_field);
+    ZIterator::basic_oop_iterate_safe(to_oop(to_addr), update_remset_promoted_filter_and_remap_per_field);
   }
 
   void update_remset_for_fields(zaddress from_addr, zaddress to_addr) const {
