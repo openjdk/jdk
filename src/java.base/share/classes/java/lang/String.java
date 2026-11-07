@@ -605,26 +605,10 @@ public final class String
             }
             // Decode with a stable copy, to be the result if the decoded length is the same
             byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
-            int sp = dp;            // first dp bytes are already in the copy
-            while (sp < length) {
-                int b1 = latin1[sp++];
-                if (b1 >= 0) {
-                    latin1[dp++] = (byte) b1;
-                    continue;
-                }
-                if ((b1 & 0xfe) == 0xc2 && sp < length) { // b1 either 0xc2 or 0xc3
-                    int b2 = latin1[sp];
-                    if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
-                        latin1[dp++] = (byte) decode2(b1, b2);
-                        sp++;
-                        continue;
-                    }
-                }
-                // anything not a latin1, including the REPL
-                // we have to go with the utf16
-                sp--;
-                break;
-            }
+            // first dp bytes are already in the copy
+            long spdp = decodeUTF8_LATIN1(latin1, dp, length, latin1, dp);
+            int sp = (int) (spdp >>> 32);
+            dp = (int) spdp;
             if (sp == length) {
                 if (dp != latin1.length) {
                     latin1 = Arrays.copyOf(latin1, dp);
@@ -745,26 +729,9 @@ public final class String
             }
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
-            offset += dp;
-            while (offset < sl) {
-                int b1 = bytes[offset++];
-                if (b1 >= 0) {
-                    dst[dp++] = (byte)b1;
-                    continue;
-                }
-                if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
-                    int b2 = bytes[offset];
-                    if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
-                        dst[dp++] = (byte)decode2(b1, b2);
-                        offset++;
-                        continue;
-                    }
-                }
-                // anything not a latin1, including the REPL
-                // we have to go with the utf16
-                offset--;
-                break;
-            }
+            long spdp = decodeUTF8_LATIN1(bytes, offset + dp, sl, dst, dp);
+            offset = (int) (spdp >>> 32);
+            dp = (int) spdp;
             if (offset == sl) {
                 if (dp != dst.length) {
                     dst = Arrays.copyOf(dst, dp);
@@ -863,6 +830,45 @@ public final class String
     }
 
     private static final char REPL = '\ufffd';
+
+    // ASCII run length after which the UTF-8 loops switch to bulk copy
+    private static final int ASCII_RUN_THRESHOLD = 64;
+
+    // Decodes UTF-8 to Latin-1 until a non Latin-1 byte, returns sp << 32 | dp
+    private static long decodeUTF8_LATIN1(byte[] src, int sp, int sl, byte[] dst, int dp) {
+        int asciiRun = 0;
+        while (sp < sl) {
+            int b1 = src[sp++];
+            if (b1 >= 0) {
+                dst[dp++] = (byte) b1;
+                if (++asciiRun >= ASCII_RUN_THRESHOLD && sp < sl) {
+                    // Long ASCII run: copy the rest of it in bulk
+                    int n = StringCoding.countPositives(src, sp, sl - sp);
+                    if (n > 0) {
+                        System.arraycopy(src, sp, dst, dp, n);
+                        sp += n;
+                        dp += n;
+                    }
+                    asciiRun = 0;
+                }
+                continue;
+            }
+            asciiRun = 0;
+            if ((b1 & 0xfe) == 0xc2 && sp < sl) { // b1 either 0xc2 or 0xc3
+                int b2 = src[sp];
+                if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
+                    dst[dp++] = (byte) decode2(b1, b2);
+                    sp++;
+                    continue;
+                }
+            }
+            // anything not a latin1, including the REPL
+            // we have to go with the utf16
+            sp--;
+            break;
+        }
+        return ((long) sp << 32) | dp;
+    }
 
     // Trim the given byte array to the given length
     private static byte[] trimArray(byte[] ba, int len) {
@@ -1250,11 +1256,25 @@ public final class String
     private static <E extends Exception> int decodeUTF8_UTF16(
             byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> exClass)
             throws E {
+        int asciiRun = 0;
         while (sp < sl) {
             int b1 = src[sp++];
             if (b1 >= 0) {
                 StringUTF16.putChar(dst, dp++, (char) b1);
-            } else if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
+                if (++asciiRun >= ASCII_RUN_THRESHOLD && sp < sl) {
+                    // Long ASCII run: inflate the rest of it in bulk
+                    int n = StringCoding.countPositives(src, sp, sl - sp);
+                    if (n > 0) {
+                        StringLatin1.inflate(src, sp, dst, dp, n);
+                        sp += n;
+                        dp += n;
+                    }
+                    asciiRun = 0;
+                }
+                continue;
+            }
+            asciiRun = 0;
+            if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
                 if (sp < sl) {
                     int b2 = src[sp++];
                     if (isNotContinuation(b2)) {
@@ -1472,13 +1492,32 @@ public final class String
             System.arraycopy(val, 0, dst, 0, positives);
         }
         int dp = positives;
-        for (int i = dp; i < val.length; i++) {
-            byte c = val[i];
-            if (c < 0) {
-                dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
-                dst[dp++] = (byte) (0x80 | (c & 0x3f));
-            } else {
-                dst[dp++] = c;
+        int i = positives;
+        while (i < val.length) {
+            int asciiRun = 0;
+            int j;
+            for (j = i; j < val.length; j++) {
+                byte c = val[j];
+                if (c < 0) {
+                    dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
+                    dst[dp++] = (byte) (0x80 | (c & 0x3f));
+                    asciiRun = 0;
+                } else {
+                    dst[dp++] = c;
+                    if (++asciiRun >= ASCII_RUN_THRESHOLD) {
+                        break;
+                    }
+                }
+            }
+            if (j >= val.length - 1) {
+                break;  // all bytes done
+            }
+            i = j + 1;
+            int n = StringCoding.countPositives(val, i, val.length - i);
+            if (n > 0) {
+                System.arraycopy(val, i, dst, dp, n);
+                i += n;
+                dp += n;
             }
         }
         if (dp == dst.length) {
