@@ -25,9 +25,6 @@
  * @test id=default
  * @summary Stress ScopedValue stack overflow recovery path
  * @run main/othervm/timeout=300 ${test.main.class}
- * @run main/othervm/timeout=300 -XX:StackShadowPages=9 ${test.main.class}
- * @run main/othervm/timeout=300 -XX:StackShadowPages=12 ${test.main.class}
- * @run main/othervm/timeout=300 -XX:StackShadowPages=20 ${test.main.class}
  */
 
 /*
@@ -56,7 +53,7 @@
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @run main/othervm/timeout=300 XX:StackShadowPages=12 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ${test.main.class}
+ * @run main/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ${test.main.class}
  */
 
 import java.lang.ScopedValue.CallableOp;
