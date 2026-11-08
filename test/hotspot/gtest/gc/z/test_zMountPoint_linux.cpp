@@ -25,6 +25,7 @@
 
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zMountPoint_linux.hpp"
+#include "gc/z/zPhysicalMemoryBacking_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/autoRestore.hpp"
@@ -69,11 +70,11 @@ public:
 };
 
 TEST_OTHER_VM(ZMountPoint, preferred_tmpfs_order) {
-  ZMountPointTest::test("tmpfs", "/dev/shm", "/run/shm");
+  ZMountPointTest::test("tmpfs", ZPreferredTmpfsMountpoints[0], ZPreferredTmpfsMountpoints[1]);
 }
 
 TEST_OTHER_VM(ZMountPoint, preferred_hugetlbfs_order) {
-  ZMountPointTest::test("hugetlbfs", "/dev/hugepages", "/hugepages");
+  ZMountPointTest::test("hugetlbfs", ZPreferredHugetlbfsMountpoints[0], ZPreferredHugetlbfsMountpoints[1]);
 }
 
 #endif // LINUX

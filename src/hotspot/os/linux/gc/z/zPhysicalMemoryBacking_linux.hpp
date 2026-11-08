@@ -28,6 +28,9 @@
 
 class ZErrno;
 
+extern const char* ZPreferredTmpfsMountpoints[];
+extern const char* ZPreferredHugetlbfsMountpoints[];
+
 class ZPhysicalMemoryBacking {
 private:
   int      _fd;
