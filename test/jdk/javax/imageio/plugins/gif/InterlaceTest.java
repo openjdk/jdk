@@ -106,7 +106,7 @@ public class InterlaceTest {
     }
 
     /**
-     * Create a random BufferedImage using a default IndexColorModel.
+     * Create a random BufferedImage using the default IndexColorModel.
      */
     public static BufferedImage getSampleImage(int width, int height) {
         BufferedImage returnValue = new BufferedImage(width, height,
