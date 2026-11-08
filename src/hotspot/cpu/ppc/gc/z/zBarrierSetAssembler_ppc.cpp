@@ -938,7 +938,8 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
                                  ? (RegisterOrConstant)addr.disp()
                                  : (RegisterOrConstant)addr.index();
 
-  if (!stub->is_native()) {
+  // No-keepalive barriers must not buffer the previous value.
+  if (!stub->is_native() && !stub->is_nokeepalive()) {
     store_barrier_medium(masm,
                          rbase,
                          ind_or_offs,
