@@ -637,14 +637,6 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             clen = commentBytes.length;
         }
 
-        // CEN header size + name length + comment length + extra length
-        // should not exceed 65,535 bytes per the PKWare APP.NOTE
-        // 4.4.10, 4.4.11, & 4.4.12.
-        long headerSize = (long)CENHDR + nlen + clen + elen;
-        if (headerSize > 0xFFFF ) {
-            throw new ZipException("invalid CEN header (bad header size)");
-        }
-
         // cen info-zip extended timestamp only outputs mtime
         // but set the flag for a/ctime, if present in loc
         int flagEXTT = 0;
@@ -675,6 +667,15 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                     elen += 4;      // + mtime (4)
             }
         }
+
+        // CEN header size + name length + comment length + extra length
+        // should not exceed 65,535 bytes per the PKWare APP.NOTE
+        // 4.4.10, 4.4.11, & 4.4.12.
+        long headerSize = (long)CENHDR + nlen + clen + elen;
+        if (headerSize > 0xFFFF ) {
+            throw new ZipException("invalid CEN header (bad header size)");
+        }
+
         writeShort(elen);
         writeShort(clen);              // file comment length
         writeShort(0);              // starting disk number
