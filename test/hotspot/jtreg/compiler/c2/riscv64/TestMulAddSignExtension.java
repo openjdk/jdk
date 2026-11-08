@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8396910
  * @summary Verify that the BigInteger mulAdd intrinsic sign-extends its integer return value
  * @requires os.arch == "riscv64" & vm.compiler2.enabled
  * @modules java.base/java.math:open
