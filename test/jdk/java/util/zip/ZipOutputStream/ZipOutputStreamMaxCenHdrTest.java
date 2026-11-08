@@ -22,12 +22,12 @@
  */
 
 /* @test
+ * @bug 8396845
  * @summary Verify that ZipOutputStream throws a ZipException when the
  * CEN header size + name length + comment length + extra length exceeds
  * 65,535 bytes
  * @run junit ZipOutputStreamMaxCenHdrTest
  */
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -37,18 +37,17 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ZipOutputStreamMaxCenHdrTest {
 
@@ -56,23 +55,14 @@ public class ZipOutputStreamMaxCenHdrTest {
     // should not exceed 65,535 bytes per the PKWare APP.NOTE
     // 4.4.10, 4.4.11, & 4.4.12.
     static final int MAX_COMBINED_CEN_HEADER_SIZE = 0xFFFF;
-
-    // Maximum possible size of name length + comment length + extra length
-    // for entries in order to not exceed 65,489 bytes minus 46 bytes for the CEN
-    // header length
-    static final int MAX_NAME_COMMENT_EXTRA_SIZE = MAX_COMBINED_CEN_HEADER_SIZE - ZipFile.CENHDR;
-
     // Tag for the 'unknown' field type, specified in APPNOTE.txt 'Third party mappings'
     static final short UNKNOWN_ZIP_TAG = (short) 0x9902;
     // ZIP file to be used by the tests
     static final Path ZIP_FILE = Path.of("maxCENHdrTest.zip");
     // Zip Entry name used by tests
     static final String ENTRY_NAME = "EntryName";
-
-    // Max length minus the size of the ENTRY_NAME
-    static final int MAX_FIELD_LEN_MINUS_ENTRY_NAME = MAX_NAME_COMMENT_EXTRA_SIZE - ENTRY_NAME.length();
     // CEN Extra field info-zip extended timestamp MTIME size
-    static int  MTIME_EXTRA_SIZE = 9;
+    static final int MTIME_EXTRA_SIZE = 9;
 
     /**
      * Clean up prior to test run
@@ -90,23 +80,16 @@ public class ZipOutputStreamMaxCenHdrTest {
      * the ZipOutputStream is closed.
      */
     @ParameterizedTest
-    @MethodSource("CEN_NAME_LEN")
-    void setNameExtraSizeTest(int length, boolean setLastModifiedTime) {
-
-        long len = setLastModifiedTime ? length + MTIME_EXTRA_SIZE + ZipEntry.CENHDR : length ;
-       System.out.printf("setLastModifiedTime: %b, length: %d%n", setLastModifiedTime, len);
-        boolean expectException = len > MAX_COMBINED_CEN_HEADER_SIZE;
-
-        final byte[] bytes = new byte[length];
-        Arrays.fill(bytes, (byte) 'a');
-        String name = new String(bytes, StandardCharsets.UTF_8);
-        System.out.printf("name len= %s%n", length);
-        ZipEntry zipEntry = new ZipEntry(name);
+    @MethodSource("CEN_header_test_params")
+    void setNameExtraSizeTest(int cenSize, boolean setLastModifiedTime) {
+        int timestampSize = setLastModifiedTime ? MTIME_EXTRA_SIZE : 0;
+        int length = cenSize - ZipEntry.CENHDR - timestampSize;
+        boolean expectException = cenSize > MAX_COMBINED_CEN_HEADER_SIZE;
+        ZipEntry zipEntry = new ZipEntry("a".repeat(length));
         if (setLastModifiedTime) {
-            zipEntry.setLastAccessTime(FileTime.fromMillis(0));
+            zipEntry.setLastModifiedTime(FileTime.fromMillis(0));
         }
-        System.out.printf("name + comment Len= %s, exception: %s%n", len, expectException);
-        assertEquals(writeZipEntry(zipEntry), expectException);
+        writeZipEntry(zipEntry, expectException);
     }
 
     /**
@@ -115,25 +98,17 @@ public class ZipOutputStreamMaxCenHdrTest {
      * the ZipOutputStream is closed.
      */
     @ParameterizedTest
-    @MethodSource("CEN_NO_NAME_LEN")
-    void setCommentExtraSizeTest(int length, boolean setLastModifiedTime) {
-
-        long len = setLastModifiedTime ?
-                length + MTIME_EXTRA_SIZE + ZipEntry.CENHDR  + ENTRY_NAME.length() : length ;
-        System.out.printf("setLastModifiedTime: %b, length: %d%n", setLastModifiedTime, len);
-        boolean expectException = len > MAX_COMBINED_CEN_HEADER_SIZE;
-        final byte[] bytes = new byte[length];
-        Arrays.fill(bytes, (byte) 'a');
+    @MethodSource("CEN_header_test_params")
+    void setCommentExtraSizeTest(int cenSize, boolean setLastModifiedTime) {
+        int timestampSize = setLastModifiedTime ? MTIME_EXTRA_SIZE : 0;
+        int length = cenSize - ZipEntry.CENHDR - ENTRY_NAME.length() - timestampSize;
+        boolean expectException = cenSize > MAX_COMBINED_CEN_HEADER_SIZE;
         ZipEntry zipEntry = new ZipEntry(ENTRY_NAME);
-        String comment = new String(bytes, StandardCharsets.UTF_8);
-        System.out.printf("Comment Len= %s, exception: %s%n", comment.length(), expectException);
-        zipEntry.setComment(new String(bytes, StandardCharsets.UTF_8));
+        zipEntry.setComment("a".repeat(length));
         if (setLastModifiedTime) {
-            zipEntry.setLastAccessTime(FileTime.fromMillis(0));
+            zipEntry.setLastModifiedTime(FileTime.fromMillis(0));
         }
-        System.out.printf("name + comment Len= %s, exception: %s%n", len, expectException);
-        assertEquals(writeZipEntry(zipEntry), expectException);
-
+        writeZipEntry(zipEntry, expectException);
     }
 
     /**
@@ -142,61 +117,75 @@ public class ZipOutputStreamMaxCenHdrTest {
      * the ZipOutputStream is closed.
      */
     @ParameterizedTest
-    @MethodSource("CEN_NO_NAME_LEN")
-    void setExtraExtraSizeTest(int length, boolean setLastModifiedTime) {
-
-        long len = setLastModifiedTime ?
-                length + MTIME_EXTRA_SIZE + ZipEntry.CENHDR  + ENTRY_NAME.length() : length ;
-        System.out.printf("setLastModifiedTime: %b, length: %d%n", setLastModifiedTime, len);
-        boolean expectException = len > MAX_COMBINED_CEN_HEADER_SIZE;
-
+    @MethodSource("CEN_header_test_params")
+    void setExtraExtraSizeTest(int cenSize, boolean setLastModifiedTime) {
+        int timestampSize = setLastModifiedTime ? MTIME_EXTRA_SIZE : 0;
+        int length = cenSize - ZipEntry.CENHDR - ENTRY_NAME.length() - timestampSize;
+        boolean expectException = cenSize > MAX_COMBINED_CEN_HEADER_SIZE;
         final byte[] bytes = new byte[length];
+        Arrays.fill(bytes, (byte) 'a');
         // Little-endian ByteBuffer for updating the header fields
         ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
         // We use the 'unknown' tag, specified in APPNOTE.TXT, 4.6.1 Third party mappings'
         buffer.putShort(UNKNOWN_ZIP_TAG);
-        // Size of the actual (empty) data
+        // Size of the actual data
         buffer.putShort((short) (length - 2 * Short.BYTES));
-        Arrays.fill(bytes, (byte) 'a');
         ZipEntry zipEntry = new ZipEntry(ENTRY_NAME);
         System.out.printf("extra Len= %s, exception: %s%n", bytes.length, expectException);
         zipEntry.setExtra(bytes);
         if (setLastModifiedTime) {
-            zipEntry.setLastAccessTime(FileTime.fromMillis(0));
+            zipEntry.setLastModifiedTime(FileTime.fromMillis(0));
         }
-        System.out.printf("name + comment Len= %s, exception: %s%n", len, expectException);
-        assertEquals(writeZipEntry(zipEntry), expectException);
+        writeZipEntry(zipEntry, expectException);
     }
 
-    private static Stream<Arguments> CEN_NO_NAME_LEN() {
+    /**
+     * Method used to provide arguments for testing the combined CEN size limit.
+     * A ZipException is expected when the stream is closed when the CEN Header,
+     * name length, comment length, and extra data length exceeds 65,535 bytes
+     * <p>
+     * Each argument pair contains the final combined CEN size and a boolean
+     * indicating whether to set the last modification time.
+     *
+     * @return stream of test arguments
+     */
+    private static Stream<Arguments> CEN_header_test_params() {
         return Stream.of(
-                Arguments.of(MAX_FIELD_LEN_MINUS_ENTRY_NAME, false),
-                Arguments.of(MAX_FIELD_LEN_MINUS_ENTRY_NAME, true)
-        );
-    }
-
-    private static Stream<Arguments> CEN_NAME_LEN() {
-        return Stream.of(
-                Arguments.of(MAX_NAME_COMMENT_EXTRA_SIZE, false),
-                Arguments.of(MAX_NAME_COMMENT_EXTRA_SIZE, true)
+                Arguments.of(65_534, false),
+                Arguments.of(65_535, false),
+                Arguments.of(65_534, true),
+                Arguments.of(65_535, true),
+                Arguments.of(65_536, true)
         );
     }
 
     /**
      * Write a single Zip entry using ZipOutputStream
+     *
      * @param zipEntry the ZipEntry to write
-     * @return true if a ZipException was thrown
      */
-    private static boolean writeZipEntry(ZipEntry zipEntry) {
+    private static void writeZipEntry(ZipEntry zipEntry, boolean expectedException) {
         boolean receivedException = false;
         try (ZipOutputStream zos = new ZipOutputStream(
                 new BufferedOutputStream(Files.newOutputStream(ZIP_FILE)))) {
-            zos.putNextEntry(zipEntry);
+            assertDoesNotThrow(() -> zos.putNextEntry(zipEntry));
         } catch (Exception e) {
+            assertInstanceOf(ZipException.class, e);
             assertTrue(e.getMessage().matches(".*bad header size.*"), "Unexpected ZipException message: " + e.getMessage());
             receivedException = true;
             System.out.printf("writeZipEntry: exception: %s%n", e.getMessage());
         }
-        return receivedException;
+        assertEquals(expectedException, receivedException);
+        // If we do not expect an Exception, sanity check we can open the ZIP file
+        if (!expectedException) {
+            assertDoesNotThrow(() -> {
+                try (ZipFile zip = new ZipFile(ZIP_FILE.toFile())) {
+                    assertEquals(1, zip.size());
+                    ZipEntry actual = zip.getEntry(zipEntry.getName());
+                    assertNotNull(actual);
+                    assertEquals(zipEntry.getComment(), actual.getComment());
+                }
+            });
+        }
     }
 }
