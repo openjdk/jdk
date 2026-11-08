@@ -296,7 +296,7 @@ void AOTModules::ArchivedProperty::runtime_check() const {
   const char* new_label1;
   const char* new_label2;
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_aot_cache()) {
     old_label1 = "in AOTConfiguration";
     old_label2 = ", AOTConfiguration =";
     new_label1 = "for current JVM";
@@ -335,7 +335,7 @@ void AOTModules::ArchivedProperty::runtime_check() const {
     AOTMetaspace::report_loading_error("Disabling full module graph");
     CDSConfig::disable_full_module_graph();
 
-    if (CDSConfig::is_dumping_final_static_archive()) {
+    if (CDSConfig::is_dumping_aot_cache()) {
       AOTMetaspace::unrecoverable_writing_error("mismatched module options");
     }
   }

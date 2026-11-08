@@ -55,12 +55,12 @@ void G1CardSetAllocator::drop_all() {
 size_t G1CardSetAllocator::mem_size() const {
   return sizeof(*this) +
          num_segments() * sizeof(Segment) +
-         _arena.num_total_slots() * _arena.slot_size();
+         (size_t)_arena.num_total_slots() * _arena.slot_size();
 }
 
 size_t G1CardSetAllocator::unused_mem_size() const {
-  uint num_unused_slots = (_arena.num_total_slots() - _arena.num_allocated_slots()) +
-                          (uint)_free_slots_list.free_count();
+  size_t num_unused_slots = (_arena.num_total_slots() - _arena.num_allocated_slots()) +
+                            _free_slots_list.free_count();
   return num_unused_slots * _arena.slot_size();
 }
 
