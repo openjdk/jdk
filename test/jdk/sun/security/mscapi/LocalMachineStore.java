@@ -29,6 +29,8 @@
  * @library /test/lib
  * @modules java.base/sun.security.tools.keytool
  *          java.base/sun.security.x509
+ * @comment Run with administrative privileges because this test modifies
+ *          the LOCALMACHINE store.
  * @run main/manual ${test.main.class}
  */
 
@@ -48,17 +50,30 @@ public class LocalMachineStore {
         String alias = "jdk-8328184-" + UUID.randomUUID();
 
         KeyStore localMachine = load("LOCALMACHINE");
-        KeyStore currentUser = null;
+        KeyStore currentUser;
         try {
             X509Certificate cert = generateCertificate();
             localMachine.setCertificateEntry(alias, cert);
 
+            // Reload the stores to ensure the certificate is actually persisted
+            localMachine = load("LOCALMACHINE");
             currentUser = load("CURRENTUSER");
-            KeyStore reloadedLocalMachine = load("LOCALMACHINE");
 
-            assertEquals(cert, reloadedLocalMachine.getCertificate(alias), "Certificate should be in LOCALMACHINE store");
+            assertEquals(cert, localMachine.getCertificate(alias), "Certificate should be in LOCALMACHINE store");
             assertFalse(currentUser.containsAlias(alias), "Certificate should not be in CURRENTUSER store");
+
+            // Add the same certificate to CURRENTUSER to verify that deleting it
+            // from LOCALMACHINE leaves the CURRENTUSER copy intact.
+            currentUser.setCertificateEntry(alias, cert);
+
+            localMachine.deleteEntry(alias);
+
+            localMachine = load("LOCALMACHINE");
+            currentUser = load("CURRENTUSER");
+            assertFalse(localMachine.containsAlias(alias), "Certificate should be removed from LOCALMACHINE store");
+            assertEquals(cert, currentUser.getCertificate(alias), "Certificate should still be in CURRENTUSER store");
         } finally {
+            // Clean up the certificate from both stores to avoid leaving test artifacts
             try {
                 load("CURRENTUSER").deleteEntry(alias);
             } finally {

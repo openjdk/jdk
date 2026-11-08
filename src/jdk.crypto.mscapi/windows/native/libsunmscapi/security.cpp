@@ -1476,10 +1476,10 @@ JNIEXPORT jstring JNICALL Java_sun_security_mscapi_CKey_getKeyType
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    storeCertificate
- * Signature: (Ljava/lang/String;Ljava/lang/String;[BIJJ)V
+ * Signature: (Ljava/lang/String;ILjava/lang/String;[BIJJ)V
  */
 JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
-  (JNIEnv *env, jobject obj, jstring jCertStoreName, jstring jCertAliasName,
+  (JNIEnv *env, jobject obj, jstring jCertStoreName, jint jCertStoreLocation, jstring jCertAliasName,
         jbyteArray jCertEncoding, jint jCertEncodingSize, jlong hCryptProv,
         jlong hCryptKey)
 {
@@ -1501,7 +1501,20 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
             == NULL) {
             __leave;
         }
-        if ((hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName)) == NULL) {
+
+        if (jCertStoreLocation == KEYSTORE_LOCATION_CURRENTUSER) {
+            hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName);
+        }
+        else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
+            hCertStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
+                CERT_SYSTEM_STORE_LOCAL_MACHINE | CERT_STORE_MAXIMUM_ALLOWED_FLAG, pszCertStoreName);
+        }
+        else {
+            ThrowException(env, KEYSTORE_EXCEPTION, ERROR_INVALID_PARAMETER);
+            __leave;
+        }
+
+        if (hCertStore == NULL) {
             ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
             __leave;
         }
@@ -1741,11 +1754,11 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    removeCertificate
- * Signature: (Ljava/lang/String;Ljava/lang/String;[BI)V
+ * Signature: (Ljava/lang/String;ILjava/lang/String;[BI)V
  */
 JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
-  (JNIEnv *env, jobject obj, jstring jCertStoreName, jstring jCertAliasName,
-  jbyteArray jCertEncoding, jint jCertEncodingSize) {
+  (JNIEnv *env, jobject obj, jstring jCertStoreName, jint jCertStoreLocation,
+  jstring jCertAliasName, jbyteArray jCertEncoding, jint jCertEncodingSize) {
 
     const char* pszCertStoreName = NULL;
     const wchar_t* pszCertAliasName = NULL;
@@ -1764,7 +1777,20 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
             == NULL) {
             __leave;
         }
-        if ((hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName)) == NULL) {
+
+        if (jCertStoreLocation == KEYSTORE_LOCATION_CURRENTUSER) {
+            hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName);
+        }
+        else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
+            hCertStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
+                CERT_SYSTEM_STORE_LOCAL_MACHINE | CERT_STORE_MAXIMUM_ALLOWED_FLAG, pszCertStoreName);
+        }
+        else {
+            ThrowException(env, KEYSTORE_EXCEPTION, ERROR_INVALID_PARAMETER);
+            __leave;
+        }
+
+        if (hCertStore == NULL) {
             ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
             __leave;
         }

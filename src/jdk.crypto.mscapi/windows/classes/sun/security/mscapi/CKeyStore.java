@@ -166,12 +166,12 @@ abstract class CKeyStore extends KeyStoreSpi {
             for (int i = 0; i < chain.length; i++) {
                 byte[] encoding = chain[i].getEncoded();
                 if (i == 0 && privateKey != null) {
-                    storeCertificate(getName(), alias, encoding,
+                    storeCertificate(getName(), storeLocation, alias, encoding,
                         encoding.length, privateKey.getHCryptProvider(),
                         privateKey.getHCryptKey());
 
                 } else {
-                    storeCertificate(getName(), alias, encoding,
+                    storeCertificate(getName(), storeLocation, alias, encoding,
                         encoding.length, 0L, 0L); // no private key to attach
                 }
             }
@@ -184,8 +184,8 @@ abstract class CKeyStore extends KeyStoreSpi {
             if (certChain != null && certChain.length > 0) {
                 try {
                     byte[] encoding = certChain[0].getEncoded();
-                    removeCertificate(getName(), getAlias(), encoding,
-                            encoding.length);
+                    removeCertificate(getName(), storeLocation,
+                            getAlias(), encoding, encoding.length);
                 } catch (CertificateException e) {
                     throw new KeyStoreException("Cannot remove entry: ", e);
                 }
@@ -850,22 +850,25 @@ abstract class CKeyStore extends KeyStoreSpi {
      * Stores a DER-encoded certificate into the certificate store
      *
      * @param name Name of the keystore.
+     * @param location Location of the keystore.
      * @param alias Name of the certificate.
      * @param encoding DER-encoded certificate.
      */
-    private native void storeCertificate(String name, String alias,
-            byte[] encoding, int encodingLength, long hCryptProvider,
-            long hCryptKey) throws CertificateException, KeyStoreException;
+    private native void storeCertificate(String name, int location,
+            String alias, byte[] encoding, int encodingLength,
+            long hCryptProvider, long hCryptKey)
+            throws CertificateException, KeyStoreException;
 
     /**
      * Removes the certificate from the certificate store
      *
      * @param name Name of the keystore.
+     * @param location Location of the keystore.
      * @param alias Name of the certificate.
      * @param encoding DER-encoded certificate.
      */
-    private native void removeCertificate(String name, String alias,
-            byte[] encoding, int encodingLength)
+    private native void removeCertificate(String name, int location,
+            String alias, byte[] encoding, int encodingLength)
             throws CertificateException, KeyStoreException;
 
     /**
