@@ -277,6 +277,10 @@ void VM_Version::c2_initialize() {
       warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
       UseRVV = false;
       FLAG_SET_DEFAULT(MaxVectorSize, 0);
+    } else if (MaxVectorSize > 128) {
+      warning("RVV vector length greater than 128 bytes is not supported. Disabling RVV.");
+      UseRVV = false;
+      FLAG_SET_DEFAULT(MaxVectorSize, 0);
     }
   }
 

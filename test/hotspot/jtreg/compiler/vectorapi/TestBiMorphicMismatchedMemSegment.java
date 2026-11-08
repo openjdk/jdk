@@ -27,6 +27,7 @@ package compiler.vectorapi;
  * @test
  * @bug 8329555
  * @modules jdk.incubator.vector
+ * @requires vm.opt.final.MaxVectorSize == null | vm.opt.final.MaxVectorSize <= 64
  *
  * @run main/othervm -Xbatch -XX:+TieredCompilation compiler.vectorapi.TestBiMorphicMismatchedMemSegment
  */

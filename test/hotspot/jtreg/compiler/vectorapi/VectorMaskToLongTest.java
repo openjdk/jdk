@@ -39,7 +39,10 @@ import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 
 public class VectorMaskToLongTest {
-    static final VectorSpecies<Byte> B_SPECIES = ByteVector.SPECIES_MAX;
+    // toLong() supports at most 64 lanes, so use SPECIES_512 for wider byte masks.
+    static final VectorSpecies<Byte> B_SPECIES = ByteVector.SPECIES_MAX.length() <= 64
+        ? ByteVector.SPECIES_MAX
+        : ByteVector.SPECIES_512;
     static final VectorSpecies<Short> S_SPECIES = ShortVector.SPECIES_MAX;
     static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_MAX;
     static final VectorSpecies<Float> F_SPECIES = FloatVector.SPECIES_MAX;
