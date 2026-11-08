@@ -489,7 +489,7 @@ void ZMappedCache::scan_remove_vmem(size_t min_size, SelectFunction select, Cons
   if (strategy == RemovalStrategy::HighestAddress) {
     // Scan whole tree starting at the highest address
     for (ZMappedCache::TreeNode* node = _tree.right_most(); node != nullptr;) {
-      ZMappedCache::TreeNode* prev = node->prev();
+      ZMappedCache::TreeNode* const prev = node->prev();
       ZMappedCacheEntry* const entry = ZMappedCacheEntry::cast_to_entry(node);
 
       const ZVirtualMemory vmem = remove_vmem<RemovalStrategy::HighestAddress>(entry, min_size, select);
@@ -507,7 +507,7 @@ void ZMappedCache::scan_remove_vmem(size_t min_size, SelectFunction select, Cons
 
     // Scan whole tree starting at the lowest address
     for (ZMappedCache::TreeNode* node = _tree.left_most(); node != nullptr;) {
-      ZMappedCache::TreeNode* next = node->next();
+      ZMappedCache::TreeNode* const next = node->next();
       ZMappedCacheEntry* const entry = ZMappedCacheEntry::cast_to_entry(node);
 
       const ZVirtualMemory vmem = remove_vmem<RemovalStrategy::LowestAddress>(entry, min_size, select);
