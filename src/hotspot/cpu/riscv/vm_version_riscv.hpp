@@ -44,8 +44,8 @@ class VM_Version : public Abstract_VM_Version {
  public:
   enum class AtomicAccessMode : uint8_t {
     RVWMO,
-    ZTSO,
-    RVWMO_ZALASR
+    RVWMO_ZALASR,
+    ZTSO
   };
 
   enum class AtomicCasMode : uint8_t {
