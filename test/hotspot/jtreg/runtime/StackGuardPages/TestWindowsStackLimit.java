@@ -23,12 +23,13 @@
 
 /*
  * @test
+ * @bug 8394484
  * @summary Verifies that on Windows, HotSpot's access-violation recovery for
  *          an in-Java stack fault advances TEB.StackLimit to cover the newly
  *          committed stack memory.
  * @requires os.family == "windows"
  * @library /test/lib
- * @run main/othervm/native TestWindowsStackLimit
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED -Xss1m TestWindowsStackLimit
  */
 
 import java.lang.foreign.FunctionDescriptor;
@@ -45,7 +46,7 @@ public class TestWindowsStackLimit {
         MemorySegment segment = lookup.find("checkStackLimit").orElseThrow();
 
         // `Linker.Option.critical()` keeps the calling thread's state as
-        // `_thread_in_java` for the whole native call, which is a prerequisite
+        // `_thread_in_Java` for the whole native call, which is a prerequisite
         // for the code that commits memory pages in `topLevelExceptionFilter()`
         Linker.Option option = Linker.Option.critical(/* heap access */ false);
         FunctionDescriptor desc = FunctionDescriptor.of(ValueLayout.JAVA_INT);
