@@ -30,6 +30,7 @@ import java.util.List;
  * Exception that is thrown when the user uses -DTest and -DExclude which both define the same test which is most
  * likely a mistake.
  */
+@SuppressWarnings("serial")
 public class OverlappingTestAndExcludeException extends RuntimeException {
     public OverlappingTestAndExcludeException(String message) {
         super(message);
