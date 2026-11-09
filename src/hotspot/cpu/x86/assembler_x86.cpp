@@ -15641,9 +15641,14 @@ void Assembler::lea(Register dst, Address src) {
 }
 
 void Assembler::leaq(Register dst, Address src) {
-  InstructionMark im(this);
-  emit_prefix_and_int8(get_prefixq(src, dst), (unsigned char)0x8D);
-  emit_operand(dst, src, 0);
+  if ((src.base() != noreg) && (src.index() == noreg) && (src.disp() == 0)) {
+    // Degenerate base-only lea (other degenerate cases not seen).
+    mov(dst, src.base());
+  } else {
+    InstructionMark im(this);
+    emit_prefix_and_int8(get_prefixq(src, dst), (unsigned char)0x8D);
+    emit_operand(dst, src, 0);
+  }
 }
 
 void Assembler::mov64(Register dst, int64_t imm64) {
