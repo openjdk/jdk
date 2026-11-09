@@ -43,7 +43,7 @@ void ShenandoahUncommitThread::run_service() {
   assert(ShenandoahUncommit, "Thread should only run when uncommit is enabled");
 
   // poll_interval avoids constantly polling regions for shrinking.
-  const int64_t poll_interval_ms = 1000;
+  const int64_t poll_interval_ms = 500;
 
   // When balancing the uncommits, target to complete entire work at most in 5 seconds.
   const double per_region_delay = 5.0 / _heap->num_regions();
