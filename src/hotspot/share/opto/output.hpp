@@ -94,6 +94,9 @@ private:
 
   ConstantTable          _constant_table;        // The constant table for this compilation unit.
 
+  // List of not inlined Java callees
+  GrowableArray<ciMethod*>* _java_callees;
+
   BufferSizingData       _buf_sizes;
   Block*                 _block;
   uint                   _index;
