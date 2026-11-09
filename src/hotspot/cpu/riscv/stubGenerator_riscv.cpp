@@ -2425,8 +2425,8 @@ class StubGenerator: public StubCodeGenerator {
                          Register count, Register vl, Register tmp_reg) {
     // Fill complete vector groups with a fixed VL, then strip-mine the tail
     // with m1 stores.
-    const int elem_shift = (t == T_BYTE) ? 0 : ((t == T_SHORT) ? 1 : 2);
-    Assembler::SEW sew = Assembler::elembytes_to_sew(1 << elem_shift);
+    const Assembler::SEW sew = Assembler::elemtype_to_sew(t);
+    const int elem_shift = static_cast<int>(sew);
     const Assembler::LMUL lmul = MacroAssembler::select_lmul_for_main_loop();
     Label L_bulk_loop, L_tail, L_tail_loop, L_exit;
 
