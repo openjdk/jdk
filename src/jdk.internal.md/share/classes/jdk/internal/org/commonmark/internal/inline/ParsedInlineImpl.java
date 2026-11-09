@@ -33,13 +33,14 @@
 package jdk.internal.org.commonmark.internal.inline;
 
 import jdk.internal.org.commonmark.node.Node;
+import jdk.internal.org.commonmark.parser.beta.ParsedInline;
 import jdk.internal.org.commonmark.parser.beta.Position;
 
-public class ParsedInlineImpl extends ParsedInline {
+public class ParsedInlineImpl implements ParsedInline {
     private final Node node;
     private final Position position;
 
-    ParsedInlineImpl(Node node, Position position) {
+    public ParsedInlineImpl(Node node, Position position) {
         this.node = node;
         this.position = position;
     }

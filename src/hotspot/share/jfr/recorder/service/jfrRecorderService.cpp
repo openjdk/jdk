@@ -467,12 +467,15 @@ void JfrRecorderService::safepoint_clear() {
   _checkpoint_manager.notify_threads(true);
   JfrDeprecationManager::on_safepoint_clear();
   JfrStackTraceRepository::clear();
-  // Ensure that non-Java threads cannot perform tagging, enqueuing,
-  // or event writing that interleaves with the epoch shift.
-  ConditionalMutexLocker lock(JfrEpochShift_lock, UseShenandoahGC || UseZGC, Mutex::_no_safepoint_check_flag);
-  _storage.clear();
-  _chunkwriter.set_time_stamp();
-  _checkpoint_manager.shift_epoch();
+  {
+    // Ensure that non-Java threads cannot perform tagging, enqueuing,
+    // or event writing that interleaves with the epoch shift.
+    ConditionalMutexLocker lock(JfrEpochShift_lock, UseShenandoahGC || UseZGC, Mutex::_no_safepoint_check_flag);
+    _storage.clear();
+    _chunkwriter.set_time_stamp();
+    _checkpoint_manager.shift_epoch();
+  }
+  JfrStringPool::on_epoch_shift();
 }
 
 void JfrRecorderService::post_safepoint_clear() {
@@ -581,12 +584,15 @@ void JfrRecorderService::safepoint_write() {
   _checkpoint_manager.on_rotation();
   JfrDeprecationManager::on_safepoint_write();
   write_stacktrace(_stack_trace_repository, _chunkwriter, true);
-  // Ensure that non-Java threads cannot perform tagging, enqueuing,
-  // or event writing that interleaves with the epoch shift.
-  ConditionalMutexLocker lock(JfrEpochShift_lock, UseShenandoahGC || UseZGC, Mutex::_no_safepoint_check_flag);
-  _storage.write_at_safepoint();
-  _chunkwriter.set_time_stamp();
-  _checkpoint_manager.shift_epoch();
+  {
+    // Ensure that non-Java threads cannot perform tagging, enqueuing,
+    // or event writing that interleaves with the epoch shift.
+    ConditionalMutexLocker lock(JfrEpochShift_lock, UseShenandoahGC || UseZGC, Mutex::_no_safepoint_check_flag);
+    _storage.write_at_safepoint();
+    _chunkwriter.set_time_stamp();
+    _checkpoint_manager.shift_epoch();
+  }
+  JfrStringPool::on_epoch_shift();
 }
 
 void JfrRecorderService::post_safepoint_write() {

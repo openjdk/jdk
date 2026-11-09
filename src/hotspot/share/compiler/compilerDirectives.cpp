@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/cdsConfig.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
@@ -214,7 +215,14 @@ bool DirectiveSet::should_print_memstat() const {
 }
 
 size_t DirectiveSet::mem_limit() const {
-  return MemLimitOption < 0 ? -MemLimitOption : MemLimitOption;
+  size_t limit = MemLimitOption < 0 ? -MemLimitOption : MemLimitOption;
+#if INCLUDE_CDS
+  if (CDSConfig::is_dumping_aot_code()) {
+    // Double limit for AOT compilation because it generates more code.
+    limit = limit * 2;
+  }
+#endif
+  return limit;
 }
 
 bool DirectiveSet::should_crash_at_mem_limit() const {

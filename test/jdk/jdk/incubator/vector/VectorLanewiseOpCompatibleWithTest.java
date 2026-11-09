@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 
 import jdk.incubator.vector.Float16;
 import jdk.incubator.vector.Vector;
@@ -40,7 +41,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8389844
+ * @bug 8389844 8391307
  * @modules jdk.incubator.vector
  * @run testng VectorLanewiseOpCompatibleWithTest
  */
@@ -73,6 +74,29 @@ public class VectorLanewiseOpCompatibleWithTest {
         return List.copyOf(operators);
     }
 
+    private static Object[][] operatorProvider(boolean compatible,
+                                               Predicate<VectorOperators.Operator> opFilter) {
+        return ELEMENT_TYPES.stream()
+                .flatMap(elementType -> Arrays.stream(VectorShape.values())
+                        .map(shape -> VectorSpecies.of(elementType, shape)))
+                .flatMap(species -> OPERATORS.stream()
+                        // These operators are more restrictive, exclude for now.
+                        .filter(op -> op != VectorOperators.COMPRESS_BITS &&
+                                      op != VectorOperators.EXPAND_BITS)
+                        .filter(opFilter)
+                        .filter(op -> op.compatibleWith(species.elementType()) == compatible)
+                        .map(op -> new Object[] {species, op}))
+                .toArray(Object[][]::new);
+    }
+
+    private static Object[][] operatorProvider(boolean compatible) {
+        return operatorProvider(compatible,
+                                op -> op instanceof VectorOperators.Unary ||
+                                      op instanceof VectorOperators.Binary ||
+                                      op instanceof VectorOperators.Ternary ||
+                                      op instanceof VectorOperators.Test);
+    }
+
     @DataProvider
     public Object[][] unsupportedOperatorProvider() {
         return operatorProvider(false);
@@ -81,22 +105,6 @@ public class VectorLanewiseOpCompatibleWithTest {
     @DataProvider
     public Object[][] supportedOperatorProvider() {
         return operatorProvider(true);
-    }
-
-    private static Object[][] operatorProvider(boolean compatible) {
-        return ELEMENT_TYPES.stream()
-                .flatMap(elementType -> Arrays.stream(VectorShape.values())
-                        .map(shape -> VectorSpecies.of(elementType, shape)))
-                .flatMap(species -> OPERATORS.stream()
-                        .filter(op -> op instanceof VectorOperators.Unary ||
-                                op instanceof VectorOperators.Binary ||
-                                op instanceof VectorOperators.Ternary)
-                        // These operators are more restrictive, exclude for now.
-                        .filter(op -> op != VectorOperators.COMPRESS_BITS &&
-                                op != VectorOperators.EXPAND_BITS)
-                        .filter(op -> op.compatibleWith(species.elementType()) == compatible)
-                        .map(op -> new Object[] {species, op}))
-                .toArray(Object[][]::new);
     }
 
     @Test(dataProvider = "unsupportedOperatorProvider")
@@ -128,6 +136,12 @@ public class VectorLanewiseOpCompatibleWithTest {
                 Assert.assertThrows(UnsupportedOperationException.class,
                         () -> vector.lanewise(ternary, vector, vector, mask));
             }
+            case VectorOperators.Test test -> {
+                Assert.assertThrows(UnsupportedOperationException.class,
+                        () -> vector.test(test));
+                Assert.assertThrows(UnsupportedOperationException.class,
+                        () -> vector.test(test, mask));
+            }
             default -> throw new AssertionError("Not a lanewise operator: " + op);
         }
     }
@@ -152,6 +166,10 @@ public class VectorLanewiseOpCompatibleWithTest {
             case VectorOperators.Ternary ternary -> {
                 vector.lanewise(ternary, vector, vector);
                 vector.lanewise(ternary, vector, vector, mask);
+            }
+            case VectorOperators.Test test -> {
+                vector.test(test);
+                vector.test(test, mask);
             }
             default -> throw new AssertionError("Not a lanewise operator: " + op);
         }

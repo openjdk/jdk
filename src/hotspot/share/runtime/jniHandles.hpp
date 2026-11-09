@@ -77,9 +77,9 @@ public:
   static const uintptr_t tag_size = 2;
   static const uintptr_t tag_mask = ((1u << tag_size) - 1u);
 
-  STATIC_ASSERT((TypeTag::local & tag_mask) == TypeTag::local);
-  STATIC_ASSERT((TypeTag::weak_global & tag_mask) == TypeTag::weak_global);
-  STATIC_ASSERT((TypeTag::global & tag_mask) == TypeTag::global);
+  static_assert((TypeTag::local & tag_mask) == TypeTag::local);
+  static_assert((TypeTag::weak_global & tag_mask) == TypeTag::weak_global);
+  static_assert((TypeTag::global & tag_mask) == TypeTag::global);
 
   // Resolve handle into oop
   inline static oop resolve(jobject handle);
@@ -134,7 +134,7 @@ public:
 
 // JNI handle blocks holding local/global JNI handles
 
-class JNIHandleBlock : public CHeapObj<mtInternal> {
+class JNIHandleBlock : public CHeapObj<mtJNI> {
   friend class VMStructs;
   friend class ZeroInterpreter;
 

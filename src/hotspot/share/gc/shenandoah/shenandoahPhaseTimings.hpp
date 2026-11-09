@@ -67,11 +67,13 @@ class outputStream;
                                                                                   "  CMR: ")                         \
   SHENANDOAH_WORKER_PHASE_DEF(f, conc_mark,                                       "Concurrent Marking",              \
                                                                                   "  CM: ")                          \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_mark_rebalance_queues,                      "  Rebalance Queues")              \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_mark_satb_flush,                            "  Flush SATB")                    \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_gross,                                "Pause Final Mark (G)")            \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark,                                      "Pause Final Mark (N)")            \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_verify,                               "  Verify")                        \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_flush_satb_roots,                     "  Flush SATB and Roots")          \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_rebalance_queues,                     "  Rebalance Queues")              \
   SHENANDOAH_WORKER_PHASE_DEF(f, finish_mark,                                     "  Finish Mark",                   \
                                                                                   "    FM: ")                        \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_propagate_gc_state,                   "  Propagate GC State")            \
@@ -103,10 +105,14 @@ class outputStream;
   SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_class_unload_purge_ec,                      "    Exception Caches")            \
   SHENANDOAH_WORKER_PHASE_DEF(f, conc_strong_roots,                               "Concurrent Strong Roots",         \
                                                                                   "  CSR: ")                         \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, final_roots_gross,                               "Pause Final Roots (G)")           \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, final_roots,                                     "Pause Final Roots (N)")           \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, final_roots_propagate_gc_state,                  "  Propagate GC State")            \
   SHENANDOAH_WORKER_PHASE_DEF(f, conc_evac,                                       "Concurrent Evacuation",           \
                                                                                   "  CE: ")                          \
+  SHENANDOAH_WORKER_PHASE_DEF(f, conc_self_forward_stranded,                      "Self Forward Stranded Objects",   \
+                                                                                  "  SF: ")                          \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_update_card_table,                          "Concurrent Update Cards")         \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_final_roots,                                "Concurrent Final Roots")          \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, complete_abbreviated,                            "Complete Abbreviated Cycle")      \
   SHENANDOAH_WORKER_PHASE_DEF(f, complete_abbreviated_promote_in_place,           "  Promote Regions",               \
                                                                                   "    PIP: ")                       \
@@ -132,42 +138,8 @@ class outputStream;
   SHENANDOAH_WORKER_PHASE_DEF(f, conc_coalesce_and_fill,                          "Concurrent Coalesce and Fill",    \
                                                                                   "  CC&F: ")                        \
                                                                                                                      \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_gross,                                  "Pause Degenerated GC (G)")        \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc,                                        "Pause Degenerated GC (N)")        \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_un_self_forward,                        "  Un-Self-Forward")               \
-  SHENANDOAH_WORKER_PHASE_DEF(f, degen_gc_mark,                                   "  Mark",                          \
-                                                                                  "    DM: ")                        \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_purge,                                  "  System Purge")                  \
-  SHENANDOAH_WORKER_PHASE_DEF(f, degen_gc_weakrefs,                               "    Weak References",             \
-                                                                                  "      WRP: ")                     \
-  SHENANDOAH_WORKER_PHASE_DEF(f, degen_gc_purge_class_unload,                     "    Unload Classes",              \
-                                                                                  "      DCU: ")                     \
-  SHENANDOAH_WORKER_PHASE_DEF(f, degen_gc_purge_weak_par,                         "    Weak Roots",                  \
-                                                                                  "      DWR: ")                     \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_purge_cldg,                             "    CLDG")                        \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_final_update_region_states,             "  Update Region States")          \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_final_manage_labs,                      "  Manage GC/TLABs")               \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_choose_cset,                            "  Choose Collection Set")         \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_final_rebuild_freeset,                  "  Rebuild Free Set")              \
-  SHENANDOAH_WORKER_PHASE_DEF(f, degen_gc_evac,                                   "  Evacuation",                    \
-                                                                                  "    DE: ")                        \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_init_update_refs_manage_gclabs,         "  Manage GCLABs")                 \
-  SHENANDOAH_WORKER_PHASE_DEF(f, degen_gc_update_refs,                            "  Update References",             \
-                                                                                  "    DUR: ")                       \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_final_update_refs_update_region_states, "  Update Region States")          \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_final_update_refs_trash_cset,           "  Trash Collection Set")          \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_final_update_refs_rebuild_freeset,      "  Rebuild Free Set")              \
-  SHENANDOAH_WORKER_PHASE_DEF(f, degen_gc_update_roots,                           "  Degen Update Roots",            \
-                                                                                  "    DU: ")                        \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_cleanup_complete,                       "  Cleanup")                       \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_promote_regions,                        "  Degen Promote Regions")         \
-  SHENANDOAH_WORKER_PHASE_DEF(f, degen_gc_coalesce_and_fill,                      "  Degen Coalesce and Fill",       \
-                                                                                  "    DC&F")                        \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, degen_gc_propagate_gc_state,                     "  Propagate GC State")            \
-                                                                                                                     \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, full_gc_gross,                                   "Pause Full GC (G)")               \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, full_gc,                                         "Pause Full GC (N)")               \
-  SHENANDOAH_SIMPLE_PHASE_DEF(f, full_gc_un_self_forward,                         "  Un-Self-Forward")               \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, full_gc_heapdump_pre,                            "  Pre Heap Dump")                 \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, full_gc_prepare,                                 "  Prepare")                       \
   SHENANDOAH_WORKER_PHASE_DEF(f, full_gc_update_roots,                            "    Update Roots",                \

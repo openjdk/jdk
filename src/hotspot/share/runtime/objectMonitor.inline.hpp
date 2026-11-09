@@ -30,7 +30,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/markWord.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -58,28 +57,6 @@ inline bool ObjectMonitor::is_entered(JavaThread* current) const {
     return has_owner(current);
   }
   return false;
-}
-
-inline uintptr_t ObjectMonitor::metadata() const {
-  return AtomicAccess::load(&_metadata);
-}
-
-inline void ObjectMonitor::set_metadata(uintptr_t value) {
-  AtomicAccess::store(&_metadata, value);
-}
-
-inline volatile uintptr_t* ObjectMonitor::metadata_addr() {
-  STATIC_ASSERT(std::is_standard_layout<ObjectMonitor>::value);
-  STATIC_ASSERT(offsetof(ObjectMonitor, _metadata) == 0);
-  return &_metadata;
-}
-
-inline intptr_t ObjectMonitor::hash() const {
-  return metadata();
-}
-
-inline void ObjectMonitor::set_hash(intptr_t hash) {
-  set_metadata(hash);
 }
 
 inline int ObjectMonitor::waiters() const {

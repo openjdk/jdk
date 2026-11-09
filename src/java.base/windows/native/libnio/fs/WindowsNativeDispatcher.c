@@ -278,30 +278,21 @@ Java_sun_nio_fs_WindowsNativeDispatcher_CreateFile0(JNIEnv* env, jclass this,
     return ptr_to_jlong(handle);
 }
 
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_WindowsNativeDispatcher_DeviceIoControlSetSparse(JNIEnv* env, jclass this,
-    jlong handle)
-{
-    DWORD bytesReturned;
-    HANDLE h = (HANDLE)jlong_to_ptr(handle);
-    if (DeviceIoControl(h, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, &bytesReturned, NULL) == 0) {
-        throwWindowsException(env, GetLastError());
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_WindowsNativeDispatcher_DeviceIoControlGetReparsePoint(JNIEnv* env, jclass this,
-    jlong handle, jlong bufferAddress, jint bufferSize)
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_WindowsNativeDispatcher_DeviceIoControl(JNIEnv* env, jclass this,
+    jlong handle, jint dwIoControlCode, jlong bufferAddress, jint bufferSize)
 {
     DWORD bytesReturned;
     HANDLE h = (HANDLE)jlong_to_ptr(handle);
     LPVOID outBuffer = (LPVOID)jlong_to_ptr(bufferAddress);
 
-    if (DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, NULL, 0, outBuffer, (DWORD)bufferSize,
+    if (DeviceIoControl(h, (DWORD)dwIoControlCode, NULL, 0, outBuffer, (DWORD)bufferSize,
                         &bytesReturned, NULL) == 0)
     {
         throwWindowsException(env, GetLastError());
+        return 0;
     }
+    return (jint)bytesReturned;
 }
 
 JNIEXPORT void JNICALL

@@ -64,7 +64,7 @@ public class TestVectorizationMultiInvar {
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteLong1(byte[] dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
-            long j = Objects.checkIndex(i * 8, (long)(src.length * 8));
+            long j = Objects.checkIndex(i * 8L, (long)(src.length * 8));
             UNSAFE.putLongUnaligned(dest, baseOffset + j, src[i]);
         }
     }
@@ -73,6 +73,26 @@ public class TestVectorizationMultiInvar {
     public static void testByteLong1_runner() {
         baseOffset = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
         testByteLong1(byteArray, longArray);
+    }
+
+    // This is a negative version of the test above where C2 currently fails to
+    // perform range check elimination, which inhibits vectorization.
+    // The reason is that the i * 8 index expression is not accepted as a valid
+    // index for long range check transformations, see
+    // PhaseIdealLoop::is_scaled_iv_plus_offset.
+    @Test
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
+    public static void testNegativeByteLong1(byte[] dest, long[] src) {
+        for (int i = 0; i < src.length; i++) {
+            long j = Objects.checkIndex(i * 8, (long)(src.length * 8));
+            UNSAFE.putLongUnaligned(dest, baseOffset + j, src[i]);
+        }
+    }
+
+    @Run(test = "testNegativeByteLong1")
+    public static void testNegativeByteLong1_runner() {
+        baseOffset = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
+        testNegativeByteLong1(byteArray, longArray);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, 2025, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_COMPILATIONMEMSTATINTERNALS_INLINE_HPP
-#define SHARE_COMPILATIONMEMSTATINTERNALS_INLINE_HPP
+#ifndef SHARE_COMPILER_COMPILATIONMEMSTATINTERNALS_INLINE_HPP
+#define SHARE_COMPILER_COMPILATIONMEMSTATINTERNALS_INLINE_HPP
 
 #include "compiler/compilationMemStatInternals.hpp"
 
@@ -92,4 +92,4 @@ inline void FootprintTimeline::on_footprint_change(size_t cur_abs, unsigned cur_
   e._live_nodes.update(cur_nodes);
 }
 
-#endif // SHARE_COMPILATIONMEMSTATINTERNALS_INLINE_HPP
+#endif // SHARE_COMPILER_COMPILATIONMEMSTATINTERNALS_INLINE_HPP

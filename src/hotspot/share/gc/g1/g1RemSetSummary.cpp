@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
  */
 
 #include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/g1/g1HumongousCardSetGroups.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
 #include "memory/allocation.inline.hpp"
@@ -156,15 +158,18 @@ public:
   G1PerRegionTypeRemSetCounters(const char* name) : _name(name), _rs_unused_mem_size(0), _rs_mem_size(0), _cards_occupied(0),
     _amount(0), _amount_tracked(0), _code_root_mem_size(0), _code_root_elems(0) { }
 
-  void add(size_t rs_unused_mem_size, size_t rs_mem_size, size_t cards_occupied,
-           size_t code_root_mem_size, size_t code_root_elems, bool tracked) {
-    _rs_unused_mem_size += rs_unused_mem_size;
-    _rs_mem_size += rs_mem_size;
-    _cards_occupied += cards_occupied;
+  void add_hrrs_stats(size_t hrrs_mem_size, size_t code_root_mem_size, size_t code_root_elems, bool tracked) {
+    _rs_mem_size += hrrs_mem_size;
     _code_root_mem_size += code_root_mem_size;
     _code_root_elems += code_root_elems;
     _amount++;
     _amount_tracked += tracked ? 1 : 0;
+  }
+
+  void add_card_set_group_stats(size_t rs_unused_mem_size, size_t rs_mem_size, size_t cards_occupied) {
+    _rs_unused_mem_size += rs_unused_mem_size;
+    _rs_mem_size += rs_mem_size;
+    _cards_occupied += cards_occupied;
   }
 
   size_t rs_unused_mem_size() const { return _rs_unused_mem_size; }
@@ -216,8 +221,8 @@ class G1HeapRegionStatsClosure: public G1HeapRegionClosure {
   size_t _max_code_root_mem_sz;
   G1HeapRegion* _max_code_root_mem_sz_region;
 
-  size_t _max_group_cardset_mem_sz;
-  G1CSetCandidateGroup* _max_cardset_mem_sz_group;
+  size_t _max_group_card_set_mem_sz;
+  G1CardSetGroup* _max_card_set_mem_sz_group;
 
   size_t total_rs_unused_mem_sz() const     { return _all.rs_unused_mem_size(); }
   size_t total_rs_mem_sz() const            { return _all.rs_mem_size(); }
@@ -226,8 +231,8 @@ class G1HeapRegionStatsClosure: public G1HeapRegionClosure {
   size_t max_rs_mem_sz() const              { return _max_rs_mem_sz; }
   G1HeapRegion* max_rs_mem_sz_region() const  { return _max_rs_mem_sz_region; }
 
-  size_t max_group_cardset_mem_sz() const                 { return _max_group_cardset_mem_sz; }
-  G1CSetCandidateGroup* max_cardset_mem_sz_group() const  { return _max_cardset_mem_sz_group; }
+  size_t max_group_card_set_mem_sz() const                 { return _max_group_card_set_mem_sz; }
+  G1CardSetGroup* max_card_set_mem_sz_group() const  { return _max_card_set_mem_sz_group; }
 
   size_t total_code_root_mem_sz() const     { return _all.code_root_mem_size(); }
   size_t total_code_root_elems() const      { return _all.code_root_elems(); }
@@ -240,28 +245,17 @@ public:
     _free("Free"), _old("Old"), _all("All"),
     _max_rs_mem_sz(0), _max_rs_mem_sz_region(nullptr),
     _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(nullptr),
-    _max_group_cardset_mem_sz(0), _max_cardset_mem_sz_group(nullptr)
+    _max_group_card_set_mem_sz(0), _max_card_set_mem_sz_group(nullptr)
   {}
 
   bool do_heap_region(G1HeapRegion* r) {
     G1HeapRegionRemSet* hrrs = r->rem_set();
-    size_t rs_mem_sz = 0;
-    size_t rs_unused_mem_sz = 0;
-    size_t occupied_cards = 0;
 
-    // Accumulate card set details for regions that are assigned to single region
-    // groups. G1HeapRegionRemSet::mem_size() includes the size of the code roots
-    if (hrrs->has_cset_group() && hrrs->cset_group()->length() == 1) {
-      G1CardSet* card_set = hrrs->cset_group()->card_set();
+    size_t rs_mem_sz = hrrs->mem_size();
 
-      rs_mem_sz = hrrs->mem_size() + card_set->mem_size();
-      rs_unused_mem_sz = card_set->unused_mem_size();
-      occupied_cards = hrrs->occupied();
-
-      if (rs_mem_sz > _max_rs_mem_sz) {
-        _max_rs_mem_sz = rs_mem_sz;
-        _max_rs_mem_sz_region = r;
-      }
+    if (rs_mem_sz > _max_rs_mem_sz) {
+      _max_rs_mem_sz = rs_mem_sz;
+      _max_rs_mem_sz_region = r;
     }
 
     size_t code_root_mem_sz = hrrs->code_roots_mem_size();
@@ -269,7 +263,7 @@ public:
       _max_code_root_mem_sz = code_root_mem_sz;
       _max_code_root_mem_sz_region = r;
     }
-    size_t code_root_elems = hrrs->code_roots_list_length();
+    size_t code_root_elems = hrrs->code_roots_length();
 
     G1PerRegionTypeRemSetCounters* current = nullptr;
     if (r->is_free()) {
@@ -283,58 +277,54 @@ public:
     } else {
       ShouldNotReachHere();
     }
-    current->add(rs_unused_mem_sz, rs_mem_sz, occupied_cards,
-                 code_root_mem_sz, code_root_elems, r->rem_set()->is_tracked());
-    _all.add(rs_unused_mem_sz, rs_mem_sz, occupied_cards,
-             code_root_mem_sz, code_root_elems, r->rem_set()->is_tracked());
+    current->add_hrrs_stats(rs_mem_sz, code_root_mem_sz, code_root_elems, r->rem_set()->is_tracked());
+    _all.add_hrrs_stats(rs_mem_sz, code_root_mem_sz, code_root_elems, r->rem_set()->is_tracked());
 
     return false;
   }
 
-  void accumulate_stats_for_group(G1CSetCandidateGroup* group, G1PerRegionTypeRemSetCounters* gen_counter) {
-    // If the group has only a single region, then stats were accumulated
-    // during region iteration. Skip these.
-    if (group->length() > 1) {
-      G1CardSet* card_set = group->card_set();
+  void accumulate_stats_for_group(G1CardSetGroup* group, G1PerRegionTypeRemSetCounters* gen_counter) {
+    G1CardSet* card_set = group->card_set();
 
-      size_t rs_mem_sz = card_set->mem_size();
-      size_t rs_unused_mem_sz = card_set->unused_mem_size();
-      size_t occupied_cards = card_set->occupied();
+    size_t group_mem_sz = card_set->mem_size();
+    size_t rs_unused_mem_sz = card_set->unused_mem_size();
+    size_t occupied_cards = card_set->occupied();
 
-      if (rs_mem_sz > _max_group_cardset_mem_sz) {
-        _max_group_cardset_mem_sz = rs_mem_sz;
-        _max_cardset_mem_sz_group = group;
-      }
-
-      gen_counter->add(rs_unused_mem_sz, rs_mem_sz, occupied_cards, 0, 0, false);
-      _all.add(rs_unused_mem_sz, rs_mem_sz, occupied_cards, 0, 0, false);
+    if (group_mem_sz > _max_group_card_set_mem_sz) {
+      _max_group_card_set_mem_sz = group_mem_sz;
+      _max_card_set_mem_sz_group = group;
     }
+
+    gen_counter->add_card_set_group_stats(rs_unused_mem_sz, group_mem_sz, occupied_cards);
+    _all.add_card_set_group_stats(rs_unused_mem_sz, group_mem_sz, occupied_cards);
   }
 
-  void do_cset_groups() {
+  void do_card_set_groups() {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    accumulate_stats_for_group(g1h->young_regions_cset_group(), &_young);
+    accumulate_stats_for_group(g1h->collection_set()->young_regions_card_set_group(), &_young);
 
-    G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
-    for (G1CSetCandidateGroup* group : candidates->from_marking_groups()) {
+    G1CollectionSetCandidates* candidates = g1h->collection_set_candidates();
+    for (G1CardSetGroup* group : candidates->from_marking_groups()) {
       accumulate_stats_for_group(group, &_old);
     }
-    // Skip gathering statistics for retained regions. Just verify that they have
-    // the expected amount of regions.
-    for (G1CSetCandidateGroup* group : candidates->retained_groups()) {
-      assert(group->length() == 1, "must be");
+    for (G1CardSetGroup* group : candidates->retained_groups()) {
+      accumulate_stats_for_group(group, &_old);
     }
+
+    g1h->humongous_card_set_groups()->iterate([&] (G1CardSetGroup* group) {
+                                                accumulate_stats_for_group(group, &_humongous);
+                                              });
   }
 
   void print_summary_on(outputStream* out) {
     G1PerRegionTypeRemSetCounters* counters[] = { &_young, &_humongous, &_free, &_old, nullptr };
 
     out->print_cr(" Current rem set statistics");
-    out->print_cr("  Total per region rem sets sizes = %zu"
-                  " Max = %zu unused = %zu",
+    out->print_cr("  Total heap region rem set and card set sizes = %zu"
+                  " Max card set = %zu unused card set = %zu",
                   total_rs_mem_sz(),
-                  max_rs_mem_sz(),
+                  max_group_card_set_mem_sz(),
                   total_rs_unused_mem_sz());
     for (G1PerRegionTypeRemSetCounters** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_rs_mem_info_on(out, total_rs_mem_sz());
@@ -350,19 +340,20 @@ public:
     if (max_rs_mem_sz_region() != nullptr) {
       G1HeapRegionRemSet* rem_set = max_rs_mem_sz_region()->rem_set();
       out->print_cr("    Region with largest rem set = " HR_FORMAT ", "
-                    "size = %zu occupied = %zu",
+                    "size = %zu group occupied = %zu group id = %u",
                     HR_FORMAT_PARAMS(max_rs_mem_sz_region()),
                     rem_set->mem_size(),
-                    rem_set->occupied());
+                    rem_set->occupied(),
+                    rem_set->has_card_set_group() ? rem_set->card_set_group_id() : G1CardSetGroup::NoGroupId);
     }
 
-    if (max_cardset_mem_sz_group() != nullptr) {
-      G1CSetCandidateGroup* cset_group = max_cardset_mem_sz_group();
-      out->print_cr("    Collectionset Candidate Group with largest cardset = %u:(%u regions), "
+    if (max_card_set_mem_sz_group() != nullptr) {
+      G1CardSetGroup* card_set_group = max_card_set_mem_sz_group();
+      out->print_cr("    Card Set Group with largest card set = %u:(%u regions), "
                     "size = %zu occupied = %zu",
-                    cset_group->group_id(), cset_group->length(),
-                    cset_group->card_set()->mem_size(),
-                    cset_group->card_set()->occupied());
+                    card_set_group->group_id(), card_set_group->num_regions(),
+                    card_set_group->card_set()->mem_size(),
+                    card_set_group->card_set()->occupied());
     }
 
     G1HeapRegionRemSet::print_static_mem_size(out);
@@ -392,7 +383,7 @@ public:
                   HR_FORMAT_PARAMS(max_code_root_mem_sz_region()),
                   byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
                   proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()),
-                  max_code_root_rem_set->code_roots_list_length());
+                  max_code_root_rem_set->code_roots_length());
   }
 };
 
@@ -408,6 +399,6 @@ void G1RemSetSummary::print_on(outputStream* out, bool show_thread_times) {
   }
   G1HeapRegionStatsClosure blk;
   G1CollectedHeap::heap()->heap_region_iterate(&blk);
-  blk.do_cset_groups();
+  blk.do_card_set_groups();
   blk.print_summary_on(out);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ class OpenBook implements Pageable {
     /**
      * This object does not know the number of pages.
      */
+    @Override
     public int getNumberOfPages(){
         return UNKNOWN_NUMBER_OF_PAGES;
     }
@@ -78,6 +79,7 @@ class OpenBook implements Pageable {
      *                  PageFormat is being requested.
      * @return The PageFormat describing the size and orientation
      */
+    @Override
     public PageFormat getPageFormat(int pageIndex) {
         return mFormat;
     }
@@ -89,6 +91,7 @@ class OpenBook implements Pageable {
      *                  Printable is being requested.
      * @return The Printable that will draw the page.
      */
+    @Override
     public Printable getPrintable(int pageIndex)
         throws IndexOutOfBoundsException
     {

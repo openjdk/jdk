@@ -2108,6 +2108,9 @@ public final class System {
             public boolean isReflectivelyOpened(Module m, String pn, Module other) {
                 return m.isReflectivelyOpened(pn, other);
             }
+            public boolean hasModuleReflectionData() {
+                return Module.hasReflectionData();
+            }
             public void addEnableNativeAccess(Module m) {
                 m.implAddEnableNativeAccess();
             }
@@ -2363,6 +2366,17 @@ public final class System {
             public void finishInit(StackTraceElement[] stackTrace) {
                 StackTraceElement.finishInit(stackTrace);
             }
+
+            @Override
+            public long[] getConfinedMemoryPools(Thread thread) {
+                return thread.confinedMemoryPools();
+            }
+
+            @Override
+            public long[] getOrCreateConfinedMemoryPools(Thread thread, int poolSlots) {
+                return thread.getOrCreateConfinedMemoryPools(poolSlots);
+            }
+
         });
     }
 }

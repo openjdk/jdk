@@ -135,6 +135,17 @@ public class TestSegmentOverlap {
         }
     }
 
+    @ParameterizedTest
+    @MethodSource("segmentFactories")
+    public void testContainedSlice(Supplier<MemorySegment> segmentSupplier) {
+        MemorySegment segment = segmentSupplier.get();
+        // Select an inner slice whose end precedes the end of the enclosing segment.
+        MemorySegment slice = segment.asSlice(1, 2);
+
+        // The overlap is limited by both segment ends, so it must not extend past the slice.
+        assertEquals(slice.byteSize(), segment.asOverlappingSlice(slice).orElseThrow().byteSize());
+    }
+
     enum OtherSegmentFactory {
         NATIVE(() -> Arena.ofAuto().allocate(16, 1)),
         HEAP(() -> MemorySegment.ofArray(new byte[]{16}));

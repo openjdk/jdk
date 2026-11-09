@@ -49,7 +49,6 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -317,7 +316,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
         return;
       }
 
-      char *opt = (char *)os::malloc(opt_len, mtInternal);
+      char *opt = (char *)os::malloc(opt_len, mtServiceability);
       if (opt == nullptr) {
         output()->print_cr("JVMTI agent attach failed: "
                            "Could not allocate %zu bytes for argument.",
@@ -1009,18 +1008,18 @@ void ClassesDCmd::execute(DCmdSource source, TRAPS) {
 
 #if INCLUDE_CDS
 void AOTEndRecordingDCmd::execute(DCmdSource source, TRAPS) {
-  if (!CDSConfig::is_dumping_preimage_static_archive()) {
+  if (!CDSConfig::is_dumping_aot_configuration()) {
     output()->print_cr("AOT.end_recording is unsupported when VM flags -XX:AOTMode=record or -XX:AOTCacheOutput=<file> are missing.");
     return;
   }
 
-  if (AOTMetaspace::preimage_static_archive_dumped()) {
+  if (AOTMetaspace::aot_configuration_dumped()) {
     output()->print_cr("Recording has already ended.");
     return;
   }
 
   AOTMetaspace::dump_static_archive(THREAD);
-  if (!AOTMetaspace::preimage_static_archive_dumped()) {
+  if (!AOTMetaspace::aot_configuration_dumped()) {
     output()->print_cr("Error: Failed to end recording.");
     return;
   }
