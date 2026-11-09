@@ -51,10 +51,10 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   Monitor _uncommit_lock;
 
   // Plan work, fill out candidate regions. True if there is work.
-  bool has_work(double shrink_delay, size_t shrink_until);
+  bool has_work(size_t shrink_until);
 
   // Perform the work of uncommitting empty regions
-  void uncommit(double shrink_delay, size_t shrink_until);
+  void uncommit(size_t shrink_until);
 
   // Try to set progress, potentially stalling until uncommits are allowed
   bool try_set_progress(int delay_ms);
