@@ -1340,6 +1340,7 @@ class trampoline_stub_Relocation : public Relocation {
   static address get_trampoline_for(address call, nmethod* code);
 };
 
+// Associates a data-only, patchable call-target slot with its owning call.
 class address_stub_Relocation : public Relocation {
  public:
   static RelocationHolder spec(address owner) {
