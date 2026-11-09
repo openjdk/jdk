@@ -507,9 +507,8 @@ public:
     return _paradoxical_hierarchy;
   }
 
-  void record_paradoxical_hierarchy() {
+  void set_paradoxical_hierarchy() {
     _paradoxical_hierarchy = true;
-    record_failure("paradoxical hierarchy");
   }
 
   // Notice that a method has been inlined in the current compile;

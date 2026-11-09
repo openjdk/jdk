@@ -852,7 +852,12 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
     gvn.set_type(root(), root()->bottom_type());
 
     JVMState* jvms = build_start_state(start(), tf());
-    if ((jvms = cg->generate(jvms)) == nullptr) {
+    jvms = cg->generate(jvms);
+    if (jvms == nullptr) {
+      if (failure_is_transient()) {
+        return;
+      }
+
       assert(failure_reason() != nullptr, "expect reason for parse failure");
       stringStream ss;
       ss.print("method parse failed: %s", failure_reason());

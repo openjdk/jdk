@@ -736,6 +736,14 @@ public class Fuzz implements Runnable {
         }
     };
 
+    // Ensure the entire hierarchy is loaded, or the compilation may fail due to concurrent class
+    // loading
+    private static final SmallValue LOAD_SMALL_VALUE = new SmallValue(0);
+    private static final LargeValue LOAD_LARGE_VALUE = new LargeValue(0);
+    private static final OopsValue LOAD_OOPS_VALUE = new OopsValue(0);
+    private static final DoubleValue LOAD_DOUBLE_VALUE = new DoubleValue(0);
+    private static final MixedValue LOAD_MIXED_VALUE = new MixedValue(0);
+
     //// Static Helpers
 
     static void rethrow(Throwable t) {

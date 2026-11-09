@@ -39,6 +39,7 @@
 // be loaded.
 class ciInstanceKlass : public ciKlass {
   CI_PACKAGE_ACCESS
+  friend class ciKlass;
   friend class ciBytecodeStream;
   friend class ciEnv;
   friend class ciExceptionHandler;
@@ -360,8 +361,8 @@ private:
   //     optimized type.
   bool _cha_info_computed;
 
-  // Whether this ciInstanceKlass has a proper subklass (a subklass that is not itself) that is not
-  // an interface
+  // Whether this ciInstanceKlass has a proper non-interface ciInstanceKlass subklass (a subklass
+  // that is not itself)
   SubklassValue _has_subklass;
 
   // _implementor is the result of trying to find a bound of all concrete subklasses of a class or

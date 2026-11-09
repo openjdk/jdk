@@ -931,7 +931,7 @@ void ciInstanceKlass::keep_alive(InstanceKlass* ik) {
   // InstanceKlass are created for both weak and strong metadata.  Ensuring this metadata
   // alive covers the cases where there are weak roots without performance cost.
   oop holder = ik->klass_holder();
-  if (ik->class_loader_data()->has_class_mirror_holder()) {
+  if (holder != nullptr) {
     // Though ciInstanceKlass records class loader oop, it's not enough to keep
     // non-strong hidden classes alive (loader == nullptr). Klass holder should
     // be used instead. It is enough to record a ciObject, since cached elements are never removed
@@ -942,7 +942,7 @@ void ciInstanceKlass::keep_alive(InstanceKlass* ik) {
   }
 }
 
-// Whether this ciInstanceKlass has a proper non-interface subklass
+// Whether this ciInstanceKlass has a proper non-interface ciInstanceKlass subklass
 bool ciInstanceKlass::has_subklass() {
   assert(is_loaded(), "must be loaded");
   if (SubklassValue res = _has_subklass; res != subklass_unknown) {
@@ -1173,7 +1173,7 @@ void ciInstanceKlass::update_cha_info_upon_creation() {
 
   for (ciInstanceKlass* s = _super; s != nullptr; s = s->super()) {
     if (s->_cha_info_computed && !verify_superklass_or_interface(s, this->get_instanceKlass())) {
-      CURRENT_ENV->record_paradoxical_hierarchy();
+      CURRENT_ENV->set_paradoxical_hierarchy();
       return;
     }
 
@@ -1187,7 +1187,7 @@ void ciInstanceKlass::update_cha_info_upon_creation() {
   for (ciInstanceKlass* i : *_transitive_interfaces) {
     assert(i->is_interface(), "must be an interface");
     if (i->_cha_info_computed && !verify_superklass_or_interface(i, this->get_instanceKlass())) {
-      CURRENT_ENV->record_paradoxical_hierarchy();
+      CURRENT_ENV->set_paradoxical_hierarchy();
       return;
     }
 
