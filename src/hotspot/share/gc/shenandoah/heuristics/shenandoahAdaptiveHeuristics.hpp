@@ -130,6 +130,7 @@ protected:
     accept_trigger();
   }
 
+  bool trigger_min_humongous_threshold(size_t max_humongous_available);
   bool trigger_min_free_threshold(size_t available, size_t capacity);
   bool trigger_learning(size_t available, size_t capacity);
   bool trigger_average_allocation_rate(const ShenandoahAnticipatedConsumption& rate, size_t allocatable_bytes, bool is_humongous);

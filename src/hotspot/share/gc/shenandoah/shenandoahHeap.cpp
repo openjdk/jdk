@@ -1805,16 +1805,22 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
         empty_region_array_size,
         0.8 // TODO: define recency_weight
       );
-      const bool need_gc = _humongous_allocation_history.sample_count() >= 4 && prob_failure >= 0.15; // TODO: define in shen_globals
+      const bool need_gc = _humongous_allocation_history.sample_count() >= 4 && prob_failure >= 0.25; // TODO: define in shen_globals
       _need_conc_gc_for_humongous.store_relaxed(need_gc);
       log_info(gc, ergo)("Humongous allocation failure probability: %.1f%%, %zu epochs in history%s",
                     prob_failure * 100, _humongous_allocation_history.sample_count(),
                     need_gc ? ", need a concurrent gc" : "");
 
+      // Only count the part of each run usable by requests of the largest recent size:
+      // a 2-region hole contributes nothing to 3-region requests.
+      const size_t k = _humongous_allocation_history.max_requested_region_count(3); // TODO: flag
       size_t humongous_budget = 0;
       for (size_t i = 0; i < empty_region_array_size; i++) {
-        humongous_budget += free_set()->empty_region_array()[i];
+        const size_t run = free_set()->empty_region_array()[i];
+        humongous_budget += (k == 0) ? run : (run / k) * k;
       }
+      log_info(gc, ergo)("ruiamzn - Humongous budget: %zu regions for request size %zu regions, %zu runs",
+                         humongous_budget, k, empty_region_array_size);
       _humongous_budget_region_count.store_relaxed(humongous_budget);
     }
   }
@@ -3118,6 +3124,16 @@ void ShenandoahHumongousAllocationHistory::push(size_t max_requested_region_coun
   if (_sample_count < max_history_entry) {
     _sample_count++;
   }
+}
+
+size_t ShenandoahHumongousAllocationHistory::max_requested_region_count(size_t window) const {
+  const size_t n = MIN2(window, _sample_count);
+  size_t result = 0;
+  for (size_t age = 0; age < n; age++) {
+    const Epoch& epoch = _epochs[(_next + max_history_entry - 1 - age) % max_history_entry];
+    result = MAX2(result, epoch.max_requested_region_count);
+  }
+  return result;
 }
 
 double ShenandoahHumongousAllocationHistory::probability_of_failure(const size_t* empty_region_array, size_t empty_region_array_length, double recency_weight) const {

@@ -128,6 +128,8 @@ public:
   ShenandoahHumongousAllocationHistory() : _sample_count(0), _next(0) {};
   void push(size_t max_requested_region_count, size_t total_requested_region_count, size_t failed_humongous_request_count);
   double probability_of_failure(const size_t* empty_region_array, size_t empty_region_array_length, double recency_weight) const;
+  // Largest single humongous request (in regions) across the most recent `window` epochs, 0 if none.
+  size_t max_requested_region_count(size_t window) const;
 
 private:
   Epoch _epochs[max_history_entry];
@@ -286,6 +288,10 @@ public:
 
   ShenandoahAllocationRate& humongous_alloc_rate() {
     return _humongous_alloc_rate;
+  }
+
+  size_t max_humongous_region_count_requested_since_gc_end() const {
+    return _max_humongous_region_count_requested_since_gc_end.load_relaxed();
   }
 
   size_t total_humongous_region_count_requested_since_gc_end() const {
