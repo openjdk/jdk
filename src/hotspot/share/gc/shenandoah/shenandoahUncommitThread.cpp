@@ -42,11 +42,8 @@ ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
 void ShenandoahUncommitThread::run_service() {
   assert(ShenandoahUncommit, "Thread should only run when uncommit is enabled");
 
-  // poll_interval avoids constantly polling regions for shrinking.
-  // Having an interval 10x lower than the delay would mean we hit the
-  // shrinking with lag of less than 1/10-th of true delay. Poll interval
-  // cannot be allowed to decay to zero, which would cause indefinite wait.
-  const int64_t poll_interval = MAX2<int64_t>(10, int64_t(ShenandoahUncommitDelay) / 10);
+  // Poll everything at least every 500ms, this should be prompt enough.
+  const int64_t poll_interval_ms = 500;
 
   while (true) {
     bool soft_max_changed;
@@ -59,7 +56,7 @@ void ShenandoahUncommitThread::run_service() {
         break;
       }
 
-      locker.wait(poll_interval);
+      locker.wait(poll_interval_ms);
 
       if (should_terminate()) {
         // Wake up for terminating, exit.
@@ -77,22 +74,26 @@ void ShenandoahUncommitThread::run_service() {
       _restart.unset();
     }
 
-    // Categorise the regions and figure out if we have any work.
     double now = os::elapsedTime();
-    size_t uncommittable = 0;
-    for (size_t i = 0; i < _heap->num_regions(); i++) {
-      ShenandoahHeapRegion* r = _heap->get_region(i);
+    size_t plan_prompt = 0;
+    size_t plan_deferred = 0;
+    size_t plan_uncommit = 0;
+
+    // Categorise the regions and figure out if we have any work.
+    for (size_t i = _heap->num_regions(); i > 0; i--) {
+      ShenandoahHeapRegion* r = _heap->get_region(i - 1);
       if (r->is_empty_committed()) {
         if (soft_max_changed || explicit_gc_requested) {
           // Either threshold moved: the region is eagerly uncommittable.
-          r->set_uncommit_time(now);
-          uncommittable++;
+          // Balance the uncommits a bit to avoid too eager uncommit.
+          r->set_uncommit_time(now + plan_prompt * 0.01);
+          plan_prompt++;
         } else if (r->uncommit_time() == 0) {
           // Newly empty region, record it for eventual uncommit.
-          r->set_uncommit_time(now + ShenandoahUncommitDelay / 1000);
+          r->set_uncommit_time(now + plan_deferred * 0.01 + ShenandoahUncommitDelay / 1000);
+          plan_deferred++;
         } else if (r->uncommit_time() <= now) {
-          // This region is eligible for uncommit.
-          uncommittable++;
+          plan_uncommit++;
         }
       }
     }
@@ -107,21 +108,17 @@ void ShenandoahUncommitThread::run_service() {
       continue;
     }
 
-    if (uncommittable > 0) {
-      uncommit(shrink_until, uncommittable);
+    if (plan_uncommit > 0) {
+      uncommit(shrink_until);
     }
   }
 }
 
-void ShenandoahUncommitThread::uncommit(size_t shrink_until, size_t uncommittable) {
+void ShenandoahUncommitThread::uncommit(size_t shrink_until) {
   assert(ShenandoahUncommit, "Should be enabled");
   assert(_uncommit_in_progress.is_unset(), "Uncommit should not be in progress");
 
   double start = os::elapsedTime();
-
-  // Target to complete current stride in half of the time needed.
-  // Put a hard limit on delays to avoid accidents.
-  int delay_ms = 1;
 
   // Uncommit from the end, allowing the allocation path that takes the regions from
   // the beginning flip the regions back to use. We are not in a hurry to uncommit,
@@ -142,7 +139,7 @@ void ShenandoahUncommitThread::uncommit(size_t shrink_until, size_t uncommittabl
     }
 
     // Try to claim progress, gracefully waiting.
-    if (!try_set_progress(delay_ms)) {
+    if (!try_set_progress()) {
       // Requested to restart.
       break;
     }
@@ -176,18 +173,11 @@ void ShenandoahUncommitThread::uncommit(size_t shrink_until, size_t uncommittabl
   assert(_uncommit_in_progress.is_unset(), "Uncommit should not be in progress");
 }
 
-bool ShenandoahUncommitThread::try_set_progress(int delay_ms) {
+bool ShenandoahUncommitThread::try_set_progress() {
   MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
   assert(_uncommit_in_progress.is_unset(), "Should be unset before checks");
 
-  // Optimistic: uncommits are allowed, just wait a bit, if requested.
-  double deadline = os::elapsedTime() + delay_ms * 1.0 / MILLIUNITS;
-  while (_uncommit_allowed.is_set() && _restart.is_unset() &&
-         os::elapsedTime() < deadline) {
-    locker.wait(delay_ms);
-  }
-
-  // Pessimistic: uncommits are disallowed. Wait until allowed again.
+  // Uncommits are disallowed. Wait until allowed again.
   while (_uncommit_allowed.is_unset() && _restart.is_unset()) {
     locker.wait();
   }
