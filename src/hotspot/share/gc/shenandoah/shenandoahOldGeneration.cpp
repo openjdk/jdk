@@ -24,69 +24,26 @@
  *
  */
 
-#include "gc/shared/collectorCounters.hpp"
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shared/plab.hpp"
-#include "gc/shared/workerThread.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
-#include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahPLAB.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
-#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
-#include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
-#include "memory/allocation.hpp"
-#include "memory/iterator.hpp"
-#include "memory/memRegion.hpp"
-#include "memory/resourceArea.hpp"
-#include "nmt/memTag.hpp"
-#include "runtime/atomicAccess.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-class ShenandoahPurgeSATBTask : public WorkerTask {
-public:
-  explicit ShenandoahPurgeSATBTask() : WorkerTask("Purge SATB") {
-    Threads::change_thread_claim_token();
-  }
-
-  void work(uint worker_id) override {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    ShenandoahSATBMarkQueueSet &satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
-    ShenandoahFlushSATB flusher(satb_queues);
-    Threads::possibly_parallel_threads_do(true /* is_par */, &flusher);
-  }
-};
 
 class ShenandoahConcurrentCoalesceAndFillTask : public WorkerTask {
 private:
@@ -461,26 +418,16 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
   }
 }
 
-void ShenandoahOldGeneration::transfer_pointers_from_satb() const {
-  const ShenandoahHeap* heap = ShenandoahHeap::heap();
-  assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
-  log_debug(gc)("Transfer SATB buffers");
-  ShenandoahPurgeSATBTask purge_satb_task;
-  heap->workers()->run_task(&purge_satb_task);
-}
-
 bool ShenandoahOldGeneration::contains(oop obj) const {
   return ShenandoahHeap::heap()->is_in_old(obj);
 }
 
-void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent) {
+void ShenandoahOldGeneration::prepare_regions_and_collection_set() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  assert(!heap->is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
+  assert(!heap->is_full_gc_in_progress(), "Only for concurrent GC");
 
   {
-    ShenandoahGCPhase phase(concurrent ?
-        ShenandoahPhaseTimings::final_update_region_states :
-        ShenandoahPhaseTimings::degen_gc_final_update_region_states);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_region_states);
     ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context(), this);
 
     parallel_heap_region_iterate(&cl);
@@ -490,9 +437,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
   {
     // This doesn't actually choose a collection set, but prepares a list of
     // regions as 'candidates' for inclusion in a mixed collection.
-    ShenandoahGCPhase phase(concurrent ?
-        ShenandoahPhaseTimings::choose_cset :
-        ShenandoahPhaseTimings::degen_gc_choose_cset);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::choose_cset);
     ShenandoahHeapLocker locker(heap->lock());
     _old_heuristics->prepare_for_old_collections();
   }
@@ -500,16 +445,14 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
   {
     // Though we did not choose a collection set above, we still may have
     // freed up immediate garbage regions so proceed with rebuilding the free set.
-    ShenandoahGCPhase phase(concurrent ?
-        ShenandoahPhaseTimings::final_rebuild_freeset :
-        ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_rebuild_freeset);
     ShenandoahFreeSet* free_set = heap->free_set();
     ShenandoahHeapLocker locker(heap->lock());
 
     // This is completion of old-gen marking.  We rebuild in order to reclaim immediate garbage and to
     // prepare for subsequent mixed evacuations.
     size_t young_trash_regions, old_trash_regions, first_old, last_old, num_old;
-    heap->free_set()->prepare_to_rebuild(young_trash_regions, old_trash_regions, first_old, last_old, num_old);
+    free_set->prepare_to_rebuild(young_trash_regions, old_trash_regions, first_old, last_old, num_old);
     // At the end of old-gen, we may find that we have reclaimed immediate garbage, allowing a longer allocation runway.
     // We may also find that we have accumulated canddiate regions for mixed evacuation.  If so, we will want to expand
     // the OldCollector reserve in order to make room for these mixed evacuations.
@@ -523,7 +466,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
                                (gen_heap->young_generation()->free_unaffiliated_regions() + young_trash_regions) *
                                ShenandoahHeapRegion::region_size_bytes());
     gen_heap->compute_old_generation_balance(max_transfer, old_trash_regions, young_trash_regions);
-    heap->free_set()->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
+    free_set->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
   }
 }
 
@@ -650,11 +593,6 @@ ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahM
   _old_heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedOldGCInterval);
   _heuristics = _old_heuristics;
   return _heuristics;
-}
-
-void ShenandoahOldGeneration::record_success_concurrent(bool abbreviated) {
-  heuristics()->record_success_concurrent();
-  ShenandoahHeap::heap()->shenandoah_policy()->record_success_old();
 }
 
 void ShenandoahOldGeneration::handle_failed_evacuation() {

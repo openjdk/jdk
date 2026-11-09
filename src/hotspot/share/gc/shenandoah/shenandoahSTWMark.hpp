@@ -25,10 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
 
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahMark.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahGeneration;
 
@@ -38,9 +36,8 @@ class ShenandoahSTWMark : public ShenandoahMark {
 private:
   ShenandoahSTWRootScanner      _root_scanner;
   TaskTerminator                _terminator;
-  bool                          _full_gc;
 public:
- ShenandoahSTWMark(ShenandoahGeneration* generation, bool full_gc);
+ ShenandoahSTWMark(ShenandoahGeneration* generation);
  void mark();
 
 private:

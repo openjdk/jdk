@@ -26,10 +26,6 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHAGGRESSIVEHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-class ShenandoahCollectionSet;
-class ShenandoahSpaceInfo;
 
 /*
  * This is a diagnostic heuristic that continuously runs collections
@@ -44,8 +40,6 @@ public:
                                              size_t free) override;
 
   bool should_start_gc() override;
-
-  bool should_unload_classes() override;
 
   const char* name()     override { return "Aggressive"; }
   bool is_diagnostic()   override { return true; }

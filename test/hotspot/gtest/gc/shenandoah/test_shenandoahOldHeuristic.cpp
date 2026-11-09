@@ -21,17 +21,13 @@
  * questions.
  */
 
-#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
-#include "gc/shenandoah/shenandoahFreeSet.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "unittest.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "unittest.hpp"
-#include "utilities/ostream.hpp"
-
+#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include <cstdarg>
-#include <iostream>
 
 // These tests will all be skipped (unless Shenandoah becomes the default
 // collector). To execute these tests, you must enable Shenandoah, which

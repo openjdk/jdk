@@ -23,27 +23,24 @@
  */
 
 #include "code/codeCache.hpp"
-#include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahConcurrentGC.hpp"
-#include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGC.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/os.hpp"
-#include "utilities/debug.hpp"
+#include "utilities/events.hpp"
 
-ShenandoahOldGC::ShenandoahOldGC(ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption) :
-    ShenandoahConcurrentGC(generation, false), _old_generation(generation), _allow_preemption(allow_preemption) {
+
+ShenandoahOldGC::ShenandoahOldGC(ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption)
+  : ShenandoahConcurrentGC(nullptr, generation, false)
+  , _old_generation(generation)
+  , _allow_preemption(allow_preemption) {
 }
 
 // Final mark for old-gen is different for young than old, so we
@@ -70,7 +67,7 @@ void ShenandoahOldGC::op_final_mark() {
     // We need to do this because weak root cleaning reports the number of dead handles
     JvmtiTagMap::set_needs_cleaning();
 
-    _generation->prepare_regions_and_collection_set(true);
+    _generation->prepare_regions_and_collection_set();
 
     heap->set_unload_classes(false);
     heap->prepare_concurrent_roots();
@@ -89,6 +86,7 @@ void ShenandoahOldGC::op_final_mark() {
   }
 }
 
+// Intentionally does not update controller phase. Allocation stalls are always attributed to state of young.
 bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   auto heap = ShenandoahGenerationalHeap::heap();
   assert(!_old_generation->is_doing_mixed_evacuations(), "Should not start an old gc with pending mixed evacuations");

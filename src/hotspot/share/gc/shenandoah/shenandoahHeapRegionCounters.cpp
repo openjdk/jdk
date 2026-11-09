@@ -24,24 +24,16 @@
  *
  */
 
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
+
 #include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionCounters.hpp"
-#include "logging/log.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/os.hpp"
 #include "runtime/perfData.inline.hpp"
-#include "runtime/perfDataTypes.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/exceptions.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "utilities/defaultStream.hpp"
 
 ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
   _last_sample_millis(0)
@@ -199,9 +191,10 @@ jlong ShenandoahHeapRegionCounters::encode_heap_status(ShenandoahHeap* heap) {
                           generation->name(), phase, BOOL_TO_STR(heap->is_concurrent_old_mark_in_progress()), status);
   }
 
-  if (heap->is_degenerated_gc_in_progress()) {
+  if (heap->has_self_forwarded_objects()) {
     status |= (1 << 6);
   }
+
   if (heap->is_full_gc_in_progress()) {
     status |= (1 << 7);
   }

@@ -25,13 +25,10 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHYOUNGHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
-#include "utilities/globalDefinitions.hpp"
 
-class ShenandoahCollectionSet;
-class ShenandoahGenerationalHeap;
+class ShenandoahYoungGeneration;
 class ShenandoahOldGeneration;
 class ShenandoahOldHeuristics;
-class ShenandoahYoungGeneration;
 
 /*
  * This is a specialization of the generational heuristic which chooses
@@ -43,6 +40,9 @@ public:
   explicit ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation);
 
   bool should_start_gc() override;
+
+  // Young collections can never unload classes
+  bool can_unload_classes() override { return false; }
 
   size_t bytes_of_allocation_runway_before_gc_trigger(size_t young_regions_to_be_reclaimed);
 

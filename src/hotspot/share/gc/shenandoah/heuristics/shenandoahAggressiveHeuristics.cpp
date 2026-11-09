@@ -22,12 +22,12 @@
  *
  */
 
-#include "gc/shared/gc_globals.hpp"
+
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
-#include "runtime/globals_extension.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "runtime/os.hpp"
 
 ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info) :
@@ -56,9 +56,3 @@ bool ShenandoahAggressiveHeuristics::should_start_gc() {
   return true;
 }
 
-bool ShenandoahAggressiveHeuristics::should_unload_classes() {
-  if (!can_unload_classes()) return false;
-  if (has_metaspace_oom()) return true;
-  // Randomly unload classes with 50% chance.
-  return (os::random() & 1) == 1;
-}

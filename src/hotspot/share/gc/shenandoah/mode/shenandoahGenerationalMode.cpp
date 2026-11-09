@@ -22,10 +22,11 @@
  *
  */
 
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
-#include "runtime/globals.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
 
 void ShenandoahGenerationalMode::initialize_flags() const {
@@ -48,7 +49,6 @@ void ShenandoahGenerationalMode::initialize_flags() const {
 
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(GCTimeRatio, 70);
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
-  SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 
   // This helps most multi-core hardware hosts, enable by default
   SHENANDOAH_ERGO_ENABLE_FLAG(UseCondCardMark);

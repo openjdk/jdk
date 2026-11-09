@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETNMETHOD_HPP
 
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "memory/allocation.hpp"
 
 class nmethod;
 class ShenandoahHeap;

@@ -22,24 +22,16 @@
  *
  */
 
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/plab.hpp"
-#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
-#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
-#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "logging/log.hpp"
-#include "oops/oop.inline.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 void ShenandoahInPlacePromotionPlanner::RegionPromotionStats::update(ShenandoahHeapRegion* region) {
   count++;
@@ -152,9 +144,6 @@ void ShenandoahInPlacePromotionPlanner::complete_planning() const {
 void ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) const {
   if (r->is_regular_or_regular_pinned() && (r->get_top_before_promote() != nullptr)) {
     // This region was scheduled for promotion. The promotion must be completed.
-    // The 'always_tenure' override flag set by WB.fullGC() is not carried over
-    // into the degenerated cycle so we cannot rely on is_tenurable again. We checked
-    // it when we made the plan for this region, that plan is authoritative.
     assert(r->is_young() && r->is_active(), "Region scheduled for promotion must still be young and active");
     promote(r);
     return;

@@ -28,8 +28,6 @@
 // No shenandoahPrefetch.hpp
 
 #include "memory/allStatic.hpp"
-#include "oops/oop.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "runtime/prefetch.inline.hpp"
 
 // Utility to centralize prefetching decisions.

@@ -28,18 +28,18 @@
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMark.hpp"
 
-class ShenandoahGeneration;
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahConcurrentMarkingTask;
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahFinalMarkingTask;
+class ShenandoahGeneration;
 
 class ShenandoahConcurrentMark: public ShenandoahMark {
   template <ShenandoahGenerationType GENERATION> friend class ShenandoahConcurrentMarkingTask;
   template <ShenandoahGenerationType GENERATION> friend class ShenandoahFinalMarkingTask;
 
 public:
-  ShenandoahConcurrentMark(ShenandoahGeneration* generation);
+  ShenandoahConcurrentMark(ShenandoahGeneration* generation, bool bootstrapping);
 
   // Concurrent mark roots
   void mark_concurrent_roots();

@@ -23,20 +23,17 @@
  *
  */
 
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
+
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "logging/log.hpp"
-#include "runtime/globals_extension.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "logging/logTag.hpp"
 
 ShenandoahStaticHeuristics::ShenandoahStaticHeuristics(ShenandoahSpaceInfo* space_info) :
   ShenandoahHeuristics(space_info) {
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
-  SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 }
 
 bool ShenandoahStaticHeuristics::should_start_gc() {

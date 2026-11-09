@@ -27,7 +27,6 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
-#include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 

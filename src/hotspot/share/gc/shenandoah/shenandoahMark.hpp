@@ -26,18 +26,15 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
 
+#include "gc/shared/ageTable.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/shared/taskTerminator.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
-#include "memory/allocation.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "utilities/globalDefinitions.hpp"
 
-class Klass;
-class ShenandoahGeneration;
 class ShenandoahMarkingContext;
-class TaskTerminator;
 
 // Base class for mark
 // Mark class does not maintain states. Instead, mark states are
@@ -48,9 +45,10 @@ protected:
   ShenandoahObjToScanQueueSet* const _task_queues;
   ShenandoahObjToScanQueueSet* const _old_gen_task_queues;
   bool const _string_dedup;
+  bool const _bootstrapping;
 
 protected:
-  ShenandoahMark(ShenandoahGeneration* generation);
+  ShenandoahMark(ShenandoahGeneration* generation, bool bootstrapping);
 
 public:
   template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
@@ -106,7 +104,7 @@ private:
   static void dedup_string(oop obj, StringDedup::Requests* const req);
 
   template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req, bool update_refs);
+  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req);
 
   template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
   NOINLINE // Main hot loop, start inlining from here

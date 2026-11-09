@@ -26,18 +26,14 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
 
-#include "gc/shared/verifyOption.hpp"
+#include "gc/shared/markBitMap.hpp"
+#include "gc/shenandoah/shenandoahRootVerifier.hpp"
 #include "memory/allocation.hpp"
-#include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.hpp"
 
-class MarkBitMap;
-class ShenandoahGeneration;
 class ShenandoahHeap;
-class ShenandoahHeapRegion;
+class ShenandoahMarkingContext;
 
 #ifdef _WINDOWS
 #pragma warning( disable : 4522 )
@@ -227,7 +223,6 @@ public:
   void verify_after_gc(ShenandoahGeneration* generation);
   void verify_before_fullgc(ShenandoahGeneration* generation);
   void verify_after_fullgc(ShenandoahGeneration* generation);
-  void verify_after_degenerated(ShenandoahGeneration* generation);
   void verify_generic(ShenandoahGeneration* generation, VerifyOption option);
 
   // Roots should only contain to-space oops

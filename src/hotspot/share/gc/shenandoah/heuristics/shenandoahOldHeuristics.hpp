@@ -25,11 +25,11 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHOLDHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHOLDHEURISTICS_HPP
 
+
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 
 class ShenandoahCollectionSet;
-class ShenandoahGenerationalHeap;
 class ShenandoahHeapRegion;
 class ShenandoahOldGeneration;
 
@@ -244,11 +244,9 @@ public:
   // Returns true if the old generation needs to prepare for marking, or continue marking.
   bool should_resume_old_cycle();
 
-  void record_success_concurrent() override;
+  void record_concurrent_completion() override;
 
-  void record_degenerated(bool is_generational_global) override;
-
-  void record_success_full() override;
+  void record_full_gc(GCCause::Cause cause) override;
 
   const char* name() override;
 

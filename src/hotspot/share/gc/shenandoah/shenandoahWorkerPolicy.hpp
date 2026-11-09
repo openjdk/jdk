@@ -26,7 +26,6 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHWORKERPOLICY_HPP
 
 #include "memory/allStatic.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahWorkerPolicy : AllStatic {
 public:
@@ -54,9 +53,6 @@ public:
   // Calculate workers for parallel full gc
   static uint calc_workers_for_fullgc();
 
-  // Calculate workers for parallel degenerated gc
-  static uint calc_workers_for_stw_degenerated();
-
   // Calculate workers for concurrent reference update
   static uint calc_workers_for_conc_update_ref();
 
@@ -68,6 +64,9 @@ public:
 
   // Calculate workers for concurrent cleanup
   static uint calc_workers_for_conc_cleanup();
+
+private:
+  static uint concurrent_workers_count();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHWORKERPOLICY_HPP

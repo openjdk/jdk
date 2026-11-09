@@ -26,9 +26,6 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHUNCOMMITTHREAD_HPP
 
 #include "gc/shared/concurrentGCThread.hpp"
-#include "gc/shenandoah/shenandoahSharedVariables.hpp"
-#include "runtime/mutex.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahHeap;
 
@@ -97,4 +94,4 @@ protected:
 };
 
 
-#endif //SHARE_GC_SHENANDOAH_SHENANDOAHUNCOMMITTHREAD_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHUNCOMMITTHREAD_HPP

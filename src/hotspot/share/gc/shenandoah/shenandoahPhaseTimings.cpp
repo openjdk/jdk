@@ -23,14 +23,14 @@
  *
  */
 
-#include "gc/shared/gcId.hpp"
+
 #include "gc/shared/workerDataArray.inline.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 
 #define SHENANDOAH_PHASE_NAME_FORMAT "%-30s"
@@ -96,7 +96,6 @@ ShenandoahWorkerData* ShenandoahPhaseTimings::worker_data(Phase phase, WorkerPha
 bool ShenandoahPhaseTimings::is_root_work_phase(Phase phase) {
   switch (phase) {
     case finish_mark:
-    case degen_gc_update_roots:
     case full_gc_mark:
     case full_gc_update_roots:
     case full_gc_adjust_roots:

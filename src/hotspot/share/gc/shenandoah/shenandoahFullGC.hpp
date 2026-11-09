@@ -25,11 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFULLGC_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFULLGC_HPP
 
-#include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
-
-class GCTimer;
-class ShenandoahHeapRegionSet;
+#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 
 /**
  * This implements Full GC (e.g. when invoking System.gc()) using a mark-compact algorithm.
@@ -51,17 +48,16 @@ class ShenandoahHeapRegionSet;
  * Parallelization is handled by assigning each GC worker the slice of the heap (the set of regions)
  * where it does sliding compaction, without interfering with other threads.
  */
-
+class GCTimer;
 class PreservedMarksSet;
+class ShenandoahHeap;
+class VM_ShenandoahFullGC;
 
 class ShenandoahFullGC : public ShenandoahGC {
   friend class ShenandoahPrepareForCompactionObjectClosure;
   friend class VM_ShenandoahFullGC;
-  friend class ShenandoahDegenGC;
 
-private:
   GCTimer* _gc_timer;
-
   PreservedMarksSet* _preserved_marks;
 
 public:
@@ -75,7 +71,7 @@ private:
   void entry_full(GCCause::Cause cause);
   void op_full(GCCause::Cause cause);
 
-  void do_it(GCCause::Cause gc_cause);
+  void do_it();
 
   void phase1_mark_heap();
   void phase2_calculate_target_addresses(ShenandoahHeapRegionSet** worker_slices);
@@ -85,6 +81,14 @@ private:
   void distribute_slices(ShenandoahHeapRegionSet** worker_slices);
   void calculate_target_humongous_objects();
   void compact_humongous_objects();
+
+  // Perform STW class unloading and weak root cleaning
+  void parallel_cleaning(ShenandoahGeneration* generation) const;
+
+  void stw_unload_classes() const;
+  void stw_process_weak_roots() const;
+
+  static void stw_weak_refs(ShenandoahGeneration* generation);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFULLGC_HPP

@@ -22,22 +22,15 @@
  *
  */
 
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shared/gcCause.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahRegulatorThread.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/os.hpp"
 
 ShenandoahRegulatorThread::ShenandoahRegulatorThread(ShenandoahGenerationalControlThread* control_thread) :
   _heap(ShenandoahHeap::heap()),
@@ -73,27 +66,21 @@ void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
         if (request_concurrent_gc(_heap->global_generation())) {
           // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
           _global_heuristics->log_trigger("%s", GCCause::to_string(GCCause::_metadata_GC_threshold));
-          _global_heuristics->cancel_trigger_request();
         }
       } else {
         if (_old_heuristics->should_resume_old_cycle()) {
           if (request_concurrent_gc(_heap->old_generation())) {
-            _old_heuristics->cancel_trigger_request();
-            log_debug(gc)("Heuristics request to resume old collection accepted");
+            log_debug(gc, thread)("Heuristics request to resume old collection accepted");
           }
         } else if (start_old_cycle()) {
-          log_debug(gc)("Heuristics request for old collection accepted");
-          _young_heuristics->cancel_trigger_request();
-          _old_heuristics->cancel_trigger_request();
+          log_debug(gc, thread)("Heuristics request for old collection accepted");
         } else if (start_young_cycle()) {
-          log_debug(gc)("Heuristics request for young collection accepted");
-          _young_heuristics->cancel_trigger_request();
+          log_debug(gc, thread)("Heuristics request for young collection accepted");
         }
       }
     } else if (mode == ShenandoahGenerationalControlThread::servicing_old) {
       if (start_young_cycle()) {
-        log_debug(gc)("Heuristics request to interrupt old for young collection accepted");
-        _young_heuristics->cancel_trigger_request();
+        log_debug(gc, thread)("Heuristics request to interrupt old for young collection accepted");
       }
     }
 
@@ -106,12 +93,13 @@ void ShenandoahRegulatorThread::regulate_young_and_global_cycles() {
   while (!should_terminate()) {
     SuspendibleThreadSetJoiner joiner;
     if (_control_thread->gc_mode() == ShenandoahGenerationalControlThread::none) {
-      if (start_global_cycle()) {
-        log_debug(gc)("Heuristics request for global collection accepted.");
-        _global_heuristics->cancel_trigger_request();
+      if (should_start_metaspace_gc() && request_concurrent_gc(_heap->global_generation())) {
+        // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
+        _global_heuristics->log_trigger("%s", GCCause::to_string(GCCause::_metadata_GC_threshold));
+      } else if (_old_heuristics->should_start_gc() && request_concurrent_gc(_heap->global_generation())) {
+        log_debug(gc, thread)("Heuristics request for global collection accepted.");
       } else if (start_young_cycle()) {
-        log_debug(gc)("Heuristics request for young collection accepted.");
-        _young_heuristics->cancel_trigger_request();
+        log_debug(gc, thread)("Heuristics request for young collection accepted.");
       }
     }
 
@@ -152,10 +140,6 @@ bool ShenandoahRegulatorThread::start_young_cycle() const {
   return _young_heuristics->should_start_gc() && request_concurrent_gc(_heap->young_generation());
 }
 
-bool ShenandoahRegulatorThread::start_global_cycle() const {
-  return _global_heuristics->should_start_gc() && request_concurrent_gc(_heap->global_generation());
-}
-
 bool ShenandoahRegulatorThread::request_concurrent_gc(ShenandoahGeneration* generation) const {
   double now = os::elapsedTime();
 
@@ -179,12 +163,11 @@ void ShenandoahRegulatorThread::stop_service() {
   log_debug(gc)("%s: Stop requested.", name());
 }
 
-bool ShenandoahRegulatorThread::should_start_metaspace_gc() {
+bool ShenandoahRegulatorThread::should_start_metaspace_gc() const {
   // The generational mode can, at present, only unload classes during a global
   // cycle. For this reason, we treat an oom in metaspace as a _trigger_ for a
   // global cycle. But, we check other prerequisites before starting a gc that won't
   // unload anything.
-  return ClassUnloadingWithConcurrentMark
-      && _global_heuristics->can_unload_classes()
+  return _global_heuristics->can_unload_classes()
       && _global_heuristics->has_metaspace_oom();
 }

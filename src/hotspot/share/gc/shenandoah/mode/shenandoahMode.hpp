@@ -28,12 +28,11 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
-#include "nmt/memTag.hpp"
 #include "runtime/java.hpp"
 #include "utilities/formatBuffer.hpp"
 
-class ShenandoahHeuristics;
 class ShenandoahSpaceInfo;
+class ShenandoahHeuristics;
 
 #define SHENANDOAH_CHECK_FLAG_SET(name)                                     \
   do {                                                                      \
@@ -59,6 +58,7 @@ public:
   virtual bool is_diagnostic() = 0;
   virtual bool is_experimental() = 0;
   virtual bool is_generational() { return false; }
+  virtual bool is_concurrent() { return true; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHMODE_HPP

@@ -23,24 +23,14 @@
  *
  */
 
-#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahCollectionSet.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
-#include "memory/iterator.hpp"
-#include "oops/oop.inline.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "runtime/thread.hpp"
-#include "utilities/debug.hpp"
 
 class ShenandoahConcurrentEvacuator : public ObjectClosure {
 private:
@@ -52,7 +42,7 @@ public:
 
   void do_object(oop p) override {
     shenandoah_assert_marked(nullptr, p);
-    if (!p->is_forwarded()) {
+    if (!ShenandoahForwarding::is_forwarded(p)) {
       _heap->evacuate_object(p, _thread);
     }
   }
@@ -61,28 +51,22 @@ public:
 ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* heap,
                                                                            ShenandoahGeneration* generation,
                                                                            ShenandoahRegionIterator* iterator,
-                                                                           bool concurrent, bool only_promote_regions) :
+                                                                           bool only_promote_regions) :
   WorkerTask("Shenandoah Evacuation"),
   _heap(heap),
   _generation(generation),
   _regions(iterator),
-  _concurrent(concurrent),
+  _collection_set(_heap->collection_set()),
   _only_promote_regions(only_promote_regions)
 {
   shenandoah_assert_generational();
 }
 
 void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
-  if (_concurrent) {
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
-    ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    SuspendibleThreadSetJoiner stsj;
-    do_work();
-  } else {
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::degen_gc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    do_work();
-  }
+  ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
+  ShenandoahConcurrentWorkerSession worker_session(worker_id);
+  SuspendibleThreadSetJoiner stsj;
+  do_work();
 }
 
 void ShenandoahGenerationalEvacuationTask::do_work() {
@@ -115,7 +99,7 @@ void ShenandoahGenerationalEvacuationTask::promote_regions() {
 
     promoter.maybe_promote_region(r);
 
-    if (_heap->check_cancelled_gc_and_yield(_concurrent)) {
+    if (_heap->check_cancelled_gc_and_yield()) {
       break;
     }
   }
@@ -124,24 +108,28 @@ void ShenandoahGenerationalEvacuationTask::promote_regions() {
 void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
   LogTarget(Debug, gc) lt;
   ShenandoahConcurrentEvacuator cl(_heap);
-  ShenandoahInPlacePromoter promoter(_heap);
   ShenandoahHeapRegion* r;
-
-  while ((r = _regions->next()) != nullptr) {
+  while ((r = _collection_set->claim_next()) != nullptr) {
     if (lt.is_enabled()) {
       LogStream ls(lt);
       log_region(r, &ls);
     }
 
-    if (r->is_cset()) {
-      assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
-      _heap->marked_object_iterate(r, &cl);
-    } else {
-      promoter.maybe_promote_region(r);
-    }
+    assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
+    _heap->marked_object_iterate(r, &cl);
 
-    if (_heap->check_cancelled_gc_and_yield(_concurrent)) {
+    if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
+      // No more evacuations for this thread, but it may yet complete in-place promotions
       break;
     }
+
+    if (_heap->check_cancelled_gc_and_yield()) {
+      // GC is cancelled (vm is stopping), no further work
+      assert(_heap->is_stopping(), "Can only stop evacuation for shutdown");
+      return;
+    }
   }
+
+  promote_regions();
 }
+

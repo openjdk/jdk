@@ -27,16 +27,12 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSET_HPP
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "memory/reservedSpace.hpp"
-#include "nmt/memTag.hpp"
-#include "oops/oopsHierarchy.hpp"
+#include "memory/virtualspace.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-class outputStream;
-class ShenandoahHeapRegion;
 
 class ShenandoahCollectionSet : public CHeapObj<mtGC> {
   friend class ShenandoahHeap;
@@ -87,6 +83,9 @@ public:
 
   // Single-thread version
   ShenandoahHeapRegion* next();
+
+  // Not MT safe, use to test if gc workers processed all regions
+  bool all_regions_claimed() const;
 
   size_t count()  const { return _region_count; }
   bool is_empty() const { return _region_count == 0; }

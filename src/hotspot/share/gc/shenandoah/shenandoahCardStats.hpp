@@ -27,11 +27,6 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
-#include "memory/allocation.hpp"
-#include "nmt/memTag.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
 
 enum CardStatType {
   DIRTY_RUN,

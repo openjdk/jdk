@@ -25,17 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGLOBALGENERATION_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGLOBALGENERATION_HPP
 
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
-#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahGenerationType.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-class ShenandoahHeapRegion;
-class ShenandoahHeuristics;
 
 // A "generation" that represents the whole heap.
 class ShenandoahGlobalGeneration : public ShenandoahGeneration {

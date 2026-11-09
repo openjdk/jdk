@@ -23,10 +23,10 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
 ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
@@ -35,6 +35,7 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _card_table(nullptr),
   _gclab(nullptr),
   _gclab_size(0),
+  _has_evac_failures(false),
   _shenandoah_plab(nullptr),
   _evacuation_stats(new ShenandoahEvacuationStats()),
   _invisible_root(nullptr),

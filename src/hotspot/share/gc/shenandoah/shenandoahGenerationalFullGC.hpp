@@ -25,14 +25,12 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALFULLGC_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALFULLGC_HPP
 
-#include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shared/preservedMarks.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "memory/iterator.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "oops/oop.inline.hpp"
+#include "utilities/growableArray.hpp"
 
-template <typename> class GrowableArray;
-class PreservedMarks;
-class ShenandoahGenerationalHeap;
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
 

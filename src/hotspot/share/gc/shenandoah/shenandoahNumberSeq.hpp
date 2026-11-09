@@ -26,8 +26,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHNUMBERSEQ_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHNUMBERSEQ_HPP
 
-#include "memory/allocation.hpp"
-#include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
@@ -49,8 +47,11 @@ private:
     MagBuckets = 56,
     MagMinimum = -32
   };
-  int** _hdr;
+  int** _hdr; // Lazily allocated on first add() and freed in the destructor.
   double _minimum;
+  NONCOPYABLE(HdrSeq);
+
+  void allocate_hdr();
 
 public:
   HdrSeq();

@@ -29,8 +29,6 @@
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 #include "gc/shared/taskqueue.inline.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
 template <class E, MemTag MT, unsigned int N>

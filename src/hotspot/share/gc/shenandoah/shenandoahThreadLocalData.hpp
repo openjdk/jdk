@@ -26,21 +26,20 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 
-#include "cppstdlib/new.hpp"
-#include "gc/shared/cardTable.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/plab.hpp"
-#include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
+#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahPLAB.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/thread.hpp"
+#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
 
 class ShenandoahThreadLocalData {
@@ -57,6 +56,7 @@ private:
   // In generational mode, it is exclusive to the young generation.
   PLAB* _gclab;
   size_t _gclab_size;
+  bool _has_evac_failures;
 
   // Thread-local allocation buffer only used in generational mode.
   // Used both by mutator threads and by GC worker threads
@@ -148,6 +148,18 @@ public:
 
   static void set_gclab_size(Thread* thread, size_t v) {
     data(thread)->_gclab_size = v;
+  }
+
+  static void set_has_evac_failures(Thread* thread, bool value) {
+    data(thread)->_has_evac_failures = value;
+  }
+
+  static bool has_evac_failures() {
+    return has_evac_failures(Thread::current());
+  }
+
+  static bool has_evac_failures(Thread* thread) {
+    return data(thread)->_has_evac_failures;
   }
 
   static void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {

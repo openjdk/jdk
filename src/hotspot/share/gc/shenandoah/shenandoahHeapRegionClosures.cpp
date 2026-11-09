@@ -24,12 +24,9 @@
  */
 
 #include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
-#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 ShenandoahSynchronizePinnedRegionStates::ShenandoahSynchronizePinnedRegionStates() :
   _lock(ShenandoahHeap::heap()->lock()) {

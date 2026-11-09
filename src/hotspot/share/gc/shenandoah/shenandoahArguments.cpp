@@ -24,27 +24,19 @@
  *
  */
 
-#include "gc/shared/cardTable.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "gc/shenandoah/shenandoahArguments.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
-#include "logging/log.hpp"
-#include "runtime/arguments.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.hpp"
-#include "utilities/align.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/formatBuffer.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "utilities/defaultStream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 void ShenandoahArguments::initialize() {
@@ -168,11 +160,6 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_DEFAULT(ShenandoahUncommit, false);
   }
 
-  // If class unloading is disabled, no unloading for concurrent cycles as well.
-  if (!ClassUnloading) {
-    FLAG_SET_DEFAULT(ClassUnloadingWithConcurrentMark, false);
-  }
-
   // TLAB sizing policy makes resizing decisions before each GC cycle. It averages
   // historical data, assigning more recent data the weight according to TLABAllocationWeight.
   // Current default is good for generational collectors that run frequent young GCs.
@@ -248,11 +235,17 @@ void ShenandoahArguments::initialize_alignments() {
   }
 }
 
+void ShenandoahArguments::initialize_heap_flags_and_sizes() {
+  GCArguments::initialize_heap_flags_and_sizes();
+
+  FLAG_SET_ERGO_IF_DEFAULT(SoftMaxHeapSize, MaxHeapSize);
+}
+
 CollectedHeap* ShenandoahArguments::create_heap() {
   if (strcmp(ShenandoahGCMode, "generational") != 0) {
     // Not generational
-    return new ShenandoahHeap(new ShenandoahCollectorPolicy());
+    return new ShenandoahHeap();
   } else {
-    return new ShenandoahGenerationalHeap(new ShenandoahCollectorPolicy());
+    return new ShenandoahGenerationalHeap();
   }
 }

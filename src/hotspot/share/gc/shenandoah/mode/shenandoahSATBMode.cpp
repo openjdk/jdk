@@ -22,11 +22,12 @@
  *
  */
 
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
-#include "runtime/globals.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/java.hpp"
 
 void ShenandoahSATBMode::initialize_flags() const {
   if (ClassUnloading) {
@@ -34,7 +35,6 @@ void ShenandoahSATBMode::initialize_flags() const {
   }
 
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
-  SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 
   // Final configuration checks
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);

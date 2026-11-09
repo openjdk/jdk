@@ -23,39 +23,16 @@
  *
  */
 
-#include "code/nmethod.hpp"
+
 #include "code/relocInfo.hpp"
-#include "gc/shared/barrierSet.hpp"
-#include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
-#include "logging/log.hpp"
-#include "memory/allocation.hpp"
-#include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.hpp"
-#include "nmt/memTag.hpp"
-#include "oops/access.hpp"
-#include "oops/accessBackend.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/method.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/icache.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/safepointVerifiers.hpp"
-#include "utilities/checkedCast.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
-#include "utilities/ostream.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm) :
   _nm(nm), _oops(nullptr), _oops_count(0), _patchable_jumps(nullptr), _patchable_jumps_count(0), _unregistered(false), _lock(), _ic_lock() {
@@ -135,8 +112,8 @@ void ShenandoahNMethod::parse(nmethod* nm, GrowableArray<oop*>& oops, bool& has_
         if (value != nullptr) {
           oop* addr = r->oop_addr();
           shenandoah_assert_correct(addr, value);
-          shenandoah_assert_not_in_cset_except(addr, value, ShenandoahHeap::heap()->cancelled_gc());
-          shenandoah_assert_not_forwarded(addr, value);
+          shenandoah_assert_not_in_cset_except(addr, value, ShenandoahHeap::heap()->cancelled_gc() || ShenandoahHeap::heap()->has_self_forwarded_objects());
+          shenandoah_assert_not_forwarded_except(addr, value, ShenandoahHeap::heap()->cancelled_gc() || ShenandoahHeap::heap()->has_self_forwarded_objects());
           // Non-null immediate oop found. null oops can safely be
           // ignored since the method will be re-registered if they
           // are later patched to be non-null.

@@ -27,12 +27,14 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 
 #include "gc/shared/taskqueue.hpp"
-#include "memory/padded.hpp"
+#include "gc/shared/taskTerminator.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "nmt/memTag.hpp"
-#include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/mutex.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
 
 class ShenandoahHeap;
 

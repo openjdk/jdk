@@ -22,35 +22,19 @@
  *
  */
 
+
 #include "classfile/classLoaderData.hpp"
-#include "gc/shared/barrierSet.hpp"
-#include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/shared/oopStorageParState.inline.hpp"
-#include "gc/shared/oopStorageSetParState.inline.hpp"
-#include "gc/shared/threadLocalAllocBuffer.hpp"
-#include "gc/shared/tlab_globals.hpp"
-#include "gc/shared/workerThread.hpp"
+#include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/stackWatermarkKind.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
-#include "runtime/threadSMR.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 ShenandoahJavaThreadsIterator::ShenandoahJavaThreadsIterator(ShenandoahPhaseTimings::Phase phase, uint n_workers) :
   _threads(),
@@ -192,15 +176,6 @@ void ShenandoahConcurrentRootScanner::update_tlab_stats() {
     }
     total.publish();
   }
-}
-
-ShenandoahRootUpdater::ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
-  ShenandoahRootProcessor(phase),
-  _vm_roots(phase),
-  _cld_roots(phase, n_workers, false /*heap iteration*/),
-  _thread_roots(phase, n_workers > 1),
-  _weak_roots(phase),
-  _code_roots(phase) {
 }
 
 ShenandoahRootAdjuster::ShenandoahRootAdjuster(uint n_workers, ShenandoahPhaseTimings::Phase phase) :

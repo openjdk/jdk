@@ -27,7 +27,6 @@
 
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "runtime/mutex.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahCycleDuration {
   // To enable detection of GC time trends, we keep separate track of the recent history of gc time.  During initialization,

@@ -26,14 +26,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCOUNTERS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCOUNTERS_HPP
 
-#include "jni.h"
+#include "logging/logFileStreamOutput.hpp"
 #include "memory/allocation.hpp"
-#include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-class PerfLongVariable;
-class ShenandoahHeap;
 
 /**
  * This provides the following in JVMStat:
@@ -52,7 +47,7 @@ class ShenandoahHeap;
  *   0 = idle, 1 = marking, 2 = evacuating, 3 = updating refs
  *
  *   For mode:
- *   0 = concurrent, 1 = degenerated, 2 = full
+ *   0 = concurrent, 1 = evacuation failures, 2 = full
  *
  * two variable counters per region, with $max_regions (see above) counters:
  * - sun.gc.shenandoah.regions.region.$i.data

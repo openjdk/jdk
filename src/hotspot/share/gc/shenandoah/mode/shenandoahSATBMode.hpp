@@ -27,6 +27,8 @@
 
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 
+class ShenandoahHeuristics;
+
 class ShenandoahSATBMode : public ShenandoahMode {
 public:
   virtual void initialize_flags() const;

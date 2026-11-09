@@ -27,11 +27,9 @@
 
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
-#include "utilities/globalDefinitions.hpp"
 
-class ShenandoahGenerationalHeap;
-class ShenandoahHeapRegion;
 class ShenandoahMarkingContext;
+class ShenandoahGenerationalHeap;
 
 // This class is responsible for identifying regions that can be
 // promoted in place. It also prepares these regions by preventing

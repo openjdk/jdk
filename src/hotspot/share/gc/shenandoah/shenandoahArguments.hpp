@@ -26,13 +26,13 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHARGUMENTS_HPP
 
 #include "gc/shared/gcArguments.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 class CollectedHeap;
 
 class ShenandoahArguments : public GCArguments {
 private:
   virtual void initialize_alignments();
+  virtual void initialize_heap_flags_and_sizes();
 
   virtual void initialize();
   virtual size_t conservative_max_heap_alignment();

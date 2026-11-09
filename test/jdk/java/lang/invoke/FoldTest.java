@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8139885
+ * @bug 8139885 8367022
  * @run junit/othervm -ea -esa test.java.lang.invoke.FoldTest
  */
 
@@ -37,8 +37,11 @@ import java.lang.invoke.MethodType;
 import static java.lang.invoke.MethodType.methodType;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for the new fold method handle combinator added in JEP 274.
@@ -90,6 +93,35 @@ public class FoldTest {
         MethodHandle catTrace = MethodHandles.foldArguments(cat, 1, trace);
         assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         assertEquals("jum", swr.toString());
+    }
+
+    static Object[][] invalidFoldPositions() {
+        return new Object[][] {
+                {-1},
+                {Integer.MIN_VALUE},
+                {Fold.MH_multer.type().parameterCount()},
+                {Integer.MAX_VALUE}
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidFoldPositions")
+    public void testInvalidFoldPositions(int pos) {
+        MethodHandle voidCombiner = MethodHandles.empty(methodType(void.class, int.class));
+        assertThrows(IllegalArgumentException.class,
+                () -> MethodHandles.foldArguments(Fold.MH_multer, pos, Fold.MH_adder1));
+        assertThrows(IllegalArgumentException.class,
+                () -> MethodHandles.foldArguments(Fold.MH_multer, pos, voidCombiner));
+    }
+
+    @Test
+    public void testVoidFoldAtEnd() throws Throwable {
+        MethodHandle voidCombiner = MethodHandles.empty(methodType(void.class));
+        int position = Fold.MH_multer.type().parameterCount();
+        MethodHandle fold = MethodHandles.foldArguments(Fold.MH_multer, position, voidCombiner);
+
+        assertEquals(Fold.MT_multer, fold.type());
+        assertEquals(120, (int) fold.invoke(2, 3, 4, 5));
     }
 
     static class Fold {

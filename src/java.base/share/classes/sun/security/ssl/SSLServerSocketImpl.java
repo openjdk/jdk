@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,8 +265,19 @@ final class SSLServerSocketImpl extends SSLServerSocket {
     }
 
     @Override
+    public String [] getSupportedNamedGroups() {
+        return NamedGroup.namesOf(sslContext.getSupportedNamedGroups());
+    }
+
+    @Override
     public Socket accept() throws IOException {
-        SSLSocketImpl s = new SSLSocketImpl(sslContext, sslConfig);
+        serverSocketLock.lock();
+        SSLSocketImpl s;
+        try {
+            s = new SSLSocketImpl(sslContext, sslConfig);
+        } finally {
+            serverSocketLock.unlock();
+        }
 
         implAccept(s);
         s.doneConnect();

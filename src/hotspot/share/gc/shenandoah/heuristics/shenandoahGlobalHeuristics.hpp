@@ -26,11 +26,7 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHGLOBALHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
 
-class ShenandoahCollectionSet;
 class ShenandoahGlobalGeneration;
 
 enum class ShenandoahGlobalRegionDisposition {
@@ -163,15 +159,17 @@ public:
 
 class ShenandoahGlobalHeuristics : public ShenandoahGenerationalHeuristics {
 public:
-  ShenandoahGlobalHeuristics(ShenandoahGlobalGeneration* generation);
+  explicit ShenandoahGlobalHeuristics(ShenandoahGlobalGeneration* generation);
 
+
+protected:
   void select_collection_set_regions(ShenandoahCollectionSet* cset,
                                      RegionData* data, size_t size,
                                      size_t actual_free) override;
 
 private:
   void choose_global_collection_set(ShenandoahCollectionSet* cset,
-                                    const ShenandoahHeuristics::RegionData* data,
+                                    const RegionData* data,
                                     size_t size, size_t actual_free,
                                     size_t cur_young_garbage) const;
 };

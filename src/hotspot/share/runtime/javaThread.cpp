@@ -314,6 +314,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   Thread(mem_tag),
   // Initialize fields
   _on_thread_list(false),
+  _smr_delete_is_safe(false),
   DEBUG_ONLY(_java_call_counter(0) COMMA)
   _entry_point(nullptr),
   _deopt_mark(nullptr),
@@ -2029,7 +2030,7 @@ void JavaThread::pretouch_stack() {
 
 // Deferred OopHandle release support.
 
-class OopHandleList : public CHeapObj<mtInternal> {
+class OopHandleList : public CHeapObj<mtThread> {
   static const int _count = 4;
   OopHandle _handles[_count];
   OopHandleList* _next;

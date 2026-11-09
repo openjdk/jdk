@@ -252,13 +252,13 @@ public:
     guarantee(!r->has_index_in_opt_cset(), "Region %u still has opt collection set index %u", r->hrm_index(), r->index_in_opt_cset());
     guarantee(is_in_full_gc() || !r->is_young() || r->rem_set()->is_complete(), "Remembered set for Young region %u must be complete outside full gc, is %s", r->hrm_index(), r->rem_set()->get_state_str());
     // Humongous and old regions regions might be of any state, so can't check here.
-    guarantee(!r->is_free() || !r->rem_set()->is_tracked(), "Remembered set for free region %u must be untracked, is %s", r->hrm_index(), r->rem_set()->get_state_str());
+    guarantee(!r->is_free() || !r->rem_set()->has_card_set_group(), "Remembered set for free region %u must not have a card set group, has %u", r->hrm_index(), r->rem_set()->card_set_group_id());
 
     if (r->is_continues_humongous()) {
       // Verify that the continues humongous regions' remembered set state
       // matches the one from the starts humongous region.
-      if (r->rem_set()->get_state_str() != r->humongous_start_region()->rem_set()->get_state_str()) {
-         log_error(gc, verify)("Remset states differ: Region %u (%s) remset %s with starts region %u (%s) remset %s",
+      if (r->rem_set()->card_set_group() != r->humongous_start_region()->rem_set()->card_set_group()) {
+         log_error(gc, verify)("Card set groups differ: Region %u (%s) remset %s with starts region %u (%s) remset %s",
                                r->hrm_index(),
                                r->get_short_type_str(),
                                r->rem_set()->get_state_str(),
@@ -434,7 +434,9 @@ void G1HeapVerifier::verify_region_sets() {
   _g1h->heap_region_iterate(&cl);
   cl.verify_counts(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
 
-  _g1h->collection_set()->candidates()->verify();
+  _g1h->collection_set()->verify();
+  _g1h->collection_set_candidates()->verify();
+  _g1h->humongous_card_set_groups()->verify();
 }
 
 class G1VerifyRegionMarkingStateClosure : public G1HeapRegionClosure {

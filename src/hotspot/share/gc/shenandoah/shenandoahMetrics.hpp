@@ -25,10 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMETRICS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMETRICS_HPP
 
-#include "memory/allocation.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-class ShenandoahFreeSet;
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 
 class ShenandoahMetricsSnapshot : public StackObj {
 private:

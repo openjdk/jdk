@@ -23,27 +23,20 @@
  *
  */
 
+
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shared/oopStorageSetParState.inline.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.hpp"
-#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
 
 class ShenandoahSTWMarkTask : public WorkerTask {
 private:
@@ -69,11 +62,10 @@ void ShenandoahSTWMarkTask::work(uint worker_id) {
   _mark->finish_mark(worker_id);
 }
 
-ShenandoahSTWMark::ShenandoahSTWMark(ShenandoahGeneration* generation, bool full_gc) :
-  ShenandoahMark(generation),
-  _root_scanner(full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_mark),
-  _terminator(ShenandoahHeap::heap()->workers()->active_workers(), task_queues()),
-  _full_gc(full_gc) {
+ShenandoahSTWMark::ShenandoahSTWMark(ShenandoahGeneration* generation) :
+  ShenandoahMark(generation, false),
+  _root_scanner(ShenandoahPhaseTimings::full_gc_mark),
+  _terminator(ShenandoahHeap::heap()->workers()->active_workers(), task_queues()) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a Shenandoah safepoint");
 }
 
@@ -141,13 +133,9 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
       _root_scanner.roots_do(&init_mark, worker_id);
       break;
     }
-    case YOUNG: {
-      ShenandoahMarkRefsClosure<YOUNG> init_mark(queue, rp, nullptr);
-      _root_scanner.roots_do(&init_mark, worker_id);
-      break;
-    }
+    case YOUNG:
     case OLD:
-      // We never exclusively mark the old generation on a safepoint. This would be encompassed
+      // We never exclusively mark the old or young generation on a safepoint. This would be encompassed
       // by a 'global' collection. Note that both GLOBAL and NON_GEN mark the entire heap, but
       // the GLOBAL closure is specialized for the generational mode.
     default:
@@ -156,7 +144,7 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
 }
 
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
-  ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_mark;
+  ShenandoahPhaseTimings::Phase phase = ShenandoahPhaseTimings::full_gc_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::Work, worker_id);
 
   mark_loop(worker_id, &_terminator, _generation->type(), false /* not cancellable */);

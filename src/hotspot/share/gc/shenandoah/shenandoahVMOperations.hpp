@@ -25,15 +25,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHVMOPERATIONS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHVMOPERATIONS_HPP
 
-#include "gc/shared/gcCause.hpp"
-#include "gc/shared/gcId.hpp"
-#include "runtime/vmOperation.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 
 class ShenandoahConcurrentGC;
-class ShenandoahDegenGC;
 class ShenandoahFullGC;
-class ShenandoahGeneration;
 
 // VM_operations for the Shenandoah Collector.
 //
@@ -46,7 +41,6 @@ class ShenandoahGeneration;
 //   - VM_ShenandoahFinalVerify: final verification at the end of the cycle
 //   - VM_ShenandoahReferenceOperation:
 //       - VM_ShenandoahFullGC: do full GC
-//       - VM_ShenandoahDegeneratedGC: do STW degenerated GC
 
 class VM_ShenandoahOperation : public VM_Operation {
 protected:
@@ -95,15 +89,6 @@ public:
   void doit() override;
 };
 
-class VM_ShenandoahDegeneratedGC: public VM_ShenandoahReferenceOperation {
-  ShenandoahDegenGC* const _gc;
-public:
-  explicit VM_ShenandoahDegeneratedGC(ShenandoahDegenGC* gc);
-  VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahDegeneratedGC; }
-  const char* name()             const override { return "Shenandoah Degenerated GC"; }
-  void doit() override;
-};
-
 class VM_ShenandoahFullGC : public VM_ShenandoahReferenceOperation {
   GCCause::Cause           _gc_cause;
   ShenandoahFullGC* const  _full_gc;
@@ -112,6 +97,7 @@ public:
   VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahFullGC; }
   const char* name()             const override { return "Shenandoah Full GC"; }
   void doit() override;
+  bool allow_nested_vm_operations() const override;
 };
 
 class VM_ShenandoahInitUpdateRefs: public VM_ShenandoahOperation {

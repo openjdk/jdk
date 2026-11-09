@@ -23,13 +23,7 @@
  *
  */
 
-#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shared/plab.hpp"
-#include "gc/shared/satbMarkQueue.hpp"
-#include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
@@ -37,36 +31,12 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahPLAB.hpp"
-#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
-#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
-#include "memory/memRegion.hpp"
-#include "oops/access.hpp"
-#include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/oop.inline.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "oops/stackChunkOop.inline.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/safepoint.hpp"
-#include "runtime/stackWatermarkKind.hpp"
-#include "runtime/stackWatermarkSet.hpp"
-#include "runtime/thread.hpp"
-#include "utilities/align.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/ostream.hpp"
-
 #ifdef COMPILER1
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #endif
@@ -137,8 +107,7 @@ void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop n
   if (ReduceInitialCardMarks && ShenandoahCardBarrier && !ShenandoahHeap::heap()->is_in_young(new_obj)) {
     log_debug(gc)("Newly allocated object (" PTR_FORMAT ") is not in the young generation", p2i(new_obj));
     // This can happen when an object is newly allocated, but we come to a safepoint before returning
-    // the object. If the safepoint runs a degenerated cycle that is upgraded to a full GC, this object
-    // will have survived two GC cycles. If the tenuring age is very low (1), this object may be promoted.
+    // the object. If the safepoint runs a full GC, and the tenuring age is very low (1), this object may be promoted.
     // In this case, we have an allocated object, but it has received no stores yet. If card marking barriers
     // have been elided, we could end up with an object in old holding pointers to young that won't be in
     // the remembered set. The solution here is conservative, but this problem should be rare, and it will
@@ -248,16 +217,20 @@ oop ShenandoahBarrierSet::load_reference_barrier_slow(oop obj, T* load_addr) {
   }
   assert(_heap->has_forwarded_objects(), "Filtered by caller");
   assert(_heap->in_collection_set(obj), "Filtered by caller");
-  oop fwd = ShenandoahForwarding::get_forwardee(obj);
-  if (obj == fwd && _heap->is_evacuation_in_progress()) {
-    Thread* t = Thread::current();
-    fwd = _heap->evacuate_object(obj, t);
+
+  oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
+  if (resolved == nullptr) {
+    if (_heap->is_evacuation_in_progress()) {
+      resolved = _heap->evacuate_object(obj, Thread::current());
+    } else {
+      resolved = obj;
+    }
   }
-  if (load_addr != nullptr && fwd != obj) {
+  if (load_addr != nullptr && resolved != obj) {
     // Since we are here and we know the load address, update the reference.
-    ShenandoahHeap::atomic_update_oop(fwd, load_addr, obj);
+    ShenandoahHeap::atomic_update_oop(resolved, load_addr, obj);
   }
-  return fwd;
+  return resolved;
 }
 
 template oop ShenandoahBarrierSet::load_reference_barrier_slow(oop obj, oop* load_addr);
@@ -295,13 +268,17 @@ private:
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       if (_cset->is_in(obj)) {
-        oop fwd = ShenandoahForwarding::get_forwardee(obj);
-        if (EVAC && obj == fwd) {
-          fwd = _heap->evacuate_object(obj, _thread);
+        oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
+        if (resolved == nullptr) {
+          if (EVAC) {
+            resolved = _heap->evacuate_object(obj, _thread);
+          } else {
+            resolved = obj;
+          }
         }
-        shenandoah_assert_forwarded_except(p, obj, _heap->cancelled_gc());
-        ShenandoahHeap::atomic_update_oop(fwd, p, o);
-        obj = fwd;
+        if (resolved != obj) {
+          ShenandoahHeap::atomic_update_oop(resolved, p, o);
+        }
       }
     }
   }
@@ -403,12 +380,13 @@ void ShenandoahBarrierSet::arraycopy_evacuation(T* src, size_t count) {
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       if (cset->is_in(obj)) {
-        oop fwd = ShenandoahForwarding::get_forwardee(obj);
-        if (obj == fwd) {
-          fwd = _heap->evacuate_object(obj, thread);
+        oop resolved = ShenandoahForwarding::forwardee_or_null(obj);
+        if (resolved == nullptr) {
+          resolved = _heap->evacuate_object(obj, thread);
         }
-        shenandoah_assert_forwarded_except(elem_ptr, obj, _heap->cancelled_gc());
-        ShenandoahHeap::atomic_update_oop(fwd, elem_ptr, o);
+        if (resolved != obj) {
+          ShenandoahHeap::atomic_update_oop(resolved, elem_ptr, o);
+        }
       }
     }
   }
@@ -432,9 +410,11 @@ void ShenandoahBarrierSet::arraycopy_update(T* src, size_t count) {
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
       if (cset->is_in(obj)) {
-        oop fwd = ShenandoahForwarding::get_forwardee(obj);
-        shenandoah_assert_forwarded_except(elem_ptr, obj, _heap->cancelled_gc());
-        ShenandoahHeap::atomic_update_oop(fwd, elem_ptr, o);
+        shenandoah_assert_forwarded(elem_ptr, obj);
+        oop resolved = ShenandoahForwarding::forwardee(obj);
+        if (resolved != obj) {
+          ShenandoahHeap::atomic_update_oop(resolved, elem_ptr, o);
+        }
       }
     }
   }

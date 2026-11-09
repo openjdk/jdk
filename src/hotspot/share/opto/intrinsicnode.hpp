@@ -28,6 +28,7 @@
 #include "opto/connode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/type.hpp"
 
 
 //----------------------PartialSubtypeCheckNode--------------------------------
@@ -81,7 +82,6 @@ class StrIntrinsicNode : public Node {
   Node(control, char_array_mem, s1, s2), _encoding(encoding) {
   }
 
-  virtual const TypePtr* adr_type() const override = 0;
   virtual uint match_edge(uint idx) const override;
   virtual uint ideal_reg() const override { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
@@ -100,7 +100,9 @@ class StrCompNode final : public StrIntrinsicNode {
   StrIntrinsicNode(control, char_array_mem, s1, c1, s2, c2, encoding) {};
   virtual int Opcode() const override;
   virtual const Type* bottom_type() const override { return TypeInt::INT; }
-  virtual const TypePtr* adr_type() const override { return TypeAryPtr::BYTES; }
+
+private:
+  const TypePtr* in_adr_type_impl() const final { return TypeAryPtr::BYTES; }
 };
 
 //------------------------------StrEquals-------------------------------------
@@ -111,7 +113,9 @@ class StrEqualsNode final : public StrIntrinsicNode {
   StrIntrinsicNode(control, char_array_mem, s1, s2, c, encoding) {};
   virtual int Opcode() const override;
   virtual const Type* bottom_type() const override { return TypeInt::BOOL; }
-  virtual const TypePtr* adr_type() const override { return TypeAryPtr::BYTES; }
+
+private:
+  const TypePtr* in_adr_type_impl() const final { return TypeAryPtr::BYTES; }
 };
 
 //------------------------------StrIndexOf-------------------------------------
@@ -122,7 +126,9 @@ class StrIndexOfNode final : public StrIntrinsicNode {
   StrIntrinsicNode(control, char_array_mem, s1, c1, s2, c2, encoding) {};
   virtual int Opcode() const override;
   virtual const Type* bottom_type() const override { return TypeInt::INT; }
-  virtual const TypePtr* adr_type() const override { return TypeAryPtr::BYTES; }
+
+private:
+  const TypePtr* in_adr_type_impl() const final { return TypeAryPtr::BYTES; }
 };
 
 //------------------------------StrIndexOfChar-------------------------------------
@@ -133,49 +139,55 @@ class StrIndexOfCharNode final : public StrIntrinsicNode {
   StrIntrinsicNode(control, char_array_mem, s1, c1, c, encoding) {};
   virtual int Opcode() const override;
   virtual const Type* bottom_type() const override { return TypeInt::INT; }
-  virtual const TypePtr* adr_type() const override { return TypeAryPtr::BYTES; }
+
+private:
+  const TypePtr* in_adr_type_impl() const final { return TypeAryPtr::BYTES; }
 };
 
 //--------------------------StrCompressedCopy-------------------------------
 class StrCompressedCopyNode final : public StrIntrinsicNode {
 private:
-  const TypePtr* const _adr_type;
+  const TypePtr* const _in_adr_type;
 
 public:
-  StrCompressedCopyNode(Node* control, Node* arymem, const TypePtr* adr_type,
+  StrCompressedCopyNode(Node* control, Node* arymem, const TypePtr* in_adr_type,
                         Node* s1, Node* s2, Node* c):
-  StrIntrinsicNode(control, arymem, s1, s2, c, none), _adr_type(adr_type) {};
+  StrIntrinsicNode(control, arymem, s1, s2, c, none), _in_adr_type(in_adr_type) {};
   virtual int Opcode() const override;
   virtual const Type* bottom_type() const override { return TypeInt::INT; }
 
 private:
   virtual uint size_of() const override { return sizeof(StrCompressedCopyNode); }
-  virtual uint hash() const override { return StrIntrinsicNode::hash() + (uint)(uintptr_t) _adr_type; }
+  virtual uint hash() const override { return StrIntrinsicNode::hash() + (uint)(uintptr_t) _in_adr_type; }
   virtual bool cmp(const Node& n) const override {
-    return StrIntrinsicNode::cmp(n) && _adr_type == static_cast<const StrCompressedCopyNode&>(n)._adr_type;
+    return StrIntrinsicNode::cmp(n) && _in_adr_type == static_cast<const StrCompressedCopyNode&>(n)._in_adr_type;
   }
-  virtual const TypePtr* adr_type() const override { return _adr_type; }
+  const TypePtr* out_adr_type_impl() const final { return TypeAryPtr::BYTES; }
+  const TypePtr* in_adr_type_impl() const final { return _in_adr_type; }
 };
 
 //--------------------------StrInflatedCopy---------------------------------
 class StrInflatedCopyNode final : public StrIntrinsicNode {
 private:
-  const TypePtr* const _adr_type;
+  const TypePtr* const _out_adr_type;
+  const TypePtr* const _in_adr_type;
 
 public:
-  StrInflatedCopyNode(Node* control, Node* arymem, const TypePtr* adr_type,
+  StrInflatedCopyNode(Node* control, Node* arymem, const TypePtr* out_adr_type, const TypePtr* in_adr_type,
                       Node* s1, Node* s2, Node* c):
-  StrIntrinsicNode(control, arymem, s1, s2, c, none), _adr_type(adr_type) {};
+  StrIntrinsicNode(control, arymem, s1, s2, c, none), _out_adr_type(out_adr_type), _in_adr_type(in_adr_type) {};
   virtual int Opcode() const override;
   virtual const Type* bottom_type() const override { return Type::MEMORY; }
 
 private:
   virtual uint size_of() const override { return sizeof(StrInflatedCopyNode); }
-  virtual uint hash() const override { return StrIntrinsicNode::hash() + (uint)(uintptr_t) _adr_type; }
+  virtual uint hash() const override { return StrIntrinsicNode::hash() + (uint)(uintptr_t) _out_adr_type + (uint)(uintptr_t) _in_adr_type; }
   virtual bool cmp(const Node& n) const override {
-    return StrIntrinsicNode::cmp(n) && _adr_type == static_cast<const StrInflatedCopyNode&>(n)._adr_type;
+    auto& other = static_cast<const StrInflatedCopyNode&>(n);
+    return StrIntrinsicNode::cmp(n) && _out_adr_type == other._out_adr_type && _in_adr_type == other._in_adr_type;
   }
-  virtual const TypePtr* adr_type() const override { return _adr_type; }
+  const TypePtr* out_adr_type_impl() const final { return _out_adr_type; }
+  const TypePtr* in_adr_type_impl() const final { return _in_adr_type; }
 };
 
 //------------------------------AryEq---------------------------------------
@@ -196,7 +208,7 @@ private:
   virtual bool cmp(const Node& n) const override {
     return StrIntrinsicNode::cmp(n) && _in_adr_type == static_cast<const AryEqNode&>(n)._in_adr_type;
   }
-  virtual const TypePtr* adr_type() const override { return _in_adr_type; }
+  const TypePtr* in_adr_type_impl() const final { return _in_adr_type; }
 };
 
 //------------------------------CountPositives------------------------------
@@ -206,7 +218,9 @@ class CountPositivesNode final : public StrIntrinsicNode {
   StrIntrinsicNode(control, char_array_mem, s1, c1, none) {};
   virtual int Opcode() const override;
   virtual const Type* bottom_type() const override { return TypeInt::POS; }
-  virtual const TypePtr* adr_type() const override { return TypeAryPtr::BYTES; }
+
+private:
+  const TypePtr* in_adr_type_impl() const final { return TypeAryPtr::BYTES; }
 };
 
 //------------------------------VectorizedHashCodeNode----------------------
@@ -230,20 +244,20 @@ private:
   virtual bool cmp(const Node& n) const override {
     return Node::cmp(n) && _in_adr_type == static_cast<const VectorizedHashCodeNode&>(n)._in_adr_type;
   }
-  virtual const TypePtr* adr_type() const override { return _in_adr_type; }
   virtual bool depends_only_on_test_impl() const override { return false; }
+  const TypePtr* in_adr_type_impl() const final { return _in_adr_type; }
 };
 
 //------------------------------EncodeISOArray--------------------------------
 // encode char[] to byte[] in ISO_8859_1 or ASCII
 class EncodeISOArrayNode final : public Node {
 private:
-  const TypePtr* const _adr_type;
+  const TypePtr* const _in_adr_type;
   bool _ascii;
 
 public:
-  EncodeISOArrayNode(Node* control, Node* arymem, const TypePtr* adr_type, Node* s1, Node* s2, Node* c, bool ascii)
-    : Node(control, arymem, s1, s2, c), _adr_type(adr_type), _ascii(ascii) {}
+  EncodeISOArrayNode(Node* control, Node* arymem, const TypePtr* in_adr_type, Node* s1, Node* s2, Node* c, bool ascii)
+    : Node(control, arymem, s1, s2, c), _in_adr_type(in_adr_type), _ascii(ascii) {}
 
   bool is_ascii() { return _ascii; }
   virtual int Opcode() const override;
@@ -255,13 +269,14 @@ public:
 
 private:
   virtual uint size_of() const override { return sizeof(EncodeISOArrayNode); }
-  virtual uint hash() const override { return Node::hash() + (uint)(uintptr_t) _adr_type + _ascii; }
+  virtual uint hash() const override { return Node::hash() + (uint)(uintptr_t) _in_adr_type + _ascii; }
   virtual bool cmp(const Node& n) const override {
     const EncodeISOArrayNode& e = static_cast<const EncodeISOArrayNode&>(n);
-    return Node::cmp(n) && _ascii == e._ascii && _adr_type == e._adr_type;
+    return Node::cmp(n) && _ascii == e._ascii && _in_adr_type == e._in_adr_type;
   }
-  virtual const TypePtr* adr_type() const override { return _adr_type; }
   virtual bool depends_only_on_test_impl() const override { return false; }
+  const TypePtr* out_adr_type_impl() const override { return TypeAryPtr::BYTES; }
+  const TypePtr* in_adr_type_impl() const override { return _in_adr_type; }
 };
 
 //-------------------------------DigitNode----------------------------------------

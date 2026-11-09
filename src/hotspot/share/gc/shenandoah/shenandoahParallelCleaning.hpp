@@ -29,7 +29,7 @@
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "memory/iterator.hpp"
 
 // Perform weak root cleaning at a pause
 template <typename IsAlive, typename KeepAlive>

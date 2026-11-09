@@ -159,7 +159,7 @@ public class TestCompilePhaseCollector {
     }
 
     public String getFullMethodName(Class<?> testClass, String methodName) {
-        return testClass.getCanonicalName() + "::" + methodName;
+        return testClass.getName() + "::" + methodName;
     }
 
     static class Ideal {

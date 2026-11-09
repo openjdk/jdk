@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_ZERO_CPPINTERPRETER_ZERO_HPP
-#define CPU_ZERO_CPPINTERPRETER_ZERO_HPP
+#ifndef CPU_ZERO_ZEROINTERPRETER_ZERO_HPP
+#define CPU_ZERO_ZEROINTERPRETER_ZERO_HPP
 
  protected:
   // Size of interpreter code
@@ -46,4 +46,4 @@
   // Main loop of normal_entry
   static void main_loop(int recurse, TRAPS);
 
-#endif // CPU_ZERO_CPPINTERPRETER_ZERO_HPP
+#endif // CPU_ZERO_ZEROINTERPRETER_ZERO_HPP

@@ -24,34 +24,17 @@
  *
  */
 
-#include "classfile/javaClasses.inline.hpp"
-#include "gc/shared/gc_globals.hpp"
-#include "gc/shared/referencePolicy.hpp"
+#include "classfile/javaClasses.hpp"
 #include "gc/shared/workerThread.hpp"
-#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
-#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
-#include "memory/universe.hpp"
-#include "oops/access.hpp"
-#include "oops/accessDecorators.hpp"
-#include "oops/compressedOops.inline.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/oop.inline.hpp"
 #include "runtime/atomicAccess.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/os.hpp"
-#include "utilities/debug.hpp"
 
 static ReferenceType reference_type(oop reference) {
   return InstanceKlass::cast(reference->klass())->reference_type();
@@ -312,7 +295,6 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
   T* referent_addr = (T*) java_lang_ref_Reference::referent_addr_raw(reference);
   T heap_oop = RawAccess<>::oop_load(referent_addr);
   oop referent = CompressedOops::decode(heap_oop);
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   if (is_inactive<T>(reference, referent, type)) {
     log_trace(gc,ref)("Reference inactive: " PTR_FORMAT, p2i(reference));
@@ -521,7 +503,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
   // set_oop_field maintains the card mark barrier as this list is constructed.
   if (!CompressedOops::is_null(*list)) {
     oop head = lrb(CompressedOops::decode_not_null(*list));
-    shenandoah_assert_not_in_cset_except(&head, head, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
+    shenandoah_assert_not_in_cset_except(&head, head, ShenandoahHeap::heap()->has_self_forwarded_objects() || ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
     oop prev = _pending_list.exchange(head);
     set_oop_field(p, prev);
     if (prev == nullptr) {
@@ -594,7 +576,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Ph
 
 void ShenandoahReferenceProcessor::enqueue_references_locked() {
   // Prepend internal pending list to external pending list
-  shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list.load_relaxed(), ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
+  shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list.load_relaxed(), ShenandoahHeap::heap()->has_self_forwarded_objects() || ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
 
   // During reference processing, we maintain a local list of references that are identified by
   //   _pending_list and _pending_list_tail.  _pending_list_tail points to the next field of the last Reference object on
@@ -621,7 +603,7 @@ void ShenandoahReferenceProcessor::enqueue_references(bool concurrent) {
     return;
   }
   if (!concurrent) {
-    // When called from mark-compact or degen-GC, the locking is done by the VMOperation,
+    // When called from STW mark, the locking is done by the VMOperation,
     enqueue_references_locked();
   } else {
     // Heap_lock protects external pending list
