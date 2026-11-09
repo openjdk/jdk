@@ -299,10 +299,6 @@ public:
   // Return adjusted max heap size
   static size_t setup_sizes(size_t max_heap_size);
 
-  static double default_uncommit_time() {
-    return os::elapsedTime() + ShenandoahUncommitDelay/1000;
-  }
-
   double uncommit_time() {
     return _uncommit_time.load_relaxed();
   }

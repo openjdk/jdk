@@ -61,7 +61,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _bottom(start),
   _end(start + RegionSizeWords),
   _new_top(nullptr),
-  _uncommit_time(default_uncommit_time()),
+  _uncommit_time(0),
   _top_before_promoted(nullptr),
   _top_at_evac_start(start),
   _state(committed ? _empty_committed : _empty_uncommitted),
@@ -341,7 +341,7 @@ void ShenandoahHeapRegion::make_empty() {
   reset_age();
   switch (state()) {
     case _trash:
-      _uncommit_time.store_relaxed(default_uncommit_time());
+      set_uncommit_time(0);
       set_state(_empty_committed);
       return;
     default:

@@ -78,49 +78,40 @@ void ShenandoahUncommitThread::run_service() {
       _restart.unset();
     }
 
+    // Categorise the regions and figure out if we have any work.
+    double now = os::elapsedTime();
+    bool has_work = false;
+    for (size_t i = 0; i < _heap->num_regions(); i++) {
+      ShenandoahHeapRegion* r = _heap->get_region(i);
+      if (r->is_empty_committed()) {
+        if (soft_max_changed || explicit_gc_requested) {
+          // Either threshold moved: the region is eagerly uncommittable.
+          r->set_uncommit_time(now);
+          has_work = true;
+        } else if (r->uncommit_time() == 0) {
+          // Update the uncommit times for newly empty regions.
+          r->set_uncommit_time(now + ShenandoahUncommitDelay / 1000);
+        } else if (r->uncommit_time() <= now) {
+          // This region is eligible for uncommit.
+          has_work = true;
+        }
+      }
+    }
+
     // Explicit GC tries to uncommit everything down to min capacity.
     // Soft max change tries to uncommit everything down to target capacity.
     // Periodic uncommit tries to uncommit suitable regions down to min capacity.
     size_t shrink_until = soft_max_changed ? _heap->soft_max_capacity() : _heap->min_capacity();
 
-    // Either threshold moved: we want to make sure every region at this moment
-    // is eagerly uncommittable.
-    if (soft_max_changed || explicit_gc_requested) {
-      double now = os::elapsedTime();
-      for (size_t i = 0; i < _heap->num_regions(); i++) {
-        ShenandoahHeapRegion* r = _heap->get_region(i);
-        if (r->is_empty_committed()) {
-          r->set_uncommit_time(now);
-        }
-      }
+    if (_heap->committed() <= shrink_until) {
+      // Do not uncommit below target.
+      continue;
     }
 
-    if (has_work(shrink_until)) {
+    if (has_work) {
       uncommit(shrink_until);
     }
   }
-}
-
-bool ShenandoahUncommitThread::has_work(size_t shrink_until) {
-  if (_heap->committed() <= shrink_until) {
-    // Do not uncommit below target.
-    return false;
-  }
-
-  // Determine if there is work to do. This avoids locking the heap if there is
-  // no work available, avoids spamming logs with superfluous logging messages,
-  // and minimises the amount of work while locks are held. Fill out all candidates:
-  // even if they are currently not targeted, by the time we get to uncommit them,
-  // they might become eligible too.
-  double now = os::elapsedTime();
-  for (size_t i = 0; i < _heap->num_regions(); i++) {
-    ShenandoahHeapRegion* r = _heap->get_region(i);
-    if (r->is_empty_committed() && (r->uncommit_time() < now)) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 void ShenandoahUncommitThread::uncommit(size_t shrink_until) {
@@ -144,7 +135,7 @@ void ShenandoahUncommitThread::uncommit(size_t shrink_until) {
     ShenandoahHeapRegion* r = _heap->get_region(i - 1);
 
     double now = os::elapsedTime();
-    if (!r->is_empty_committed() || (r->uncommit_time() >= now)) {
+    if (!r->is_empty_committed() || (r->uncommit_time() > now)) {
       // Not a candidate, try again.
       continue;
     }
@@ -159,7 +150,7 @@ void ShenandoahUncommitThread::uncommit(size_t shrink_until) {
     {
       SuspendibleThreadSetJoiner sts_joiner;
       ShenandoahHeapLocker heap_locker(_heap->lock());
-      if (r->is_empty_committed() && (r->uncommit_time() < now)) {
+      if (r->is_empty_committed() && (r->uncommit_time() <= now)) {
         log_trace(gc)("Uncommitting region %zu", r->index());
         r->make_uncommitted();
         uncommitted_count++;

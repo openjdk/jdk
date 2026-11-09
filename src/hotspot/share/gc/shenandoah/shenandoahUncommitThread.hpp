@@ -50,9 +50,6 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // This lock is used to coordinate allowing or forbidding regions to be uncommitted
   Monitor _uncommit_lock;
 
-  // Plan work, fill out candidate regions. True if there is work.
-  bool has_work(size_t shrink_until);
-
   // Perform the work of uncommitting empty regions
   void uncommit(size_t shrink_until);
 
