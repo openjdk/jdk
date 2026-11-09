@@ -292,7 +292,7 @@ public:
     return _must_match.runtime_check();
   }
 
-  void print(outputStream* st);
+  void print(outputStream* st, bool output_for_diff = false, bool actual_jvm_config = false);
 };
 
 class FileMapInfo : public CHeapObj<mtInternal> {
@@ -478,7 +478,7 @@ public:
   BitMapView oopmap_view(int region_index);
   BitMapView ptrmap_view(int region_index);
 
-  void print(outputStream* st) const;
+  void print(outputStream* st, bool output_for_diff = false, bool actual_jvm_config = false) const;
 
   const char* vm_version() {
     return header()->jvm_ident();
