@@ -2430,6 +2430,8 @@ class StubGenerator: public StubCodeGenerator {
     const Assembler::LMUL lmul = MacroAssembler::select_lmul_for_main_loop();
     Label L_bulk_loop, L_tail, L_tail_loop, L_exit;
 
+    __ enter();
+
     __ vsetvli(vl, x0, sew, lmul, Assembler::ma, Assembler::ta);
     __ vmv_v_x(v0, value);
     __ bltu(count, vl, L_tail);
@@ -2449,6 +2451,8 @@ class StubGenerator: public StubCodeGenerator {
     __ bnez(count, L_tail_loop);
 
     __ bind(L_exit);
+    __ leave();
+    __ ret();
   }
 
   //
@@ -2513,17 +2517,15 @@ class StubGenerator: public StubCodeGenerator {
     const Register cnt_words = x29;      // temp register
     const Register tmp_reg   = t1;
 
-    __ enter();
-
     if (UseRVV) {
       generate_fill_rvv(t, to, value, count, cnt_words, tmp_reg);
-      __ leave();
-      __ ret();
 
       // Record the stub entry and end.
       store_archive_data(stub_id, start, __ pc());
       return start;
     }
+
+    __ enter();
 
     Label L_fill_elements;
 
