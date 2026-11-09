@@ -42,8 +42,11 @@ ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
 void ShenandoahUncommitThread::run_service() {
   assert(ShenandoahUncommit, "Thread should only run when uncommit is enabled");
 
-  // Poll everything at least every 500ms, this should be prompt enough.
-  const int64_t poll_interval_ms = 500;
+  // poll_interval avoids constantly polling regions for shrinking.
+  const int64_t poll_interval_ms = 1000;
+
+  // When balancing the uncommits, target to complete entire work at most in 5 seconds.
+  const double per_region_delay = 5.0 / _heap->num_regions();
 
   while (true) {
     bool soft_max_changed;
@@ -86,11 +89,11 @@ void ShenandoahUncommitThread::run_service() {
         if (soft_max_changed || explicit_gc_requested) {
           // Either threshold moved: the region is eagerly uncommittable.
           // Balance the uncommits a bit to avoid too eager uncommit.
-          r->set_uncommit_time(now + plan_prompt * 0.01);
+          r->set_uncommit_time(now + plan_prompt * per_region_delay);
           plan_prompt++;
         } else if (r->uncommit_time() == 0) {
           // Newly empty region, record it for eventual uncommit.
-          r->set_uncommit_time(now + plan_deferred * 0.01 + ShenandoahUncommitDelay / 1000);
+          r->set_uncommit_time(now + plan_deferred * per_region_delay + ShenandoahUncommitDelay / 1000);
           plan_deferred++;
         } else if (r->uncommit_time() <= now) {
           plan_uncommit++;
