@@ -53,13 +53,14 @@ enum MapArchiveResult {
 class AOTMetaspace : AllStatic {
   static ReservedSpace _symbol_rs;  // used only during -Xshare:dump
   static VirtualSpace _symbol_vs;   // used only during -Xshare:dump
+  static bool _static_archive_validation_failed;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
   static void* _aot_metaspace_static_top;
   static intx _relocation_delta;
   static char* _requested_base_address;
   static Array<Method*>* _archived_method_handle_intrinsics;
-  static int volatile _preimage_static_archive_dumped;
+  static int volatile _aot_configuration_dumped;
   static FileMapInfo* _output_mapinfo;
 
  public:
@@ -76,7 +77,7 @@ class AOTMetaspace : AllStatic {
 
   static void dump_static_archive(TRAPS) NOT_CDS_RETURN;
 #ifdef _LP64
- static void init_heap_settings() NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_heap_settings() NOT_CDS_JAVA_HEAP_RETURN;
 #endif
 
 private:
@@ -92,8 +93,14 @@ public:
   static void initialize_for_static_dump() NOT_CDS_RETURN;
   static void initialize_runtime_shared_and_meta_spaces() NOT_CDS_RETURN;
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
+  static void get_aot_code_region_size() NOT_CDS_RETURN;
 
   static void print_on(outputStream* st);
+
+  static void set_static_archive_validation_failed() {
+    _static_archive_validation_failed = true;
+  }
+  static bool has_static_archive_validation_failed() { return _static_archive_validation_failed; }
 
   static void set_archive_loading_failed() {
     _archive_loading_failed = true;
@@ -117,12 +124,13 @@ public:
   // inside the metaspace of the dynamic static CDS archive
   static bool in_aot_cache_dynamic_region(void* p) NOT_CDS_RETURN_(false);
 
-  static bool preimage_static_archive_dumped() NOT_CDS_RETURN_(false);
+  static bool aot_configuration_dumped() NOT_CDS_RETURN_(false);
 
   [[noreturn]] static void unrecoverable_loading_error(const char* message = "unrecoverable error");
   static void report_loading_error(const char* format, ...) ATTRIBUTE_PRINTF(1, 0);
   [[noreturn]] static void unrecoverable_writing_error(const char* message = nullptr);
   static void writing_error(const char* message = nullptr);
+  static void writing_error(oop exception_oop);
 
   static void make_method_handle_intrinsics_shareable() NOT_CDS_RETURN;
   static void write_method_handle_intrinsics() NOT_CDS_RETURN;
@@ -188,12 +196,13 @@ public:
 
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;
-  static void fork_and_dump_final_static_archive(TRAPS);
+  static void fork_and_dump_aot_cache(TRAPS);
   static void open_output_mapinfo();
   static bool write_static_archive(ArchiveBuilder* builder,
                                    FileMapInfo* map_info,
                                    AOTMappedHeapInfo* mapped_heap_info,
                                    AOTStreamedHeapInfo* streamed_heap_info);
+  static FileMapInfo* get_static_archive();
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
   // use_requested_addr: If true (default), attempt to map at the address the

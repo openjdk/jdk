@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -43,33 +44,36 @@ class PartialArrayStateManager;
 // for later processing, either by the current thread or by some other thread
 // that steals one of those tasks.
 //
-// Processing a state involves using the state to claim a segment of the
-// array, and processing that segment.  Claiming is done by atomically
-// incrementing the index, thereby claiming the segment from the old to new
-// index values.  New tasks should also be added as needed to ensure the
-// entire array will be processed.  A PartialArrayTaskStepper can be used to
-// help with this.
+// PartialArraySplitter atomically claims disjoint chunks and publishes enough
+// continuation tasks for parallel processing.  The state is only needed while
+// claiming a chunk, not while scanning it.
 //
 // States are allocated and released using a PartialArrayStateAllocator.
-// States are reference counted to aid in that management.  Each task
-// referring to a given state that is added to a taskqueue must increase the
-// reference count by one.  When the processing of a task referring to a state
-// is complete, the reference count must be decreased by one.  When the
-// reference count reaches zero the state is released to the allocator for
-// later reuse.
+// Each full-sized chunk reserves a reference to the state at allocation,
+// including chunks whose tasks have not yet been published.  After a task has
+// claimed its chunk, published any continuations, and captured everything needed
+// for scanning, decrement the remaining chunk count by one.  The worker that
+// decrements it to zero recycles the state on its own allocator for later reuse.
 class PartialArrayState {
-  oop _source;
-  oop _destination;
+  objArrayOop _array;
   size_t _length;
   size_t _chunk_size;
   Atomic<size_t> _index;
-  Atomic<size_t> _refcount;
+  Atomic<size_t> _num_remaining_chunks;
 
   friend class PartialArrayStateAllocator;
+  friend class PartialArraySplitter;
 
-  PartialArrayState(oop src, oop dst,
+  PartialArrayState(objArrayOop array,
                     size_t index, size_t length,
-                    size_t chunk_size, size_t initial_refcount);
+                    size_t chunk_size);
+
+  size_t claim_next() {
+    size_t start = _index.fetch_then_add(_chunk_size, memory_order_relaxed);
+    assert(start < _length, "every task must have a chunk to claim");
+    assert((_length - start) % _chunk_size == 0, "whole chunks remain");
+    return start;
+  }
 
 public:
   // Deleted to require management by allocator object.
@@ -77,24 +81,7 @@ public:
 
   NONCOPYABLE(PartialArrayState);
 
-  // Add count references, one per referring task being added to a taskqueue.
-  void add_references(size_t count);
-
-  // The source array oop.
-  oop source() const { return _source; }
-
-  // The destination array oop.  In some circumstances the source and
-  // destination may be the same.
-  oop destination() const { return _destination; }
-
-  // The length of the array oop.
-  size_t length() const { return _length; }
-
-  size_t chunk_size() const { return _chunk_size; }
-
-  // A pointer to the start index for the next segment to process, for atomic
-  // update.
-  Atomic<size_t>* index_addr() { return &_index; }
+  objArrayOop array() const { return _array; }
 };
 
 // This class provides memory management for PartialArrayStates.
@@ -109,7 +96,7 @@ public:
 // states will eventually be reclaimed when the arena is reset.
 //
 // The allocators each provide a free-list of states.  When a state is
-// released and its reference count has reached zero, it is added to the
+// released and its remaining chunk count has reached zero, it is added to the
 // allocator's free-list, for use by future allocation requests.  This causes
 // the maximum number of allocated states to be based on the number of
 // in-progress arrays, rather than the total number of arrays that need to be
@@ -121,7 +108,7 @@ class PartialArrayStateAllocator : public CHeapObj<mtGC> {
 
   PartialArrayStateManager* _manager;
   FreeListEntry* _free_list;
-  Arena* _arena;                // Obtained from _manager.
+  Arena* _arena;
 
 public:
   explicit PartialArrayStateAllocator(PartialArrayStateManager* manager);
@@ -129,17 +116,13 @@ public:
 
   NONCOPYABLE(PartialArrayStateAllocator);
 
-  // Create a new state, obtaining the memory for it from the free-list or
-  // from the associated manager.
-  PartialArrayState* allocate(oop src, oop dst,
+  PartialArrayState* allocate(objArrayOop array,
                               size_t index, size_t length,
-                              size_t chunk_size,
-                              size_t initial_refcount);
+                              size_t chunk_size);
 
-  // Decrement the state's refcount.  If the new refcount is zero, add the
-  // state to the free-list associated with worker_id.  The state must have
-  // been allocated by this allocator, but that allocation doesn't need to
-  // have been associated with worker_id.
+  // Decrement the state's remaining chunk count by one.  If it reaches zero,
+  // recycle on this allocator's free-list.  The caller must have finished
+  // accessing the state.  The state must belong to the same manager.
   void release(PartialArrayState* state);
 };
 

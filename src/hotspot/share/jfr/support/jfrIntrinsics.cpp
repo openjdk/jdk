@@ -61,19 +61,6 @@ void* JfrIntrinsicSupport::return_lease(JavaThread* jt) {
   return nullptr;
 }
 
-void JfrIntrinsicSupport::load_barrier(const Klass* klass) {
-  assert(klass != nullptr, "sanity");
-  JfrTraceIdLoadBarrier::load_barrier(klass);
-}
-
-address JfrIntrinsicSupport::epoch_address() {
-  return JfrTraceIdEpoch::epoch_address();
-}
-
 address JfrIntrinsicSupport::epoch_generation_address() {
   return JfrTraceIdEpoch::epoch_generation_address();
-}
-
-address JfrIntrinsicSupport::signal_address() {
-  return JfrTraceIdEpoch::signal_address();
 }

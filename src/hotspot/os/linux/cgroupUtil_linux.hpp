@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CGROUP_UTIL_LINUX_HPP
-#define CGROUP_UTIL_LINUX_HPP
+#ifndef OS_LINUX_CGROUPUTIL_LINUX_HPP
+#define OS_LINUX_CGROUPUTIL_LINUX_HPP
 
 #include "cgroupSubsystem_linux.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -46,4 +46,4 @@ class CgroupUtil: AllStatic {
     static double get_updated_cpu_limit(CgroupCpuController* c, double lowest, double upper_bound);
 };
 
-#endif // CGROUP_UTIL_LINUX_HPP
+#endif // OS_LINUX_CGROUPUTIL_LINUX_HPP

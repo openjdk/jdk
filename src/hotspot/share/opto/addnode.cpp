@@ -127,11 +127,12 @@ static bool commute(PhaseGVN* phase, Node* add) {
   return false;
 }
 
-//------------------------------Idealize---------------------------------------
-// If we get here, we assume we are associative!
-Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  const Type *t1 = phase->type(in(1));
-  const Type *t2 = phase->type(in(2));
+// If we get here, we assume '+' is
+// - associative: (a + b) + c = a + (b + c)
+// - commutative: a + b = b + a
+Node* AddNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
   bool con_left  = t1->singleton();
   bool con_right = t2->singleton();
 
@@ -294,30 +295,30 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     // Convert "(a-b)+(c-d)" into "(a+c)-(b+d)"
     if (op2 == Op_Sub(bt)) {
       // Check for dead cycle: d = (a-b)+(c-d)
-      assert( in1->in(2) != this && in2->in(2) != this,
-              "dead loop in AddINode::Ideal" );
-      Node* sub = SubNode::make(nullptr, nullptr, bt);
-      Node* sub_in1;
+      assert(in1->in(2) != this && in2->in(2) != this, "dead loop in AddINode::Ideal");
+
+      // This transformation can create 3 nodes out of the current one. It also lays a good structure
+      // for the same rule to apply again. Even if termination is guaranteed, in some cases, we can
+      // create an exponential amount of nodes before simplifying them. To avoid that, let's leave this
+      // job to IGVN, where we delay the recursive transformations, hoping we can common the new nodes
+      // with existing ones, containing the explosion. This is likely if the expression has a small
+      // number of leaves, that is expression DAG in the IR is rather narrow (not like a tree whose width
+      // blows up with depth).
+      if (can_reshape == false) {
+        phase->record_for_igvn(this);
+        return nullptr;
+      }
       PhaseIterGVN* igvn = phase->is_IterGVN();
-      // During IGVN, if both inputs of the new AddNode are a tree of SubNodes, this same transformation will be applied
-      // to every node of the tree. Calling transform() causes the transformation to be applied recursively, once per
-      // tree node whether some subtrees are identical or not. Pushing to the IGVN worklist instead, causes the transform
-      // to be applied once per unique subtrees (because all uses of a subtree are updated with the result of the
-      // transformation). In case of a large tree, this can make a difference in compilation time.
-      if (igvn != nullptr) {
-        sub_in1 = igvn->register_new_node_with_optimizer(AddNode::make(in1->in(1), in2->in(1), bt));
-      } else {
-        sub_in1 = phase->transform(AddNode::make(in1->in(1), in2->in(1), bt));
-      }
-      Node* sub_in2;
-      if (igvn != nullptr) {
-        sub_in2 = igvn->register_new_node_with_optimizer(AddNode::make(in1->in(2), in2->in(2), bt));
-      } else {
-        sub_in2 = phase->transform(AddNode::make(in1->in(2), in2->in(2), bt));
-      }
-      sub->init_req(1, sub_in1);
-      sub->init_req(2, sub_in2);
-      return sub;
+      assert(igvn != nullptr, "should be IGVN now");
+
+      // sub_in1 and sub_in2 can be transformed again into an explosive amount of nodes. To avoid that,
+      // we make them available for eager commoning with sub_in1 and sub_in2 created by the AddNode::IdealIL
+      // of other Add nodes, similar enough to `this`.
+      Node* sub_in1 = AddNode::make(in1->in(1), in2->in(1), bt);
+      sub_in1 = igvn->find_node_or_register_new_node_with_optimizer(sub_in1);
+      Node* sub_in2 = AddNode::make(in1->in(2), in2->in(2), bt);
+      sub_in2 = igvn->find_node_or_register_new_node_with_optimizer(sub_in2);
+      return SubNode::make(sub_in1, sub_in2, bt);
     }
     // Convert "(a-b)+(b+c)" into "(a+c)"
     if (op2 == Op_Add(bt) && in1->in(2) == in2->in(1)) {
@@ -343,7 +344,7 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     return AddNode::make(phase->transform(SubNode::make(in1, in2->in(2), bt)), in2->in(1), bt);
   }
 
-  // Associative
+  // Distributivity of * over + (also uses commutativity of *)
   if (op1 == Op_Mul(bt) && op2 == Op_Mul(bt)) {
     Node* add_in1 = nullptr;
     Node* add_in2 = nullptr;
@@ -624,28 +625,32 @@ Node* AddINode::Identity(PhaseGVN* phase) {
 // Supplied function returns the sum of the inputs.  Guaranteed never
 // to be passed a TOP or BOTTOM type, these are filtered out by
 // pre-check.
-const Type *AddINode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
-  int lo = java_add(r0->_lo, r1->_lo);
-  int hi = java_add(r0->_hi, r1->_hi);
-  if( !(r0->is_con() && r1->is_con()) ) {
-    // Not both constants, compute approximate result
-    if( (r0->_lo & r1->_lo) < 0 && lo >= 0 ) {
-      lo = min_jint; hi = max_jint; // Underflow on the low side
-    }
-    if( (~(r0->_hi | r1->_hi)) < 0 && hi < 0 ) {
-      lo = min_jint; hi = max_jint; // Overflow on the high side
-    }
-    if( lo > hi ) {               // Handle overflow
-      lo = min_jint; hi = max_jint;
-    }
-  } else {
-    // both constants, compute precise result using 'lo' and 'hi'
-    // Semantics define overflow and underflow for integer addition
-    // as expected.  In particular: 0x80000000 + 0x80000000 --> 0x0
+const Type* AddINode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeInt* range0 = t0->is_int();
+  const TypeInt* range1 = t1->is_int();
+
+  jlong lo_sum = (jlong)range0->_lo + (jlong)range1->_lo;
+  jlong hi_sum = (jlong)range0->_hi + (jlong)range1->_hi;
+
+  const jlong jint_wrap_offset = (jlong)max_juint + 1;
+
+  if (hi_sum < min_jint) {
+    // The entire range underflows.
+    lo_sum += jint_wrap_offset;
+    hi_sum += jint_wrap_offset;
+  } else if (lo_sum > max_jint) {
+    // The entire range overflows.
+    lo_sum -= jint_wrap_offset;
+    hi_sum -= jint_wrap_offset;
+  } else if (lo_sum < min_jint || hi_sum > max_jint) {
+    // The range crosses one or both jint boundaries.
+    lo_sum = min_jint;
+    hi_sum = max_jint;
   }
-  return TypeInt::make( lo, hi, MAX2(r0->_widen,r1->_widen) );
+
+  return TypeInt::make(checked_cast<jint>(lo_sum),
+                       checked_cast<jint>(hi_sum),
+                       MAX2(range0->_widen, range1->_widen));
 }
 
 
@@ -865,7 +870,7 @@ const Type *AddPNode::bottom_type() const {
     txoffset = tx->get_con();
   }
   if (tp->isa_aryptr()) {
-    // In the case of a flat inline type array, each field has its
+    // In the case of a flat value type array, each field has its
     // own slice so we need to extract the field being accessed from
     // the address computation
     return tp->is_aryptr()->add_field_offset_and_offset(txoffset);
@@ -891,7 +896,7 @@ const Type* AddPNode::Value(PhaseGVN* phase) const {
     p2offset = p2->get_con();
   }
   if (p1->isa_aryptr()) {
-    // In the case of a flat inline type array, each field has its
+    // In the case of a flat value type array, each field has its
     // own slice so we need to extract the field being accessed from
     // the address computation
     return p1->is_aryptr()->add_field_offset_and_offset(p2offset);
@@ -957,6 +962,17 @@ uint AddPNode::match_edge(uint idx) const {
 Node* OrINode::Identity(PhaseGVN* phase) {
   // x | x => x
   if (in(1) == in(2)) {
+    return in(1);
+  }
+
+  // x | (y | x) => y | x
+  if (in(2)->Opcode() == Op_OrI &&
+      (in(2)->in(1) == in(1) || in(2)->in(2) == in(1))) {
+    return in(2);
+  }
+  // (x | y) | x => x | y
+  if (in(1)->Opcode() == Op_OrI &&
+      (in(1)->in(1) == in(2) || in(1)->in(2) == in(2))) {
     return in(1);
   }
 
@@ -1030,6 +1046,17 @@ const Type* OrINode::add_ring(const Type* t1, const Type* t2) const {
 Node* OrLNode::Identity(PhaseGVN* phase) {
   // x | x => x
   if (in(1) == in(2)) {
+    return in(1);
+  }
+
+  // x | (y | x) => y | x
+  if (in(2)->Opcode() == Op_OrL &&
+      (in(2)->in(1) == in(1) || in(2)->in(2) == in(1))) {
+    return in(2);
+  }
+  // (x | y) | x => x | y
+  if (in(1)->Opcode() == Op_OrL &&
+      (in(1)->in(1) == in(2) || in(1)->in(2) == in(2))) {
     return in(1);
   }
 
@@ -1584,6 +1611,8 @@ Node* MaxLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
   if (can_reshape) {
     return fold_subI_no_underflow_pattern(this, phase);
+  } else {
+    phase->record_for_igvn(this);
   }
   return nullptr;
 }
@@ -1616,6 +1645,8 @@ Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
   if (can_reshape) {
     return fold_subI_no_underflow_pattern(this, phase);
+  } else {
+    phase->record_for_igvn(this);
   }
   return nullptr;
 }

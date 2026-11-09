@@ -3094,7 +3094,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MADV_POPULATE_WRITE MADV_POPULATE_WRITE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  STATIC_ASSERT(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
+  static_assert(MADV_POPULATE_WRITE == MADV_POPULATE_WRITE_value);
 #endif
 
 // Note that the value for MAP_FIXED_NOREPLACE differs between architectures, but all architectures
@@ -3104,7 +3104,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MAP_FIXED_NOREPLACE MAP_FIXED_NOREPLACE_value
 #else
   // Sanity-check our assumed default value if we build with a new enough libc.
-  STATIC_ASSERT(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
+  static_assert(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
 #endif
 
 int os::Linux::commit_memory_impl(char* addr, size_t size,
@@ -3352,6 +3352,8 @@ bool os::Linux::libnuma_init() {
                                                    libnuma_dlsym(handle, "numa_num_configured_nodes")));
       set_numa_available(CAST_TO_FN_PTR(numa_available_func_t,
                                         libnuma_dlsym(handle, "numa_available")));
+      set_numa_node_size64(CAST_TO_FN_PTR(numa_node_size64_func_t,
+                                          libnuma_dlsym(handle, "numa_node_size64")));
       set_numa_tonode_memory(CAST_TO_FN_PTR(numa_tonode_memory_func_t,
                                             libnuma_dlsym(handle, "numa_tonode_memory")));
       set_numa_interleave_memory(CAST_TO_FN_PTR(numa_interleave_memory_func_t,
@@ -3641,6 +3643,7 @@ os::Linux::numa_node_to_cpus_func_t os::Linux::_numa_node_to_cpus;
 os::Linux::numa_node_to_cpus_v2_func_t os::Linux::_numa_node_to_cpus_v2;
 os::Linux::numa_max_node_func_t os::Linux::_numa_max_node;
 os::Linux::numa_num_configured_nodes_func_t os::Linux::_numa_num_configured_nodes;
+os::Linux::numa_node_size64_func_t os::Linux::_numa_node_size64;
 os::Linux::numa_available_func_t os::Linux::_numa_available;
 os::Linux::numa_tonode_memory_func_t os::Linux::_numa_tonode_memory;
 os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;

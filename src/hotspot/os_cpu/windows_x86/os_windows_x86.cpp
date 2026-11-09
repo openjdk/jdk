@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ bool os::win32::register_code_area(char *low, char *high) {
   pDCD = (pDynamicCodeData) masm->pc();
 
   masm->jump(RuntimeAddress((address)&HandleExceptionFromCodeCache), rscratch1);
-  masm->flush();
+  masm->invalidate_icache();
 
   // Create an Unwind Structure specifying no unwind info
   // other than an Exception Handler
@@ -392,17 +392,13 @@ extern "C" int SpinPause () {
 juint os::cpu_microcode_revision() {
   juint result = 0;
   BYTE data[8] = {0};
-  HKEY key;
-  DWORD status = RegOpenKey(HKEY_LOCAL_MACHINE,
-               "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
+  DWORD size = sizeof(data);
+  DWORD status = RegGetValueA(HKEY_LOCAL_MACHINE,
+                              "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+                              "Update Revision", RRF_RT_ANY, nullptr, data, &size);
   if (status == ERROR_SUCCESS) {
-    DWORD size = sizeof(data);
-    status = RegQueryValueEx(key, "Update Revision", nullptr, nullptr, data, &size);
-    if (status == ERROR_SUCCESS) {
-      if (size == 4) result = *((juint*)data);
-      if (size == 8) result = *((juint*)data + 1); // upper 32-bits
-    }
-    RegCloseKey(key);
+    if (size == 4) result = *((juint*)data);
+    if (size == 8) result = *((juint*)data + 1); // upper 32-bits
   }
   return result;
 }

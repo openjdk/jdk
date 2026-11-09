@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
 
 /*
  * @test
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *     --enable-native-access=ALL-UNNAMED
  *     TestNULLAddress
  */
 
-import org.testng.annotations.Test;
 
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
@@ -37,7 +36,8 @@ import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class TestNULLAddress {
 
@@ -47,18 +47,22 @@ public class TestNULLAddress {
 
     static final Linker LINKER = Linker.nativeLinker();
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testNULLLinking() {
-        LINKER.downcallHandle(
-                MemorySegment.NULL,
-                FunctionDescriptor.ofVoid());
+        assertThrows(IllegalArgumentException.class, () -> {
+            LINKER.downcallHandle(
+                    MemorySegment.NULL,
+                    FunctionDescriptor.ofVoid());
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testNULLVirtual() throws Throwable {
         MethodHandle mh = LINKER.downcallHandle(
                 FunctionDescriptor.ofVoid());
-        mh.invokeExact(MemorySegment.NULL);
+        assertThrows(IllegalArgumentException.class, () -> {
+            mh.invokeExact(MemorySegment.NULL);
+        });
     }
 
     @Test

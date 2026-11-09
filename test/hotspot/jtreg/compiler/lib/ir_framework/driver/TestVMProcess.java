@@ -110,10 +110,14 @@ public class TestVMProcess {
      */
     private void dumpTestVmOutputIfRequested() {
         if (DUMP_OUTPUT) {
-            System.out.println("Test VM Output");
-            System.out.println("--------------");
-            System.out.println(oa.getOutput());
+            dumpTestVmOutput();
         }
+    }
+
+    private void dumpTestVmOutput() {
+        System.out.println("Test VM Output");
+        System.out.println("--------------");
+        System.out.println(oa.getOutput());
     }
 
     private TestVMData readAndDumpTestVmData(TestFrameworkSocket socket, boolean allowNotCompilable) {
@@ -154,7 +158,8 @@ public class TestVMProcess {
             secondaryException = buildSecondaryExceptionInfo(e);
         }
         // Primary exception: non-zero Test VM exit.
-        return new TestVMException(buildExceptionInfo() + secondaryException);
+        String exceptionInfo = buildPrimaryExceptionInfo() + secondaryException;
+        return new TestVMException(exceptionInfo);
     }
 
     private String buildSecondaryExceptionInfo(RuntimeException e) {
@@ -172,7 +177,7 @@ public class TestVMProcess {
     /**
      * Get more detailed information about the exception in a pretty format.
      */
-    private String buildExceptionInfo() {
+    private String buildPrimaryExceptionInfo() {
         StringBuilder builder = new StringBuilder();
         builder.append("Test VM exited with code ").append(oa.getExitValue()).append(System.lineSeparator());
         if (hasFatalErrorMarker() || DUMP_OUTPUT) {

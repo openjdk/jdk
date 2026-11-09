@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef CPU_ARM_VMSTORAGE_ARM_INLINE_HPP
-#define CPU_ARM_VMSTORAGE_ARM_INLINE_HPP
+#ifndef CPU_ARM_VMSTORAGE_ARM_HPP
+#define CPU_ARM_VMSTORAGE_ARM_HPP
 
 #include <cstdint>
 
@@ -49,4 +49,4 @@ inline VMStorage as_VMStorage(VMReg reg, BasicType bt) {
   return VMStorage::invalid();
 }
 
-#endif // CPU_ARM_VMSTORAGE_ARM_INLINE_HPP
+#endif // CPU_ARM_VMSTORAGE_ARM_HPP

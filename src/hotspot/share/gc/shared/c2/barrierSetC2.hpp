@@ -68,7 +68,6 @@ class PhaseIdealLoop;
 class PhaseMacroExpand;
 class Type;
 class TypePtr;
-class Unique_Node_List;
 
 // This class wraps a node and a type.
 class C2AccessValue: public StackObj {
@@ -148,14 +147,14 @@ class C2ParseAccess: public C2Access {
 protected:
   GraphKit*         _kit;
   Node* _ctl;
-  const InlineTypeNode* _vt; // For flat, atomic accesses that might require GC barriers on oop fields
+  const ValueTypeNode* _vt; // For flat, atomic accesses that might require GC barriers on oop fields
 
   void* barrier_set_state() const;
 
 public:
   C2ParseAccess(GraphKit* kit, DecoratorSet decorators,
                 BasicType type, Node* base, C2AccessValuePtr& addr,
-                Node* ctl = nullptr, const InlineTypeNode* vt = nullptr) :
+                Node* ctl = nullptr, const ValueTypeNode* vt = nullptr) :
     C2Access(decorators, type, base, addr),
     _kit(kit),
     _ctl(ctl),
@@ -165,7 +164,7 @@ public:
 
   GraphKit* kit() const           { return _kit; }
   Node* control() const;
-  const InlineTypeNode* vt() const { return _vt; }
+  const ValueTypeNode* vt() const { return _vt; }
 
   virtual PhaseGVN& gvn() const;
   virtual bool is_parse_access() const { return true; }
@@ -214,7 +213,7 @@ public:
 
 class BarrierSetC2State : public ArenaObj {
 protected:
-  Node_Array                      _live;
+  Node_Array<Node> _live;
 
 public:
   BarrierSetC2State(Arena* arena) : _live(arena) {}
@@ -316,8 +315,6 @@ public:
                              Node*& fast_oop_ctrl, Node*& fast_oop_rawmem,
                              intx prefetch_lines) const;
 
-  virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const { return nullptr; }
-
   // These are general helper methods used by C2
   enum ArrayCopyPhase {
     Parsing,
@@ -328,19 +325,9 @@ public:
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const { return false; }
   virtual void clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const;
 
-  // Support for GC barriers emitted during parsing
-  virtual bool has_load_barrier_nodes() const { return false; }
-  virtual bool is_gc_pre_barrier_node(Node* node) const { return false; }
-  virtual bool is_gc_barrier_node(Node* node) const { return false; }
-  virtual Node* step_over_gc_barrier(Node* c) const { return c; }
-
   // Support for macro expanded GC barriers
-  virtual void register_potential_barrier_node(Node* node) const { }
-  virtual void unregister_potential_barrier_node(Node* node) const { }
   virtual void eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const { }
   virtual void eliminate_gc_barrier_data(Node* node) const { }
-  virtual void enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {}
-  virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const {}
 
   // Allow barrier sets to have shared state that is preserved across a compilation unit.
   // This could for example comprise macro nodes to be expanded during macro expansion.
@@ -349,9 +336,6 @@ public:
   // unit state to be expanded later, then now is the time to do so.
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const { return false; }
   virtual void final_refinement(Compile* C) const { }
-  virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const { return false; }
-  virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return false; }
-  virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return false; }
   // Estimated size of the node barrier in number of C2 Ideal nodes.
   // This is used to guide heuristics in C2, e.g. whether to unroll a loop.
   virtual uint estimated_barrier_size(const Node* node) const { return 0; }
@@ -368,15 +352,6 @@ public:
   virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const {}
 #endif
 
-  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode, Unique_Node_List& dead_nodes) const { return false; }
-
-  virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const { return false; }
-  virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const { return false; }
-  virtual bool escape_has_out_with_unsafe_object(Node* n) const { return false; }
-
-  virtual bool matcher_find_shared_post_visit(Matcher* matcher, Node* n, uint opcode) const { return false; };
-  virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const { return false; }
-
   // Whether the given phi node joins OOPs from fast and slow allocation paths.
   static bool is_allocation(const Node* node);
   // Elide GC barriers from a Mach node according to elide_dominated_barriers().
@@ -384,7 +359,7 @@ public:
   // Elide GC barriers from instructions in 'accesses' if they are dominated by
   // instructions in 'access_dominators' (according to elide_mach_barrier()) and
   // there is no safepoint poll in between.
-  void elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const;
+  void elide_dominated_barriers(const Node_List<MachNode>& accesses, const Node_List<Node>& access_dominators) const;
   virtual void late_barrier_analysis() const { }
   virtual void compute_liveness_at_stubs() const;
   virtual int estimate_stub_size() const { return 0; }

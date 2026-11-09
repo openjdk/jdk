@@ -53,4 +53,4 @@ public:
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
 };
 
-#endif // #ifndef CPU_RISCV_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_RISCV_HPP
+#endif // CPU_RISCV_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_RISCV_HPP

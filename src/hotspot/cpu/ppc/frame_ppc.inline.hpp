@@ -320,7 +320,12 @@ inline frame frame::sender(RegisterMap* map) const {
   }
 
   // Calling frame::id() is currently not supported for heap frames.
-  assert(result._on_heap || this->_on_heap || result.is_older(this->id()), "Must be");
+  // For an async map, registers are sampled at an arbitrary point,
+  // which means that the apparent sender may not be a valid frame
+  // suitable for walking. Because of this we only assert if the
+  // sender frame is older than this frame for non-async maps.
+  assert(result._on_heap || this->_on_heap || map->is_async() ||
+         result.is_older(this->id()), "Must be");
 
   return result;
 }
@@ -339,7 +344,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
 #ifdef COMPILER1
     DEBUG_ONLY(nmethod* nm = _cb->as_nmethod_or_null());
     assert(nm == nullptr || !nm->is_compiled_by_c1() || !nm->method()->has_scalarized_args() ||
-           pc() >= nm->verified_inline_entry_point(), "unsupported");
+           pc() >= nm->verified_value_entry_point(), "unsupported");
 #endif
     if (!_cb->is_nmethod()) { // compiled frames do not use callee-saved registers
       map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));

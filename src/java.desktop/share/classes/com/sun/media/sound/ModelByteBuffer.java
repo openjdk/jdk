@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,6 +201,9 @@ public final class ModelByteBuffer {
     public void writeTo(OutputStream out) throws IOException {
         if (root.file != null && root.buffer == null) {
             try (InputStream is = getInputStream()) {
+                if (is == null) {
+                   throw new IOException("null stream");
+                }
                 is.transferTo(out);
             }
         } else
@@ -321,6 +324,8 @@ public final class ModelByteBuffer {
             buffer = new byte[(int) capacity()];
             offset = 0;
             dis.readFully(buffer);
+        } catch (NullPointerException npe) {
+            throw new IOException("input stream is null", npe);
         }
 
     }

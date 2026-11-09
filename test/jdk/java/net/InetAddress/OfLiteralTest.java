@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8272215 8315767 8332686
+ * @bug 8272215 8315767 8332686 8391603
  * @summary Test for ofLiteral, ofPosixLiteral APIs in InetAddress classes
  * @run junit/othervm -Djdk.net.hosts.file=nonExistingHostsFile.txt
  *                     OfLiteralTest
@@ -330,6 +330,18 @@ public class OfLiteralTest {
                 // IPv4 address literal with BSD-formatting
                 Arguments.of(InetAddressClass.INET_ADDRESS, "1.2.3.0256"),
                 Arguments.of(InetAddressClass.INET4_ADDRESS, "1.2.3.0256"),
+
+                // IPv4 with oversized octet
+                Arguments.of(InetAddressClass.INET_ADDRESS, "1.2.256.4"),
+                Arguments.of(InetAddressClass.INET_ADDRESS, "1.2.3.4" + Long.MAX_VALUE),
+                Arguments.of(InetAddressClass.INET4_ADDRESS, "1.2.256.4"),
+                Arguments.of(InetAddressClass.INET4_ADDRESS, "1.2.3.4" + Long.MAX_VALUE),
+
+                // IPv4-mapped IPv6 with oversized IPv4 octet
+                Arguments.of(InetAddressClass.INET_ADDRESS, "::FFFF:1.2.256.4"),
+                Arguments.of(InetAddressClass.INET_ADDRESS, "::FFFF:1.2.3.4" + Long.MAX_VALUE),
+                Arguments.of(InetAddressClass.INET6_ADDRESS, "::FFFF:1.2.256.4"),
+                Arguments.of(InetAddressClass.INET6_ADDRESS, "::FFFF:1.2.3.4" + Long.MAX_VALUE),
 
                 // Invalid IPv4-mapped IPv6 address forms
                 //      ::FFFF:d.d.d

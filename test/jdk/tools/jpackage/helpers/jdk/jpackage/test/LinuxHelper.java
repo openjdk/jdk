@@ -24,6 +24,7 @@ package jdk.jpackage.test;
 
 import static java.util.Collections.unmodifiableSortedSet;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
@@ -54,6 +55,7 @@ import jdk.internal.util.Architecture;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.Result;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.LauncherShortcut.InvokeShortcutSpec;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
@@ -91,6 +93,10 @@ public final class LinuxHelper {
         var desktopFileName = getLauncherDesktopFileName(cmd, launcherName);
         return cmd.appLayout().desktopIntegrationDirectory().resolve(
                 desktopFileName);
+    }
+
+    public static boolean isDesktopFileValidateCommandAvailable() {
+        return DesktopFileValidateAvailable.VALUE;
     }
 
     static Path getServiceUnitFilePath(JPackageCommand cmd, String launcherName) {
@@ -434,6 +440,11 @@ public final class LinuxHelper {
                         "Check there are no .desktop files in the package");
             }
         });
+
+        test.addInitializer(cmd -> {
+            cmd.enableMessageCategories(MessageCategory.TOOLS);
+            verifyDesktopFileValidateInvocationsInOutput(cmd, integrated);
+        });
     }
 
     static void verifyDesktopIntegrationFiles(JPackageCommand cmd, boolean installed) {
@@ -568,7 +579,8 @@ public final class LinuxHelper {
                 Map.entry("Type", "Application"),
                 Map.entry("Terminal", "false"),
                 Map.entry("Comment", launcherDescription),
-                Map.entry("Categories", Optional.ofNullable(cmd.getArgumentValue("--linux-menu-group")).orElse("Utility"))
+                Map.entry("Categories", ensureEndsWithSemicolon(
+                        Optional.ofNullable(cmd.getArgumentValue("--linux-menu-group")).orElse("Utility")))
         )) {
             String key = e.getKey();
             TKit.assertEquals(e.getValue(), data.find(key).orElseThrow(), String.format(
@@ -615,6 +627,94 @@ public final class LinuxHelper {
         }
 
         TKit.trace(String.format("Check [%s] file END", desktopFile));
+    }
+
+    private static String ensureEndsWithSemicolon(String str) {
+        if (!str.endsWith(";")) {
+            return str + ';';
+        } else {
+            return str;
+        }
+    }
+
+    private static void verifyDesktopFileValidateInvocationsInOutput(JPackageCommand cmd, boolean integrated) {
+
+        var startsWith = "Running desktop-file-validate ";
+
+        cmd.validateResult(result -> {
+            var validatedDesktopEntryFiles = result.stdout().stream()
+                    .filter(JPackageCommand::withTimestamp)
+                    .map(JPackageCommand::stripTimestamp)
+                    .<Path>mapMulti((str, sink) -> {
+                        if (str.startsWith(startsWith)) {
+                            sink.accept(Path.of(unquoteIfNeeded(str.substring(startsWith.length()))));
+                        }
+                    }).collect(toCollection(ArrayList::new));
+
+            if (cmd.hasArgument("--linux-menu-group")) {
+                TKit.assertTrue(!validatedDesktopEntryFiles.isEmpty(),
+                        "Check that there are traces of desktop-file-validate executions in the output");
+                TKit.assertEquals("probe.desktop", validatedDesktopEntryFiles.getFirst().getFileName().toString(),
+                        "Check the name of the file used in the first desktop-file-validate execution");
+                validatedDesktopEntryFiles.remove(0);
+            }
+
+            if (!integrated) {
+                TKit.assertEquals(List.of(), validatedDesktopEntryFiles,
+                        "Check there are no unexpected traces of desktop-file-validate executions in the output");
+                return;
+            }
+
+            if (!isDesktopFileValidateCommandAvailable()) {
+                int expectedCount;
+                if (cmd.hasArgument("--linux-menu-group")) {
+                    expectedCount = 0;
+                } else {
+                    expectedCount = 1;
+                }
+
+                TKit.assertEquals(expectedCount, validatedDesktopEntryFiles.size(),
+                        String.format(
+                                "Check that the remaining number of traces of desktop-file-validate executions %s in the output is as expected",
+                                validatedDesktopEntryFiles));
+                return;
+            }
+
+            final List<Path> expectedValidatedDesktopEntryFileNames;
+            if (integrated) {
+                getDesktopFile(cmd, null);
+                var launcherDesktopEntryFilenames = cmd.launcherNames(true).stream().map(launcherName -> {
+                    return getLauncherDesktopFileName(cmd, launcherName);
+                }).toList();
+                expectedValidatedDesktopEntryFileNames = getDesktopFiles(cmd).stream()
+                        .map(Path::getFileName)
+                        .filter(launcherDesktopEntryFilenames::contains)
+                        .toList();
+            } else {
+                expectedValidatedDesktopEntryFileNames = List.of();
+            }
+
+            var missing = expectedValidatedDesktopEntryFileNames.stream().filter(fileName -> {
+                return validatedDesktopEntryFiles.stream().map(Path::getFileName).filter(Predicate.isEqual(fileName)).findAny().isEmpty();
+            }).sorted().toList();
+
+            var unexpected = validatedDesktopEntryFiles.stream().filter(path -> {
+                return !expectedValidatedDesktopEntryFileNames.contains(path.getFileName());
+            }).sorted().toList();
+
+            TKit.assertEquals(List.of(), missing, "Check there are no missing traces of desktop-file-validate executions in the output");
+            TKit.assertEquals(List.of(), unexpected, "Check there are no unexpected traces of desktop-file-validate executions in the output");
+        });
+    }
+
+    private static String unquoteIfNeeded(String str) {
+        if (str.length() < 2) {
+            return str;
+        }
+
+        int startIdx = str.charAt(0) == '\'' ? 1 : 0;
+        int endIdx = str.charAt(str.length() - 1) == '\'' ? str.length() - 1 : str.length();
+        return str.substring(startIdx, endIdx);
     }
 
     static void initFileAssociationsTestFile(Path testFile) {
@@ -973,15 +1073,19 @@ public final class LinuxHelper {
         static final PackageType VALUE;
 
         private static boolean isDebian() {
-            // we are just going to run "dpkg -s coreutils" and assume Debian
-            // or derivative if no error is returned.
-            return Result.of(Executor.of("dpkg", "-s", "coreutils")::execute).hasValue();
+            // Run "dpkg -s coreutils" command and assume this is native Debian-based Linux if it succeeds.
+            // If it fails to execute (command not found) or exits with an error (non-zero exit code), we assume the opposite.
+            return Result.of(Executor.of("dpkg", "-s", "coreutils")::executeWithoutExitCodeCheck).value().filter(result -> {
+                return result.getExitCode() == 0;
+            }).isPresent();
         }
 
         private static boolean isRpm() {
-            // we are just going to run "rpm -q rpm" and assume RPM
-            // or derivative if no error is returned.
-            return Result.of(Executor.of("rpm", "-q", "rpm")::execute).hasValue();
+            // Run "rpm -q rpm" command and assume this is native RPM-based Linux if it succeeds.
+            // If it fails to execute (command not found) or exits with an error (non-zero exit code), we assume the opposite.
+            return Result.of(Executor.of("rpm", "-q", "rpm")::executeWithoutExitCodeCheck).value().filter(result -> {
+                return result.getExitCode() == 0;
+            }).isPresent();
         }
 
         static {
@@ -993,6 +1097,11 @@ public final class LinuxHelper {
                 VALUE = null;
             }
         }
+    }
+
+    private static final class DesktopFileValidateAvailable {
+
+        static final boolean VALUE = Result.of(Executor.of("desktop-file-validate", "-h")::executeWithoutExitCodeCheck).hasValue();
     }
 
     private static final Pattern XDG_CMD_ICON_SIZE_PATTERN = Pattern.compile("\\s--size\\s+(\\d+)\\b");

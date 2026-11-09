@@ -331,6 +331,11 @@ public class LingeredApp {
             String classpath = System.getProperty("test.class.path");
             cmd.add((classpath == null) ? "." : classpath);
         }
+        // Forward test.thread.factory to child process for virtual thread testing
+        String testThreadFactory = System.getProperty("test.thread.factory");
+        if (testThreadFactory != null) {
+            cmd.add("-Dtest.thread.factory=" + testThreadFactory);
+        }
 
         return cmd;
     }
@@ -609,8 +614,25 @@ public class LingeredApp {
      */
     @SuppressWarnings("restricted")
     public static void main(String args[]) {
-        boolean forceCrash = false;
+        // Checks the property directly so the app keeps working with a minimal classpath.
+        if ("Virtual".equals(System.getProperty("test.thread.factory"))) {
+            Thread t = Thread.ofVirtual().start(() -> mainLoop(args));
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        } else {
+            mainLoop(args);
+        }
+    }
 
+    /**
+     * Runs the app on the current thread regardless of the test thread factory.
+     */
+    @SuppressWarnings("restricted")
+    public static void mainLoop(String[] args) {
+        boolean forceCrash = false;
         if (args.length == 0) {
             System.err.println("Lock file name is not specified");
             System.exit(7);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,5 +50,34 @@ public class InstanceStackChunkKlass extends InstanceKlass {
 
   public InstanceStackChunkKlass(Address addr) {
     super(addr);
+  }
+
+  @Override
+  public long getObjectSize(Oop object) {
+    // Mirrors InstanceStackChunkKlass::oop_size in the VM, in bytes.
+    long stackSizeInWords = ((IntField) findField("size", "I")).getValue(object);
+    return instanceSize(stackSizeInWords);
+  }
+
+  private long instanceSize(long stackSizeInWords) {
+    long sizeInWords = getSizeHelper() + stackSizeInWords + gcDataSize(stackSizeInWords);
+    return Oop.alignObjectSize(sizeInWords * VM.getVM().getAddressSize());
+  }
+
+  private static long gcDataSize(long stackSizeInWords) {
+    return bitmapSize(stackSizeInWords);
+  }
+
+  private static long bitmapSize(long stackSizeInWords) {
+    long bitsPerWord = VM.getVM().getBytesPerWord() * 8L;
+    return bitmapSizeInBits(stackSizeInWords) / bitsPerWord;
+  }
+
+  private static long bitmapSizeInBits(long stackSizeInWords) {
+    VM vm = VM.getVM();
+    // Need one bit per potential narrowOop* or oop* address.
+    long bitsPerWord = vm.getBytesPerWord() * 8L;
+    long sizeInBits = stackSizeInWords * (vm.getBytesPerWord() / vm.getHeapOopSize());
+    return vm.alignUp(sizeInBits, bitsPerWord);
   }
 }

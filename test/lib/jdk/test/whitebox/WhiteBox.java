@@ -104,6 +104,8 @@ public class WhiteBox {
   // printed by the VM.
   public native String printString(String str, int maxLength);
 
+  public native String printObject(Object obj);
+
   public native void lockAndStuckInSafepoint();
 
   public int countAliveClasses(String name) {
@@ -222,6 +224,11 @@ public class WhiteBox {
     return printMethods0(classNamePattern, methodPattern, flags);
   }
 
+  public native int getMarkWordOffset();
+  public native long getValueTypePattern();
+  public native long getNullFreeArrayBitInPlace();
+  public native long getFlatArrayBitInPlace();
+
   // JVMTI
   private native void addToBootstrapClassLoaderSearch0(String segment);
   public         void addToBootstrapClassLoaderSearch(String segment){
@@ -328,6 +335,15 @@ public class WhiteBox {
    *                             regions are not included)
    */
   public native long[] g1GetMixedGCInfo(int liveness);
+
+  // Shenandoah
+  public native int shenandoahRegionSize();
+  public native int shenandoahRegionCount();
+  public native long shenandoahOldMarkGC(int timeoutSeconds);
+  public long shenandoahOldMarkGC() {
+    final int TIMEOUT_SECONDS = 10;
+    return shenandoahOldMarkGC(TIMEOUT_SECONDS);
+  }
 
   // NMT
   public native long NMTMalloc(long size);
@@ -842,6 +858,11 @@ public class WhiteBox {
                                    String procSelfCgroup,
                                    String procSelfMountinfo);
   public native void printOsInfo();
+
+  // Total physical memory as seen by the VM, respecting container limits.
+  public native long physicalMemory();
+
+  // Total physical memory as seen by the VM, deliberately ignoring container limits.
   public native long hostPhysicalMemory();
   public native long hostAvailableMemory();
   public native long hostPhysicalSwap();

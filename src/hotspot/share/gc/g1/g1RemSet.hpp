@@ -126,8 +126,7 @@ public:
   // Refine the region corresponding to "card_ptr". Must be called after
   // being filtered by clean_card_before_refine(), and after proper
   // fence/synchronization.
-  RefineResult refine_card_concurrently(CardValue* const card_ptr,
-                                        const uint worker_id);
+  RefineResult refine_card_concurrently(CardValue* const card_ptr);
 
   // Print accumulated summary info from the start of the VM.
   void print_summary_info();
