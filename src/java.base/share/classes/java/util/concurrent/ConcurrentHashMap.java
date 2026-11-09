@@ -2146,9 +2146,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Equivalent to {@link #containsValue(Object) containsValue}.
      *
      * @deprecated
-     * This method is potentially confusing because its name does not indicate
-     * whether it checks for the presence of a key or a value. Use {@link
-     * #containsValue(Object) containsValue} instead.
+     * This method is potentially confusing with {@link #containsKey(Object)
+     * containsKey}. Use {@link #containsValue(Object) containsValue} instead.
      *
      * @param  value a value to search for
      * @return {@code true} if and only if some key maps to the
