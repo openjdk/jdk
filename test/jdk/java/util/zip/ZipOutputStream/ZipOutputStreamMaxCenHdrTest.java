@@ -78,6 +78,8 @@ public class ZipOutputStreamMaxCenHdrTest {
      * Validate an ZipException is thrown when the combined CEN Header, name
      * length, comment length, and extra data length exceeds 65,535 bytes when
      * the ZipOutputStream is closed.
+     * @param  cenSize size of the combined CEN header to test
+     * @param  setLastModifiedTime true if ZipEntry::setLastModifiedTime called;false otherwise
      */
     @ParameterizedTest
     @MethodSource("CEN_header_test_params")
@@ -96,6 +98,8 @@ public class ZipOutputStreamMaxCenHdrTest {
      * Validate an ZipException is thrown when the combined CEN Header, name
      * length, comment length, and extra data length exceeds 65,535 bytes when
      * the ZipOutputStream is closed.
+     * @param  cenSize size of the combined CEN header to test
+     * @param  setLastModifiedTime true if ZipEntry::setLastModifiedTime called;false otherwise
      */
     @ParameterizedTest
     @MethodSource("CEN_header_test_params")
@@ -115,6 +119,8 @@ public class ZipOutputStreamMaxCenHdrTest {
      * Validate an ZipException is thrown when the combined CEN Header, name
      * length, comment length, and extra data length exceeds 65,535 bytes when
      * the ZipOutputStream is closed.
+     * @param  cenSize size of the combined CEN header to test
+     * @param  setLastModifiedTime true if ZipEntry::setLastModifiedTime called;false otherwise
      */
     @ParameterizedTest
     @MethodSource("CEN_header_test_params")
@@ -163,6 +169,7 @@ public class ZipOutputStreamMaxCenHdrTest {
      * Write a single Zip entry using ZipOutputStream
      *
      * @param zipEntry the ZipEntry to write
+     * @param expectedException true if a ZipException should be thrown; false otherwise
      */
     private static void writeZipEntry(ZipEntry zipEntry, boolean expectedException) {
         boolean receivedException = false;
