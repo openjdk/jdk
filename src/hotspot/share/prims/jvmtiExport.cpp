@@ -2296,6 +2296,12 @@ static bool should_skip_field_event_during_strict_initialization(JavaThread* thr
     return ik->has_strict_static_fields() && ik->is_reentrant_initialization(thread);
   }
 
+  // Do not skip if there are no strict instance fields in the class hierarchy.
+  InstanceKlass* receiver_klass = InstanceKlass::cast(object()->klass());
+  if (!receiver_klass->has_strict_instance_fields_in_hierarchy()) {
+    return false;
+  }
+
   // Skip a field event for an instance field when the object containing the field is being
   // constructed by the event thread and the object's class, or any of its superclasses,
   // has strictly-initialized instance fields.
