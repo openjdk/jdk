@@ -1637,8 +1637,8 @@ static bool is_counted_loop_cmp(Node *cmp) {
   return n != nullptr &&
          n->is_Phi() &&
          n->in(0) != nullptr &&
-         n->in(0)->is_BaseCountedLoop() &&
-         n->in(0)->as_BaseCountedLoop()->phi() == n;
+         n->in(0)->is_CountedLoop() &&
+         n->in(0)->as_CountedLoop()->phi() == n;
 }
 
 //------------------------------Ideal------------------------------------------
@@ -1740,21 +1740,6 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
                phase->type(cmp2->in(2)) == TypeInt::MIN &&
                !is_cloop_condition(this)) {
       Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), cmp2->in(1)));
-      return new BoolNode(ncmp, _test._test);
-    }
-  }
-
-  // Remove long subtraction or constant addition from equality comparisons with zero.
-  if (cop == Op_CmpL &&
-      (_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
-      phase->type(cmp2) == TypeLong::ZERO) {
-    if (cmp1_op == Op_SubL) {
-      Node* ncmp = phase->transform(new CmpLNode(cmp1->in(1), cmp1->in(2)));
-      return new BoolNode(ncmp, _test._test);
-    }
-    if (cmp1_op == Op_AddL && cmp1->in(2)->is_Con() && !is_counted_loop_cmp(cmp)) {
-      Node* limit = phase->longcon(java_negate(cmp1->in(2)->get_long()));
-      Node* ncmp = phase->transform(new CmpLNode(cmp1->in(1), limit));
       return new BoolNode(ncmp, _test._test);
     }
   }

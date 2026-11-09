@@ -464,7 +464,7 @@ public class TestFoldComparesFuzzer {
 
         public Template.ZeroArgs getIRTemplate(boolean withWarmup) {
             return Template.make(() -> {
-                String signedCmpParse, unsignedCmpParse, signedCmpFinal, unsignedCmpFinal;
+                String cmpIParse, cmpUParse, cmpIFinal, cmpUFinal;
                 String comment;
 
                 // If both branches are compiled (in -Xcomp mode, i.e. no warmup), then
@@ -472,89 +472,89 @@ public class TestFoldComparesFuzzer {
                 if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LT) {
                     // a)   (n >  lo && n <  hi)
                     if (lo == maxValue() || hi == minValue()) {
-                        signedCmpParse = "< 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "< 2"; unsignedCmpFinal = "= 0";
+                        cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
                         comment = "a) one or both checks fold at parse time";
                     } else if (lo < hi && lo+2 == hi) {
                         // Not yet folded at parsing, because lo != hi
                         // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
-                        signedCmpParse = "= 2"; unsignedCmpParse = "= 0";
-                        signedCmpFinal = "= 1";
-                        unsignedCmpFinal = "= 0";
+                        cmpIParse = "= 2"; cmpUParse = "= 0";
+                        cmpIFinal = "= 1";
+                        cmpUFinal = "= 0";
                         comment = "a) single element -> signed equality";
                     } else if (lo < hi && lo+1 == hi) {
                         // Not yet folded at parsing, because lo != hi
-                        signedCmpParse = "= 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "= 0"; unsignedCmpFinal = "= 0";
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
                         comment = "a) impossible condition (exact) -> fold away";
                     } else if (lo < hi) {
-                        signedCmpParse = "= 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "= 0"; unsignedCmpFinal = "= 1";
-                        comment = "a) replace with unsigned comparison (non-empty)";
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
+                        comment = "a) replace with CmpU (non-empty)";
                     } else if (lo == hi) {
-                        // Same signed comparison at parse time.
-                        signedCmpParse = "= 1"; unsignedCmpParse = "= 0"; signedCmpFinal = "= 0"; unsignedCmpFinal = "= 0";
+                        // same CmpI at parse time
+                        cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
                         comment = "a) impossible condition -> fold away";
                     } else {
-                        signedCmpParse = "= 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "= 0"; unsignedCmpFinal = "= 0";
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
                         comment = "a) impossible condition -> fold away";
                     }
                 } else if (c_lo.cmp() == Comparator.GT && c_hi.cmp() == Comparator.LE) {
                     // b)   (n >  lo && n <= hi)
                     if (lo == maxValue() || hi == maxValue()) {
-                        signedCmpParse = "< 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "< 2"; unsignedCmpFinal = "= 0";
+                        cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
                         comment = "b) one or both checks fold at parse time";
                     } else if (lo < hi && lo+1 == hi) {
                         // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
-                        signedCmpParse = "= 2"; unsignedCmpParse = "= 0";
-                        signedCmpFinal = "= 1";
-                        unsignedCmpFinal = "= 0";
+                        cmpIParse = "= 2"; cmpUParse = "= 0";
+                        cmpIFinal = "= 1";
+                        cmpUFinal = "= 0";
                         comment = "b) single element -> signed equality";
                     } else if (lo < hi && lo+1 < hi) {
-                        signedCmpParse = "= 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "= 0"; unsignedCmpFinal = "= 1";
-                        comment = "b) replace with unsigned comparison (non-empty)";
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
+                        comment = "b) replace with CmpU (non-empty)";
                     } else if (lo == hi) {
-                        signedCmpParse = "= 1"; unsignedCmpParse = "= 0"; signedCmpFinal = "= 0"; unsignedCmpFinal = "= 0";
+                        cmpIParse = "= 1"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
                         comment = "b) impossible condition (exact) -> fold away";
                     } else {
-                        signedCmpParse = "= 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "= 0"; unsignedCmpFinal = "= 0";
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
                         comment = "b) impossible condition -> fold away";
                     }
                 } else if (c_lo.cmp() == Comparator.GE && c_hi.cmp() == Comparator.LT) {
                     // c)   (n >= lo && n <  hi)
                     if (lo == minValue() || hi == minValue()) {
-                        signedCmpParse = "< 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "< 2"; unsignedCmpFinal = "= 0";
+                        cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
                         comment = "c) one or both checks fold at parse time";
                     } else if (lo < hi && lo+1 == hi) {
                         // BoolNode::Ideal: x <u 1 or x <=u 0 -> x==0 (signed)
-                        signedCmpParse = "= 2"; unsignedCmpParse = "= 0";
-                        signedCmpFinal = "= 1";
-                        unsignedCmpFinal = "= 0";
+                        cmpIParse = "= 2"; cmpUParse = "= 0";
+                        cmpIFinal = "= 1";
+                        cmpUFinal = "= 0";
                         comment = "c) single element -> signed equality";
                     } else if (lo < hi && lo+1 < hi) {
-                        signedCmpParse = "= 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "= 0"; unsignedCmpFinal = "= 1";
-                        comment = "c) replace with unsigned comparison (non-empty)";
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
+                        comment = "c) replace with CmpU (non-empty)";
                     } else if (lo == hi) {
                         // RegionNode::optimize_trichotomy: can fold (n >= x && n < x) -> never
-                        signedCmpParse = "< 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "= 0"; unsignedCmpFinal = "= 0";
+                        cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
                         comment = "c) impossible condition (exact) -> fold away";
                     } else {
-                        signedCmpParse = "= 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "= 0"; unsignedCmpFinal = "= 0";
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
                         comment = "c) impossible condition -> fold away";
                     }
                 } else if (c_lo.cmp() == Comparator.GE && c_hi.cmp() == Comparator.LE) {
                     // d)   (n >= lo && n <= hi)
                     if (lo == minValue() || hi == maxValue()) {
-                        signedCmpParse = "< 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "< 2"; unsignedCmpFinal = "= 0";
+                        cmpIParse = "< 2"; cmpUParse = "= 0"; cmpIFinal = "< 2"; cmpUFinal = "= 0";
                         comment = "d) one or both checks fold at parse time";
                     } else if (lo == hi) {
                         // Both checks share one signed comparison at parse time.
-                        signedCmpParse = "= 1"; unsignedCmpParse = "= 0";
-                        signedCmpFinal = "= 1";
-                        unsignedCmpFinal = "= 0";
+                        cmpIParse = "= 1"; cmpUParse = "= 0";
+                        cmpIFinal = "= 1";
+                        cmpUFinal = "= 0";
                         comment = "d) single element -> signed equality";
                     } else if (lo < hi) {
-                        signedCmpParse = "= 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "= 0"; unsignedCmpFinal = "= 1";
-                        comment = "d) replace with unsigned comparison (non-empty)";
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 1";
+                        comment = "d) replace with CmpU (non-empty)";
                     } else {
-                        signedCmpParse = "= 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "= 0"; unsignedCmpFinal = "= 0";
+                        cmpIParse = "= 2"; cmpUParse = "= 0"; cmpIFinal = "= 0"; cmpUFinal = "= 0";
                         comment = "d) impossible condition -> fold away";
                     }
                 } else {
@@ -562,39 +562,39 @@ public class TestFoldComparesFuzzer {
                 }
 
                 // All the precise counting above assumes that both ifs get compiled, and hence
-                // both signed comparisons are generated. Further, it assumes that both of the "or" branches
+                // both CmpI are generated. Further, it assumes that both of the "or" branches
                 // (fail1 and fail2) end up "in the same place": either at the same region, or
                 // both in an uncommon trap. With profiling, the following cases are possible:
-                // - The first if is constant folded to fail1, and we have no signed or unsigned comparisons
+                // - The first if is constant folded to fail1, and we have no CmpI nor CmpU
                 //   in the graph.
                 // - The first if always leads to fail1, and away from the second if, and so we
-                //   only have a single signed comparison in the graph after parsing.
+                //   only have a single CmpI in the graph after parsing.
                 // - The first if always leads towards the second if, and away from fail1. And
                 //   the second if always points towards fail2 and away from succ. We get an
                 //   uncommon trap for fail1 and succ, and only the fail2 path is compiled.
-                //   Hence, we have two signed comparisons, but fail1 and fail2 do not end up "in the same place".
+                //   Hence, we have two CmpI, but fail1 and fail2 do not end up "in the same place".
                 // This makes our IR rule quite weak, sadly. We could make the IR rules stronger,
                 // but we would need to control warmup, and generate corresponding inputs that
                 // ensure the right paths are compiled or not compiled.
                 if (withWarmup) {
-                    signedCmpParse = "<= 2"; unsignedCmpParse = "= 0"; signedCmpFinal = "<= 2"; unsignedCmpFinal = "< 2";
+                    cmpIParse = "<= 2"; cmpUParse = "= 0"; cmpIFinal = "<= 2"; cmpUFinal = "< 2";
                     comment = "with warmup: unstable-if makes precise counting hard.";
                 }
 
                 return scope(
                     // CMP_L also matches CmpL3 retained in uncommon-trap debug information.
                     // So use CmpL here instead of IRNode.CMP_L.
-                    let("signedCmp", isLong ? "\"CmpL\\\\b\"" : "IRNode.CMP_I"),
-                    let("unsignedCmp", isLong ? "CMP_UL" : "CMP_U"),
-                    let("SP", signedCmpParse),
-                    let("UP", unsignedCmpParse),
-                    let("SF", signedCmpFinal),
-                    let("UF", unsignedCmpFinal),
+                    let("cmpSigned", isLong ? "\"CmpL\\\\b\"" : "IRNode.CMP_I"),
+                    let("cmpUnsigned", isLong ? "CMP_UL" : "CMP_U"),
+                    let("IP", cmpIParse),
+                    let("UP", cmpUParse),
+                    let("IF", cmpIFinal),
+                    let("UF", cmpUFinal),
                     let("comment", comment),
                     """
                     // #comment
-                    @IR(counts = {#signedCmp, "#SP", IRNode.#unsignedCmp, "#UP"}, phase = CompilePhase.AFTER_PARSING)
-                    @IR(counts = {#signedCmp, "#SF", IRNode.#unsignedCmp, "#UF"}, phase = CompilePhase.PRINT_IDEAL)
+                    @IR(counts = {#cmpSigned, "#IP", IRNode.#cmpUnsigned, "#UP"}, phase = CompilePhase.AFTER_PARSING)
+                    @IR(counts = {#cmpSigned, "#IF", IRNode.#cmpUnsigned, "#UF"}, phase = CompilePhase.PRINT_IDEAL)
                     """
                 );
             });
