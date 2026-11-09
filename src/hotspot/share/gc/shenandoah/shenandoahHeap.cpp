@@ -859,11 +859,16 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
   // New object should fit the GCLAB size
   size_t min_size = MAX2(size, PLAB::min_size());
 
-  // Figure out size of new GCLAB, looking back at heuristics. Expand aggressively.
-  size_t new_size = ShenandoahThreadLocalData::gclab_size(thread) * 2;
-
-  new_size = MIN2(new_size, PLAB::max_size());
-  new_size = MAX2(new_size, PLAB::min_size());
+  size_t new_size;
+  if (thread->is_Worker_thread()) {
+    // GC workers perform the bulk of the evacuation work, so give them the largest GCLABs available.
+    new_size = PLAB::max_size();
+  } else {
+    assert(thread->is_Java_thread(), "Must be java thread");
+    // Figure out size of new GCLAB, looking back at heuristics. Expand aggressively.
+    new_size = clamp(ShenandoahThreadLocalData::gclab_size(thread) * 2,
+                     PLAB::min_size(), PLAB::max_size());
+  }
 
   // Record new heuristic value even if we take any shortcut. This captures
   // the case when moderately-sized objects always take a shortcut. At some point,
