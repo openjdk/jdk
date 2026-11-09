@@ -719,7 +719,7 @@ public:
   void counted_loop( PhaseIdealLoop *phase );
 
   // Check for Node being a loop-breaking test
-  Node *is_loop_exit(Node *iff) const;
+  Node* is_loop_exit(const IfNode *iff) const;
 
   // Return unique loop-exit projection or null if the loop has multiple exits.
   IfFalseNode* unique_loop_exit_proj_or_null();
@@ -1737,8 +1737,8 @@ public:
 #endif
 
   // Returns nonzero constant stride if-node is a possible iv test (otherwise returns zero.)
-  int stride_of_possible_iv( Node* iff );
-  bool is_possible_iv_test( Node* iff ) { return stride_of_possible_iv(iff) != 0; }
+  int stride_of_possible_iv(IfNode* iff);
+  bool is_possible_iv_test(IfNode* iff) { return stride_of_possible_iv(iff) != 0; }
   // Return the (unique) control output node that's in the loop (if it exists.)
   Node* stay_in_loop( Node* n, IdealLoopTree *loop);
   // Insert a signed compare loop exit cloned from an unsigned compare.

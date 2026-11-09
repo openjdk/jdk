@@ -925,6 +925,8 @@ public:
   template <typename T> static T* isa(Node*);
   template <typename T> static const T* isa(const Node*);
   template <typename T> static T* isa(std::nullptr_t);
+  template <typename T> static T* as(Node*);
+  template <typename T> static const T* as(const Node*);
   template <int Op> static bool is(const Node* n) {
     if (n == nullptr) return false;
     return n->Opcode() == Op;
@@ -1606,6 +1608,18 @@ T* Node::isa(std::nullptr_t) {
   return nullptr;
 }
 
+template <typename T>
+T* Node::as(Node*) {
+  static_assert(DependentAlwaysFalse<T>, "No Node::as<T>(Node*) specialization found for this type");
+  return nullptr;
+}
+
+template <typename T>
+const T* Node::as(const Node*) {
+  static_assert(DependentAlwaysFalse<T>, "No Node::as<T>(const Node*) specialization found for this type");
+  return nullptr;
+}
+
 #define DEFINE_CLASS_TEMPLATED_QUERY(type)                        \
 template <>                                                       \
 inline bool Node::is<type##Node>(const Node* n) {                 \
@@ -1625,6 +1639,16 @@ inline const type##Node* Node::isa<type##Node>(const Node* n) {   \
 template <>                                                       \
 inline type##Node* Node::isa<type##Node>(std::nullptr_t) {        \
   return nullptr;                                                 \
+}                                                                 \
+template <>                                                       \
+inline type##Node* Node::as<type##Node>(Node* n) {                \
+  assert(n != nullptr, "invalid null node");                      \
+  return n->as_##type();                                          \
+}                                                                 \
+template <>                                                       \
+inline const type##Node* Node::as<type##Node>(const Node* n) {    \
+  assert(n != nullptr, "invalid null node");                      \
+  return n->as_##type();                                          \
 }                                                                 \
 
 NODE_METHODS(DEFINE_CLASS_TEMPLATED_QUERY)

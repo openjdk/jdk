@@ -367,8 +367,7 @@ void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines
   }
 }
 
-void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead) {
-  assert(Node::is<CallNode>(dead), "sanity");
+void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, CallNode* dead) {
   int found = 0;
   for (int i = 0; i < inlines->length(); i++) {
     if (inlines->at(i)->call_node() == dead) {
@@ -428,15 +427,15 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->for_merge_stores_igvn()) {
     remove_from_merge_stores_igvn(dead);
   }
-  if (dead->is_Call()) {
-    remove_useless_late_inlines(                &_late_inlines, dead);
-    remove_useless_late_inlines(         &_string_late_inlines, dead);
-    remove_useless_late_inlines(         &_boxing_late_inlines, dead);
-    remove_useless_late_inlines(         &_vector_late_inlines, dead);
-    remove_useless_late_inlines(&_vector_reboxing_late_inlines, dead);
+  if (CallNode* dead_call = dead->isa_Call(); dead_call != nullptr) {
+    remove_useless_late_inlines(                &_late_inlines, dead_call);
+    remove_useless_late_inlines(         &_string_late_inlines, dead_call);
+    remove_useless_late_inlines(         &_boxing_late_inlines, dead_call);
+    remove_useless_late_inlines(         &_vector_late_inlines, dead_call);
+    remove_useless_late_inlines(&_vector_reboxing_late_inlines, dead_call);
 
-    if (dead->is_CallStaticJava()) {
-      remove_unstable_if_trap(dead->as_CallStaticJava(), false);
+    if (CallStaticJavaNode* dead_call_static = dead->isa_CallStaticJava(); dead_call_static != nullptr) {
+      remove_unstable_if_trap(dead_call_static, false);
     }
   }
 }
@@ -6018,7 +6017,7 @@ void Compile::sort_macro_nodes() {
   }
 }
 
-void Compile::print_method(CompilerPhaseType compile_phase, int level, Node* n) {
+void Compile::print_method(CompilerPhaseType compile_phase, int level, const Node* n) {
   if (failing_internal()) { return; } // failing_internal to not stress bailouts from printing code.
   EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
