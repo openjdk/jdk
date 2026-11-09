@@ -1174,7 +1174,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     method->print_short_name(&ss);
     tty->print_cr("%s", ss.freeze());
   }
-  LogStreamHandle(Debug, aot, codecache, compilation) log;
+  LogStreamHandle(Debug, aot, compilation) log;
   if (log.is_enabled() && (AOTCodeCache::is_using_code() || AOTCodeCache::is_dumping_code())) {
     ResourceMark rm;
     MethodTrainingData* mtd = MethodTrainingData::have_data() ? MethodTrainingData::find_fast(method) : nullptr;
@@ -2297,6 +2297,13 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     ResourceMark rm;
     task->print_post(tty);
   }
+  if (task->is_aot_compile()) {
+    LogStreamHandle(Debug, aot, compilation) log;
+    if (log.is_enabled()) {
+      ResourceMark rm;
+      task->print_post(&log);
+    }
+  }
 
   Log(compilation, codecache) log;
   if (log.is_debug()) {
@@ -2457,10 +2464,10 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
 
   nmethod* code = is_osr ? method->lookup_osr_nmethod_for(task->osr_bci(), comp_level, true /* match_level */)
                          : method->code();
-  // With VerifyAOTCode AOT code is not installed.
-  bool verify_aot_code = task->is_aot_load() && VerifyAOTCode;
+  // AOT code is not published during assembly phase and with VerifyAOTCode during production.
+  bool not_used_aot_code = task->is_aot_compile() || (task->is_aot_load() && VerifyAOTCode);
   // Check if compiled code was invalidated already
-  bool invalidated = !verify_aot_code && (code == nullptr || code->compile_id() != compile_id);
+  bool invalidated = !not_used_aot_code && (code == nullptr || code->compile_id() != compile_id);
 
   CompilerCounters* counters = thread->counters();
 
