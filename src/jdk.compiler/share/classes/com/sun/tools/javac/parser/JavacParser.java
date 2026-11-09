@@ -1707,7 +1707,7 @@ public class JavacParser implements Parser {
                             }
                             selectExprMode();
                             return term3Rest(t, typeArgs);
-                         }
+                        }
                         break loop;
                     default:
                         break loop;
