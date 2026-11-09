@@ -434,8 +434,7 @@ public:
   PhiNode* phi() const {
     Node* tmp = incr();
     if (tmp && tmp->req() == 3) {
-      Node* phi = tmp->in(1);
-      return isa<PhiNode>(phi);
+      return isa<PhiNode>(tmp->in(1));
     }
     return nullptr;
   }

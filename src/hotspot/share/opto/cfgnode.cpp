@@ -3338,7 +3338,7 @@ const TypeTuple* PhiNode::collect_types(PhaseGVN* phase) const {
     if (t != phi_type && t->higher_equal_speculative(phi_type)) {
       types.insert_sorted<compare_types>(t);
     }
-    while (ConstraintCastNode* cast = isa<ConstraintCastNode>(in)) {
+    for (ConstraintCastNode* cast = isa<ConstraintCastNode>(in); cast != nullptr; cast = isa<ConstraintCastNode>(in)) {
       Node* next = in->in(1);
       if (phase->type(next)->isa_rawptr() && phase->type(in)->isa_oopptr()) {
         break;
