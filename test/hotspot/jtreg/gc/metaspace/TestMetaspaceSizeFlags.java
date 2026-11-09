@@ -84,7 +84,7 @@ public class TestMetaspaceSizeFlags {
     //          We need to make sure that MaxMetaspaceSize can be lowered
     //          once, raised once above default MetaspaceSize and that
     //          MetaspaceSize follows to the first lower value and then
-    //          is adjust back to the default MetaspaceSize for the higher
+    //          is adjusted back to the default MetaspaceSize for the higher
     //          value.
     testMaxMetaspaceSizeLTDefaultMetaspaceSizeTwice(LOWER_THAN_DEFAULT1,
                                                     HIGHER_THAN_DEFAULT);

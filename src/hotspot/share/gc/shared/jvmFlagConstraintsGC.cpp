@@ -435,12 +435,9 @@ JVMFlag::Error MaxMetaspaceSizeConstraintFunc(size_t value, bool verbose) {
     } else {
       // The new MaxMetaspaceSize is >= defaultMetaspaceSize so we
       // silently adjust MetaspaceSize back to defaultMetaspaceSize.
-      // I considered using FLAG_SET_ERGO here to document the fact
-      // that the MetaspaceSize value was ergo adjusted lower and back
-      // again to the default, but to what end?
       FLAG_SET_DEFAULT(MetaspaceSize, defaultMetaspaceSize);
       // However, using FLAG_SET_DEFAULT here does not change the flag
-      // origin back to "{default}". It remains at "{ergonomic}".
+      // origin back to "{default}". It remains as "{ergonomic}".
     }
   }
   return JVMFlag::SUCCESS;
