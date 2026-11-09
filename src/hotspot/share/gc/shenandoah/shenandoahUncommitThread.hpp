@@ -28,19 +28,9 @@
 #include "gc/shared/concurrentGCThread.hpp"
 
 class ShenandoahHeap;
-class ShenandoahHeapRegion;
 
 class ShenandoahUncommitThread : public ConcurrentGCThread {
   ShenandoahHeap* const _heap;
-
-  // Candidate regions
-  struct Candidate {
-    ShenandoahHeapRegion* _region;
-    int64_t _empty_time;
-  };
-
-  Candidate* _candidates;
-  size_t _candidates_count;
 
   // Indicates that `SoftMaxHeapSize` has changed
   ShenandoahSharedFlag _soft_max_changed;
@@ -54,14 +44,14 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // Indicates that regions are being actively uncommitted
   ShenandoahSharedFlag _uncommit_in_progress;
 
-  // Indicates that current plan needs to be re-evaluated.
-  ShenandoahSharedFlag _reevaluate;
+  // Indicates that current stride needs to be restarted.
+  ShenandoahSharedFlag _restart;
 
   // This lock is used to coordinate allowing or forbidding regions to be uncommitted
   Monitor _uncommit_lock;
 
   // Plan work, fill out candidate regions. True if there is work.
-  bool plan_work(double shrink_delay, size_t shrink_until);
+  bool has_work(double shrink_delay, size_t shrink_until);
 
   // Perform the work of uncommitting empty regions
   void uncommit(double shrink_delay, size_t shrink_until);
@@ -71,8 +61,6 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
 
   // Unset progress
   void unset_progress();
-
-  static int compare_uncommit_priority(Candidate& a, Candidate& b);
 
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
