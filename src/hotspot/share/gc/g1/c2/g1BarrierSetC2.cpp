@@ -226,21 +226,13 @@ void G1BarrierSetC2::eliminate_gc_barrier_data(Node* node) const {
   }
 }
 
-static TypePtr::PTR nullness_of_oop(Node* ptr) {
-  const Type* ptr_bottom_type = ptr->bottom_type();
-  const TypePtr* ptr_bottom_type_as_ptr = ptr_bottom_type->make_ptr();
-  assert(ptr_bottom_type_as_ptr != nullptr, "we should have a pointer there");
-  return ptr_bottom_type_as_ptr->ptr();
-}
-
-static TypePtr::PTR nullness_of_oops_in_store_l_special(const MemNode* store) {
-  TypePtr::PTR first_ptr = nullness_of_oop(store->in(StoreLSpecialNode::FirstOop));
-  TypePtr::PTR second_ptr = TypePtr::TopPTR;
+static TypePtr::PTR meet_ptr_of_oops_in_store_l_special(const MemNode* store) {
+  const Type* oops_meet = store->in(StoreLSpecialNode::FirstOop)->bottom_type();
   if (!store->in(StoreLSpecialNode::SecondOop)->is_top()) {
-    second_ptr = nullness_of_oop(store->in(StoreLSpecialNode::SecondOop));
+    oops_meet = oops_meet->meet(store->in(StoreLSpecialNode::SecondOop)->bottom_type());
   }
-  // They might disagree, but both will share the same barrier. We must be conservative.
-  return TypePtr::meet_ptr(first_ptr, second_ptr);
+  const TypePtr* oops_meet_as_ptr = oops_meet->make_ptr();
+  return oops_meet_as_ptr->ptr();
 }
 
 static void refine_barrier_by_new_val_type(const Node* n) {
@@ -253,7 +245,7 @@ static void refine_barrier_by_new_val_type(const Node* n) {
   uint8_t barrier_data = store->barrier_data();
   TypePtr::PTR newval_type;
   if (n->Opcode() == Op_StoreLSpecial) {
-    newval_type = nullness_of_oops_in_store_l_special(store);
+    newval_type = meet_ptr_of_oops_in_store_l_special(store);
   } else {
     const Node* newval = n->in(MemNode::ValueIn);
     assert(newval != nullptr, "");

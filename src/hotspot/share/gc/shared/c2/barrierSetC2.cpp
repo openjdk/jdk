@@ -149,7 +149,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
   bool mismatched = (decorators & C2_MISMATCHED) != 0;
   bool unaligned = (decorators & C2_UNALIGNED) != 0;
   bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
-  bool store_special = (decorators & C2_STORE_SPECIAL) != 0;
+  bool store_special = (decorators & C2_SPECIAL_ACCESS) != 0;
   bool requires_atomic_access = (decorators & MO_UNORDERED) == 0;
 
   MemNode::MemOrd mo = access.mem_node_mo();

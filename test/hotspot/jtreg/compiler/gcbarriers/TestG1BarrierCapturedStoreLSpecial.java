@@ -162,12 +162,14 @@ public class TestG1BarrierCapturedStoreLSpecial {
         }
     }
 
+    // Assignment of value of unknown nullness, just after allocation
+    // No barrier needed. Store could be captured.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-            failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_SPECIAL})
     @IR(applyIf = {"UseCompressedOops", "true"},
-            counts = {G1_STORE_L_SPECIAL, "2"},  // Should be 1 with store capturing
-            failOn = {G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY})
+        counts = {G1_STORE_L_SPECIAL, "2"},  // Should be 1 with store capturing
+        failOn = {G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY})
     static Holder test1(Integer i, MyValue v) {
         Holder t = new Holder();
         t.i = i;
@@ -183,6 +185,8 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertEQ(h.v, v);
     }
 
+    // Assignment of value of unknown nullness, in existing object.
+    // Pre- and post-barrier needed.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -204,6 +208,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertEQ(t, h);
     }
 
+    // Similar to test1, but v is also freshly allocated, hence not-null.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -225,6 +230,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertNE(h.v, null);
     }
 
+    // Similar to test1, but v is known to be null.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -245,6 +251,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertEQ(h.v, null);
     }
 
+    // Similar to test2, v is still not-null at assignment point, but it is already allocated
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -265,6 +272,8 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertEQ(h.v, v);
     }
 
+    // Assign 2 oops in a since StoreLSpecial. Both are known to be not-null.
+    // We can use a not-null post-barrier.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -285,6 +294,8 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertNE(h2.v.v2, null);
     }
 
+    // Assign 2 oops in a since StoreLSpecial. Only left is known to be not-null.
+    // We cannot use a not-null post-barrier.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -305,6 +316,8 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertEQ(h2.v.v2, null);
     }
 
+    // Similar to test6, but this time, only right is not-null.
+    // We cannot use a not-null post-barrier.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -325,6 +338,8 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertNE(h2.v.v2, null);
     }
 
+    // Assign 2 null in a since StoreLSpecial.
+    // Not post barrier is needed.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -345,11 +360,12 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertEQ(h2.v.v2, null);
     }
 
+    // Assign a single not-null oop at offset 0 with a StoreLSpecial. Not-null post-barrier does the trick.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-            failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_SPECIAL})
     @IR(applyIf = {"UseCompressedOops", "true"},
-            counts = {G1_STORE_L_SPECIAL_ONE_OOP_0_WITH_BARRIER_FLAG, PRE_AND_POST_NOT_NULL, "1"})
+        counts = {G1_STORE_L_SPECIAL_ONE_OOP_0_WITH_BARRIER_FLAG, PRE_AND_POST_NOT_NULL, "1"})
     static HolderWithOopsFirst test9_non_null(HolderWithOopsFirst h) {
         MyValueOopFirst v = new MyValueOopFirst(42, new Object());
         h.v = v;
@@ -365,6 +381,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertNE(h2.v.v, null);
     }
 
+    // Assign a single null at offset 0 with a StoreLSpecial. No post-barrier needed.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -393,11 +410,12 @@ public class TestG1BarrierCapturedStoreLSpecial {
         }
     }
 
+    // Same as test9_non_null, but oop is at offset 4.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
-            failOn = {G1_STORE_L_SPECIAL})
+        failOn = {G1_STORE_L_SPECIAL})
     @IR(applyIf = {"UseCompressedOops", "true"},
-            counts = {G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG, PRE_AND_POST_NOT_NULL, "1"})
+        counts = {G1_STORE_L_SPECIAL_ONE_OOP_4_WITH_BARRIER_FLAG, PRE_AND_POST_NOT_NULL, "1"})
     static HolderWithOopsSecond test10_non_null(HolderWithOopsSecond h) {
         MyValueOopSecond v = new MyValueOopSecond(42, new Object());
         h.v = v;
@@ -413,6 +431,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertNE(h2.v.v, null);
     }
 
+    // Same as test9_maybe_null, but null is at offset 4.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -441,6 +460,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         }
     }
 
+    // Assign two oops in a single StoreLSpecial, just after initialization
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
@@ -460,6 +480,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertEQ(h.v, v);
     }
 
+    // Variation of test11: instead of getting the value object containing the two oops, we create it here.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})

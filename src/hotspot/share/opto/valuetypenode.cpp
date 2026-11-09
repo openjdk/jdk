@@ -2403,7 +2403,7 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
     // Contains oops and requires late barrier expansion. Emit a special store node that allows to emit GC barriers in the backend.
     assert(UseG1GC, "Unexpected GC");
     assert(payload_bt == T_LONG, "Unexpected payload type");
-    Node* store_special = kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, TypeLong::LONG, T_LONG, _decorators | C2_MISMATCHED | C2_STORE_SPECIAL, true, value);
+    Node* store_special = kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, TypeLong::LONG, T_LONG, _decorators | C2_MISMATCHED | C2_SPECIAL_ACCESS, true, value);
     assert(store_special->Opcode() == Op_StoreLSpecial, "must be special");
 
     // If one oop, set the offset (if no offset is set, two oops are assumed by the backend)
