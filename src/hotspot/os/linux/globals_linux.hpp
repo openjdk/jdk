@@ -76,9 +76,10 @@
                                                                         \
   product(bool, THPStackMitigation, true, DIAGNOSTIC,                   \
           "If THPs are unconditionally enabled on the system (mode "    \
-          "\"always\"), the JVM will prevent THP from forming in "      \
-          "thread stacks. When disabled, the absence of this mitigation"\
-          "allows THPs to form in thread stacks.")                      \
+          "\"always\") and MAP_STACK is not mapped to VM_NOHUGEPAGE "   \
+          "in the kernel, the JVM will prevent THP from forming in "    \
+          "thread stacks. When disabled, the absence of this "          \
+          "mitigation allows THPs to form in thread stacks.")           \
                                                                         \
   develop(bool, DelayThreadStartALot, false,                            \
           "Artificially delay thread starts randomly for testing.")     \
