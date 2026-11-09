@@ -7830,6 +7830,31 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  address generate_updateBytesCRC32_scalar() {
+    assert(UseCRC32Intrinsics, "what are we doing here?");
+
+    StubId stub_id = StubId::stubgen_updateBytesCRC32_scalar_id;
+    assert(StubInfo::entry_count(stub_id) == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+
+    start = __ pc();
+    __ enter();
+    __ kernel_crc32(c_rarg0, c_rarg1, c_rarg2,
+                    c_rarg3, c_rarg4, c_rarg5, c_rarg6,
+                    c_rarg7, t2, t3, t4, t5, t6,
+                    false /* use_vector */);
+    __ leave();
+    __ ret();
+
+    store_archive_data(stub_id, start, __ pc());
+    return start;
+  }
+
   address generate_updateBytesCRC32C() {
     assert(UseCRC32CIntrinsics, "what are we doing here?");
     StubId stub_id = StubId::stubgen_updateBytesCRC32C_id;
@@ -7954,6 +7979,7 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     if (UseCRC32Intrinsics) {
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
+      StubRoutines::riscv::_updateBytesCRC32_scalar = generate_updateBytesCRC32_scalar();
     }
 
     if (UseCRC32CIntrinsics) {

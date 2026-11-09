@@ -2634,7 +2634,8 @@ void MacroAssembler::kernel_crc32_vclmul_fold(Register crc, Register buf, Regist
  */
 void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
-        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6,
+        bool use_vector) {
   assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
   Label L_vector_entry,
         L_unroll_loop,
@@ -2679,7 +2680,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   bind(L_skip2);
 
 #ifdef COMPILER2
-  if (UseRVV) {
+  if (UseRVV && use_vector) {
     const int64_t tmp_limit =
             UseZvbc ? 128 * 3 // 3 rounds of folding with carry-less multiplication
                     : MaxVectorSize >= 32 ? unroll_words*3 : unroll_words*5;
@@ -2739,7 +2740,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   // put vector code here, otherwise "offset is too large" error occurs.
 #ifdef COMPILER2
-  if (UseRVV) {
+  if (UseRVV && use_vector) {
     // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
     j(L_exit);
 
