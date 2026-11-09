@@ -23,11 +23,11 @@
  */
 
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotMetaspaceRecipes.hpp"
 #include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/finalImageRecipes.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
@@ -39,23 +39,23 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
-static FinalImageRecipes* _final_image_recipes = nullptr;
+static AOTMetaspaceRecipes* _aot_metaspace_recipes = nullptr;
 
-void* FinalImageRecipes::operator new(size_t size) throw() {
+void* AOTMetaspaceRecipes::operator new(size_t size) throw() {
   return ArchiveBuilder::current()->ro_region_alloc(size);
 }
 
-void FinalImageRecipes::record_all_classes() {
+void AOTMetaspaceRecipes::record_all_classes() {
   _all_klasses = ArchiveUtils::archive_array(ArchiveBuilder::current()->klasses());
   ArchivePtrMarker::mark_pointer(&_all_klasses);
 }
 
-void FinalImageRecipes::record_recipes_for_constantpool() {
+void AOTMetaspaceRecipes::record_recipes_for_constantpool() {
   ResourceMark rm;
 
   // The recipes are recorded regardless of CDSConfig::is_dumping_{invokedynamic,dynamic_proxies,reflection_data}().
   // If some of these options are not enabled, the corresponding recipes will be
-  // ignored during the final image assembly.
+  // ignored during the AOT cache assembly.
 
   GrowableArray<Array<int>*> tmp_cp_recipes;
   GrowableArray<int> tmp_flags;
@@ -152,8 +152,8 @@ void FinalImageRecipes::record_recipes_for_constantpool() {
   ArchivePtrMarker::mark_pointer(&_flags);
 }
 
-void FinalImageRecipes::apply_recipes_for_constantpool(JavaThread* current) {
-  assert(CDSConfig::is_dumping_final_static_archive(), "must be");
+void AOTMetaspaceRecipes::apply_recipes_for_constantpool(JavaThread* current) {
+  assert(CDSConfig::is_dumping_aot_cache(), "must be");
 
   for (int i = 0; i < _all_klasses->length(); i++) {
     Array<int>* cp_indices = _cp_recipes->at(i);
@@ -181,7 +181,7 @@ void FinalImageRecipes::apply_recipes_for_constantpool(JavaThread* current) {
   }
 }
 
-void FinalImageRecipes::load_all_classes(TRAPS) {
+void AOTMetaspaceRecipes::load_all_classes(TRAPS) {
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
   for (int i = 0; i < _all_klasses->length(); i++) {
     Klass* k = _all_klasses->at(i);
@@ -204,7 +204,7 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
   }
 }
 
-void FinalImageRecipes::link_all_classes(TRAPS) {
+void AOTMetaspaceRecipes::link_all_classes(TRAPS) {
   for (int i = 0; i < _all_klasses->length(); i++) {
     Klass* k = _all_klasses->at(i);
     if (k->is_instance_klass()) {
@@ -217,7 +217,7 @@ void FinalImageRecipes::link_all_classes(TRAPS) {
   }
 }
 
-void FinalImageRecipes::initialize_all_safe_classes(TRAPS) {
+void AOTMetaspaceRecipes::initialize_all_safe_classes(TRAPS) {
   for (int i = 0; i < _all_klasses->length(); i++) {
     Klass* k = _all_klasses->at(i);
     int flags = _flags->at(i);
@@ -236,17 +236,17 @@ void FinalImageRecipes::initialize_all_safe_classes(TRAPS) {
   }
 }
 
-void FinalImageRecipes::record_recipes() {
-  assert(CDSConfig::is_dumping_preimage_static_archive(), "must be");
-  _final_image_recipes = new FinalImageRecipes();
-  _final_image_recipes->record_all_classes();
-  _final_image_recipes->record_recipes_for_constantpool();
+void AOTMetaspaceRecipes::record_recipes() {
+  assert(CDSConfig::is_dumping_aot_configuration(), "must be");
+  _aot_metaspace_recipes = new AOTMetaspaceRecipes();
+  _aot_metaspace_recipes->record_all_classes();
+  _aot_metaspace_recipes->record_recipes_for_constantpool();
 }
 
-void FinalImageRecipes::apply_recipes(TRAPS) {
-  assert(CDSConfig::is_dumping_final_static_archive(), "must be");
-  if (_final_image_recipes != nullptr) {
-    _final_image_recipes->apply_recipes_impl(THREAD);
+void AOTMetaspaceRecipes::apply_recipes(TRAPS) {
+  assert(CDSConfig::is_dumping_aot_cache(), "must be");
+  if (_aot_metaspace_recipes != nullptr) {
+    _aot_metaspace_recipes->apply_recipes_impl(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       log_error(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
@@ -255,19 +255,19 @@ void FinalImageRecipes::apply_recipes(TRAPS) {
     }
   }
 
-  // Set it to null as we don't need to write this table into the final image.
-  _final_image_recipes = nullptr;
+  // Set it to null as we don't need to write this table into the AOT cache
+  _aot_metaspace_recipes = nullptr;
 }
 
 // Follow the same class processing phases as during production run
-void FinalImageRecipes::apply_recipes_impl(TRAPS) {
-  assert(CDSConfig::is_dumping_final_static_archive(), "sanity");
+void AOTMetaspaceRecipes::apply_recipes_impl(TRAPS) {
+  assert(CDSConfig::is_dumping_aot_cache(), "sanity");
   load_all_classes(CHECK);
   link_all_classes(CHECK);
   initialize_all_safe_classes(CHECK);
   apply_recipes_for_constantpool(THREAD);
 }
 
-void FinalImageRecipes::serialize(SerializeClosure* soc) {
-  soc->do_ptr((void**)&_final_image_recipes);
+void AOTMetaspaceRecipes::serialize(SerializeClosure* soc) {
+  soc->do_ptr((void**)&_aot_metaspace_recipes);
 }

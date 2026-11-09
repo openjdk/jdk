@@ -232,7 +232,7 @@ bool AOTCodeCache::is_using_code() {
 // This is used before AOTCodeCache is initialized
 // but after AOT (CDS) Cache flags consistency is checked.
 bool AOTCodeCache::maybe_dumping_code() {
-  return AOTCodeCaching && CDSConfig::is_dumping_final_static_archive();
+  return AOTCodeCaching && CDSConfig::is_dumping_aot_cache();
 }
 
 // Next methods could be called regardless of AOT code cache status.
@@ -287,7 +287,7 @@ uint AOTCodeCache::max_aot_code_size() {
 }
 
 bool AOTCodeCache::is_code_load_thread_on() {
-  return AOTCodeCaching && !CDSConfig::is_dumping_final_static_archive();
+  return AOTCodeCaching && !CDSConfig::is_dumping_aot_cache();
 }
 
 // It is called from AOTMetaspace::initialize_shared_spaces()
@@ -303,7 +303,7 @@ void AOTCodeCache::initialize() {
 
   bool is_dumping = false;
   bool is_using   = false;
-  if (CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes()) {
+  if (CDSConfig::is_dumping_aot_cache() && CDSConfig::is_dumping_aot_linked_classes()) {
     is_dumping = is_caching_enabled();
   } else if (CDSConfig::is_using_archive() && CDSConfig::is_using_aot_linked_classes()) {
     is_using = is_caching_enabled();
