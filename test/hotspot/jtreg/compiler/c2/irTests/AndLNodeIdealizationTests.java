@@ -58,6 +58,18 @@ public class AndLNodeIdealizationTests {
         assertResult(max, max);
     }
 
+    @Run(test = { "test10", "test11" })
+    public void runMethodConvI2L() {
+        int a = RunInfo.getRandom().nextInt();
+
+        assertResultConvI2L(0);
+        assertResultConvI2L(10);
+        assertResultConvI2L(-10);
+        assertResultConvI2L(Integer.MIN_VALUE);
+        assertResultConvI2L(Integer.MAX_VALUE);
+        assertResultConvI2L(a);
+    }
+
     @DontCompile
     public void assertResult(long a, long b) {
         Asserts.assertEQ((~a) & (~b), test1(a, b));
@@ -69,6 +81,12 @@ public class AndLNodeIdealizationTests {
         Asserts.assertEQ(((byte)a & -8L) <= 127, test7(a, b));
         Asserts.assertEQ(((a & 255) & (char)b) > 255, test8(a, b));
         Asserts.assertEQ((((a & 1) - 3) & ((b & 2) - 10)) > -8, test9(a, b));
+    }
+
+    @DontCompile
+    public void assertResultConvI2L(int a) {
+        Asserts.assertEQ(a & -8L, test10(a));
+        Asserts.assertEQ(a & 0xFFFFFFFFL, test11(a));
     }
 
     @Test
@@ -134,5 +152,24 @@ public class AndLNodeIdealizationTests {
     // Checks that [-3, -2] & [-10, -8] => [-16, -8]
     public boolean test9(long a, long b) {
         return (((a & 1) - 3) & ((b & 2) - 10)) > -8;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.AND_L })
+    @IR(counts = { IRNode.AND_I, "1",
+                   IRNode.CONV_I2L, "1" })
+    // Checks ConvI2L(a) & -8 => ConvI2L(a & -8), the mask being a sign
+    // extension of its 32-bit value
+    public long test10(int a) {
+        return a & -8L;
+    }
+
+    @Test
+    @IR(counts = { IRNode.AND_L, "1" })
+    @IR(failOn = { IRNode.AND_I })
+    // Checks that ConvI2L(a) & 0xFFFFFFFF is not commuted: 0xFFFFFFFF is not a
+    // sign extension of a 32-bit value, so the result must stay zero extended
+    public long test11(int a) {
+        return a & 0xFFFFFFFFL;
     }
 }
