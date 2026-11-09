@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -562,21 +563,32 @@ public class FramesDecoder {
     }
 
     private Http2Frame parseAltSvcFrame(int frameLength, int frameStreamid, int frameFlags) {
+        if (frameLength < 2) {
+            skipBytes(frameLength);
+            return new MalformedFrame(ErrorFrame.FRAME_SIZE_ERROR,
+                    "AltSvcFrame length is " + frameLength + ", should be >= 2");
+        }
         var len = getShort();
+        if (len > frameLength - 2) {
+            skipBytes(frameLength - 2);
+            return new MalformedFrame(ErrorFrame.FRAME_SIZE_ERROR,
+                    "AltSvcFrame origin length " + len + " > payload");
+        }
         byte[] origin;
         Optional<String> originUri = Optional.empty();
         if (len > 0) {
             origin = getBytes(len);
             if (!isUSAscii(origin)) {
-                return new MalformedFrame(ErrorFrame.PROTOCOL_ERROR, frameStreamid,
-                        "illegal character in AltSvcFrame");
+                Log.logTrace("Ignoring AltSvcFrame with illegal character in origin");
+                skipBytes(frameLength - 2 - len);
+                return null;
             }
             originUri = Optional.of(new String(origin, StandardCharsets.US_ASCII));
         }
         byte[] altbytes = getBytes(frameLength - 2 - len);
         if (!isUSAscii(altbytes)) {
-            return new MalformedFrame(ErrorFrame.PROTOCOL_ERROR, frameStreamid,
-                    "illegal character in AltSvcFrame");
+            Log.logTrace("Ignoring AltSvcFrame with illegal character in value");
+            return null;
         }
         String altSvc = new String(altbytes, StandardCharsets.US_ASCII);
         return new AltSvcFrame(frameStreamid, 0, originUri, altSvc);

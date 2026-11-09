@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +59,7 @@ public class MalformedFrame extends Http2Frame {
     @Override
     public String toString() {
         return super.toString() + " MalformedFrame, Error: " + ErrorFrame.stringForCode(errorCode)
-                + " streamid: " + streamid + " reason: " + msg;
+                + " errorStream: " + errorStream + " reason: " + msg;
     }
 
     public int getErrorCode() {
@@ -67,5 +68,13 @@ public class MalformedFrame extends Http2Frame {
 
     public String getMessage() {
         return msg;
+    }
+
+    public int getErrorStream() {
+        return errorStream;
+    }
+
+    public boolean isConnectionError() {
+        return errorStream == 0;
     }
 }

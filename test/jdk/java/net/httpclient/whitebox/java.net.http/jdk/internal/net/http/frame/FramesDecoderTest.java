@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,5 +137,77 @@ public class FramesDecoderTest {
         out.println("Sending " + combined + " to decoder: ");
         decoder.decode(combined);
         assertEquals(1, testFrameProcessor.numberOfFramesDecoded());
+    }
+
+    private static byte[] frame(int type, int streamId, byte[] payload) {
+        ByteBuffer buffer = ByteBuffer.allocate(Http2Frame.FRAME_HEADER_SIZE
+                + payload.length);
+        int len = payload.length;
+        buffer.put((byte) (len >> 16));
+        buffer.put((byte) (len >> 8));
+        buffer.put((byte) len);
+        buffer.put((byte) type);
+        buffer.put((byte) 0);
+        buffer.putInt(streamId);
+        buffer.put(payload);
+        return buffer.array();
+    }
+
+    private static final byte[] PING = frame(PingFrame.TYPE, 0, new byte[8]);
+
+    private static List<Http2Frame> decode(byte[][] frames) throws IOException {
+        int len = 0;
+        for (byte[] frame : frames) {
+            len += frame.length;
+        }
+        ByteBuffer input = ByteBuffer.allocate(len);
+        for (byte[] frame : frames) {
+            input.put(frame);
+        }
+        input.flip();
+        List<Http2Frame> decoded = new ArrayList<>();
+        new FramesDecoder(decoded::add).decode(input);
+        return decoded;
+    }
+
+    /**
+     * A PRIORITY frame with a length other than 5
+     */
+    @Test
+    public void decodeBadLengthPriorityFrame() throws Exception {
+        List<Http2Frame> frames = decode(new byte[][]{frame(PriorityFrame.TYPE, 3, new byte[4]), PING});
+        assertEquals(2, frames.size(), frames.toString());
+        MalformedFrame malformedFrame = assertInstanceOf(MalformedFrame.class, frames.get(0));
+        assertEquals(ErrorFrame.FRAME_SIZE_ERROR, malformedFrame.getErrorCode());
+        assertEquals(3, malformedFrame.getErrorStream());
+        assertFalse(malformedFrame.isConnectionError());
+        assertInstanceOf(PingFrame.class, frames.get(1));
+    }
+
+    /**
+     * ALTSVC frames with non-ASCII origin or value.
+     */
+    @Test
+    public void decodeNonAsciiAltSvcFrame() throws Exception {
+        byte[] badOrigin = {0, 2, (byte) 0xC3, (byte) 0xA9, 'h', '2', '=', '"', ':', '1', '"'};
+        byte[] badValue = {0, 1, 'x', 'h', '2', '=', (byte) 0xC3, (byte) 0xA9};
+        List<Http2Frame> frames = decode(new byte[][]{frame(AltSvcFrame.TYPE, 0, badOrigin),
+                frame(AltSvcFrame.TYPE, 0, badValue), PING});
+        assertEquals(1, frames.size(), frames.toString());
+        assertInstanceOf(PingFrame.class, frames.get(0));
+    }
+
+    /**
+     * ALTSVC frames too small.
+     */
+    @Test
+    public void decodeTooSmallAltSvcFrame() throws Exception {
+        for (byte[] payload : List.of(new byte[] {0}, new byte[] {0, 10, 'a', 'b'})) {
+            List<Http2Frame> frames = decode(new byte[][]{frame(AltSvcFrame.TYPE, 0, payload)});
+            assertEquals(1, frames.size(), frames.toString());
+            MalformedFrame malformedFrame = assertInstanceOf(MalformedFrame.class, frames.get(0));
+            assertEquals(ErrorFrame.FRAME_SIZE_ERROR, malformedFrame.getErrorCode());
+            assertTrue(malformedFrame.isConnectionError());
+        }
     }
 }

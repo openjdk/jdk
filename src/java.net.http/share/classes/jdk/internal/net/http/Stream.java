@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1873,6 +1874,28 @@ class Stream<T> extends ExchangeImpl<T> {
      */
      boolean isCanceled() {
         return errorRef.get() != null;
+    }
+
+    /**
+     * Returns true if this stream is closed.
+     * @return true if this stream is closed.
+     */
+    boolean isClosed() {
+        if (closed || streamState != 0) {
+            return true;
+        }
+        if (!(endStreamSeen || endStreamReceived())) {
+            return false;
+        }
+        if (this instanceof PushedStream || requestBodyCF.isDone()) {
+            return true;
+        }
+        stateLock.lock();
+        try {
+            return requestSent;
+        } finally {
+            stateLock.unlock();
+        }
     }
 
     /**

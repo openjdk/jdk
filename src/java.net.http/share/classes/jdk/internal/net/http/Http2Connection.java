@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -940,20 +941,30 @@ class Http2Connection implements Closeable {
      */
     void processFrame(Http2Frame frame) throws IOException {
         Log.logFrames(frame, "IN");
-        int streamid = frame.streamid();
-        if (frame instanceof MalformedFrame) {
-            Log.logError(((MalformedFrame) frame).getMessage());
-            if (streamid == 0) {
+        if (frame instanceof MalformedFrame malformedFrame) {
+            Log.logError(malformedFrame.getMessage());
+            int errorStream = malformedFrame.getErrorStream();
+            if (errorStream == 0) {
                 framesDecoder.close("Malformed frame on stream 0");
-                protocolError(((MalformedFrame) frame).getErrorCode(),
-                        ((MalformedFrame) frame).getMessage());
+                protocolError(malformedFrame.getErrorCode(),
+                        malformedFrame.getMessage());
             } else {
-                if (debug.on())
-                    debug.log(() -> "Reset stream: " + ((MalformedFrame) frame).getMessage());
-                resetStream(streamid, ((MalformedFrame) frame).getErrorCode());
+                Stream<?> stream = getStream(errorStream);
+                if (stream != null && !stream.isClosed()) {
+                    if (debug.on())
+                        debug.log(() -> "Reset stream " + errorStream + ": "
+                                + malformedFrame.getMessage());
+                    stream.onProtocolError(new ProtocolException(
+                            malformedFrame.getMessage()),
+                            malformedFrame.getErrorCode());
+                } else if (debug.on()) {
+                    debug.log(() -> "Ignoring malformed frame on idle or closed stream "
+                            + errorStream + ": " + malformedFrame.getMessage());
+                }
             }
             return;
         }
+        int streamid = frame.streamid();
         if (streamid == 0) {
             handleConnectionFrame(frame);
         } else {
