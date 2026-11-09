@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,7 +38,7 @@ enum {
   pd_nof_fpu_regs_frame_map = FloatRegister::number_of_registers,  // number of float registers used during code emission
 
   // caller saved
-  pd_nof_caller_save_cpu_regs_frame_map = 21, // number of registers killed by calls
+  pd_nof_caller_save_cpu_regs_frame_map = 22, // number of registers killed by calls
   pd_nof_caller_save_fpu_regs_frame_map = 32, // number of float registers killed by calls
 
   pd_first_callee_saved_reg = pd_nof_caller_save_cpu_regs_frame_map,
