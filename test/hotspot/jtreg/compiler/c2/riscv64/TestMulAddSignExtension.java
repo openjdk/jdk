@@ -27,9 +27,9 @@
  * @summary Verify that the BigInteger mulAdd intrinsic sign-extends its integer return value
  * @requires os.arch == "riscv64" & vm.compiler2.enabled
  * @modules java.base/java.math:open
- * @run main/othervm -Xbatch -XX:-TieredCompilation
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000
  *      -XX:+UnlockDiagnosticVMOptions -XX:+UseMulAddIntrinsic
- *      -XX:CompileCommand=dontinline,compiler.c2.riscv64.TestMulAddSignExtension::testCarry
+ *      -XX:CompileCommand=compileonly,compiler.c2.riscv64.TestMulAddSignExtension::testCarry
  *      compiler.c2.riscv64.TestMulAddSignExtension
  */
 
@@ -64,19 +64,32 @@ public class TestMulAddSignExtension {
     }
 
     public static void main(String[] args) throws Throwable {
+        // The RISC-V intrinsic processes 8 elements per unrolled iteration.
+        // Cover empty input, one element, and lengths around the 8- and 16-element boundaries.
         int[] lengths = {0, 1, 7, 8, 9, 15, 16, 17};
         int[] in = new int[17];
         int[] out = new int[17];
+        // Each input element is treated as unsigned 0xFFFFFFFF, not signed -1.
         Arrays.fill(in, -1);
 
-        for (int i = 0; i < 20_000; i++) {
+        // Warm up past the C2 compilation threshold, then keep checking compiled code.
+        for (int i = 0; i < 2_000; i++) {
             for (int len : lengths) {
+                // Reset out before each call because mulAdd updates it in place.
+                // Zero length always returns zero carry.
+                // Unsigned 0xFFFFFFFF * 0xFFFFFFFF gives carry 0xFFFFFFFE (int -2).
                 Arrays.fill(out, 0);
                 testCarry(out, in, len, -1, len == 0 ? 0 : -2);
+
+                // Unsigned multiplier 0x80000000 gives carry 0x7FFFFFFF: a positive control.
                 Arrays.fill(out, 0);
                 testCarry(out, in, len, Integer.MIN_VALUE, len == 0 ? 0 : Integer.MAX_VALUE);
+
+                // Adding existing output 0xFFFFFFFF raises the carry to 0xFFFFFFFF (int -1).
                 Arrays.fill(out, -1);
                 testCarry(out, in, len, -1, len == 0 ? 0 : -1);
+
+                // With zero multiplier and zero output, the carry stays zero.
                 Arrays.fill(out, 0);
                 testCarry(out, in, len, 0, 0);
             }
