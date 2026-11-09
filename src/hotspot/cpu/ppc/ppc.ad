@@ -9023,8 +9023,15 @@ instruct moveF2I_reg_reg(iRegIdst dst, regF src, regF tmp) %{
 instruct moveI2F_reg_reg(regF dst, iRegIorL2I src) %{
   match(Set dst (MoveI2F src));
 
-  format %{ "MTVSRWS   $dst, $src \t// MoveI2F (Power9), else MTVSRWZ + XXSPLTW\n\t"
-            "XSCVSPDPN $dst, $dst" %}
+  format %{ $$template
+    if (PowerArchitecturePPC64 >= 9) {
+      $$emit$$"MTVSRWS   $dst, $src \t// MoveI2F\n\t"
+    } else {
+      $$emit$$"MTVSRWZ   $dst, $src \t// MoveI2F\n\t"
+      $$emit$$"XXSPLTW   $dst, $dst, 1\n\t"
+    }
+    $$emit$$"XSCVSPDPN $dst, $dst"
+  %}
   size((PowerArchitecturePPC64 >= 9 ? 8 : 12));
   ins_encode %{
     __ intBitsToFloat($dst$$FloatRegister, $src$$Register);
