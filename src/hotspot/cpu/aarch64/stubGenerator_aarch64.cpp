@@ -12388,7 +12388,9 @@ class StubGenerator: public StubCodeGenerator {
     if (! UseLSE) {
       return;
     }
+    StubId stub_id = StubId::stubgen_atomic_entry_points_id;
 
+    int entry_count = StubInfo::entry_count(stub_id);
     ptrdiff_t count = aarch64_atomic_ops_end - aarch64_atomic_ops;
     for (ptrdiff_t i = 0; i < count; i++) {
       AtomicAccess::store(&aarch64_atomic_ops[i], lse_aarch64_atomic_ops[i]);

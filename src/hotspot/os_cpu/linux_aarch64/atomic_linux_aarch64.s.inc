@@ -70,7 +70,7 @@ DECLARE_LOCAL_FUNC(aarch64_atomic_fetch_add_4_relaxed_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
 #define ATOMIC_OP(LOAD, STORE, SZ, LSEOP)        \
         hint    #0x22 /* bti c */               ;\
-        LSEOP SZ ## 1, SZ ## 2, [x0]            ;\
+        LSEOP   SZ ## 1, SZ ## 2, [x0]          ;\
         dmb     ish                             ;\
         mov     SZ ## 0, SZ ## 2                ;\
         ret
