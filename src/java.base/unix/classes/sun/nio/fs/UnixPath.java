@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -565,95 +565,52 @@ class UnixPath implements Path {
     @Override
     public UnixPath normalize() {
         final int count = getNameCount();
-        if (count == 0 || isEmpty())
+        if (count == 0 || isEmpty()) {
             return this;
-
-        boolean[] ignore = new boolean[count];      // true => ignore name
-        int[] size = new int[count];                // length of name
-        int remaining = count;                      // number of names remaining
-        boolean hasDotDot = false;                  // has at least one ..
-        boolean isAbsolute = isAbsolute();
-
-        // first pass:
-        //   1. compute length of names
-        //   2. mark all occurrences of "." to ignore
-        //   3. and look for any occurrences of ".."
-        for (int i=0; i<count; i++) {
-            int begin = offsets[i];
-            int len;
-            if (i == (offsets.length-1)) {
-                len = path.length - begin;
-            } else {
-                len = offsets[i+1] - begin - 1;
-            }
-            size[i] = len;
-
-            if (path[begin] == '.') {
-                if (len == 1) {
-                    ignore[i] = true;  // ignore  "."
-                    remaining--;
-                }
-                else {
-                    if (path[begin+1] == '.')   // ".." found
-                        hasDotDot = true;
-                }
-            }
         }
 
-        // multiple passes to eliminate all occurrences of name/..
-        if (hasDotDot) {
-            int prevRemaining;
-            do {
-                prevRemaining = remaining;
-                int prevName = -1;
-                for (int i=0; i<count; i++) {
-                    if (ignore[i])
-                        continue;
+        int[] lengths = new int[count];       // lengths of name elements
+        int[] names = new int[count];         // indices of remaining name elements
+        int remaining = 0;                    // number of name elements remaining
+        boolean isAbsolute = isAbsolute();
 
-                    // not a ".."
-                    if (size[i] != 2) {
-                        prevName = i;
-                        continue;
-                    }
-
-                    int begin = offsets[i];
-                    if (path[begin] != '.' || path[begin+1] != '.') {
-                        prevName = i;
-                        continue;
-                    }
-
-                    // ".." found
-                    if (prevName >= 0) {
-                        // name/<ignored>/.. found so mark name and ".." to be
-                        // ignored
-                        ignore[prevName] = true;
-                        ignore[i] = true;
-                        remaining = remaining - 2;
-                        prevName = -1;
-                    } else {
-                        // Case: /<ignored>/.. so mark ".." as ignored
-                        if (isAbsolute) {
-                            boolean hasPrevious = false;
-                            for (int j=0; j<i; j++) {
-                                if (!ignore[j]) {
-                                    hasPrevious = true;
-                                    break;
-                                }
-                            }
-                            if (!hasPrevious) {
-                                // all proceeding names are ignored
-                                ignore[i] = true;
-                                remaining--;
-                            }
+        // Process name elements in one pass, the outcome of which is the indices
+        // of the remaining name elements
+        for (int i = 0; i < count; i++) {
+            int start = offsets[i];
+            int len = (i == (count - 1))
+                    ? (path.length - start)
+                    : (offsets[i + 1] - start - 1);
+            lengths[i] = len;
+            boolean keep = true;
+            if (path[start] == '.') {
+                if (len == 1) {
+                    keep = false;
+                } else if (len == 2 && path[start + 1] == '.') {
+                    if (remaining > 0) {
+                        int previous = names[remaining - 1];
+                        int previousStart = offsets[previous];
+                        if ((lengths[previous] != 2)
+                                || (path[previousStart] != '.')
+                                || (path[previousStart + 1] != '.')) {
+                            remaining--;  // cancel previous
+                            keep = false;
                         }
                     }
+                    if (isAbsolute) {
+                        keep = false;
+                    }
                 }
-            } while (prevRemaining > remaining);
+            }
+            if (keep) {
+                names[remaining++] = i;
+            }
         }
 
         // no redundant names
-        if (remaining == count)
+        if (remaining == count) {
             return this;
+        }
 
         // corner case - all names removed
         if (remaining == 0) {
@@ -662,26 +619,24 @@ class UnixPath implements Path {
 
         // compute length of result
         int len = remaining - 1;
-        if (isAbsolute)
+        if (isAbsolute) {
             len++;
-
-        for (int i=0; i<count; i++) {
-            if (!ignore[i])
-                len += size[i];
         }
-        byte[] result = new byte[len];
+        for (int i = 0; i < remaining; i++) {
+            len += lengths[names[i]];
+        }
 
         // copy names into result
+        byte[] result = new byte[len];
         int pos = 0;
         if (isAbsolute)
             result[pos++] = '/';
-        for (int i=0; i<count; i++) {
-            if (!ignore[i]) {
-                System.arraycopy(path, offsets[i], result, pos, size[i]);
-                pos += size[i];
-                if (--remaining > 0) {
-                    result[pos++] = '/';
-                }
+        for (int i = 0; i < remaining; i++) {
+            int name = names[i];
+            System.arraycopy(path, offsets[name], result, pos, lengths[name]);
+            pos += lengths[name];
+            if (i < (remaining - 1)) {
+                result[pos++] = '/';
             }
         }
         return new UnixPath(getFileSystem(), result);

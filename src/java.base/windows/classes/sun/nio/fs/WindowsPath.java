@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -489,100 +489,75 @@ class WindowsPath implements Path {
     @Override
     public WindowsPath normalize() {
         final int count = getNameCount();
-        if (count == 0 || isEmpty())
+        if (count == 0 || isEmpty()) {
             return this;
+        }
 
-        boolean[] ignore = new boolean[count];      // true => ignore name
-        int remaining = count;                      // number of names remaining
+        int[] names = new int[count];    // indices of remaining name elements
+        int remaining = 0;               // number of name elements remaining
+        boolean ignoreLeadingDotDot = isAbsolute()
+                || type == WindowsPathType.DIRECTORY_RELATIVE;
 
-        // multiple passes to eliminate all occurrences of "." and "name/.."
-        int prevRemaining;
-        do {
-            prevRemaining = remaining;
-            int prevName = -1;
-            for (int i=0; i<count; i++) {
-                if (ignore[i])
-                    continue;
-
-                String name = elementAsString(i);
-
-                // not "." or ".."
-                if (name.length() > 2) {
-                    prevName = i;
-                    continue;
-                }
-
-                // "." or something else
-                if (name.length() == 1) {
-                    // ignore "."
-                    if (name.charAt(0) == '.') {
-                        ignore[i] = true;
-                        remaining--;
-                    } else {
-                        prevName = i;
+        // Process name elements in one pass, the outcome of which is the indices
+        // of the remaining name elements
+        for (int i = 0; i < count; i++) {
+            int start = offsets[i];
+            int len = (i == (count - 1))
+                    ? (path.length() - start)
+                    : (offsets[i + 1] - start - 1);
+            boolean keep = true;
+            if (path.charAt(start) == '.') {
+                if (len == 1) {
+                    keep = false;
+                } else if (len == 2 && path.charAt(start + 1) == '.') {
+                    if (remaining > 0) {
+                        int previous = names[remaining - 1];
+                        int previousStart = offsets[previous];
+                        int previousLength = (previous == (count - 1))
+                                ? (path.length() - previousStart)
+                                : (offsets[previous + 1] - previousStart - 1);
+                        if ((previousLength != 2)
+                                || (path.charAt(previousStart) != '.')
+                                || (path.charAt(previousStart + 1) != '.')) {
+                            remaining--;  // cancel previous
+                            keep = false;
+                        }
                     }
-                    continue;
-                }
-
-                // not ".."
-                if (name.charAt(0) != '.' || name.charAt(1) != '.') {
-                    prevName = i;
-                    continue;
-                }
-
-                // ".." found
-                if (prevName >= 0) {
-                    // name/<ignored>/.. found so mark name and ".." to be
-                    // ignored
-                    ignore[prevName] = true;
-                    ignore[i] = true;
-                    remaining = remaining - 2;
-                    prevName = -1;
-                } else {
-                    // Cases:
-                    //    C:\<ignored>\..
-                    //    \\server\\share\<ignored>\..
-                    //    \<ignored>..
-                    if (isAbsolute() || type == WindowsPathType.DIRECTORY_RELATIVE) {
-                        boolean hasPrevious = false;
-                        for (int j=0; j<i; j++) {
-                            if (!ignore[j]) {
-                                hasPrevious = true;
-                                break;
-                            }
-                        }
-                        if (!hasPrevious) {
-                            // all proceeding names are ignored
-                            ignore[i] = true;
-                            remaining--;
-                        }
+                    if (ignoreLeadingDotDot) {
+                        keep = false;
                     }
                 }
             }
-        } while (prevRemaining > remaining);
+            if (keep) {
+                names[remaining++] = i;
+            }
+        }
 
         // no redundant names
-        if (remaining == count)
+        if (remaining == count) {
             return this;
+        }
 
         // corner case - all names removed
         if (remaining == 0) {
             return root.isEmpty() ? emptyPath() : getRoot();
         }
 
-        // re-constitute the path from the remaining names.
+        // copy names into result
         StringBuilder result = new StringBuilder();
-        if (root != null)
+        if (root != null) {
             result.append(root);
-        for (int i=0; i<count; i++) {
-            if (!ignore[i]) {
-                result.append(getName(i));
-                result.append("\\");
-            }
+        }
+        for (int i = 0; i < remaining; i++) {
+            int name = names[i];
+            int start = offsets[name];
+            int end = (name == (count - 1)) ? path.length() : (offsets[name + 1] - 1);
+            result.append(path, start, end);
+            result.append("\\");
         }
 
         // drop trailing slash in result
-        result.setLength(result.length()-1);
+        result.setLength(result.length() - 1);
         return createFromNormalizedPath(getFileSystem(), result.toString());
     }
 
