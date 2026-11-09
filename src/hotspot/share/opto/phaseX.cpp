@@ -734,9 +734,7 @@ Node* PhaseGVN::transform(Node* n) {
       set_progress();
     }
 #endif
-    set_type(k, t);
-    // If k is a TypeNode, capture any more-precise type permanently into Node
-    k->raise_bottom_type(t);
+    set_type_and_raise_bottom_type(k, t);
   }
 
   if (t->singleton() && !k->is_Con()) {
@@ -1959,6 +1957,15 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
   return n;
 }
 
+Node* PhaseIterGVN::find_node_or_register_new_node_with_optimizer(Node* n) {
+  Node* existing = hash_find_insert(n);
+  if (existing != nullptr) {
+    n->destruct(this);
+    return existing;
+  }
+  return register_new_node_with_optimizer(n);
+}
+
 //------------------------------transform--------------------------------------
 // Non-recursive: idealize Node 'n' with respect to its inputs and its value
 Node *PhaseIterGVN::transform( Node *n ) {
@@ -2159,9 +2166,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   if (type_or_null(k) != t) {
     NOT_PRODUCT(inc_new_values();)
     set_progress();
-    set_type(k, t);
-    // If k is a TypeNode, capture any more-precise type permanently into Node
-    k->raise_bottom_type(t);
+    set_type_and_raise_bottom_type(k, t);
     // Move users of node to worklist
     add_users_to_worklist(k);
   }
@@ -2941,7 +2946,8 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
 
   // f(f(x)) => x for f = Reverse / ReverseBytes
-  if (use_op == Op_ReverseV || use_op == Op_ReverseBytesV) {
+  if (use_op == Op_ReverseV || use_op == Op_ReverseBytesV ||
+      use_op == Op_ReverseBytesS || use_op == Op_ReverseBytesUS) {
     add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
       return u->Opcode() == use_op;
     });
@@ -2963,8 +2969,17 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (VectorNode::is_associative_and_commutative_vector_operation(use_op) &&
       !use->as_Vector()->is_predicated_vector()) {
     add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
-      return u->Opcode() == use_op && !u->as_Vector()->is_predicated_vector() &&
-             (u->in(1)->Opcode() == Op_Replicate || u->in(2)->Opcode() == Op_Replicate);
+      if (u->Opcode() != use_op || u->as_Vector()->is_predicated_vector()) {
+        return false;
+      }
+      // Reached from remove_globally_dead_node() -> replace_edge() ->
+      // set_req_X() after clearing one input leaves the shared input with a
+      // single user and has_special_unique_user() is true. 'u' is still being
+      // disconnected, so a required input may already be null.
+      Node* in1 = u->in(1);
+      Node* in2 = u->in(2);
+      return (in1 != nullptr && in1->Opcode() == Op_Replicate) ||
+             (in2 != nullptr && in2->Opcode() == Op_Replicate);
     });
   }
 

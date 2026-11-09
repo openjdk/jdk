@@ -101,6 +101,14 @@ void Rewriter::restore_bytecodes(Thread* thread) {
     scan_method(thread, method, true, &invokespecial_error);
     assert(!invokespecial_error, "reversing should not get an invokespecial error");
   }
+
+  // These need to be reset in case we want to rewrite again.
+  _invokedynamic_index = 0;
+  _field_entry_index = 0;
+  _method_entry_index = 0;
+  _initialized_indy_entries.clear();
+  _initialized_field_entries.clear();
+  _initialized_method_entries.clear();
 }
 
 // Creates a constant pool cache given a CPC map

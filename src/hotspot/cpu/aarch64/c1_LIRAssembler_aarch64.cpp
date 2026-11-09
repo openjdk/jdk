@@ -491,7 +491,22 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       if (vk->can_be_returned_as_fields()) {
         address unpack_handler = vk->unpack_handler();
         assert(unpack_handler != nullptr, "must be");
-        __ far_call(RuntimeAddress(unpack_handler));
+#if INCLUDE_CDS
+        if (AOTCodeCache::is_on_for_dump()) {
+          // in AOT compiled code call the unpack handler indirectly
+          // via the klass. The handler's blob does not currently get
+          // saved to the archive. So, a direct call to the handler
+          // address cannot be injected into a caller that is saved
+          // and restored.
+          __ mov_metadata(rscratch1, vk->constant_encoding());
+          __ ldr(rscratch1, Address(rscratch1, ValueKlass::adr_members_offset()));
+          __ ldr(rscratch1, Address(rscratch1, ValueKlass::unpack_handler_offset()));
+          __ blr(rscratch1);
+        } else
+#endif
+        {
+          __ far_call(RuntimeAddress(unpack_handler));
+        }
       }
     } else if (return_type->is_instance_klass() && (!return_type->is_loaded() || StressCallingConvention)) {
       Label skip;

@@ -188,9 +188,7 @@ public class AOTCodeTest {
                 out.shouldMatch("aot,codecache,exit.*\\s+AOT code cache size: [1-9]\\d+ bytes");
             } else if (runMode == RunMode.PRODUCTION) {
                 out.shouldMatch("aot,codecache,init.*\\s+Loaded [1-9]\\d+ AOT code entries from AOT Code Cache");
-                if (!withVerifyOops) { // Adapters are not cached for VerifyOops+Valhalla
-                    out.shouldMatch("aot,codecache,stubs.*\\s+Loaded blob.*kind=Adapter.*");
-                }
+                out.shouldMatch("aot,codecache,stubs.*\\s+Loaded blob.*kind=Adapter.*");
                 out.shouldMatch("aot,codecache,stubs.*\\s+Loaded blob.*kind=SharedBlob.*");
                 out.shouldMatch("aot,codecache,stubs.*\\s+Loaded blob.*kind=C1Blob.*");
             }
