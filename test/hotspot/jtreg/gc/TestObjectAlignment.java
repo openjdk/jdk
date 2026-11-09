@@ -30,18 +30,18 @@ package gc;
  * @summary G1: Concurrent marking crashes with -XX:ObjectAlignmentInBytes>=32 in 64bit VMs
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=8 ${test.main.class}
- * @run main/othervm -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=16 ${test.main.class}
- * @run main/othervm -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=32 ${test.main.class}
- * @run main/othervm -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=64 ${test.main.class}
- * @run main/othervm -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=128 ${test.main.class}
- * @run main/othervm -Xmx20M -XX:+ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=256 ${test.main.class}
- * @run main/othervm -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=8 ${test.main.class}
- * @run main/othervm -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=16 ${test.main.class}
- * @run main/othervm -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=32 ${test.main.class}
- * @run main/othervm -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=64 ${test.main.class}
- * @run main/othervm -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=128 ${test.main.class}
- * @run main/othervm -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=256 ${test.main.class}
+ * @run main/othervm -XX:+ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=8 ${test.main.class}
+ * @run main/othervm -XX:+ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=16 ${test.main.class}
+ * @run main/othervm -XX:+ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=32 ${test.main.class}
+ * @run main/othervm -XX:+ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=64 ${test.main.class}
+ * @run main/othervm -XX:+ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=128 ${test.main.class}
+ * @run main/othervm -XX:+ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=256 ${test.main.class}
+ * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=8 ${test.main.class}
+ * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=16 ${test.main.class}
+ * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=32 ${test.main.class}
+ * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=64 ${test.main.class}
+ * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=128 ${test.main.class}
+ * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:ObjectAlignmentInBytes=256 ${test.main.class}
  */
 
 public class TestObjectAlignment {
