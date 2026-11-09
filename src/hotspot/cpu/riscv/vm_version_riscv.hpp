@@ -526,8 +526,8 @@ private:
   // UseZtso separately. UseZalasr is set from command-line and extension
   // detection before VM_Version::initialize() runs the toolchain-psABI check,
   // so during startup it may be transiently true even where that check later
-  // disables it. When both flags are enabled, native atomics use Ztso while
-  // JIT-generated volatile accesses can still use Zalasr.
+  // disables it. When both flags are enabled, native atomics must use Zalasr
+  // to interoperate with JIT-generated volatile accesses.
   // AtomicAccess is invoked from os::init_2, vm_init_globals,
   // ObjectSynchronizer::initialize and other subsystems that run before
   // init_globals() calls VM_Version_init(), so dispatching on UseZalasr

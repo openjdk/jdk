@@ -196,10 +196,10 @@ void VM_Version::common_initialize() {
   // Latch the native AtomicAccess dispatch mode only after every UseZalasr and
   // UseZtso adjustment above has settled. See the comment on
   // _atomic_access_mode in vm_version_riscv.hpp.
-  if (UseZtso) {
-    _atomic_access_mode = AtomicAccessMode::ZTSO;
-  } else if (UseZalasr) {
+  if (UseZalasr) {
     _atomic_access_mode = AtomicAccessMode::RVWMO_ZALASR;
+  } else if (UseZtso) {
+    _atomic_access_mode = AtomicAccessMode::ZTSO;
   } else {
     _atomic_access_mode = AtomicAccessMode::RVWMO;
   }
