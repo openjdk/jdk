@@ -60,6 +60,7 @@ public class TestGenerationalHeuristics {
 
         {
             OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UseShenandoahGC",
                 "-XX:ShenandoahGCMode=generational",
                 "-XX:ShenandoahGCHeuristics=aggressive",
