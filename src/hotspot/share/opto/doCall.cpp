@@ -867,18 +867,7 @@ void Parse::do_call() {
     // If the return type of the method is not loaded, assert that the
     // value we got is a null.  Otherwise, we need to recompile.
     if (!rtype->is_loaded()) {
-      if (PrintOpto && (Verbose || WizardMode)) {
-        method()->print_name(); tty->print_cr(" asserting nullness of result at bci: %d", bci());
-        cg->method()->print_name(); tty->cr();
-      }
-      if (C->log() != nullptr) {
-        C->log()->elem("assert_null reason='return' klass='%d'",
-                       C->log()->identify(rtype));
-      }
-      // If there is going to be a trap, put it at the next bytecode:
-      set_bci(iter().next_bci());
-      null_assert(peek());
-      set_bci(iter().cur_bci()); // put it back
+      null_assert_for_unloaded_type(peek(), rtype, "return", true, cg->method());
     }
     BasicType ct = ctype->basic_type();
     if (is_reference_type(ct)) {

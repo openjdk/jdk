@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ import sun.util.logging.PlatformLogger;
  * </ul>
  * </blockquote>
  *
- * <p>There're various ways user can hook up his own HTTP cookie management behavior, e.g.
+ * <p>There are various ways a user can hook up his own HTTP cookie management behavior, e.g.
  * <blockquote>
  * <ul>
  *   <li>Use CookieHandler.setDefault to set a brand new {@link CookieHandler} implementation

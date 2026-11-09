@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public interface SelChImpl extends Channel {
      */
     default void park(int event, long nanos) throws IOException {
         if (Thread.currentThread().isVirtual()) {
-            Poller.poll(getFDVal(), event, nanos, this::isOpen);
+            Poller.poll(this, getFDVal(), event, nanos, this::isOpen);
         } else {
             long millis;
             if (nanos <= 0) {

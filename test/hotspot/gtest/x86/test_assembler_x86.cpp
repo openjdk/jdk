@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ static void asm_check(const uint8_t *insns, const uint8_t *insns1, const unsigne
   }
 }
 
-TEST_VM(AssemblerX86, validate) {
+TEST_OTHER_VM(AssemblerX86, validate) {
   UseAVX = 3;
   FlagSetting flag_change_apx(UseAPX, true);
   VM_Version::set_bmi_cpuFeatures();
