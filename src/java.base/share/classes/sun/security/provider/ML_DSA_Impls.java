@@ -28,6 +28,7 @@ package sun.security.provider;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.util.DerOutputStream;
+import sun.security.util.InternalSignatureParameterSpec;
 import sun.security.util.KeyChoices;
 import sun.security.util.KnownOIDs;
 import sun.security.util.ObjectIdentifier;
@@ -188,9 +189,8 @@ public class ML_DSA_Impls {
     public sealed static class SIG extends NamedSignature
             permits SIG2, SIG3, SIG5 {
 
-        private boolean isInternal = false;
-        private boolean isDeterministic = false;
-        private boolean useExternalMu = false;
+        private InternalSignatureParameterSpec sps
+                = InternalSignatureParameterSpec.PURE;
 
         public SIG() {
             super("ML-DSA", new KF());
@@ -204,29 +204,49 @@ public class ML_DSA_Impls {
         protected void engineSetParameter(AlgorithmParameterSpec params)
                 throws InvalidAlgorithmParameterException {
             super.engineSetParameter(params);
-            isInternal = isDeterministic = useExternalMu = false;
-            for (var f : sps.features()) {
-                switch (f) {
-                    case "internal" -> isInternal = true;
-                    case "deterministic" -> isDeterministic = true;
-                    case "externalMu" -> useExternalMu = true;
-                    default -> throw new InvalidAlgorithmParameterException(
-                            "Unknown feature: " + f);
+            if (params instanceof InternalSignatureParameterSpec sps) {
+                boolean isInternal = false;
+                boolean useExternalMu = false;
+                for (var f : sps.features()) {
+                    switch (f) {
+                        case "internal" -> isInternal = true;
+                        case "deterministic" -> { /* valid feature */ }
+                        case "externalMu" -> useExternalMu = true;
+                        default -> throw new InvalidAlgorithmParameterException(
+                                "Unknown feature: " + f);
+                    }
                 }
-            }
-            if (useExternalMu) {
-                if (!isInternal) {
-                    throw new InvalidAlgorithmParameterException(
-                            "externalMu requires internal");
-                }
-                if (sps.context().length != 0) {
-                    throw new InvalidAlgorithmParameterException(
-                            "externalMu ignores context");
+                if (useExternalMu) {
+                    if (!isInternal) {
+                        throw new InvalidAlgorithmParameterException(
+                                "externalMu requires internal");
+                    }
+                    if (sps.context().length != 0) {
+                        throw new InvalidAlgorithmParameterException(
+                                "externalMu ignores context");
+                    }
+                    if (sps.preHash() != null) {
+                        throw new InvalidAlgorithmParameterException(
+                                "externalMu ignores pre-hash");
+                    }
                 }
                 if (sps.preHash() != null) {
-                    throw new InvalidAlgorithmParameterException(
-                            "externalMu ignores pre-hash");
+                    try {
+                        accu = new SignatureMessageAccumulator.DigestAccumulator(
+                                MessageDigest.getInstance(sps.preHash()));
+                    } catch (NoSuchAlgorithmException e) {
+                        throw new InvalidAlgorithmParameterException("Unknown pre-hash");
+                    }
+                } else {
+                    accu = new SignatureMessageAccumulator.MemoryAccumulator();
                 }
+                this.sps = sps;
+            } else if (params == null) {
+                this.sps = InternalSignatureParameterSpec.PURE;
+                this.accu = new SignatureMessageAccumulator.MemoryAccumulator();
+            } else {
+                throw new InvalidAlgorithmParameterException(
+                        "Unsupported parameters: " + params.getClass());
             }
         }
 
@@ -255,18 +275,19 @@ public class ML_DSA_Impls {
         protected byte[] implSign(String pname, byte[] skBytes, Object sk2,
                 byte[] msg, SecureRandom sr) throws SignatureException {
             byte[] rnd = new byte[32];
-            if (!isDeterministic) {
+            if (!sps.hasFeature("deterministic")) {
                 var r = sr != null ? sr : JCAUtil.getDefSecureRandom();
                 r.nextBytes(rnd);
             }
-            if (useExternalMu && msg.length != 64) {
+            if (sps.hasFeature("externalMu") && msg.length != 64) {
                 throw new SignatureException(
                         "input must be 64 bytes in externalMu mode");
             }
             var size = name2int(pname);
             var mlDsa = new ML_DSA(size);
             ML_DSA.ML_DSA_Signature sig = mlDsa.signInternal(
-                    useExternalMu, isInternal ? msg : m(msg), rnd, skBytes);
+                    sps.hasFeature("externalMu"),
+                    sps.hasFeature("internal") ? msg : m(msg), rnd, skBytes);
             return mlDsa.sigEncode(sig);
         }
 
@@ -274,14 +295,15 @@ public class ML_DSA_Impls {
         protected boolean implVerify(String pname, byte[] pkBytes,
                 Object pk2, byte[] msg, byte[] sigBytes)
                 throws SignatureException {
-            if (useExternalMu && msg.length != 64) {
+            if (sps.hasFeature("externalMu") && msg.length != 64) {
                 throw new SignatureException(
                         "input must be 64 bytes in externalMu mode");
             }
             var size = name2int(pname);
             var mlDsa = new ML_DSA(size);
             return mlDsa.verifyInternal(
-                    pkBytes, useExternalMu, isInternal ? msg : m(msg), sigBytes);
+                    pkBytes, sps.hasFeature("externalMu"),
+                    sps.hasFeature("internal") ? msg : m(msg), sigBytes);
         }
 
         @Override

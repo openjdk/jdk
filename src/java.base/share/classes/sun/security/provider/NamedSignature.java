@@ -26,14 +26,12 @@
 package sun.security.provider;
 
 import sun.security.pkcs.NamedPKCS8Key;
-import sun.security.util.InternalSignatureParameterSpec;
 import sun.security.x509.NamedX509Key;
 
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.ProviderException;
 import java.security.PublicKey;
@@ -52,11 +50,7 @@ public abstract class NamedSignature extends SignatureSpi {
     private final String fname; // family name
     private final NamedKeyFactory fac;
 
-    // Default value; never null
-    protected InternalSignatureParameterSpec sps = InternalSignatureParameterSpec.PURE;
-
-    // Default no pre-hash
-    private SignatureMessageAccumulator accu = new SignatureMessageAccumulator();
+    protected SignatureMessageAccumulator accu;
 
     // init with...
     private String pname;
@@ -77,6 +71,7 @@ public abstract class NamedSignature extends SignatureSpi {
         }
         this.fname = fname;
         this.fac = fac;
+        this.accu = new SignatureMessageAccumulator.MemoryAccumulator();
     }
 
     @Override
@@ -103,18 +98,18 @@ public abstract class NamedSignature extends SignatureSpi {
 
     @Override
     protected void engineUpdate(byte b) throws SignatureException {
-        accu.write(b);
+        accu.add(b);
     }
 
     @Override
     protected void engineUpdate(byte[] b, int off, int len) throws SignatureException {
-        accu.write(b, off, len);
+        accu.add(b, off, len);
     }
 
     @Override
     protected byte[] engineSign() throws SignatureException {
         if (secKey != null) {
-            var msg = accu.toByteArray();
+            var msg = accu.getMessage();
             return implSign(pname, secKey, sk2, msg, appRandom);
         } else {
             throw new SignatureException("No private key");
@@ -124,7 +119,7 @@ public abstract class NamedSignature extends SignatureSpi {
     @Override
     protected boolean engineVerify(byte[] sig) throws SignatureException {
         if (pubKey != null) {
-            var msg = accu.toByteArray();
+            var msg = accu.getMessage();
             return implVerify(pname, pubKey, pk2, msg, sig);
         } else {
             throw new SignatureException("No public key");
@@ -147,24 +142,9 @@ public abstract class NamedSignature extends SignatureSpi {
     @Override
     protected void engineSetParameter(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
-        if (params instanceof InternalSignatureParameterSpec sps) {
-            var hash = sps.preHash();
-            if (hash == null) {
-                accu = new SignatureMessageAccumulator();
-            } else {
-                try {
-                    accu = new SignatureMessageAccumulator(hash);
-                } catch (NoSuchAlgorithmException e) {
-                    throw new InvalidAlgorithmParameterException(e);
-                }
-            }
-            this.sps = sps;
-        } else if (params != null) {
-            throw new InvalidAlgorithmParameterException("The " + fname
-                    + " algorithm does not take parameters of " + params.getClass());
-        } else {
-            accu = new SignatureMessageAccumulator();
-            sps = InternalSignatureParameterSpec.PURE;
+        if (accu.isOn()) {
+            throw new IllegalStateException(
+                    "Cannot set parameters during operations");
         }
     }
 

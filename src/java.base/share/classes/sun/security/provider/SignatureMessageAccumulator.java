@@ -26,62 +26,78 @@ package sun.security.provider;
 
 import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Objects;
 
 /// Accumulate messages in a [NamedSignature]. May be pure or pre-hashed.
-public class SignatureMessageAccumulator {
+public interface SignatureMessageAccumulator {
 
-    private final ByteArrayOutputStream ba; // for "pure"
-    private final MessageDigest md; // for "pre-hash"
+    void add(byte b);
+    void add(byte[] data, int off, int len);
+    byte[] getMessage();
+    void reset();
+    boolean isOn();
 
-    /// Creates a new accumulator without a hash.
-    public SignatureMessageAccumulator() {
-        ba = new ByteArrayOutputStream();
-        md = null;
+    public static class DigestAccumulator implements SignatureMessageAccumulator {
+        private final MessageDigest digester;
+        private boolean isOn = false;
+
+        DigestAccumulator(MessageDigest digester) {
+            this.digester = digester;
+        }
+
+        @Override
+        public void add(byte b) {
+            isOn = true;
+            digester.update(b);
+        }
+        @Override
+        public void add(byte[] data, int off, int len) {
+            if (len > 0) isOn = true;
+            digester.update(data, off, len);
+        }
+        @Override
+        public byte[] getMessage() {
+            isOn = false;
+            return digester.digest();
+        }
+
+        @Override
+        public void reset() {
+            digester.reset();
+            isOn = false;
+        }
+
+        @Override
+        public boolean isOn() {
+            return isOn;
+        }
     }
 
-    /// Creates a new accumulator with a hash.
-    ///
-    /// @param s pre-hash algorithm
-    /// @throws NoSuchAlgorithmException if `s` is not supported
-    public SignatureMessageAccumulator(String s) throws NoSuchAlgorithmException {
-        ba = null;
-        md = MessageDigest.getInstance(Objects.requireNonNull(s));
-    }
+    public static class MemoryAccumulator implements SignatureMessageAccumulator {
+        ByteArrayOutputStream message = new ByteArrayOutputStream();
 
-    /// Reset the accumulator
-    public void reset() {
-        if (ba == null) md.reset();
-        else ba.reset();
-    }
-
-    /// Write a byte into the accumulator.
-    ///
-    /// @param b the byte
-    public void write(byte b) {
-        if (ba == null) md.update(b);
-        else ba.write(b);
-    }
-
-    /// Write a byte array into the accumulator.
-    ///
-    /// @param b the data.
-    /// @param off the start offset in the data.
-    /// @param len the number of bytes to write.
-    public void write(byte[] b, int off, int len) {
-        if (ba == null) md.update(b, off, len);
-        else ba.write(b, off, len);
-    }
-
-    /// {@return the data accumulated and reset the accumulator}
-    public byte[] toByteArray() {
-        if (ba == null) {
-            return md.digest();
-        } else {
-            var result = ba.toByteArray();
-            ba.reset();
+        @Override
+        public void add(byte b) {
+            message.write(b);
+        }
+        @Override
+        public void add(byte[] data, int off, int len) {
+            message.write(data, off, len);
+        }
+        @Override
+        public byte[] getMessage() {
+            var result = message.toByteArray();
+            message.reset();
             return result;
+        }
+
+        @Override
+        public void reset() {
+            message.reset();
+        }
+
+        @Override
+        public boolean isOn() {
+            return message.size() != 0;
         }
     }
 }
