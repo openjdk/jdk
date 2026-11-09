@@ -712,7 +712,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     final boolean tryMatchData(DualNode p, Object x) {
         if (p != null && p.isData &&
             x != null && p.cmpExItem(x, null) == x) {
-            LockSupport.unpark(p.waiter);
+            LockSupport.unpark(p.getVolatileWaiter());
             return true;
         }
         return false;

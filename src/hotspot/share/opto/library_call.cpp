@@ -2472,6 +2472,9 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   assert(Unsafe_field_offset_to_byte_offset(11) == 11,
          "fieldOffset must be byte-scaled");
 
+  // Save state and restore on bailout
+  SavedState old_state(this);
+
   if (base->is_ValueType()) {
     assert(!is_store, "ValueTypeNodes are non-larval value objects");
     ValueTypeNode* vt = base->as_ValueType();
@@ -2495,6 +2498,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
             value = ValueTypeNode::make_from_oop(this, value, value_type->value_klass());
           }
           set_result(value);
+          old_state.discard();
           return true;
         }
       }
@@ -2510,9 +2514,6 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   // 32-bit machines ignore the high half!
   offset = ConvL2X(offset);
-
-  // Save state and restore on bailout
-  SavedState old_state(this);
 
   if (const TypeAryPtr* base_ary_type = _gvn.type(base)->isa_aryptr(); type == T_OBJECT && base_ary_type != nullptr) {
     // Read an object from a primitive array, or a Phi some of whose inputs are primitive arrays
@@ -2747,12 +2748,8 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
     // parameter layoutKind is not a constant
     return false;
   }
-  assert(layout_type->get_con() >= static_cast<int>(LayoutKind::REFERENCE) &&
-         layout_type->get_con() < static_cast<int>(LayoutKind::UNKNOWN),
-         "invalid layoutKind %d", layout_type->get_con());
-  LayoutKind layout = static_cast<LayoutKind>(layout_type->get_con());
-  assert(layout == LayoutKind::REFERENCE || LayoutKindHelper::is_flat(layout),
-         "unexpected layoutKind %d", layout_type->get_con());
+
+  OptionalFlatLayout layout = FlatLayoutEncoding::decode(layout_type->get_con());
 
   null_check(argument(0));
   if (stopped()) {
@@ -2798,7 +2795,7 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
     ptr = basic_plus_adr(base, ConvL2X(offset));
   } else if (base_type->isa_aryptr()) {
     decorators |= IS_ARRAY;
-    if (layout == LayoutKind::REFERENCE) {
+    if (!layout.is_flat()) {
       if (!base_type->is_aryptr()->is_not_flat()) {
         const TypeAryPtr* array_type = base_type->is_aryptr()->cast_to_not_flat();
         // TODO 8388444 This should be a CheckCastPP, can we add a test?
@@ -2810,8 +2807,8 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
     } else {
       if (UseArrayFlattening) {
         // Flat array must have an exact type
-        bool is_null_free = !LayoutKindHelper::is_nullable_flat(layout);
-        bool is_atomic = LayoutKindHelper::is_atomic_flat(layout);
+        bool is_null_free = !layout.is_nullable_flat();
+        bool is_atomic = layout.is_atomic_flat();
         ciObjArrayKlass* array_klass = get_flat_array_klass_exact(value_klass, is_null_free, is_atomic);
         if (!array_klass->is_loaded()) {
           uncommon_trap(Deoptimization::Reason_unloaded,
@@ -2858,12 +2855,12 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
 
     assert(value_type == TypePtr::NULL_PTR || value_type->value_klass() == value_klass,
            "value is of type %s while value klass is %s", value_type->value_klass()->name()->as_utf8(), value_klass->name()->as_utf8());
-    if (layout == LayoutKind::REFERENCE) {
+    if (!layout.is_flat()) {
       const TypePtr* ptr_type = (decorators & C2_MISMATCHED) != 0 ? TypeRawPtr::BOTTOM : _gvn.type(ptr)->is_ptr();
       access_store_at(base, ptr, ptr_type, value, value_type, T_OBJECT, decorators);
     } else {
-      bool atomic = LayoutKindHelper::is_atomic_flat(layout);
-      bool null_free = !LayoutKindHelper::is_nullable_flat(layout);
+      bool atomic = layout.is_atomic_flat();
+      bool null_free = !layout.is_nullable_flat();
       if (null_free) {
         null_check(value);
       }
@@ -2874,13 +2871,13 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
   } else {
     decorators |= (C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD);
     ValueTypeNode* result;
-    if (layout == LayoutKind::REFERENCE) {
+    if (!layout.is_flat()) {
       const TypePtr* ptr_type = (decorators & C2_MISMATCHED) != 0 ? TypeRawPtr::BOTTOM : _gvn.type(ptr)->is_ptr();
       Node* oop = access_load_at(base, ptr, ptr_type, Type::get_const_type(value_klass), T_OBJECT, decorators);
       result = ValueTypeNode::make_from_oop(this, oop, value_klass);
     } else {
-      bool atomic = LayoutKindHelper::is_atomic_flat(layout);
-      bool null_free = !LayoutKindHelper::is_nullable_flat(layout);
+      bool atomic = layout.is_atomic_flat();
+      bool null_free = !layout.is_nullable_flat();
       result = ValueTypeNode::make_from_flat(this, value_klass, base, ptr, atomic, immutable_memory, null_free, decorators);
     }
 
@@ -3236,15 +3233,17 @@ bool LibraryCallKit::inline_arrayLayout() {
   Node* klass_node = load_object_klass(array);
   generate_refArray_guard(klass_node, region);
   if (region->req() == 3) {
-    phi->add_req(intcon((jint)LayoutKind::REFERENCE));
+    phi->add_req(intcon(FlatLayoutEncoding::encode_non_flat()));
   }
 
   int layout_kind_offset = in_bytes(FlatArrayKlass::layout_kind_offset());
   Node* layout_kind_addr = basic_plus_adr(top(), klass_node, layout_kind_offset);
   Node* layout_kind = make_load(nullptr, layout_kind_addr, TypeInt::POS, T_INT, MemNode::unordered);
+  // See FlatLayoutEncoding::encode
+  Node* layout_value = AddI(layout_kind, intcon(1));
 
   region->init_req(1, control());
-  phi->init_req(1, layout_kind);
+  phi->init_req(1, layout_value);
 
   set_control(_gvn.transform(region));
   set_result(_gvn.transform(phi));
@@ -6299,6 +6298,22 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       }
       return true;
     }
+
+#if INCLUDE_JVMTI
+    // Deoptimize and allocate in interpreter to call VMObjectAlloc callback.
+    Node* addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_notify_object_alloc));
+    Node* should_post_vm_object_alloc = make_load(this->control(), addr, TypeInt::INT, T_INT, MemNode::unordered);
+    Node* chk = _gvn.transform(new CmpINode(should_post_vm_object_alloc, intcon(0)));
+    Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
+    {
+      BuildCutout unless(this, tst, PROB_MAX);
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_make_not_entrant);
+    }
+    if (stopped()) {
+      return true;
+    }
+#endif
 
     // If we are going to clone an instance, we need its exact type to
     // know the number and types of fields to convert the clone to

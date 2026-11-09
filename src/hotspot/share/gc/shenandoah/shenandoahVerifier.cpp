@@ -562,6 +562,26 @@ private:
         ShouldNotReachHere();
     }
 
+    uint32_t start_index = r->humongous_start_region();
+    if (r->is_humongous()) {
+      verify(r, start_index != ShenandoahHeapRegion::UndefinedRegionIndex,
+             "Humongous region must have a valid start region index");
+
+      if (r->is_humongous_start()) {
+        verify(r, start_index == r->index(),
+               "Humongous start region must identify itself as its own start");
+      } else {
+        for (size_t i = start_index + 1; i <= r->index(); i++) {
+          ShenandoahHeapRegion* chain = _heap->get_region(i);
+          verify(chain, chain->is_humongous_continuation(),
+                 "Humongous start must belong to same humongous chain");
+        }
+      }
+    } else {
+      verify(r, start_index == ShenandoahHeapRegion::UndefinedRegionIndex,
+             "Non-humongous region should have an undefined region index");
+    }
+
     verify(r, r->capacity() == ShenandoahHeapRegion::region_size_bytes(),
            "Capacity should match region size");
 
@@ -835,6 +855,59 @@ public:
   }
 };
 
+class ShenandoahIsGCWorkerClosure : public ThreadClosure {
+private:
+  const Thread* _target;
+  bool _found;
+
+public:
+  ShenandoahIsGCWorkerClosure(const Thread* t) : _target(t), _found(false) {}
+
+  void do_thread(Thread* t) override {
+    if (_target == t) {
+      _found = true;
+    }
+  }
+
+  bool found() const { return _found; }
+};
+
+class ShenandoahVerifyThreadLabsClosure : public ThreadClosure {
+private:
+  const char* _label;
+  const bool _generational;
+  const WorkerThreads* _workers;
+
+  void verify_labs(Thread* t, bool expect_labs) const {
+    const PLAB* gclab = ShenandoahThreadLocalData::gclab(t);
+    const ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(t);
+    const bool expect_plab = _generational && expect_labs;
+
+    guarantee((gclab != nullptr) == expect_labs, "%s: GCLAB %s be initialized for thread: %s",
+              _label, expect_labs ? "should" : "shouldn't", t->name());
+    guarantee((plab != nullptr) == expect_plab, "%s: PLAB %s be initialized for thread: %s",
+              _label, expect_plab ? "should" : "shouldn't", t->name());
+  }
+
+public:
+  ShenandoahVerifyThreadLabsClosure(const char* label, bool generational, const WorkerThreads* workers) :
+    _label(label),
+    _generational(generational),
+    _workers(workers) {}
+
+  void do_thread(Thread* t) override {
+    if (t->is_Java_thread()) {
+      verify_labs(t, true);
+    } else if (t->is_Worker_thread()) {
+      ShenandoahIsGCWorkerClosure cl(t);
+      _workers->threads_do(&cl);
+      verify_labs(t, cl.found());
+    } else {
+      verify_labs(t, false);
+    }
+  }
+};
+
 void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
                                              const char* label,
                                              VerifyRememberedSet remembered,
@@ -904,6 +977,9 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
       Threads::java_threads_do(&vtgcs);
     }
   }
+
+  ShenandoahVerifyThreadLabsClosure labs_cl(label, _heap->mode()->is_generational(), _heap->workers());
+  Threads::threads_do(&labs_cl);
 
   // Deactivate barriers temporarily: Verifier wants plain heap accesses
   ShenandoahGCStateResetter resetter;
@@ -1055,7 +1131,7 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
       if (r->is_humongous()) {
         // For humongous objects, test if start region is marked live, and if so,
         // all humongous regions in that chain have live data equal to their "used".
-        juint start_live = ld[r->humongous_start_region()->index()].load_relaxed();
+        juint start_live = ld[r->humongous_start_region()].load_relaxed();
         if (start_live > 0) {
           verf_live = (juint)(r->used() / HeapWordSize);
         }

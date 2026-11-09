@@ -76,7 +76,7 @@ public class SmtpClient extends TransferProtocolClient {
     public void to(String s) throws IOException {
         if (s.indexOf('\n') != -1 || s.indexOf('\r') != -1) {
             throw new IOException("Illegal SMTP command",
-                    new IllegalArgumentException("Illegal carriage return"));
+                    new IllegalArgumentException("Illegal carriage return or line feed"));
         }
         int st = 0;
         int limit = s.length();
@@ -122,7 +122,7 @@ public class SmtpClient extends TransferProtocolClient {
     public void from(String s) throws IOException {
         if (s.indexOf('\n') != -1 || s.indexOf('\r') != -1) {
             throw new IOException("Illegal SMTP command",
-                    new IllegalArgumentException("Illegal carriage return"));
+                    new IllegalArgumentException("Illegal carriage return or line feed"));
         }
         if (s.startsWith("<")) {
             issueCommand("mail from: " + s + "\r\n", 250);
