@@ -268,7 +268,7 @@ static void refine_barrier_by_new_val_type(const Node* n) {
 bool G1BarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
   ResourceMark rm;
   VectorSet visited;
-  Node_List worklist;
+  Node_List<Node> worklist;
   worklist.push(C->root());
   while (worklist.size() > 0) {
     Node* n = worklist.pop();
@@ -519,8 +519,8 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
 
   // Find allocations and memory accesses (stores and atomic operations), and
   // track them in lists.
-  Node_List accesses;
-  Node_List allocations;
+  Node_List<MachNode> accesses;
+  Node_List<Node> allocations;
   for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
     const Block* const block = cfg->get_block(i);
     for (uint j = 0; j < block->number_of_nodes(); ++j) {

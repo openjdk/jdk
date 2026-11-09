@@ -81,6 +81,8 @@ class CompilerThread : public JavaThread {
   ArenaStatCounter*     _arena_stat;
 
   Timeout*              _timeout;
+
+  bool                  _is_aot_thread; // Thread is used to load AOT code
  public:
 
   static CompilerThread* current() {
@@ -103,6 +105,9 @@ class CompilerThread : public JavaThread {
 
   void set_compiler(AbstractCompiler* c);
   AbstractCompiler* compiler() const             { return _compiler; }
+
+  bool is_aot_thread() const                     { return _is_aot_thread; }
+  void set_is_aot_thread()                       { _is_aot_thread = true; }
 
   CompileQueue* queue()        const             { return _queue; }
   CompilerCounters* counters() const             { return _counters; }

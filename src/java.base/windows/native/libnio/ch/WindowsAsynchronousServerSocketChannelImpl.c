@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include <windows.h>
 #include <winsock2.h>
+#include <mswsock.h>
 
 #include "jni.h"
 #include "jni_util.h"
@@ -36,29 +37,7 @@
 #include "sun_nio_ch_WindowsAsynchronousServerSocketChannelImpl.h"
 
 
-#ifndef WSAID_ACCEPTEX
-#define WSAID_ACCEPTEX {0xb5367df1,0xcbac,0x11cf,{0x95,0xca,0x00,0x80,0x5f,0x48,0xa1,0x92}}
-#endif
-
-#ifndef SO_UPDATE_ACCEPT_CONTEXT
-#define SO_UPDATE_ACCEPT_CONTEXT 0x700B
-#endif
-
-
-typedef BOOL (*AcceptEx_t)
-(
-    SOCKET sListenSocket,
-    SOCKET sAcceptSocket,
-    PVOID lpOutputBuffer,
-    DWORD dwReceiveDataLength,
-    DWORD dwLocalAddressLength,
-    DWORD dwRemoteAddressLength,
-    LPDWORD lpdwBytesReceived,
-    LPOVERLAPPED lpOverlapped
-);
-
-
-static AcceptEx_t AcceptEx_func;
+static LPFN_ACCEPTEX AcceptEx_func;
 
 
 JNIEXPORT void JNICALL
