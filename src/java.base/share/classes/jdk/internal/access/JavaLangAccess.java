@@ -251,6 +251,12 @@ public interface JavaLangAccess {
     boolean isReflectivelyOpened(Module module, String pn, Module other);
 
     /**
+     * Returns true if there are readability, exports/uses, or service uses that were added
+     * reflectively.
+     */
+    boolean hasModuleReflectionData();
+
+    /**
      * Updates module m to allow access to restricted methods.
      */
     void addEnableNativeAccess(Module m);
@@ -653,4 +659,18 @@ public interface JavaLangAccess {
      * Finish initialization of the StackTraceElement objects in a stack trace.
      */
     void finishInit(StackTraceElement[] stackTrace);
+
+    /**
+     * Returns the live native pool-cache storage for the given platform thread, or
+     * {@code null} if uninitialized. The caller must provide owner-confined
+     * access; the returned array is not synchronized.
+     */
+    long[] getConfinedMemoryPools(Thread thread);
+
+    /**
+     * Returns the live native pool-cache storage for the given platform thread or
+     * initializes one if needed. The caller must provide owner-confined
+     * access; the returned array is not synchronized.
+     */
+    long[] getOrCreateConfinedMemoryPools(Thread thread, int poolSlots);
 }

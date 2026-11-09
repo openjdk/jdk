@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,8 @@ public class IndexWriter extends HtmlDocletWriter {
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.Index"))))
                 .addMainContent(mainContent)
-                .setFooter(getFooter()));
+                .setFooter(getFooter())
+                .toContent());
 
         String description = splitIndex ? "index: " + displayFirstCharacters.get(0) : "index";
         printHtmlDocument(null, description, body);

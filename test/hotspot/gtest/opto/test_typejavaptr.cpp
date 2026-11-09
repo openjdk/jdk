@@ -51,6 +51,17 @@ class TypeAryKlassPtrMirror;
 //   tests.
 // - Mirror instances are created at compile time, ensuring the absence of unexpected behaviors.
 
+// For GCC, UBSAN breaks the constexpr evaluation, which results in compilation failure.
+// For MSVC, the constexpr evaluation mechanism on GHA seems to have a smaller computing step
+// limit, which results in it failing to compute _2d_samples, which is a constexpr variable.
+// Our workaround to those compiler issues is to compute the variables at runtime instead. The
+// downside is that we do not benefit from the lack-of-UB guarantee of constexpr evaluation.
+#ifdef __clang__
+#define MAYBE_CONSTEXPR constexpr
+#else // __clang__
+#define MAYBE_CONSTEXPR const
+#endif // __clang__
+
 class InterfaceSet {
 public:
   bool _i0;
@@ -987,7 +998,7 @@ constexpr auto TypeAryPtrMirror::generate_1d_elem_samples() {
   return res;
 }
 
-constexpr std::array<AryElemType<TypeOopPtrMirror>, TypeAryPtrMirror::_1d_elem_samples_size> TypeAryPtrMirror::_1d_elem_samples = generate_1d_elem_samples();
+MAYBE_CONSTEXPR std::array<AryElemType<TypeOopPtrMirror>, TypeAryPtrMirror::_1d_elem_samples_size> TypeAryPtrMirror::_1d_elem_samples = generate_1d_elem_samples();
 
 template <class R>
 constexpr void TypeAryPtrMirror::fill_samples_helper(R& res, size_t& sample_idx, TypePtr::PTR ptr, InstanceMirror const_oop, const AryElemType<TypeOopPtrMirror>* elem,
@@ -1128,7 +1139,7 @@ constexpr auto TypeAryPtrMirror::generate_1d_samples() {
   return res;
 }
 
-constexpr std::array<TypeAryPtrMirror, TypeAryPtrMirror::_1d_samples_size> TypeAryPtrMirror::_1d_samples = generate_1d_samples();
+MAYBE_CONSTEXPR std::array<TypeAryPtrMirror, TypeAryPtrMirror::_1d_samples_size> TypeAryPtrMirror::_1d_samples = generate_1d_samples();
 
 constexpr auto TypeAryPtrMirror::generate_2d_elem_samples() {
   std::array<AryElemType<TypeOopPtrMirror>, _2d_elem_samples_size> res;
@@ -1152,7 +1163,7 @@ constexpr auto TypeAryPtrMirror::generate_2d_elem_samples() {
   return res;
 }
 
-constexpr std::array<AryElemType<TypeOopPtrMirror>, TypeAryPtrMirror::_2d_elem_samples_size> TypeAryPtrMirror::_2d_elem_samples = generate_2d_elem_samples();
+MAYBE_CONSTEXPR std::array<AryElemType<TypeOopPtrMirror>, TypeAryPtrMirror::_2d_elem_samples_size> TypeAryPtrMirror::_2d_elem_samples = generate_2d_elem_samples();
 
 constexpr auto TypeAryPtrMirror::generate_2d_samples() {
   std::array<TypeAryPtrMirror, _2d_samples_size> res;
@@ -1194,7 +1205,7 @@ constexpr auto TypeAryPtrMirror::generate_2d_samples() {
   return res;
 }
 
-constexpr std::array<TypeAryPtrMirror, TypeAryPtrMirror::_2d_samples_size> TypeAryPtrMirror::_2d_samples = generate_2d_samples();
+MAYBE_CONSTEXPR std::array<TypeAryPtrMirror, TypeAryPtrMirror::_2d_samples_size> TypeAryPtrMirror::_2d_samples = generate_2d_samples();
 
 class TypeKlassPtrMirror : public TypePtrMirror {
 private:
@@ -1580,7 +1591,7 @@ constexpr auto TypeAryKlassPtrMirror::generate_1d_elem_samples() {
   return res;
 }
 
-constexpr std::array<AryElemType<TypeKlassPtrMirror>, TypeAryKlassPtrMirror::_1d_elem_samples_size> TypeAryKlassPtrMirror::_1d_elem_samples = generate_1d_elem_samples();
+MAYBE_CONSTEXPR std::array<AryElemType<TypeKlassPtrMirror>, TypeAryKlassPtrMirror::_1d_elem_samples_size> TypeAryKlassPtrMirror::_1d_elem_samples = generate_1d_elem_samples();
 
 constexpr auto TypeAryKlassPtrMirror::generate_1d_samples() {
   std::array<TypeAryKlassPtrMirror, _1d_samples_size> res;
@@ -1628,7 +1639,7 @@ constexpr auto TypeAryKlassPtrMirror::generate_1d_samples() {
   return res;
 }
 
-constexpr std::array<TypeAryKlassPtrMirror, TypeAryKlassPtrMirror::_1d_samples_size> TypeAryKlassPtrMirror::_1d_samples = generate_1d_samples();
+MAYBE_CONSTEXPR std::array<TypeAryKlassPtrMirror, TypeAryKlassPtrMirror::_1d_samples_size> TypeAryKlassPtrMirror::_1d_samples = generate_1d_samples();
 
 constexpr auto TypeAryKlassPtrMirror::generate_2d_elem_samples() {
   std::array<AryElemType<TypeKlassPtrMirror>, _2d_elem_samples_size> res;
@@ -1646,7 +1657,7 @@ constexpr auto TypeAryKlassPtrMirror::generate_2d_elem_samples() {
   return res;
 }
 
-constexpr std::array<AryElemType<TypeKlassPtrMirror>, TypeAryKlassPtrMirror::_2d_elem_samples_size> TypeAryKlassPtrMirror::_2d_elem_samples = generate_2d_elem_samples();
+MAYBE_CONSTEXPR std::array<AryElemType<TypeKlassPtrMirror>, TypeAryKlassPtrMirror::_2d_elem_samples_size> TypeAryKlassPtrMirror::_2d_elem_samples = generate_2d_elem_samples();
 
 constexpr auto TypeAryKlassPtrMirror::generate_2d_samples() {
   std::array<TypeAryKlassPtrMirror, _2d_samples_size> res;
@@ -1679,7 +1690,7 @@ constexpr auto TypeAryKlassPtrMirror::generate_2d_samples() {
   return res;
 }
 
-constexpr std::array<TypeAryKlassPtrMirror, TypeAryKlassPtrMirror::_2d_samples_size> TypeAryKlassPtrMirror::_2d_samples = generate_2d_samples();
+MAYBE_CONSTEXPR std::array<TypeAryKlassPtrMirror, TypeAryKlassPtrMirror::_2d_samples_size> TypeAryKlassPtrMirror::_2d_samples = generate_2d_samples();
 
 // OopPtrMirror is the mirror of oop
 class OopPtrMirror {

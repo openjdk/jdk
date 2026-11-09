@@ -46,11 +46,11 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *          It is not possible to synchronize on a value object. An attempt to {@code
  *          synchronize} on a value object causes {@link IdentityException} to be thrown.
  *          <p>
- *          The {@link #finalize()} method of a value class will never be invoked by
- *          the garbage collector.
+ *          Value objects are never finalized, and it is an error to declare a
+ *          {@code finalize} method in a value class.
  *          <p>
  *          A {@linkplain java.lang.ref.Reference Reference object} can only refer to an
- *          object with identity. Creating a reference object with a value object as
+ *          object with identity. Creating a Reference object with a value object as
  *          the referent throws {@code IdentityException}.
  * }
  *
@@ -71,15 +71,15 @@ public class Object {
      * {@code Class} object is the object that is locked by {@code
      * static synchronized} methods of the represented class.
      *
-     * <p><b>The actual result type is {@code Class<? extends |X|>}</b>
+     * <p><b>The actual result type is {@code Class<? extends |X|>}
      * where {@code |X|} is the erasure of the static type of the
-     * expression on which {@code getClass} is called. For
+     * expression on which {@code getClass} is called.</b> For
      * example, no cast is required in this code fragment:</p>
      *
-     * <pre>{@code
-     * Number n = 0;
-     * Class<? extends Number> c = n.getClass();
-     * }</pre>
+     * <p>
+     * {@code Number n = 0;                             }<br>
+     * {@code Class<? extends Number> c = n.getClass(); }
+     * </p>
      *
      * @return The {@code Class} object that represents the runtime
      *         class of this object.
@@ -585,16 +585,12 @@ public class Object {
      * determines that there are no more references to the object.
      * An identity class may override the {@code finalize} method to dispose of
      * system resources or to perform other cleanup.
-     *
      * {@previewNote (jep=401)
-     *          The {@code finalize} method of a value class is never directly
-     *          invoked by the garbage collector. This includes the case where an
-     *          abstract value class declares a {@code finalize} method and the
-     *          class is extended by an identity class; the garbage collector never
-     *          directly invokes the {@code finalize} method declared by the
-     *          abstract value class.
+     *          A value class cannot override the {@code finalize} method, and
+     *          the garbage collector never invokes {@code finalize} on a value
+     *          object.
      * }
-     *
+     * <p>
      * <b>When running in a Java virtual machine in which finalization has been
      * disabled or removed, the garbage collector will never call {@code finalize()}
      * for any object. In a Java virtual machine in which finalization is
@@ -604,7 +600,7 @@ public class Object {
      * The general contract of {@code finalize} is that it is invoked
      * if and when the Java virtual
      * machine has determined that there is no longer any
-     * means by which this object can be accessed by any thread that has
+     * means by which this identity object can be accessed by any thread that has
      * not yet died, except as a result of an action taken by the
      * finalization of some other object or class which is ready to be
      * finalized. The {@code finalize} method may take any action, including

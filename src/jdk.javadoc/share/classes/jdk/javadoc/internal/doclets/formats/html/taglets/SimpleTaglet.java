@@ -128,7 +128,8 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * @param locations the possible locations that this tag can appear in
      * @param enabled   whether this tag is enabled
      */
-    static SimpleTaglet createWithDefaultForNested(HtmlConfiguration config, DocTree.Kind tagKind, String header, Set<Taglet.Location> locations, boolean enabled) {
+    static SimpleTaglet createWithDefaultForNested(HtmlConfiguration config, DocTree.Kind tagKind, String header,
+                                                   Set<Taglet.Location> locations, boolean enabled) {
         return new SimpleTaglet(config, tagKind, header, locations, enabled) {
             @Override
             protected List<? extends BlockTagTree> getDefaultBlockTags(Element e, Predicate<? super BlockTagTree> accepts) {
@@ -156,14 +157,8 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         assert !isFirstSentence;
         try {
             var docFinder = utils.docFinder();
-            Optional<Documentation> r;
-            if (src == null) {
-                r = docFinder.find((ExecutableElement) dst,
-                        m -> DocFinder.Result.fromOptional(extractFirst(m))).toOptional();
-            } else {
-                r = docFinder.search((ExecutableElement) src,
-                        m -> DocFinder.Result.fromOptional(extractFirst(m))).toOptional();
-            }
+            Optional<Documentation> r = docFinder.searchInherited((ExecutableElement) dst, (ExecutableElement) src,
+                    m -> DocFinder.Result.fromOptional(extractFirst(m))).toOptional();
             return r.map(result -> new Output(result.tag, result.method, result.description, true))
                     .orElseGet(()->new Output(null, null, List.of(), true));
         } catch (DocFinder.NoOverriddenMethodFound e) {

@@ -49,7 +49,6 @@ void ShenandoahGenerationalMode::initialize_flags() const {
 
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(GCTimeRatio, 70);
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
-  SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 
   // This helps most multi-core hardware hosts, enable by default
   SHENANDOAH_ERGO_ENABLE_FLAG(UseCondCardMark);

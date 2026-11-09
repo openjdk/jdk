@@ -96,7 +96,6 @@ ShenandoahWorkerData* ShenandoahPhaseTimings::worker_data(Phase phase, WorkerPha
 bool ShenandoahPhaseTimings::is_root_work_phase(Phase phase) {
   switch (phase) {
     case finish_mark:
-    case degen_gc_update_roots:
     case full_gc_mark:
     case full_gc_update_roots:
     case full_gc_adjust_roots:

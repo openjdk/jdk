@@ -26,11 +26,11 @@
 package sun.net.httpserver;
 
 import java.io.*;
-import java.net.*;
-import com.sun.net.httpserver.*;
-import com.sun.net.httpserver.spi.*;
 
 class ChunkedInputStream extends LeftOverInputStream {
+
+    private IOException readFailure = null;
+
     ChunkedInputStream(ExchangeImpl t, InputStream src) {
         super (t, src);
     }
@@ -50,6 +50,9 @@ class ChunkedInputStream extends LeftOverInputStream {
 
     private int numeric(char[] arr, int nchars) throws IOException {
         assert arr.length >= nchars;
+        if (nchars == 0) {
+            throw new IOException("missing chunk length");
+        }
         int len = 0;
         for (int i=0; i<nchars; i++) {
             char c = arr[i];
@@ -63,7 +66,11 @@ class ChunkedInputStream extends LeftOverInputStream {
             } else {
                 throw new IOException("invalid chunk length");
             }
-            len = len * 16 + val;
+            long nextLen = len * 16L + val;
+            if (nextLen > Integer.MAX_VALUE) {
+                throw new IOException("chunk length too big: " + nextLen);
+            }
+            len = (int) nextLen;
         }
         return len;
     }
@@ -111,14 +118,27 @@ class ChunkedInputStream extends LeftOverInputStream {
     }
 
     protected int readImpl(byte[] b, int off, int len) throws IOException {
+        // Chunk reader is stateful, don't retry after a failure
+        if (readFailure != null) {
+            throw readFailure;
+        }
+        try {
+            return readImpl0(b, off, len);
+        } catch (IOException ioe) {
+            readFailure = ioe;
+            throw ioe;
+        }
+    }
+
+    private int readImpl0(byte[] b, int off, int len) throws IOException {
         if (eof) {
             return -1;
         }
         if (needToReadHeader) {
             remaining = readChunkHeader();
             if (remaining == 0) {
-                eof = true;
                 consumeCRLF();
+                eof = true;
                 t.getServerImpl().requestCompleted(t.getConnection());
                 return -1;
             }

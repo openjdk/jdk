@@ -55,7 +55,8 @@ import com.sun.jdi.event.VMDisconnectEvent;
  *
  * {@previewNote (jep=401)
  * <h2><a id=valueObjects>Value Objects</a></h2>
- * If preview features are enabled, JDI supports value objects and classes.
+ * The Java Debug Interface (JDI) supports debugging of programs that use
+ * {@linkplain Class#isValue() value objects}.
  * However, the support does in some cases deviate from identity object
  * support in behavior or expectations as noted below:
  * <p>
@@ -100,9 +101,11 @@ public interface ObjectReference extends Value {
      * The Field must be valid for this ObjectReference;
      * that is, it must be from
      * the mirrored object's class or a superclass of that class.
+     *
      * {@previewNote (jep=401)
-     * If preview features are enabled, this method does not prevent a
-     * strictly-initialized field from being read before it has been initialized.
+     * This method does not prevent a
+     * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized field}
+     * from being read before it has been initialized.
      * }
      *
      * @param sig the field containing the requested value
@@ -117,9 +120,11 @@ public interface ObjectReference extends Value {
      * The Fields must be valid for this ObjectReference;
      * that is, they must be from
      * the mirrored object's class or a superclass of that class.
+     *
      * {@previewNote (jep=401)
-     * If preview features are enabled, this method does not prevent a
-     * strictly-initialized field from being read before it has been initialized.
+     * This method does not prevent a
+     * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized field}
+     * from being read before it has been initialized.
      * }
      *
      * @param fields a list of {@link Field} objects containing the

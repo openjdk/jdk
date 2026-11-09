@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestFunctionDescriptor
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestFunctionDescriptor
  */
 
 import java.lang.foreign.FunctionDescriptor;
@@ -32,9 +32,9 @@ import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class TestFunctionDescriptor extends NativeTestHelper {
 
@@ -44,17 +44,17 @@ public class TestFunctionDescriptor extends NativeTestHelper {
     public void testOf() {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONG_LONG);
 
-        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
+        assertEquals(List.of(C_DOUBLE, C_LONG_LONG), fd.argumentLayouts());
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertTrue(returnLayoutOp.isPresent());
-        assertEquals(returnLayoutOp.get(), C_INT);
+        assertEquals(C_INT, returnLayoutOp.get());
     }
 
     @Test
     public void testOfVoid() {
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_DOUBLE, C_LONG_LONG);
 
-        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
+        assertEquals(List.of(C_DOUBLE, C_LONG_LONG), fd.argumentLayouts());
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertFalse(returnLayoutOp.isPresent());
     }
@@ -64,10 +64,10 @@ public class TestFunctionDescriptor extends NativeTestHelper {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONG_LONG);
         fd = fd.appendArgumentLayouts(C_POINTER);
 
-        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG, C_POINTER));
+        assertEquals(List.of(C_DOUBLE, C_LONG_LONG, C_POINTER), fd.argumentLayouts());
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertTrue(returnLayoutOp.isPresent());
-        assertEquals(returnLayoutOp.get(), C_INT);
+        assertEquals(C_INT, returnLayoutOp.get());
     }
 
     @Test
@@ -75,10 +75,10 @@ public class TestFunctionDescriptor extends NativeTestHelper {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONG_LONG);
         fd = fd.changeReturnLayout(C_INT);
 
-        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
+        assertEquals(List.of(C_DOUBLE, C_LONG_LONG), fd.argumentLayouts());
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertTrue(returnLayoutOp.isPresent());
-        assertEquals(returnLayoutOp.get(), C_INT);
+        assertEquals(C_INT, returnLayoutOp.get());
     }
 
     @Test
@@ -86,7 +86,7 @@ public class TestFunctionDescriptor extends NativeTestHelper {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONG_LONG);
         fd = fd.dropReturnLayout();
 
-        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
+        assertEquals(List.of(C_DOUBLE, C_LONG_LONG), fd.argumentLayouts());
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertFalse(returnLayoutOp.isPresent());
     }
@@ -110,44 +110,58 @@ public class TestFunctionDescriptor extends NativeTestHelper {
                 MemoryLayout.structLayout(C_INT, C_INT),
                 MemoryLayout.sequenceLayout(3, C_INT));
         MethodType cmt = fd.toMethodType();
-        assertEquals(cmt, MethodType.methodType(int.class, int.class, MemorySegment.class, MemorySegment.class));
+        assertEquals(MethodType.methodType(int.class, int.class, MemorySegment.class, MemorySegment.class), cmt);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testIllegalInsertArgNegIndex() {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT);
-        fd.insertArgumentLayouts(-1, C_INT);
+        assertThrows(IllegalArgumentException.class, () -> {
+            fd.insertArgumentLayouts(-1, C_INT);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testIllegalInsertArgOutOfBounds() {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT);
-        fd.insertArgumentLayouts(2, C_INT);
+        assertThrows(IllegalArgumentException.class, () -> {
+            fd.insertArgumentLayouts(2, C_INT);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadPaddingInVoidFunction() {
-        FunctionDescriptor.ofVoid(MemoryLayout.paddingLayout(1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            FunctionDescriptor.ofVoid(MemoryLayout.paddingLayout(1));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadPaddingInNonVoidFunction() {
-        FunctionDescriptor.of(MemoryLayout.paddingLayout(1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            FunctionDescriptor.of(MemoryLayout.paddingLayout(1));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadPaddingInAppendArgLayouts() {
-        FunctionDescriptor.ofVoid().appendArgumentLayouts(MemoryLayout.paddingLayout(1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            FunctionDescriptor.ofVoid().appendArgumentLayouts(MemoryLayout.paddingLayout(1));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadPaddingInInsertArgLayouts() {
-        FunctionDescriptor.ofVoid().insertArgumentLayouts(0, MemoryLayout.paddingLayout(1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            FunctionDescriptor.ofVoid().insertArgumentLayouts(0, MemoryLayout.paddingLayout(1));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadPaddingInChangeRetLayout() {
-        FunctionDescriptor.ofVoid().changeReturnLayout(MemoryLayout.paddingLayout(1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            FunctionDescriptor.ofVoid().changeReturnLayout(MemoryLayout.paddingLayout(1));
+        });
     }
 
 }

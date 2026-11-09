@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 /*
  * @test
  *
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   TestUpcallStructScope
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   TestUpcallStructScope
@@ -37,7 +37,6 @@
 
 import java.lang.foreign.*;
 
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -46,9 +45,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 public class TestUpcallStructScope extends NativeTestHelper {
     static final MethodHandle MH_do_upcall;
@@ -117,7 +117,7 @@ public class TestUpcallStructScope extends NativeTestHelper {
         // We've captured the address '42' from the upcall. This should have
         // the global scope, so it should still be alive here.
         MemorySegment captured = capturedSegment.get();
-        assertEquals(argAddr, captured);
+        assertEquals(captured, argAddr);
         assertTrue(captured.scope().isAlive());
     }
 }

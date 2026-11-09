@@ -521,8 +521,9 @@ public interface ReferenceType
      * superinterface, or an implemented interface.
      *
      * {@previewNote (jep=401)
-     * If preview features are enabled, this method does not prevent a
-     * strictly-initialized field from being read before it has been initialized.
+     * This method does not prevent a
+     * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized field}
+     * from being read before it has been initialized.
      * }
      *
      * @param field the field containing the requested value
@@ -540,8 +541,9 @@ public interface ReferenceType
      * superinterface, or an implemented interface.
      *
      * {@previewNote (jep=401)
-     * If preview features are enabled, this method does not prevent a
-     * strictly-initialized field from being read before it has been initialized.
+     * This method does not prevent a
+     * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized field}
+     * from being read before it has been initialized.
      * }
      *
      * @param fields a list of {@link Field} objects containing the

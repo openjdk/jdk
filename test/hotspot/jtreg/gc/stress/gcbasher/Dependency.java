@@ -24,7 +24,9 @@
 
 package gc.stress.gcbasher;
 
-@jdk.test.lib.valueclass.AsValueClass
+import jdk.test.lib.valueclass.AsValueClass;
+
+@AsValueClass
 class Dependency {
     private String methodName;
 

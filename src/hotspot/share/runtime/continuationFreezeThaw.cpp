@@ -74,6 +74,9 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahStackChunkGCData.inline.hpp"
+#endif
 #if INCLUDE_ZGC
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #endif
@@ -1614,6 +1617,7 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size, int argsize_md)
 #endif
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
+    ShenandoahStackChunkGCData::initialize(chunk);
     _barriers = chunk->requires_barriers();
   } else
 #endif

@@ -43,7 +43,6 @@ class G1CodeRootSet {
   ~G1CodeRootSet();
 
   void add(nmethod* method);
-  bool remove(nmethod* method);
   void bulk_remove();
   // Notify the code root set that we are about to add the given
   // number of code roots. Only to be used during safepoint, not
@@ -58,8 +57,6 @@ class G1CodeRootSet {
 
   // Remove all nmethods which no longer contain pointers into our "owner" region.
   void clean(G1HeapRegion* owner);
-
-  bool is_empty() { return length() == 0;}
 
   // Length in elements
   size_t length() const;

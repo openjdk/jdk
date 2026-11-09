@@ -22,19 +22,19 @@
  *
  */
 
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciSymbols.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/flatArrayKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
+#include "opto/valuetypenode.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 //------------------------------make_dtrace_method_entry_exit ----------------
@@ -62,6 +62,30 @@ void GraphKit::make_dtrace_method_entry_exit(ciMethod* method, bool is_entry) {
                     thread, method_node);
 }
 
+Node* Parse::null_assert_for_unloaded_type(Node* value, ciType* unloaded_type,
+                                           const char* reason, bool trap_at_next_bci,
+                                           ciMethod* callee) {
+  if (PrintOpto && (Verbose || WizardMode)) {
+    method()->print_name();
+    tty->print_cr(" asserting nullness of %s at bci: %d", reason, bci());
+    if (callee != nullptr) {
+      callee->print_name();
+      tty->cr();
+    }
+  }
+  if (C->log() != nullptr) {
+    C->log()->elem("assert_null reason='%s' klass='%d'",
+                   reason, C->log()->identify(unloaded_type));
+  }
+  if (trap_at_next_bci) {
+    set_bci(iter().next_bci());
+  }
+  Node* result = null_assert(value);
+  if (trap_at_next_bci) {
+    set_bci(iter().cur_bci()); // put it back
+  }
+  return result;
+}
 
 //=============================================================================
 //------------------------------do_checkcast-----------------------------------
@@ -75,20 +99,10 @@ void Parse::do_checkcast() {
   // then the checkcast does nothing.
   const TypeOopPtr *tp = _gvn.type(obj)->isa_oopptr();
   if (!will_link || (tp && !tp->is_loaded())) {
-    if (C->log() != nullptr) {
-      if (!will_link) {
-        C->log()->elem("assert_null reason='checkcast' klass='%d'",
-                       C->log()->identify(klass));
-      }
-      if (tp && !tp->is_loaded()) {
-        // %%% Cannot happen?
-        ciKlass* klass = tp->unloaded_klass();
-        C->log()->elem("assert_null reason='checkcast source' klass='%d'",
-                       C->log()->identify(klass));
-      }
-    }
-    null_assert(obj);
-    assert( stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null" );
+    ciKlass* unloaded_klass = !will_link ? klass : tp->unloaded_klass();
+    const char* reason = !will_link ? "checkcast" : "checkcast source";
+    null_assert_for_unloaded_type(obj, unloaded_klass, reason, false);
+    assert(stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null");
     return;
   }
 
@@ -115,12 +129,8 @@ void Parse::do_instanceof() {
   ciKlass* klass = iter().get_klass(will_link);
 
   if (!will_link) {
-    if (C->log() != nullptr) {
-      C->log()->elem("assert_null reason='instanceof' klass='%d'",
-                     C->log()->identify(klass));
-    }
-    null_assert(peek());
-    assert( stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null" );
+    null_assert_for_unloaded_type(peek(), klass, "instanceof", false);
+    assert(stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null");
     if (!stopped()) {
       // The object is now known to be null.
       // Shortcut the effect of gen_instanceof and return "false" directly.
@@ -250,37 +260,37 @@ Node* Parse::array_store_check(const Type*& elemtype) {
   Node* p2 = off_heap_plus_addr(array_klass, element_klass_offset);
   Node* a_e_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p2, tak));
 
-  // If we statically know that this is an inline type array, use precise element klass for checkcast
+  // If we statically know that this is a value type array, use precise element klass for checkcast
   const TypeAryPtr* arytype = _gvn.type(ary)->is_aryptr();
   const TypePtr* elem_ptr = elemtype->make_ptr();
   bool null_free = arytype->is_null_free();
-  if (elem_ptr->is_inlinetypeptr()) {
-    // We statically know that this is an inline type array, use precise klass ptr
-    a_e_klass = makecon(TypeKlassPtr::make(elemtype->inline_klass()));
+  if (elem_ptr->is_valueklassptr()) {
+    // We statically know that this is a value type array, use precise klass ptr
+    a_e_klass = makecon(TypeKlassPtr::make(elemtype->value_klass()));
   }
 #ifdef ASSERT
   if (!StressReflectiveCode && array_klass->is_Con() != a_e_klass->is_Con()) {
     // When the element type is exact, the array type also needs to be exact. There is one exception, though:
     // Nullable arrays are not exact because the null-free array is a subtype while the element type being a
     // concrete value class (i.e. final) is always exact.
-    assert(!array_klass->is_Con() && a_e_klass->is_Con() && elem_ptr->is_inlinetypeptr() && !null_free,
+    assert(!array_klass->is_Con() && a_e_klass->is_Con() && elem_ptr->is_valueklassptr() && !null_free,
            "a constant element type either matches a constant array type or a non-constant nullable value class array");
   }
 
   // If the element type is exact, the array can be null-free (i.e. the element type is NotNull) if:
-  //   - The elements are inline types
+  //   - The elements are value types
   //   - The array is from an autobox cache.
   // If the element type is inexact, it could represent multiple null-free arrays. Since autobox cache arrays
   // are local to very few cache classes and are only used in the valueOf() methods, they are always exact and are not
   // merged or hidden behind super types. Therefore, an inexact null-free array always represents some kind of
-  // inline type array - either of an abstract value class or Object.
+  // value type array - either of an abstract value class or Object.
   if (null_free) {
     ciKlass* klass = elem_ptr->is_instptr()->instance_klass();
     if (klass->exact_klass()) {
-      assert(elem_ptr->is_inlinetypeptr() || arytype->is_autobox_cache(), "elements must be inline type or autobox cache");
+      assert(elem_ptr->is_valueklassptr() || arytype->is_autobox_cache(), "elements must be value type or autobox cache");
     } else {
-      assert(!arytype->is_autobox_cache() && elem_ptr->can_be_inline_type() &&
-             (klass->is_java_lang_Object() || klass->is_abstract()), "cannot have inexact non-inline type elements");
+      assert(!arytype->is_autobox_cache() && elem_ptr->can_be_value_type() &&
+             (klass->is_java_lang_Object() || klass->is_abstract()), "cannot have inexact non-value type elements");
     }
   }
 #endif // ASSERT
@@ -321,7 +331,7 @@ void Parse::do_new() {
 
   // Keep track of whether opportunities exist for StringBuilder
   // optimizations.
-  if (OptimizeStringConcat &&
+  if (C->do_stringopts() &&
       (klass == C->env()->StringBuilder_klass() ||
        klass == C->env()->StringBuffer_klass())) {
     C->set_has_stringbuilder(true);

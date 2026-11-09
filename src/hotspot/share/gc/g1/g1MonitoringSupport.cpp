@@ -367,6 +367,10 @@ G1MonitoringScope::~G1MonitoringScope() {
   MemoryService::track_memory_usage();
 }
 
+void G1MonitoringScope::set_all_memory_pools_affected() {
+  _tms.set_all_memory_pools_affected();
+}
+
 G1YoungGCMonitoringScope::G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support,
                                                    bool all_memory_pools_affected) :
   G1MonitoringScope(monitoring_support,
@@ -374,6 +378,14 @@ G1YoungGCMonitoringScope::G1YoungGCMonitoringScope(G1MonitoringSupport* monitori
                     &monitoring_support->_young_gc_memory_manager,
                     "end of minor GC",
                     all_memory_pools_affected) {
+}
+
+G1YoungGCMonitoringScope::~G1YoungGCMonitoringScope() {
+  G1GCPhaseTimes* phase_times = G1CollectedHeap::heap()->phase_times();
+  if (phase_times->sum_thread_work_items(G1GCPhaseTimes::EagerlyReclaimHumongousObjects,
+                                         G1GCPhaseTimes::EagerlyReclaimNumReclaimed) != 0) {
+    set_all_memory_pools_affected();
+  }
 }
 
 G1FullGCMonitoringScope::G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support) :

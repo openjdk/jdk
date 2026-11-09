@@ -88,7 +88,7 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
     os::free(_path);
     _path = nullptr;
   }
-  _cgroup_path = os::strdup(cgroup_path);
+  _cgroup_path = os::strdup(cgroup_path, mtInternal);
   stringStream ss;
   if (_root != nullptr && cgroup_path != nullptr) {
     ss.print_raw(_mount_point);
@@ -120,7 +120,7 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
         }
       }
     }
-    _path = os::strdup(ss.base());
+    _path = os::strdup(ss.base(), mtInternal);
   }
 }
 
@@ -473,13 +473,13 @@ void CgroupV1MemoryController::print_version_specific_info(outputStream* st, phy
 char* CgroupV1Subsystem::cpu_cpuset_cpus() {
   char cpus[1024];
   CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.cpus", "cpuset.cpus", cpus, 1024);
-  return os::strdup(cpus);
+  return os::strdup(cpus, mtInternal);
 }
 
 char* CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
   char mems[1024];
   CONTAINER_READ_STRING_CHECKED(_cpuset, "/cpuset.mems", "cpuset.mems", mems, 1024);
-  return os::strdup(mems);
+  return os::strdup(mems, mtInternal);
 }
 
 /* cpu_quota

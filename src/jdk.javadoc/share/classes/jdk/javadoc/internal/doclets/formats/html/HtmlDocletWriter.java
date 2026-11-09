@@ -517,7 +517,7 @@ public abstract class HtmlDocletWriter {
                 .addContent(extraHeadContent);
 
         HtmlDocument htmlDocument = new HtmlDocument(
-                HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body));
+                HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body));
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
 
@@ -550,9 +550,9 @@ public abstract class HtmlDocletWriter {
      */
     public String getFileTitle(DocFileElement element) {
         var fileName = element.getFileObject().getName();
-        if (fileName.endsWith(".html")) {
+        if (Utils.isHtmlFile(fileName)) {
             return getTextContent(utils.getPreamble(element), "title");
-        } else if (fileName.endsWith(".md")) {
+        } else if (Utils.isMarkdownFile(fileName)) {
             var c = commentTagsToContent(element, utils.getBody(element), false);
             return getHeadingText(c);
         } else {

@@ -27,7 +27,9 @@ package gc.stress.gcbasher;
 import java.util.HashSet;
 import java.util.Set;
 
-@jdk.test.lib.valueclass.AsValueClass
+import jdk.test.lib.valueclass.AsValueClass;
+
+@AsValueClass
 class ClassInfo {
     private String name;
 

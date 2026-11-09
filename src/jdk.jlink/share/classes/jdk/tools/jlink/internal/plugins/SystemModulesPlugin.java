@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -869,20 +869,22 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     ACC_PUBLIC,
                     cob -> {
 
+                        Map<String, Set<String>> sortedMap = new TreeMap<>(map);
+
                         // map of Set -> local
                         Map<Set<String>, Integer> locals;
                         int setBuilt = 0;
 
                         // generate code to create the sets that are duplicated
                         if (dedup) {
-                            Collection<Set<String>> values = map.values();
-                            Set<Set<String>> duplicateSets = values.stream()
+                            Collection<Set<String>> values = sortedMap.values();
+                            List<Set<String>> duplicates = values.stream()
                                     .distinct()
                                     .filter(s -> Collections.frequency(values, s) > 1)
-                                    .collect(Collectors.toSet());
+                                    .toList();
                             locals = new HashMap<>();
                             int index = 1;
-                            for (Set<String> s : duplicateSets) {
+                            for (Set<String> s : duplicates) {
                                 genImmutableSet(clb, cob, s, methodName + setBuilt++);
                                 cob.astore(index);
                                 locals.put(s, index);
@@ -899,7 +901,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                            .anewarray(CD_Map_Entry);
 
                         int index = 0;
-                        for (var e : new TreeMap<>(map).entrySet()) {
+                        for (var e : sortedMap.entrySet()) {
                             String name = e.getKey();
                             Set<String> s = e.getValue();
 

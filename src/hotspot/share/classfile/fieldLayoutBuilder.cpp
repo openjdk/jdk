@@ -30,16 +30,17 @@
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/layoutKind.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-static LayoutKind field_layout_selection(FieldInfo field_info, Array<InlineLayoutInfo>* inline_layout_info_array,
-                                         bool can_use_atomic_flat) {
+static OptionalFlatLayout flat_layout_selection(FieldInfo field_info, Array<ValueFieldInfo>* value_field_info_array,
+                                                bool can_use_atomic_flat) {
 
   // The can_use_atomic_flat argument indicates if an atomic flat layout can be used for this field.
   // This argument will be false if the container is a loosely consistent value class. Using an atomic layout
@@ -47,132 +48,142 @@ static LayoutKind field_layout_selection(FieldInfo field_info, Array<InlineLayou
   // tearing even if the field's class was declared atomic (non loosely consistent).
 
   if (!UseFieldFlattening) {
-    return LayoutKind::REFERENCE;
+    return OptionalFlatLayout::non_flat();
   }
 
   if (field_info.field_flags().is_injected()) {
     // don't flatten injected fields
-    return LayoutKind::REFERENCE;
+    return OptionalFlatLayout::non_flat();
   }
 
   if (field_info.access_flags().is_volatile()) {
     // volatile is used as a keyword to prevent flattening
-    return LayoutKind::REFERENCE;
+    return OptionalFlatLayout::non_flat();
   }
 
   if (field_info.access_flags().is_static()) {
     // don't flatten static fields
-    return LayoutKind::REFERENCE;
+    return OptionalFlatLayout::non_flat();
   }
 
-  if (inline_layout_info_array == nullptr || inline_layout_info_array->adr_at(field_info.index())->klass() == nullptr) {
+  if (value_field_info_array == nullptr || value_field_info_array->adr_at(field_info.index())->klass() == nullptr) {
     // field's type is not a known value class, using a reference
-    return LayoutKind::REFERENCE;
+    return OptionalFlatLayout::non_flat();
   }
 
-  InlineLayoutInfo* inline_field_info = inline_layout_info_array->adr_at(field_info.index());
-  InlineKlass* vk = inline_field_info->klass();
+  ValueFieldInfo* value_field_info = value_field_info_array->adr_at(field_info.index());
+  ValueKlass* vk = value_field_info->klass();
 
-  if (field_info.field_flags().is_null_free_inline_type()) {
+  if (field_info.field_flags().is_null_free_value_type()) {
     assert(field_info.access_flags().is_strict(), "null-free fields must be strict");
     if (vk->must_be_atomic()) {
       if (vk->is_naturally_atomic(true /* null-free */) && vk->has_null_free_non_atomic_layout()) {
-        return LayoutKind::NULL_FREE_NON_ATOMIC_FLAT;
+        return OptionalFlatLayout::flat(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);
       }
-      return (vk->has_null_free_atomic_layout() && can_use_atomic_flat) ? LayoutKind::NULL_FREE_ATOMIC_FLAT : LayoutKind::REFERENCE;
+      return (vk->has_null_free_atomic_layout() && can_use_atomic_flat)
+          ? OptionalFlatLayout::flat(LayoutKind::NULL_FREE_ATOMIC_FLAT)
+          : OptionalFlatLayout::non_flat();
     } else {
-      return vk->has_null_free_non_atomic_layout() ? LayoutKind::NULL_FREE_NON_ATOMIC_FLAT : LayoutKind::REFERENCE;
+      return vk->has_null_free_non_atomic_layout()
+          ? OptionalFlatLayout::flat(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT)
+          : OptionalFlatLayout::non_flat();
     }
   } else {
     // To preserve the consistency between the null-marker and the field content, the NULLABLE_NON_ATOMIC_FLAT
     // can only be used in containers that have atomicity guarantees (can_use_atomic_flat argument set to true)
     if (field_info.access_flags().is_strict() && field_info.access_flags().is_final() && can_use_atomic_flat) {
       if (vk->has_nullable_non_atomic_layout()) {
-        return LayoutKind::NULLABLE_NON_ATOMIC_FLAT;
+        return OptionalFlatLayout::flat(LayoutKind::NULLABLE_NON_ATOMIC_FLAT);
       }
     }
     // Another special case where NULLABLE_NON_ATOMIC_FLAT can be used: nullable empty values, because the
     // payload of those values contains only the null-marker
-    if (vk->is_empty_inline_type() && vk->has_nullable_non_atomic_layout()) {
-      return LayoutKind::NULLABLE_NON_ATOMIC_FLAT;
+    if (vk->is_empty_value_type() && vk->has_nullable_non_atomic_layout()) {
+      return OptionalFlatLayout::flat(LayoutKind::NULLABLE_NON_ATOMIC_FLAT);
     }
     if (UseNullableAtomicValueFlattening && vk->has_nullable_atomic_layout()) {
-      return can_use_atomic_flat ? LayoutKind::NULLABLE_ATOMIC_FLAT : LayoutKind::REFERENCE;
+      return can_use_atomic_flat
+          ? OptionalFlatLayout::flat(LayoutKind::NULLABLE_ATOMIC_FLAT)
+          : OptionalFlatLayout::non_flat();
     } else {
-      return LayoutKind::REFERENCE;
+      return OptionalFlatLayout::non_flat();
     }
   }
 }
 
-static LayoutKind adjust_with_budget(FieldInfo field_info, Array<InlineLayoutInfo>* inline_layout_info_array,
-                                     LayoutKind lk, int& budget) {
-  if (lk == LayoutKind::REFERENCE) return lk;
-  assert(LayoutKindHelper::is_flat((lk)), "Must be");
-  InlineLayoutInfo* inline_field_info = inline_layout_info_array->adr_at(field_info.index());
-  InlineKlass* vk = inline_field_info->klass();
-  int size = vk->layout_size_in_bytes(lk);
+static OptionalFlatLayout adjust_with_budget(FieldInfo field_info, Array<ValueFieldInfo>* value_field_info_array,
+                                             OptionalFlatLayout ofl, int& budget) {
+  if (!ofl.is_flat()) {
+    return ofl;
+  }
+
+  ValueFieldInfo* value_field_info = value_field_info_array->adr_at(field_info.index());
+  ValueKlass* vk = value_field_info->klass();
+  int size = vk->layout_size_in_bytes(ofl.get().layout_kind());
   if (size > budget) {
-    return LayoutKind::REFERENCE;
+    return OptionalFlatLayout::non_flat();
   } else {
     budget -= size;
-    return lk;
+    return ofl;
   }
 }
 
-static bool field_is_inlineable(FieldInfo fieldinfo, LayoutKind lk, Array<InlineLayoutInfo>* ili) {
-  if (fieldinfo.field_flags().is_null_free_inline_type()) {
-    // A null-free inline type is always inlineable
+static bool field_is_flattenable(FieldInfo fieldinfo, Array<ValueFieldInfo>* vfi) {
+  if (fieldinfo.field_flags().is_null_free_value_type()) {
+    // This makes sure that we include static null-restricted fields.
+    // We currently don't flatten them by policy, but they are still considered
+    // flattenable.
     return true;
   }
 
-  if (lk != LayoutKind::REFERENCE) {
-    assert(lk != LayoutKind::BUFFERED, "Sanity check");
-    assert(lk != LayoutKind::UNKNOWN, "Sanity check");
-    // We've chosen a layout that isn't a normal reference
-    return true;
-  }
-
-  const int field_index = (int)fieldinfo.index();
-  if (!fieldinfo.field_flags().is_injected() &&
-      ili != nullptr &&
-      ili->adr_at(field_index)->klass() != nullptr &&
-      !ili->adr_at(field_index)->klass()->is_identity_class() &&
-      !ili->adr_at(field_index)->klass()->is_abstract()) {
-    // The field's klass is not an identity class or abstract
-    return true;
-  }
-
-  return false;
+  // Include this if it is a value field
+  return !fieldinfo.field_flags().is_injected() &&
+      vfi != nullptr &&
+      vfi->adr_at(fieldinfo.index())->klass() != nullptr;
 }
 
-LayoutRawBlock::LayoutRawBlock(Kind kind, int size) :
-  _next_block(nullptr),
-  _prev_block(nullptr),
-  _inline_klass(nullptr),
-  _block_kind(kind),
-  _layout_kind(LayoutKind::UNKNOWN),
-  _offset(-1),
-  _alignment(1),
-  _size(size),
-  _field_index(-1) {
+LayoutRawBlock::LayoutRawBlock(Kind kind, int size)
+  : _next_block(nullptr),
+    _prev_block(nullptr),
+    _value_klass(nullptr),
+    _block_kind(kind),
+    _flat_layout_slot(),
+    _offset(-1),
+    _alignment(1),
+    _size(size),
+    _field_index(-1) {
   assert(kind == EMPTY || kind == RESERVED || kind == PADDING || kind == INHERITED || kind == NULL_MARKER,
          "Otherwise, should use the constructor with a field index argument");
   assert(size > 0, "Sanity check");
 }
 
+LayoutRawBlock::LayoutRawBlock(int index, Kind kind, int size, int alignment)
+  : _next_block(nullptr),
+    _prev_block(nullptr),
+    _value_klass(nullptr),
+    _block_kind(kind),
+    _flat_layout_slot(),
+    _offset(-1),
+    _alignment(alignment),
+    _size(size),
+    _field_index(index) {
+  assert(kind == REGULAR || kind == INHERITED,
+         "Constructor for real non-flat fields");
+  assert(size > 0, "Sanity check");
+  assert(alignment > 0, "Sanity check");
+}
 
-LayoutRawBlock::LayoutRawBlock(int index, Kind kind, int size, int alignment) :
-  _next_block(nullptr),
-  _prev_block(nullptr),
-  _inline_klass(nullptr),
-  _block_kind(kind),
-  _layout_kind(LayoutKind::UNKNOWN),
- _offset(-1),
- _alignment(alignment),
- _size(size),
- _field_index(index) {
-  assert(kind == REGULAR || kind == FLAT || kind == INHERITED,
-         "Other kind do not have a field index");
+LayoutRawBlock::LayoutRawBlock(int index, Kind kind, int size, int alignment, ValueKlass* vk, FlatLayout flat_layout)
+  : _next_block(nullptr),
+    _prev_block(nullptr),
+    _value_klass(vk),
+    _block_kind(kind),
+    _flat_layout_slot(flat_layout),
+    _offset(-1),
+    _alignment(alignment),
+    _size(size),
+    _field_index(index) {
+  assert(kind == FLAT, "Constructor for flat fields");
   assert(size > 0, "Sanity check");
   assert(alignment > 0, "Sanity check");
 }
@@ -187,19 +198,14 @@ bool LayoutRawBlock::fit(int size, int alignment) {
 
 FieldGroup::FieldGroup(int contended_group) :
   _next(nullptr),
-  _small_primitive_fields(nullptr),
-  _big_primitive_fields(nullptr),
+  _non_oop_fields(nullptr),
   _oop_fields(nullptr),
   _contended_group(contended_group) {} // -1 means no contended group, 0 means default contended group
 
 void FieldGroup::add_primitive_field(int idx, BasicType type) {
   int size = type2aelembytes(type);
   LayoutRawBlock* block = new LayoutRawBlock(idx, LayoutRawBlock::REGULAR, size, size /* alignment == size for primitive types */);
-  if (size >= heapOopSize) {
-    add_to_big_primitive_list(block);
-  } else {
-    add_to_small_primitive_list(block);
-  }
+  add_to_non_oop_list(block);
 }
 
 void FieldGroup::add_oop_field(int idx) {
@@ -211,47 +217,31 @@ void FieldGroup::add_oop_field(int idx) {
   _oop_fields->append(block);
 }
 
-void FieldGroup::add_flat_field(int idx, InlineKlass* vk, LayoutKind lk) {
+void FieldGroup::add_flat_field(int idx, ValueKlass* vk, FlatLayout flat_layout) {
+  const LayoutKind lk = flat_layout.layout_kind();
   const int size = vk->layout_size_in_bytes(lk);
   const int alignment = vk->layout_alignment(lk);
 
-  LayoutRawBlock* block = new LayoutRawBlock(idx, LayoutRawBlock::FLAT, size, alignment);
-  block->set_inline_klass(vk);
-  block->set_layout_kind(lk);
-  if (block->size() >= heapOopSize) {
-    add_to_big_primitive_list(block);
-  } else {
-    assert(!vk->contains_oops(), "Size of Inline klass with oops should be >= heapOopSize");
-    add_to_small_primitive_list(block);
-  }
+  LayoutRawBlock* block = new LayoutRawBlock(idx, LayoutRawBlock::FLAT, size, alignment, vk, flat_layout);
+  add_to_non_oop_list(block);
 }
 
 void FieldGroup::sort_by_size() {
-  if (_small_primitive_fields != nullptr) {
-    _small_primitive_fields->sort(LayoutRawBlock::compare_size_inverted);
-  }
-  if (_big_primitive_fields != nullptr) {
-    _big_primitive_fields->sort(LayoutRawBlock::compare_size_inverted);
+  if (_non_oop_fields != nullptr) {
+    _non_oop_fields->sort(LayoutRawBlock::compare_size_inverted);
   }
 }
 
-void FieldGroup::add_to_small_primitive_list(LayoutRawBlock* block) {
-  if (_small_primitive_fields == nullptr) {
-    _small_primitive_fields = new GrowableArray<LayoutRawBlock*>(INITIAL_LIST_SIZE);
+void FieldGroup::add_to_non_oop_list(LayoutRawBlock* block) {
+  if (_non_oop_fields == nullptr) {
+    _non_oop_fields = new GrowableArray<LayoutRawBlock*>(INITIAL_LIST_SIZE);
   }
-  _small_primitive_fields->append(block);
+  _non_oop_fields->append(block);
 }
 
-void FieldGroup::add_to_big_primitive_list(LayoutRawBlock* block) {
-  if (_big_primitive_fields == nullptr) {
-    _big_primitive_fields = new GrowableArray<LayoutRawBlock*>(INITIAL_LIST_SIZE);
-  }
-  _big_primitive_fields->append(block);
-}
-
-FieldLayout::FieldLayout(GrowableArray<FieldInfo>* field_info, Array<InlineLayoutInfo>* inline_layout_info_array, ConstantPool* cp) :
+FieldLayout::FieldLayout(GrowableArray<FieldInfo>* field_info, Array<ValueFieldInfo>* value_field_info_array, ConstantPool* cp) :
   _field_info(field_info),
-  _inline_layout_info_array(inline_layout_info_array),
+  _value_field_info_array(value_field_info_array),
   _cp(cp),
   _blocks(nullptr),
   _start(_blocks),
@@ -310,18 +300,41 @@ LayoutRawBlock* FieldLayout::first_field_block() {
   return block;
 }
 
-// Insert a set of fields into a layout.
-// For each field, search for an empty slot able to fit the field
+// Return the first non-oop field smaller than a heap oop.
+int FieldGroup::first_small_field_index() const {
+  if (_non_oop_fields == nullptr) {
+    return 0;
+  }
+
+  int index = 0;
+  while (index < _non_oop_fields->length() && _non_oop_fields->at(index)->size() >= heapOopSize) {
+    index++;
+  }
+  return index;
+}
+
+// Insert fields from a list into a layout. add() inserts the whole list,
+// while add_range() inserts a half-open range of the list.
+// For each selected field, search for an empty slot able to fit the field
 // (satisfying both size and alignment requirements), if none is found,
 // add the field at the end of the layout.
 // Fields cannot be inserted before the block specified in the "start" argument
 void FieldLayout::add(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start) {
-  if (list == nullptr) return;
-  if (start == nullptr) start = this->_start;
+  if (list == nullptr) {
+    return;
+  }
+  add_range(list, 0, list->length(), start);
+}
+
+void FieldLayout::add_range(GrowableArray<LayoutRawBlock*>* list, int from, int to, LayoutRawBlock* start) {
+  assert(list != nullptr, "sanity");
+  assert(0 <= from && from <= to && to <= list->length(), "sanity");
+
+  if (start == nullptr) start = _start;
   bool last_search_success = false;
   int last_size = 0;
   int last_alignment = 0;
-  for (int i = 0; i < list->length(); i ++) {
+  for (int i = from; i < to; i ++) {
     LayoutRawBlock* b = list->at(i);
     LayoutRawBlock* cursor = nullptr;
     LayoutRawBlock* candidate = nullptr;
@@ -458,10 +471,9 @@ LayoutRawBlock* FieldLayout::insert_field_block(LayoutRawBlock* slot, LayoutRawB
       _acmp_maps_offset = block->offset();
     }
   }
-  if (LayoutKindHelper::is_nullable_flat(block->layout_kind())) {
-    int nm_offset = block->inline_klass()->null_marker_offset() - block->inline_klass()->payload_offset() + block->offset();
+  if (block->block_kind() == LayoutRawBlock::FLAT && block->flat_layout().is_nullable()) {
+    int nm_offset = block->value_klass()->null_marker_offset() - block->value_klass()->payload_offset() + block->offset();
     _field_info->adr_at(block->field_index())->set_null_marker_offset(nm_offset);
-    _inline_layout_info_array->adr_at(block->field_index())->set_null_marker_offset(nm_offset);
   }
 
   return block;
@@ -487,11 +499,11 @@ void FieldLayout::reconstruct_layout(const InstanceKlass* ik, bool& has_nonstati
       }
       LayoutRawBlock* block;
       if (fs.is_flat()) {
-        InlineLayoutInfo layout_info = ik->inline_layout_info(fs.index());
-        InlineKlass* vk = layout_info.klass();
+        ValueFieldInfo value_field_info = ik->value_field_info(fs.index());
+        ValueKlass* vk = value_field_info.klass();
         block = new LayoutRawBlock(fs.index(), LayoutRawBlock::INHERITED,
-                                   vk->layout_size_in_bytes(layout_info.kind()),
-                                   vk->layout_alignment(layout_info.kind()));
+                                   vk->layout_size_in_bytes(value_field_info.flat_layout_kind()),
+                                   vk->layout_alignment(value_field_info.flat_layout_kind()));
         assert(_super_alignment == -1 || _super_alignment >=  vk->payload_alignment(), "Invalid value alignment");
         _super_min_align_required = _super_min_align_required > vk->payload_alignment() ? _super_min_align_required : vk->payload_alignment();
       } else {
@@ -635,11 +647,10 @@ void FieldLayout::shift_fields(int shift) {
     b->set_offset(b->offset() + shift);
     if (b->block_kind() == LayoutRawBlock::REGULAR || b->block_kind() == LayoutRawBlock::FLAT) {
       _field_info->adr_at(b->field_index())->set_offset(b->offset());
-      if (LayoutKindHelper::is_nullable_flat(b->layout_kind())) {
-        int new_nm_offset = _field_info->adr_at(b->field_index())->null_marker_offset() + shift;
-        _field_info->adr_at(b->field_index())->set_null_marker_offset(new_nm_offset);
-        _inline_layout_info_array->adr_at(b->field_index())->set_null_marker_offset(new_nm_offset);
-      }
+    }
+    if (b->block_kind() == LayoutRawBlock::FLAT && b->flat_layout().is_nullable()) {
+      int new_nm_offset = _field_info->adr_at(b->field_index())->null_marker_offset() + shift;
+      _field_info->adr_at(b->field_index())->set_null_marker_offset(new_nm_offset);
     }
     assert(b->block_kind() == LayoutRawBlock::EMPTY || b->offset() % b->alignment() == 0, "Must still be correctly aligned");
     b = b->next_block();
@@ -677,7 +688,7 @@ void FieldLayout::remove_null_marker() {
   ShouldNotReachHere(); // if we reach this point, the null marker was not found!
 }
 
-void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlass* super, Array<InlineLayoutInfo>* inline_fields, bool dummy_field_is_reused_as_null_marker) {
+void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlass* super, Array<ValueFieldInfo>* value_fields, bool dummy_field_is_reused_as_null_marker) {
   ResourceMark rm;
   LayoutRawBlock* b = _blocks;
   while(b != _last) {
@@ -704,8 +715,8 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
       }
       case LayoutRawBlock::FLAT: {
         FieldInfo* fi = _field_info->adr_at(b->field_index());
-        InlineKlass* ik = inline_fields->adr_at(fi->index())->klass();
-        assert(ik != nullptr, "");
+        ValueKlass* vk = value_fields->adr_at(fi->index())->klass();
+        assert(vk != nullptr, "");
         output->print_cr(" @%d %s %d/%d \"%s\" %s %s@%p %s",
                          b->offset(),
                          "FLAT",
@@ -713,9 +724,9 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
                          b->alignment(),
                          fi->name(_cp)->as_C_string(),
                          fi->signature(_cp)->as_C_string(),
-                         ik->name()->as_C_string(),
-                         ik->class_loader_data(),
-                         LayoutKindHelper::layout_kind_as_string(b->layout_kind()));
+                         vk->name()->as_C_string(),
+                         vk->class_loader_data(),
+                         b->flat_layout().as_string());
         break;
       }
       case LayoutRawBlock::RESERVED: {
@@ -776,15 +787,15 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
 }
 
 FieldLayoutBuilder::FieldLayoutBuilder(const Symbol* classname, ClassLoaderData* loader_data, const InstanceKlass* super_klass, ConstantPool* constant_pool,
-                                       GrowableArray<FieldInfo>* field_info, bool is_contended, bool is_inline_type,bool is_abstract_value,
-                                       bool must_be_atomic, FieldLayoutInfo* info, Array<InlineLayoutInfo>* inline_layout_info_array) :
+                                       GrowableArray<FieldInfo>* field_info, bool is_contended, bool is_concrete_value, bool is_abstract_value,
+                                       bool must_be_atomic, FieldLayoutInfo* info, Array<ValueFieldInfo>* value_field_info_array) :
   _classname(classname),
   _loader_data(loader_data),
   _super_klass(super_klass),
   _constant_pool(constant_pool),
   _field_info(field_info),
   _info(info),
-  _inline_layout_info_array(inline_layout_info_array),
+  _value_field_info_array(value_field_info_array),
   _root_group(nullptr),
   _contended_groups(GrowableArray<FieldGroup*>(8)),
   _static_fields(nullptr),
@@ -808,12 +819,12 @@ FieldLayoutBuilder::FieldLayoutBuilder(const Symbol* classname, ClassLoaderData*
   _is_naturally_atomic(false),
   _must_be_atomic(must_be_atomic),
   _has_nonstatic_fields(false),
-  _has_inlineable_fields(false),
-  _has_inlined_fields(false),
+  _has_flattenable_fields(false),
+  _has_flat_fields(false),
   _is_contended(is_contended),
-  _is_inline_type(is_inline_type),
+  _is_concrete_value(is_concrete_value),
   _is_abstract_value(is_abstract_value),
-  _is_empty_inline_class(false) {}
+  _is_empty_value_class(false) {}
 
 FieldGroup* FieldLayoutBuilder::get_or_create_contended_group(int g) {
   assert(g > 0, "must only be called for named contended groups");
@@ -828,20 +839,77 @@ FieldGroup* FieldLayoutBuilder::get_or_create_contended_group(int g) {
 }
 
 void FieldLayoutBuilder::prologue() {
-  _layout = new FieldLayout(_field_info, _inline_layout_info_array, _constant_pool);
+  _layout = new FieldLayout(_field_info, _value_field_info_array, _constant_pool);
   const InstanceKlass* super_klass = _super_klass;
   _layout->initialize_instance_layout(super_klass, _super_ends_with_oop);
   _nonstatic_oopmap_count = super_klass == nullptr ? 0 : super_klass->nonstatic_oop_map_count();
   if (super_klass != nullptr) {
     _has_nonstatic_fields = super_klass->has_nonstatic_fields();
   }
-  _static_layout = new FieldLayout(_field_info, _inline_layout_info_array, _constant_pool);
+  _static_layout = new FieldLayout(_field_info, _value_field_info_array, _constant_pool);
   _static_layout->initialize_static_layout();
   _static_fields = new FieldGroup();
   _root_group = new FieldGroup();
 }
 
-// Field sorting for regular (non-inline) classes:
+int FieldLayoutBuilder::add_field_to_group(FieldInfo fieldinfo, int idx, FieldGroup* group) {
+  BasicType type = Signature::basic_type(fieldinfo.signature(_constant_pool));
+  switch(type) {
+  case T_BYTE:
+  case T_CHAR:
+  case T_DOUBLE:
+  case T_FLOAT:
+  case T_INT:
+  case T_LONG:
+  case T_SHORT:
+  case T_BOOLEAN:
+    group->add_primitive_field(idx, type);
+    return type2aelembytes(type); // alignment == size for primitive types
+  case T_OBJECT:
+  case T_ARRAY:
+  {
+    const bool is_value_compatible_class = _is_concrete_value || _is_abstract_value;
+    // Atomic flat fields can always be used in identity classes.
+    // Use them only for value classes if the container is itself atomic.
+    const bool use_atomic_flat = !is_value_compatible_class || _must_be_atomic;
+    OptionalFlatLayout ofl = flat_layout_selection(fieldinfo, _value_field_info_array, use_atomic_flat);
+    ofl = adjust_with_budget(fieldinfo, _value_field_info_array, ofl, _flattening_budget);
+    if (field_is_flattenable(fieldinfo, _value_field_info_array)) {
+      _has_flattenable_fields = true;
+    }
+
+    if (!ofl.is_flat()) {
+      if (group != _static_fields) {
+        _nonstatic_oopmap_count++;
+      }
+      group->add_oop_field(idx);
+      return type2aelembytes(type); // alignment == size for oops
+    }
+
+    assert(group != _static_fields, "Static fields are not flattened");
+    FlatLayout fl = ofl.get();
+
+    const int field_index = (int)fieldinfo.index();
+    assert(_value_field_info_array != nullptr, "Array must have been created");
+    assert(_value_field_info_array->adr_at(field_index)->klass() != nullptr, "Klass must have been set");
+    _has_flat_fields = true;
+    ValueKlass* vk = _value_field_info_array->adr_at(field_index)->klass();
+    if (is_value_compatible_class && !vk->is_naturally_atomic(!fl.is_nullable())) {
+      _has_non_naturally_atomic_fields = true;
+    }
+    group->add_flat_field(idx, vk, fl);
+    _value_field_info_array->adr_at(field_index)->set_flat_layout(fl);
+    _nonstatic_oopmap_count += vk->nonstatic_oop_map_count();
+    _field_info->adr_at(idx)->field_flags_addr()->update_flat(true);
+    _field_info->adr_at(idx)->set_flat_layout(fl);
+    return vk->layout_alignment(fl.layout_kind());
+  }
+  default:
+    fatal("Unexpected BasicType");
+  }
+}
+
+// Field sorting for regular (non-value) classes:
 //   - fields are sorted in static and non-static fields
 //   - non-static fields are also sorted according to their contention group
 //     (support of the @Contended annotation)
@@ -869,52 +937,7 @@ void FieldLayoutBuilder::regular_field_sorting() {
       }
     }
     assert(group != nullptr, "invariant");
-    BasicType type = Signature::basic_type(fieldinfo.signature(_constant_pool));
-    switch(type) {
-    case T_BYTE:
-    case T_CHAR:
-    case T_DOUBLE:
-    case T_FLOAT:
-    case T_INT:
-    case T_LONG:
-    case T_SHORT:
-    case T_BOOLEAN:
-      group->add_primitive_field(idx, type);
-      break;
-    case T_OBJECT:
-    case T_ARRAY:
-    {
-      LayoutKind lk = field_layout_selection(fieldinfo, _inline_layout_info_array, true);
-      lk = adjust_with_budget(fieldinfo, _inline_layout_info_array, lk, _flattening_budget);
-      if (field_is_inlineable(fieldinfo, lk, _inline_layout_info_array)) {
-        _has_inlineable_fields = true;
-      }
-
-      if (lk == LayoutKind::REFERENCE) {
-        if (group != _static_fields) _nonstatic_oopmap_count++;
-        group->add_oop_field(idx);
-      } else {
-        assert(group != _static_fields, "Static fields are not flattened");
-        assert(lk != LayoutKind::BUFFERED && lk != LayoutKind::UNKNOWN,
-               "Invalid layout kind for flat field: %s", LayoutKindHelper::layout_kind_as_string(lk));
-
-        const int field_index = (int)fieldinfo.index();
-        assert(_inline_layout_info_array != nullptr, "Array must have been created");
-        assert(_inline_layout_info_array->adr_at(field_index)->klass() != nullptr, "Klass must have been set");
-        _has_inlined_fields = true;
-        InlineKlass* vk = _inline_layout_info_array->adr_at(field_index)->klass();
-        group->add_flat_field(idx, vk, lk);
-        _inline_layout_info_array->adr_at(field_index)->set_kind(lk);
-        _nonstatic_oopmap_count += vk->nonstatic_oop_map_count();
-        _field_info->adr_at(idx)->field_flags_addr()->update_flat(true);
-        _field_info->adr_at(idx)->set_layout_kind(lk);
-        // no need to update _must_be_atomic if vk->must_be_atomic() is true because current class is not an inline class
-      }
-      break;
-    }
-    default:
-      fatal("Something wrong?");
-    }
+    add_field_to_group(fieldinfo, idx, group);
   }
   _root_group->sort_by_size();
   _static_fields->sort_by_size();
@@ -925,19 +948,19 @@ void FieldLayoutBuilder::regular_field_sorting() {
   }
 }
 
-// Field sorting for inline classes:
-//   - because inline classes are immutable, the @Contended annotation is ignored
+// Field sorting for value classes:
+//   - because value classes are immutable, the @Contended annotation is ignored
 //     when computing their layout (with only read operation, there's no false
 //     sharing issue)
 //   - this method also records the alignment of the field with the most
 //     constraining alignment, this value is then used as the alignment
-//     constraint when flattening this inline type into another container
+//     constraint when flattening this value type into another container
 //   - field flattening decisions are taken in this method (those decisions are
 //     currently only based in the size of the fields to be flattened, the size
 //     of the resulting instance is not considered)
 //
-void FieldLayoutBuilder::inline_class_field_sorting() {
-  assert(_is_inline_type || _is_abstract_value, "Should only be used for inline classes");
+void FieldLayoutBuilder::value_class_field_sorting() {
+  assert(_is_concrete_value || _is_abstract_value, "Should only be used for value classes");
   int alignment = -1;
   int idx = 0;
   for (GrowableArrayIterator<FieldInfo> it = _field_info->begin(); it != _field_info->end(); ++it, ++idx) {
@@ -952,60 +975,7 @@ void FieldLayoutBuilder::inline_class_field_sorting() {
       group = _root_group;
     }
     assert(group != nullptr, "invariant");
-    BasicType type = Signature::basic_type(fieldinfo.signature(_constant_pool));
-    switch(type) {
-    case T_BYTE:
-    case T_CHAR:
-    case T_DOUBLE:
-    case T_FLOAT:
-    case T_INT:
-    case T_LONG:
-    case T_SHORT:
-    case T_BOOLEAN:
-      if (group != _static_fields) {
-        field_alignment = type2aelembytes(type); // alignment == size for primitive types
-      }
-      group->add_primitive_field(idx, type);
-      break;
-    case T_OBJECT:
-    case T_ARRAY:
-    {
-      bool use_atomic_flat = _must_be_atomic; // flatten atomic fields only if the container is itself atomic
-      LayoutKind lk = field_layout_selection(fieldinfo, _inline_layout_info_array, use_atomic_flat);
-      lk = adjust_with_budget(fieldinfo, _inline_layout_info_array, lk, _flattening_budget);
-      if (field_is_inlineable(fieldinfo, lk, _inline_layout_info_array)) {
-        _has_inlineable_fields = true;
-      }
-
-      if (lk == LayoutKind::REFERENCE) {
-        if (group != _static_fields) {
-          _nonstatic_oopmap_count++;
-          field_alignment = type2aelembytes(type); // alignment == size for oops
-        }
-        group->add_oop_field(idx);
-      } else {
-        assert(group != _static_fields, "Static fields are not flattened");
-        assert(lk != LayoutKind::BUFFERED && lk != LayoutKind::UNKNOWN,
-               "Invalid layout kind for flat field: %s", LayoutKindHelper::layout_kind_as_string(lk));
-
-        const int field_index = (int)fieldinfo.index();
-        assert(_inline_layout_info_array != nullptr, "Array must have been created");
-        assert(_inline_layout_info_array->adr_at(field_index)->klass() != nullptr, "Klass must have been set");
-        _has_inlined_fields = true;
-        InlineKlass* vk = _inline_layout_info_array->adr_at(field_index)->klass();
-        if (!vk->is_naturally_atomic(LayoutKindHelper::is_null_free_flat(lk))) _has_non_naturally_atomic_fields = true;
-        group->add_flat_field(idx, vk, lk);
-        _inline_layout_info_array->adr_at(field_index)->set_kind(lk);
-        _nonstatic_oopmap_count += vk->nonstatic_oop_map_count();
-        field_alignment = vk->layout_alignment(lk);
-        _field_info->adr_at(idx)->field_flags_addr()->update_flat(true);
-        _field_info->adr_at(idx)->set_layout_kind(lk);
-      }
-      break;
-    }
-    default:
-      fatal("Unexpected BasicType");
-    }
+    field_alignment = add_field_to_group(fieldinfo, idx, group);
     if (!fieldinfo.access_flags().is_static() && field_alignment > alignment) alignment = field_alignment;
   }
   _root_group->sort_by_size();
@@ -1025,14 +995,14 @@ LayoutRawBlock* FieldLayoutBuilder::insert_contended_padding(LayoutRawBlock* slo
 
 // Computation of regular classes layout is an evolution of the previous default layout
 // (FieldAllocationStyle 1):
-//   - primitive fields (both primitive types and flat inline types) are allocated
+//   - non-oop fields (both primitive types and flat value types) are allocated
 //     first (from the biggest to the smallest)
 //   - oop fields are allocated, either in existing gaps or at the end of
 //     the layout. We allocate oops in a single block to have a single oop map entry.
 //   - if the super class ended with an oop, we lead with oops. That will cause the
 //     trailing oop map entry of the super class and the oop map entry of this class
 //     to be folded into a single entry later. Correspondingly, if the super class
-//     ends with a primitive field, we gain nothing by leading with oops; therefore
+//     ends with a non-oop field, we gain nothing by leading with oops; therefore
 //     we let oop fields trail, thus giving future derived classes the chance to apply
 //     the same trick.
 void FieldLayoutBuilder::compute_regular_layout() {
@@ -1053,11 +1023,9 @@ void FieldLayoutBuilder::compute_regular_layout() {
 
   if (_super_ends_with_oop) {
     _layout->add(_root_group->oop_fields());
-    _layout->add(_root_group->big_primitive_fields());
-    _layout->add(_root_group->small_primitive_fields());
+    _layout->add(_root_group->non_oop_fields());
   } else {
-    _layout->add(_root_group->big_primitive_fields());
-    _layout->add(_root_group->small_primitive_fields());
+    _layout->add(_root_group->non_oop_fields());
     _layout->add(_root_group->oop_fields());
   }
 
@@ -1072,8 +1040,7 @@ void FieldLayoutBuilder::compute_regular_layout() {
         start = padding;
       }
 
-      _layout->add(cg->big_primitive_fields(), start);
-      _layout->add(cg->small_primitive_fields(), start);
+      _layout->add(cg->non_oop_fields(), start);
       _layout->add(cg->oop_fields(), start);
       need_tail_padding = true;
     }
@@ -1083,29 +1050,28 @@ void FieldLayoutBuilder::compute_regular_layout() {
     insert_contended_padding(_layout->last_block());
   }
 
-  // Warning: IntanceMirrorKlass expects static oops to be allocated first
+  // InstanceMirrorKlass expects static oop fields to be allocated first.
   _static_layout->add_contiguously(_static_fields->oop_fields());
-  _static_layout->add(_static_fields->big_primitive_fields());
-  _static_layout->add(_static_fields->small_primitive_fields());
+  _static_layout->add(_static_fields->non_oop_fields());
 
   epilogue();
 }
 
-// Computation of inline classes has a slightly different strategy than for
+// Computation of value classes has a slightly different strategy than for
 // regular classes. Regular classes have their oop fields allocated at the end
 // of the layout to increase GC performance. Unfortunately, this strategy
 // increases the number of empty slots inside an instance. Because the purpose
-// of inline classes is to be embedded into other containers, it is critical
+// of value classes is to be embedded into other containers, it is critical
 // to keep their size as small as possible. For this reason, the allocation
 // strategy is:
-//   - big primitive fields (primitive types and flat inline types larger
-//     than an oop) are allocated first (from the biggest to the smallest)
+//   - non-oop fields at least as large as a heap oop are allocated first
+//     (from the biggest to the smallest)
 //   - then oop fields
-//   - then small primitive fields (from the biggest to the smallest)
+//   - then non-oop fields smaller than a heap oop (from the biggest to the smallest)
 //
-void FieldLayoutBuilder::compute_inline_class_layout() {
+void FieldLayoutBuilder::compute_value_class_layout() {
 
-  // Test if the concrete inline class is an empty class (no instance fields)
+  // Test if the concrete value class is an empty class (no instance fields)
   // and insert a dummy field if needed
   if (!_is_abstract_value) {
     bool declares_nonstatic_fields = false;
@@ -1120,7 +1086,7 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
       bool has_inherited_fields = _super_klass != nullptr && _super_klass->has_nonstatic_fields();
       if (!has_inherited_fields) {
         // Inject ".empty" dummy field
-        _is_empty_inline_class = true;
+        _is_empty_value_class = true;
         FieldInfo::FieldFlags fflags(0);
         fflags.update_injected(true);
         AccessFlags aflags;
@@ -1136,7 +1102,7 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
   }
 
   prologue();
-  inline_class_field_sorting();
+  value_class_field_sorting();
 
   assert(_layout->start()->block_kind() == LayoutRawBlock::RESERVED, "Unexpected");
 
@@ -1191,16 +1157,28 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
     }
   }
 
-  _layout->add(_root_group->big_primitive_fields());
+  // The non-oop fields are sorted in decreasing size order. Split the list around
+  // heapOopSize so oop fields can be placed between large and small fields.
+  GrowableArray<LayoutRawBlock*>* non_oop_fields = _root_group->non_oop_fields();
+  int split_index = 0;
+
+  if (non_oop_fields != nullptr) {
+    split_index = _root_group->first_small_field_index();
+    _layout->add_range(non_oop_fields, 0, split_index);
+  }
+
   _layout->add(_root_group->oop_fields());
-  _layout->add(_root_group->small_primitive_fields());
+
+  if (non_oop_fields != nullptr) {
+    _layout->add_range(non_oop_fields, split_index, non_oop_fields->length());
+  }
 
   LayoutRawBlock* first_field = _layout->first_field_block();
   if (first_field != nullptr) {
     _payload_offset = _layout->first_field_block()->offset();
     _payload_size_in_bytes = _layout->last_block()->offset() - _layout->first_field_block()->offset();
   } else {
-    assert(_is_abstract_value, "Concrete inline types must have at least one field");
+    assert(_is_abstract_value, "Concrete value types must have at least one field");
     _payload_offset = _layout->blocks()->size();
     _payload_size_in_bytes = 0;
   }
@@ -1247,7 +1225,7 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
       LayoutRawBlock* b = _layout->first_field_block();
       assert(b != nullptr, "A concrete value class must have at least one (possible dummy) field");
       int null_marker_offset = -1;
-      if (_is_empty_inline_class) {
+      if (_is_empty_value_class) {
         // Reusing the dummy field as a field marker
         assert(_field_info->adr_at(b->field_index())->name(_constant_pool) == vmSymbols::empty_marker_name(), "b must be the dummy field");
         null_marker_offset = b->offset();
@@ -1291,12 +1269,12 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
       if (_null_marker_offset == -1) { // No nullable layout has been accepted
         // If the nullable layout is rejected, the NULL_MARKER block should be removed
         // from the layout, otherwise it will appear anyway if the layout is printer
-        if (!_is_empty_inline_class) {  // empty values don't have a dedicated NULL_MARKER block
+        if (!_is_empty_value_class) {  // empty values don't have a dedicated NULL_MARKER block
           _layout->remove_null_marker();
         }
       }
     }
-    // If the inline class has an atomic or nullable atomic layout,
+    // If the value class has an atomic or nullable atomic layout,
     // we want the raw layout to have the same alignment as those atomic layouts so access codes
     // could remain simple (single instruction without intermediate copy). This might require
     // shifting all fields in the raw layout, but this operation is possible only if the class
@@ -1318,13 +1296,13 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
         _payload_offset = _layout->first_field_block()->offset();
         assert(is_aligned(_payload_offset, required_alignment), "Fields should have been shifted to respect the required alignment");
         if (has_nullable_atomic_layout() || has_nullable_non_atomic_layout()) {
-          assert(!_is_empty_inline_class, "Should not get here with empty values");
+          assert(!_is_empty_value_class, "Should not get here with empty values");
           _null_marker_offset = _layout->find_null_marker()->offset();
         }
         _payload_alignment = required_alignment;
       } else {
         _null_free_atomic_layout_size_in_bytes = -1;
-        if (has_nullable_atomic_layout() && !has_nullable_non_atomic_layout() && !_is_empty_inline_class) {  // empty values don't have a dedicated NULL_MARKER block
+        if (has_nullable_atomic_layout() && !has_nullable_non_atomic_layout() && !_is_empty_value_class) {  // empty values don't have a dedicated NULL_MARKER block
           _layout->remove_null_marker();
           _null_marker_offset = -1;
         }
@@ -1334,7 +1312,7 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
       _payload_alignment = required_alignment;
     }
 
-    // If the inline class has a nullable layout, the layout used in heap allocated standalone
+    // If the value class has a nullable layout, the layout used in heap allocated standalone
     // instances must also be the nullable layout, in order to be able to set the null marker to
     // non-null before copying the payload to other containers.
     if (has_nullable_atomic_layout() && payload_layout_size_in_bytes() < nullable_atomic_layout_size_in_bytes()) {
@@ -1344,23 +1322,22 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
       _payload_size_in_bytes = nullable_non_atomic_layout_size_in_bytes();
     }
 
-    // If the inline class has a null-free atomic layout, then the layout used in heap allocated standalone
+    // If the value class has a null-free atomic layout, then the layout used in heap allocated standalone
     // instances must have at least equal to the atomic layout to allow safe read/write atomic
     // operation.
     if (has_null_free_atomic_layout() && payload_layout_size_in_bytes() < null_free_atomic_layout_size_in_bytes()) {
       _payload_size_in_bytes = null_free_atomic_layout_size_in_bytes();
     }
   }
-  // Warning:: InstanceMirrorKlass expects static oops to be allocated first
+  // InstanceMirrorKlass expects static oop fields to be allocated first.
   _static_layout->add_contiguously(_static_fields->oop_fields());
-  _static_layout->add(_static_fields->big_primitive_fields());
-  _static_layout->add(_static_fields->small_primitive_fields());
+  _static_layout->add(_static_fields->non_oop_fields());
 
   generate_acmp_maps();
   epilogue();
 }
 
-void FieldLayoutBuilder::add_flat_field_oopmap(OopMapBlocksBuilder* nonstatic_oop_maps, InlineKlass* vklass, int offset) {
+void FieldLayoutBuilder::add_flat_field_oopmap(OopMapBlocksBuilder* nonstatic_oop_maps, ValueKlass* vklass, int offset) {
   int diff = offset - vklass->payload_offset();
   const OopMapBlock* map = vklass->start_of_nonstatic_oop_maps();
   const OopMapBlock* last_map = map + vklass->nonstatic_oop_map_count();
@@ -1378,7 +1355,7 @@ void FieldLayoutBuilder::register_embedded_oops_from_list(OopMapBlocksBuilder* n
   for (int i = 0; i < list->length(); i++) {
     LayoutRawBlock* f = list->at(i);
     if (f->block_kind() == LayoutRawBlock::FLAT) {
-      InlineKlass* vk = f->inline_klass();
+      ValueKlass* vk = f->value_klass();
       assert(vk != nullptr, "Should have been initialized");
       if (vk->contains_oops()) {
         add_flat_field_oopmap(nonstatic_oop_maps, vk, f->offset());
@@ -1394,7 +1371,8 @@ void FieldLayoutBuilder::register_embedded_oops(OopMapBlocksBuilder* nonstatic_o
       nonstatic_oop_maps->add(b->offset(), 1);
     }
   }
-  register_embedded_oops_from_list(nonstatic_oop_maps, group->big_primitive_fields());
+  // A non-oop block can be a flat field that contains embedded oops.
+  register_embedded_oops_from_list(nonstatic_oop_maps, group->non_oop_fields());
 }
 
 static int insert_segment(GrowableArray<AcmpMapSegment>* map, int offset, int size, int last_idx) {
@@ -1451,12 +1429,12 @@ static void split_after(GrowableArray<AcmpMapSegment>* map, int idx, int head) {
 }
 
 void FieldLayoutBuilder::generate_acmp_maps() {
-  assert(_is_inline_type || _is_abstract_value, "Must be done only for value classes (abstract or not)");
+  assert(_is_concrete_value || _is_abstract_value, "Must be done only for value classes (abstract or not)");
 
   // create/initialize current class' maps
   _nonoop_acmp_map = new GrowableArray<AcmpMapSegment>();
   _oop_acmp_map = new GrowableArray<int>();
-  if (_is_empty_inline_class) return;
+  if (_is_empty_value_class) return;
   // last_idx remembers the position of the last insertion in order to speed up the next insertion.
   // Local fields are processed in ascending offset order, so an insertion is very likely be performed
   // next to the previous insertion. However, in some cases local fields and inherited fields can be
@@ -1491,10 +1469,10 @@ void FieldLayoutBuilder::generate_acmp_maps() {
        }
       case LayoutRawBlock::FLAT:
         {
-          InlineKlass* vk = b->inline_klass();
+          ValueKlass* vk = b->value_klass();
           int field_offset = b->offset() - vk->payload_offset();
           last_idx = insert_map_at_offset(_nonoop_acmp_map, _oop_acmp_map, vk, field_offset, last_idx);
-          if (LayoutKindHelper::is_nullable_flat(b->layout_kind())) {
+          if (b->flat_layout().is_nullable()) {
             int null_marker_offset = b->offset() + vk->null_marker_offset_in_payload();
             last_idx = insert_segment(_nonoop_acmp_map, null_marker_offset, 1, last_idx);
             // Important note: the implementation assumes that for nullable flat fields, if the
@@ -1573,9 +1551,9 @@ void FieldLayoutBuilder::epilogue() {
   _info->_static_field_size = static_fields_size;
   _info->_nonstatic_field_size = (nonstatic_field_end - instanceOopDesc::base_offset_in_bytes()) / heapOopSize;
   _info->_has_nonstatic_fields = _has_nonstatic_fields;
-  _info->_has_inlined_fields = _has_inlined_fields;
+  _info->_has_flat_fields = _has_flat_fields;
   _info->_is_naturally_atomic = _is_naturally_atomic;
-  if (_is_inline_type) {
+  if (_is_concrete_value) {
     _info->_must_be_atomic = _must_be_atomic;
     _info->_payload_alignment = _payload_alignment;
     _info->_payload_offset = _payload_offset;
@@ -1587,11 +1565,11 @@ void FieldLayoutBuilder::epilogue() {
     _info->_nullable_non_atomic_layout_size_in_bytes = _nullable_non_atomic_layout_size_in_bytes;
     _info->_null_marker_offset = _null_marker_offset;
     _info->_null_reset_value_offset = _static_layout->null_reset_value_offset();
-    _info->_is_empty_inline_klass = _is_empty_inline_class;
+    _info->_is_empty_value_klass = _is_empty_value_class;
   }
 
   // Acmp maps are needed for both concrete and abstract value classes
-  if (_is_inline_type || _is_abstract_value) {
+  if (_is_concrete_value || _is_abstract_value) {
     _info->_acmp_maps_offset = _static_layout->acmp_maps_offset();
     _info->_nonoop_acmp_map = _nonoop_acmp_map;
     _info->_oop_acmp_map = _oop_acmp_map;
@@ -1629,7 +1607,7 @@ void FieldLayoutBuilder::epilogue() {
 
   static bool first_layout_print = true;
 
-  if (PrintFieldLayout || (PrintInlineLayout && (_has_inlineable_fields || _is_inline_type || _is_abstract_value))) {
+  if (PrintFieldLayout || (PrintValueLayout && (_has_flattenable_fields || _is_concrete_value || _is_abstract_value))) {
     ResourceMark rm;
     stringStream st;
     if (first_layout_print) {
@@ -1644,14 +1622,14 @@ void FieldLayoutBuilder::epilogue() {
       st.print_cr("Layout of class %s@%p", _classname->as_C_string(), _loader_data);
     }
     st.print_cr("Instance fields:");
-    const bool dummy_field_is_reused_as_null_marker = _is_empty_inline_class && _null_marker_offset != -1;
-    _layout->print(&st, false, _super_klass, _inline_layout_info_array, dummy_field_is_reused_as_null_marker);
+    const bool dummy_field_is_reused_as_null_marker = _is_empty_value_class && _null_marker_offset != -1;
+    _layout->print(&st, false, _super_klass, _value_field_info_array, dummy_field_is_reused_as_null_marker);
     st.print_cr("Static fields:");
-    _static_layout->print(&st, true, nullptr, _inline_layout_info_array, false);
+    _static_layout->print(&st, true, nullptr, _value_field_info_array, false);
     st.print_cr("Instance size = %d bytes", _info->_instance_size * wordSize);
-    if (_is_inline_type) {
+    if (_is_concrete_value) {
       st.print_cr("First field offset = %d", _payload_offset);
-      st.print_cr("%s layout: %d/%d", LayoutKindHelper::layout_kind_as_string(LayoutKind::BUFFERED),
+      st.print_cr("BUFFERED layout: %d/%d",
                   _payload_size_in_bytes, _payload_alignment);
       if (has_null_free_non_atomic_flat_layout()) {
         st.print_cr("%s layout: %d/%d",
@@ -1706,8 +1684,8 @@ void FieldLayoutBuilder::epilogue() {
 }
 
 void FieldLayoutBuilder::build_layout() {
-  if (_is_inline_type || _is_abstract_value) {
-    compute_inline_class_layout();
+  if (_is_concrete_value || _is_abstract_value) {
+    compute_value_class_layout();
   } else {
     compute_regular_layout();
   }

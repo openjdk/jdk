@@ -83,15 +83,14 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register start, Register count, Register tmp) {
-  assert_different_registers(start, tmp);
-  assert_different_registers(count, tmp);
+  assert_different_registers(start, count, tmp);
 
   Label L_loop, L_done;
   const Register end = count;
 
   __ beqz(count, L_done); // zero count - nothing to do
   // end = start + count << LogBytesPerHeapOop
-  __ shadd(end, count, start, count, LogBytesPerHeapOop);
+  __ shift_left_add(end, count, start, LogBytesPerHeapOop);
   __ subi(end, end, BytesPerHeapOop); // last element address to make inclusive
 
   __ srli(start, start, CardTable::card_shift());

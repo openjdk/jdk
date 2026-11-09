@@ -313,7 +313,7 @@ static bool might_be_null_restricted_field(Method* method, address code_base, in
   bool is_resolved = field->is_resolved(bc);
 
   if (is_resolved) {
-    return field->is_null_free_inline_type();
+    return field->is_null_free_value_type();
   } else {
     // This is rare. The compiler might not have resolved the field or the klass
     // in the interpreter first. Just say it might be null restricted because we don't know.

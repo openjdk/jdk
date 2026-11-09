@@ -40,11 +40,32 @@ class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend RiscvHwprobe;
+
+ public:
+  enum class AtomicAccessMode : uint8_t {
+    RVWMO,
+    RVWMO_ZALASR,
+    ZTSO
+  };
+
+  enum class AtomicCasMode : uint8_t {
+    BASELINE,
+    ZACAS,
+    ZACAS_ZABHA
+  };
+
  private:
 
   // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
   enum VendorId {
-    RIVOS = 0x6cf, // JEDEC: 0x4f, Bank: 14
+    RIVOS   = 0x6cf, // JEDEC: 0x4f, Bank: 14
+    XUANTIE = 0x5b7, // JEDEC: 0x37, Bank: 12
+  };
+
+  enum XuantieArchitectureId : uint64_t {
+    C925_MARCHID = 0x80000000091c1600ULL,
+    C930_MARCHID = 0x8000000009201600ULL,
+    C950_MARCHID = 0x8000000009241600ULL,
   };
 
   class RVExtFeatures;
@@ -244,12 +265,18 @@ class VM_Version : public Abstract_VM_Version {
                                                                                                           \
   /* Atomic compare-and-swap (CAS) instructions */                                                        \
   decl(Zacas       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZacas))                                  \
+  /* Byte and Halfword Atomic Memory instructions */                                                      \
+  decl(Zabha       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZabha))                                  \
+  /* Load-acquire and store-release instructions */                                                       \
+  decl(Zalasr      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZalasr))                                 \
+  /* Wait-on-Reservation-Set instructions */                                                              \
+  decl(Zawrs       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZawrs))                                  \
   /* Zba Address generation instructions */                                                               \
   decl(Zba         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZba))                                    \
   /* Zbb Basic bit-manipulation */                                                                        \
   decl(Zbb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbb))                                    \
   /* Zbc Carry-less multiplication */                                                                     \
-  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
+  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbc))                                    \
   /* Bitmanip instructions for Cryptography */                                                            \
   decl(Zbkb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbkb))                                   \
   /* Zbs Single-bit instructions */                                                                       \
@@ -262,20 +289,16 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zfh         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfh))                                    \
   /* Zfhmin Minimal Half-Precision Floating-Point instructions */                                         \
   decl(Zfhmin      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfhmin))                                 \
-  /* Zicbom Cache Block Management Operations */                                                          \
-  decl(Zicbom      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbom))                                 \
   /* Zicbop Cache Block Prefetch Operations */                                                            \
   decl(Zicbop      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbop))                                 \
-  /* Zicboz Cache Block Zero Operations */                                                                \
-  decl(Zicboz      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicboz))                                 \
+  /* Ziccid Instruction/Data Coherence and Consistency */                                                 \
+  decl(Ziccid      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZiccid))                                 \
   /* Base Counters and Timers */                                                                          \
   decl(Zicntr      ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
   /* Zicond Conditional operations */                                                                     \
   decl(Zicond      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicond))                                 \
   /* Zicsr Control and Status Register (CSR) Instructions */                                              \
   decl(Zicsr       ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
-  /* Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space. */             \
-  decl(Zic64b      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZic64b))                                 \
   /* Zifencei Instruction-Fetch Fence */                                                                  \
   decl(Zifencei    ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
   /* Zihintpause Pause instruction HINT */                                                                \
@@ -321,7 +344,6 @@ class VM_Version : public Abstract_VM_Version {
   decl(unaligned_scalar  ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   /* Performance of misaligned vector accesses (unknown, unspported, slow, fast) */            \
   decl(unaligned_vector  ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
-  decl(zicboz_block_size ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
 
   #define DECLARE_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)            \
   struct PRETTY##RVNonExtFeatureValue : public RVNonExtFeatureValue {              \
@@ -347,7 +369,7 @@ private:
     };
    private:
     uint64_t _features_bitmap[(MAX_CPU_FEATURE_INDEX / BitsPerLong) + 1];
-    STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
+    static_assert(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
 
     // Number of 8-byte elements in _features_bitmap.
     constexpr static int element_count() {
@@ -430,10 +452,7 @@ private:
     RV_ENABLE_EXTENSION(UseZba)                      \
     RV_ENABLE_EXTENSION(UseZbb)                      \
     RV_ENABLE_EXTENSION(UseZbs)                      \
-    RV_ENABLE_EXTENSION(UseZic64b)                   \
-    RV_ENABLE_EXTENSION(UseZicbom)                   \
     RV_ENABLE_EXTENSION(UseZicbop)                   \
-    RV_ENABLE_EXTENSION(UseZicboz)                   \
     RV_ENABLE_EXTENSION(UseZihintpause)              \
 
   static void useRVA22U64Profile();
@@ -442,16 +461,14 @@ private:
   #define RV_USE_RVA23U64                           \
     RV_ENABLE_EXTENSION(UseRVC)                     \
     RV_ENABLE_EXTENSION(UseRVV)                     \
+    RV_ENABLE_EXTENSION(UseZawrs)                   \
     RV_ENABLE_EXTENSION(UseZba)                     \
     RV_ENABLE_EXTENSION(UseZbb)                     \
     RV_ENABLE_EXTENSION(UseZbs)                     \
     RV_ENABLE_EXTENSION(UseZcb)                     \
     RV_ENABLE_EXTENSION(UseZfa)                     \
     RV_ENABLE_EXTENSION(UseZfhmin)                  \
-    RV_ENABLE_EXTENSION(UseZic64b)                  \
-    RV_ENABLE_EXTENSION(UseZicbom)                  \
     RV_ENABLE_EXTENSION(UseZicbop)                  \
-    RV_ENABLE_EXTENSION(UseZicboz)                  \
     RV_ENABLE_EXTENSION(UseZicond)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
     RV_ENABLE_EXTENSION(UseZvfhmin)                 \
@@ -499,10 +516,29 @@ private:
   static void vendor_features();
   // Vendors specific features
   static void rivos_features();
+  static void xuantie_features();
 
   // Determine vector length iff ext_V/UseRVV
   static uint32_t cpu_vector_length();
   static uint32_t _initial_vector_length;
+
+  // Native AtomicAccess dispatches on this instead of reading UseZalasr and
+  // UseZtso separately. UseZalasr is set from command-line and extension
+  // detection before VM_Version::initialize() runs the toolchain-psABI and
+  // UseZtso mutual-exclusion checks, so during startup it may be transiently
+  // true even on configurations where those checks would later disable it.
+  // AtomicAccess is invoked from os::init_2, vm_init_globals,
+  // ObjectSynchronizer::initialize and other subsystems that run before
+  // init_globals() calls VM_Version_init(), so dispatching on UseZalasr
+  // directly can either SIGILL (CPU lacks the extension) or emit Zalasr
+  // sequences that later get paired with the incompatible pre-psABI atomics
+  // mapping. This mode is RVWMO by default and is latched to the final flag
+  // values after all validation completes.
+  static AtomicAccessMode _atomic_access_mode;
+
+  // Keep native CAS on the baseline ISA until CPU feature initialization
+  // completes, then latch the final Zacas/Zabha configuration.
+  static AtomicCasMode _atomic_cas_mode;
 
   static void common_initialize();
 
@@ -514,6 +550,11 @@ private:
   // Initialization
   static void initialize();
   static void initialize_cpu_information();
+
+  static uint32_t initial_vector_length() { return _initial_vector_length; }
+
+  static AtomicAccessMode atomic_access_mode() { return _atomic_access_mode; }
+  static AtomicCasMode atomic_cas_mode() { return _atomic_cas_mode; }
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
@@ -527,8 +568,18 @@ private:
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
 
+  // Zfhmin only provides half-precision load/store/convert instructions,
+  // Zfh additionally provides half-precision arithmetic. Either one is
+  // enough to convert between float16 and float.
   static bool supports_float16_float_conversion() {
     return UseZfh || UseZfhmin;
+  }
+
+  // Shared code gates the Float.float16ToFloat/floatToFloat16 intrinsics on
+  // this, and those only need the conversion instructions. Note that it does
+  // not imply half-precision arithmetic is available, which needs UseZfh.
+  static bool supports_float16() {
+    return supports_float16_float_conversion();
   }
 
   // Check intrinsic support

@@ -26,7 +26,7 @@
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "jvm.h"
-#include "oops/inlineKlass.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature_cc.hpp"
 #ifdef COMPILER2
@@ -35,7 +35,7 @@
 #endif
 
 void MacroAssembler::skip_unpacked_fields(const GrowableArray<SigEntry>* sig, int& sig_index, VMRegPair* regs_from, int regs_from_count, int& from_index) {
-  ScalarizedInlineArgsStream stream(sig, sig_index, regs_from, regs_from_count, from_index);
+  ScalarizedValueArgsStream stream(sig, sig_index, regs_from, regs_from_count, from_index);
   VMReg reg;
   BasicType bt;
   while (stream.next(reg, bt)) {}
@@ -44,7 +44,7 @@ void MacroAssembler::skip_unpacked_fields(const GrowableArray<SigEntry>* sig, in
 }
 
 bool MacroAssembler::is_reg_in_unpacked_fields(const GrowableArray<SigEntry>* sig, int sig_index, VMReg to, VMRegPair* regs_from, int regs_from_count, int from_index) {
-  ScalarizedInlineArgsStream stream(sig, sig_index, regs_from, regs_from_count, from_index);
+  ScalarizedValueArgsStream stream(sig, sig_index, regs_from, regs_from_count, from_index);
   VMReg reg;
   BasicType bt;
   while (stream.next(reg, bt)) {
@@ -79,8 +79,8 @@ MacroAssembler::RegState* MacroAssembler::init_reg_state(VMRegPair* regs, int nu
 }
 
 #ifdef COMPILER2
-int MacroAssembler::unpack_inline_args(Compile* C, bool receiver_only) {
-  assert(C->has_scalarized_args(), "inline type argument scalarization is disabled");
+int MacroAssembler::unpack_value_args(Compile* C, bool receiver_only) {
+  assert(C->has_scalarized_args(), "value type argument scalarization is disabled");
   ciMethod* method = C->method();
   const GrowableArray<SigEntry>* sig = method->get_sig_cc();
   assert(sig != nullptr, "must have scalarized signature");
@@ -102,8 +102,8 @@ int MacroAssembler::unpack_inline_args(Compile* C, bool receiver_only) {
   } else {
     // Only unpack the receiver, all other arguments are already scalarized
     ciInstanceKlass* holder = method->holder();
-    int rec_len = (holder->is_inlinetype() && method->is_scalarized_arg(0)) ? holder->as_inline_klass()->inline_arg_length() : 1;
-    // Copy scalarized signature but skip receiver and inline type delimiters
+    int rec_len = (holder->is_value_klass() && method->is_scalarized_arg(0)) ? holder->as_value_klass()->value_arg_length() : 1;
+    // Copy scalarized signature but skip receiver and value type delimiters
     for (int i = 0; i < sig->length(); i++) {
       if (SigEntry::skip_value_delimiters(sig, i) && rec_len <= 0) {
         sig_bt[args_passed++] = sig->at(i)._bt;
@@ -122,25 +122,25 @@ int MacroAssembler::unpack_inline_args(Compile* C, bool receiver_only) {
   // Check if we need to extend the stack for unpacking
   int sp_inc = 0;
   if (args_on_stack_cc > args_on_stack) {
-    sp_inc = extend_stack_for_inline_args(args_on_stack_cc);
+    sp_inc = extend_stack_for_value_args(args_on_stack_cc);
   }
-  shuffle_inline_args(false, receiver_only, sig,
-                      args_passed, args_on_stack, regs,           // from
-                      args_passed_cc, args_on_stack_cc, regs_cc,  // to
-                      sp_inc, noreg);
+  shuffle_value_args(false, receiver_only, sig,
+                     args_passed, args_on_stack, regs,           // from
+                     args_passed_cc, args_on_stack_cc, regs_cc,  // to
+                     sp_inc, noreg);
   return sp_inc;
 }
 #endif // COMPILER2
 
-void MacroAssembler::shuffle_inline_args(bool is_packing, bool receiver_only,
-                                         const GrowableArray<SigEntry>* sig,
-                                         int args_passed, int args_on_stack, VMRegPair* regs,
-                                         int args_passed_to, int args_on_stack_to, VMRegPair* regs_to,
-                                         int sp_inc, Register val_array) {
+void MacroAssembler::shuffle_value_args(bool is_packing, bool receiver_only,
+                                        const GrowableArray<SigEntry>* sig,
+                                        int args_passed, int args_on_stack, VMRegPair* regs,
+                                        int args_passed_to, int args_on_stack_to, VMRegPair* regs_to,
+                                        int sp_inc, Register val_array) {
   int max_stack = MAX2(args_on_stack + sp_inc/VMRegImpl::stack_slot_size, args_on_stack_to);
   RegState* reg_state = init_reg_state(regs, args_passed, sp_inc, max_stack);
 
-  // Emit code for packing/unpacking inline type arguments
+  // Emit code for packing/unpacking value type arguments
   // We try multiple times and eventually start spilling to resolve (circular) dependencies
   bool done = (args_passed_to == 0);
   for (int i = 0; i < 2*args_passed_to && !done; ++i) {
@@ -157,7 +157,7 @@ void MacroAssembler::shuffle_inline_args(bool is_packing, bool receiver_only,
       assert(0 <= sig_index && sig_index < sig->length(), "index out of bounds");
       if (spill) {
         // This call returns true IFF we should keep trying to spill in this round.
-        spill = shuffle_inline_args_spill(is_packing, sig, sig_index, regs, from_index, args_passed,
+        spill = shuffle_value_args_spill(is_packing, sig, sig_index, regs, from_index, args_passed,
                                           reg_state);
       }
       BasicType bt = sig->at(sig_index)._bt;
@@ -174,18 +174,18 @@ void MacroAssembler::shuffle_inline_args(bool is_packing, bool receiver_only,
       } else if (is_packing) {
         assert(val_array != noreg, "must be");
         VMReg reg_to = regs_to[to_index].first();
-        done &= pack_inline_helper(sig, sig_index, vtarg_index,
-                                   regs, args_passed, from_index, reg_to,
-                                   reg_state, val_array);
+        done &= pack_value_helper(sig, sig_index, vtarg_index,
+                                  regs, args_passed, from_index, reg_to,
+                                  reg_state, val_array);
         vtarg_index++;
         to_index++;
       } else if (!receiver_only || (from_index == 0 && bt == T_VOID)) {
         VMReg from_reg = regs[from_index].first();
-        done &= unpack_inline_helper(sig, sig_index,
-                                     from_reg, from_index, regs_to, args_passed_to, to_index,
-                                     reg_state);
+        done &= unpack_value_helper(sig, sig_index,
+                                    from_reg, from_index, regs_to, args_passed_to, to_index,
+                                    reg_state);
         if (from_index == -1 && sig_index != 0) {
-          // This can happen when we are confusing an empty inline type argument which is
+          // This can happen when we are confusing an empty value type argument which is
           // not counted in the scalarized signature for the receiver. Just ignore it.
           assert(receiver_only, "sanity");
           from_index = 0;
@@ -193,11 +193,11 @@ void MacroAssembler::shuffle_inline_args(bool is_packing, bool receiver_only,
       }
     }
   }
-  guarantee(done, "Could not resolve circular dependency when shuffling inline type arguments");
+  guarantee(done, "Could not resolve circular dependency when shuffling value type arguments");
 }
 
-bool MacroAssembler::shuffle_inline_args_spill(bool is_packing, const GrowableArray<SigEntry>* sig, int sig_index,
-                                               VMRegPair* regs_from, int from_index, int regs_from_count, RegState* reg_state) {
+bool MacroAssembler::shuffle_value_args_spill(bool is_packing, const GrowableArray<SigEntry>* sig, int sig_index,
+                                              VMRegPair* regs_from, int from_index, int regs_from_count, RegState* reg_state) {
   VMReg reg;
   if (!is_packing || SigEntry::skip_value_delimiters(sig, sig_index)) {
     reg = regs_from[from_index].first();
@@ -206,7 +206,7 @@ bool MacroAssembler::shuffle_inline_args_spill(bool is_packing, const GrowableAr
       return true;
     }
   } else {
-    ScalarizedInlineArgsStream stream(sig, sig_index, regs_from, regs_from_count, from_index);
+    ScalarizedValueArgsStream stream(sig, sig_index, regs_from, regs_from_count, from_index);
     VMReg from_reg;
     BasicType bt;
     bool found = false;
@@ -219,7 +219,7 @@ bool MacroAssembler::shuffle_inline_args_spill(bool is_packing, const GrowableAr
       }
     }
     if (!found) {
-      // Spilling fields in this inline type arg won't break cycles
+      // Spilling fields in this value type arg won't break cycles
       return true;
     }
   }

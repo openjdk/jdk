@@ -54,7 +54,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Hash map implementation that uses inline class entries in the initial table
+ * Hash map implementation that uses value class entries in the initial table
  * and maintains a link list of separate Node entries for key/value pairs
  * that have the same hash value.  The handling of the link list is the same
  * as the original java.util.HashMap.
