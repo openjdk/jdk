@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         addTree(classTree.recordClasses(), "doclet.Record_Class_Hierarchy", mainContent);
         bodyContents.addMainContent(mainContent);
         bodyContents.setFooter(getFooter());
-        body.add(bodyContents);
+        body.add(bodyContents.toContent());
         printHtmlDocument(null, getDescription("tree", packageElement), body);
     }
 

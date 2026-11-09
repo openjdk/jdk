@@ -296,12 +296,7 @@ CastLLNode* CastLLNode::make_with(Node* parent, const TypeInteger* type, const D
 
 Node* ConstraintCastNode::find_or_make_integer_cast(PhaseIterGVN* igvn, Node* parent, const TypeInteger* type, const DependencyType& dependency) const {
   Node* n = make_with(parent, type, dependency);
-  Node* existing = igvn->hash_find_insert(n);
-  if (existing != nullptr) {
-    n->destruct(igvn);
-    return existing;
-  }
-  return igvn->register_new_node_with_optimizer(n);
+  return igvn->find_node_or_register_new_node_with_optimizer(n);
 }
 
 Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -782,24 +777,24 @@ const TypeInteger* ConstraintCastNode::widen_type(const PhaseGVN* phase, const T
   }
 
   const TypeInteger* in_type = phase->type(in(1))->isa_integer(bt);
-  if (in_type != nullptr &&
-      (in_type->lo_as_long() != this_type->lo_as_long() ||
-       in_type->hi_as_long() != this_type->hi_as_long())) {
-    jlong lo1 = this_type->lo_as_long();
-    jlong hi1 = this_type->hi_as_long();
-    int w1 = this_type->_widen;
-    if (lo1 >= 0) {
+  if (in_type != nullptr) {
+    jlong lo = this_type->lo_as_long();
+    jlong hi = this_type->hi_as_long();
+    int w = this_type->_widen;
+    if (lo >= 0) {
       // Keep a range assertion of >=0.
-      lo1 = 0;        hi1 = max_signed_integer(bt);
-    } else if (hi1 < 0) {
+      lo = 0;
+      hi = max_signed_integer(bt);
+    } else if (hi < 0) {
       // Keep a range assertion of <0.
-      lo1 = min_signed_integer(bt); hi1 = -1;
+      lo = min_signed_integer(bt);
+      hi = -1;
     } else {
-      lo1 = min_signed_integer(bt); hi1 = max_signed_integer(bt);
+      lo = min_signed_integer(bt);
+      hi = max_signed_integer(bt);
     }
-    return TypeInteger::make(MAX2(in_type->lo_as_long(), lo1),
-                             MIN2(in_type->hi_as_long(), hi1),
-                             MAX2((int)in_type->_widen, w1), bt);
+    // Must filter in the same direction as Value
+    return in_type->filter(TypeInteger::make(lo, hi, w, bt))->is_integer(bt);
   }
   return this_type;
 }

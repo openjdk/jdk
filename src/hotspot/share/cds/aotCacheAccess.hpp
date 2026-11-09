@@ -62,7 +62,7 @@ public:
    */
   template <typename T>
   static narrowPtr to_narrow_ptr(T addr) {
-    assert(CDSConfig::is_dumping_final_static_archive(), "must be");
+    assert(CDSConfig::is_dumping_aot_cache(), "must be");
     assert(ArchiveBuilder::is_active(), "must be");
     return AOTCompressedPointers::encode_not_null(addr);
   }
@@ -102,7 +102,7 @@ public:
 
   // Used during production run to convert a Method in AOTCache to encoded pointer
   static narrowPtr method_to_narrow_ptr(Method* method) {
-    assert(CDSConfig::is_using_archive() && !CDSConfig::is_dumping_final_static_archive(), "must be");
+    assert(CDSConfig::is_using_archive() && !CDSConfig::is_dumping_aot_cache(), "must be");
     assert(AOTMetaspace::in_aot_cache(method), "method %p is not in AOTCache", method);
     return AOTCompressedPointers::encode_address_in_cache(method);
   }
@@ -117,7 +117,6 @@ public:
 
   static bool map_aot_code_region(ReservedSpace rs) NOT_CDS_RETURN_(false);
   static void unmap_aot_code_region() NOT_CDS_RETURN;
-
 
   static bool is_aot_code_region_empty() NOT_CDS_RETURN_(true);
 
