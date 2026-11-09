@@ -28,6 +28,13 @@
 #include "memory/allStatic.hpp"
 #include "opto/phaseX.hpp"
 
+// Template argument that selects the NodeOps specialization used by a generic
+// optimization.
+enum class NodeTypeCon {
+  VECTOR,    // Vector, e.g. XorV
+  PVECTMASK  // PVectMask, e.g. XorVMask
+};
+
 // GVN/IGVN optimizations that apply to different types of nodes, so the same
 // logic is not duplicated for each node type. For example, `A + B - B` -> `A`
 // can apply to INT, LONG, FLOAT, DOUBLE, VECTOR, and so on.
@@ -38,8 +45,8 @@
 // the caller's convention, e.g. nullptr for Ideal and the root for Identity.
 class GenericOpts : public AllStatic {
  public:
-  template<typename NodeClass>
-  static Node* Ideal_XorAnd_to_AndNot(NodeClass* root, PhaseGVN* phase);
+  template<NodeTypeCon NT>
+  static Node* Ideal_XorAnd_to_AndNot(Node* root, PhaseGVN* phase);
 };
 
 #endif // SHARE_OPTO_GENERICOPTS_HPP

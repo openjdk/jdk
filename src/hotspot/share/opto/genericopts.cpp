@@ -28,37 +28,16 @@
 // This file implements the generic optimization framework.
 //
 // Each optimization is a GenericOpts method written against a NT type.
-// NodeOps<NT> supplies the primitive operations, the matching and
-// construction, for one NT type.
+// NodeOps<NT> supplies the primitive operations, the matching and construction,
+// for one NT type.
 //
-// A NT type is represented by a NodeTypeCon, such as VECTOR for vector
-// nodes and PVECTMASK for PVectMask nodes. Nodes of the same NT type have
-// essentially the same primitive operations, so the optimization decouples
-// from each specific node type.
-//
-// NodeType maps the root node class to a NT type. Define one specialization
-// for each root class so a call site can deduce the NT type from that class.
-
-enum class NodeTypeCon {
-  VECTOR,    // Vector, e.g. XorV
-  PVECTMASK  // PVectMask, e.g. XorVMask
-};
-
-template<typename NodeClass>
-struct NodeType;
+// A NT type is represented by a NodeTypeCon, such as VECTOR for vector nodes
+// and PVECTMASK for PVectMask nodes. Nodes of the same NT type have essentially
+// the same primitive operations, so the optimization decouples from each
+// specific node type.
 
 template<NodeTypeCon NT>
 class NodeOps;
-
-template<>
-struct NodeType<XorVNode> {
-  static constexpr NodeTypeCon value = NodeTypeCon::VECTOR;
-};
-
-template<>
-struct NodeType<XorVMaskNode> {
-  static constexpr NodeTypeCon value = NodeTypeCon::PVECTMASK;
-};
 
 template<>
 class NodeOps<NodeTypeCon::VECTOR> : public StackObj {
@@ -133,10 +112,9 @@ class NodeOps<NodeTypeCon::PVECTMASK> : public StackObj {
 };
 
 // Canonicalize `(A & B) ^ B` to `~A & B`.
-template<typename NodeClass>
-Node* GenericOpts::Ideal_XorAnd_to_AndNot(NodeClass* n, PhaseGVN* phase) {
-  constexpr NodeTypeCon nt = NodeType<NodeClass>::value;
-  NodeOps<nt> ops(phase);
+template<NodeTypeCon NT>
+Node* GenericOpts::Ideal_XorAnd_to_AndNot(Node* n, PhaseGVN* phase) {
+  NodeOps<NT> ops(phase);
 
   if (!ops.is_xor(n)) {
     return nullptr;
@@ -178,5 +156,5 @@ Node* GenericOpts::Ideal_XorAnd_to_AndNot(NodeClass* n, PhaseGVN* phase) {
   return ops.make_and(shared, not_other);
 }
 
-template Node* GenericOpts::Ideal_XorAnd_to_AndNot<XorVNode>(XorVNode* n, PhaseGVN* phase);
-template Node* GenericOpts::Ideal_XorAnd_to_AndNot<XorVMaskNode>(XorVMaskNode* n, PhaseGVN* phase);
+template Node* GenericOpts::Ideal_XorAnd_to_AndNot<NodeTypeCon::VECTOR>(Node* n, PhaseGVN* phase);
+template Node* GenericOpts::Ideal_XorAnd_to_AndNot<NodeTypeCon::PVECTMASK>(Node* n, PhaseGVN* phase);

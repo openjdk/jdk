@@ -2944,7 +2944,7 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // (XorV (AndV A B) B) => (AndV B (XorV A (Replicate -1)))
-  res = GenericOpts::Ideal_XorAnd_to_AndNot(this, phase);
+  res = GenericOpts::Ideal_XorAnd_to_AndNot<NodeTypeCon::VECTOR>(this, phase);
   if (res != nullptr) {
     return res;
   }
@@ -2958,7 +2958,7 @@ Node* XorVMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // (XorVMask (AndVMask A B) B) => (AndVMask B (XorVMask A (MaskAll -1)))
-  res = GenericOpts::Ideal_XorAnd_to_AndNot(this, phase);
+  res = GenericOpts::Ideal_XorAnd_to_AndNot<NodeTypeCon::PVECTMASK>(this, phase);
   if (res != nullptr) {
     return res;
   }
