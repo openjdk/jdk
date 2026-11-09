@@ -26,7 +26,6 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahUncommitThread.hpp"
 #include "logging/log.hpp"
-#include "memory/allocation.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/events.hpp"
 
@@ -89,7 +88,7 @@ void ShenandoahUncommitThread::run_service() {
           r->set_uncommit_time(now);
           has_work = true;
         } else if (r->uncommit_time() == 0) {
-          // Update the uncommit times for newly empty regions.
+          // Newly empty region, record it for eventual uncommit.
           r->set_uncommit_time(now + ShenandoahUncommitDelay / 1000);
         } else if (r->uncommit_time() <= now) {
           // This region is eligible for uncommit.
@@ -118,8 +117,6 @@ void ShenandoahUncommitThread::uncommit(size_t shrink_until) {
   assert(ShenandoahUncommit, "Should be enabled");
   assert(_uncommit_in_progress.is_unset(), "Uncommit should not be in progress");
 
-  int delay_ms = 1;
-
   double start = os::elapsedTime();
 
   // Uncommit from the end, allowing the allocation path that takes the regions from
@@ -141,6 +138,7 @@ void ShenandoahUncommitThread::uncommit(size_t shrink_until) {
     }
 
     // Try to claim progress, gracefully waiting.
+    const int delay_ms = 10;
     if (!try_set_progress(delay_ms)) {
       // Requested to restart.
       break;
