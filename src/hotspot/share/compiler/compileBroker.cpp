@@ -2272,16 +2272,21 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     }
   }
 
+  LogStreamHandle(Debug, aot, compilation) aot_log;
+  bool aot_log_is_enabled = task->is_aot_compile() && aot_log.is_enabled();
   if (failure_reason != nullptr) {
     task->set_failure_reason(failure_reason, failure_reason_on_C_heap);
     if (CompilationLog::log() != nullptr) {
       CompilationLog::log()->log_failure(thread, task, failure_reason, retry_message);
     }
+    FormatBufferResource msg = retry_message != nullptr ?
+      FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
+      FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
     if (PrintCompilation || directive->PrintCompilationOption) {
-      FormatBufferResource msg = retry_message != nullptr ?
-        FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
-        FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
       task->print(tty, msg);
+    }
+    if (aot_log_is_enabled) {
+      task->print(&aot_log, msg);
     }
   }
 
@@ -2297,12 +2302,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     ResourceMark rm;
     task->print_post(tty);
   }
-  if (task->is_aot_compile()) {
-    LogStreamHandle(Debug, aot, compilation) log;
-    if (log.is_enabled()) {
-      ResourceMark rm;
-      task->print_post(&log);
-    }
+  if (aot_log_is_enabled) {
+    ResourceMark rm;
+    task->print_post(&aot_log);
   }
 
   Log(compilation, codecache) log;

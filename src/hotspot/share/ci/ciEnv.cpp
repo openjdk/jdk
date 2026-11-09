@@ -1314,8 +1314,11 @@ void ciEnv::register_method(ciMethod* target,
         // The AOT compiler runs in a special AOT assembly phase,
         // not part of any Java application.  The compiled code is not
         // runnable in this instance of the JVM. Don't publish it in
-        // Method::_code. Move it from `not_installed` state so
-        // normal GC CodeCache unloading can reclaim it.
+        // Method::_code.
+        // AOTCodeCache::store_nmethod() already cached the code and
+        // its copy in CodeCache is not needed any more. Move it from
+        // `not_installed` state so normal GC CodeCache unloading can
+        // reclaim it.
         MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
         nm->make_in_use();
       } else {
