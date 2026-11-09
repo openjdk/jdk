@@ -38,12 +38,12 @@
 #include "oops/method.hpp"
 
 bool AOTCacheAccess::can_generate_aot_code(address addr) {
-  assert(CDSConfig::is_dumping_final_static_archive(), "must be");
+  assert(CDSConfig::is_dumping_aot_cache(), "must be");
   return ArchiveBuilder::is_active() && ArchiveBuilder::current()->has_been_archived(addr);
 }
 
 bool AOTCacheAccess::can_generate_aot_code_for(InstanceKlass* ik) {
-  assert(CDSConfig::is_dumping_final_static_archive(), "must be");
+  assert(CDSConfig::is_dumping_aot_cache(), "must be");
   if (!ArchiveBuilder::is_active()) {
     return false;
   }
@@ -111,7 +111,7 @@ oop AOTCacheAccess::get_archived_object(int permanent_index) {
 #endif // INCLUDE_CDS_JAVA_HEAP
 
 void* AOTCacheAccess::allocate_aot_code_region(size_t size) {
-  assert(CDSConfig::is_dumping_final_static_archive(), "must be");
+  assert(CDSConfig::is_dumping_aot_cache(), "must be");
   return (void*)ArchiveBuilder::ac_region_alloc(size);
 }
 
@@ -141,7 +141,7 @@ void AOTCacheAccess::unmap_aot_code_region() {
 }
 
 bool AOTCacheAccess::is_aot_code_region_empty() {
-  assert(CDSConfig::is_dumping_final_static_archive(), "must be");
+  assert(CDSConfig::is_dumping_aot_cache(), "must be");
   return ArchiveBuilder::current()->ac_region()->is_empty();
 }
 
