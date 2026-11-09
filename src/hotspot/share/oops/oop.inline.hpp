@@ -214,11 +214,31 @@ bool oopDesc::is_value()            const { return klass()->is_value_klass();   
 bool oopDesc::is_instanceRef()      const { return klass()->is_reference_instance_klass();   }
 bool oopDesc::is_stackChunk()       const { return klass()->is_stack_chunk_instance_klass(); }
 bool oopDesc::is_array()            const { return klass()->is_array_klass();                }
+bool oopDesc::is_typeArray()        const { return klass()->is_typeArray_klass();            }
 bool oopDesc::is_objArray()         const { return klass()->is_objArray_klass();             }
 bool oopDesc::is_refArray()         const { return klass()->is_refArray_klass();             }
-bool oopDesc::is_typeArray()        const { return klass()->is_typeArray_klass();            }
-bool oopDesc::is_refined_objArray() const { return klass()->is_refined_objArray_klass();     }
 bool oopDesc::is_flatArray()        const { return klass()->is_flatArray_klass();            }
+
+template <typename OopType>
+bool oopDesc::is() const {
+  static_assert(sizeof(OopType) == 0, "No is<OopType> specialization found for this type");
+  return false;
+}
+
+template<> inline bool oopDesc::is<instanceOop>()  const { return is_instance();  }
+template<> inline bool oopDesc::is<arrayOop>()     const { return is_array();     }
+template<> inline bool oopDesc::is<objArrayOop>()  const { return is_objArray();  }
+template<> inline bool oopDesc::is<refArrayOop>()  const { return is_refArray();  }
+template<> inline bool oopDesc::is<typeArrayOop>() const { return is_typeArray(); }
+template<> inline bool oopDesc::is<flatArrayOop>() const { return is_flatArray(); }
+
+template<typename OopType>
+OopType oop_cast(oop obj) {
+  assert(obj->is<OopType>(), "Invalid cast");
+  return (OopType) obj;
+}
+
+bool oopDesc::is_refined_objArray() const { return klass()->is_refined_objArray_klass();     }
 
 bool oopDesc::is_array_with_oops() const {
   if (!is_objArray()) {

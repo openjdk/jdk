@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,14 @@
 
 /*
  * @test
+ * @key stress
  * @summary Invokes eight threads that concurrently have to resolve the same
             set of classes, thereby putting stress on the classloader and
             deadlocks will be noticed. This execution is iterated many times.
  * @library /test/lib
  * @enablePreview
  * @compile BigClassTreeClassLoader.java
- * @run junit/othervm/timeout=480 -XX:ReservedCodeCacheSize=1G runtime.valhalla.valuetypes.classloading.ConcurrentClassLoadingTest
+ * @run junit/othervm/timeout=480 -XX:ReservedCodeCacheSize=1G ${test.main.class}
  */
 
 package runtime.valhalla.valuetypes.classloading;

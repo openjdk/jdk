@@ -441,9 +441,9 @@ bool AOTClassLocation::check(const char* runtime_path, bool has_aot_linked_class
       } else {
         aot_log_warning(aot)("Archived non-system classes are disabled because the "
                          "file %s exists", runtime_path);
-        FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
+        FileMapInfo::static_input_archive()->set_has_platform_or_app_classes(false);
         if (DynamicArchive::is_mapped()) {
-          FileMapInfo::dynamic_info()->set_has_platform_or_app_classes(false);
+          FileMapInfo::dynamic_input_archive()->set_has_platform_or_app_classes(false);
         }
       }
     }
@@ -478,9 +478,9 @@ void AOTClassLocationConfig::dumptime_init(JavaThread* current) {
     vm_exit_during_initialization("AOTClassLocationConfig::dumptime_init_helper() failed unexpectedly");
   }
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_aot_cache()) {
     // The _max_used_index is usually updated by ClassLoader::record_result(). However,
-    // when dumping the final archive, the classes are loaded from their images in
+    // when dumping the AOT cache, the classes are loaded from their images in
     // the AOT config file, so we don't go through ClassLoader::record_result().
     dumptime_update_max_used_index(runtime()->_max_used_index); // Same value as recorded in the training run.
   }
@@ -661,10 +661,19 @@ void AOTClassLocationConfig::add_class_location(JavaThread* current, GrowableCla
       size_t name_len = strlen(file_start);
       if (name_len > 0) {
         ResourceMark rm(current);
-        size_t libname_len = dir_len + name_len;
-        char* libname = NEW_RESOURCE_ARRAY(char, libname_len + 1);
-        int n = os::snprintf(libname, libname_len + 1, "%.*s%s", dir_len, dir_name, file_start);
-        assert((size_t)n == libname_len, "Unexpected number of characters in string");
+        char* libname;
+
+        if (strncasecmp(file_start, "file:", 5) == 0) {
+          // If the "file:" prefix is present in the attribute, the subsequent
+          // path is absolute. Remove this prefix from the path name and use
+          // the absolute path rather than appending to the parent directory.
+          libname = ClassLoader::uri_to_path(file_start);
+        } else {
+          size_t libname_len = dir_len + name_len;
+          libname = NEW_RESOURCE_ARRAY(char, libname_len + 1);
+          int n = os::snprintf(libname, libname_len + 1, "%.*s%s", dir_len, dir_name, file_start);
+          assert((size_t)n == libname_len, "Unexpected number of characters in string");
+        }
 
         // Avoid infinite recursion when two JAR files refer to each
         // other via cpattr.
@@ -757,7 +766,17 @@ bool AOTClassLocationConfig::is_valid_classpath_index(int classpath_index, Insta
                                                                           ik->name()->utf8_length());
       Handle class_loader(current, ik->class_loader());
       const AOTClassLocation* cl = AOTClassLocationConfig::class_location_at(classpath_index);
-      if (!zip->has_entry(current, file_name, class_loader, cl->is_multi_release_jar())) {
+      bool found = zip->has_entry(file_name, class_loader, cl->is_multi_release_jar(), current);
+      if (current->has_pending_exception()) {
+        AOTMetaspace::writing_error(current->pending_exception());
+        aot_log_warning(aot)("class %s cannot be archived because an exception was thrown when checking %s",
+                             class_name, zip->name());
+        current->clear_pending_exception();
+        // Treat it as if the zip file didn't contain this class. This means transient OOM would
+        // not be catastrophic -- just fewer classes would be cached.
+        return false;
+      }
+      if (!found) {
         aot_log_warning(aot)("class %s cannot be archived because it was not defined from %s as claimed",
                          class_name, zip->name());
         return false;
@@ -1091,7 +1110,7 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
     const char* hint_msg = log_is_enabled(Info, class, path) ?
         "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
     if (RequireSharedSpaces && !PrintSharedArchiveAndExit) {
-      if (CDSConfig::is_dumping_final_static_archive()) {
+      if (CDSConfig::is_dumping_aot_cache()) {
         aot_log_error(aot)("class path and/or module path are not compatible with the "
                        "ones specified when the AOTConfiguration file was recorded%s", hint_msg);
         AOTMetaspace::unrecoverable_writing_error("Unable to use create AOT cache.");

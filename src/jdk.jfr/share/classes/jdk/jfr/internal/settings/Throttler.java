@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package jdk.jfr.internal.settings;
 
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
-import jdk.jfr.internal.PlatformEventType;
+
 public final class Throttler {
     private static final ThrottlerParameters DISABLED_PARAMETERS = new ThrottlerParameters(0, 0, 0);
     private static final long MILLIUNITS = 1000;

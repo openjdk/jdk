@@ -69,6 +69,20 @@ RegionNode* PhaseIdealLoop::split_thru_region(Node* n, RegionNode* region) {
   return r;
 }
 
+ProjNode* PhaseIdealLoop::unique_scmem_proj_if_any(Node* n) {
+  ProjNode* proj = nullptr;
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* u = n->fast_out(i);
+    if (u->Opcode() == Op_SCMemProj) {
+      assert(proj == nullptr, "only one SCMemProj");
+      proj = u->as_Proj();
+    } else {
+      assert(!u->is_Proj(), "we can't split nodes with Proj uses other than SCMemProj");
+    }
+  }
+  return proj;
+}
+
 //------------------------------split_up---------------------------------------
 // Split block-local op up through the phis to empty the current block
 bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
@@ -155,6 +169,15 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     tty->print_cr("  Splitting up: %d %s", n->_idx, n->Name());
   }
 #endif
+  // If n has a SCMemProj use, pushing n through the Phi and then the SCMemProj (which has then a Phi input) through the
+  // Phi doesn't work as split if needs the adr_type of an SCMemProj to create its Phi which Proj::addr_type() gets from
+  // its input: that works as long as the input of the SCMemProj is n but not if it's a Phi. Prepare the Phi for the
+  // SCMemProj here before n is cloned.
+  ProjNode* mem_proj = unique_scmem_proj_if_any(n);
+  Node* phi_mem_proj = nullptr;
+  if (mem_proj != nullptr) {
+    phi_mem_proj = PhiNode::make_blank(blk1, mem_proj);
+  }
   Node *phi = PhiNode::make_blank(blk1, n);
   for( uint j = 1; j < blk1->req(); j++ ) {
     Node *x = n->clone();
@@ -178,6 +201,21 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
   // Remove cloned-up value from optimizer; use phi instead
   _igvn.replace_node( n, phi );
 
+  if (mem_proj != nullptr) {
+    for (uint j = 1; j < blk1->req(); j++) {
+      Node* x = mem_proj->clone();
+      x->set_req(0, phi->in(j));
+      register_new_node(x, blk1->in(j));
+      phi_mem_proj->init_req(j, x);
+    }
+    // Announce phi to optimizer
+    register_new_node(phi_mem_proj, blk1);
+
+    // Remove cloned-up value from optimizer; use phi instead
+    _igvn.replace_node(mem_proj, phi_mem_proj);
+  }
+  assert(!phi->has_out_with(Op_SCMemProj), "only works with a single SCMemProj use");
+
   // (There used to be a self-recursive call to split_up() here,
   // but it is not needed.  All necessary forward walking is done
   // by do_split_if() below.)
@@ -200,7 +238,7 @@ bool PhaseIdealLoop::clone_cmp_loadklass_down(Node* n, const Node* blk1, const N
       tty->print_cr("  Cloning down (LoadKlass): %d %s", n->_idx, n->Name());
     }
 #endif
-    Node_List cmp_nodes;
+    Node_List<Node> cmp_nodes;
     uint old = C->unique();
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* u1 = n->fast_out(i);
@@ -753,8 +791,8 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
 
   // Control is updated here to a region, which is not a test, so any node that
   // depends_only_on_test must be pinned
-  pin_nodes_dependent_on(new_true, iff->Opcode() == Op_RangeCheck);
-  pin_nodes_dependent_on(new_false, iff->Opcode() == Op_RangeCheck);
+  IfNode::pin_nodes_dependent_on(new_true, iff->Opcode(), &_igvn, this);
+  IfNode::pin_nodes_dependent_on(new_false, iff->Opcode(), &_igvn, this);
 
   if (new_false_region != nullptr) {
     *new_false_region = new_false;
@@ -764,28 +802,4 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   }
 
   DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
-}
-
-void PhaseIdealLoop::pin_nodes_dependent_on(Node* ctrl, bool old_iff_is_rangecheck) {
-  for (DUIterator i = ctrl->outs(); ctrl->has_out(i); i++) {
-    Node* use = ctrl->out(i);
-    if (!use->depends_only_on_test()) {
-      continue;
-    }
-
-
-    // When a RangeCheckNode is folded because its condition is a constant, IfProjNode::Identity
-    // returns the control input of the RangeCheckNode. As a result, when the old IfNode is not a
-    // RangeCheckNode, and a Load output of it depends_only_on_test, we don't need to pin the Load.
-    if (use->is_Load() && !old_iff_is_rangecheck) {
-      continue;
-    }
-
-    Node* pinned_clone = use->pin_node_under_control();
-    if (pinned_clone != nullptr) {
-      register_new_node_with_ctrl_of(pinned_clone, use);
-      _igvn.replace_node(use, pinned_clone);
-      --i;
-    }
-  }
 }

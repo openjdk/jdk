@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ public class B6433018 {
 
     static final String cmd =
         "POST /test/item HTTP/1.1"+CRLF+
+        "Host: araku:9999"+CRLF+
         "Keep-Alive: 300"+CRLF+
         "Proxy-Connection: keep-alive"+CRLF+
         "Content-Type: text/xml"+CRLF+

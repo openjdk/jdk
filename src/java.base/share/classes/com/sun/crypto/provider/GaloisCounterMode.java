@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1603,8 +1603,9 @@ abstract class GaloisCounterMode extends CipherSpi {
                         NIO_ACCESS.acquireSession(dst);
                         try {
                             Unsafe.getUnsafe().setMemory(
-                                NIO_ACCESS.getBufferAddress(dst),
-                                len + dst.position(), (byte) 0);
+                                NIO_ACCESS.getBufferAddress(dst)
+                                        + dst.position(),
+                                len, (byte) 0);
                         } finally {
                             NIO_ACCESS.releaseSession(dst);
                         }
