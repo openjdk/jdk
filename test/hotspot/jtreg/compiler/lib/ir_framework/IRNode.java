@@ -343,6 +343,12 @@ public class IRNode {
         superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
     }
 
+    public static final String ARRAY_COPY = PREFIX + "ARRAY_COPY" + POSTFIX;
+    static {
+        String regex = START + "ArrayCopy" + MID + END;
+        macroNodes(ARRAY_COPY, regex);
+    }
+
     public static final String OPAQUE_MULTIVERSIONING = PREFIX + "OPAQUE_MULTIVERSIONING" + POSTFIX;
     static {
         beforeMatchingNameRegex(OPAQUE_MULTIVERSIONING, "OpaqueMultiversioning");
@@ -490,6 +496,12 @@ public class IRNode {
         superWordNodes(AND_REDUCTION_V, "AndReductionV");
     }
 
+    public static final String ANY_LOOP = PREFIX + "ANY_LOOP" + POSTFIX;
+    static {
+        String regex = START + "(Counted|LongCounted|OuterStripMined)?Loop\\b" + MID + END;
+        fromBeforeCountedLoops(ANY_LOOP, regex);
+    }
+
     public static final String CALL = PREFIX + "CALL" + POSTFIX;
     static {
         beforeMatchingNameRegex(CALL, "Call.*Java");
@@ -536,6 +548,11 @@ public class IRNode {
     public static final String VECTORAPI_INSERT_OP = PREFIX + "VECTORAPI_INSERT_OP" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTORAPI_INSERT_OP, "CallStaticJava(?=.*VectorSupport::insert instptr:)");
+    }
+
+    public static final String VECTORAPI_SLICE_OP = PREFIX + "VECTORAPI_SLICE_OP" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTORAPI_SLICE_OP, "CallStaticJava(?=.*VectorSupport::sliceOp instptr:)");
     }
 
     public static final String CAST_II = PREFIX + "CAST_II" + POSTFIX;
@@ -2497,6 +2514,18 @@ public class IRNode {
         machOnlyNameRegex(RISCV_LOAD_N2P_UNSCALED, "loadN2P_unscaled");
     }
 
+    // Conditional move whose condition is a VectorTest. One rule per value type.
+    // Exclude the separate _negate rules that materialize boolean results.
+    public static final String RISCV_CMOVE_VTEST_ANYTRUE = PREFIX + "RISCV_CMOVE_VTEST_ANYTRUE" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_CMOVE_VTEST_ANYTRUE, "cmov[ILFDPN]_vtest_anytrue\\b");
+    }
+
+    public static final String RISCV_CMOVE_VTEST_ALLTRUE = PREFIX + "RISCV_CMOVE_VTEST_ALLTRUE" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_CMOVE_VTEST_ALLTRUE, "cmov[ILFDPN]_vtest_alltrue\\b");
+    }
+
     public static final String RISCV_VAND_NOTI_VX_MASKED = PREFIX + "RISCV_VAND_NOTI_VX_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VAND_NOTI_VX_MASKED, "vand_notI_vx_masked");
@@ -2773,9 +2802,44 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_MASK_CAST, "VectorMaskCast");
     }
 
-    public static final String VECTOR_REINTERPRET = PREFIX + "VECTOR_REINTERPRET" + POSTFIX;
+    public static final String VECTOR_REINTERPRET_B = VECTOR_PREFIX + "VECTOR_REINTERPRET_B" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_REINTERPRET, "VectorReinterpret");
+        vectorNode(VECTOR_REINTERPRET_B, "VectorReinterpret", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_REINTERPRET_C = VECTOR_PREFIX + "VECTOR_REINTERPRET_C" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_C, "VectorReinterpret", TYPE_CHAR);
+    }
+
+    public static final String VECTOR_REINTERPRET_S = VECTOR_PREFIX + "VECTOR_REINTERPRET_S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_S, "VectorReinterpret", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_REINTERPRET_I = VECTOR_PREFIX + "VECTOR_REINTERPRET_I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_I, "VectorReinterpret", TYPE_INT);
+    }
+
+    public static final String VECTOR_REINTERPRET_L = VECTOR_PREFIX + "VECTOR_REINTERPRET_L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_L, "VectorReinterpret", TYPE_LONG);
+    }
+
+    public static final String VECTOR_REINTERPRET_F = VECTOR_PREFIX + "VECTOR_REINTERPRET_F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_F, "VectorReinterpret", TYPE_FLOAT);
+    }
+
+    public static final String VECTOR_REINTERPRET_D = VECTOR_PREFIX + "VECTOR_REINTERPRET_D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_D, "VectorReinterpret", TYPE_DOUBLE);
+    }
+
+    public static final String VECTOR_REINTERPRET_Z = VECTOR_PREFIX + "VECTOR_REINTERPRET_Z" + POSTFIX;
+    static {
+        vectorNode(VECTOR_REINTERPRET_Z, "VectorReinterpret", TYPE_BOOLEAN);
     }
 
     public static final String VECTOR_UCAST_B2S = VECTOR_PREFIX + "VECTOR_UCAST_B2S" + POSTFIX;

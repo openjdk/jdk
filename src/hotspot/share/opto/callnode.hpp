@@ -929,7 +929,6 @@ public:
     : CallJavaNode(tf, addr, method, TypePtr::BOTTOM, TypePtr::BOTTOM), _safe_for_fold_compare(true) {
     init_class_id(Class_CallStaticJava);
     if (C->eliminate_boxing() && (method != nullptr) && (method->is_boxing_method() || method->is_unboxing_method())) {
-      init_flags(Flag_is_macro);
       C->add_macro_node(this);
     }
     const TypeTuple *r = tf->range_sig();
@@ -940,7 +939,6 @@ public:
         r->field_at(TypeFunc::Parms)->isa_oopptr() &&
         r->field_at(TypeFunc::Parms)->is_oopptr()->can_be_value_type()) {
       // Make sure this call is processed by PhaseMacroExpand::expand_mh_intrinsic_return
-      init_flags(Flag_is_macro);
       C->add_macro_node(this);
     }
   }
@@ -956,11 +954,11 @@ public:
   static int extract_uncommon_trap_request(const Node* call);
 
   bool is_boxing_method() const {
-    return is_macro() && (method() != nullptr) && method()->is_boxing_method();
+    return Compile::current()->eliminate_boxing() && (method() != nullptr) && method()->is_boxing_method();
   }
 
   bool is_unboxing_method() const {
-    return is_macro() && (method() != nullptr) && method()->is_unboxing_method();
+    return Compile::current()->eliminate_boxing() && (method() != nullptr) && method()->is_unboxing_method();
   }
 
   // Late inlining modifies the JVMState, so we need to deep clone it
@@ -1310,7 +1308,6 @@ protected:
                                        GrowableArray<AbstractLockNode*> &lock_ops);
   bool find_unlocks_for_region(const RegionNode* region, LockNode* lock,
                                GrowableArray<AbstractLockNode*> &lock_ops);
-  LockNode *find_matching_lock(UnlockNode* unlock);
 
   // Update the counter to indicate that this lock was eliminated.
   void set_eliminated_lock_counter() PRODUCT_RETURN;
@@ -1398,7 +1395,6 @@ public:
   virtual uint size_of() const; // Size is bigger
   LockNode(Compile* C, const TypeFunc* tf) : AbstractLockNode(tf, TypeRawPtr::BOTTOM, TypePtr::BOTTOM) {
     init_class_id(Class_Lock);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
   virtual bool        guaranteed_safepoint()  { return false; }
@@ -1427,7 +1423,6 @@ public:
 #endif
   {
     init_class_id(Class_Unlock);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);

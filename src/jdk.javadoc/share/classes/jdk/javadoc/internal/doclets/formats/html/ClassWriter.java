@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,7 +495,7 @@ public class ClassWriter extends SubWriterHolderWriter {
         String description = getDescription("declaration", typeElement);
         PackageElement pkg = utils.containingPackage(typeElement);
         List<DocPath> localStylesheets = getLocalStylesheets(pkg);
-        content.add(bodyContents);
+        content.add(bodyContents.toContent());
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(typeElement),
                 description, localStylesheets, content);
     }

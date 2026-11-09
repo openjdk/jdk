@@ -22,10 +22,11 @@
  *
  */
 
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotModules.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -295,7 +296,7 @@ void AOTModules::ArchivedProperty::runtime_check() const {
   const char* new_label1;
   const char* new_label2;
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_aot_cache()) {
     old_label1 = "in AOTConfiguration";
     old_label2 = ", AOTConfiguration =";
     new_label1 = "for current JVM";
@@ -334,7 +335,7 @@ void AOTModules::ArchivedProperty::runtime_check() const {
     AOTMetaspace::report_loading_error("Disabling full module graph");
     CDSConfig::disable_full_module_graph();
 
-    if (CDSConfig::is_dumping_final_static_archive()) {
+    if (CDSConfig::is_dumping_aot_cache()) {
       AOTMetaspace::unrecoverable_writing_error("mismatched module options");
     }
   }
@@ -476,13 +477,13 @@ void AOTModules::init_archived_modules(JavaThread* current, Handle h_platform_lo
 void AOTModules::load_archived_platform_and_system_class_loaders() {
   // The streaming object loader prefers loading the class loader related objects before
   //  the CLD constructor which has a NoSafepointVerifier.
-  if (!HeapShared::is_loading_streaming_mode()) {
+  if (!AOTHeap::is_loading_streaming_mode()) {
     return;
   }
 
   // Ensure these class loaders are eagerly materialized before their CLDs are created.
-  HeapShared::get_root(_platform_loader_root_index, false /* clear */);
-  HeapShared::get_root(_system_loader_root_index, false /* clear */);
+  AOTHeap::get_root(_platform_loader_root_index, false /* clear */);
+  AOTHeap::get_root(_system_loader_root_index, false /* clear */);
 
   if (Universe::is_module_initialized() || !CDSConfig::is_using_full_module_graph()) {
     return;
@@ -551,14 +552,20 @@ void AOTModules::remove_unshareable_info() {
 
   _archived_javabase_moduleEntry = ArchiveBuilder::current()->get_buffered_addr(ModuleEntryTable::javabase_moduleEntry());
 
-  _platform_loader_root_index = HeapShared::append_root(SystemDictionary::java_platform_loader());
-  _system_loader_root_index = HeapShared::append_root(SystemDictionary::java_system_loader());
+  _platform_loader_root_index = AOTHeap::append_root(SystemDictionary::java_platform_loader());
+  _system_loader_root_index = AOTHeap::append_root(SystemDictionary::java_system_loader());
 }
 
 void AOTModules::serialize(SerializeClosure* f) {
+  // These tables are used for loading cached modules in a retaining JVM. However,
+  // these tables should not be written into the AOT configuration file (which
+  // doesn't cache modules).
+  AOTWriteClosureDisabler disable_if(CDSConfig::is_redumping_aot_configuration());
+
   _archived_boot_loader_data.serialize(f);
   _archived_platform_loader_data.serialize(f);
   _archived_system_loader_data.serialize(f);
+
   f->do_ptr(&_archived_javabase_moduleEntry);
   f->do_int(&_platform_loader_root_index);
   f->do_int(&_system_loader_root_index);
@@ -579,9 +586,9 @@ ModuleEntry* AOTModules::archived_unnamed_module(ClassLoaderData* loader_data) {
     precond(_platform_loader_root_index >= 0);
     precond(_system_loader_root_index >= 0);
 
-    if (loader_data->class_loader() == HeapShared::get_root(_platform_loader_root_index)) {
+    if (loader_data->class_loader() == AOTHeap::get_root(_platform_loader_root_index)) {
       archived_module = _archived_platform_loader_data.unnamed_module();
-    } else if (loader_data->class_loader() == HeapShared::get_root(_system_loader_root_index)) {
+    } else if (loader_data->class_loader() == AOTHeap::get_root(_system_loader_root_index)) {
       archived_module = _archived_system_loader_data.unnamed_module();
     }
   }
@@ -595,8 +602,8 @@ void AOTModules::clear_archived_oops() {
   _archived_platform_loader_data.clear_archived_oops();
   _archived_system_loader_data.clear_archived_oops();
   if (_platform_loader_root_index >= 0) {
-    HeapShared::clear_root(_platform_loader_root_index);
-    HeapShared::clear_root(_system_loader_root_index);
+    AOTHeap::clear_root(_platform_loader_root_index);
+    AOTHeap::clear_root(_system_loader_root_index);
   }
 }
 
@@ -634,8 +641,8 @@ void AOTModules::restore_archived_modules_for_preloading_classes(JavaThread* cur
   precond(_platform_loader_root_index >= 0);
   precond(_system_loader_root_index >= 0);
 
-  Handle h_platform_loader(current, HeapShared::get_root(_platform_loader_root_index));
-  Handle h_system_loader(current, HeapShared::get_root(_system_loader_root_index));
+  Handle h_platform_loader(current, AOTHeap::get_root(_platform_loader_root_index));
+  Handle h_system_loader(current, AOTHeap::get_root(_system_loader_root_index));
   init_archived_modules(current, h_platform_loader, h_system_loader);
 }
 

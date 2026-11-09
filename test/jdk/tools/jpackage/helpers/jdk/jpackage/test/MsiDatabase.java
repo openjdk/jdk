@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -101,6 +102,7 @@ public final class MsiDatabase {
         static final Set<Table> FIND_PROPERTY_REQUIRED_TABLES = Set.of(PROPERTY);
         static final Set<Table> LIST_SHORTCUTS_REQUIRED_TABLES = Set.of(COMPONENT, DIRECTORY, FILE, SHORTCUT);
         static final Set<Table> UI_ALTERATIONS_REQUIRED_TABLES = Set.of(CONTROL_EVENT, INSTALL_UI_SEQUENCE);
+        static final Set<Table> LIST_COMPONENT_IDS_REQUIRED_TABLES = Set.of(COMPONENT);
     }
 
 
@@ -131,6 +133,14 @@ public final class MsiDatabase {
             var workDir = directoryPath(row.apply("WkDir"));
             var shortcutTarget = Path.of(expandFormattedString(row.apply("Target")));
             return new Shortcut(shortcutPath, shortcutTarget, workDir);
+        }).toList();
+    }
+
+    Collection<UUID> listComponentIds() {
+        return rows(Table.COMPONENT).map(row -> {
+            var str = row.apply("ComponentId");
+            // Strip leading and trailing brackets
+            return UUID.fromString(str.substring(1, str.length() - 1));
         }).toList();
     }
 

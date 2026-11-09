@@ -56,6 +56,7 @@ private:
   // In generational mode, it is exclusive to the young generation.
   PLAB* _gclab;
   size_t _gclab_size;
+  bool _has_evac_failures;
 
   // Thread-local allocation buffer only used in generational mode.
   // Used both by mutator threads and by GC worker threads
@@ -147,6 +148,18 @@ public:
 
   static void set_gclab_size(Thread* thread, size_t v) {
     data(thread)->_gclab_size = v;
+  }
+
+  static void set_has_evac_failures(Thread* thread, bool value) {
+    data(thread)->_has_evac_failures = value;
+  }
+
+  static bool has_evac_failures() {
+    return has_evac_failures(Thread::current());
+  }
+
+  static bool has_evac_failures(Thread* thread) {
+    return data(thread)->_has_evac_failures;
   }
 
   static void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {

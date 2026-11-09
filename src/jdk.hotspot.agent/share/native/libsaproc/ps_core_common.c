@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,6 @@
 #include "libproc_impl.h"
 #include "cds.h"
 
-#ifdef __APPLE__
-#include "sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext.h"
-#endif
-
 // Define a segment permission flag allowing read if there is a read flag. Otherwise use 0.
 #ifdef PF_R
 #define MAP_R_FLAG PF_R
@@ -60,8 +56,6 @@
 
 // close all file descriptors
 static void close_files(struct ps_prochandle* ph) {
-  lib_info* lib = NULL;
-
   // close core file descriptor
   if (ph->core->core_fd >= 0)
     close(ph->core->core_fd);
@@ -77,16 +71,6 @@ static void close_files(struct ps_prochandle* ph) {
   // close class share archive file
   if (ph->core->classes_jsa_fd >= 0)
     close(ph->core->classes_jsa_fd);
-
-  // close all library file descriptors
-  lib = ph->libs;
-  while (lib) {
-    int fd = lib->fd;
-    if (fd >= 0 && fd != ph->core->exec_fd) {
-      close(fd);
-    }
-    lib = lib->next;
-  }
 }
 
 // clean all map_info stuff

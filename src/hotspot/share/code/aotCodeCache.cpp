@@ -29,7 +29,6 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciUtilities.inline.hpp"
@@ -117,6 +116,11 @@ const char* aot_code_entry_kind_name[] = {
   DO_AOTCODEENTRY_KIND(DECL_KIND_STRING)
 #undef DECL_KIND_STRING
 };
+
+// Used when logging, we need the human-readable name
+const char* AOTCodeCache::get_kind_name(const AOTCodeEntry::Kind kind) {
+  return aot_code_entry_kind_name[kind];
+}
 
 // Stream to printing AOTCodeCache loading failure.
 // Print to error channel when -XX:AOTMode is set to "on"
@@ -228,7 +232,7 @@ bool AOTCodeCache::is_using_code() {
 // This is used before AOTCodeCache is initialized
 // but after AOT (CDS) Cache flags consistency is checked.
 bool AOTCodeCache::maybe_dumping_code() {
-  return AOTCodeCaching && CDSConfig::is_dumping_final_static_archive();
+  return AOTCodeCaching && CDSConfig::is_dumping_aot_cache();
 }
 
 // Next methods could be called regardless of AOT code cache status.
@@ -239,12 +243,6 @@ void AOTCodeCache::enable_caching() {
   load_info_log().print_cr("AOT Code Cache is not supported on this platform");
   disable_caching();
 #else
-  if (Arguments::is_valhalla_enabled()) {
-    // Disable AOT code caching when Valhalla is enabled.
-    load_info_log().print_cr("AOT Code Caching is not supported with Valhalla");
-    disable_caching();
-    return;
-  }
   FLAG_SET_ERGO_IF_DEFAULT(AOTCodeCaching, true);
   FLAG_SET_ERGO_IF_DEFAULT(AOTStubCaching, true);
   FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
@@ -289,7 +287,7 @@ uint AOTCodeCache::max_aot_code_size() {
 }
 
 bool AOTCodeCache::is_code_load_thread_on() {
-  return AOTCodeCaching && !CDSConfig::is_dumping_final_static_archive();
+  return AOTCodeCaching && !CDSConfig::is_dumping_aot_cache();
 }
 
 // It is called from AOTMetaspace::initialize_shared_spaces()
@@ -303,14 +301,9 @@ void AOTCodeCache::initialize() {
   }
   assert(!FLAG_IS_DEFAULT(AOTCache), "AOTCache should be specified");
 
-  if (VerifyOops && ValueTypePassFieldsAsArgs) {
-    load_info_log().print_cr("AOT Adapter Caching is not supported with VerifyOops + ValueTypePassFieldsAsArgs.");
-    FLAG_SET_ERGO(AOTAdapterCaching, false);
-  }
-
   bool is_dumping = false;
   bool is_using   = false;
-  if (CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes()) {
+  if (CDSConfig::is_dumping_aot_cache() && CDSConfig::is_dumping_aot_linked_classes()) {
     is_dumping = is_caching_enabled();
   } else if (CDSConfig::is_using_archive() && CDSConfig::is_using_aot_linked_classes()) {
     is_using = is_caching_enabled();
@@ -2057,8 +2050,9 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   // In the case of a multi-stub blob we need to write start, end,
   // secondary entries and extras. For any other blob entry addresses
   // beyond the blob start will be stored in the blob as offsets.
+  uint embedded_stub_offset = 0;
   if (stub_data != nullptr) {
-    if (!cache->write_stub_data(blob, stub_data)) {
+    if (!cache->write_stub_data(blob, stub_data, &embedded_stub_offset)) {
       return false;
     }
   }
@@ -2108,6 +2102,9 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   AOTCodeEntry* entry = new(cache) AOTCodeEntry(entry_kind, encode_id(entry_kind, id),
                                                 entry_position, entry_size, name_offset, name_size,
                                                 blob_offset, has_oop_maps);
+  if (embedded_stub_offset != 0) {
+    entry->set_embedded_stub_offset(embedded_stub_offset - entry_position);
+  }
   log_debug(aot, codecache, stubs)("Wrote code blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
   return true;
 }
@@ -2126,10 +2123,15 @@ bool AOTCodeCache::store_multi_stub_blob(CodeBlob& blob, BlobId id, AOTStubData*
   return store_code_blob(blob, AOTCodeEntry::StubGenBlob, (uint)id, StubInfo::name(id), stub_data, code_buffer);
 }
 
-bool AOTCodeCache::write_stub_data(CodeBlob &blob, AOTStubData *stub_data) {
+bool AOTCodeCache::write_stub_data(CodeBlob& blob, AOTStubData* stub_data, uint* stubs_offset) {
   if (!align_write_int()) {
     return false;
   }
+
+  if (stubs_offset != nullptr) {
+    *stubs_offset = _write_position;
+  }
+
   uint* count_ptr = (uint *)reserve_bytes(sizeof(uint));
   if (count_ptr == nullptr) {
     return false;
@@ -2619,7 +2621,8 @@ void AOTCodeCache::publish_stub_addresses(CodeBlob &code_blob, BlobId blob_id, A
   }
 }
 
-AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, AbstractCompiler* compiler, bool for_preload) {
+AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, GrowableArray<ciMethod*>* java_callees,
+                                          AbstractCompiler* compiler, bool for_preload) {
   if (!is_dumping_code()) {
     return nullptr;
   }
@@ -2639,7 +2642,7 @@ AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, AbstractCompiler* compile
   assert(comp_level == CompLevel_simple || comp_level == CompLevel_limited_profile || comp_level == CompLevel_full_optimization, "must be");
 
   TraceTime t1("Total time to store AOT code", &_t_totalStore, enable_timers(), false);
-  AOTCodeEntry* entry = cache->write_nmethod(nm, for_preload);
+  AOTCodeEntry* entry = cache->write_nmethod(nm, java_callees, for_preload);
   {
     ResourceMark rm;
     const char* name = nm->method()->name_and_sig_as_C_string();
@@ -2652,7 +2655,7 @@ AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, AbstractCompiler* compile
   return entry;
 }
 
-AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, bool for_preload) {
+AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, GrowableArray<ciMethod*>* java_callees, bool for_preload) {
   assert(!nm->has_clinit_barriers() || (ClassInitBarrierMode > 0), "sanity");
   _compile_id = nm->compile_id();
   _comp_level = nm->comp_level();
@@ -2725,6 +2728,39 @@ AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, bool for_preload) {
       return nullptr;
     }
   }
+
+  if (ValueTypePassFieldsAsArgs) {
+    // Record method fingerprint to match it on load.
+    if (!write_fingerprint(method)) {
+      if (lookup_failed() && !failed()) {
+        // Skip this method and reposition file
+        set_write_position(entry_position);
+      }
+      return nullptr;
+    }
+    // Record not inlined Java callee fingerprints
+    int callee_cnt = java_callees == nullptr ? 0 : java_callees->length();
+    if (!write_int(callee_cnt)) {
+      return nullptr;
+    }
+    for (int i = 0; i < callee_cnt; i++) {
+      Method* m = java_callees->at(i)->get_Method();
+      if (!write_method(m)) {
+        if (lookup_failed() && !failed()) {
+          // Skip this method and reposition file
+          set_write_position(entry_position);
+        }
+        return nullptr;
+      }
+      if (!write_fingerprint(m)) {
+        if (lookup_failed() && !failed()) {
+          // Skip this method and reposition file
+          set_write_position(entry_position);
+        }
+        return nullptr;
+      }
+    }
+  } // ValueTypePassFieldsAsArgs
 
   // Write nmethod's code blob
   if (!align_write()) {
@@ -2858,6 +2894,7 @@ bool AOTCodeCache::load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, Abs
 // Cached nmethod layout
 // - id (encoded Method*)
 // - name of method
+// - method's adapter fingerprint
 // - copy of nmethod
 // - relocation_size
 // - relocations
@@ -2908,6 +2945,39 @@ bool AOTCodeReader::compile_nmethod(ciEnv* env, ciMethod* target, AbstractCompil
     log_info(aot, codecache, nmethod)("%d (A%s%d) '%s' AOT nmethod id: " UINT32_FORMAT_X_0 "%s: %sloading from AOT Code Cache",
              compile_id(), (preload ? "P" : ""), comp_level(), target_name, id,
              (clinit_brs ? ", has clinit barriers" : ""), (preload ? "pre" : ""));
+
+    if (ValueTypePassFieldsAsArgs) {
+      // Verify recorded method fingerprint.
+      if (!verify_fingerprint(method())) {
+        return false;
+      }
+      // Verify recorded not inlined Java callee fingerprints
+      int callee_cnt;
+      if (!read_int(&callee_cnt)) {
+        return false;
+      }
+      if (callee_cnt < 0) {
+        set_lookup_failed("Damaged AOT code: negative callee count");
+        return false;
+      }
+      for (int i = 0; i < callee_cnt; i++) {
+        DataKind kind;
+        if (!read_kind(&kind)) {
+          return false;
+        }
+        if (kind != DataKind::Method) {
+          set_lookup_failed("Invalid DataKind when Method is expected");
+          return false;
+        }
+        Method* m = read_method();
+        if (m == nullptr) {
+          return false;
+        }
+        if (!verify_fingerprint(m)) {
+          return false;
+        }
+      }
+    } // ValueTypePassFieldsAsArgs
   }
 
   if (!align_read_position(DATA_ALIGNMENT)) {
@@ -3588,6 +3658,52 @@ Metadata* AOTCodeReader::read_metadata(JavaThread* thread) {
   return m;
 }
 
+bool AOTCodeCache::write_fingerprint(Method* method) {
+  if (method->adapter() == nullptr) {
+    ResourceMark rm;
+    log_debug(aot, codecache, metadata)("%d (A%d): Method is missing adapter: %s",
+              compile_id(), comp_level(), method->name_and_sig_as_C_string());
+    set_lookup_failed();
+    return false;
+  }
+  AdapterFingerPrint* fp = method->adapter()->fingerprint();
+  int sz = BytesPerWord * method->adapter()->fingerprint_size();
+  if (!write_int(sz)) {
+    return false;
+  }
+  if (!align_write_bytes(BytesPerWord)) {
+    return false;
+  }
+  if (!write_bytes((address)fp, sz)) {
+    return false;
+  }
+  return true;
+}
+
+bool AOTCodeReader::verify_fingerprint(Method* method) {
+  int fp_size = BytesPerWord * method->adapter()->fingerprint_size();
+  int archived_fp_size;
+  if (!read_int(&archived_fp_size)) {
+    return false;
+  }
+  if (archived_fp_size != fp_size) {
+    set_lookup_failed("Cached method's adapter fingerprint size is different from the expected");
+    return false; // Skip this nmethod
+  }
+  if (!align_read_position(BytesPerWord)) {
+    return false;
+  }
+  AdapterFingerPrint* archived_fp;
+  if (!get_set_read_position((address*)&archived_fp, (uint)fp_size)) {
+    return false;
+  }
+  if (!method->adapter()->fingerprint_equals(archived_fp)) {
+    set_lookup_failed("Cached method's adapter fingerprint is different from the expected");
+    return false; // Skip this nmethod
+  }
+  return true;
+}
+
 bool AOTCodeCache::write_method(Method* method) {
   ResourceMark rm; // To method's name printing
   if (AOTCacheAccess::can_generate_aot_code(method)) {
@@ -3663,18 +3779,11 @@ bool AOTCodeCache::write_klass(Klass* klass) {
     can_write = AOTCacheAccess::can_generate_aot_code(klass);
     ObjArrayKlass* oak = ObjArrayKlass::cast(klass);
     array_dim = oak->dimension();
-    if (klass->is_refined_objArray_klass()) {
-      // Preserve property of object array
-      Klass::KlassKind kind;
-      LayoutKind layout;
-      if (klass->is_flatArray_klass()) {
-        kind = Klass::FlatArrayKlassKind;
-        layout = FlatArrayKlass::cast(klass)->layout_kind();
-      } else {
-        kind = Klass::RefArrayKlassKind;
-        layout = LayoutKind::REFERENCE;
-      }
-      array_desc = ArrayDescription(kind, oak->properties(), layout).value();
+    // Preserve property of object array
+    if (klass->is_flatArray_klass()) {
+      array_desc = ArrayDescription::flat(oak->properties(), FlatArrayKlass::cast(klass)->layout_kind()).value();
+    } else if (klass->is_refArray_klass()) {
+      array_desc = ArrayDescription::reference(oak->properties()).value();
     }
     klass = oak->bottom_klass(); // overwrites klass
   }
@@ -4500,10 +4609,7 @@ void AOTCodeAddressTable::init_extrs() {
 #if INCLUDE_JFR
   ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::write_checkpoint);
   ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::return_lease);
-  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::load_barrier);
-  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::epoch_address());
   ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::epoch_generation_address());
-  ADD_EXTERNAL_ADDRESS(JfrIntrinsicSupport::signal_address());
   ADD_EXTERNAL_ADDRESS(&VMContinuations)
 #endif
   // For JFR
@@ -5160,8 +5266,9 @@ void AOTCodeCache::print_on(outputStream* st) {
       uint name_offset = entry->name_offset() + entry_position;
       const char* saved_name = opened_cache->addr(name_offset);
 
-      st->print_cr("%4u: %10s Id:%u AP%u size=%u '%s' %s%s%s",
-                   i, aot_code_entry_kind_name[entry->kind()], entry->id(), entry->comp_level(),
+      st->print_cr("%4u: %10s Id:%u %u AP%u size=%u '%s' %s%s%s",
+                   i, aot_code_entry_kind_name[entry->kind()], entry->id(),
+                   entry->comp_id(), entry->comp_level(),
                    entry->size(),  saved_name,
                    entry->has_clinit_barriers() ? " has_clinit_barriers" : "",
                    entry->is_loaded()           ? " loaded"              : "",
@@ -5182,11 +5289,18 @@ void AOTCodeCache::print_on(outputStream* st) {
       uint name_offset = entry->name_offset() + entry_position;
       const char* saved_name = opened_cache->addr(name_offset);
 
-      st->print_cr("%4u: %10s idx:%4u Id:%u A%u size=%u '%s' %s%s",
-                   i, aot_code_entry_kind_name[entry->kind()], index, entry->id(), entry->comp_level(),
-                   entry->size(),  saved_name,
-                   entry->is_loaded()           ? " loaded"              : "",
-                   entry->not_entrant()         ? " not_entrant"         : "");
+      if (entry->is_nmethod()) {
+        st->print_cr("%4u: %10s idx:%4u Id:%u %u A%u size=%u '%s' %s%s",
+                     i, aot_code_entry_kind_name[entry->kind()], index, entry->id(),
+                     entry->comp_id(), entry->comp_level(),
+                     entry->size(),  saved_name,
+                     entry->is_loaded()           ? " loaded"              : "",
+                     entry->not_entrant()         ? " not_entrant"         : "");
+      } else {
+        st->print_cr("%4u: %10s idx:%4u Id:%u size=%u '%s'",
+                     i, aot_code_entry_kind_name[entry->kind()], index, entry->id(),
+                     entry->size(),  saved_name);
+      }
     }
   }
 }
@@ -5360,6 +5474,48 @@ void AOTStubData::check_stored(StubId stub_id) {
   }
 }
 #endif
+
+//This is a helper function that executes a function over each embedded stub available
+// Embedded StubGenBlobs are assumed to have the following structure
+// [ count | StubId | offset | size | N | offset_1 | offset_2 | ... | offset_N ]
+void AOTCodeCache::iterate_embedded_stubs(const AOTCodeEntry* entry, const embedded_stub_func func) {
+  assert(entry->kind() == AOTCodeEntry::Kind::StubGenBlob, "invalid call");
+  // jump to the embedded stubs section
+  uint pos = entry->offset() + entry->embedded_stub_offset();
+  // skip stub count
+  pos += sizeof(uint);
+
+  // Now we can get the information we want to log (embedded stubs)
+  // get the first embedded stub id
+  StubId stub_id = *(StubId*)(_store_buffer + pos);
+  pos += sizeof(StubId);
+
+  // loop until we run out of stubs (no stubid)
+  while (stub_id != StubId::NO_STUBID) {
+    assert(stub_id > StubId::NO_STUBID && stub_id < StubId::NUM_STUBIDS, "Embedded Stub ID is not valid.");
+    assert(StubInfo::blob(stub_id) == (BlobId) entry->id(), "We found an embedded stub that doesn't belong here.");
+    uint offset = *(uint*)(_store_buffer + pos);
+    pos += sizeof(uint);
+    uint size = *(uint*)(_store_buffer + pos);
+    pos += sizeof(uint);
+
+    //Call the function on the embedded stub
+    (*func)(p2i(_store_buffer + entry->offset() + entry->code_offset() + offset),
+      size, (uint) stub_id, StubInfo::name(stub_id), (uint) entry->id());
+
+    //Get the number of secondary/extra entry offsets
+    int n = *(int*) (_store_buffer + pos);
+    pos += sizeof(int);
+    //to skip them and prepare for the following stub (if exists)
+    pos += n * sizeof(uint);
+    // the entry+extras count for the stub read from the file should exceed the declared entry count
+    assert(n >= StubInfo::entry_count(stub_id) - 1, "We are missing entries on this stub.");
+
+    // position ourselves in the potential following stub
+    stub_id = *(StubId*)(_store_buffer + pos);
+    pos += sizeof(StubId);
+  }
+}
 
 //============ Statistic ============
 

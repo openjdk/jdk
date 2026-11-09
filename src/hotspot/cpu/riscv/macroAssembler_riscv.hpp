@@ -1535,8 +1535,6 @@ INSN(sd_release, sd, sd_rl);
   address zero_words(Register ptr, Register cnt);
   void fill_words(Register base, Register cnt, Register value);
   void zero_memory(Register addr, Register len, Register tmp);
-  void zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2);
-
   void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt);
   void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt, Register tmp);
 
@@ -1559,6 +1557,13 @@ INSN(sd_release, sd, sd_rl);
 
   // Helper routine processing the slow path of NaN when converting float to float16
   void float_to_float16_NaN(Register dst, FloatRegister src, Register tmp1, Register tmp2);
+
+  // j.l.Float.float16ToFloat and j.l.Float.floatToFloat16, with the NaN handling
+  // emitted inline. C2 uses C2_MacroAssembler::float16_to_float() and
+  // C2_MacroAssembler::float_to_float16() instead, which keep it out of line.
+  // Both clobber t0 and t1.
+  void flt16_to_flt(FloatRegister dst, Register src);
+  void flt_to_flt16(Register dst, FloatRegister src, FloatRegister ftmp);
 
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
@@ -1598,11 +1603,15 @@ INSN(sd_release, sd, sd_rl);
   }
 
   // vector pseudo instructions
-  // rotate vector register left with shift bits, 32-bit version
+  // Rotate 32-bit vector elements left. The caller must configure SEW=32.
   inline void vrole32_vi(VectorRegister vd, uint32_t shift, VectorRegister tmp_vr) {
-    vsrl_vi(tmp_vr, vd, 32 - shift);
-    vsll_vi(vd, vd, shift);
-    vor_vv(vd, vd, tmp_vr);
+    if (UseZvbb) {
+      vror_vi(vd, vd, 32 - shift);
+    } else {
+      vsrl_vi(tmp_vr, vd, 32 - shift);
+      vsll_vi(vd, vd, shift);
+      vor_vv(vd, vd, tmp_vr);
+    }
   }
 
   inline void vl1r_v(VectorRegister vd, Register rs) {

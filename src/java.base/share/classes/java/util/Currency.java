@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.spi.CurrencyNameProvider;
@@ -321,6 +320,10 @@ public final class Currency implements Serializable {
             }
             char char1 = currencyCode.charAt(0);
             char char2 = currencyCode.charAt(1);
+            if (!isValidCountryFormat(char1, char2)) {
+                throw new IllegalArgumentException(
+                        "The country code: \"%c%c\" is not a valid ISO 3166 code".formatted(char1, char2));
+            }
             int tableEntry = getMainTableEntry(char1, char2);
             if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
                     && tableEntry != INVALID_COUNTRY_ENTRY
@@ -394,14 +397,12 @@ public final class Currency implements Serializable {
         }
 
         String country = CalendarDataUtility.findRegionOverride(locale).getCountry();
-
-        if (country == null || !country.matches("^[a-zA-Z]{2}$")) {
+        char char1;
+        char char2;
+        if (country.length() != 2 || !isValidCountryFormat(char1 = country.charAt(0), char2 = country.charAt(1))) {
             throw new IllegalArgumentException(
                     "The country of the input locale: \"%s\" is not a valid ISO 3166 country code".formatted(locale));
         }
-
-        char char1 = country.charAt(0);
-        char char2 = country.charAt(1);
         int tableEntry = getMainTableEntry(char1, char2);
         if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
                     && tableEntry != INVALID_COUNTRY_ENTRY) {
@@ -694,14 +695,18 @@ public final class Currency implements Serializable {
     }
 
     /**
+     * Returns whether the input is in the correct ISO 3166 country code format.
+     * That is, whether both char1 and char2 are between 'A' and 'Z' inclusive.
+     */
+    private static boolean isValidCountryFormat(char char1, char char2) {
+        return char1 >= 'A' && char1 <= 'Z' && char2 >= 'A' && char2 <= 'Z';
+    }
+
+    /**
      * Gets the main table entry for the country whose country code consists
      * of char1 and char2.
      */
     private static int getMainTableEntry(char char1, char char2) {
-        if (char1 < 'A' || char1 > 'Z' || char2 < 'A' || char2 > 'Z') {
-            throw new IllegalArgumentException(
-                    "The country code: \"%c%c\" is not a valid ISO 3166 code".formatted(char1, char2));
-        }
         return mainTable[(char1 - 'A') * A_TO_Z + (char2 - 'A')];
     }
 
