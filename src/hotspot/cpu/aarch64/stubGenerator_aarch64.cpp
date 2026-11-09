@@ -12280,27 +12280,6 @@ class StubGenerator: public StubCodeGenerator {
   // If LSE is in use, generate LSE versions of all the stubs. The
   // non-LSE versions are in atomic_aarch64.S.
 
-  // class AtomicStubMark records the entry point of a stub and the
-  // stub pointer which will point to it. The stub pointer is set to
-  // the entry point when ~AtomicStubMark() is called, which must be
-  // after ICache::invalidate_range. This ensures safe publication of
-  // the generated code.
-  class AtomicStubMark {
-    address _entry_point;
-    aarch64_atomic_stub_t *_stub;
-    MacroAssembler *_masm;
-  public:
-    AtomicStubMark(MacroAssembler *masm, aarch64_atomic_stub_t *stub) {
-      _masm = masm;
-      __ align(32);
-      _entry_point = __ pc();
-      _stub = stub;
-    }
-    ~AtomicStubMark() {
-      *_stub = (aarch64_atomic_stub_t)_entry_point;
-    }
-  };
-
   // NB: For memory_order_conservative we need a trailing membar after
   // LSE atomic operations but not a leading membar.
   //
@@ -12410,72 +12389,10 @@ class StubGenerator: public StubCodeGenerator {
       return;
     }
 
-    StubId stub_id = StubId::stubgen_atomic_entry_points_id;
-    GrowableArray<address> entries;
-    int entry_count = StubInfo::entry_count(stub_id);
-    address start = load_archive_data(stub_id, &entries);
-    if (start != nullptr) {
-      assert(entries.length() == entry_count - 1,
-             "unexpected extra entry count %d", entries.length());
-      aarch64_atomic_fetch_add_4_impl = (aarch64_atomic_stub_t)start;
-
-      int idx = 0;
-      address *atomic_stubs = &aarch64_atomic_ops_start;
-      size_t len = &aarch64_atomic_ops_end - &aarch64_atomic_ops_start;
-      for (size_t i = 1; i < len; i++) {
-        atomic_stubs[i] = entries.at(idx++);
-      }
-      assert(idx == entries.length(), "sanity!");
-
-      return;
+    ptrdiff_t count = aarch64_atomic_ops_end - aarch64_atomic_ops;
+    for (ptrdiff_t i = 0; i < count; i++) {
+      AtomicAccess::store(&aarch64_atomic_ops[i], lse_aarch64_atomic_ops[i]);
     }
-
-#define ATOMIC_STUB(NAME, KIND, SIZE, MEM_ORDER)                \
-    AtomicStubMark mark_ ## NAME(_masm, & aarch64_atomic_ ## NAME ## _impl);       \
-    gen_ ## KIND ## _entry(SIZE, memory_order_ ## MEM_ORDER);
-
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, stub_id);
-    start = __ pc();
-    address end;
-    {
-      ATOMIC_STUB(fetch_add_4,         ldadd, Assembler::word,  conservative);
-      ATOMIC_STUB(fetch_add_8,         ldadd, Assembler::xword, conservative);
-      ATOMIC_STUB(fetch_add_4_relaxed, ldadd, Assembler::word,  relaxed);
-      ATOMIC_STUB(fetch_add_8_relaxed, ldadd, Assembler::xword, relaxed);
-      ATOMIC_STUB(xchg_1,              swpal, Assembler::byte,  conservative);
-      ATOMIC_STUB(xchg_4,              swpal, Assembler::word,  conservative);
-      ATOMIC_STUB(xchg_8,              swpal, Assembler::xword, conservative);
-      ATOMIC_STUB(cmpxchg_1,           cas,   Assembler::byte,  conservative);
-      ATOMIC_STUB(cmpxchg_4,           cas,   Assembler::word,  conservative);
-      ATOMIC_STUB(cmpxchg_8,           cas,   Assembler::xword, conservative);
-      ATOMIC_STUB(cmpxchg_4_relaxed,   cas,   Assembler::word,  relaxed);
-      ATOMIC_STUB(cmpxchg_8_relaxed,   cas,   Assembler::xword, relaxed);
-      ATOMIC_STUB(cmpxchg_4_release,   cas,   Assembler::word,  release);
-      ATOMIC_STUB(cmpxchg_8_release,   cas,   Assembler::xword, release);
-      ATOMIC_STUB(cmpxchg_4_seq_cst,   cas,   Assembler::word,  seq_cst);
-      ATOMIC_STUB(cmpxchg_8_seq_cst,   cas,   Assembler::xword, seq_cst);
-
-      end = __ pc();
-
-      ICache::invalidate_range(start, end - start);
-      // exit block to force update of AtomicStubMark targets
-    }
-
-    assert(start == (address)aarch64_atomic_fetch_add_4_impl,
-           "atomic stub should be at start of buffer");
-    // record the stub start and end plus all the entries saved by the
-    // AtomicStubMark destructor
-    address *atomic_stubs = &aarch64_atomic_ops_start;
-    int len = &aarch64_atomic_ops_end - &aarch64_atomic_ops_start;
-    for (int i = 1; i < len; i++) {
-      entries.append((address)atomic_stubs[i]);
-    }
-
-    assert(entries.length() == entry_count - 1,
-           "unexpected extra entry count %d", entries.length());
-
-    store_archive_data(stub_id, start, end, &entries);
   }
 
 #undef ATOMIC_STUB

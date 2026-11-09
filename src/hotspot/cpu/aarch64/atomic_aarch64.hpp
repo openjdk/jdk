@@ -32,9 +32,9 @@
 typedef uint64_t (*aarch64_atomic_stub_t)(volatile void *ptr, uint64_t arg1, uint64_t arg2);
 
 #define ATOMIC_OPS_START                        \
-extern address aarch64_atomic_ops_start;
+  extern address aarch64_atomic_ops[], lse_aarch64_atomic_ops[];
 #define ATOMIC_OPS_END                          \
-extern address aarch64_atomic_ops_end;
+  extern address aarch64_atomic_ops_end[], lse_aarch64_atomic_ops_end[];
 
 #elif defined(__ASSEMBLER__)
 
