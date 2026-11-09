@@ -79,20 +79,20 @@ void ShenandoahUncommitThread::run_service() {
 
     // Categorise the regions and figure out if we have any work.
     double now = os::elapsedTime();
-    bool has_work = false;
+    size_t uncommittable = 0;
     for (size_t i = 0; i < _heap->num_regions(); i++) {
       ShenandoahHeapRegion* r = _heap->get_region(i);
       if (r->is_empty_committed()) {
         if (soft_max_changed || explicit_gc_requested) {
           // Either threshold moved: the region is eagerly uncommittable.
           r->set_uncommit_time(now);
-          has_work = true;
+          uncommittable++;
         } else if (r->uncommit_time() == 0) {
           // Newly empty region, record it for eventual uncommit.
           r->set_uncommit_time(now + ShenandoahUncommitDelay / 1000);
         } else if (r->uncommit_time() <= now) {
           // This region is eligible for uncommit.
-          has_work = true;
+          uncommittable++;
         }
       }
     }
@@ -107,17 +107,21 @@ void ShenandoahUncommitThread::run_service() {
       continue;
     }
 
-    if (has_work) {
-      uncommit(shrink_until);
+    if (uncommittable > 0) {
+      uncommit(shrink_until, uncommittable);
     }
   }
 }
 
-void ShenandoahUncommitThread::uncommit(size_t shrink_until) {
+void ShenandoahUncommitThread::uncommit(size_t shrink_until, size_t uncommittable) {
   assert(ShenandoahUncommit, "Should be enabled");
   assert(_uncommit_in_progress.is_unset(), "Uncommit should not be in progress");
 
   double start = os::elapsedTime();
+
+  // Target to complete current stride in half of the time needed.
+  // Put a hard limit on delays to avoid accidents.
+  int delay_ms = 1;
 
   // Uncommit from the end, allowing the allocation path that takes the regions from
   // the beginning flip the regions back to use. We are not in a hurry to uncommit,
@@ -138,7 +142,6 @@ void ShenandoahUncommitThread::uncommit(size_t shrink_until) {
     }
 
     // Try to claim progress, gracefully waiting.
-    const int delay_ms = 10;
     if (!try_set_progress(delay_ms)) {
       // Requested to restart.
       break;
