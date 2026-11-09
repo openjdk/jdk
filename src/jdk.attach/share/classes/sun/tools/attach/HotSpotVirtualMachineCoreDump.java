@@ -206,7 +206,7 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
                         // Always show other errors, or show if we are repeating ourself, or verbose is set:
                         if (e != HELPER_RETRY || i > 1 || verbose) {
                             System.out.println(out);
-                            System.err.println("jcmd: revivalhelper pid " + pid + " failed, exit with: " + e + ". tries=" + i);
+                            System.err.println("jcmd: revivalhelper pid " + pid + " failed, exit with: " + e + ". try=" + i);
                             System.err.println("(Retrying process revival.)");
                         }
                         if (!debug) {
@@ -230,8 +230,14 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
             }
             break; // No retry except for explicit continue above.
         }
+        if (i > 1 || verbose) {
+            System.err.println("jcmd: revivalhelper tries=" + i);
+        }
         if (!ok) {
             System.out.println(out);
+            if (i >= maxTries) {
+                System.err.println("Error: Retry limit (" + maxTries + ") reached for process revival. Set with 'jcmd -J-Djdk.attach.core.tries= ...'");
+            }
             throw new AttachOperationFailedException("jcmd returned an error");  // JCmd caller will call System.exit(1)
         }
         return new ByteArrayInputStream(out.getBytes(UTF_8));

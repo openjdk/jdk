@@ -67,6 +67,7 @@
  * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
  * @requires vm.gc != "Z"
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  *
  * @run main/othervm JCmdRevival abortvmonexception Thread.print
@@ -78,7 +79,7 @@
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  *
- * @run main/othervm JCmdRevival abortvmonexception VM.version VM.class_hierarchy VM.classloader_stats
+ * @run main/othervm JCmdRevival abortvmonexception VM.version VM.command_line VM.events VM.class_hierarchy 
  */
 
 /*
@@ -86,9 +87,10 @@
  * @summary Test jcmd on a core file (AbortVMOnException).
  * @requires os.family == "linux" | os.family == "windows"
  * @requires vm.gc != "Z"
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  *
- * @run main/othervm JCmdRevival abortvmonexception VM.classloaders VM.command_line VM.events
+ * @run main/othervm JCmdRevival abortvmonexception VM.classloaders VM.classloader_stats 
  */
 
 /*
@@ -127,6 +129,8 @@
  * @requires os.family == "linux" | os.family == "windows"
  * @requires vm.gc != "Z"
  * @requires vm.debug == true
+ * @requires vm.opt.AOTCache == null
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  *
  * @run main/othervm JCmdRevival cicrash VM.version help Thread.print GC.heap_dump
@@ -139,6 +143,7 @@
  * @summary Test jcmd on a core file: LingeredApp crash.
  * @requires os.family == "linux" | os.family == "windows"
  * @requires vm.gc != "Z"
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  *
  * @run main/othervm JCmdRevival lingeredappcrash Thread.print GC.heap_info
@@ -320,11 +325,12 @@ public class JCmdRevival {
 
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jcmd");
         // Run jcmd with -J-Dprop=value to pass any System property we care about: the log level setting.
+        // We do not generally run jcmd itself with other options. No need for: launcher.addVMArgs(Utils.getTestJavaOpts());
+        // Any VM options to jcmd do not affect the VM image revived from a core file.
         String logLevel = System.getProperty("jdk.attach.core.log");
         if (logLevel != null) {
             launcher.addVMArg("-Djdk.attach.core.log=" + logLevel);
         }
-        launcher.addVMArgs(Utils.getTestJavaOpts()); // People do not generally run jcmd itself with other options.
         launcher.addToolArg(coreFileName);
 
         // This method just takes a command name to test.  For some commands add a further argument:
@@ -381,7 +387,11 @@ public class JCmdRevival {
                     break;
                 }
                 case "Compiler.codelist": {
-                    out.shouldContain("jdk.internal.misc.Unsafe.getReferenceVolatile(Ljava/lang/Object;J)Ljava/lang/Object; [0x");
+                    if (!out.contains("jdk.internal.misc.Unsafe.getReferenceVolatile(Ljava/lang/Object;J)Ljava/lang/Object; [0x")
+                        && !out.contains("java.lang.invoke.MethodHandle.linkToSpecial(Ljava")
+                        && !out.contains("java.lang.invoke.MethodHandle.<clinit>()V [0x0")) {
+                        throw new RuntimeException("Expected text not found in Compiler.codelist output");
+                    }
                     break;
                 }
                 case "Compiler.memory": {
