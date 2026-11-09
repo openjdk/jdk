@@ -384,6 +384,12 @@ JNIEXPORT jstring JNICALL Java_sun_awt_FcFontManager_getFontPathNative
 
 #include <fontconfig/fontconfig.h>
 
+/* FC_VARIABLE was added in fontconfig 2.13.1 which is newer than what is in
+ * the devkit used to build JDK, so conditionally define it.
+ */
+#ifndef FC_VARIABLE
+#define FC_VARIABLE "variable"
+#endif
 
 static void* openFontConfig() {
 
@@ -527,6 +533,8 @@ typedef int (*FcGetVersionFuncType)();
 typedef FcStrList* (*FcConfigGetCacheDirsFuncType)(FcConfig *config);
 typedef FcChar8* (*FcStrListNextFuncType)(FcStrList *list);
 typedef FcChar8* (*FcStrListDoneFuncType)(FcStrList *list);
+
+typedef FcPattern* (*FcFreeTypeQueryFuncType)(FcChar8 *file, int id, FcBlanks *k, int *count);
 
 static char **getFontConfigLocations() {
 
@@ -793,7 +801,9 @@ Java_sun_font_FontConfigManager_getFontConfig
     FcConfigSubstituteFuncType FcConfigSubstitute;
     FcDefaultSubstituteFuncType  FcDefaultSubstitute;
     FcFontMatchFuncType FcFontMatch;
+    FcFreeTypeQueryFuncType FcFreeTypeQuery;
     FcPatternGetIntegerFuncType FcPatternGetInteger;
+    FcPatternGetBoolFuncType FcPatternGetBool;
     FcPatternGetStringFuncType FcPatternGetString;
     FcPatternDestroyFuncType FcPatternDestroy;
     FcPatternGetCharSetFuncType FcPatternGetCharSet;
@@ -867,6 +877,9 @@ Java_sun_font_FontConfigManager_getFontConfig
     FcDefaultSubstitute = (FcDefaultSubstituteFuncType)
         dlsym(libfontconfig, "FcDefaultSubstitute");
     FcFontMatch = (FcFontMatchFuncType)dlsym(libfontconfig, "FcFontMatch");
+    FcFreeTypeQuery = (FcFreeTypeQueryFuncType)dlsym(libfontconfig, "FcFreeTypeQuery");
+    FcPatternGetBool =
+        (FcPatternGetBoolFuncType)dlsym(libfontconfig, "FcPatternGetBool");
     FcPatternGetInteger =
         (FcPatternGetIntegerFuncType)dlsym(libfontconfig, "FcPatternGetInteger");
     FcPatternGetString =
@@ -894,6 +907,8 @@ Java_sun_font_FontConfigManager_getFontConfig
         FcConfigSubstitute   == NULL ||
         FcDefaultSubstitute  == NULL ||
         FcFontMatch          == NULL ||
+        FcFreeTypeQuery      == NULL ||
+        FcPatternGetBool     == NULL ||
         FcPatternGetInteger  == NULL ||
         FcPatternGetString   == NULL ||
         FcPatternDestroy     == NULL ||
@@ -1066,10 +1081,21 @@ Java_sun_font_FontConfigManager_getFontConfig
 
             fontformat = NULL;
             if (fontCount == 0) {
-                (*FcPatternGetString)(fontPattern, FC_FILE, 0, &filename);
-                if (strstr((char*)filename, "[wght]") != NULL) {
-                    skippedVarFont = 1;
-                    continue;
+                // Query to see if it is a variable font.  0x8000000 is used as the
+                // font index to tell fontconfig you want the variable font info.
+                // NULL is returned from FcFreeTypeQuery if it is not a variable font.
+                // So we could stop there rather than doing the check for FC_VARIABLE.
+                FcResult pr = (*FcPatternGetString)(fontPattern, FC_FILE, 0, &filename);
+                if (pr == FcResultMatch) {
+                    FcPattern *vp = (*FcFreeTypeQuery)(filename, 0x80000000, NULL, NULL);
+                    if (vp != NULL) {
+                        FcBool variable = FcFalse;
+                        FcResult res = (*FcPatternGetBool)(vp, FC_VARIABLE, 0, &variable);
+                        if ((res == FcResultMatch) && (variable == FcTrue)) {
+                            skippedVarFont = 1;
+                            continue;
+                        }
+                    }
                 }
             }
             (*FcPatternGetString)(fontPattern, FC_FONTFORMAT, 0, &fontformat);
