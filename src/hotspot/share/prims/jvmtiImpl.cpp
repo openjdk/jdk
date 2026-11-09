@@ -261,6 +261,13 @@ int JvmtiBreakpoints::set(JvmtiBreakpoint& bp) {
 
   // Ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit().
   methodHandle mh(Thread::current(), bp.method());
+
+  // Build MethodCounters on the calling JavaThread so the breakpoint count can't be dropped
+  // later in the VM operation.
+  if (mh->get_method_counters(Thread::current()) == nullptr) {
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+
   VM_ChangeBreakpoints set_breakpoint(VM_ChangeBreakpoints::SET_BREAKPOINT, &bp);
   VMThread::execute(&set_breakpoint);
   return JVMTI_ERROR_NONE;

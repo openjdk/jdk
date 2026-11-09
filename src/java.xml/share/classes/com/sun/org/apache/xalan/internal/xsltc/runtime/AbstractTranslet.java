@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,6 +25,7 @@ import com.sun.org.apache.xalan.internal.xsltc.DOMCache;
 import com.sun.org.apache.xalan.internal.xsltc.DOMEnhancedForDTM;
 import com.sun.org.apache.xalan.internal.xsltc.Translet;
 import com.sun.org.apache.xalan.internal.xsltc.TransletException;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.dom.DOMAdapter;
 import com.sun.org.apache.xalan.internal.xsltc.dom.KeyIndex;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.output.TransletOutputHandlerFactory;
@@ -40,11 +41,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Templates;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.SecuritySupport;
+import jdk.xml.internal.XMLSecurityManager;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 
@@ -54,7 +58,7 @@ import org.w3c.dom.Document;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author John Howard, JohnH@schemasoft.com
- * @LastModified: Sept 2021
+ * @LastModified: July 2026
  */
 public abstract class AbstractTranslet implements Translet {
 
@@ -115,6 +119,7 @@ public abstract class AbstractTranslet implements Translet {
      * protocols allowed for external references set by the stylesheet processing instruction, Document() function, Import and Include element.
      */
     private String _accessExternalStylesheet = JdkConstants.EXTERNAL_ACCESS_DEFAULT;
+    private XMLSecurityManager _xsm;
 
     // The error message when access to exteranl resources is rejected
     private String _accessErr = null;
@@ -787,6 +792,37 @@ public abstract class AbstractTranslet implements Translet {
      */
     public void setAllowedProtocols(String protocols) {
         _accessExternalStylesheet = protocols;
+    }
+
+    /**
+     * Returns the XMLSecurityManager
+     */
+    public XMLSecurityManager getXMLSecurityManager() {
+        return _xsm;
+    }
+
+    /**
+     * Sets the XMLSecurityManager
+     * @param xsm the XMLSecurityManager instance
+     */
+    public void setXMLSecurityManager(XMLSecurityManager xsm) {
+        _xsm = xsm;
+    }
+
+    /**
+     * Verifies that access to the resource represented by the systemId is permitted.
+     * @param systemId the systemId
+
+     * @throws TransletException if access is not permitted
+     */
+    public void verifyAccess(String systemId) throws TransletException {
+        String accessError = SecuritySupport.checkAccess(systemId, _xsm,
+            XMLConstants.ACCESS_EXTERNAL_STYLESHEET, _accessExternalStylesheet);
+        if (accessError != null) {
+            ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
+                SecuritySupport.sanitizePath(systemId), accessError);
+            throw new TransletException(msg.toString());
+        }
     }
 
     /**

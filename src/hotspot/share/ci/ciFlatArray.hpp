@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CIFLATARRAY_HPP
-#define SHARE_VM_CI_CIFLATARRAY_HPP
+#ifndef SHARE_CI_CIFLATARRAY_HPP
+#define SHARE_CI_CIFLATARRAY_HPP
 
 #include "ci/ciArray.hpp"
 #include "ci/ciClassList.hpp"
@@ -53,4 +53,4 @@ public:
   ciConstant null_marker_of_element_by_index(int index);
 };
 
-#endif // SHARE_VM_CI_CIFLATARRAY_HPP
+#endif // SHARE_CI_CIFLATARRAY_HPP

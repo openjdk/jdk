@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_VALUEKLASS_HPP
-#define SHARE_VM_OOPS_VALUEKLASS_HPP
+#ifndef SHARE_OOPS_VALUEKLASS_HPP
+#define SHARE_OOPS_VALUEKLASS_HPP
 
 #include "oops/instanceKlass.hpp"
 #include "oops/layoutKind.hpp"
@@ -302,8 +302,6 @@ class ValueKlass: public InstanceKlass {
     *null_marker_address(payload) = 0;
   }
 
-  inline bool layout_has_null_marker(LayoutKind lk) const;
-
   inline bool is_layout_supported(LayoutKind lk) const;
 
   inline int layout_alignment(LayoutKind kind) const;
@@ -426,4 +424,4 @@ class ValueKlass: public InstanceKlass {
   void oop_verify_on(oop obj, outputStream* st) override;
 };
 
-#endif // SHARE_VM_OOPS_VALUEKLASS_HPP
+#endif // SHARE_OOPS_VALUEKLASS_HPP

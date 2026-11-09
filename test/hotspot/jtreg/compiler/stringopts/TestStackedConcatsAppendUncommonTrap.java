@@ -33,6 +33,20 @@
  *                   compiler.stringopts.TestStackedConcatsAppendUncommonTrap
  */
 
+/*
+ * @test
+ * @bug 8357105
+ * @summary Test stacked string concatenations where the toString result
+ *          of the first StringBuilder chain is wired into an uncommon trap
+ *          located in the second one.
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-TieredCompilation -Xbatch
+ *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsAppendUncommonTrap::*
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *                   compiler.stringopts.TestStackedConcatsAppendUncommonTrap
+ */
+
 package compiler.stringopts;
 
 public class TestStackedConcatsAppendUncommonTrap {

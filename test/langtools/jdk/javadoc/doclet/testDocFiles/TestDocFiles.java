@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8008949 8234051 8245696
+ * @bug 8008949 8234051 8245696 8234051
  * @summary doclet crashes if HTML files in module doc-files directories
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -175,4 +175,36 @@ public class TestDocFiles extends JavadocTester {
             }
         }
     }
+
+    @Test
+    public void testUppercaseExtension(Path  base) throws IOException {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                "package p; public class C { }");
+        Path df = src.resolve("p").resolve("doc-files");
+
+        // Files with upper-case extension should not be recognized as HTML or Markdown doc files.
+        tb.writeFile(df.resolve("README.MD"), """
+                    README
+                    ======
+                    This is *not* recognized as Markdown file by javadoc.
+                    """);
+        tb.writeFile(df.resolve("INDEX.HTML"), """
+                    This is not recognized as HTML doc file by {@code javadoc}.
+                    """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        // Files should be copied without changes.
+        checkFiles(false, "p/doc-files/README.html");
+        checkOutput("p/doc-files/README.MD", true, "README", "======",
+                "This is *not* recognized as Markdown file by javadoc.");
+        checkOutput("p/doc-files/INDEX.HTML", true,
+                "This is not recognized as HTML doc file by {@code javadoc}.");
+    }
+
 }

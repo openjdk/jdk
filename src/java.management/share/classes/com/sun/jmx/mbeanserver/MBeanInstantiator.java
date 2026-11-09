@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,29 +321,7 @@ public class MBeanInstantiator {
     public ObjectInputStream deserialize(ClassLoader loader, byte[] data)
         throws OperationsException {
 
-        // Check parameter validity
-        if (data == null) {
-            throw new  RuntimeOperationsException(new
-                IllegalArgumentException(), "Null data passed in parameter");
-        }
-        if (data.length == 0) {
-            throw new  RuntimeOperationsException(new
-                IllegalArgumentException(), "Empty data passed in parameter");
-        }
-
-        // Object deserialization
-        ByteArrayInputStream bIn;
-        ObjectInputStream    objIn;
-
-        bIn   = new ByteArrayInputStream(data);
-        try {
-            objIn = new ObjectInputStreamWithLoader(bIn,loader);
-        } catch (IOException e) {
-            throw new OperationsException(
-                     "An IOException occurred trying to de-serialize the data");
-        }
-
-        return objIn;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     /**
@@ -378,56 +356,7 @@ public class MBeanInstantiator {
                OperationsException,
                ReflectionException  {
 
-        // Check parameter validity
-        if (data == null) {
-            throw new  RuntimeOperationsException(new
-                IllegalArgumentException(), "Null data passed in parameter");
-        }
-        if (data.length == 0) {
-            throw new  RuntimeOperationsException(new
-                IllegalArgumentException(), "Empty data passed in parameter");
-        }
-        if (className == null) {
-            throw new  RuntimeOperationsException(new
-             IllegalArgumentException(), "Null className passed in parameter");
-        }
-
-        Class<?> theClass;
-        if (loaderName == null) {
-            // Load the class using the agent class loader
-            theClass = findClass(className, loader);
-
-        } else {
-            // Get the class loader MBean
-            try {
-                ClassLoader instance = null;
-
-                instance = getClassLoader(loaderName);
-                if (instance == null)
-                    throw new ClassNotFoundException(className);
-                theClass = Class.forName(className, false, instance);
-            }
-            catch (ClassNotFoundException e) {
-                throw new ReflectionException(e,
-                               "The MBean class could not be loaded by the " +
-                               loaderName.toString() + " class loader");
-            }
-        }
-
-        // Object deserialization
-        ByteArrayInputStream bIn;
-        ObjectInputStream    objIn;
-
-        bIn   = new ByteArrayInputStream(data);
-        try {
-            objIn = new ObjectInputStreamWithLoader(bIn,
-                                           theClass.getClassLoader());
-        } catch (IOException e) {
-            throw new OperationsException(
-                    "An IOException occurred trying to de-serialize the data");
-        }
-
-        return objIn;
+        throw new UnsupportedOperationException("Not supported");
     }
 
 

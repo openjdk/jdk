@@ -24,9 +24,7 @@
 /*
  * @test
  * @bug 8296244
- * @enablePreview
  * @summary Implement Subject.current and Subject.callAs using scoped values.
- *      Need enablePreview to use StructuredTaskScope.
  * @run main/othervm ${test.main.class} true
  */
 import com.sun.security.auth.UserPrincipal;

@@ -274,6 +274,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_vectorizedMismatch(Intrinsic* x);
   void do_blackhole(Intrinsic* x);
 
+  void deoptimize_vmalloc_for_jvmti(bool is_allocated_by_vm, CodeEmitInfo* info);
+
   LIR_Opr access_flat_array(bool is_load, LIRItem& array, LIRItem& index, LIRItem& obj_item, ciField* field = nullptr, size_t offset = 0);
   void access_sub_element(LIRItem& array, LIRItem& index, LIR_Opr& result, ciField* field, size_t sub_offset);
   LIR_Opr get_and_load_element_address(LIRItem& array, LIRItem& index);
@@ -345,8 +347,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   // volatile field operations are never patchable because a klass
   // must be loaded to know it's volatile which means that the offset
   // is always known as well.
+  // volatile_field_store and volatile_field_load provide MO_SEQ_CST semantics.
   void volatile_field_store(LIR_Opr value, LIR_Address* address, CodeEmitInfo* info);
-  // volatile_field_load provides trailing membar semantics
   void volatile_field_load(LIR_Address* address, LIR_Opr result, CodeEmitInfo* info);
 
   void put_Object_unsafe(LIR_Opr src, LIR_Opr offset, LIR_Opr data, BasicType type, bool is_volatile);
@@ -354,7 +356,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void arithmetic_call_op (Bytecodes::Code code, LIR_Opr result, LIR_OprList* args);
 
-  void increment_counter(address counter, BasicType type, int step = 1);
   void increment_counter(LIR_Address* addr, int step = 1);
 
   void arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp, CodeEmitInfo* info = nullptr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,25 +91,27 @@ final class PKCS5Padding implements Padding {
             (len == 0)) { // this can happen if input is really a padded buffer
             return 0;
         }
-        int idx = Math.addExact(off, len);
-        byte lastByte = in[idx - 1];
-        int padValue = (int)lastByte & 0x0ff;
-        if ((padValue < 0x01)
-            || (padValue > blockSize)) {
-            return -1;
-        }
 
-        int start = idx - padValue;
-        if (start < off) {
-            return -1;
-        }
+        int last = Math.addExact(off, len);
+        int padValue = in[last - 1] & 0x0ff;
+        // check padValue >= 1; negative if fail
+        int invalid = (padValue - 1);
+        // check padValue <= blockSize; negative if fail
+        invalid |= (blockSize - padValue);
 
-        for (int i = start; i < idx; i++) {
-            if (in[i] != lastByte) {
-                return -1;
-            }
+        // check the last block for the padding bytes
+        for (int i = last - blockSize; i < last ; i++) {
+            // mask = 0 for the first (blockSize - padValue) bytes in the block
+            // otherwise, use 0xffff to preserve the value
+            int mask = (last - padValue - i - 1) >> 8 ;
+            int valueCheck = ((in[i] & 0x0ff) ^ padValue) & mask;
+            // again, assign negative value if fail
+            invalid |= -valueCheck;
         }
-        return start;
+        // convert 'invalid' to -1 when 'invalid' is not 0
+        // right shifting by 8 should be sufficient since value range is small
+        invalid >>= 8; // 0 or -1
+        return (invalid | (last - padValue));
     }
 
     /**

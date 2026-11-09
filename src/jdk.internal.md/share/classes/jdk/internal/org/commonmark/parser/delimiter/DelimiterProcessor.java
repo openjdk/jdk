@@ -38,6 +38,8 @@ import jdk.internal.org.commonmark.node.Text;
  * Custom delimiter processor for additional delimiters besides {@code _} and {@code *}.
  * <p>
  * Note that implementations of this need to be thread-safe, the same instance may be used by multiple parsers.
+ *
+ * @see org.commonmark.parser.beta.InlineContentParserFactory
  */
 public interface DelimiterProcessor {
 
