@@ -41,6 +41,8 @@ typedef struct {
 } jzentry;
 
 class ZipLibrary : AllStatic {
+  friend class Threads;
+  static void initialize_loader_lock();
  public:
   static void** open(const char* name, char** pmsg);
   static void close(jzfile* zip);
