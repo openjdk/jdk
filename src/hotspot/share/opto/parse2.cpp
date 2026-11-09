@@ -2509,9 +2509,7 @@ IfNode* Parse::acmp_fast_path_if_from_substitutable_call(PhaseGVN* phase, CallSt
   IfProjNode* if_proj = call->in(TypeFunc::Control)->as_IfProj();
   if (if_proj->_con != 1) return nullptr;
 
-  assert(if_proj->in(0) != nullptr, "");
-  assert(if_proj->in(0)->is_If(), "");
-  IfNode* iff = if_proj->in(0)->as_If();
+  IfNode* iff = Node::as<IfNode>(if_proj->in(0));
 
   assert(iff->in(1) != nullptr, "");
   if (!iff->in(1)->is_Bool()) return nullptr;

@@ -5790,9 +5790,7 @@ IfNode* LibraryCallKit::hashcode_fast_path_if_from_identity_hash_code_call(Phase
     IfProjNode* if_proj = region->in(i)->as_IfProj();
     if (if_proj->_con != 1) continue;
 
-    assert(if_proj->in(0) != nullptr, "");
-    assert(if_proj->in(0)->is_If(), "");
-    IfNode* iff = if_proj->in(0)->as_If();
+    IfNode* iff = Node::as<IfNode>(if_proj->in(0));
 
     assert(iff->in(1) != nullptr, "");
     if (!iff->in(1)->is_Bool()) continue;
