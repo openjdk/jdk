@@ -4428,19 +4428,6 @@ operand indOffset16NarrowAlg4_klass(iRegNsrc reg, immL16Alg4 offset) %{
 //
 // This operand is used for loading and storing temporary values on
 // the stack where a match requires a value to flow through memory.
-operand stackSlotI(sRegI reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegI);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
 operand stackSlotL(sRegL reg) %{
   constraint(ALLOC_IN_RC(stack_slots));
   op_cost(100);
@@ -8927,10 +8914,9 @@ instruct andcL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 
 //----------Moves between int/long and float/double----------------------------
 //
-// The following rules move values from int/long registers/stack-locations
-// to float/double registers/stack-locations and vice versa, without doing any
-// conversions. These rules are used to implement the bit-conversion methods
-// of java.lang.Float etc., e.g.
+// The following rules move values from int/long registers to float/double
+// registers and vice versa, without doing any value conversion. These rules are
+// used to implement the bit-conversion methods of java.lang.Float etc., e.g.
 //   int   floatToIntBits(float value)
 //   float intBitsToFloat(int bits)
 
@@ -8961,28 +8947,6 @@ instruct moveI2D_reg(regD dst, iRegIsrc src) %{
 //---------- Chain stack slots between similar types --------
 
 // These are needed so that the rules below can match.
-
-// Load integer from stack slot
-instruct stkI_to_regI(iRegIdst dst, stackSlotI src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LWZ     $dst, $src" %}
-  size(4);
-  ins_encode( enc_lwz(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Store integer to stack slot
-instruct regI_to_stkI(stackSlotI dst, iRegIsrc src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STW     $src, $dst \t// stk" %}
-  size(4);
-  ins_encode( enc_stw(src, dst) ); // rs=rt
-  ins_pipe(pipe_class_memory);
-%}
 
 // Load long from stack slot
 instruct stkL_to_regL(iRegLdst dst, stackSlotL src) %{
