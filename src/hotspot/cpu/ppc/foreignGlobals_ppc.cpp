@@ -141,7 +141,7 @@ static void move_float(MacroAssembler* masm, int out_stk_bias,
       // FP arguments can get passed in GP reg! (Only for VarArgs for which we don't use FP regs.)
       assert(from_reg.segment_mask() == to_reg.segment_mask(), "sanity");
       if (from_reg.segment_mask() == REG32_MASK) {
-        __ floatToIntBits(as_Register(to_reg), as_FloatRegister(from_reg), as_FloatRegister(from_reg));
+        __ floatToIntBits(as_Register(to_reg), as_FloatRegister(from_reg), F0);
       } else {
         __ mffprd(as_Register(to_reg), as_FloatRegister(from_reg));
       }
