@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8396624
+ * @requires vm.opt.TieredCompilation != false
  * @summary Verify that SHA3 parallel intrinsics are invoked properly.
  *
  * @library /test/lib /
@@ -33,31 +34,31 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -Xbatch -XX:-TieredCompilation
- *                   -XX:Tier4InvocationThreshold=50000
+ *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
+ *                   -XX:Tier4InvocationThreshold=20000
  *                   -XX:+LogCompilation -XX:LogFile=positive_double.log
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
  *                   --add-opens java.base/sun.security.provider=ALL-UNNAMED
  *                   -XX:+UseSHA3Intrinsics -Dmethod=doubleKeccak
  *                   compiler.intrinsics.sha.sanity.TestSHA3ParallelIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -Xbatch -XX:-TieredCompilation
- *                   -XX:Tier4InvocationThreshold=50000
+ *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
+ *                   -XX:Tier4InvocationThreshold=20000
  *                   -XX:+LogCompilation -XX:LogFile=negative_double.log
  *                   --add-opens java.base/sun.security.provider=ALL-UNNAMED
  *                   -XX:-UseSHA3Intrinsics -Dmethod=doubleKeccak
  *                   compiler.intrinsics.sha.sanity.TestSHA3ParallelIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -Xbatch -XX:-TieredCompilation
- *                   -XX:Tier4InvocationThreshold=50000
+ *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
+ *                   -XX:Tier4InvocationThreshold=20000
  *                   -XX:+LogCompilation -XX:LogFile=positive_quad.log
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
  *                   --add-opens java.base/sun.security.provider=ALL-UNNAMED
  *                   -XX:+UseSHA3Intrinsics -Dmethod=quadKeccak
  *                   compiler.intrinsics.sha.sanity.TestSHA3ParallelIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -Xbatch -XX:-TieredCompilation
- *                   -XX:Tier4InvocationThreshold=50000
+ *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
+ *                   -XX:Tier4InvocationThreshold=20000
  *                   -XX:+LogCompilation -XX:LogFile=negative_quad.log
  *                   --add-opens java.base/sun.security.provider=ALL-UNNAMED
  *                   -XX:-UseSHA3Intrinsics -Dmethod=quadKeccak

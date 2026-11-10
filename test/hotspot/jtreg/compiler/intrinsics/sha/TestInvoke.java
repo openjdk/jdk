@@ -27,12 +27,12 @@
  * @summary C2 support for SHA3 doubleKeccak/quadKeccak
  *
  * @run main/othervm/timeout=600 -Xbatch
- *      -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
+ *      -XX:CompileThreshold=500 -XX:+UnlockDiagnosticVMOptions
  *      --add-opens java.base/sun.security.provider=ALL-UNNAMED
  *      -XX:-UseSHA3Intrinsics -Dmethod=doubleKeccak
  *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch
- *      -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
+ *      -XX:CompileThreshold=500 -XX:+UnlockDiagnosticVMOptions
  *      --add-opens java.base/sun.security.provider=ALL-UNNAMED
  *      -XX:-UseSHA3Intrinsics -Dmethod=quadKeccak
  *      ${test.main.class}
