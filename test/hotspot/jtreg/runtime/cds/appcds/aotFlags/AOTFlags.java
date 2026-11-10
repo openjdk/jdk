@@ -599,6 +599,7 @@ public class AOTFlags {
             // Disable individual Valhalla flags to check just preview mode
             pb = ProcessTools.createTestJavaProcessBuilder(
                 "--enable-preview",
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:-UseArrayFlattening",
                 "-XX:-UseFieldFlattening",
@@ -618,6 +619,8 @@ public class AOTFlags {
 
             // Assembly run without preview specified
             pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
                 "-XX:AOTMode=create",
                 "-XX:AOTConfiguration=" + aotConfigFile,
                 "-XX:AOTCache=" + aotCacheFile,
@@ -631,6 +634,7 @@ public class AOTFlags {
             // Disable individual Valhalla flags to check just preview mode
             pb = ProcessTools.createTestJavaProcessBuilder(
                 "--enable-preview",
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:-UseArrayFlattening",
                 "-XX:-UseFieldFlattening",
@@ -651,6 +655,8 @@ public class AOTFlags {
 
             // Production run without preview specified
             pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
                 "-XX:AOTMode=required",
                 "-XX:AOTCache=" + aotCacheFile,
                 "-Xlog:aot=debug",
@@ -662,6 +668,8 @@ public class AOTFlags {
             printTestCase("Training-Assembly Preview mismatch 2");
             // Train without preview
             pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
                 "-XX:AOTMode=record",
                 "-XX:AOTConfiguration=" + aotConfigFile,
                 "-Xlog:aot=debug",
@@ -674,6 +682,7 @@ public class AOTFlags {
             pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "--enable-preview",
                 "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-UseArrayFlattening",
                 "-XX:-UseFieldFlattening",
                 "-XX:-ValueTypePassFieldsAsArgs",
@@ -694,6 +703,8 @@ public class AOTFlags {
             printTestCase("Assembly-Production Preview mismatch 2");
             // Assembly run without preview
             pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
                 "-XX:AOTMode=create",
                 "-XX:AOTConfiguration=" + aotConfigFile,
                 "-XX:AOTCache=" + aotCacheFile,
@@ -706,6 +717,7 @@ public class AOTFlags {
             // Production run with preview but individual flags disabled
             pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "--enable-preview",
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:-UseArrayFlattening",
                 "-XX:-UseFieldFlattening",
@@ -737,7 +749,8 @@ public class AOTFlags {
 
             String[] valhallaNumericFlags = {
                 "FlatteningBudget",
-                "DiagnoseSyncOnValueBasedClasses"
+                "DiagnoseSyncOnValueBasedClasses",
+                "FlatArrayElementMaxOops"
             };
 
             for (String flag : valhallaFlags) {
@@ -779,6 +792,7 @@ public class AOTFlags {
 
         // Training
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
@@ -791,6 +805,7 @@ public class AOTFlags {
 
         // Assembly
         pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
@@ -818,6 +833,7 @@ public class AOTFlags {
 
         // Training must have same configuration as assembly
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
@@ -830,6 +846,7 @@ public class AOTFlags {
 
         // Assembly
         pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
@@ -843,6 +860,7 @@ public class AOTFlags {
 
         // Production
         pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:AOTMode=required",
             "-XX:AOTCache=" + aotCacheFile,
