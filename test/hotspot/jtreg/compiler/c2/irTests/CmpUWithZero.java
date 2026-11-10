@@ -62,25 +62,25 @@ public class CmpUWithZero {
     }
 
     @Test
-    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.CMP_UL }, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = { IRNode.CMP_L, "1" }, failOn = { IRNode.CMP_UL }, phase = CompilePhase.PRINT_IDEAL)
     public static boolean testLongLT(long x) {
         return Long.compareUnsigned(x, 1) < 0;
     }
 
     @Test
-    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.CMP_UL }, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = { IRNode.CMP_L, "1" }, failOn = { IRNode.CMP_UL }, phase = CompilePhase.PRINT_IDEAL)
     public static boolean testLongLE(long x) {
         return Long.compareUnsigned(x, 0) <= 0;
     }
 
     @Test
-    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.CMP_UL }, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = { IRNode.CMP_L, "1" }, failOn = { IRNode.CMP_UL }, phase = CompilePhase.PRINT_IDEAL)
     public static boolean testLongGT(long x) {
         return Long.compareUnsigned(x, 0) > 0;
     }
 
     @Test
-    @IR(counts = { "CmpL\\b", "1" }, failOn = { IRNode.CMP_UL }, phase = CompilePhase.PRINT_IDEAL)
+    @IR(counts = { IRNode.CMP_L, "1" }, failOn = { IRNode.CMP_UL }, phase = CompilePhase.PRINT_IDEAL)
     public static boolean testLongGE(long x) {
         return Long.compareUnsigned(x, 1) >= 0;
     }
