@@ -79,7 +79,9 @@ private:
   // Note that this is different from the VM invalidating an assumption made by the compiled code.
   // Such invalidations happen during code installation or afterwards. This value is about whether
   // the compiler can observe a paradoxical hierarchy, and we should abort the compilation right
-  // away to avoid issues from observing the inconsistencies in the class hierarchy.
+  // away to avoid issues from observing the inconsistencies in the class hierarchy. The reason we
+  // do not fail the ciEnv is that only C2 cares about the consistency of CHA computation, and
+  // ciTypeFlow does not expect spontaneous failures when calling ciEnv::get_instance_klass.
   bool _paradoxical_hierarchy;
 
   char* _name_buffer;
