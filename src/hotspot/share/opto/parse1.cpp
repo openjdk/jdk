@@ -1881,7 +1881,7 @@ void Parse::canonicalize_early_larval_aliases() {
         continue;
       }
     }
-    assert(!value->is_ValueType() && _gvn.type(value)->is_valueklassptr(), "unexpected early larval");
+    assert(!value->is_ValueType() && _gvn.type(value)->isa_oopptr() != nullptr, "unexpected early larval");
 
     bool created;
     if (aliases == nullptr) {
