@@ -57,18 +57,29 @@ import sun.awt.AWTAccessor;
 final class CAccessible extends CFRetainedResource implements Accessible {
 
     public static CAccessible getCAccessible(final Accessible a) {
-        return getCAccessible(a, true);
+        return getCAccessible(a, true, false);
     }
 
     /**
+     * This returns null immediately if `a` is null.
+     *
      * @param createIfUndefined if there is not yet a cached CAccessible for
      *                          the given Accessible, then this boolean
      *                          controls whether this method creates a new
      *                          CAccessible or returns null.
+     * @param returnNullOnNullContext if true then this returns null if
+     *                                `a.getAccessibleContext() == null`.
+     *                                If false and `createIfUndefined == true`
+     *                                then this method may trigger a NPE.
      */
-    private static CAccessible getCAccessible(final Accessible a, final boolean createIfUndefined) {
+    private static CAccessible getCAccessible(final Accessible a,
+                                      final boolean createIfUndefined,
+                                      final boolean returnNullOnNullContext) {
         if (a == null) return null;
         AccessibleContext context = a.getAccessibleContext();
+        if (returnNullOnNullContext && context == null) {
+            return null;
+        }
         AWTAccessor.AccessibleContextAccessor accessor
                 = AWTAccessor.getAccessibleContextAccessor();
         final CAccessible cachedCAX = (CAccessible) accessor.getNativeAXResource(context);
@@ -101,7 +112,7 @@ final class CAccessible extends CFRetainedResource implements Accessible {
                     }
                 }
                 if (c instanceof Accessible ax) {
-                    CAccessible ca = getCAccessible(ax, false);
+                    CAccessible ca = getCAccessible(ax, false, true);
                     if (ca != null) {
                         ca.dispose();
                     }

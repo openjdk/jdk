@@ -59,7 +59,7 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 // auipc useable for all cc -> cc calls and jumps
 #define CODE_CACHE_SIZE_LIMIT ((2*G)-(2*K))
 
-// The expected size in bytes of a cache line.
+// Default to 64 bytes, matching the Zic64b requirement in RVA22/RVA23.
 #define DEFAULT_CACHE_LINE_SIZE 64
 
 // The default padding size for data structures to avoid false sharing.

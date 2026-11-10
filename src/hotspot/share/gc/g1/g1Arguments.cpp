@@ -202,6 +202,12 @@ void G1Arguments::initialize() {
     uint marking_thread_num = scale_concurrent_worker_threads(ParallelGCThreads);
     FLAG_SET_ERGO(ConcGCThreads, marking_thread_num);
   }
+  // G1 does not support more marking threads than parallel worker threads.
+  if (ConcGCThreads > ParallelGCThreads) {
+    vm_exit_during_initialization(err_msg("G1 expects ConcGCThreads (%u) <= ParallelGCThreads (%u), "
+                                          "verify the values of -XX:ParallelGCThreads and -XX:ConcGCThreads",
+                                          ConcGCThreads, ParallelGCThreads));
+  }
 
   if (FLAG_IS_DEFAULT(GCTimeRatio) || GCTimeRatio == 0) {
     // In G1, we want the default GC overhead goal to be higher than

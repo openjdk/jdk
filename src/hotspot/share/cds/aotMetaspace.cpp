@@ -34,8 +34,10 @@
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotMetaspaceRecipes.hpp"
 #include "cds/aotModules.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
@@ -46,7 +48,6 @@
 #include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/finalImageRecipes.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -58,7 +59,6 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/aotCodeCache.hpp"
@@ -114,13 +114,14 @@
 
 ReservedSpace AOTMetaspace::_symbol_rs;
 VirtualSpace AOTMetaspace::_symbol_vs;
+bool AOTMetaspace::_static_archive_validation_failed = false;
 bool AOTMetaspace::_archive_loading_failed = false;
 bool AOTMetaspace::_remapped_readwrite = false;
 void* AOTMetaspace::_aot_metaspace_static_top = nullptr;
 intx AOTMetaspace::_relocation_delta;
 char* AOTMetaspace::_requested_base_address;
 Array<Method*>* AOTMetaspace::_archived_method_handle_intrinsics = nullptr;
-int volatile AOTMetaspace::_preimage_static_archive_dumped = 0;
+int volatile AOTMetaspace::_aot_configuration_dumped = 0;
 FileMapInfo* AOTMetaspace::_output_mapinfo = nullptr;
 
 // The CDS archive is divided into the following regions:
@@ -325,7 +326,7 @@ void AOTMetaspace::initialize_for_static_dump() {
     AOTMetaspace::unrecoverable_writing_error();
   }
   _symbol_region.init(&_symbol_rs, &_symbol_vs);
-  if (CDSConfig::is_dumping_preimage_static_archive()) {
+  if (CDSConfig::is_dumping_aot_configuration()) {
     // We are in the AOT training run. User code is executed.
     //
     // On Windows, if the user code closes System.out and we open the AOT config file for output
@@ -341,15 +342,15 @@ void AOTMetaspace::initialize_for_static_dump() {
 void AOTMetaspace::open_output_mapinfo() {
   const char* static_archive = CDSConfig::output_archive_path();
   assert(static_archive != nullptr, "sanity");
-  _output_mapinfo = new FileMapInfo(static_archive, true);
+  _output_mapinfo = FileMapInfo::allocate_output_archive(static_archive, true);
   _output_mapinfo->open_as_output();
 }
 
 // Called by universe_post_init()
 void AOTMetaspace::post_initialize(TRAPS) {
   if (CDSConfig::is_using_archive()) {
-    FileMapInfo *static_mapinfo = FileMapInfo::current_info();
-    FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
+    FileMapInfo *static_mapinfo = FileMapInfo::static_input_archive();
+    FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_input_archive();
 
     if (AOTMapLogger::is_logging_at_bootstrap()) {
       // The map logging needs to be done here, as it requires some stubs on Windows,
@@ -526,14 +527,14 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   SymbolTable::serialize_shared_table_header(soc);
   StringTable::serialize_shared_table_header(soc);
   AOTHeap::serialize_tables(soc);
-  SystemDictionaryShared::serialize_dictionary_headers(soc);
+  AOTSystemDictionary::serialize_dictionary_headers(soc);
   AOTLinkedClassBulkLoader::serialize(soc);
-  FinalImageRecipes::serialize(soc);
+  AOTMetaspaceRecipes::serialize(soc);
   TrainingData::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
-  SystemDictionaryShared::serialize_vm_classes(soc);
+  AOTSystemDictionary::serialize_vm_classes(soc);
   soc->do_tag(--tag);
 
   CDS_JAVA_HEAP_ONLY(AOTModules::serialize(soc);)
@@ -545,9 +546,9 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   soc->do_tag(666);
 }
 
-// In AOTCache workflow, when dumping preimage, the constant pool entries are stored in unresolved state.
+// In AOTCache workflow, when dumping the AOT config file, the constant pool entries are stored in unresolved state.
 // So the fast version of getfield/putfield needs to be converted to nofast version.
-// When dumping the final image in the assembly phase, these nofast versions are converted back to fast versions
+// When dumping the AOT cache, these nofast versions are converted back to fast versions
 // if the constant pool entry refered by these bytecodes is stored in resolved state.
 // Same principle applies to static and dynamic archives. If the constant pool entry is in resolved state, then
 // the fast version of the bytecodes can be preserved, else use the nofast version.
@@ -577,7 +578,7 @@ static void rewrite_bytecodes(const methodHandle& method) {
       uint rfe_index = bcs.get_index_u2();
       bool is_resolved = cp->is_resolved(rfe_index, opcode);
       if (is_resolved) {
-        assert(!CDSConfig::is_dumping_preimage_static_archive(), "preimage should not have resolved field references");
+        assert(!CDSConfig::is_dumping_aot_configuration(), "AOT configuration should not have resolved field references");
         ResolvedFieldEntry* rfe = cp->resolved_field_entry_at(bcs.get_index_u2());
         switch(rfe->tos_state()) {
         case btos:
@@ -610,7 +611,7 @@ static void rewrite_bytecodes(const methodHandle& method) {
       uint rfe_index = bcs.get_index_u2();
       bool is_resolved = cp->is_resolved(rfe_index, opcode);
       if (is_resolved) {
-        assert(!CDSConfig::is_dumping_preimage_static_archive(), "preimage should not have resolved field references");
+        assert(!CDSConfig::is_dumping_aot_configuration(), "AOT configuration should not have resolved field references");
         ResolvedFieldEntry* rfe = cp->resolved_field_entry_at(bcs.get_index_u2());
         switch(rfe->tos_state()) {
         case btos: new_code = Bytecodes::_fast_bputfield; break;
@@ -709,10 +710,10 @@ public:
 
   virtual void iterate_roots(MetaspaceClosure* it) {
     AOTArtifactFinder::all_cached_classes_do(it);
-    SystemDictionaryShared::dumptime_classes_do(it);
+    AOTSystemDictionary::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
-    TrainingData::iterate_roots(it);
+    TrainingData::dumptime_iterate_roots(it);
     if (CDSConfig::is_dumping_full_module_graph()) {
       AOTModules::iterate_roots(it);
     }
@@ -749,11 +750,11 @@ char* VM_PopulateDumpSharedSpace::dump_early_read_only_tables() {
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*& cl_config) {
   ArchiveBuilder::OtherROAllocMark mark;
 
-  SystemDictionaryShared::write_to_archive();
+  AOTSystemDictionary::write_to_archive();
   cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
   AOTClassLinker::write_to_archive();
-  if (CDSConfig::is_dumping_preimage_static_archive()) {
-    FinalImageRecipes::record_recipes();
+  if (CDSConfig::is_dumping_aot_configuration()) {
+    AOTMetaspaceRecipes::record_recipes();
   }
 
   TrainingData::dump_training_data();
@@ -779,11 +780,11 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
 void VM_PopulateDumpSharedSpace::doit() {
   CDSConfig::set_is_at_aot_safepoint(true);
 
-  if (!CDSConfig::is_dumping_final_static_archive()) {
+  if (!CDSConfig::is_dumping_with_input_archive()) {
     guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
   }
 
-  DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
+  DEBUG_ONLY(AOTSystemDictionary::NoClassLoadingMark nclm);
 
   _pending_method_handle_intrinsics = new (mtClassShared) GrowableArray<Method*>(256, mtClassShared);
   if (CDSConfig::is_dumping_method_handles()) {
@@ -927,17 +928,17 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
   AOTClassLinker::initialize();
   AOTClassInitializer::init_test_class(CHECK);
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_aot_cache()) {
     // - Load and link all classes used in the training run.
     // - Initialize @AOTSafeClassInitializer classes that were
     //   initialized in the training run.
     // - Perform per-class optimization such as AOT-resolution of
     //   constant pool entries that were resolved during the training run.
-    FinalImageRecipes::apply_recipes(CHECK);
+    AOTMetaspaceRecipes::apply_recipes(CHECK);
 
     // Because the AOT assembly phase does not run the same exact code as in the
     // training run (e.g., we use different lambda form invoker classes;
-    // generated lambda form classes are not recorded in FinalImageRecipes),
+    // generated lambda form classes are not recorded in AOTMetaspaceRecipes),
     // the recipes do not cover all classes that have been loaded so far. As
     // a result, we might have some unlinked classes at this point. Since we
     // require cached classes to be linked, all such classes will be linked
@@ -964,7 +965,7 @@ void AOTMetaspace::dump_static_archive(TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_aot_cache()) {
     if (AOTPrintTrainingInfo) {
       tty->print_cr("==================== archived_training_data ** before dumping ====================");
       TrainingData::print_archived_training_data_on(tty);
@@ -982,7 +983,7 @@ void AOTMetaspace::dump_static_archive(TRAPS) {
   }
 
   if (CDSConfig::new_aot_flags_used()) {
-    if (CDSConfig::is_dumping_preimage_static_archive()) {
+    if (CDSConfig::is_dumping_aot_configuration()) {
       // We are in the JVM that runs the training run. Continue execution,
       // so that it can finish all clean-up and return the correct exit
       // code to the OS.
@@ -1012,7 +1013,7 @@ void AOTMetaspace::init_heap_settings() {
     if (!AOTCodeCache::is_caching_enabled()) {
       // We don't need it -- always disable for better jitted code.
       FLAG_SET_ERGO(AOTCompatibleOopCompression, false);
-    } else if (CDSConfig::is_dumping_final_static_archive()) {
+    } else if (CDSConfig::is_dumping_aot_cache()) {
       // Enable by default: use the CompressedOops::HeapBasedNarrowOop mode
       // so that AOT code can always work regardless of runtime heap range.
       //
@@ -1027,11 +1028,7 @@ void AOTMetaspace::init_heap_settings() {
       //
       FLAG_SET_ERGO_IF_DEFAULT(AOTCompatibleOopCompression, true);
     } else if (CDSConfig::is_using_archive()) {
-      FileMapInfo* static_mapinfo = FileMapInfo::current_info();
-      // may have been opened by get_aot_code_region_size()
-      if (static_mapinfo == nullptr) {
-        static_mapinfo = open_static_archive();
-      }
+      FileMapInfo* static_mapinfo = get_static_archive();
       if (static_mapinfo != nullptr && static_mapinfo->header()->compatible_oop_compression()) {
         // Use the same setting as recorded in the archive.
         FLAG_SET_ERGO(AOTCompatibleOopCompression, true);
@@ -1097,17 +1094,17 @@ void AOTMetaspace::exercise_runtime_cds_code(TRAPS) {
   CDSProtectionDomain::to_file_URL("dummy.jar", Handle(), CHECK);
 }
 
-bool AOTMetaspace::preimage_static_archive_dumped() {
-  assert(CDSConfig::is_dumping_preimage_static_archive(), "Required");
-  return AtomicAccess::load_acquire(&_preimage_static_archive_dumped) == 1;
+bool AOTMetaspace::aot_configuration_dumped() {
+  assert(CDSConfig::is_dumping_aot_configuration(), "Required");
+  return AtomicAccess::load_acquire(&_aot_configuration_dumped) == 1;
 }
 
 void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS) {
-  if (CDSConfig::is_dumping_preimage_static_archive()) {
+  if (CDSConfig::is_dumping_aot_configuration()) {
     // When dumping to the AOT configuration file ensure this function is only executed once.
     // Multiple invocations may happen via JCmd, during VM exit or other means (in the future)
     // from different threads and possibly concurrently.
-    if (AtomicAccess::cmpxchg(&_preimage_static_archive_dumped, 0, 1) != 0) {
+    if (AtomicAccess::cmpxchg(&_aot_configuration_dumped, 0, 1) != 0) {
       return;
     }
   }
@@ -1123,7 +1120,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     }
   }
 
-  if (CDSConfig::is_dumping_preimage_static_archive()) {
+  if (CDSConfig::is_dumping_aot_configuration()) {
     log_info(aot)("Reading lambda form invokers from JDK default classlist ...");
     char default_classlist[JVM_MAXPATHLEN];
     get_default_classlist(default_classlist, JVM_MAXPATHLEN);
@@ -1136,9 +1133,9 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    if (!CDSConfig::is_dumping_preimage_static_archive()) {
+    if (!CDSConfig::is_dumping_aot_configuration()) {
       // A single thread is required for Reference handling and deterministic CDS archive.
-      // Its's not required for dumping preimage, where References won't be archived and
+      // It is not required for dumping AOT configuration, where References won't be archived and
       // determinism is not needed.
       assert(CDSConfig::allow_only_single_java_thread(), "Required");
     }
@@ -1151,7 +1148,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
   }
 #endif
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_aot_cache()) {
     if (ExtraSharedClassListFile) {
       log_info(aot)("Loading extra classes from %s ...", ExtraSharedClassListFile);
       ClassListParser::parse_classlist(ExtraSharedClassListFile,
@@ -1191,18 +1188,15 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
   }
 #endif
 
-  if (!CDSConfig::is_dumping_preimage_static_archive()) {
-    if (CDSConfig::is_dumping_final_static_archive()) {
-      FileMapInfo::free_current_info(); // FIXME: should not free current info
-    }
+  if (!CDSConfig::is_dumping_aot_configuration()) {
     open_output_mapinfo();
   }
 
   VM_PopulateDumpSharedSpace op(builder, _output_mapinfo);
   VMThread::execute(&op);
 
-  if (AOTCodeCache::is_caching_enabled() && CDSConfig::is_dumping_final_static_archive()) {
-    // We have just created the final image. Now dump AOT adapters, stubs and compiled code.
+  if (AOTCodeCache::is_caching_enabled() && CDSConfig::is_dumping_aot_cache()) {
+    // We have dumped the metaspace regions. Now dump AOT adapters, stubs and compiled code.
     builder.start_ac_region();
     if (AOTCodeCache::is_dumping_code()) {
       // Let's run the AOT compiler.
@@ -1222,11 +1216,11 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
   bool status = write_static_archive(&builder, _output_mapinfo, op.mapped_heap_info(), op.streamed_heap_info());
   assert(!_output_mapinfo->is_open(), "Must be closed already");
   _output_mapinfo = nullptr;
-  if (status && CDSConfig::is_dumping_preimage_static_archive()) {
+  if (status && CDSConfig::is_dumping_aot_configuration()) {
     tty->print_cr("%sAOTConfiguration recorded: %s",
                   CDSConfig::has_temp_aot_config_file() ? "Temporary " : "", AOTConfiguration);
     if (CDSConfig::is_single_command_training()) {
-      fork_and_dump_final_static_archive(CHECK);
+      fork_and_dump_aot_cache(CHECK);
     }
   }
 
@@ -1281,7 +1275,8 @@ static int exec_jvm_with_java_tool_options(const char* java_launcher_path, TRAPS
   // Pass all arguments. These include those from JAVA_TOOL_OPTIONS and _JAVA_OPTIONS.
   for (int i = 0; i < Arguments::num_jvm_args(); i++) {
     const char* arg = Arguments::jvm_args_array()[i];
-    if (strstr(arg, "-XX:AOTCacheOutput=") == arg || // arg starts with ...
+    if (strstr(arg, "-XX:AOTCache=") == arg || // arg starts with ...
+        strstr(arg, "-XX:AOTCacheOutput=") == arg ||
         strstr(arg, "-XX:AOTConfiguration=") == arg ||
         strstr(arg, "-XX:AOTMode=") == arg) {
       // Filter these out. They wiill be set below.
@@ -1351,8 +1346,8 @@ static int exec_jvm_with_java_tool_options(const char* java_launcher_path, TRAPS
   return result.get_jint();
 }
 
-void AOTMetaspace::fork_and_dump_final_static_archive(TRAPS) {
-  assert(CDSConfig::is_dumping_preimage_static_archive(), "sanity");
+void AOTMetaspace::fork_and_dump_aot_cache(TRAPS) {
+  assert(CDSConfig::is_dumping_aot_configuration(), "sanity");
 
   ResourceMark rm;
   stringStream ss;
@@ -1393,13 +1388,13 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
   JavaThread* THREAD = current; // For exception macros.
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
-  if (ik->in_aot_cache() && !CDSConfig::is_dumping_final_static_archive()) {
+  if (ik->in_aot_cache() && !CDSConfig::is_dumping_with_input_archive()) {
     assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
     return false;
   }
 
   if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
-      !SystemDictionaryShared::has_class_failed_verification(ik)) {
+      !AOTSystemDictionary::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->defined_by_other_loaders() && ik->class_loader() == nullptr) {
       // The verification decision is based on BytecodeVerificationRemote
@@ -1420,9 +1415,9 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
                             current->pending_exception()->klass()->external_name(),
                             message == nullptr ? "(no message)" : java_lang_String::as_utf8_string(message));
       CLEAR_PENDING_EXCEPTION;
-      SystemDictionaryShared::set_class_has_failed_verification(ik);
+      AOTSystemDictionary::set_class_has_failed_verification(ik);
     } else {
-      assert(!SystemDictionaryShared::has_class_failed_verification(ik), "sanity");
+      assert(!AOTSystemDictionary::has_class_failed_verification(ik), "sanity");
       ik->compute_has_loops_flag_for_methods();
     }
     BytecodeVerificationLocal = saved;
@@ -1435,7 +1430,7 @@ bool AOTMetaspace::try_link_class(JavaThread* current, InstanceKlass* ik) {
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
   if (CDSConfig::is_dumping_heap()) {
     AOTHeap::write_heap(&_mapped_heap_info, &_streamed_heap_info);
-  } else if (!CDSConfig::is_dumping_preimage_static_archive()) {
+  } else if (!CDSConfig::is_dumping_aot_configuration()) {
     CDSConfig::log_reasons_for_not_dumping_heap();
   }
 }
@@ -1472,10 +1467,10 @@ bool AOTMetaspace::in_aot_cache_static_region(void* p) {
 void AOTMetaspace::unrecoverable_loading_error(const char* message) {
   report_loading_error("%s", message);
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
-    vm_exit_during_initialization("Must be a valid AOT configuration generated by the current JVM", AOTConfiguration);
+  if (CDSConfig::is_dumping_aot_cache()) {
+    vm_exit_during_initialization("Unable to use AOT configuration file", AOTConfiguration);
   } else if (CDSConfig::new_aot_flags_used()) {
-    vm_exit_during_initialization("Unable to use AOT cache.", nullptr);
+    vm_exit_during_initialization("Unable to use AOT cache.", AOTCache);
   } else {
     vm_exit_during_initialization("Unable to use shared archive. Unrecoverable archive loading error (run with -Xlog:aot,cds for details)", message);
   }
@@ -1551,10 +1546,7 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
   assert(CDSConfig::is_using_archive(), "Must be called when UseSharedSpaces is enabled");
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
 
-  FileMapInfo* static_mapinfo = FileMapInfo::current_info(); // may have been opened by init_heap_settings()
-  if (static_mapinfo == nullptr) {
-    static_mapinfo = open_static_archive();
-  }
+  FileMapInfo* static_mapinfo = get_static_archive(); // may have been opened by init_heap_settings()
   FileMapInfo* dynamic_mapinfo = nullptr;
 
   if (static_mapinfo != nullptr) {
@@ -1603,7 +1595,12 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
       if (RequireSharedSpaces) {
         AOTMetaspace::unrecoverable_loading_error("Unable to map shared spaces");
       } else {
-        report_loading_error("Unable to map shared spaces");
+        if (CDSConfig::is_dumping_aot_configuration()) {
+          precond(AOTIgnoreIncompatibleCacheInTraining);
+          log_error(aot)("-XX:AOTCache=%s is ignored because it is incompatible with the current VM settings", AOTCache);
+        } else {
+          report_loading_error("Unable to map shared spaces");
+        }
       }
     }
   }
@@ -1628,12 +1625,12 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
 // and the size of the AOT code region during production run.
 // We need the size to reserve space to map code from AOT code region.
 void AOTMetaspace::get_aot_code_region_size() {
-  if (!AOTCodeCache::is_caching_enabled() || CDSConfig::is_dumping_final_static_archive()) {
+  if (!AOTCodeCache::is_caching_enabled() || CDSConfig::is_dumping_aot_cache()) {
     return;
   } else if (CDSConfig::is_using_archive()) { // production run with AOT code cache
-    precond(FileMapInfo::current_info() == nullptr);
+    precond(FileMapInfo::static_input_archive() == nullptr);
     precond(CodeCache::max_capacity() == 0);
-    FileMapInfo* static_mapinfo = open_static_archive();
+    FileMapInfo* static_mapinfo = get_static_archive();
     if (static_mapinfo != nullptr) {
       FileMapRegion* aot_code_region = static_mapinfo->region_at(AOTMetaspace::ac);
       AOTCacheAccess::set_aot_code_region_size(aot_code_region->used_aligned());
@@ -1641,13 +1638,25 @@ void AOTMetaspace::get_aot_code_region_size() {
   }
 }
 
+FileMapInfo* AOTMetaspace::get_static_archive() {
+  if (has_static_archive_validation_failed()) {
+    return nullptr;
+  }
+  FileMapInfo* static_mapinfo = FileMapInfo::static_input_archive();
+  // may have already been opened; if not, open it now
+  if (static_mapinfo == nullptr) {
+    static_mapinfo = open_static_archive();
+  }
+  return static_mapinfo;
+}
+
 FileMapInfo* AOTMetaspace::open_static_archive() {
   const char* static_archive = CDSConfig::input_static_archive_path();
   assert(static_archive != nullptr, "sanity");
-  FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
+  FileMapInfo* mapinfo = FileMapInfo::allocate_static_input_archive(static_archive);
   if (!mapinfo->open_as_input()) {
     delete(mapinfo);
-    log_info(cds)("Opening of static archive %s failed", static_archive);
+    aot_log_info(aot)("Opening of %s %s failed", CDSConfig::type_of_archive_being_loaded(), static_archive);
     return nullptr;
   }
   return mapinfo;
@@ -1662,7 +1671,7 @@ FileMapInfo* AOTMetaspace::open_dynamic_archive() {
     return nullptr;
   }
 
-  FileMapInfo* mapinfo = new FileMapInfo(dynamic_archive, false);
+  FileMapInfo* mapinfo = FileMapInfo::allocate_dynamic_input_archive(dynamic_archive);
   if (!mapinfo->open_as_input()) {
     delete(mapinfo);
     if (RequireSharedSpaces) {
@@ -2203,8 +2212,8 @@ class CountSharedSymbols : public SymbolClosure {
 // serialize it out to its various destinations.
 
 void AOTMetaspace::initialize_shared_spaces() {
-  FileMapInfo *static_mapinfo = FileMapInfo::current_info();
-  FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
+  FileMapInfo *static_mapinfo = FileMapInfo::static_input_archive();
+  FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_input_archive();
 
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables.
@@ -2254,11 +2263,11 @@ void AOTMetaspace::initialize_shared_spaces() {
       tty->print_cr("Static archive version %d", static_mapinfo->version());
     }
 
-    SystemDictionaryShared::print_shared_archive(tty);
+    AOTSystemDictionary::print_shared_archive(tty);
     if (dynamic_mapinfo != nullptr) {
       tty->print_cr("\n\nDynamic archive name: %s", dynamic_mapinfo->full_path());
       tty->print_cr("Dynamic archive version %d", dynamic_mapinfo->version());
-      SystemDictionaryShared::print_shared_archive(tty, false/*dynamic*/);
+      AOTSystemDictionary::print_shared_archive(tty, false/*dynamic*/);
     }
 
     TrainingData::print_archived_training_data_on(tty);
@@ -2273,7 +2282,7 @@ void AOTMetaspace::initialize_shared_spaces() {
       tty->print_cr("Number of shared strings: %zu", StringTable::shared_entry_count());
     }
     tty->print_cr("VM version: %s\r\n", static_mapinfo->vm_version());
-    if (FileMapInfo::current_info() == nullptr || _archive_loading_failed) {
+    if (_archive_loading_failed) {
       tty->print_cr("archive is invalid");
       vm_exit(1);
     } else {
@@ -2289,12 +2298,12 @@ bool AOTMetaspace::remap_shared_readonly_as_readwrite() {
 
   if (CDSConfig::is_using_archive()) {
     // remap the shared readonly space to shared readwrite, private
-    FileMapInfo* mapinfo = FileMapInfo::current_info();
+    FileMapInfo* mapinfo = FileMapInfo::static_input_archive();
     if (!mapinfo->remap_shared_readonly_as_readwrite()) {
       return false;
     }
-    if (FileMapInfo::dynamic_info() != nullptr) {
-      mapinfo = FileMapInfo::dynamic_info();
+    if (FileMapInfo::dynamic_input_archive() != nullptr) {
+      mapinfo = FileMapInfo::dynamic_input_archive();
       if (!mapinfo->remap_shared_readonly_as_readwrite()) {
         return false;
       }
