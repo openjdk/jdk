@@ -34,6 +34,7 @@ import jtreg.SkippedException;
 /**
  * @test
  * @bug 8396859
+ * @summary Test whether SA can find out and use separated debuginfo.
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
@@ -60,6 +61,12 @@ public class TestELFDebuginfo {
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
 
+        // callSleep() JNI function would call sleep_internal(). Both functions
+        // are provided by libDebuginfoTest.so which is stripped with --strip-all
+        // in build process. It does not has a symbol of sleep_internal() because
+        // it is not an exported function. In addition .note.gnu.build-id ELF
+        // section is removed, so SA should find out associated debuginfo from
+        // .gnu_debuglink section.
         out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldContain("LingeredAppForDebuginfoTest.callSleep");
         out.shouldContain("sleep_internal");

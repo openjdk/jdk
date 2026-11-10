@@ -250,6 +250,7 @@ static bool get_build_id(const char *filename, int fd, ELF_EHDR* ehdr, unsigned 
       }
       if (read(fd, buf, php->p_filesz) != php->p_filesz) {
         print_error("failed to read PT_NOTE data in %s\n", filename);
+        free(buf);
         break;
       }
 
@@ -273,6 +274,7 @@ static bool get_build_id(const char *filename, int fd, ELF_EHDR* ehdr, unsigned 
             print_error("failed to allocate memory for Build ID of %s\n", filename);
           }
           loop_exit = true;
+          break;
         }
         p = descdata + ROUNDUP(notep->n_descsz, 4);
       }
