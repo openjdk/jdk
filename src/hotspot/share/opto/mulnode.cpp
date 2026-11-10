@@ -838,13 +838,11 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* in1 = in(1);
   int op = in1->Opcode();
 
-  // Are we masking a long that was converted from an int with a mask
-  // that fits in 32-bits?  Commute them and use an AndINode.  Don't
-  // convert masks which would cause a sign extension of the integer
-  // value.  This check includes UI2L masks (0x00000000FFFFFFFF) which
-  // would be optimized away later in Identity.
-  if (op == Op_ConvI2L && (mask & UCONST64(0xFFFFFFFF80000000)) == 0) {
-    Node* andi = new AndINode(in1->in(1), phase->intcon(mask));
+  // If the mask is a sign extension of a 32-bit value, commute the AND
+  // with the conversion:
+  //   ConvI2L(x) & mask => ConvI2L(x & (jint)mask)
+  if (op == Op_ConvI2L && mask == (jlong)(jint)mask) {
+    Node* andi = new AndINode(in1->in(1), phase->intcon((jint)mask));
     andi = phase->transform(andi);
     return new ConvI2LNode(andi);
   }

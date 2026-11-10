@@ -413,6 +413,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">pāli</language>
 			<language type="pis">pidžinvaloda</language>
 			<language type="pl">poļu</language>
+			<language type="pms">pjemontiešu</language>
 			<language type="pon">ponapiešu</language>
 			<language type="pqm">malisetu-pasamakvodi</language>
 			<language type="prg">prūšu</language>
@@ -1021,18 +1022,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">kārtošanas secība</key>
 			<key type="colNormalization">normalizēta kārtošana</key>
 			<key type="colNumeric">kārtošana skaitliskā secībā</key>
+			<key type="colReorder">rakstību/bloku pārkārtošana</key>
 			<key type="colStrength">kārtošanas pakāpe</key>
 			<key type="currency">valūta</key>
+			<key type="d0">Pārveidošanas mērķis</key>
+			<key type="dx">Izņēmumi vārdnīcas segmentēšanai</key>
 			<key type="em">Emocijzīmes attēlojums</key>
+			<key type="fw">Pirmā nedēļas diena</key>
+			<key type="h0">Jaukti</key>
 			<key type="hc">Stundu formāts (12 vai 24)</key>
+			<key type="i0">Ievades metode</key>
+			<key type="k0">Tastatūra</key>
+			<key type="kv">Visvairāk ignorētās rakstzīmes</key>
 			<key type="lb">Rindiņas pārtraukuma stils</key>
 			<key type="lw">Rindiņu pārtraukumi vārdos</key>
+			<key type="m0">Pārveidošanas noteikumi</key>
 			<key type="ms">mērvienību sistēma</key>
+			<key type="mu">Mērvienība</key>
 			<key type="numbers">Cipari</key>
+			<key type="rg">Reģions papildu datiem</key>
+			<key type="s0">Transformācijas avots</key>
+			<key type="sd">Reģiona apakšiedalījums</key>
 			<key type="ss">Teikuma beigas pēc abr.</key>
+			<key type="t">Transformācija</key>
+			<key type="t0">Mašīntulkots</key>
 			<key type="timezone">laika josla</key>
 			<key type="va">lokalizācijas variants</key>
 			<key type="x">personīgai lietošanai</key>
+			<key type="x0">Personīgai lietošanai paredzēta transformācija</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">budistu kalendārs</type>
@@ -1052,13 +1069,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">ebreju kalendārs</type>
 			<type key="calendar" type="hebrew" scope="core">ebreju</type>
 			<type key="calendar" type="indian">Indijas nacionālais kalendārs</type>
+			<type key="calendar" type="indian" scope="core">Indijas nacionālais</type>
 			<type key="calendar" type="islamic">Hidžrī kalendārs</type>
 			<type key="calendar" type="islamic" scope="core">Hidžrī</type>
 			<type key="calendar" type="islamic-civil">Hidžrī kalendārs (pilsoņu)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Hidžrī (pilsoņu)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Hidžrī kalendārs (Saūda Arābijas mēness novērojums)</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hidžrī (tabulārais, astronomiskās ēras)</type>
 			<type key="calendar" type="islamic-umalqura">Hidžrī kalendārs (Umm al-kura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hidžrī (Umm al-kura)</type>
-			<type key="calendar" type="iso8601">ISO 8601 kalendārs</type>
+			<type key="calendar" type="iso8601">Gregora kalendārs (nedēļu numerācija pēc ISO 8601)</type>
+			<type key="calendar" type="iso8601" scope="core">Gregora</type>
 			<type key="calendar" type="japanese">japāņu kalendārs</type>
 			<type key="calendar" type="japanese" scope="core">japāņu</type>
 			<type key="calendar" type="persian">persiešu kalendārs</type>
@@ -1074,41 +1095,70 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no">Kārtot diakritiskās zīmes parastā secībā</type>
 			<type key="colBackwards" type="yes">Kārtot diakritiskās zīmes apgrieztā secībā</type>
 			<type key="colCaseFirst" type="lower">Kārtot pēc pirmā mazā burta</type>
+			<type key="colCaseFirst" type="lower" scope="core">mazie burti</type>
 			<type key="colCaseFirst" type="no">Kārtot burtu reģistra parastā secībā</type>
+			<type key="colCaseFirst" type="no" scope="core">mazie burti</type>
 			<type key="colCaseFirst" type="upper">Kārtot pēc pirmā lielā burta</type>
+			<type key="colCaseFirst" type="upper" scope="core">lielie burti</type>
 			<type key="colCaseLevel" type="no">Kārtot reģistrnejutīgas rakstzīmes</type>
 			<type key="colCaseLevel" type="yes">Kārtot reģistrjutīgās rakstzīmes</type>
 			<type key="collation" type="compat" draft="contributed">saderīgā kārtošanas secība</type>
+			<type key="collation" type="compat" scope="core">saderība</type>
 			<type key="collation" type="dictionary">Vārdnīcas kārtošanas secība</type>
+			<type key="collation" type="dictionary" scope="core">vārdnīca</type>
 			<type key="collation" type="ducet">noklusējuma unikoda kārtošanas secība</type>
 			<type key="collation" type="ducet" scope="core">noklusējuma unikods</type>
+			<type key="collation" type="emoji" scope="core">emocijzīme</type>
 			<type key="collation" type="eor" draft="contributed">Eiropas rakstību kārtošanas secīa</type>
+			<type key="collation" type="eor" scope="core">Eiropas noteikumi</type>
 			<type key="collation" type="phonebook">tālruņu grāmatas kārtošanas secība</type>
+			<type key="collation" type="phonebook" scope="core">telefongrāmata</type>
 			<type key="collation" type="phonetic">Fonētiskā kārtošanas secība</type>
+			<type key="collation" type="phonetic" scope="core">fonētisks</type>
 			<type key="collation" type="pinyin">piņjiņa kārtošanas secība</type>
+			<type key="collation" type="pinyin" scope="core">piņjiņs</type>
 			<type key="collation" type="search">vispārīga meklēšana</type>
 			<type key="collation" type="search" scope="core">meklēšana</type>
 			<type key="collation" type="searchjl">Meklēt pēc Hangul sākuma līdzskaņa</type>
+			<type key="collation" type="searchjl" scope="core">korejiešu sākuma līdzskanis</type>
 			<type key="collation" type="standard">standarta kārtošanas secība</type>
 			<type key="collation" type="standard" scope="core">standarta</type>
 			<type key="collation" type="stroke">Stroke kārtošanas secība</type>
+			<type key="collation" type="stroke" scope="core">vilcienu skaits</type>
 			<type key="collation" type="traditional">tradicionālā kārtošanas secība</type>
+			<type key="collation" type="traditional" scope="core">tradicionālā secība</type>
 			<type key="collation" type="unihan">Radikālā kārtošanas secība pēc vilkumu skaita</type>
+			<type key="collation" type="unihan" scope="core">radikāļu un vilcienu skaita secība</type>
+			<type key="collation" type="zhuyin" scope="core">Džujins</type>
 			<type key="colNormalization" type="no">Kārtot bez normalizēšanas</type>
 			<type key="colNormalization" type="yes">Kārtot unikodu normalizējot</type>
 			<type key="colNumeric" type="no">Kārtot ciparus atsevišķi</type>
 			<type key="colNumeric" type="yes">Kārtot ciparus skaitliskā secībā</type>
+			<type key="colReorder" type="currency" scope="core">valūta</type>
+			<type key="colReorder" type="digit" scope="core">cipari</type>
+			<type key="colReorder" type="punct" scope="core">interpunkcija</type>
+			<type key="colReorder" type="space" scope="core">tukšzīme</type>
+			<type key="colReorder" type="symbol" scope="core">simbols</type>
 			<type key="colStrength" type="identical">Kārtot visus</type>
+			<type key="colStrength" type="identical" scope="core">visi</type>
 			<type key="colStrength" type="primary">Kārtot tikai pamata burtus</type>
+			<type key="colStrength" type="primary" scope="core">tikai pamatburti</type>
 			<type key="colStrength" type="quaternary">Kārtot diakritiskās zīmes/reģistrjutīgās rakstzīmes/rakstzīmes pēc platuma/Kana rakstzīmes</type>
+			<type key="colStrength" type="quaternary" scope="core">pamatburti, diakritiskās zīmes, lielie/mazie burti, varianti, Kana</type>
 			<type key="colStrength" type="secondary">Kārtot diakritiskās zīmes</type>
+			<type key="colStrength" type="secondary" scope="core">pamatburti, diakritiskās zīmes</type>
 			<type key="colStrength" type="tertiary">Kārtot diakritiskās zīmes/reģistrjutīgās rakstzīmes/rakstzīmes pēc platuma</type>
+			<type key="colStrength" type="tertiary" scope="core">pamatburti, diakritiskās zīmes, lielie/mazie burti, varianti</type>
 			<type key="d0" type="fwidth">Pilna platuma</type>
 			<type key="d0" type="hwidth">Pusplatuma</type>
 			<type key="d0" type="npinyin">Ciparu</type>
 			<type key="em" type="default" scope="core">Noklusējuma</type>
 			<type key="em" type="emoji" scope="core">Emocijzīmes</type>
 			<type key="em" type="text" scope="core">Teksts</type>
+			<type key="hc" type="c12">12 stundu sistēma</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 stundu sistēma</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 stundu sistēma (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 stundu sistēma (1–12)</type>
@@ -1117,6 +1167,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 stundu sistēma (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">ignorēt atstarpes, pieturzīmes un visus simbolus</type>
+			<type key="kv" type="punct" scope="core">ignorēt atstarpes un pieturzīmes</type>
+			<type key="kv" type="space" scope="core">ignorēt atstarpes un pieturzīmes</type>
+			<type key="kv" type="symbol" scope="core">ignorēt atstarpes, pieturzīmes un simbolus, kas nav valūtas simboli</type>
 			<type key="lb" type="loose">Brīvais rindiņas pārtraukuma stils</type>
 			<type key="lb" type="loose" scope="core">Brīvais</type>
 			<type key="lb" type="normal">Parastais rindiņas pārtraukuma stils</type>
@@ -1137,51 +1191,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">ASV</type>
 			<type key="numbers" type="arab">Arābu-indiešu cipari</type>
 			<type key="numbers" type="arabext">Izvērstie arābu-indiešu cipari</type>
+			<type key="numbers" type="arabext" scope="core">Izvērstie arābu-indiešu</type>
 			<type key="numbers" type="armn">Armēņu cipari</type>
 			<type key="numbers" type="armnlow">Mazie armēņu cipari</type>
+			<type key="numbers" type="armnlow" scope="core">Mazie armēņu</type>
 			<type key="numbers" type="beng">Bengāļu cipari</type>
 			<type key="numbers" type="cakm">Čakmas cipari</type>
 			<type key="numbers" type="deva">Devanāgarī cipari</type>
 			<type key="numbers" type="ethi">Etiopiešu cipari</type>
 			<type key="numbers" type="finance">Finanšu cipari</type>
+			<type key="numbers" type="finance" scope="core">finanšu</type>
 			<type key="numbers" type="fullwide">Pilna platuma cipari</type>
+			<type key="numbers" type="fullwide" scope="core">pilna platuma</type>
 			<type key="numbers" type="geor">Gruzīnu cipari</type>
 			<type key="numbers" type="grek">Grieķu cipari</type>
 			<type key="numbers" type="greklow">Mazie grieķu cipari</type>
+			<type key="numbers" type="greklow" scope="core">mazie grieķu</type>
 			<type key="numbers" type="gujr">Gudžaratu cipari</type>
 			<type key="numbers" type="guru">Gurmuki cipari</type>
+			<type key="numbers" type="hanidays" scope="core">Mēneša dienu numerācija ar haņu rakstzīmēm tradicionālajos kalendāros</type>
 			<type key="numbers" type="hanidec">Ķīniešu decimāldaļskaitļi</type>
+			<type key="numbers" type="hanidec" scope="core">pozicionālā decimālsistēma ar ķīniešu ciparu rakstzīmēm</type>
 			<type key="numbers" type="hans">Vienkāršotie ķīniešu cipari</type>
 			<type key="numbers" type="hansfin">Vienkāršotie ķīniešu cipari finanšu dokumentiem</type>
+			<type key="numbers" type="hansfin" scope="core">Vienkāršotās ķīniešu finanšu ciparzīmes</type>
 			<type key="numbers" type="hant">Tradicionālie ķīniešu cipari</type>
 			<type key="numbers" type="hantfin">Tradicionālie ķīniešu cipari finanšu dokumentiem</type>
+			<type key="numbers" type="hantfin" scope="core">Tradicionālās ķīniešu finanšu ciparzīmes</type>
 			<type key="numbers" type="hebr">Ivrita cipari</type>
 			<type key="numbers" type="java">Javas cipari</type>
 			<type key="numbers" type="jpan">Japāņu cipari</type>
 			<type key="numbers" type="jpanfin">Japāņu cipari finanšu dokumentiem</type>
+			<type key="numbers" type="jpanfin" scope="core">Japāņu finanšu ciparzīmes</type>
+			<type key="numbers" type="jpanyear" scope="core">Japāņu pirmā gada numerācija</type>
 			<type key="numbers" type="khmr">Khmeru cipari</type>
 			<type key="numbers" type="knda">Kannadu cipari</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (reliģiskais lietojums)</type>
 			<type key="numbers" type="laoo">Laosiešu cipari</type>
 			<type key="numbers" type="latn">Arābu cipari</type>
+			<type key="numbers" type="mathbold" scope="core">Matemātiskais treknraksts</type>
+			<type key="numbers" type="mathdbl" scope="core">Matemātiskais dubultsvītrojums</type>
+			<type key="numbers" type="mathmono" scope="core">Matemātiskais vienplatuma raksts</type>
+			<type key="numbers" type="mathsanb" scope="core">Matemātiskais bezserifa treknraksts</type>
+			<type key="numbers" type="mathsans" scope="core">Matemātiskais bezserifa raksts</type>
 			<type key="numbers" type="mlym">Malajalu cipari</type>
 			<type key="numbers" type="mong">Mongoļu cipari</type>
 			<type key="numbers" type="mtei">Mītei majek cipari</type>
 			<type key="numbers" type="mymr">Birmiešu cipari</type>
+			<type key="numbers" type="mymrepka" scope="core">Mjanmas austrumu pvo karenu</type>
+			<type key="numbers" type="mymrpao" scope="core">Mjanmas pao</type>
+			<type key="numbers" type="mymrshan" scope="core">Mjanmas šaņu</type>
+			<type key="numbers" type="mymrtlng" scope="core">Mjanmas tai laingu</type>
 			<type key="numbers" type="native">Vietējie cipari</type>
+			<type key="numbers" type="native" scope="core">Vietējie cipari</type>
 			<type key="numbers" type="olck">Olčiki cipari</type>
 			<type key="numbers" type="orya">Oriju cipari</type>
+			<type key="numbers" type="outlined" scope="core">Kontūrveida</type>
 			<type key="numbers" type="roman">Romiešu cipari</type>
+			<type key="numbers" type="roman" scope="core">Romiešu lielie cipari</type>
 			<type key="numbers" type="romanlow">Mazie romiešu cipari</type>
+			<type key="numbers" type="romanlow" scope="core">Romiešu mazie cipari</type>
+			<type key="numbers" type="segment" scope="core">Segmentēti</type>
 			<type key="numbers" type="taml">Tamilu tradicionālie cipari</type>
 			<type key="numbers" type="tamldec">Tamilu cipari</type>
+			<type key="numbers" type="tamldec" scope="core">Mūsdienu tamilu</type>
 			<type key="numbers" type="telu">Telugu cipari</type>
 			<type key="numbers" type="thai">Tajiešu cipari</type>
 			<type key="numbers" type="tibt">Tibetiešu cipari</type>
 			<type key="numbers" type="traditional">Tradicionālā ciparu sistēma</type>
+			<type key="numbers" type="traditional" scope="core">Tradicionālie cipari</type>
 			<type key="numbers" type="vaii">VAI cipari</type>
 			<type key="ss" type="none" scope="core">Izsl.</type>
 			<type key="ss" type="standard" scope="core">Iesl.</type>
+			<type key="t0" type="und">Nenorādīta mašīntulkošana</type>
+			<type key="va" type="posix" scope="core">POSIX variants</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Izsl.</typeValue>
+			<typeValue type="yes">Iesl.</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">metriskā</measurementSystemName>
 			<measurementSystemName type="UK">angļu</measurementSystemName>
@@ -1225,6 +1313,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</eraAbbr>
 				</eras>
 			</calendar>
+			<calendar type="chinese">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="contributed">-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="coptic">
 				<months>
 					<monthContext type="format">
@@ -1253,6 +1348,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="1" draft="contributed">pēc Diokl.</era>
 					</eraAbbr>
 				</eras>
+			</calendar>
+			<calendar type="dangi">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="contributed">-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
@@ -1342,7 +1444,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMMEd">E, y. 'g'. d. MMM G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hv">HH v</dateFormatItem>
 						<dateFormatItem id="Md">dd.MM.</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd.MM.</dateFormatItem>
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
@@ -1679,6 +1780,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1708,10 +1812,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E, h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y. 'g'.</dateFormatItem>
-						<dateFormatItem id="GyMd">GGGGG dd-MM-y</dateFormatItem>
+						<dateFormatItem id="GyMd">d.M.y. G</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y. 'g'. MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y. 'g'. d. MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, G y. 'g'. d. MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, y. 'g'. d. MMM, G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">y. 'gada' MMMM, G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">y. 'gada' d. MMMM, G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, y. 'gada' d. MMMM, G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
@@ -1733,13 +1840,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMM">y. 'g'. MMM</dateFormatItem>
 						<dateFormatItem id="yMMMd">y. 'g'. d. MMM</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, y. 'g'. d. MMM</dateFormatItem>
-						<dateFormatItem id="yMMMM">y. 'g'. MMMM</dateFormatItem>
+						<dateFormatItem id="yMMMM">y. 'gada'. MMMM</dateFormatItem>
+						<dateFormatItem id="yMMMMd">y. 'gada' d. MMMM</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, y. 'gada' d. MMMM</dateFormatItem>
 						<dateFormatItem id="yQQQ">y. 'g'. QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y. 'g'. QQQQ</dateFormatItem>
 						<dateFormatItem id="yw" count="zero">Y. 'g'. w. 'nedēļa'</dateFormatItem>
 						<dateFormatItem id="yw" count="one">Y. 'g'. w. 'nedēļa'</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y. 'g'. w. 'nedēļa'</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{1}, {0}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{1}, {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d.–d.</greatestDifference>
@@ -1810,6 +1923,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d. MMM – E, d. MMM</greatestDifference>
 							<greatestDifference id="M">E, d. MMM – E, d. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y.–y.</greatestDifference>
@@ -2917,9 +3033,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Librevila</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Lielbritānijas vasaras laiks</daylight>
-				</long>
 				<exemplarCity>Londona</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -3004,9 +3117,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Džajapura</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Īrijas ziemas laiks</daylight>
-				</long>
 				<exemplarCity>Dublina</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3603,6 +3713,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Johannesburg">
 				<exemplarCity>Johannesburga</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Akres laiks</generic>
+					<standard>Akres ziemas laiks</standard>
+					<daylight>Akres vasaras laiks</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Afganistānas laiks</standard>
@@ -3783,6 +3900,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Brazīlijas laiks</generic>
 					<standard>Brazīlijas ziemas laiks</standard>
 					<daylight>Brazīlijas vasaras laiks</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Lielbritānijas laiks</generic>
+					<daylight>Lielbritānijas vasaras laiks</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3973,6 +4096,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Griničas laiks</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Grenlandes laiks</generic>
+					<standard>Grenlandes ziemas laiks</standard>
+					<daylight>Grenlandes vasaras laiks</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Austrumgrenlandes laiks</generic>
@@ -3999,7 +4129,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Havaju–Aleutu ziemas laiks</standard>
+					<standard>Havaju laiks</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4060,6 +4190,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Irānas vasaras laiks</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Īrijas laiks</generic>
+					<daylight>Īrijas ziemas laiks</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Irkutskas laiks</generic>
@@ -4083,9 +4219,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic>Petropavlovskas-Kamčatskas laiks</generic>
-					<standard>Petropavlovskas-Kamčatskas ziemas laiks</standard>
-					<daylight>Petropavlovskas-Kamčatskas vasaras laiks</daylight>
+					<generic>Kamčatkas laiks</generic>
+					<standard>Kamčatkas ziemas laiks</standard>
+					<daylight>Kamčatkas vasaras laiks</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -4359,9 +4495,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa laiks</generic>
 					<standard>Samoa ziemas laiks</standard>
-					<daylight>Samoa vasaras laiks</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4452,6 +4586,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Urugvajas laiks</generic>
 					<standard>Urugvajas ziemas laiks</standard>
 					<daylight>Urugvajas vasaras laiks</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Urumči laiks</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4573,28 +4712,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
+					<pattern type="1000" count="zero">0 tūkst'.'</pattern>
 					<pattern type="1000" count="one">0 tūkst'.'</pattern>
 					<pattern type="1000" count="other">0 tūkst'.'</pattern>
+					<pattern type="10000" count="zero">00 tūkst'.'</pattern>
 					<pattern type="10000" count="one">00 tūkst'.'</pattern>
 					<pattern type="10000" count="other">00 tūkst'.'</pattern>
+					<pattern type="100000" count="zero">000 tūkst'.'</pattern>
 					<pattern type="100000" count="one">000 tūkst'.'</pattern>
 					<pattern type="100000" count="other">000 tūkst'.'</pattern>
+					<pattern type="1000000" count="zero">0 milj'.'</pattern>
 					<pattern type="1000000" count="one">0 milj'.'</pattern>
 					<pattern type="1000000" count="other">0 milj'.'</pattern>
+					<pattern type="10000000" count="zero">00 milj'.'</pattern>
 					<pattern type="10000000" count="one">00 milj'.'</pattern>
 					<pattern type="10000000" count="other">00 milj'.'</pattern>
+					<pattern type="100000000" count="zero">000 milj'.'</pattern>
 					<pattern type="100000000" count="one">000 milj'.'</pattern>
 					<pattern type="100000000" count="other">000 milj'.'</pattern>
+					<pattern type="1000000000" count="zero">0 mljrd'.'</pattern>
 					<pattern type="1000000000" count="one">0 mljrd'.'</pattern>
 					<pattern type="1000000000" count="other">0 mljrd'.'</pattern>
+					<pattern type="10000000000" count="zero">00 mljrd'.'</pattern>
 					<pattern type="10000000000" count="one">00 mljrd'.'</pattern>
 					<pattern type="10000000000" count="other">00 mljrd'.'</pattern>
+					<pattern type="100000000000" count="zero">000 mljrd'.'</pattern>
 					<pattern type="100000000000" count="one">000 mljrd'.'</pattern>
 					<pattern type="100000000000" count="other">000 mljrd'.'</pattern>
+					<pattern type="1000000000000" count="zero">0 trilj'.'</pattern>
 					<pattern type="1000000000000" count="one">0 trilj'.'</pattern>
 					<pattern type="1000000000000" count="other">0 trilj'.'</pattern>
+					<pattern type="10000000000000" count="zero">00 trilj'.'</pattern>
 					<pattern type="10000000000000" count="one">00 trilj'.'</pattern>
 					<pattern type="10000000000000" count="other">00 trilj'.'</pattern>
+					<pattern type="100000000000000" count="zero">000 trilj'.'</pattern>
 					<pattern type="100000000000000" count="one">000 trilj'.'</pattern>
 					<pattern type="100000000000000" count="other">000 trilj'.'</pattern>
 				</decimalFormat>
@@ -4604,9 +4755,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
-				</currencyFormat>
-				<currencyFormat type="accounting">
 					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -5692,9 +5840,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>Karību guldenis</displayName>
-				<displayName count="zero">Karību guldenis</displayName>
-				<displayName count="one">Karību guldenis</displayName>
-				<displayName count="other">Karību guldenis</displayName>
 			</currency>
 			<currency type="XDR">
 				<displayName>Speciālās aizņēmuma tiesības</displayName>
@@ -5773,9 +5918,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>Zimbabves zelts</displayName>
-				<displayName count="zero">Zimbabves zelts</displayName>
-				<displayName count="one">Zimbabves zelts</displayName>
-				<displayName count="other">Zimbabves zelts</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName>Zimbabves dolārs (2009)</displayName>
@@ -7868,12 +8010,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} dzīvsudraba stabiņa milimetru</unitPattern>
 				<unitPattern count="other" case="locative">{0} dzīvsudraba stabiņa milimetros</unitPattern>
 			</unit>
-			<unit type="pressure-ofhg">
-				<displayName>pēc dzīvsudraba staba</displayName>
-				<unitPattern count="zero">{0} pēc dzīvsudraba staba</unitPattern>
-				<unitPattern count="one">{0} pēc dzīvsudraba staba</unitPattern>
-				<unitPattern count="other">{0} pēc dzīvsudraba staba</unitPattern>
-			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>mārciņas uz kvadrātcollu</displayName>
 				<unitPattern count="zero">{0} mārciņu uz kvadrātcollu</unitPattern>
@@ -9273,16 +9409,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dunams</displayName>
 			</unit>
 			<unit type="concentr-part">
-				<displayName>daļa</displayName>
 				<unitPattern count="zero">{0} daļu</unitPattern>
 				<unitPattern count="one">{0} daļa</unitPattern>
 				<unitPattern count="other">{0} daļa</unitPattern>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
-				<unitPattern count="zero">{0} Glc</unitPattern>
-				<unitPattern count="one">{0} Glc</unitPattern>
-				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<unitPattern count="zero">{0} cet.</unitPattern>
@@ -9426,7 +9555,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}W</unitPattern>
 			</unit>
 			<unit type="pressure-ofhg">
-				<displayName>pēc dzīvsudraba staba</displayName>
 				<unitPattern count="zero">{0} pēc dzīvsudraba staba</unitPattern>
 				<unitPattern count="one">{0} pēc dzīvsudraba staba</unitPattern>
 				<unitPattern count="other">{0} pēc dzīvsudraba staba</unitPattern>
@@ -9485,49 +9613,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="zero">{0}mi³</unitPattern>
 				<unitPattern count="one">{0}mi³</unitPattern>
 				<unitPattern count="other">{0}mi³</unitPattern>
-			</unit>
-			<unit type="electric-coulomb">
-				<unitPattern count="zero">{0} C</unitPattern>
-				<unitPattern count="one">{0} C</unitPattern>
-				<unitPattern count="other">{0} C</unitPattern>
-			</unit>
-			<unit type="electric-farad">
-				<unitPattern count="zero">{0} F</unitPattern>
-				<unitPattern count="one">{0} F</unitPattern>
-				<unitPattern count="other">{0} F</unitPattern>
-			</unit>
-			<unit type="electric-henry">
-				<unitPattern count="zero">{0} H</unitPattern>
-				<unitPattern count="one">{0} H</unitPattern>
-				<unitPattern count="other">{0} H</unitPattern>
-			</unit>
-			<unit type="electric-siemens">
-				<unitPattern count="zero">{0} S</unitPattern>
-				<unitPattern count="one">{0} S</unitPattern>
-				<unitPattern count="other">{0} S</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>cal-IT</displayName>
-			</unit>
-			<unit type="energy-becquerel">
-				<unitPattern count="zero">{0} Bq</unitPattern>
-				<unitPattern count="one">{0} Bq</unitPattern>
-				<unitPattern count="other">{0} Bq</unitPattern>
-			</unit>
-			<unit type="energy-sievert">
-				<unitPattern count="zero">{0} Sv</unitPattern>
-				<unitPattern count="one">{0} Sv</unitPattern>
-				<unitPattern count="other">{0} Sv</unitPattern>
-			</unit>
-			<unit type="energy-gray">
-				<unitPattern count="zero">{0} Gy</unitPattern>
-				<unitPattern count="one">{0} Gy</unitPattern>
-				<unitPattern count="other">{0} Gy</unitPattern>
-			</unit>
-			<unit type="magnetic-weber">
-				<unitPattern count="zero">{0} Wb</unitPattern>
-				<unitPattern count="one">{0} Wb</unitPattern>
-				<unitPattern count="other">{0} Wb</unitPattern>
 			</unit>
 		</unitLength>
 	</units>
