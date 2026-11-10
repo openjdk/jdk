@@ -196,6 +196,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DIgnoreCompilerControls=true`: Ignore all compiler controls applied in the framework. This includes any compiler control annotations (`@DontCompile`, `@DontInline`, `@ForceCompile`, `@ForceInline`, `@ForceCompileStaticInitializer`), the exclusion of `@Run` and `@Check` methods from compilation, and the directive to not inline `@Test` annotated methods.
 - `-DPreferCommandLineFlags=true`: Prefer flags set via the command line over flags specified by the tests.
 - `-DIgnoreSkip=true`: Additionally run all skipped tests (i.e. tests with a `@Skip` annotation).
+- `-DIgnoreSkipIR=true`: Additionally perform IR matching of all skipped `@IR` rules (i.e. `@IR` rules with `@IR(skip = true, ...)`).
 
 ## 3. Test Framework Execution
 This section gives an overview of how the framework is executing a JTreg test that calls the framework from within its `main()` method.

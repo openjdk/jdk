@@ -21,7 +21,7 @@
  * questions.
  */
 
-package testlibrary_tests.ir_framework.tests;
+package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
@@ -81,7 +81,10 @@ public class TestSkipIR {
 
     private static void runNotCompiledTest() {
         try {
-            TestFramework.run(NotCompiledSkippedIR.class);
+            new TestFramework(NotCompiledSkippedIR.class)
+                    .addFlags("-DIgnoreSkipIR=true")
+                    .start();
+            Asserts.fail("should fail IR matching");
         } catch (IRViolationException e) {
             String message = e.getExceptionInfo();
             checkHeader(message, 1, 1);
@@ -93,6 +96,10 @@ public class TestSkipIR {
     private static void runNotCompilable() {
         new TestFramework(NotCompilableSkippedIR.class)
                 .addFlags("-XX:CompileCommand=compileonly,*NotCompilableSkippedIR::test,0111")
+                .start();
+        new TestFramework(NotCompilableSkippedIR.class)
+                .addFlags("-DIgnoreSkipIR=true",
+                          "-XX:CompileCommand=compileonly,*NotCompilableSkippedIR::test,0111")
                 .start();
     }
 
