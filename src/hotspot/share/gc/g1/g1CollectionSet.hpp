@@ -200,8 +200,6 @@ class G1CollectionSet {
 
   void add_group_to_collection_set(G1CardSetGroup* gr);
 
-  void add_region_to_collection_set(G1HeapRegion* r);
-
   double select_candidates_from_marking(double time_remaining_ms);
 
   void select_candidates_from_retained(double time_remaining_ms);
@@ -314,6 +312,7 @@ public:
   // Add survivor region to the collection set.
   void add_survivor_regions(G1HeapRegion* hr);
 
+  void verify();
 #ifndef PRODUCT
   bool verify_young_ages();
 

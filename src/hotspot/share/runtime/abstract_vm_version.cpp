@@ -159,9 +159,9 @@ const char* Abstract_VM_Version::vm_info_string() {
   if (is_vm_statically_linked()) {
     ss.print("%s", ", static");
   }
-  if (CDSConfig::is_dumping_preimage_static_archive()) {
+  if (CDSConfig::is_dumping_aot_configuration()) {
     ss.print("%s", ", aot training");
-  } else if (CDSConfig::is_dumping_final_static_archive()) {
+  } else if (CDSConfig::is_dumping_aot_cache()) {
     ss.print("%s", ", aot assembly");
   } else if (CDSConfig::is_using_archive()) {
     ss.print("%s", CDSConfig::new_aot_flags_used() ? ", aot production" : ", sharing");
