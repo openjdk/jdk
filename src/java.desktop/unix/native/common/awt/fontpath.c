@@ -1091,6 +1091,7 @@ Java_sun_font_FontConfigManager_getFontConfig
                     if (vp != NULL) {
                         FcBool variable = FcFalse;
                         FcResult res = (*FcPatternGetBool)(vp, FC_VARIABLE, 0, &variable);
+                        (*FcPatternDestroy)(vp);
                         if ((res == FcResultMatch) && (variable == FcTrue)) {
                             skippedVarFont = 1;
                             continue;
