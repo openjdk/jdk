@@ -148,8 +148,8 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
         return;
       }
 
-      bool marked_as_dirty = _contains[region].compare_set(false, true);
-      if (marked_as_dirty) {
+      bool added = _contains[region].compare_set(false, true);
+      if (added) {
         uint allocated = _cur_idx.fetch_then_add(1u);
         _buffer[allocated] = region;
       }
