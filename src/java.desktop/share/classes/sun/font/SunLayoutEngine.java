@@ -37,7 +37,7 @@ import sun.java2d.DisposerRecord;
 
 import java.awt.geom.Point2D;
 import java.lang.foreign.MemorySegment;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Arrays;
 import java.util.WeakHashMap;
 
 public final class SunLayoutEngine {
@@ -60,31 +60,49 @@ public final class SunLayoutEngine {
         return ref.getNativePtr();
     }
 
-    static boolean useFFM = true;
+    static boolean useFFM;
     static {
         String prop = System.getProperty("sun.font.layout.ffm", "true");
         useFFM = "true".equals(prop);
     }
+
+    // HarfBuzz keeps up to 5 code points (at most 10 UTF-16 chars) of context on each side.
+    // See hb_buffer_t::CONTEXT_LENGTH in hb-buffer.hh
+    // test/jdk/java/awt/font/TextLayout/ShapingContextTest.java checks the value in case of a future change.
+    private static final int HB_CONTEXT_LENGTH = 10;
 
     public static void layout(Font2D font, int script, FontStrikeDesc desc, float[] mat, int gmask,
                        int baseIndex, TextRecord tr, int typo_flags,
                        Point2D.Float pt, GVData data) {
 
         FontStrike strike = font.getStrike(desc);
+
+        char[] text = tr.text;
+        int start = tr.start;
+        int limit = tr.limit;
+
+        int contextStart = Math.max(0, start - HB_CONTEXT_LENGTH);
+        int contextLimit = Math.min(text.length, limit + HB_CONTEXT_LENGTH);
+        if (0 < contextStart || contextLimit < text.length) {
+            text = Arrays.copyOfRange(text, contextStart, contextLimit);
+            start -= contextStart;
+            limit -= contextStart;
+        }
+
         if (useFFM) {
             MemorySegment face = HBShaper.getFace(font);
             if (face != null) {
                 HBShaper.shape(font, strike, mat, face,
-                        tr.text, data, script,
-                        tr.start, tr.limit, baseIndex, pt,
+                        text, data, script,
+                        start, limit, baseIndex, pt,
                         typo_flags, gmask);
             }
         } else {
             long pFace = getFacePtr(font);
             if (pFace != 0) {
                 shape(font, strike, mat, pFace,
-                    tr.text, data, script,
-                    tr.start, tr.limit, baseIndex, pt,
+                    text, data, script,
+                    start, limit, baseIndex, pt,
                     typo_flags, gmask);
             }
         }
