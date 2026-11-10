@@ -406,7 +406,7 @@
           "from CPU count and heap size; 1 disables striping.")             \
           range(0, 32)                                                      \
                                                                             \
-  product(uint, ShenandoahCollectorAllocRegions, 0, EXPERIMENTAL,           \
+  product(uint, ShenandoahCollectorAllocRegions, 1, EXPERIMENTAL,           \
           "Number of CAS alloc regions striped across each collector "      \
           "allocator (Collector and OldCollector) to spread GC-worker "     \
           "evacuation contention. Each reserved slot pre-charges its "      \
