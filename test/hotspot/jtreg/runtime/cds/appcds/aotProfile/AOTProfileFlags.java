@@ -24,6 +24,7 @@
 
 /**
  * @test
+ * @bug 8396064
  * @summary Sanity test of combinations of the diagnostic flags [+-]AOTRecordTraining and [+-]AOTReplayTraining
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
@@ -122,8 +123,10 @@ public class AOTProfileFlags {
     public static void testFlagsMismatch() throws Exception {
         String errorPattern = ".*Profile.* setting .* does not equal the current .*Profile.* setting.*";
         trainAndRun("TypeProfileLevel", "-XX:TypeProfileLevel=222", "-XX:TypeProfileLevel=111", errorPattern);
-        trainAndRun("TypeProfileArgsLimit", "-XX:TypeProfileArgsLimit=2", "-XX:TypeProfileArgsLimit=3", errorPattern);
-        trainAndRun("TypeProfileParamsLimit", "-XX:TypeProfileParmsLimit=2", "-XX:TypeProfileParmsLimit=3", errorPattern);
+        trainAndRun("TypeProfileArgsLimit", "-XX:TypeProfileArgsLimit=2", "-XX:TypeProfileArgsLimit=3",
+                    "TypeProfileArgsLimit setting \\(2\\) does not equal the current TypeProfileArgsLimit setting \\(3\\)");
+        trainAndRun("TypeProfileParmsLimit", "-XX:TypeProfileParmsLimit=2", "-XX:TypeProfileParmsLimit=3",
+                    "TypeProfileParmsLimit setting \\(2\\) does not equal the current TypeProfileParmsLimit setting \\(3\\)");
         trainAndRun("TypeProfileWidth", "-XX:TypeProfileWidth=2", "-XX:TypeProfileWidth=3", errorPattern);
         trainAndRun("ProfileExceptionHandlers", "-XX:+ProfileExceptionHandlers", "-XX:-ProfileExceptionHandlers", errorPattern);
         if (Platform.isDebugBuild()) {

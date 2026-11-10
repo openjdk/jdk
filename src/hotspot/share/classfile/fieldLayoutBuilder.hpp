@@ -72,7 +72,7 @@ class LayoutRawBlock : public ResourceObj {
   LayoutRawBlock* _prev_block;
   ValueKlass* _value_klass;
   Kind _block_kind;
-  LayoutKind _layout_kind;
+  FlatLayoutSlot _flat_layout_slot;
   int _offset;
   int _alignment;
   int _size;
@@ -82,6 +82,7 @@ class LayoutRawBlock : public ResourceObj {
   LayoutRawBlock(Kind kind, int size);
 
   LayoutRawBlock(int index, Kind kind, int size, int alignment);
+  LayoutRawBlock(int index, Kind kind, int size, int alignment, ValueKlass* vk, FlatLayout flat_layout);
   LayoutRawBlock* next_block() const { return _next_block; }
   void set_next_block(LayoutRawBlock* next) { _next_block = next; }
   LayoutRawBlock* prev_block() const { return _prev_block; }
@@ -108,10 +109,10 @@ class LayoutRawBlock : public ResourceObj {
     assert(_value_klass != nullptr, "Must be initialized");
     return _value_klass;
   }
-  void set_value_klass(ValueKlass* value_klass) { _value_klass = value_klass; }
 
-  LayoutKind layout_kind() const { return _layout_kind; }
-  void set_layout_kind(LayoutKind kind) { _layout_kind = kind; }
+  FlatLayout flat_layout() const {
+    return _flat_layout_slot.get_if(_block_kind == FLAT);
+  }
 
   bool fit(int size, int alignment);
 
@@ -132,16 +133,16 @@ class LayoutRawBlock : public ResourceObj {
 
 // A Field group represents a set of fields that have to be allocated together,
 // this is the way the @Contended annotation is supported.
-// Inside a FieldGroup, fields are sorted based on their kind: primitive,
-// oop, or flat.
+// Fields are separated into oop fields and non-oop field blocks.
+// Non-oop blocks include primitive fields and flat fields.
+// Flat fields can themselves contain embedded oops.
 //
 class FieldGroup : public ResourceObj {
 
  private:
   FieldGroup* _next;
 
-  GrowableArray<LayoutRawBlock*>* _small_primitive_fields;
-  GrowableArray<LayoutRawBlock*>* _big_primitive_fields;
+  GrowableArray<LayoutRawBlock*>* _non_oop_fields;
   GrowableArray<LayoutRawBlock*>* _oop_fields;
   int _contended_group;
   static const int INITIAL_LIST_SIZE = 16;
@@ -151,19 +152,19 @@ class FieldGroup : public ResourceObj {
 
   FieldGroup* next() const { return _next; }
   void set_next(FieldGroup* next) { _next = next; }
-  GrowableArray<LayoutRawBlock*>* small_primitive_fields() const { return _small_primitive_fields; }
-  GrowableArray<LayoutRawBlock*>* big_primitive_fields() const { return _big_primitive_fields; }
+  GrowableArray<LayoutRawBlock*>* non_oop_fields() const { return _non_oop_fields; }
   GrowableArray<LayoutRawBlock*>* oop_fields() const { return _oop_fields; }
   int contended_group() const { return _contended_group; }
+  // Requires the non-oop fields to be sorted in decreasing size order.
+  int first_small_field_index() const;
 
   void add_primitive_field(int idx, BasicType type);
   void add_oop_field(int idx);
-  void add_flat_field(int idx, ValueKlass* vk, LayoutKind lk);
+  void add_flat_field(int idx, ValueKlass* vk, FlatLayout flat_layout);
   void add_block(LayoutRawBlock** list, LayoutRawBlock* block);
   void sort_by_size();
  private:
-  void add_to_small_primitive_list(LayoutRawBlock* block);
-  void add_to_big_primitive_list(LayoutRawBlock* block);
+  void add_to_non_oop_list(LayoutRawBlock* block);
 };
 
 // The FieldLayout class represents a set of fields organized
@@ -201,7 +202,7 @@ class FieldLayout : public ResourceObj {
  public:
   FieldLayout(GrowableArray<FieldInfo>* field_info, Array<ValueFieldInfo>* value_field_info_array, ConstantPool* cp);
   void initialize_static_layout();
-  void initialize_instance_layout(const InstanceKlass* ik, bool& super_ends_with_oop);
+  void initialize_instance_layout(const InstanceKlass* ik, const bool is_value_compatible_class, bool& super_ends_with_oop);
 
   LayoutRawBlock* first_empty_block() {
     LayoutRawBlock* block = _start;
@@ -232,11 +233,13 @@ class FieldLayout : public ResourceObj {
 
   LayoutRawBlock* first_field_block();
   void add(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start = nullptr);
+  // Add the fields in the half-open range [from, to).
+  void add_range(GrowableArray<LayoutRawBlock*>* list, int from, int to, LayoutRawBlock* start = nullptr);
   void add_field_at_offset(LayoutRawBlock* blocks, int offset, LayoutRawBlock* start = nullptr);
   void add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start = nullptr);
   LayoutRawBlock* insert_field_block(LayoutRawBlock* slot, LayoutRawBlock* block);
   void reconstruct_layout(const InstanceKlass* ik, bool& has_nonstatic_fields, bool& ends_with_oop);
-  void fill_holes(const InstanceKlass* ik);
+  void fill_holes(const InstanceKlass* ik, bool is_value_compatible_class);
   LayoutRawBlock* insert(LayoutRawBlock* slot, LayoutRawBlock* block);
   void remove(LayoutRawBlock* block);
   void shift_fields(int shift);

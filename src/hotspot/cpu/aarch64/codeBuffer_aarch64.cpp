@@ -35,9 +35,6 @@ void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
 
   bool created;
   Offsets* offsets = _shared_trampoline_requests->put_if_absent(dest, &created);
-  if (created) {
-    _shared_trampoline_requests->maybe_grow();
-  }
   offsets->push(caller_offset);
   _finalize_stubs = true;
 }

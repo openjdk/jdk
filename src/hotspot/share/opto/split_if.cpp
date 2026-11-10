@@ -238,7 +238,7 @@ bool PhaseIdealLoop::clone_cmp_loadklass_down(Node* n, const Node* blk1, const N
       tty->print_cr("  Cloning down (LoadKlass): %d %s", n->_idx, n->Name());
     }
 #endif
-    Node_List cmp_nodes;
+    Node_List<Node> cmp_nodes;
     uint old = C->unique();
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* u1 = n->fast_out(i);
@@ -791,8 +791,8 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
 
   // Control is updated here to a region, which is not a test, so any node that
   // depends_only_on_test must be pinned
-  pin_nodes_dependent_on(new_true, iff->Opcode() == Op_RangeCheck);
-  pin_nodes_dependent_on(new_false, iff->Opcode() == Op_RangeCheck);
+  IfNode::pin_nodes_dependent_on(new_true, iff->Opcode(), &_igvn, this);
+  IfNode::pin_nodes_dependent_on(new_false, iff->Opcode(), &_igvn, this);
 
   if (new_false_region != nullptr) {
     *new_false_region = new_false;
@@ -802,28 +802,4 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   }
 
   DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
-}
-
-void PhaseIdealLoop::pin_nodes_dependent_on(Node* ctrl, bool old_iff_is_rangecheck) {
-  for (DUIterator i = ctrl->outs(); ctrl->has_out(i); i++) {
-    Node* use = ctrl->out(i);
-    if (!use->depends_only_on_test()) {
-      continue;
-    }
-
-
-    // When a RangeCheckNode is folded because its condition is a constant, IfProjNode::Identity
-    // returns the control input of the RangeCheckNode. As a result, when the old IfNode is not a
-    // RangeCheckNode, and a Load output of it depends_only_on_test, we don't need to pin the Load.
-    if (use->is_Load() && !old_iff_is_rangecheck) {
-      continue;
-    }
-
-    Node* pinned_clone = use->pin_node_under_control();
-    if (pinned_clone != nullptr) {
-      register_new_node_with_ctrl_of(pinned_clone, use);
-      _igvn.replace_node(use, pinned_clone);
-      --i;
-    }
-  }
 }

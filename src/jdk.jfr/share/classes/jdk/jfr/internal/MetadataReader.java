@@ -242,7 +242,7 @@ final class MetadataReader {
                 boolean constantPool = fieldElement.attribute(ATTRIBUTE_CONSTANT_POOL) != null;
                 // Add annotation later, because they may refer to undefined
                 // types at this stage
-                t.add(PrivateAccess.getInstance().newValueDescriptor(name, fieldType, new ArrayList<>(), (int) dimension, constantPool, null));
+                t.add(PrivateAccess.getInstance().newValueDescriptor(name, fieldType, new ArrayList<>(), (int) dimension, constantPool));
             }
             t.trimFields();
         }
