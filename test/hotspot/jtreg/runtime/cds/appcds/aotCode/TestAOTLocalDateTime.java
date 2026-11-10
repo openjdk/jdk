@@ -212,7 +212,8 @@ public class TestAOTLocalDateTime {
                 out.shouldMatch("aot,codecache,exit.*\\s+AOT code cache size: [1-9]\\d+ bytes");
             } else if (runMode == RunMode.PRODUCTION) {
                 if (compTier == 4) {
-                  out.shouldMatch("aot,codecache,nmethod.*\\(A4\\).*LocalDate.*create.*Loaded nmethod from AOT Code Cache");
+                  // AP4 may transition directly to JIT level 4. As result, A4 may not be loaded. Check both cases.
+                  out.shouldMatch("aot,codecache,nmethod.*\\(AP?4\\).*LocalDate.*create.*Loaded nmethod from AOT Code Cache");
                 }
                 /* In production run VM may request Tier 2 compilation before
                  * TrainingReplayThread can process class init dependencies.
