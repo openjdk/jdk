@@ -1171,7 +1171,8 @@ public class TestConditionalMove {
     //     I fo I
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveIEQforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1185,7 +1186,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveINEforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1199,7 +1201,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveIGTforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1213,7 +1216,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveIGEforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1227,7 +1231,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveILTforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1241,7 +1246,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveILEforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1256,7 +1262,8 @@ public class TestConditionalMove {
     //     I fo L
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_I, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveIEQforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -1270,7 +1277,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_I, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveINEforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -1284,7 +1292,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_I, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveIGTforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -1298,7 +1307,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_I, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveIGEforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -1312,7 +1322,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_I, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveILTforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -1326,7 +1337,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_I, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_I, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveILEforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -1559,7 +1571,8 @@ public class TestConditionalMove {
     //     L fo I
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_L, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveLEQforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1573,7 +1586,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_L, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveLNEforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1587,7 +1601,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_L, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveLGTforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1601,7 +1616,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_L, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveLGEforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1615,7 +1631,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_L, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveLLTforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1629,7 +1646,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_L, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveLLEforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1644,7 +1662,8 @@ public class TestConditionalMove {
     //     L fo L
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_L, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveLEQforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -1658,7 +1677,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_L, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveLNEforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -1672,7 +1692,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_L, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveLGTforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -1686,7 +1707,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_L, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveLGEforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -1700,7 +1722,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_L, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveLLTforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -1714,7 +1737,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_L, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_L, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveLLEforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -1954,7 +1978,8 @@ public class TestConditionalMove {
     //     I fo I
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveUIEQforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1968,7 +1993,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveUINEforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1982,7 +2008,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveUIGTforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -1996,7 +2023,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveUIGEforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -2010,7 +2038,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveUILTforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -2024,7 +2053,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveUILEforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -2039,7 +2069,8 @@ public class TestConditionalMove {
     //     I fo L
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_U, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveUIEQforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2053,7 +2084,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_U, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveUINEforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2067,7 +2099,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_U, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveUIGTforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2081,7 +2114,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_U, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveUIGEforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2095,7 +2129,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_U, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveUILTforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2109,7 +2144,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_U, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_U, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveUILEforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2342,7 +2378,8 @@ public class TestConditionalMove {
     //     L fo I
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_UL, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveULEQforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -2356,7 +2393,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_UL, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveULNEforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -2370,7 +2408,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_UL, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveULGTforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -2384,7 +2423,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_UL, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveULGEforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -2398,7 +2438,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_UL, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveULLTforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -2412,7 +2453,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_UL, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveULLEforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -2427,7 +2469,8 @@ public class TestConditionalMove {
     //     L fo L
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_UL, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveULEQforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2441,7 +2484,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_UL, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveULNEforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2455,7 +2499,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_UL, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveULGTforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2469,7 +2514,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_UL, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveULGEforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2483,7 +2529,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_UL, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveULLTforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2497,7 +2544,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_UL, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_UL, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveULLEforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2735,7 +2783,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_F, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveFGTforI(float[] a, float[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -2749,7 +2798,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_F, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_F, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveFGTforL(float[] a, float[] b, long[] c, long[] d, long[] r, long[] r2) {
@@ -2798,7 +2848,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_D, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveDGTforI(double[] a, double[] b, int[] c, int[] d, int[] r, int[] r2) {
@@ -2812,7 +2863,8 @@ public class TestConditionalMove {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_D, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_D, ">0"},
         applyIf = {"UseVectorCmov", "false"},
         applyIfPlatform = {"riscv64", "true"})
     private static void testCMoveDGTforL(double[] a, double[] b, long[] c, long[] d, long[] r, long[] r2) {

@@ -1221,10 +1221,12 @@ public class TestLWorldProfiling {
 
     @Test
     // TODO 8384979
-    @IR(skip = true, applyIfOr = {"UseACmpProfile", "true", "TypeProfileLevel", "= 222"},
+    @IR(skip = true,
+        applyIfOr = {"UseACmpProfile", "true", "TypeProfileLevel", "= 222"},
         failOn = {STATIC_CALL_OF_METHOD, "isSubstitutable.*"},
         counts = {LOAD_OF_CLASS, "MyValue1", "> 30"}) // Loading all the fields, there are many.
-    @IR(skip = true, applyIfAnd = {"UseACmpProfile", "false", "TypeProfileLevel", "!= 222"},
+    @IR(skip = true,
+        applyIfAnd = {"UseACmpProfile", "false", "TypeProfileLevel", "!= 222"},
         failOn = {LOAD_OF_CLASS, "MyValue1"},
         counts = {STATIC_CALL_OF_METHOD, "isSubstitutable.*", ">= 1"})
     public static boolean test43(Object a, Object b) {
@@ -1241,10 +1243,12 @@ public class TestLWorldProfiling {
 
     @Test
     // TODO 8384979
-    @IR(skip = true, applyIfOr = {"UseACmpProfile", "true", "TypeProfileLevel", "= 222"},
+    @IR(skip = true,
+        applyIfOr = {"UseACmpProfile", "true", "TypeProfileLevel", "= 222"},
         failOn = {STATIC_CALL_OF_METHOD, "isSubstitutable.*"},
         counts = {LOAD_OF_CLASS, "MyValue1", "> 30"}) // Loading all the fields, there are many.
-    @IR(skip = true, applyIfAnd = {"UseACmpProfile", "false", "TypeProfileLevel", "!= 222"},
+    @IR(skip = true,
+        applyIfAnd = {"UseACmpProfile", "false", "TypeProfileLevel", "!= 222"},
         failOn = {LOAD_OF_CLASS, "MyValue1"},
         counts = {STATIC_CALL_OF_METHOD, "isSubstitutable.*", ">= 1"})
     public static boolean test44(Object a, Object b) {
@@ -1262,10 +1266,12 @@ public class TestLWorldProfiling {
 
     @Test
     // TODO 8384979
-    @IR(skip = true, applyIfOr = {"UseACmpProfile", "true", "TypeProfileLevel", "= 222"},
+    @IR(skip = true,
+        applyIfOr = {"UseACmpProfile", "true", "TypeProfileLevel", "= 222"},
         failOn = {STATIC_CALL_OF_METHOD, "isSubstitutable.*"},
         counts = {LOAD_OF_CLASS, "MyValue1", "> 30"}) // Loading all the fields, there are many.
-    @IR(skip = true, applyIfAnd = {"UseACmpProfile", "false", "TypeProfileLevel", "!= 222"},
+    @IR(skip = true,
+        applyIfAnd = {"UseACmpProfile", "false", "TypeProfileLevel", "!= 222"},
         failOn = {LOAD_OF_CLASS, "MyValue1"},
         counts = {STATIC_CALL_OF_METHOD, "isSubstitutable.*", ">= 1"})
     public static boolean test45(Object a, Object b) {

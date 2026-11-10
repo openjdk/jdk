@@ -3017,7 +3017,8 @@ public class TestNullableArrays {
     // Same as test112 but with call to hash()
     @Test
     // TODO 8384979
-    @IR(skip = true, failOn = {ALLOC_OF_MYVALUE_KLASS, STORE_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
+    @IR(skip = true,
+        failOn = {ALLOC_OF_MYVALUE_KLASS, STORE_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
     public long test113(boolean b) {
         MyValue1 val = MyValue1.createWithFieldsInline(rI, rL);
         if (b) {

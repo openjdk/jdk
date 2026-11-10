@@ -592,7 +592,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
-    @IR(skip = true, counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(skip = true,
+        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     // TODO: FAILS: adr is CastX2P(dest + 8 * (i + int_con))
     // See: JDK-8331576
     public static void testOffHeapLong1a(long dest, long[] src) {
@@ -603,7 +604,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
-    @IR(skip = true, counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(skip = true,
+        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     // TODO: FAILS: adr is CastX2P(dest + 8L * (i + int_con))
     // See: JDK-8331576
     public static void testOffHeapLong1b(long dest, long[] src) {
@@ -620,7 +622,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
-    @IR(skip = true, counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(skip = true,
+        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     // TODO: FAILS: adr is CastX2P
     // See: JDK-8331576
     public static void testOffHeapLong2a(long dest, long[] src) {
@@ -631,7 +634,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
-    @IR(skip = true, counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(skip = true,
+        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     // TODO: FAILS: adr is CastX2P
     // See: JDK-8331576
     public static void testOffHeapLong2b(long dest, long[] src) {
@@ -648,7 +652,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
-    @IR(skip = true, counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(skip = true,
+        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     // TODO: FAILS: adr is CastX2P
     // See: JDK-8331576
     public static void testOffHeapLong3a(long dest, long[] src) {
@@ -659,7 +664,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
-    @IR(skip = true, counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(skip = true,
+        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     // TODO: FAILS: adr is CastX2P
     // See: JDK-8331576
     public static void testOffHeapLong3b(long dest, long[] src) {
@@ -676,7 +682,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
-    @IR(skip = true, counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+    @IR(skip = true,
+        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
         applyIf = {"AlignVector", "false"})
     // TODO: FAILS: adr is CastX2P
     // See: JDK-8331576
@@ -689,7 +696,8 @@ public class TestVectorizationMismatchedAccess {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
-    @IR(skip = true, counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+    @IR(skip = true,
+        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
         applyIf = {"AlignVector", "false"})
     // TODO: FAILS: adr is CastX2P
     // See: JDK-8331576

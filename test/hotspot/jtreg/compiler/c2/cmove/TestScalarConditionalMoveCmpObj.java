@@ -132,9 +132,11 @@ public class TestScalarConditionalMoveCmpObj {
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
     // TODO: enable CMOVE_L verification when it's guaranteed to generate CMOVE_L.
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_P, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_P, ">0"},
         applyIf = {"UseCompressedOops", "false"})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_N, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_N, ">0"},
         applyIf = {"UseCompressedOops", "true"})
     private static void testCMoveOEQforL(NotValue[] a, NotValue[] b, long[] c, long[] d, long[] r, long[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -148,9 +150,11 @@ public class TestScalarConditionalMoveCmpObj {
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
     // TODO: enable CMOVE_L verification when it's guaranteed to generate CMOVE_L.
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_P, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_P, ">0"},
         applyIf = {"UseCompressedOops", "false"})
-    @IR(skip = true, counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_N, ">0"},
+    @IR(skip = true,
+        counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_N, ">0"},
         applyIf = {"UseCompressedOops", "true"})
     private static void testCMoveONEforL(NotValue[] a, NotValue[] b, long[] c, long[] d, long[] r, long[] r2) {
         for (int i = 0; i < a.length; i++) {

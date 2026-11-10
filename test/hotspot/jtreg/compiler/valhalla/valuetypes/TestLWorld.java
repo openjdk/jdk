@@ -5383,7 +5383,8 @@ public class TestLWorld {
     // Test acmp with deep nesting of flat fields
     @Test(allowNotCompilable = true) // TODO 8378943: reason should be "failed spill-split-recycle sanity check"
     // TODO 8384979
-    @IR(skip = true, failOn = {ALLOC, STORE_OF_ANY_KLASS, STATIC_CALL_OF_METHOD, "isSubstitutable.*"})
+    @IR(skip = true,
+        failOn = {ALLOC, STORE_OF_ANY_KLASS, STATIC_CALL_OF_METHOD, "isSubstitutable.*"})
     public boolean test178(Value178 x, Value178 y) {
         return getter(x) == getter(y);
     }
@@ -5416,7 +5417,8 @@ public class TestLWorld {
     // Same as test178 but with object argument
     @Test(allowNotCompilable = true) // TODO 8378943: reason should be "failed spill-split-recycle sanity check"
     // TODO 8384979
-    @IR(skip = true, failOn = {ALLOC, STORE_OF_ANY_KLASS, STATIC_CALL_OF_METHOD, "isSubstitutable.*"})
+    @IR(skip = true,
+        failOn = {ALLOC, STORE_OF_ANY_KLASS, STATIC_CALL_OF_METHOD, "isSubstitutable.*"})
     public boolean test179(Value178 x, Object y) {
         return getter(x) == getter(y);
     }
@@ -5454,7 +5456,8 @@ public class TestLWorld {
     // Test constant folding
     @Test
     // TODO 8384979
-    @IR(skip = true, failOn = {ALLOC, LOAD, STORE, STATIC_CALL_OF_METHOD, "isSubstitutable.*"})
+    @IR(skip = true,
+        failOn = {ALLOC, LOAD, STORE, STATIC_CALL_OF_METHOD, "isSubstitutable.*"})
     public boolean test180() {
         Object val1 = null;
         Object val2 = null;

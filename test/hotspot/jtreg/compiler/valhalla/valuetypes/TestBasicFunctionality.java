@@ -281,7 +281,8 @@ public class TestBasicFunctionality {
     // Merge value objects created from two branches
     @Test
     // TODO 8384979
-    @IR(skip = true, failOn = {ALLOC_OF_MYVALUE_KLASS, STORE_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(skip = true,
+        failOn = {ALLOC_OF_MYVALUE_KLASS, STORE_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     public long test8(boolean b) {
         MyValue1 v;
         if (b) {
@@ -302,10 +303,12 @@ static MyValue1 tmp = null;
     // Merge value objects created from two branches
     @Test
     // TODO 8380875, 8384979
-    @IR(skip = true, applyIf = {"ValueTypePassFieldsAsArgs", "true"},
+    @IR(skip = true,
+        applyIf = {"ValueTypePassFieldsAsArgs", "true"},
         counts = {ALLOC_OF_MYVALUE_KLASS, "= 1", LOAD_OF_ANY_KLASS, "= 19", STORE_OF_ANY_KLASS, "= 3"},
         failOn = {UNSTABLE_IF_TRAP, PREDICATE_TRAP})
-    @IR(skip = true, applyIf = {"ValueTypePassFieldsAsArgs", "false"},
+    @IR(skip = true,
+        applyIf = {"ValueTypePassFieldsAsArgs", "false"},
         counts = {ALLOC_OF_MYVALUE_KLASS, "= 2", STORE_OF_ANY_KLASS, "= 19"},
         failOn = {LOAD_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
     public MyValue1 test9(boolean b, int localrI, long localrL) {
@@ -957,7 +960,8 @@ static MyValue1 tmp = null;
 
     @Test
     // TODO 8384979
-    @IR(skip = true, failOn = {ALLOC_OF_MYVALUE_KLASS, STORE_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
+    @IR(skip = true,
+        failOn = {ALLOC_OF_MYVALUE_KLASS, STORE_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
     public long test36(boolean b) {
         Object o;
         if (b) {
@@ -1239,7 +1243,8 @@ static MyValue1 tmp = null;
 
     @Test
     // TODO 8357580 more aggressive flattening
-    @IR(skip = true, applyIfAnd = {"UseFieldFlattening", "true", "UseNullableAtomicValueFlattening", "true"}, counts = {IRNode.LOAD_I, "1", IRNode.LOAD_B, "1"})
+    @IR(skip = true,
+        applyIfAnd = {"UseFieldFlattening", "true", "UseNullableAtomicValueFlattening", "true"}, counts = {IRNode.LOAD_I, "1", IRNode.LOAD_B, "1"})
     public Integer test45(Object arg) {
         return ((MyValue45ValueHolder) arg).v.v;
     }
@@ -1254,8 +1259,10 @@ static MyValue1 tmp = null;
 
     @Test
     // TODO 8357580 more aggressive flattening
-    @IR(skip = true, applyIfAnd = {"UseFieldFlattening", "true", "UseNullableAtomicValueFlattening", "true"}, counts = {IRNode.LOAD_L, "1"})
-    @IR(skip = true, applyIfAnd = {"UseFieldFlattening", "true", "UseNullableAtomicValueFlattening", "true"}, failOn = {IRNode.LOAD_I, IRNode.LOAD_B})
+    @IR(skip = true,
+        applyIfAnd = {"UseFieldFlattening", "true", "UseNullableAtomicValueFlattening", "true"}, counts = {IRNode.LOAD_L, "1"})
+    @IR(skip = true,
+        applyIfAnd = {"UseFieldFlattening", "true", "UseNullableAtomicValueFlattening", "true"}, failOn = {IRNode.LOAD_I, IRNode.LOAD_B})
     public Integer test46(Object arg) {
         return ((MyValue45Holder) arg).v.v;
     }

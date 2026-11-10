@@ -119,36 +119,44 @@ public class TestSkipIR {
     }
 
     @Test
-    @IR(skip = true, counts = {IRNode.CALL, "2"}) // normally fails
+    @IR(skip = true,
+        counts = {IRNode.CALL, "2"}) // normally fails
     public static void testNoSkip1() {}
 
     @Test
-    @IR(skip = true, counts = {IRNode.CALL, "2"}) // normally fails
+    @IR(skip = true,
+        counts = {IRNode.CALL, "2"}) // normally fails
     @IR(failOn = IRNode.CALL)
     public static void testNoSkip2() {}
 
     @Test
-    @IR(skip = true, counts = {IRNode.CALL, "2"}) // normally fails
+    @IR(skip = true,
+        counts = {IRNode.CALL, "2"}) // normally fails
     @IR(failOn = IRNode.CALL)
-    @IR(skip = true, counts = {IRNode.CALL, "1"}) // normally fails
+    @IR(skip = true,
+        counts = {IRNode.CALL, "1"}) // normally fails
     public static void testNoSkip3() {}
 
     @Test
     @Skip
-    @IR(skip = true, counts = {IRNode.CALL, "2"}) // normally fails
+    @IR(skip = true,
+        counts = {IRNode.CALL, "2"}) // normally fails
     public static void testYesSkip1() {}
 
     @Test
     @Skip
-    @IR(skip = true, counts = {IRNode.CALL, "2"}) // normally fails
+    @IR(skip = true,
+        counts = {IRNode.CALL, "2"}) // normally fails
     @IR(failOn = IRNode.CALL)
     public static void testYesSkip2() {}
 
     @Test
     @Skip
-    @IR(skip = true, counts = {IRNode.CALL, "2"}) // normally fails
+    @IR(skip = true,
+        counts = {IRNode.CALL, "2"}) // normally fails
     @IR(failOn = IRNode.CALL)
-    @IR(skip = true, counts = {IRNode.CALL, "1"}) // normally fails
+    @IR(skip = true,
+        counts = {IRNode.CALL, "1"}) // normally fails
     public static void testYesSkip3() {}
 }
 
@@ -156,7 +164,8 @@ class NotCompiledSkippedIR {
     static int iFld;
 
     @Test
-    @IR(skip = true, failOn = IRNode.STORE_I)
+    @IR(skip = true,
+        failOn = IRNode.STORE_I)
     public static void test() {
         iFld = 34;
     }
@@ -171,7 +180,8 @@ class NotCompilableSkippedIR {
     static int iFld;
 
     @Test(allowNotCompilable = true) // We disable compilation for C2 for this method
-    @IR(skip = true, failOn = IRNode.STORE_I)
+    @IR(skip = true,
+        failOn = IRNode.STORE_I)
     public static void test() {
         iFld = 34;
     }

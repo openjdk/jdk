@@ -282,7 +282,8 @@ public class IntegerDivValueTests {
     private static final long LONG_CONST_2 = LONGS.next();
 
     @Test
-    @IR(skip = true, failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
+    @IR(skip = true,
+        failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     // TODO: This results in a series of nodes due to DivLNode::Ideal and in particular transform_long_divide, which operates on non-constant divisors.
     // transform_long_divide splits up the division into multiple other nodes, such as MulHiLNode, which does not have a good Value() implemantion.
     // When JDK-8366815 is fixed, these rules should be reenabled
@@ -300,7 +301,8 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @IR(skip = true, failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
+    @IR(skip = true,
+        failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     // TODO: This results in a series of nodes due to DivLNode::Ideal and in particular transform_long_divide, which operates on non-constant divisors.
     // transform_long_divide splits up the division into multiple other nodes, such as MulHiLNode, which does not have a good Value() implemantion.
     // When JDK-8366815 is fixed, these rules should be reenabled
