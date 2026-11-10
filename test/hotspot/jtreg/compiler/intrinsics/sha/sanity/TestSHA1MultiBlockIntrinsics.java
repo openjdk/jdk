@@ -64,11 +64,16 @@
 
 package compiler.intrinsics.sha.sanity;
 
+import java.util.function.BooleanSupplier;
+
 import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
+import jdk.test.lib.cli.predicate.AndPredicate;
 
 public class TestSHA1MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
-        new DigestSanityTestBase(IntrinsicPredicates.isSHA1MultiBlockIntrinsicAvailable(),
-                DigestSanityTestBase.MB_INTRINSIC_ID).test();
+        BooleanSupplier pred
+                = new AndPredicate(IntrinsicPredicates.isSHA1MultiBlockIntrinsicAvailable(),
+                                   IntrinsicPredicates.isSHA1IntrinsicAvailable());
+        new DigestSanityTestBase(pred, DigestSanityTestBase.MB_INTRINSIC_ID).test();
     }
 }
