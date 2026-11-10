@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8396445
+ * @bug 8396397
  * @summary Test that the two-hop notification for AndI(SubI(0, x), 1) -> AndI(x, 1) happens.
  * @library /test/lib
  * @run main/othervm -Xbatch -XX:-TieredCompilation
