@@ -29,7 +29,7 @@
  * @run main ${test.main.class}
  */
 
-package compiler.memoryinitialization.storeCapture;
+package compiler.memoryinitialization.store_capture;
 
 import jdk.test.lib.Asserts;
 

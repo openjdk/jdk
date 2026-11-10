@@ -32,7 +32,7 @@
  *      ${test.main.class}
  */
 
-package compiler.memoryinitialization.storeCapture;
+package compiler.memoryinitialization.store_capture;
 
 public class Test8007294 {
 
