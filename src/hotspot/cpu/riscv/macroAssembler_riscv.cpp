@@ -6164,6 +6164,7 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
   j(L_tail_loop);
 
   bind(L_end);
+  sext(out, out, 32);
 }
 
 // Multiply and multiply-accumulate unsigned 64-bit registers.
