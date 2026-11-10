@@ -97,18 +97,17 @@ import java.util.stream.Collectors;
  * }
  *
  * <h2 id="formatting">Formatting</h2>
- * The default formatting behavior returns a formatted string with no fractional
- * digits, however users can use the {@link #setMinimumFractionDigits(int)}
- * method to include the fractional part.
- * The number {@code 1000.0} or {@code 1000} is formatted as {@code "1K"}
- * not {@code "1.00K"} (in the {@link java.util.Locale#US US locale}). For this
- * reason, the patterns provided for formatting contain only the minimum
- * integer digits, prefix and/or suffix, but no fractional part.
- * For example, patterns used are {@code {"", "", "", 0K, 00K, ...}}. If the pattern
- * selected for formatting a number is {@code "0"} (special pattern),
- * either explicit or defaulted, then the general number formatting provided by
- * {@link java.text.DecimalFormat DecimalFormat}
- * for the specified locale is used.
+ * Formatting that uses the special pattern "0", either explicitly or when the empty string compact pattern
+ * falls back to it, is referred to as general number formatting. This uses the formatting provided by {@link
+ * DecimalFormat}. Such formatting never produces fractional digits, even if the underlying decimal pattern
+ * has been composed to use fractional digits. Only formatting that does not use the special pattern can produce
+ * output with fractional digits. However, the default compact pattern behavior supports no fractional
+ * digits. This is why the patterns provided for formatting contain only the minimum
+ * integer digits, prefix and/or suffix, but no fractional part. If needed, users can use
+ * {@link #setMinimumFractionDigits(int)} to support fractional digits for compact number formatting.
+ * For example, using the following patterns {@code {"", "", "", "0K", ...}} with the {@link
+ * Locale#US US locale} and a minimum of 1 fractional digit, {@code 55.5} is formatted as
+ * "56", and {@code 5500} is formatted as "5.5K".
  *
  * <h3>Rounding</h3>
  * {@code CompactNumberFormat} provides rounding modes defined in
