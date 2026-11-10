@@ -260,31 +260,30 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
 
-  if (trigger_min_humongous_threshold(humongous_budget_curr)) {
+  if (humongous_regions_under_budget(humongous_budget_curr)) {
     return true;
   }
 
   return ShenandoahHeuristics::should_start_gc();
 }
 
-bool ShenandoahAdaptiveHeuristics::trigger_min_humongous_threshold(size_t max_humongous_available) {
+bool ShenandoahAdaptiveHeuristics::humongous_regions_under_budget(size_t max_humongous_budget_byte) {
   const size_t max_requested_regions = ShenandoahHeap::heap()->max_humongous_region_count_requested_since_gc_end();
   if (max_requested_regions == 0) {
-    // No humongous allocation requests
     return false;
   }
 
-  const size_t threshold = max_requested_regions * ShenandoahHeapRegion::region_size_bytes();
-  if (max_humongous_available <= threshold) { // needs to be equal in case regular objects are assigned into the regions
+  const size_t demand_in_byte = max_requested_regions * ShenandoahHeapRegion::region_size_bytes();
+  if (max_humongous_budget_byte <= demand_in_byte) { // needs to be equal in case regular objects are assigned into the regions
     log_trigger("Max humongous allocatable: " PROPERFMT ", below max requested humongous region size: " PROPERFMT,
-                PROPERFMTARGS(max_humongous_available), PROPERFMTARGS(threshold));
+                PROPERFMTARGS(max_humongous_budget_byte), PROPERFMTARGS(demand_in_byte));
     accept_trigger_with_type(OTHER);
     return true;
   }
   log_info(gc, ergo)("ruiamzn - Min humongous threshold: max humongous allocatable: " PROPERFMT
                       " (%zu regions), max requested: " PROPERFMT " (%zu regions), not triggering",
-                      PROPERFMTARGS(max_humongous_available),
-                      max_humongous_available / ShenandoahHeapRegion::region_size_bytes(),
+                      PROPERFMTARGS(max_humongous_budget_byte),
+                      max_humongous_budget_byte / ShenandoahHeapRegion::region_size_bytes(),
                       PROPERFMTARGS(threshold), max_requested_regions);
   return false;
 }
