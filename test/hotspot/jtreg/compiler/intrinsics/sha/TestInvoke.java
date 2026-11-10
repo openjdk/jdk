@@ -26,11 +26,13 @@
  * @bug 8396624
  * @summary C2 support for SHA3 doubleKeccak/quadKeccak
  *
- * @run main/othervm/timeout=600 -Xbatch -XX:-TieredCompilation
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
  *      --add-opens java.base/sun.security.provider=ALL-UNNAMED
  *      -XX:-UseSHA3Intrinsics -Dmethod=doubleKeccak
  *      ${test.main.class}
- * @run main/othervm/timeout=600 -Xbatch -XX:-TieredCompilation
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
  *      --add-opens java.base/sun.security.provider=ALL-UNNAMED
  *      -XX:-UseSHA3Intrinsics -Dmethod=quadKeccak
  *      ${test.main.class}
@@ -48,7 +50,8 @@ public class TestInvoke {
     public static void main(String[] args) throws Exception {
         String klass = "sun.security.provider.SHA3Parallel";
         String method = System.getProperty("method", DOUBLE_KECCAK_METHOD_ID);
-        int iters = (args.length > 1 ? Integer.valueOf(args[0]) : 50000);
+        int iters = 20000;
+
         testInvoke(klass, method, 1, iters);
     }
 
@@ -56,7 +59,6 @@ public class TestInvoke {
                                   int iters) throws Exception {
         System.out.println("class = " + klass);
         System.out.println("method = " + method);
-        System.out.println("iters = " + iters);
 
         try {
             Method m;

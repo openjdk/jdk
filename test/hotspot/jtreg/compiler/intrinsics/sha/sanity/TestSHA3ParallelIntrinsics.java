@@ -36,35 +36,31 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:-TieredCompilation
  *                   -XX:Tier4InvocationThreshold=50000
  *                   -XX:+LogCompilation -XX:LogFile=positive_double.log
- *                   -XX:+UseSHA3Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
  *                   --add-opens java.base/sun.security.provider=ALL-UNNAMED
- *                   -Dmethod=doubleKeccak
+ *                   -XX:+UseSHA3Intrinsics -Dmethod=doubleKeccak
  *                   compiler.intrinsics.sha.sanity.TestSHA3ParallelIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:-TieredCompilation
  *                   -XX:Tier4InvocationThreshold=50000
  *                   -XX:+LogCompilation -XX:LogFile=negative_double.log
- *                   -XX:-UseSHA3Intrinsics
  *                   --add-opens java.base/sun.security.provider=ALL-UNNAMED
- *                   -Dmethod=doubleKeccak
+ *                   -XX:-UseSHA3Intrinsics -Dmethod=doubleKeccak
  *                   compiler.intrinsics.sha.sanity.TestSHA3ParallelIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:-TieredCompilation
  *                   -XX:Tier4InvocationThreshold=50000
  *                   -XX:+LogCompilation -XX:LogFile=positive_quad.log
- *                   -XX:+UseSHA3Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
  *                   --add-opens java.base/sun.security.provider=ALL-UNNAMED
- *                   -Dmethod=quadKeccak
+ *                   -XX:+UseSHA3Intrinsics -Dmethod=quadKeccak
  *                   compiler.intrinsics.sha.sanity.TestSHA3ParallelIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:-TieredCompilation
  *                   -XX:Tier4InvocationThreshold=50000
  *                   -XX:+LogCompilation -XX:LogFile=negative_quad.log
- *                   -XX:-UseSHA3Intrinsics
  *                   --add-opens java.base/sun.security.provider=ALL-UNNAMED
- *                   -Dmethod=quadKeccak
+ *                   -XX:-UseSHA3Intrinsics -Dmethod=quadKeccak
  *                   compiler.intrinsics.sha.sanity.TestSHA3ParallelIntrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
  *                    compiler.testlibrary.intrinsics.Verifier positive_double.log positive_quad.log

@@ -38,9 +38,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA::*
- *                   -XX:+UseSHA1Intrinsics -XX:-UseMD5Intrinsics
- *                   -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics
- *                   -Dalgorithm=SHA-1
+ *                   -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics -XX:-UseSHA3Intrinsics
+ *                   -XX:+UseSHA1Intrinsics -Dalgorithm=SHA-1
  *                   compiler.intrinsics.sha.sanity.TestSHA1MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500

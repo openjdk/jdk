@@ -39,9 +39,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
- *                   -Dalgorithm=SHA3-224
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-224
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -49,8 +48,7 @@
  *                   -XX:+LogCompilation -XX:LogFile=negative_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:-UseSHA3Intrinsics
- *                   -Dalgorithm=SHA3-224
+ *                   -XX:-UseSHA3Intrinsics -Dalgorithm=SHA3-224
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -58,9 +56,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
- *                   -Dalgorithm=SHA3-256
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-256
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -68,8 +65,7 @@
  *                   -XX:+LogCompilation -XX:LogFile=negative_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:-UseSHA3Intrinsics
- *                   -Dalgorithm=SHA3-256
+ *                   -XX:-UseSHA3Intrinsics -Dalgorithm=SHA3-256
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -77,9 +73,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_384.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
- *                   -Dalgorithm=SHA3-384
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-384
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -87,8 +82,7 @@
  *                   -XX:+LogCompilation -XX:LogFile=negative_384.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:-UseSHA3Intrinsics
- *                   -Dalgorithm=SHA3-384
+ *                   -XX:-UseSHA3Intrinsics -Dalgorithm=SHA3-384
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -96,9 +90,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_512.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
- *                   -Dalgorithm=SHA3-512
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-512
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -106,8 +99,7 @@
  *                   -XX:+LogCompilation -XX:LogFile=negative_512.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:-UseSHA3Intrinsics
- *                   -Dalgorithm=SHA3-512
+ *                   -XX:-UseSHA3Intrinsics -Dalgorithm=SHA3-512
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
  *                    compiler.testlibrary.intrinsics.Verifier positive_224.log positive_256.log positive_384.log positive_512.log
@@ -133,10 +125,9 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:-UseSIMDForSHA3Intrinsic -XX:-PreserveFramePointer
- *                   -Dalgorithm=SHA3-224
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-224
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -144,10 +135,9 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:-UseSIMDForSHA3Intrinsic -XX:-PreserveFramePointer
- *                   -Dalgorithm=SHA3-256
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-256
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -155,10 +145,9 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_384.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:-UseSIMDForSHA3Intrinsic -XX:-PreserveFramePointer
- *                   -Dalgorithm=SHA3-384
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-384
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -166,10 +155,9 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_512.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:-UseSIMDForSHA3Intrinsic -XX:-PreserveFramePointer
- *                   -Dalgorithm=SHA3-512
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-512
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
  *                    compiler.testlibrary.intrinsics.Verifier positive_224.log positive_256.log positive_384.log positive_512.log

@@ -38,8 +38,7 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA2::*
- *                   -XX:+UseSHA256Intrinsics
- *                   -Dalgorithm=SHA-224
+ *                   -XX:+UseSHA256Intrinsics -Dalgorithm=SHA-224
  *                   compiler.intrinsics.sha.sanity.TestSHA256Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -47,8 +46,7 @@
  *                   -XX:+LogCompilation -XX:LogFile=negative_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA2::*
- *                   -XX:-UseSHA256Intrinsics
- *                   -Dalgorithm=SHA-224
+ *                   -XX:-UseSHA256Intrinsics -Dalgorithm=SHA-224
  *                   compiler.intrinsics.sha.sanity.TestSHA256Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -56,8 +54,7 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA2::*
- *                   -XX:+UseSHA256Intrinsics
- *                   -Dalgorithm=SHA-256
+ *                   -XX:+UseSHA256Intrinsics -Dalgorithm=SHA-256
  *                   compiler.intrinsics.sha.sanity.TestSHA256Intrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -65,8 +62,7 @@
  *                   -XX:+LogCompilation -XX:LogFile=negative_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA2::*
- *                   -XX:-UseSHA256Intrinsics
- *                   -Dalgorithm=SHA-256
+ *                   -XX:-UseSHA256Intrinsics -Dalgorithm=SHA-256
  *                   compiler.intrinsics.sha.sanity.TestSHA256Intrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
  *                    compiler.testlibrary.intrinsics.Verifier positive_224.log positive_256.log

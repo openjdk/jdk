@@ -38,9 +38,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA2::*
- *                   -XX:+UseSHA256Intrinsics -XX:-UseMD5Intrinsics
- *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA512Intrinsics
- *                   -Dalgorithm=SHA-224
+ *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA512Intrinsics -XX:-UseSHA3Intrinsics
+ *                   -XX:+UseSHA256Intrinsics -Dalgorithm=SHA-224
  *                   compiler.intrinsics.sha.sanity.TestSHA256MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -55,7 +54,6 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
- *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
  *                   -XX:CompileOnly=sun.security.provider.SHA2::*
  *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA-224
  *                   compiler.intrinsics.sha.sanity.TestSHA256MultiBlockIntrinsics
@@ -65,9 +63,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA2::*
- *                   -XX:+UseSHA256Intrinsics -XX:-UseMD5Intrinsics
- *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA512Intrinsics
- *                   -Dalgorithm=SHA-256
+ *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA512Intrinsics -XX:-UseSHA3Intrinsics
+ *                   -XX:+UseSHA256Intrinsics -Dalgorithm=SHA-256
  *                   compiler.intrinsics.sha.sanity.TestSHA256MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -82,7 +79,6 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
- *                   -XX:DisableIntrinsic=_digestBase_implCompressMB
  *                   -XX:CompileOnly=sun.security.provider.SHA::*
  *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA-256
  *                   compiler.intrinsics.sha.sanity.TestSHA256MultiBlockIntrinsics
