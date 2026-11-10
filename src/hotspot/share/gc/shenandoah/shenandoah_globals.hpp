@@ -283,7 +283,6 @@
           "intervals are present, where GC can run without stealing "       \
           "time from active application. Time is in milliseconds. "         \
           "Setting this to 0 disables the feature.")                        \
-                                                                            \
   product(uintx, ShenandoahGuaranteedOldGCInterval, 10*60*1000, EXPERIMENTAL, \
           "Run a collection of the old generation at least this often. "    \
           "Heuristics may trigger collections more frequently. Time is in " \
@@ -524,6 +523,35 @@
   develop(int, ShenandoahCardStatsLogInterval, 50,                          \
           "Log cumulative card stats every so many remembered set or "      \
           "update refs scans")                                              \
+                                                                            \
+  product(double, ShenandoahHeuristicsHumongousGcCycleRecencyWeight,        \
+                                                         0.8, EXPERIMENTAL, \
+          "Recency weight for heuristics evaluating humongous allocations " \
+          "across past GC cycles. The lower the weight, the less impact "   \
+          "older GC cycles have on the heuristics.")                        \
+          range(0.0,1.0)                                                    \
+                                                                            \
+  product(double, ShenandoahHeuristicsHumongousFailureProb, 0.25,           \
+                                                              EXPERIMENTAL, \
+          "Accepted humongous allocation failure probability used by "      \
+          "adaptive heuristics. The lower the probability, the more "       \
+          "sensitive the heuristics are to humongous allocations, i.e. "    \
+          "the more likely they trigger a GC to clear space for humongous " \
+          "objects.")                                                       \
+          range(0.0,1.0)                                                    \
+                                                                            \
+  product(uintx, ShenandoahHeuristicsMaxHumongousLookBackWindow, 3,         \
+                                                              EXPERIMENTAL, \
+          "Number of most recent GC cycles adaptive heuristics look back "  \
+          "to find the max requested humongous region count.")              \
+          range(1,16)                                                       \
+                                                                            \
+  product(uintx, ShenandoahHeuristicsHumongousMinSampleCount, 4,            \
+                                                              EXPERIMENTAL, \
+          "Minimum number of GC cycles in the humongous allocation history "\
+          "before adaptive heuristics start evaluating the humongous "      \
+          "allocation failure probability.")                                \
+          range(1,16)                                                       \
                                                                             \
   product(uintx, ShenandoahMinimumOldTimeMs, 100, EXPERIMENTAL,             \
          "Minimum amount of time in milliseconds to run old collections "   \
