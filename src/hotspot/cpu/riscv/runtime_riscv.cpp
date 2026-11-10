@@ -83,8 +83,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   OopMap* map = reg_save.save_live_registers(masm, 0, &frame_size_in_words);
   int frame_size_in_bytes = frame_size_in_words * wordSize;
 
-  // RVC permits the trap request to be only halfword aligned.
-  __ load_int_misaligned(c_rarg1, Address(ra), t0, true, 2);
+  __ lw(c_rarg1, Address(ra));
 
   // we need to set the past SP to the stack pointer of the stub frame
   // and the pc to the address where this runtime call will return
