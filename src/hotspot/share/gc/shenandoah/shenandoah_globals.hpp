@@ -546,6 +546,13 @@
           "to find the max requested humongous region count.")              \
           range(1,16)                                                       \
                                                                             \
+  product(uintx, ShenandoahHeuristicsHumongousMinSampleCount, 4,            \
+                                                              EXPERIMENTAL, \
+          "Minimum number of GC cycles in the humongous allocation history "\
+          "before adaptive heuristics start evaluating the humongous "      \
+          "allocation failure probability.")                                \
+          range(1,16)                                                       \
+                                                                            \
   product(uintx, ShenandoahMinimumOldTimeMs, 100, EXPERIMENTAL,             \
          "Minimum amount of time in milliseconds to run old collections "   \
          "before a young collection is allowed to run. This is intended "   \

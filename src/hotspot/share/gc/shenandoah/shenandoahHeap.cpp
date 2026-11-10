@@ -1804,7 +1804,8 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
         empty_region_array_size,
         ShenandoahHeuristicsHumongousGcCycleRecencyWeight
       );
-      const bool need_gc = _humongous_allocation_history.sample_count() >= 4 && prob_failure >= ShenandoahHeuristicsHumongousFailureProb;
+      const bool need_gc = _humongous_allocation_history.sample_count() >= ShenandoahHeuristicsHumongousMinSampleCount
+        && prob_failure >= ShenandoahHeuristicsHumongousFailureProb;
       _need_conc_gc_for_humongous.store_relaxed(need_gc);
       log_info(gc, ergo)("Humongous allocation failure probability: %.1f%%, %zu epochs in history%s",
                     prob_failure * 100, _humongous_allocation_history.sample_count(),

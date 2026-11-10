@@ -284,7 +284,7 @@ bool ShenandoahAdaptiveHeuristics::humongous_regions_under_budget(size_t max_hum
                       " (%zu regions), max requested: " PROPERFMT " (%zu regions), not triggering",
                       PROPERFMTARGS(max_humongous_budget_byte),
                       max_humongous_budget_byte / ShenandoahHeapRegion::region_size_bytes(),
-                      PROPERFMTARGS(threshold), max_requested_regions);
+                      PROPERFMTARGS(demand_in_byte), max_requested_regions);
   return false;
 }
 
