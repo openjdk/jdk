@@ -5917,8 +5917,9 @@ class C2 extends C1 implements I2 {
         variable whose type is <code>Object</code> or a subclass of <code>Object</code>.
         <p/>
         When preview features are enabled, if the local is the "<code>this</code>"
-        object in a constructor frame whose declaring class or any of its
-        superclasses has strictly initialized instance fields,
+        object in a constructor frame whose declaring class or any of its superclasses has
+        <externallink id="../api/java.base/java/lang/reflect/Field.html#isStrictInit()">
+        strictly-initialized<sup>PREVIEW</sup></externallink> instance fields,
         the function returns <code>JVMTI_ERROR_OPAQUE_FRAME</code>.
         <p/>
         <b>API Note:</b>
