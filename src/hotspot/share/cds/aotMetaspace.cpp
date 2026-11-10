@@ -1260,6 +1260,19 @@ static int exec_jvm_with_java_tool_options(const char* java_launcher_path, TRAPS
   HandleMark hm(THREAD);
   GrowableArray<Handle> args;
 
+  // Set the assembly process's boot classpath to match that of the recording
+  // run. The jdk.boot.class.path.append property includes all appended boot
+  // classpath entries, e.g. from the -Xbootclasspath/a flag, or from the
+  // Boot-Class-Path attribute of a javaagent. The javaagent case is why we
+  // need to use the resolved boot classpath, not simply forward the arguments.
+  const char* bootcp_append = Arguments::get_property("jdk.boot.class.path.append");
+  if (bootcp_append != nullptr && strlen(bootcp_append) > 0) {
+    stringStream ss;
+    ss.print("-Xbootclasspath/a:");
+    ss.print_raw(bootcp_append);
+    append_args(&args, ss.freeze(), CHECK_0);
+  }
+
   const char* cp = Arguments::get_appclasspath();
   if (cp != nullptr && strlen(cp) > 0 && strcmp(cp, ".") != 0) {
     // We cannot use "-cp", because "-cp" is only interpreted by the java launcher,
@@ -1280,6 +1293,8 @@ static int exec_jvm_with_java_tool_options(const char* java_launcher_path, TRAPS
         strstr(arg, "-XX:AOTConfiguration=") == arg ||
         strstr(arg, "-XX:AOTMode=") == arg) {
       // Filter these out. They wiill be set below.
+    } else if (strstr(arg, "-Xbootclasspath/a:") == arg) {
+      // Filter these out. The effective boot classpath append has been set above.
     } else {
       append_args(&args, arg, CHECK_0);
     }
