@@ -2960,10 +2960,11 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     // from occupying the VM Thread, which in turn affects the occurrence of
     // GC and other VM operations.
     merger.do_merge();
-    if (writer.error() != nullptr) {
-      set_error(writer.error());
-    }
   }
+  if (writer.error() != nullptr) {
+    set_error(writer.error());
+  }
+
   // emit JFR event
   if (error() == nullptr) {
     event.set_destination(path);
