@@ -278,7 +278,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (_cpu == CPU_ARM && model_is(CPU_MODEL_ARM_CORTEX_A53)) {
+  if (supports_a53mac()) {
     if (FLAG_IS_DEFAULT(UseSIMDForArrayEquals)) {
       FLAG_SET_DEFAULT(UseSIMDForArrayEquals, false);
     }
