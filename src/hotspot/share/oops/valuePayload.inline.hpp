@@ -272,8 +272,7 @@ inline void ValuePayload::assert_post_construction_invariants() const {
         // Accessing nested flat field
         const ValueKlass* const element_klass = container_flat_array_klass->element_klass();
         const int element_offset =
-            (checked_cast<int>(this->offset()) -
-              checked_cast<int>(flatArrayOopDesc::base_offset_in_bytes())) %
+            (this->offset() - flatArrayOopDesc::base_offset_in_bytes()) %
             container_flat_array_klass->element_byte_size();
         const int payload_offset = element_klass->payload_offset();
         assert_is_flat_field(element_klass, element_offset + payload_offset);
@@ -625,7 +624,7 @@ inline void FlatArrayPayload::set_offset(ptrdiff_t offset) {
 
   const ptrdiff_t element_size = _storage._element_size;
   const ptrdiff_t length = container()->length();
-  const ptrdiff_t base_offset = (ptrdiff_t)flatArrayOopDesc::base_offset_in_bytes();
+  const ptrdiff_t base_offset = flatArrayOopDesc::base_offset_in_bytes();
 
   const ptrdiff_t min_offset = base_offset - (length == 0 ? 0 : element_size);
   const ptrdiff_t max_offset = base_offset + length * element_size;
