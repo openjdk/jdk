@@ -5921,6 +5921,12 @@ class C2 extends C1 implements I2 {
         superclasses has strictly initialized instance fields,
         the function returns <code>JVMTI_ERROR_OPAQUE_FRAME</code>.
         <p/>
+        <b>API Note:</b>
+        <externallink id="../api/java.base/java/lang/Class.html#isValue()">
+        Value classes<sup>PREVIEW</sup></externallink> rely upon strict field
+        initialization. This function can not be used to return from a constructor
+        of a value class with one or more instance fields.
+        <p/>
         The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
@@ -5987,6 +5993,12 @@ class C2 extends C1 implements I2 {
         is in a constructor frame whose declaring class or any of its superclasses
         has strictly initialized instance fields,
         the function returns <code>JVMTI_ERROR_OPAQUE_FRAME</code>.
+        <p/>
+        <b>API Note:</b>
+        <externallink id="../api/java.base/java/lang/Class.html#isValue()">
+        Value classes<sup>PREVIEW</sup></externallink> rely upon strict field
+        initialization. This function can not be used to return from a constructor
+        of a value class with one or more instance fields.
         <p/>
         The specified thread must be suspended or must be the current thread.
       </description>
