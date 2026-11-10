@@ -1622,26 +1622,14 @@ source_hpp %{
 class CallStubImpl {
  public:
 
-  // call trampolines
-  // Size of call trampoline stub. For add'l comments, see size_java_to_interp().
-  static uint size_call_trampoline() {
+  // Size of call stub.
+  static uint size_call_stub() {
     return 0; // no call trampolines on this platform
   }
 
-  // call trampolines
-  // Number of relocations needed by a call trampoline stub.
-  static uint reloc_call_trampoline() {
+  // Number of relocations needed by a call stub.
+  static uint reloc_call_stub() {
     return 0; // No call trampolines on this platform.
-  }
-
-  // Size of call address stub.
-  static uint size_call_address_stub() {
-    return 0; // no call address stubs on this platform
-  }
-
-  // number of relocations needed by a call address stub
-  static uint reloc_call_address_stub() {
-    return 0; // no call address stubs on this platform
   }
 };
 

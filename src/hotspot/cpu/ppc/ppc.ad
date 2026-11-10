@@ -1301,27 +1301,18 @@ class CallStubImpl {
 
  public:
 
-  // Size of call trampoline stub.
+  // Size of call stub.
   // This doesn't need to be accurate to the byte, but it
   // must be larger than or equal to the real size of the stub.
-  static uint size_call_trampoline() {
+  static uint size_call_stub() {
     return MacroAssembler::trampoline_stub_size;
   }
 
-  // number of relocations needed by a call trampoline stub
-  static uint reloc_call_trampoline() {
+  // Number of relocations needed by a call stub.
+  static uint reloc_call_stub() {
     return 5;
   }
 
-  // Size of call address stub.
-  static uint size_call_address_stub() {
-    return 0; // no call address stubs on this platform
-  }
-
-  // number of relocations needed by a call address stub
-  static uint reloc_call_address_stub() {
-    return 0; // no call address stubs on this platform
-  }
 };
 
 %} // end source_hpp
