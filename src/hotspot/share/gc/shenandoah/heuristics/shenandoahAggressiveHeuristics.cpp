@@ -56,9 +56,3 @@ bool ShenandoahAggressiveHeuristics::should_start_gc() {
   return true;
 }
 
-bool ShenandoahAggressiveHeuristics::should_unload_classes() {
-  if (!can_unload_classes()) return false;
-  if (has_metaspace_oom()) return true;
-  // Randomly unload classes with 50% chance.
-  return (os::random() & 1) == 1;
-}

@@ -30,7 +30,6 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotStreamedHeap.hpp"
 #include "cds/archiveUtils.hpp"
-#include "cds/heapShared.hpp"
 #include "include/cds.h"
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
@@ -113,6 +112,7 @@ public:
   f(UseNullableAtomicValueFlattening) \
   f(UseNullableNonAtomicValueFlattening) \
   f(FlatteningBudget) \
+  f(FlatArrayElementMaxOops) \
   f(RestrictReservedStack) \
   f(DiagnoseSyncOnValueBasedClasses)
 
@@ -219,6 +219,7 @@ public:
   void set_base_archive_name_size(unsigned int s)           { _generic_header._base_archive_name_size = s;   }
 
   bool is_static()                         const { return magic() == CDS_ARCHIVE_MAGIC; }
+  bool is_training()                       const { return magic() == AOT_CONFIGURATION_MAGIC; }
   size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }
   address narrow_oop_base()                const { return _narrow_oop_base; }
@@ -317,23 +318,23 @@ private:
   // mapped.  This structure gets written to a file.  It is not a class, so
   // that the compilers don't add any compiler-private data to it.
 
-  static FileMapInfo* _current_info;
-  static FileMapInfo* _dynamic_archive_info;
+  static FileMapInfo* _static_input_archive;
+  static FileMapInfo* _dynamic_input_archive;
+  static FileMapInfo* _output_archive;
   static bool _memory_mapping_failed;
+  FileMapInfo(const char* full_path, bool is_static);
 
 public:
   FileMapHeader *header() const       { return _header; }
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 const char** base_archive_name);
-  static void check_preimage_static_archive(const char* file);
+  static void check_aot_configuration(const char* file);
 
   bool init_from_file(int fd);
 
   void log_paths(const char* msg, int start_idx, int end_idx);
 
-  FileMapInfo(const char* full_path, bool is_static);
   ~FileMapInfo();
-  static void free_current_info();
 
   // Accessors
   int    compute_header_crc()  const { return header()->compute_crc(); }
@@ -387,24 +388,18 @@ public:
     return header()->has_platform_or_app_classes();
   }
 
-  static FileMapInfo* current_info() {
-    CDS_ONLY(return _current_info;)
-    NOT_CDS(return nullptr;)
-  }
+  static FileMapInfo* allocate_static_input_archive(const char* filename);
+  static FileMapInfo* allocate_dynamic_input_archive(const char* filename);
+  static FileMapInfo* allocate_output_archive(const char* filename, bool is_static);
 
-  static void set_current_info(FileMapInfo* info) {
-    CDS_ONLY(_current_info = info;)
-  }
-
-  static FileMapInfo* dynamic_info() {
-    CDS_ONLY(return _dynamic_archive_info;)
-    NOT_CDS(return nullptr;)
-  }
+  static FileMapInfo* static_input_archive()   {  NOT_CDS(return nullptr;) CDS_ONLY(return _static_input_archive;)  }
+  static FileMapInfo* dynamic_input_archive()  {  NOT_CDS(return nullptr;) CDS_ONLY(return _dynamic_input_archive;) }
+  static FileMapInfo* output_archive()         {  NOT_CDS(return nullptr;) CDS_ONLY(return _output_archive;)        }
 
   static void assert_mark(bool check);
 
   // File manipulation.
-  bool  open_as_input() NOT_CDS_RETURN_(false);
+  bool  open_as_input();
   void  open_as_output();
   void  prepare_for_writing();
   void  write_header();

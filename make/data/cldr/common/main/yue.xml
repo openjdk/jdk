@@ -1211,23 +1211,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="cf">貨幣格式</key>
 			<key type="colAlternate">略過符號排序</key>
 			<key type="colBackwards">反向重音排序</key>
-			<key type="colCaseFirst">大寫/小寫排列</key>
-			<key type="colCaseLevel">區分大小寫排序</key>
+			<key type="colCaseFirst">大細楷排序</key>
+			<key type="colCaseLevel">分大細楷排序</key>
 			<key type="collation">排序</key>
 			<key type="colNormalization">正規化排序</key>
 			<key type="colNumeric">數字排序</key>
+			<key type="colReorder">語系文字/區塊重新排序</key>
 			<key type="colStrength">排序強度</key>
 			<key type="currency">貨幣</key>
+			<key type="d0">轉換目的地</key>
+			<key type="dx">字典斷詞排除項目</key>
 			<key type="em">Emoji 顯示方式</key>
+			<key type="fw">一星期嘅第一日</key>
+			<key type="h0">混合</key>
 			<key type="hc">時間週期（12 小時制與 24 小時制）</key>
+			<key type="i0">輸入法</key>
+			<key type="k0">鍵盤</key>
+			<key type="kv">略過嘅最高級別項目</key>
 			<key type="lb">換行樣式</key>
 			<key type="lw">單字強制換行</key>
+			<key type="m0">轉換規則</key>
 			<key type="ms">度量單位系統</key>
+			<key type="mu">度量單位</key>
 			<key type="numbers">數字</key>
+			<key type="rg">補充資料專用區域</key>
+			<key type="s0">轉換來源</key>
+			<key type="sd">區域次分區</key>
 			<key type="ss">縮寫後斷句</key>
+			<key type="t">轉換</key>
+			<key type="t0">機器翻譯</key>
 			<key type="timezone">時區</key>
 			<key type="va">區域變異</key>
 			<key type="x">專用區</key>
+			<key type="x0">專用區轉換</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">佛曆</type>
@@ -1247,15 +1263,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="hebrew">希伯來曆</type>
 			<type key="calendar" type="hebrew" scope="core">希伯來曆</type>
 			<type key="calendar" type="indian">印度國曆</type>
+			<type key="calendar" type="indian" scope="core">印度國定曆</type>
 			<type key="calendar" type="islamic">伊斯蘭曆</type>
 			<type key="calendar" type="islamic" scope="core">伊斯蘭曆</type>
 			<type key="calendar" type="islamic-civil">伊斯蘭民用曆 (表格式)</type>
 			<type key="calendar" type="islamic-civil" scope="core">伊斯蘭民用曆 (表格式)</type>
 			<type key="calendar" type="islamic-rgsa" draft="provisional">伊斯蘭新月曆</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">伊斯蘭新月曆</type>
 			<type key="calendar" type="islamic-tbla" draft="provisional">伊斯蘭天文曆</type>
+			<type key="calendar" type="islamic-tbla" scope="core">伊斯蘭天文曆</type>
 			<type key="calendar" type="islamic-umalqura">伊斯蘭曆 (烏姆庫拉)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">伊斯蘭曆 (烏姆庫拉)</type>
 			<type key="calendar" type="iso8601">公曆 (元年)</type>
+			<type key="calendar" type="iso8601" scope="core">公曆</type>
 			<type key="calendar" type="japanese">日本曆</type>
 			<type key="calendar" type="japanese" scope="core">日本曆</type>
 			<type key="calendar" type="persian">波斯曆</type>
@@ -1271,41 +1291,70 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="colBackwards" type="no" draft="contributed">正常排序重音</type>
 			<type key="colBackwards" type="yes" draft="contributed">依反向重音排序</type>
 			<type key="colCaseFirst" type="lower" draft="contributed">優先排序小寫</type>
+			<type key="colCaseFirst" type="lower" scope="core">細楷</type>
 			<type key="colCaseFirst" type="no" draft="contributed">正常大小寫順序排序</type>
+			<type key="colCaseFirst" type="no" scope="core">細楷</type>
 			<type key="colCaseFirst" type="upper" draft="contributed">優先排序大寫</type>
+			<type key="colCaseFirst" type="upper" scope="core">大楷</type>
 			<type key="colCaseLevel" type="no" draft="contributed">不分大小寫排序</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">依大小寫排序</type>
+			<type key="collation" type="compat" scope="core">相容性</type>
 			<type key="collation" type="dictionary">字典排序</type>
+			<type key="collation" type="dictionary" scope="core">字典</type>
 			<type key="collation" type="ducet">預設 Unicode 排序</type>
 			<type key="collation" type="ducet" scope="core">預設 Unicode</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
 			<type key="collation" type="eor" draft="contributed">歐洲排序規則</type>
+			<type key="collation" type="eor" scope="core">歐洲規則</type>
 			<type key="collation" type="phonebook">電話簿排序</type>
+			<type key="collation" type="phonebook" scope="core">電話簿</type>
 			<type key="collation" type="phonetic">發音排序</type>
+			<type key="collation" type="phonetic" scope="core">發音</type>
 			<type key="collation" type="pinyin">拼音排序</type>
+			<type key="collation" type="pinyin" scope="core">拼音</type>
 			<type key="collation" type="search">一般用途搜尋</type>
 			<type key="collation" type="search" scope="core">搜尋</type>
 			<type key="collation" type="searchjl" draft="contributed">韓文子音排序</type>
+			<type key="collation" type="searchjl" scope="core">韓文初聲子音</type>
 			<type key="collation" type="standard">標準排序</type>
 			<type key="collation" type="standard" scope="core">標準</type>
 			<type key="collation" type="stroke">筆畫排序</type>
+			<type key="collation" type="stroke" scope="core">筆畫</type>
 			<type key="collation" type="traditional">傳統排序</type>
+			<type key="collation" type="traditional" scope="core">傳統</type>
 			<type key="collation" type="unihan">部首筆畫排序</type>
+			<type key="collation" type="unihan" scope="core">部首筆畫</type>
 			<type key="collation" type="zhuyin">注音排序</type>
+			<type key="collation" type="zhuyin" scope="core">注音</type>
 			<type key="colNormalization" type="no" draft="contributed">非正規化排序</type>
 			<type key="colNormalization" type="yes" draft="contributed">依正規化排序 Unicode</type>
 			<type key="colNumeric" type="no" draft="contributed">個別排序數字</type>
 			<type key="colNumeric" type="yes" draft="contributed">依數字順序排序數字</type>
+			<type key="colReorder" type="currency" scope="core">貨幣</type>
+			<type key="colReorder" type="digit" scope="core">數字</type>
+			<type key="colReorder" type="punct" scope="core">標點符號</type>
+			<type key="colReorder" type="space" scope="core">空白字元</type>
+			<type key="colReorder" type="symbol" scope="core">符號</type>
 			<type key="colStrength" type="identical" draft="contributed">全部排序</type>
+			<type key="colStrength" type="identical" scope="core">全部</type>
 			<type key="colStrength" type="primary" draft="contributed">僅排序基礎字母</type>
+			<type key="colStrength" type="primary" scope="core">只限基礎字母</type>
 			<type key="colStrength" type="quaternary" draft="contributed">排序重音/大小寫/全半形/假名</type>
+			<type key="colStrength" type="quaternary" scope="core">基礎、重音、大細楷、變體、假名</type>
 			<type key="colStrength" type="secondary" draft="contributed">排序重音</type>
+			<type key="colStrength" type="secondary" scope="core">基礎、重音</type>
 			<type key="colStrength" type="tertiary" draft="contributed">排序重音/大小寫/全半形</type>
+			<type key="colStrength" type="tertiary" scope="core">基礎、重音、大細寫、變體</type>
 			<type key="d0" type="fwidth">全形</type>
 			<type key="d0" type="hwidth">半形</type>
 			<type key="d0" type="npinyin" draft="contributed">數值</type>
 			<type key="em" type="default" scope="core">預設</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
 			<type key="em" type="text" scope="core">文字</type>
+			<type key="hc" type="c12">12 小時制</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 小時制</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 小時制 (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 小時制 (1–12)</type>
@@ -1314,6 +1363,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 小時制 (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Shift、空格、標點符號、所有符號</type>
+			<type key="kv" type="punct" scope="core">Shift、空格、標點符號</type>
+			<type key="kv" type="space" scope="core">Shift、空格、標點符號</type>
+			<type key="kv" type="symbol" scope="core">Shift、空格、標點符號、非貨幣符號</type>
 			<type key="lb" type="loose">寬鬆換行樣式</type>
 			<type key="lb" type="loose" scope="core">寬鬆</type>
 			<type key="lb" type="normal">一般換行樣式</type>
@@ -1334,8 +1387,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="ms" type="ussystem" scope="core">美制</type>
 			<type key="numbers" type="arab">阿拉伯-印度數字</type>
 			<type key="numbers" type="arabext">阿拉伯-印度擴充數字</type>
+			<type key="numbers" type="arabext" scope="core">阿拉伯-印度擴充</type>
 			<type key="numbers" type="armn">亞美尼亞數字</type>
 			<type key="numbers" type="armnlow">小寫亞美尼亞數字</type>
+			<type key="numbers" type="armnlow" scope="core">小寫亞美尼亞</type>
 			<type key="numbers" type="bali" draft="contributed">峇里文數字</type>
 			<type key="numbers" type="beng">孟加拉數字</type>
 			<type key="numbers" type="brah" draft="contributed">婆羅米數字</type>
@@ -1344,43 +1399,67 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="deva">梵文數字</type>
 			<type key="numbers" type="ethi">衣索比亞數字</type>
 			<type key="numbers" type="finance" draft="contributed">金融數字</type>
+			<type key="numbers" type="finance" scope="core">財務</type>
 			<type key="numbers" type="fullwide">全形數字</type>
+			<type key="numbers" type="fullwide" scope="core">全形</type>
 			<type key="numbers" type="geor">喬治亞數字</type>
 			<type key="numbers" type="grek">希臘數字</type>
 			<type key="numbers" type="greklow">小寫希臘數字</type>
+			<type key="numbers" type="greklow" scope="core">小寫希臘</type>
 			<type key="numbers" type="gujr">古吉拉特數字</type>
 			<type key="numbers" type="guru">古爾穆奇數字</type>
+			<type key="numbers" type="hanidays" scope="core">傳統曆法漢字月日寫法</type>
 			<type key="numbers" type="hanidec">中文十進位數字</type>
+			<type key="numbers" type="hanidec" scope="core">使用漢字數字計數的位置十進制</type>
 			<type key="numbers" type="hans">小寫簡體中文數字</type>
 			<type key="numbers" type="hansfin">大寫簡體中文數字</type>
+			<type key="numbers" type="hansfin" scope="core">大寫簡體中文</type>
 			<type key="numbers" type="hant">小寫繁體中文數字</type>
 			<type key="numbers" type="hantfin">大寫繁體中文數字</type>
+			<type key="numbers" type="hantfin" scope="core">大寫繁體中文</type>
 			<type key="numbers" type="hebr">希伯來數字</type>
 			<type key="numbers" type="java">爪哇文數字</type>
 			<type key="numbers" type="jpan">小寫日文數字</type>
 			<type key="numbers" type="jpanfin">大寫日文數字</type>
+			<type key="numbers" type="jpanfin" scope="core">大寫日文</type>
+			<type key="numbers" type="jpanyear" scope="core">日本元年紀年法</type>
 			<type key="numbers" type="kali" draft="contributed">克耶數字</type>
 			<type key="numbers" type="khmr">高棉數字</type>
 			<type key="numbers" type="knda">坎那達數字</type>
 			<type key="numbers" type="lana" draft="contributed">老傣文數字</type>
 			<type key="numbers" type="lanatham" draft="contributed">蘭納文數字</type>
+			<type key="numbers" type="lanatham" scope="core">蘭納文 (教會用語)</type>
 			<type key="numbers" type="laoo">寮國數字</type>
 			<type key="numbers" type="latn">阿拉伯數字</type>
 			<type key="numbers" type="lepc" draft="contributed">西納文數字</type>
 			<type key="numbers" type="limb" draft="contributed">林布文數字</type>
+			<type key="numbers" type="mathbold" scope="core">數學粗體</type>
+			<type key="numbers" type="mathdbl" scope="core">數學雙線體</type>
+			<type key="numbers" type="mathmono" scope="core">數學等寬字體</type>
+			<type key="numbers" type="mathsanb" scope="core">數學無襯線粗體</type>
+			<type key="numbers" type="mathsans" scope="core">數學無襯線字體</type>
 			<type key="numbers" type="mlym">馬來亞拉姆數字</type>
 			<type key="numbers" type="mong">蒙古數字</type>
 			<type key="numbers" type="mtei">曼尼普爾數字</type>
 			<type key="numbers" type="mymr">緬甸數字</type>
+			<type key="numbers" type="mymrepka" scope="core">緬甸東部波克倫族</type>
+			<type key="numbers" type="mymrpao" scope="core">緬甸巴歐族</type>
 			<type key="numbers" type="mymrshan" draft="contributed">緬甸撣文數字</type>
+			<type key="numbers" type="mymrshan" scope="core">緬甸撣族</type>
+			<type key="numbers" type="mymrtlng" scope="core">緬甸紅傣族</type>
 			<type key="numbers" type="native">原始數字</type>
+			<type key="numbers" type="native" scope="core">原始數字</type>
 			<type key="numbers" type="nkoo" draft="contributed">曼德數字</type>
 			<type key="numbers" type="olck">桑塔利文數字</type>
 			<type key="numbers" type="orya">歐利亞數字</type>
 			<type key="numbers" type="osma" draft="contributed">奧斯曼亞數字</type>
+			<type key="numbers" type="outlined" scope="core">大綱</type>
 			<type key="numbers" type="roman">羅馬數字</type>
+			<type key="numbers" type="roman" scope="core">大寫羅馬數字</type>
 			<type key="numbers" type="romanlow">小寫羅馬數字</type>
+			<type key="numbers" type="romanlow" scope="core">小寫羅馬數字</type>
 			<type key="numbers" type="saur" draft="contributed">索拉什特拉文數字</type>
+			<type key="numbers" type="segment" scope="core">分段</type>
 			<type key="numbers" type="shrd" draft="contributed">夏拉達數字</type>
 			<type key="numbers" type="sora" draft="contributed">索朗桑朋數字</type>
 			<type key="numbers" type="sund">巽他數字</type>
@@ -1388,14 +1467,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="talu" draft="contributed">新傣仂文數字</type>
 			<type key="numbers" type="taml">坦米爾數字</type>
 			<type key="numbers" type="tamldec">坦米爾數字</type>
+			<type key="numbers" type="tamldec" scope="core">現代泰米爾</type>
 			<type key="numbers" type="telu">泰盧固數字</type>
 			<type key="numbers" type="thai">泰文數字</type>
 			<type key="numbers" type="tibt">西藏數字</type>
 			<type key="numbers" type="traditional" draft="contributed">傳統數字</type>
+			<type key="numbers" type="traditional" scope="core">傳統數字</type>
 			<type key="numbers" type="vaii">瓦伊文數字</type>
 			<type key="ss" type="none" scope="core">閂</type>
 			<type key="ss" type="standard" scope="core">開</type>
+			<type key="t0" type="und">未指定嘅機器翻譯</type>
+			<type key="va" type="posix" scope="core">POSIX 變體</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">閂</typeValue>
+			<typeValue type="yes">開</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">公制</measurementSystemName>
 			<measurementSystemName type="UK">英制</measurementSystemName>
@@ -2077,6 +2164,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">G y年QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="numeric">{0}日至{1}日</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0}至{1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">Bh時至Bh時</greatestDifference>
@@ -2177,6 +2267,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL至LLLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">M月d–d日</greatestDifference>
+							<greatestDifference id="M">M月d日–M月d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">G y至y</greatestDifference>
@@ -2287,27 +2381,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="morning1">清晨</dayPeriod>
 							<dayPeriod type="morning2">朝早</dayPeriod>
 							<dayPeriod type="afternoon1">中午</dayPeriod>
-							<dayPeriod type="afternoon2">下晝</dayPeriod>
+							<dayPeriod type="afternoon2">下午</dayPeriod>
 							<dayPeriod type="evening1">夜晚</dayPeriod>
 							<dayPeriod type="night1">凌晨</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">上晝</dayPeriod>
-							<dayPeriod type="pm">下晝</dayPeriod>
+							<dayPeriod type="midnight">午夜</dayPeriod>
+							<dayPeriod type="morning1">清晨</dayPeriod>
+							<dayPeriod type="morning2">朝早</dayPeriod>
+							<dayPeriod type="afternoon1">中午</dayPeriod>
+							<dayPeriod type="afternoon2">下午</dayPeriod>
+							<dayPeriod type="evening1">夜晚</dayPeriod>
+							<dayPeriod type="night1">凌晨</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">上晝</dayPeriod>
-							<dayPeriod type="pm">下晝</dayPeriod>
+							<dayPeriod type="midnight">午夜</dayPeriod>
+							<dayPeriod type="morning1">清晨</dayPeriod>
+							<dayPeriod type="morning2">朝早</dayPeriod>
+							<dayPeriod type="afternoon1">中午</dayPeriod>
+							<dayPeriod type="afternoon2">下午</dayPeriod>
+							<dayPeriod type="evening1">夜晚</dayPeriod>
+							<dayPeriod type="night1">凌晨</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">上晝</dayPeriod>
-							<dayPeriod type="pm">下晝</dayPeriod>
+							<dayPeriod type="morning1">清晨</dayPeriod>
+							<dayPeriod type="morning2">朝早</dayPeriod>
+							<dayPeriod type="afternoon1">中午</dayPeriod>
+							<dayPeriod type="afternoon2">下午</dayPeriod>
+							<dayPeriod type="evening1">夜晚</dayPeriod>
+							<dayPeriod type="night1">凌晨</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">上晝</dayPeriod>
-							<dayPeriod type="pm">下晝</dayPeriod>
+							<dayPeriod type="morning1">清晨</dayPeriod>
+							<dayPeriod type="morning2">朝早</dayPeriod>
+							<dayPeriod type="afternoon1">中午</dayPeriod>
+							<dayPeriod type="afternoon2">下午</dayPeriod>
+							<dayPeriod type="evening1">夜晚</dayPeriod>
+							<dayPeriod type="night1">凌晨</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">上午</dayPeriod>
+							<dayPeriod type="pm">下午</dayPeriod>
+							<dayPeriod type="morning1">清晨</dayPeriod>
+							<dayPeriod type="morning2">朝早</dayPeriod>
+							<dayPeriod type="afternoon1">中午</dayPeriod>
+							<dayPeriod type="afternoon2">下午</dayPeriod>
+							<dayPeriod type="evening1">夜晚</dayPeriod>
+							<dayPeriod type="night1">凌晨</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -2372,6 +2494,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -2432,6 +2557,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMM">Gy年M月</dateFormatItem>
 						<dateFormatItem id="GyMMMd">Gy年M月d日</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">Gy年M月d日 E</dateFormatItem>
+						<dateFormatItem id="GyMMMM">Gy年M月</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">Gy年M月d日</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">Gy年M月d日 (E)</dateFormatItem>
 						<dateFormatItem id="h">ah時</dateFormatItem>
 						<dateFormatItem id="H">H點</dateFormatItem>
 						<dateFormatItem id="hm">ah:mm</dateFormatItem>
@@ -2449,6 +2577,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMd">M月d日</dateFormatItem>
 						<dateFormatItem id="MMMEd">M月d日 E</dateFormatItem>
 						<dateFormatItem id="MMMMd">M月d日</dateFormatItem>
+						<dateFormatItem id="MMMMEd">MMMMd (E)</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">M月第W個星期</dateFormatItem>
 						<dateFormatItem id="y">y年</dateFormatItem>
 						<dateFormatItem id="yM">y/M</dateFormatItem>
@@ -2459,10 +2588,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">y年M月d日</dateFormatItem>
 						<dateFormatItem id="yMMMEd">y年M月d日 E</dateFormatItem>
 						<dateFormatItem id="yMMMM">y年M月</dateFormatItem>
+						<dateFormatItem id="yMMMMd">y年M月d日</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">y年M月d日 (E)</dateFormatItem>
 						<dateFormatItem id="yQQQ">y年QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y年QQQQ</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y年第w個星期</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Date-Timezone">{0} ({1})</appendItem>
+						<appendItem request="Day-Of-Week">{0} ({1})</appendItem>
+						<appendItem request="Era">{1}{0}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{1}{0}</appendItem>
+						<appendItem request="Timezone">{0} ({1})</appendItem>
+					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0}至{1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
@@ -2567,6 +2705,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL至LLLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMMd–d日</greatestDifference>
+							<greatestDifference id="M">M月d日至M月d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y至y</greatestDifference>
@@ -2765,238 +2907,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="japanese">
 				<eras>
 					<eraAbbr>
-						<era type="0">大化</era>
-						<era type="1">白雉</era>
-						<era type="2">白鳳</era>
-						<era type="3">朱鳥</era>
-						<era type="4">大寶</era>
-						<era type="5">慶雲</era>
-						<era type="6">和銅</era>
-						<era type="7">靈龜</era>
-						<era type="8">養老</era>
-						<era type="9">神龜</era>
-						<era type="10">天平</era>
-						<era type="11">天平感寶</era>
-						<era type="12">天平勝寶</era>
-						<era type="13">天平寶字</era>
-						<era type="14">天平神護</era>
-						<era type="15">神護景雲</era>
-						<era type="16">寶龜</era>
-						<era type="17">天應</era>
-						<era type="18">延曆</era>
-						<era type="19">大同</era>
-						<era type="20">弘仁</era>
-						<era type="21">天長</era>
-						<era type="22">承和</era>
-						<era type="23">嘉祥</era>
-						<era type="24">仁壽</era>
-						<era type="25">齊衡</era>
-						<era type="26">天安</era>
-						<era type="27">貞觀</era>
-						<era type="28">元慶</era>
-						<era type="29">仁和</era>
-						<era type="30">寬平</era>
-						<era type="31">昌泰</era>
-						<era type="32">延喜</era>
-						<era type="33">延長</era>
-						<era type="34">承平</era>
-						<era type="35">天慶</era>
-						<era type="36">天曆</era>
-						<era type="37">天德</era>
-						<era type="38">應和</era>
-						<era type="39">康保</era>
-						<era type="40">安和</era>
-						<era type="41">天祿</era>
-						<era type="42">天延</era>
-						<era type="43">貞元</era>
-						<era type="44">天元</era>
-						<era type="45">永觀</era>
-						<era type="46">寬和</era>
-						<era type="47">永延</era>
-						<era type="48">永祚</era>
-						<era type="49">正曆</era>
-						<era type="50">長德</era>
-						<era type="51">長保</era>
-						<era type="52">寬弘</era>
-						<era type="53">長和</era>
-						<era type="54">寬仁</era>
-						<era type="55">治安</era>
-						<era type="56">萬壽</era>
-						<era type="57">長元</era>
-						<era type="58">長曆</era>
-						<era type="59">長久</era>
-						<era type="60">寬德</era>
-						<era type="61">永承</era>
-						<era type="62">天喜</era>
-						<era type="63">康平</era>
-						<era type="64">治曆</era>
-						<era type="65">延久</era>
-						<era type="66">承保</era>
-						<era type="67">承曆</era>
-						<era type="68">永保</era>
-						<era type="69">應德</era>
-						<era type="70">寬治</era>
-						<era type="71">嘉保</era>
-						<era type="72">永長</era>
-						<era type="73">承德</era>
-						<era type="74">康和</era>
-						<era type="75">長治</era>
-						<era type="76">嘉承</era>
-						<era type="77">天仁</era>
-						<era type="78">天永</era>
-						<era type="79">永久</era>
-						<era type="80">元永</era>
-						<era type="81">保安</era>
-						<era type="82">天治</era>
-						<era type="83">大治</era>
-						<era type="84">天承</era>
-						<era type="85">長承</era>
-						<era type="86">保延</era>
-						<era type="87">永治</era>
-						<era type="88">康治</era>
-						<era type="89">天養</era>
-						<era type="90">久安</era>
-						<era type="91">仁平</era>
-						<era type="92">久壽</era>
-						<era type="93">保元</era>
-						<era type="94">平治</era>
-						<era type="95">永曆</era>
-						<era type="96">應保</era>
-						<era type="97">長寬</era>
-						<era type="98">永萬</era>
-						<era type="99">仁安</era>
-						<era type="100">嘉應</era>
-						<era type="101">承安</era>
-						<era type="102">安元</era>
-						<era type="103">治承</era>
-						<era type="104">養和</era>
-						<era type="105">壽永</era>
-						<era type="106">元曆</era>
-						<era type="107">文治</era>
-						<era type="108">建久</era>
-						<era type="109">正治</era>
-						<era type="110">建仁</era>
-						<era type="111">元久</era>
-						<era type="112">建永</era>
-						<era type="113">承元</era>
-						<era type="114">建曆</era>
-						<era type="115">建保</era>
-						<era type="116">承久</era>
-						<era type="117">貞應</era>
-						<era type="118">元仁</era>
-						<era type="119">嘉祿</era>
-						<era type="120">安貞</era>
-						<era type="121">寬喜</era>
-						<era type="122">貞永</era>
-						<era type="123">天福</era>
-						<era type="124">文曆</era>
-						<era type="125">嘉禎</era>
-						<era type="126">曆仁</era>
-						<era type="127">延應</era>
-						<era type="128">仁治</era>
-						<era type="129">寬元</era>
-						<era type="130">寶治</era>
-						<era type="131">建長</era>
-						<era type="132">康元</era>
-						<era type="133">正嘉</era>
-						<era type="134">正元</era>
-						<era type="135">文應</era>
-						<era type="136">弘長</era>
-						<era type="137">文永</era>
-						<era type="138">建治</era>
-						<era type="139">弘安</era>
-						<era type="140">正應</era>
-						<era type="141">永仁</era>
-						<era type="142">正安</era>
-						<era type="143">乾元</era>
-						<era type="144">嘉元</era>
-						<era type="145">德治</era>
-						<era type="146">延慶</era>
-						<era type="147">應長</era>
-						<era type="148">正和</era>
-						<era type="149">文保</era>
-						<era type="150">元應</era>
-						<era type="151">元亨</era>
-						<era type="152">正中</era>
-						<era type="153">嘉曆</era>
-						<era type="154">元德</era>
-						<era type="155">元弘</era>
-						<era type="156">建武</era>
-						<era type="157">延元</era>
-						<era type="158">興國</era>
-						<era type="159">正平</era>
-						<era type="160">建德</era>
-						<era type="161">文中</era>
-						<era type="162">天授</era>
-						<era type="163">康曆</era>
-						<era type="164">弘和</era>
-						<era type="165">元中</era>
-						<era type="166">至德</era>
-						<era type="167">嘉慶</era>
-						<era type="168">康應</era>
-						<era type="169">明德</era>
-						<era type="170">應永</era>
-						<era type="171">正長</era>
-						<era type="172">永享</era>
-						<era type="173">嘉吉</era>
-						<era type="174">文安</era>
-						<era type="175">寶德</era>
-						<era type="176">享德</era>
-						<era type="177">康正</era>
-						<era type="178">長祿</era>
-						<era type="179">寬正</era>
-						<era type="180">文正</era>
-						<era type="181">應仁</era>
-						<era type="182">文明</era>
-						<era type="183">長享</era>
-						<era type="184">延德</era>
-						<era type="185">明應</era>
-						<era type="186">文龜</era>
-						<era type="187">永正</era>
-						<era type="188">大永</era>
-						<era type="189">享祿</era>
-						<era type="190">天文</era>
-						<era type="191">弘治</era>
-						<era type="192">永祿</era>
-						<era type="193">元龜</era>
-						<era type="194">天正</era>
-						<era type="195">文祿</era>
-						<era type="196">慶長</era>
-						<era type="197">元和</era>
-						<era type="198">寬永</era>
-						<era type="199">正保</era>
-						<era type="200">慶安</era>
-						<era type="201">承應</era>
-						<era type="202">明曆</era>
-						<era type="203">萬治</era>
-						<era type="204">寬文</era>
-						<era type="205">延寶</era>
-						<era type="206">天和</era>
-						<era type="207">貞享</era>
-						<era type="208">元祿</era>
-						<era type="209">寶永</era>
-						<era type="210">正德</era>
-						<era type="211">享保</era>
-						<era type="212">元文</era>
-						<era type="213">寬保</era>
-						<era type="214">延享</era>
-						<era type="215">寬延</era>
-						<era type="216">寶曆</era>
-						<era type="217">明和</era>
-						<era type="218">安永</era>
-						<era type="219">天明</era>
-						<era type="220">寬政</era>
-						<era type="221">享和</era>
-						<era type="222">文化</era>
-						<era type="223">文政</era>
-						<era type="224">天保</era>
-						<era type="225">弘化</era>
-						<era type="226">嘉永</era>
-						<era type="227">安政</era>
-						<era type="228">萬延</era>
-						<era type="229">文久</era>
-						<era type="230">元治</era>
-						<era type="231">慶應</era>
 						<era type="232">明治</era>
 						<era type="233">大正</era>
 						<era type="234">昭和</era>
@@ -3828,9 +3738,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>自由市</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>英國夏令時間</daylight>
-				</long>
 				<exemplarCity>倫敦</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -3921,9 +3828,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>加亞布拉</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>愛爾蘭標準時間</daylight>
-				</long>
 				<exemplarCity>都柏林</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -4658,13 +4562,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>阿拉斯加夏令時間</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>阿拉木圖時間</generic>
-					<standard>阿拉木圖標準時間</standard>
-					<daylight>阿拉木圖夏令時間</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>亞馬遜時間</generic>
@@ -4712,20 +4609,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>阿皮亞時間</generic>
 					<standard>阿皮亞標準時間</standard>
 					<daylight>阿皮亞夏令時間</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>阿克陶時間</generic>
-					<standard>阿克陶標準時間</standard>
-					<daylight>阿克陶夏令時間</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>阿克托比時間</generic>
-					<standard>阿克托比標準時間</standard>
-					<daylight>阿克托比夏令時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -4827,6 +4710,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>巴西利亞時間</generic>
 					<standard>巴西利亞標準時間</standard>
 					<daylight>巴西利亞夏令時間</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>英國時間</generic>
+					<daylight>英國夏令時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -5007,6 +4896,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>格林威治標準時間</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>格陵蘭時間</generic>
+					<standard>格陵蘭標準時間</standard>
+					<daylight>格陵蘭夏令時間</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>格陵蘭東部時間</generic>
@@ -5021,11 +4917,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>格陵蘭西部夏令時間</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>關島標準時間</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>波斯灣海域標準時間</standard>
@@ -5038,7 +4929,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>夏威夷-阿留申標準時間</standard>
+					<standard>夏威夷申標準時間</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -5097,6 +4988,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>伊朗時間</generic>
 					<standard>伊朗標準時間</standard>
 					<daylight>伊朗夏令時間</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>愛爾蘭時間</generic>
+					<daylight>愛爾蘭標準時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -5166,11 +5063,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>吉爾吉斯時間</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>蘭卡時間</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>萊恩群島時間</standard>
@@ -5181,13 +5073,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>豪勳爵島時間</generic>
 					<standard>豪勳爵島標準時間</standard>
 					<daylight>豪勳爵島夏令時間</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>澳門時間</generic>
-					<standard>澳門標準時間</standard>
-					<daylight>澳門夏令時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -5305,11 +5190,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>費爾南多 - 迪諾羅尼亞夏令時間</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>北馬里亞納群島時間</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>新西伯利亞時間</generic>
@@ -5389,13 +5269,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>平壤時間</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>克孜勒奧爾達時間</generic>
-					<standard>克孜勒奧爾達標準時間</standard>
-					<daylight>克孜勒奧爾達夏令時間</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>留尼旺時間</standard>
@@ -5422,9 +5295,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>薩摩亞時間</generic>
 					<standard>薩摩亞標準時間</standard>
-					<daylight>薩摩亞夏令時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -5491,6 +5362,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>楚克島時間</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>土耳其時間</generic>
+					<standard>土耳其標準時間</standard>
+					<daylight>土耳其夏令時間</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>土庫曼時間</generic>
@@ -5508,6 +5386,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>烏拉圭時間</generic>
 					<standard>烏拉圭標準時間</standard>
 					<daylight>烏拉圭夏令時間</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>烏魯木齊時間</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -6478,7 +6361,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XCG">
 				<displayName>加勒比盾</displayName>
-				<displayName count="other">加勒比盾</displayName>
 			</currency>
 			<currency type="XDR">
 				<displayName>特殊提款權</displayName>
@@ -6562,7 +6444,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZWG">
 				<displayName>辛巴威金</displayName>
-				<displayName count="other">辛巴威金</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName>辛巴威元 (2009)</displayName>
@@ -6599,14 +6480,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="area-square-inch">
 				<perUnitPattern>每平方英吋 {0}</perUnitPattern>
-			</unit>
-			<unit type="concentr-part">
-				<displayName>等份</displayName>
-				<unitPattern count="other">{0} 等份</unitPattern>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>葡萄糖</displayName>
-				<unitPattern count="other">{0} 葡萄糖</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<unitPattern count="other">{0} 個世紀</unitPattern>
@@ -6717,10 +6590,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-liter">
 				<perUnitPattern>每公升 {0}</perUnitPattern>
 			</unit>
-			<unit type="volume-fluid-ounce-metric">
-				<displayName>公制液量安士</displayName>
-				<unitPattern count="other">{0} 公制液量安士</unitPattern>
-			</unit>
 			<unit type="volume-gallon">
 				<perUnitPattern>每加侖 {0}</perUnitPattern>
 			</unit>
@@ -6729,14 +6598,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<unitPattern count="other">英制甜品匙{0}匙</unitPattern>
-			</unit>
-			<unit type="angle-steradian">
-				<displayName>球面度</displayName>
-				<unitPattern count="other">{0} 球面度</unitPattern>
-			</unit>
-			<unit type="concentr-katal">
-				<displayName>開特</displayName>
-				<unitPattern count="other">{0} 開特</unitPattern>
 			</unit>
 			<unit type="electric-coulomb">
 				<displayName>庫侖</displayName>
@@ -6769,10 +6630,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="energy-gray">
 				<displayName>戈瑞</displayName>
 				<unitPattern count="other">{0} 戈瑞</unitPattern>
-			</unit>
-			<unit type="force-kilogram-force">
-				<displayName>公斤力</displayName>
-				<unitPattern count="other">{0} 公斤力</unitPattern>
 			</unit>
 			<unit type="magnetic-tesla">
 				<displayName>特斯拉</displayName>
@@ -7674,11 +7531,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="concentr-part">
-				<displayName>等份</displayName>
 				<unitPattern count="other">{0} 等份</unitPattern>
 			</unit>
 			<unit type="concentr-ofglucose">
-				<displayName>葡萄糖</displayName>
 				<unitPattern count="other">{0} 葡萄糖</unitPattern>
 			</unit>
 			<unit type="digital-byte">
@@ -7717,9 +7572,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-ounce">
 				<perUnitPattern>每安士 {0}</perUnitPattern>
 			</unit>
-			<unit type="pressure-ofhg">
-				<unitPattern count="other">{0} Hg</unitPattern>
-			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<unitPattern count="other">每平方吋 {0} 磅</unitPattern>
 			</unit>
@@ -7736,31 +7588,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>°C</displayName>
 			</unit>
 			<unit type="volume-fluid-ounce-metric">
-				<displayName>公制液量安士</displayName>
 				<unitPattern count="other">{0} 公制液量安士</unitPattern>
 			</unit>
 			<unit type="angle-steradian">
-				<displayName>球面度</displayName>
 				<unitPattern count="other">{0} 球面度</unitPattern>
 			</unit>
 			<unit type="concentr-katal">
-				<displayName>開特</displayName>
 				<unitPattern count="other">{0} 開特</unitPattern>
 			</unit>
 			<unit type="electric-coulomb">
-				<displayName>庫</displayName>
 				<unitPattern count="other">{0} 庫</unitPattern>
 			</unit>
 			<unit type="electric-farad">
-				<displayName>法</displayName>
 				<unitPattern count="other">{0} 法</unitPattern>
 			</unit>
 			<unit type="electric-henry">
-				<displayName>亨</displayName>
 				<unitPattern count="other">{0} 亨</unitPattern>
 			</unit>
 			<unit type="electric-siemens">
-				<displayName>西</displayName>
 				<unitPattern count="other">{0} 西</unitPattern>
 			</unit>
 			<unit type="energy-calorie-it">
@@ -7768,27 +7613,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 卡路里-IT</unitPattern>
 			</unit>
 			<unit type="energy-becquerel">
-				<displayName>貝克</displayName>
 				<unitPattern count="other">{0} 貝克</unitPattern>
 			</unit>
 			<unit type="energy-sievert">
-				<displayName>希</displayName>
 				<unitPattern count="other">{0} 希</unitPattern>
 			</unit>
 			<unit type="energy-gray">
-				<displayName>戈</displayName>
 				<unitPattern count="other">{0} 戈</unitPattern>
 			</unit>
 			<unit type="force-kilogram-force">
-				<displayName>公斤力</displayName>
 				<unitPattern count="other">{0} 公斤力</unitPattern>
 			</unit>
 			<unit type="magnetic-tesla">
-				<displayName>特</displayName>
 				<unitPattern count="other">{0} 特</unitPattern>
 			</unit>
 			<unit type="magnetic-weber">
-				<displayName>韋</displayName>
 				<unitPattern count="other">{0} 韋</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">

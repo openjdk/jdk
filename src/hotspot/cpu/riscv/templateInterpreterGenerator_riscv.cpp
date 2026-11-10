@@ -510,6 +510,16 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   return entry;
 }
 
+// Continuation entry for an interpreted frame thawed after its callee was
+// popped by JVMTI PopFrame.
+address TemplateInterpreterGenerator::generate_cont_popframe_reexecute_entry() {
+  address entry = __ pc();
+  // We reuse the deopt entry with step=0, which restores the interpreter
+  // state and reexecutes the invoke.
+  __ jump_to_entry(Interpreter::deopt_entry(vtos, 0));
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type) {
   address entry = __ pc();
   if (type == T_OBJECT) {
@@ -967,9 +977,55 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   return entry;
 }
 
-// Not supported
-address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
+/**
+ * Method entry for static method:
+ *    java.lang.Float.float16ToFloat(short floatBinary16)
+ */
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
+  assert(VM_Version::supports_float16_float_conversion(), "this intrinsic is not supported");
+  if (StubRoutines::hf2f_adr() == nullptr) {
+    return nullptr;
+  }
+
+  // x19_sender_sp: sender sp
+  // stack:
+  //        [ arg ] <-- esp
+  // retaddr in ra
+  // result in f10
+
+  address entry_point = __ pc();
+  __ lh(c_rarg0, Address(esp)); // Load and sign-extend the low 16 bits of the argument
+  __ andi(sp, x19_sender_sp, -16); // Restore caller's SP
+  // The stub is a leaf which returns through 'ra', so it returns straight
+  // back to our caller: this is a tail call.
+  __ far_jump(RuntimeAddress(StubRoutines::hf2f_adr()));
+  return entry_point;
+}
+
+/**
+ * Method entry for static method:
+ *    java.lang.Float.floatToFloat16(float value)
+ */
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
+  assert(VM_Version::supports_float16_float_conversion(), "this intrinsic is not supported");
+  if (StubRoutines::f2hf_adr() == nullptr) {
+    return nullptr;
+  }
+
+  // x19_sender_sp: sender sp
+  // stack:
+  //        [ arg ] <-- esp
+  // retaddr in ra
+  // result in x10
+
+  address entry_point = __ pc();
+  __ flw(f10, Address(esp));
+  __ andi(sp, x19_sender_sp, -16); // Restore caller's SP
+  // The stub is a leaf which returns through 'ra', so it returns straight
+  // back to our caller: this is a tail call.
+  __ far_jump(RuntimeAddress(StubRoutines::f2hf_adr()));
+  return entry_point;
+}
 
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // See more discussion in stackOverflow.hpp.
@@ -1657,16 +1713,17 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ sw(x13, Address(xthread, JavaThread::popframe_condition_offset()));
 
   {
-    // Check to see whether we are returning to a deoptimized frame.
-    // (The PopFrame call ensures that the caller of the popped frame is
-    // either interpreted or compiled and deoptimizes it if compiled.)
-    // In this case, we can't call dispatch_next() after the frame is
-    // popped, but instead must save the incoming arguments and restore
-    // them after deoptimization has occurred.
+    // Check to see whether we are returning to a deoptimized frame or
+    // into the continuation return barrier (the PopFrame call ensures that
+    // the caller of the popped frame is either interpreted or compiled and
+    // deoptimizes it if compiled). In both cases, we can't call dispatch_next()
+    // after the frame is popped, but instead must save the incoming arguments
+    // and restore them after deoptimization or thaw has occurred.
     //
     // Note that we don't compare the return PC against the
     // deoptimization blob's unpack entry because of the presence of
-    // adapter frames in C2.
+    // adapter frames in C2. Checking for an interpreter return PC covers
+    // the return barrier as well.
     Label caller_not_deoptimized;
     __ ld(c_rarg1, Address(fp, frame::return_addr_offset * wordSize));
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::interpreter_contains), c_rarg1);

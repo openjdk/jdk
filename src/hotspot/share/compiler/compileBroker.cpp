@@ -335,7 +335,7 @@ void CompileQueue::add(CompileTask* task) {
     task->log_task_queued();
   }
 
-  if (TrainingData::need_data() && !CDSConfig::is_dumping_final_static_archive()) {
+  if (TrainingData::need_data() && !CDSConfig::is_dumping_aot_cache()) {
     CompileTrainingData* ctd = CompileTrainingData::make(task);
     if (ctd != nullptr) {
       task->set_training_data(ctd);
@@ -1029,7 +1029,7 @@ void CompileBroker::init_training_replay() {
   // Ensure any exceptions lead to vm_exit_during_initialization.
   EXCEPTION_MARK;
   // No need to replay training during assembly phase. Only training data is used.
-  if (TrainingData::have_data() && !CDSConfig::is_dumping_final_static_archive()) {
+  if (TrainingData::have_data() && !CDSConfig::is_dumping_aot_cache()) {
     Handle thread_oop = JavaThread::create_system_thread_object("Training replay thread", CHECK);
     jobject thread_handle = JNIHandles::make_local(THREAD, thread_oop());
     make_thread(training_replay_t, thread_handle, nullptr, nullptr, THREAD);

@@ -933,14 +933,14 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
             objArrayOop oa = (objArrayOop)value;
             if (value->is_flatArray()) {
               FlatArrayKlass* klass = ((flatArrayOop)oa)->klass();
-              LayoutKind lk = klass->layout_kind();
+              FlatLayout flat_layout = klass->flat_layout();
               _out->print(" flat");
-              if (LayoutKindHelper::is_nullable_flat(lk)) {
+              if (flat_layout.is_nullable()) {
                 _out->print(" nullable");
               } else {
                 _out->print(" null-free");
               }
-              if (LayoutKindHelper::is_atomic_flat(lk)) {
+              if (flat_layout.is_atomic()) {
                 _out->print(" atomic");
               } else {
                 _out->print(" non-atomic");

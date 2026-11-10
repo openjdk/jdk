@@ -89,9 +89,14 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
-    @IR(failOn = { IRNode.COUNTED_LOOP})
+    // This is a negative test: the range check cannot be currently optimized
+    // because the index expression scale * i + offset contains short scaling
+    // (see PhaseIdealLoop::is_scaled_iv) and is thus not a candidate for long
+    // range check transformations. The two rules below verify that range check
+    // optimization does NOT take place.
+    @IR(applyIf = { "ShortRunningLongLoop", "false" }, failOn = IRNode.LOOP)
+    @IR(counts = { IRNode.COUNTED_LOOP, "1"})
     public static void testStridePosScalePosInIntLoop2(int start, int stop, long length, long offset) {
         final int scale = 2;
         final int stride = 1;
@@ -143,9 +148,14 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
-    @IR(failOn = { IRNode.COUNTED_LOOP})
+    // This is a negative test: the range check cannot be currently optimized
+    // because the index expression scale * i + offset contains short scaling
+    // (see PhaseIdealLoop::is_scaled_iv) and is thus not a candidate for long
+    // range check transformations. The two rules below verify that range check
+    // optimization does NOT take place.
+    @IR(applyIf = { "ShortRunningLongLoop", "false" }, failOn = IRNode.LOOP)
+    @IR(counts = { IRNode.COUNTED_LOOP, "1"})
     public static void testStrideNegScaleNegInIntLoop2(int start, int stop, long length, long offset) {
         final int scale = -2;
         final int stride = 1;
@@ -195,9 +205,14 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
-    @IR(failOn = { IRNode.COUNTED_LOOP})
+    // This is a negative test: the range check cannot be currently optimized
+    // because the index expression scale * i + offset contains short scaling
+    // (see PhaseIdealLoop::is_scaled_iv) and is thus not a candidate for long
+    // range check transformations. The two rules below verify that range check
+    // optimization does NOT take place.
+    @IR(applyIf = { "ShortRunningLongLoop", "false" }, failOn = IRNode.LOOP)
+    @IR(counts = { IRNode.COUNTED_LOOP, "1"})
     public static void testStrideNegScalePosInIntLoop2(int start, int stop, long length, long offset) {
         final int scale = 2;
         final int stride = 1;
@@ -246,9 +261,14 @@ public class TestLongRangeChecks {
     }
 
     @Test
-    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
-    @IR(failOn = { IRNode.COUNTED_LOOP})
+    // This is a negative test: the range check cannot be currently optimized
+    // because the index expression scale * i + offset contains short scaling
+    // (see PhaseIdealLoop::is_scaled_iv) and is thus not a candidate for long
+    // range check transformations. The two rules below verify that range check
+    // optimization does NOT take place.
+    @IR(applyIf = { "ShortRunningLongLoop", "false" }, failOn = IRNode.LOOP)
+    @IR(counts = { IRNode.COUNTED_LOOP, "1"})
     public static void testStridePosScaleNegInIntLoop2(int start, int stop, long length, long offset) {
         final int scale = -2;
         final int stride = 1;

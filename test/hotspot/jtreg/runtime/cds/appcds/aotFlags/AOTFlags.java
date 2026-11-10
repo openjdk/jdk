@@ -24,7 +24,8 @@
 
 /*
  * @test
- * @summary "AOT" aliases for traditional CDS command-line options
+ * @bug 8362530 8396140
+ * @summary General use of AOT flags
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
@@ -35,11 +36,12 @@
  */
 
 import java.io.File;
+
+import jdk.internal.misc.PreviewFeatures;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.internal.misc.PreviewFeatures;
 
 public class AOTFlags {
     static String appJar = ClassFileInstaller.getJarPath("hello.jar");
@@ -102,6 +104,22 @@ public class AOTFlags {
         out.shouldContain("Using AOT-linked classes: true (static archive: has aot-linked classes)");
         out.shouldContain("Opened AOT cache hello.aot.");
         out.shouldContain("Hello World");
+        out.shouldMatch(hasMappedAOTCodePattern);
+        out.shouldHaveExitValue(0);
+
+        //----------------------------------------------------------------------
+        printTestCase("Production Run with PrintSharedArchiveAndExit");
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:AOTCache=" + aotCacheFile,
+            "-XX:AOTMode=required",
+            "-XX:+PrintSharedArchiveAndExit",
+            "-Xlog:aot",
+            "-Xlog:aot+codecache*",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "prod");
+        out.shouldContain("Using AOT-linked classes: true (static archive: has aot-linked classes)");
+        out.shouldContain("Opened AOT cache hello.aot.");
+        out.shouldContain("AOT Code Cache entries");
         out.shouldMatch(hasMappedAOTCodePattern);
         out.shouldHaveExitValue(0);
 
@@ -371,15 +389,51 @@ public class AOTFlags {
         out.shouldNotHaveExitValue(0);
 
         //----------------------------------------------------------------------
-        printTestCase("AOTCache specified with -XX:AOTMode=record");
+        printTestCase("Iterative: Non-existent AOTCache specified with -XX:AOTMode=record");
         pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
-            "-XX:AOTCache=" + aotCacheFile,
+            "-XX:AOTCache=" + aotCacheFile + "-no-such-file",
             "-cp", appJar, helloClass);
 
-        out = CDSTestUtils.executeAndLog(pb, "neg");
-        out.shouldContain("AOTCache must not be specified when using -XX:AOTMode=record");
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldContain("Unable to use AOT cache.");
+        out.shouldNotHaveExitValue(0);
+
+        //----------------------------------------------------------------------
+        printTestCase("Iterative: cannot use AOTCache created with -XX:-AOTClassLinking");
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:AOTCacheOutput=hello-noaotlink.aot",
+            "-XX:-AOTClassLinking",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:AOTCache=hello-noaotlink.aot",
+            "-XX:AOTCacheOutput=" + aotCacheFile,
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldContain("AOT cache was created with AOTClassLinking disabled. It cannot be used when AOTClassLinking is enabled");
+        out.shouldNotHaveExitValue(0);
+
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:AOTCache=hello-noaotlink.aot",
+            "-XX:AOTMode=record",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            "-XX:-AOTClassLinking",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldContain("AOTClassLinking cannot be disabled when both AOTCache and AOTConfiguration are specified");
+        out.shouldNotHaveExitValue(0);
+
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:AOTCache=hello-noaotlink.aot",
+            "-XX:AOTCacheOutput=" + aotCacheFile,
+            "-XX:-AOTClassLinking",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldContain("AOTClassLinking cannot be disabled when both AOTCache and AOTCacheOutput are specified");
         out.shouldNotHaveExitValue(0);
 
         //----------------------------------------------------------------------
@@ -570,7 +624,7 @@ public class AOTFlags {
                 "-Xlog:aot=debug",
                 "-cp", appJar, helloClass);
             out = CDSTestUtils.executeAndLog(pb, "neg");
-            out.shouldContain("VM option --enable-preview is different between");
+            out.shouldContain("This archive was created with --enable-preview. It is incompatible with the current JVM setting");
             out.shouldNotHaveExitValue(0);
 
             printTestCase("Assembly-Production Preview mismatch");
@@ -602,7 +656,7 @@ public class AOTFlags {
                 "-Xlog:aot=debug",
                 "-cp", appJar, helloClass);
             out = CDSTestUtils.executeAndLog(pb, "neg");
-            out.shouldContain("VM option --enable-preview is different between");
+            out.shouldContain("This archive was created with --enable-preview. It is incompatible with the current JVM setting");
             out.shouldNotHaveExitValue(0);
 
             printTestCase("Training-Assembly Preview mismatch 2");
@@ -634,7 +688,7 @@ public class AOTFlags {
                 "-Xlog:aot=debug",
                 "-cp", appJar, helloClass);
             out = CDSTestUtils.executeAndLog(pb, "neg");
-            out.shouldContain("VM option --enable-preview is different between");
+            out.shouldContain("This archive was not created with --enable-preview. It is incompatible with the current JVM setting");
             out.shouldNotHaveExitValue(0);
 
             printTestCase("Assembly-Production Preview mismatch 2");
@@ -666,7 +720,7 @@ public class AOTFlags {
                 "-Xlog:aot=debug",
                 "-cp", appJar, helloClass);
             out = CDSTestUtils.executeAndLog(pb, "neg");
-            out.shouldContain("VM option --enable-preview is different between");
+            out.shouldContain("This archive was not created with --enable-preview. It is incompatible with the current JVM setting");
             out.shouldNotHaveExitValue(0);
 
             String[] valhallaFlags = {
@@ -725,6 +779,7 @@ public class AOTFlags {
 
         // Training
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockExperimentalVMOptions",
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
             reverse ? flagMode0 : flagMode1,
@@ -736,6 +791,7 @@ public class AOTFlags {
 
         // Assembly
         pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockExperimentalVMOptions",
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
@@ -762,6 +818,7 @@ public class AOTFlags {
 
         // Training must have same configuration as assembly
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockExperimentalVMOptions",
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
             reverse ? flagMode0 : flagMode1,
@@ -773,6 +830,7 @@ public class AOTFlags {
 
         // Assembly
         pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockExperimentalVMOptions",
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
@@ -785,6 +843,7 @@ public class AOTFlags {
 
         // Production
         pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockExperimentalVMOptions",
             "-XX:AOTMode=required",
             "-XX:AOTCache=" + aotCacheFile,
             reverse ? flagMode1 : flagMode0,

@@ -27,6 +27,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "interpreter/interpreter.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -2539,6 +2540,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
   int frame_count = 0;
   bool is_interpreted[2];
   intptr_t *frame_sp[2];
+  javaVFrame* heap_jvf[2] = { nullptr, nullptr };
   // The 2-nd arg of constructor is needed to stop iterating at java entry frame.
   for (vframeStream vfs(java_thread, true, false /* process_frames */); !vfs.at_end(); vfs.next()) {
     methodHandle mh(current_thread, vfs.method());
@@ -2547,6 +2549,29 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
       return;
     }
     is_interpreted[frame_count] = vfs.is_interpreted_frame();
+    if (is_interpreted[frame_count] && frame_count == 1 && vfs.reg_map()->in_cont() &&
+        Interpreter::cont_popframe_reexecute_entry() == nullptr) {
+      // No entry on this platform to reexecute the invoke of a frozen interpreted caller.
+      _result = JVMTI_ERROR_OPAQUE_FRAME;
+      return;
+    }
+    if (!is_interpreted[frame_count]) {
+      javaVFrame* jvf = vfs.asJavaVFrame();
+      // The frame is frozen in a stack chunk on the heap, not on the thread stack.
+      if (vfs.reg_map()->in_cont()) {
+        assert(_state->is_virtual(), "invariant");
+        if (frame_count == 0) {
+          // If the top frame is compiled and in the heap, PopFrame is not supported.
+          _result = JVMTI_ERROR_OPAQUE_FRAME;
+          return;
+        }
+        heap_jvf[frame_count] = jvf;
+      }
+      if (!jvf->fr().can_be_deoptimized()) {
+        _result = JVMTI_ERROR_OPAQUE_FRAME;
+        return;
+      }
+    }
     frame_sp[frame_count] = vfs.frame_id();
     if (++frame_count > 1) break;
   }
@@ -2570,7 +2595,14 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
   // If any of the top 2 frames is a compiled one, need to deoptimize it
   for (int i = 0; i < 2; i++) {
     if (!is_interpreted[i]) {
-      Deoptimization::deoptimize_frame(java_thread, frame_sp[i]);
+      // deoptimize_frame only walks the thread stack, a frozen frame is patched
+      // in its stack chunk instead.
+      if (heap_jvf[i] != nullptr) {
+        frame fr = heap_jvf[i]->fr();
+        fr.deoptimize(nullptr, heap_jvf[i]->stack_chunk());
+      } else {
+        Deoptimization::deoptimize_frame(java_thread, frame_sp[i]);
+      }
     }
   }
 

@@ -689,6 +689,10 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_popframe_reexecute_entry() {
+  return nullptr;
+}
+
 address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, address runtime_entry) {
   address entry = __ pc();
 
@@ -2089,12 +2093,14 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ empty_expression_stack();
     __ unlock_if_synchronized_method(vtos, /* throw_monitor_exception */ false, /* install_monitor_exception */ false);
 
-    // Check to see whether we are returning to a deoptimized frame.
-    // (The PopFrame call ensures that the caller of the popped frame is
-    // either interpreted or compiled and deoptimizes it if compiled.)
+    // Check to see whether we are returning to a deoptimized frame or
+    // into the continuation return barrier (the PopFrame call ensures that
+    // the caller of the popped frame is either interpreted or compiled and
+    // deoptimizes it if compiled).
     // Note that we don't compare the return PC against the
     // deoptimization blob's unpack entry because of the presence of
-    // adapter frames in C2.
+    // adapter frames in C2. Checking for an interpreter return PC covers
+    // the return barrier as well.
     Label Lcaller_not_deoptimized;
     Register return_pc = R3_ARG1;
     __ ld(return_pc, 0, R1_SP);

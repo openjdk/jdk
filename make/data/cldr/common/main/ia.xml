@@ -878,6 +878,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="islamic-tbla">calendario hegiric (tabular, epocha astronomic)</type>
 			<type key="calendar" type="islamic-umalqura">calendario hegiric (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">calendario ISO-8601</type>
+			<type key="calendar" type="iso8601" scope="core">ISO-8601</type>
 			<type key="calendar" type="japanese">calendario japonese</type>
 			<type key="calendar" type="persian">calendario persa</type>
 			<type key="calendar" type="roc">calendario del Republica de China</type>
@@ -898,6 +899,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="traditional">ordinamento traditional</type>
 			<type key="collation" type="unihan">ordinamento de tractos radical</type>
 			<type key="collation" type="zhuyin">ordinamento zhuyin</type>
+			<type key="hc" type="c12">systema de 12 horas</type>
+			<type key="hc" type="c24">systema de 24 horas</type>
 			<type key="hc" type="h11">systema de 12 horas (0–11)</type>
 			<type key="hc" type="h12">systema de 12 horas (1–12)</type>
 			<type key="hc" type="h23">systema de 24 horas (0–23)</type>
@@ -1415,12 +1418,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d 'de' MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E 'le' d 'de' MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ 'de' y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'septimana' w 'de' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'septimana' w 'de' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -2050,21 +2060,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Atlantic/Faeroe">
 				<exemplarCity>Feroe</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Hora estive britannic</daylight>
-				</long>
-			</zone>
 			<zone type="Europe/Athens">
 				<exemplarCity>Athenas</exemplarCity>
 			</zone>
 			<zone type="Asia/Hong_Kong">
 				<exemplarCity>Hongkong</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Hora estive irlandese</daylight>
-				</long>
 			</zone>
 			<zone type="Europe/Isle_of_Man">
 				<exemplarCity>Insula de Man</exemplarCity>
@@ -2350,6 +2350,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>hora estive de Brasilia</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Hora britannic</generic>
+					<daylight>Hora estive britannic</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>hora de Brunei</standard>
@@ -2544,11 +2550,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>hora estive de Groenlandia occidental</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>hora normal de Guam</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>hora normal del Golfo</standard>
@@ -2561,7 +2562,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>hora normal de Hawaii-Aleutianas</standard>
+					<standard>hora normal de Hawaii</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -2620,6 +2621,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>hora de Iran</generic>
 					<standard>hora normal de Iran</standard>
 					<daylight>hora estive de Iran</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Hora irlandese</generic>
+					<daylight>Hora estive irlandese</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -2907,9 +2914,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>hora de Samoa american</generic>
 					<standard>hora normal de Samoa american</standard>
-					<daylight>hora estive de Samoa american</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

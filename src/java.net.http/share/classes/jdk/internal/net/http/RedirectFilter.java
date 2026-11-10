@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,23 +28,15 @@ package jdk.internal.net.http;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.net.http.HttpClient;
+import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpHeaders;
-import java.util.concurrent.locks.ReentrantLock;
 
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Utils;
 
 class RedirectFilter implements HeaderFilter {
 
-    private final ReentrantLock stateLock = new ReentrantLock();
-    HttpRequestImpl request;
-    HttpClientImpl client;
-    HttpClient.Redirect policy;
-    String method;
-    MultiExchange<?> exchange;
     static final int DEFAULT_MAX_REDIRECTS = 5;
-    URI uri;
 
     /*
      * NOT_MODIFIED status code results from a conditional GET where
@@ -62,28 +54,11 @@ class RedirectFilter implements HeaderFilter {
 
     @Override
     public void request(HttpRequestImpl r, MultiExchange<?> e) throws IOException {
-        stateLock.lock();
-        try {
-            this.request = r;
-            this.client = e.client();
-            this.policy = client.followRedirects();
-
-            this.method = r.method();
-            this.uri = r.uri();
-            this.exchange = e;
-        } finally {
-            stateLock.unlock();
-        }
     }
 
     @Override
     public HttpRequestImpl response(Response r) throws IOException {
-        stateLock.lock();
-        try {
-            return handleResponse(r);
-        } finally {
-            stateLock.unlock();
-        }
+        return handleResponse(r);
     }
 
     private static String redirectedMethod(int statusCode, String orig) {
@@ -120,7 +95,9 @@ class RedirectFilter implements HeaderFilter {
      */
     private HttpRequestImpl handleResponse(Response r) {
         int rcode = r.statusCode();
-        if (rcode == 200 || policy == HttpClient.Redirect.NEVER) {
+        MultiExchange<?> exchange = r.exchange.multi;
+        Redirect policy = exchange.client.followRedirects();
+        if (rcode == 200 || policy == Redirect.NEVER) {
             return null;
         }
 
@@ -128,10 +105,12 @@ class RedirectFilter implements HeaderFilter {
             return null;
 
         if (isRedirecting(rcode)) {
-            URI redir = getRedirectedURI(r.headers());
-            String newMethod = redirectedMethod(rcode, method);
+            HttpRequestImpl request = r.request();
+            URI from = request.uri();
+            URI redir = getRedirectedURI(from, r.headers());
+            String newMethod = redirectedMethod(rcode, request.method());
             Log.logTrace("response code: {0}, redirected URI: {1}", rcode, redir);
-            if (canRedirect(redir) && ++exchange.numberOfRedirects < max_redirects) {
+            if (canRedirect(from, redir, policy) && ++exchange.numberOfRedirects < max_redirects) {
                 Log.logTrace("redirect to: {0} with method: {1}", redir, newMethod);
                 return HttpRequestImpl.newInstanceForRedirection(redir, newMethod, request, rcode != 303);
             } else {
@@ -142,7 +121,7 @@ class RedirectFilter implements HeaderFilter {
         return null;
     }
 
-    private URI getRedirectedURI(HttpHeaders headers) {
+    private URI getRedirectedURI(URI uri, HttpHeaders headers) {
         URI redirectedURI;
         redirectedURI = headers.firstValue("Location")
                 .map(URI::create)
@@ -155,7 +134,7 @@ class RedirectFilter implements HeaderFilter {
         return redirectedURI;
     }
 
-    private boolean canRedirect(URI redir) {
+    private boolean canRedirect(URI uri, URI redir, Redirect policy) {
         String newScheme = redir.getScheme();
         String oldScheme = uri.getScheme();
         return switch (policy) {
