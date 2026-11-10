@@ -950,7 +950,7 @@ class Http2Connection implements Closeable {
                         malformedFrame.getMessage());
             } else {
                 Stream<?> stream = getStream(errorStream);
-                if (stream != null && !stream.isClosed()) {
+                if (stream != null && !stream.isTerminalState()) {
                     if (debug.on())
                         debug.log(() -> "Reset stream " + errorStream + ": "
                                 + malformedFrame.getMessage());
