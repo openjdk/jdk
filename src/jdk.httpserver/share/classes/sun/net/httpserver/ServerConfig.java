@@ -46,7 +46,7 @@ class ServerConfig {
     // timing out request/response if max request/response time is configured
     private static final long DEFAULT_REQ_RSP_TIMER_TASK_SCHEDULE_MILLIS = 1000;
     private static final int  DEFAULT_MAX_REQ_HEADERS = 200;
-    private static final int  DEFAULT_MAX_REQ_HEADER_SIZE = 380 * 1024;
+    private static final int  DEFAULT_MAX_REQ_HEADER_SIZE = 384 * 1024;
     private static final long DEFAULT_DRAIN_AMOUNT = 64 * 1024;
 
     private static final long idleTimerScheduleMillis;

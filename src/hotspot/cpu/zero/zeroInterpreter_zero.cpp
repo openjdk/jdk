@@ -871,6 +871,10 @@ address ZeroInterpreter::deopt_entry(TosState state, int length) {
   return nullptr;
 }
 
+address ZeroInterpreter::cont_popframe_reexecute_entry() {
+  return nullptr;
+}
+
 address ZeroInterpreter::remove_activation_preserving_args_entry() {
   // Do an uncommon trap type entry. c++ interpreter will know
   // to pop frame and preserve the args

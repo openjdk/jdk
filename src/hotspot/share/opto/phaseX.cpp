@@ -2946,7 +2946,8 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
 
   // f(f(x)) => x for f = Reverse / ReverseBytes
-  if (use_op == Op_ReverseV || use_op == Op_ReverseBytesV) {
+  if (use_op == Op_ReverseV || use_op == Op_ReverseBytesV ||
+      use_op == Op_ReverseBytesS || use_op == Op_ReverseBytesUS) {
     add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
       return u->Opcode() == use_op;
     });
