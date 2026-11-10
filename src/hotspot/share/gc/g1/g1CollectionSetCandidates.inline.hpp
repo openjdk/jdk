@@ -27,23 +27,13 @@
 
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 
-#include "utilities/growableArray.hpp"
-
-template<typename Func>
-void G1CardSetGroupList::iterate(Func&& f) const {
-  for (G1CardSetGroup* group : _groups) {
-    for (G1CardSetGroupItem ci : *group) {
-      G1HeapRegion* r = ci._r;
-      f(r);
-    }
-  }
-}
+#include "gc/g1/g1CardSetGroup.inline.hpp"
 
 template<typename Func>
 void G1CollectionSetCandidates::iterate_regions(Func&& f) const {
-  _from_marking_groups.iterate(f);
+  _from_marking_groups.iterate_regions(f);
 
-  _retained_groups.iterate(f);
+  _retained_groups.iterate_regions(f);
 }
 
 #endif /* SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_INLINE_HPP */

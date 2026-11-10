@@ -874,6 +874,8 @@ class AdapterHandlerEntry : public MetaspaceObj {
 
   uint id() const { return _id; }
   AdapterFingerPrint* fingerprint() const { return _fingerprint; }
+  int fingerprint_size() const;
+  bool fingerprint_equals(AdapterFingerPrint* fp) const;
 
 #ifdef ASSERT
   // Used to verify that code generated for shared adapters is equivalent
@@ -1010,6 +1012,8 @@ public:
   CompiledEntrySignature(Method* method = nullptr);
   void compute_calling_conventions(bool link_time = true);
   void initialize_from_fingerprint(AdapterFingerPrint* fingerprint);
+
+  static int max_stack_slots_cc();
 };
 
 #endif // SHARE_RUNTIME_SHAREDRUNTIME_HPP

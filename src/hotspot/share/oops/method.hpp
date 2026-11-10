@@ -783,12 +783,6 @@ public:
   bool is_scalarized_arg(int idx) const;
   bool is_scalarized_buffer_arg(int idx) const;
 
-  bool needs_stack_repair() const { return constMethod()->needs_stack_repair(); }
-  void set_needs_stack_repair() { constMethod()->set_needs_stack_repair(); }
-
-  bool mismatch() const { return constMethod()->mismatch(); }
-  void set_mismatch() { constMethod()->set_mismatch(); }
-
   JFR_ONLY(DEFINE_TRACE_FLAG_ACCESSOR;)
 
   ConstMethod::MethodType method_type() const {
@@ -837,12 +831,8 @@ public:
 
   void clear_is_not_c1_compilable()           { set_is_not_c1_compilable(false); }
   void clear_is_not_c2_compilable()           { set_is_not_c2_compilable(false); }
+  void clear_is_not_c1_osr_compilable()       { set_is_not_c1_osr_compilable(false); }
   void clear_is_not_c2_osr_compilable()       { set_is_not_c2_osr_compilable(false); }
-
-  // not_c1_osr_compilable == not_c1_compilable
-  bool is_not_c1_osr_compilable() const       { return is_not_c1_compilable(); }
-  void set_is_not_c1_osr_compilable()         { set_is_not_c1_compilable(); }
-  void clear_is_not_c1_osr_compilable()       { clear_is_not_c1_compilable(); }
 
   // Background compilation support
   void clear_queued_for_compilation()  { set_queued_for_compilation(false);   }

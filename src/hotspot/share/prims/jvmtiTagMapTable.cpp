@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,9 @@ static bool equal_fields(char type, oop obj1, int offset1, oop obj2, int offset2
   case JVM_SIGNATURE_CHAR:
     return obj1->char_field(offset1) == obj2->char_field(offset2);
   case JVM_SIGNATURE_FLOAT:
-    return obj1->float_field(offset1) == obj2->float_field(offset2);
+    return *obj1->field_addr<juint>(offset1) == *obj2->field_addr<juint>(offset2);
   case JVM_SIGNATURE_DOUBLE:
-    return obj1->double_field(offset1) == obj2->double_field(offset2);
+    return *obj1->field_addr<julong>(offset1) == *obj2->field_addr<julong>(offset2);
   case JVM_SIGNATURE_BYTE:
     return obj1->byte_field(offset1) == obj2->byte_field(offset2);
   case JVM_SIGNATURE_SHORT:
@@ -79,7 +79,7 @@ static bool is_null_flat_field(oop obj, int offset, ValueKlass* klass) {
 // For flattened objects offset is the offset in the holder object, 'klass' is value object class.
 // The object must be prechecked for non-null values.
 static bool equal_value_objects(oop obj1, int offset1, oop obj2, int offset2, ValueKlass* klass) {
-  for (JavaFieldStream fld(klass); !fld.done(); fld.next()) {
+  for (HierarchicalFieldStream<JavaFieldStream> fld(klass); !fld.done(); fld.next()) {
     // ignore static fields
     if (fld.access_flags().is_static()) {
       continue;
@@ -87,7 +87,7 @@ static bool equal_value_objects(oop obj1, int offset1, oop obj2, int offset2, Va
     int field_offset1 = offset1 + fld.offset() - (offset1 > 0 ? klass->payload_offset() : 0);
     int field_offset2 = offset2 + fld.offset() - (offset2 > 0 ? klass->payload_offset() : 0);
     if (fld.is_flat()) { // flat value field
-      InstanceKlass* holder_klass = fld.field_holder();
+      InstanceKlass* holder_klass = fld.field_descriptor().field_holder();
       ValueKlass* field_klass = holder_klass->get_value_type_field_klass(fld.index());
       if (!fld.is_null_free_value_type()) {
         bool field1_is_null = is_null_flat_field(obj1, field_offset1, field_klass);
@@ -178,7 +178,7 @@ void JvmtiTagMapKey::release_handle() {
 
 JvmtiHeapwalkObject JvmtiTagMapKey::heapwalk_object() const {
   if (_obj != nullptr) {
-    return JvmtiHeapwalkObject(_obj->obj(), _obj->offset(), _obj->value_klass(), _obj->layout_kind());
+    return JvmtiHeapwalkObject(_obj->obj(), _obj->offset(), _obj->value_klass(), _obj->optional_flat_layout());
   }
   oop obj = object_no_keepalive();
   if (obj == nullptr) {
@@ -270,13 +270,6 @@ void JvmtiTagMapTable::add(const JvmtiHeapwalkObject& obj, jlong tag) {
     jlong* value = _table.put_if_absent(new_entry, tag, &is_added);
     *value = tag; // assign the new tag
   }
-  if (is_added) {
-    if (_table.maybe_grow(5, true /* use_large_table_sizes */)) {
-      int max_bucket_size = DEBUG_ONLY(_table.verify()) NOT_DEBUG(0);
-      log_info(jvmti, table) ("JvmtiTagMap table resized to %d for %d entries max bucket %d",
-                              _table.table_size(), _table.number_of_entries(), max_bucket_size);
-    }
-  }
 }
 
 bool JvmtiTagMapTable::update(const JvmtiHeapwalkObject& obj, jlong tag) {
@@ -318,51 +311,56 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
   _table.unlink(&is_dead);
 }
 
-JvmtiFlatTagMapKey::JvmtiFlatTagMapKey(const JvmtiHeapwalkObject& obj)
-  : _holder(obj.obj()), _offset(obj.offset()), _value_klass(obj.value_klass()), _layout_kind(obj.layout_kind()) {
-}
+JvmtiValueTagMapKey::JvmtiValueTagMapKey(const JvmtiHeapwalkObject& obj)
+  : _holder(obj.obj()), _offset(obj.offset()), _value_klass(obj.value_klass()), _optional_flat_layout(obj.optional_flat_layout()) {}
 
-JvmtiFlatTagMapKey::JvmtiFlatTagMapKey(const JvmtiFlatTagMapKey& src) : _h() {
+OopHandle JvmtiValueTagMapKey::create_holder_oop_handle() const {
   // move object into Handle when copying into the table
-  if (src._holder != nullptr) {
+  if (_holder != nullptr) {
     // Holder object was read with AS_NO_KEEPALIVE. Needs to be kept alive when it is published.
-    Universe::heap()->keep_alive(src._holder);
-    _h = OopHandle(JvmtiExport::jvmti_oop_storage(), src._holder);
+    Universe::heap()->keep_alive(_holder);
+    return OopHandle(JvmtiExport::jvmti_oop_storage(), _holder);
   } else {
     // resizing needs to create a copy.
-    _h = src._h;
+    return _h;
   }
-  // holder object is always null after a copy.
-  _holder = nullptr;
-  _offset = src._offset;
-  _value_klass = src._value_klass;
-  _layout_kind = src._layout_kind;
 }
 
-JvmtiHeapwalkObject JvmtiFlatTagMapKey::heapwalk_object() const {
-  return JvmtiHeapwalkObject(_holder != nullptr ? _holder : holder_no_keepalive(), _offset, _value_klass, _layout_kind);
+JvmtiValueTagMapKey::JvmtiValueTagMapKey(const JvmtiValueTagMapKey& src)
+  : // move object into Handle when copying into the table
+    _h(src.create_holder_oop_handle()),
+    // holder object is always null after a copy.
+    _holder(nullptr),
+    _offset(src._offset),
+    _value_klass(src._value_klass),
+    _optional_flat_layout(src._optional_flat_layout) {
+  assert(_optional_flat_layout.is_flat(), "We should ever only copy flat values");
 }
 
-oop JvmtiFlatTagMapKey::holder() const {
+JvmtiHeapwalkObject JvmtiValueTagMapKey::heapwalk_object() const {
+  return JvmtiHeapwalkObject(_holder != nullptr ? _holder : holder_no_keepalive(), _offset, _value_klass, _optional_flat_layout);
+}
+
+oop JvmtiValueTagMapKey::holder() const {
   assert(_holder == nullptr, "Must have a handle and not object");
   return _h.resolve();
 }
 
-oop JvmtiFlatTagMapKey::holder_no_keepalive() const {
+oop JvmtiValueTagMapKey::holder_no_keepalive() const {
   assert(_holder == nullptr, "Must have a handle and not object");
   return _h.peek();
 
 }
 
-void JvmtiFlatTagMapKey::release_handle() {
+void JvmtiValueTagMapKey::release_handle() {
   _h.release(JvmtiExport::jvmti_oop_storage());
 }
 
-unsigned JvmtiFlatTagMapKey::get_hash(const JvmtiFlatTagMapKey& entry) {
+unsigned JvmtiValueTagMapKey::get_hash(const JvmtiValueTagMapKey& entry) {
   return get_value_object_hash(entry._holder, entry._offset, entry._value_klass);
 }
 
-bool JvmtiFlatTagMapKey::equals(const JvmtiFlatTagMapKey& lhs, const JvmtiFlatTagMapKey& rhs) {
+bool JvmtiValueTagMapKey::equals(const JvmtiValueTagMapKey& lhs, const JvmtiValueTagMapKey& rhs) {
   if (lhs._value_klass == rhs._value_klass) {
     oop lhs_obj = lhs._holder != nullptr ? lhs._holder : lhs._h.peek();
     oop rhs_obj = rhs._holder != nullptr ? rhs._holder : rhs._h.peek();
@@ -382,30 +380,23 @@ jlong JvmtiFlatTagMapTable::find(const JvmtiHeapwalkObject& obj) const {
     return 0;
   }
 
-  JvmtiFlatTagMapKey entry(obj);
+  JvmtiValueTagMapKey entry(obj);
   jlong* found = _table.get(entry);
   return found == nullptr ? 0 : *found;
 }
 
 void JvmtiFlatTagMapTable::add(const JvmtiHeapwalkObject& obj, jlong tag) {
   assert(obj.is_value() && obj.is_flat(), "Must be flattened value object");
-  JvmtiFlatTagMapKey entry(obj);
+  JvmtiValueTagMapKey entry(obj);
   bool is_added;
   jlong* value = _table.put_if_absent(entry, tag, &is_added);
   *value = tag; // assign the new tag
-  if (is_added) {
-    if (_table.maybe_grow(5, true /* use_large_table_sizes */)) {
-      int max_bucket_size = DEBUG_ONLY(_table.verify()) NOT_DEBUG(0);
-      log_info(jvmti, table) ("JvmtiFlatTagMapTable table resized to %d for %d entries max bucket %d",
-        _table.table_size(), _table.number_of_entries(), max_bucket_size);
-    }
-  }
 }
 
 jlong JvmtiFlatTagMapTable::remove(const JvmtiHeapwalkObject& obj) {
-  JvmtiFlatTagMapKey entry(obj);
+  JvmtiValueTagMapKey entry(obj);
   jlong ret = 0;
-  auto clean = [&](JvmtiFlatTagMapKey& entry, jlong tag) {
+  auto clean = [&](JvmtiValueTagMapKey& entry, jlong tag) {
     ret = tag;
     entry.release_handle();
   };
@@ -413,13 +404,13 @@ jlong JvmtiFlatTagMapTable::remove(const JvmtiHeapwalkObject& obj) {
   return ret;
 }
 
-void JvmtiFlatTagMapTable::entry_iterate(JvmtiFlatTagMapKeyClosure* closure) {
+void JvmtiFlatTagMapTable::entry_iterate(JvmtiValueTagMapKeyClosure* closure) {
   _table.iterate(closure);
 }
 
 void JvmtiFlatTagMapTable::clear() {
   struct RemoveAll {
-    bool do_entry(JvmtiFlatTagMapKey& entry, const jlong& tag) {
+    bool do_entry(JvmtiValueTagMapKey& entry, const jlong& tag) {
       entry.release_handle();
       return true;
     }

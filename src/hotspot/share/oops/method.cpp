@@ -429,9 +429,14 @@ Symbol* Method::klass_name() const {
 }
 
 void Method::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(aot)("Iter(Method): %p", this);
-
-  if (!method_holder()->is_rewritten() || Arguments::is_valhalla_enabled()) {
+  LogStreamHandle(Trace, aot) lsh;
+  if (lsh.is_enabled() && method_holder() != nullptr) {
+    lsh.print("Iter(Method): %p ", this);
+    print_external_name(&lsh);
+    lsh.cr();
+  }
+  // holder is null for MH intrinsic methods
+  if (method_holder() != nullptr && !method_holder()->is_rewritten()) {
     it->push(&_constMethod, MetaspaceClosure::_writable);
   } else {
     it->push(&_constMethod);
@@ -1303,8 +1308,20 @@ void Method::remove_unshareable_flags() {
   set_is_not_c2_compilable(false);
   set_is_not_c1_compilable(false);
   set_is_not_c2_osr_compilable(false);
+  set_is_not_c1_osr_compilable(false);
   set_on_stack_flag(false);
+  // This flag describes the adapter selected for this method in
+  // the current VM. Recompute it when the method is linked and
+  // its adapter is selected.
   set_has_scalarized_args(false);
+  if (CDSConfig::is_dumping_aot_configuration()) {
+    // These flags may reflect class linking state during training run.
+    // Recompute them during assembly phase and preserve the results
+    // in the final AOT cache so production run uses the same
+    // conservative calling convention constraints as AOT compilation.
+    set_needs_stack_repair(false);
+    set_mismatch(false);
+  }
 }
 #endif
 

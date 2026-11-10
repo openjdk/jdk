@@ -74,7 +74,7 @@ static const char* ReferenceTypeNames[REF_PHANTOM + 1] = {
        "None", "SoftReference", "WeakReference", "FinalReference", "PhantomReference"
        };
 
-STATIC_ASSERT((REF_PHANTOM + 1) == ARRAY_SIZE(ReferenceTypeNames));
+static_assert((REF_PHANTOM + 1) == ARRAY_SIZE(ReferenceTypeNames));
 
 static const char* phase_enum_2_phase_string(ReferenceProcessor::RefProcPhases phase) {
   ASSERT_PHASE(phase);

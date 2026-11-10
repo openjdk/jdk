@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,7 @@ public class JPEGImageWriteParam extends ImageWriteParam {
      * @throws IllegalStateException if the compression mode is not
      * {@code MODE_EXPLICIT}.
      */
+    @Override
     public void unsetCompression() {
         if (getCompressionMode() != MODE_EXPLICIT) {
             throw new IllegalStateException
@@ -150,6 +151,7 @@ public class JPEGImageWriteParam extends ImageWriteParam {
      * @throws IllegalStateException if the compression mode is not
      * {@code MODE_EXPLICIT}.
      */
+    @Override
     public boolean isCompressionLossless() {
         if (getCompressionMode() != MODE_EXPLICIT) {
             throw new IllegalStateException
@@ -158,6 +160,7 @@ public class JPEGImageWriteParam extends ImageWriteParam {
         return false;
     }
 
+    @Override
     public String[] getCompressionQualityDescriptions() {
         if (getCompressionMode() != MODE_EXPLICIT) {
             throw new IllegalStateException
@@ -170,6 +173,7 @@ public class JPEGImageWriteParam extends ImageWriteParam {
         return qualityDescs.clone();
     }
 
+    @Override
     public float[] getCompressionQualityValues() {
         if (getCompressionMode() != MODE_EXPLICIT) {
             throw new IllegalStateException

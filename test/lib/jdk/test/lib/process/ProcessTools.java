@@ -392,7 +392,9 @@ public final class ProcessTools {
 
         final List<String> doubleWordArgs = List.of(
                 "--add-opens", "--upgrade-module-path", "--add-modules", "--add-exports", "--enable-native-access",
-                "--limit-modules", "--add-reads", "--patch-module", "--module-path", "-p");
+                "--limit-modules", "--add-reads", "--patch-module", "--module-path", "-p",
+                "--enable-final-field-mutation", "--illegal-native-access", "--illegal-final-field-mutation",
+                "--sun-misc-unsafe-memory-access", "--finalization");
 
         ArrayList<String> args = new ArrayList<>();
 

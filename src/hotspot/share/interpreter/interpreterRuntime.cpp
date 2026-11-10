@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
@@ -249,6 +250,15 @@ JRT_BLOCK_ENTRY(void, InterpreterRuntime::read_flat_field(JavaThread* current, o
   JRT_BLOCK_END
 JRT_END
 
+JRT_LEAF(void, InterpreterRuntime::write_null_free_flat_field(oopDesc* obj, oopDesc* value, ResolvedFieldEntry* entry))
+  assert(value != nullptr, "Expecting null-free value");
+  assert(oopDesc::is_oop(obj), "Sanity check");
+  assert(oopDesc::is_oop(value), "Sanity check");
+
+  FlatFieldPayload payload(instanceOop(obj), entry);
+  payload.write_without_nullability_check(valueOop(value));
+JRT_END
+
 JRT_ENTRY(void, InterpreterRuntime::write_flat_field(JavaThread* current, oopDesc* obj, oopDesc* value, ResolvedFieldEntry* entry))
   assert(oopDesc::is_oop(obj), "Sanity check");
   assert(oopDesc::is_oop_or_null(value), "Sanity check");
@@ -326,7 +336,6 @@ JRT_ENTRY(jboolean, InterpreterRuntime::is_substitutable(JavaThread* current, oo
   args.push_oop(ha);
   args.push_oop(hb);
   methodHandle method(current, Universe::is_substitutable_method());
-  method->method_holder()->initialize(CHECK_false); // Ensure class ValueObjectMethods is initialized
   JavaCalls::call(&result, method, &args, THREAD);
   Exceptions::wrap_exception_in_internal_error("Internal error in substitutability test", CHECK_false);
 
@@ -747,18 +756,27 @@ void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_ind
   Bytecodes::Code get_code = (Bytecodes::Code)0;
   Bytecodes::Code put_code = (Bytecodes::Code)0;
   if (uninitialized_static && (info.is_strict_static_unset() || strict_static_final)) {
-    // During <clinit>, closely track the state of strict statics.
-    // 1. if we are reading an uninitialized strict static, throw
-    // 2. if we are writing one, clear the "unset" flag
-    //
-    // Note: If we were handling an attempted write of a null to a
-    // null-restricted strict static, we would NOT clear the "unset"
-    // flag.
-    assert(klass->is_being_initialized(), "else should have thrown");
-    assert(klass->is_reentrant_initialization(THREAD),
-      "<clinit> must be running in current thread");
-    klass->notify_strict_static_access(info.index(), is_put, CHECK);
-    assert(!info.is_strict_static_unset(), "after initialization, no unset flags");
+    if (init_mode == ClassInitMode::dont_init) {
+      // During an AOT assembly run, the VM resolves constant pool field references
+      // and may come across a strict static field whose holder is in the linked,
+      // not initialized, state. Strict static field access should not be notified
+      // in this case since this isn't a true access. Leave it uncached until
+      // an actual runtime access.
+      precond(CDSConfig::is_dumping_archive());
+    } else {
+      // During <clinit>, closely track the state of strict statics.
+      // 1. if we are reading an uninitialized strict static, throw
+      // 2. if we are writing one, clear the "unset" flag
+      //
+      // Note: If we were handling an attempted write of a null to a
+      // null-restricted strict static, we would NOT clear the "unset"
+      // flag.
+      assert(klass->is_being_initialized(), "else should have thrown");
+      assert(klass->is_reentrant_initialization(THREAD),
+        "<clinit> must be running in current thread");
+      klass->notify_strict_static_access(info.index(), is_put, CHECK);
+      assert(!info.is_strict_static_unset(), "after initialization, no unset flags");
+    }
   } else if (!uninitialized_static || VM_Version::supports_fast_class_init_checks()) {
     get_code = ((is_static) ? Bytecodes::_getstatic : Bytecodes::_getfield);
     if ((is_put && !has_initialized_final_update) || !info.access_flags().is_final()) {
@@ -1548,16 +1566,14 @@ JRT_END
 #if INCLUDE_JVMTI
 // This is a support of the JVMTI PopFrame interface.
 // Make sure it is an invokestatic of a polymorphic intrinsic that has a member_name argument
-// and return it as a vm_result_oop so that it can be reloaded in the list of invokestatic parameters.
+// and return it so that it can be reloaded in the list of invokestatic parameters.
 // The member_name argument is a saved reference (in local#0) to the member_name.
 // For backward compatibility with some JDK versions (7, 8) it can also be a direct method handle.
 // FIXME: remove DMH case after j.l.i.InvokerBytecodeGenerator code shape is updated.
-JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current, address member_name,
-                                                            Method* method, address bcp))
+oop InterpreterRuntime::popframe_member_name_arg_or_null(address member_name, Method* method, address bcp) {
   Bytecodes::Code code = Bytecodes::code_at(method, bcp);
   if (code != Bytecodes::_invokestatic) {
-    current->set_vm_result_oop(nullptr);
-    return;
+    return nullptr;
   }
 
   ConstantPool* cpool = method->constants();
@@ -1566,8 +1582,7 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
   Symbol* mname = cpool->name_ref_at(cp_index, code);
 
   if (!MethodHandles::has_member_arg(cname, mname)) {
-    current->set_vm_result_oop(nullptr);
-    return;
+    return nullptr;
   }
 
   oop member_name_oop = cast_to_oop(member_name);
@@ -1581,7 +1596,12 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
   if (java_lang_invoke_DirectMethodHandle::is_instance(member_name_oop)) {
     member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);
   }
-  current->set_vm_result_oop(member_name_oop);
+  return member_name_oop;
+}
+
+JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current, address member_name,
+                                                            Method* method, address bcp))
+  current->set_vm_result_oop(popframe_member_name_arg_or_null(member_name, method, bcp));
 JRT_END
 #endif // INCLUDE_JVMTI
 

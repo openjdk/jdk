@@ -262,14 +262,8 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
   OopMap* oop_map = new OopMap(frame_size_in_slots, 0);
   assert_cond(oop_map != nullptr);
 
-  // caller save registers only, see FrameMap::initialize
-  // in c1_FrameMap_riscv.cpp for detail.
-  const static Register caller_save_cpu_regs[FrameMap::max_nof_caller_save_cpu_regs] = {
-    x7, x10, x11, x12, x13, x14, x15, x16, x17, x28, x29, x30, x31
-  };
-
-  for (int i = 0; i < FrameMap::max_nof_caller_save_cpu_regs; i++) {
-    Register r = caller_save_cpu_regs[i];
+  for (int i = 0; i < FrameMap::nof_caller_save_cpu_regs(); i++) {
+    Register r = FrameMap::caller_save_cpu_reg_at(i)->as_register();
     int sp_offset = cpu_reg_save_offsets[r->encoding()];
     oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
                               r->as_VMReg());
@@ -774,7 +768,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
             case StubId::c1_new_null_free_array_id:
               __ mv(t0, (int)Klass::_lh_array_tag_flat_value); // the array can be a flat array.
               __ beq(t0, tmp, ok);
-              __ mv(t0, (int)Klass::_lh_array_tag_ref_value);  // the array cannot be a flat array (due to the InlineArrayElementMaxFlatSize, etc.)
+              __ mv(t0, (int)Klass::_lh_array_tag_ref_value);  // the array cannot be a flat array.
               __ beq(t0, tmp, ok);
               __ stop("assert(is an object or value type array klass)");
               break;
@@ -894,7 +888,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
-        restore_live_registers_except_r10(sasm);
+        restore_live_registers(sasm);
       }
       break;
 

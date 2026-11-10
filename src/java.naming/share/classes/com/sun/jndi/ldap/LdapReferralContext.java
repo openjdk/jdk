@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ final class LdapReferralContext implements DirContext, LdapContext {
             Object obj;
             try {
                 obj = NamingManagerHelper.getObjectInstance(ref, null, null,
-                        env, ObjectFactoriesFilter::checkLdapFilter);
+                        env, ObjectFactoriesFilter.ldapFactoryFilter());
             } catch (NamingException e) {
 
                 if (handleReferrals == LdapClient.LDAP_REF_THROW) {

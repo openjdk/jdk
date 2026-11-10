@@ -42,7 +42,8 @@ class G1FullGCCompactTask : public G1FullGCTask {
 
   void compact_region(G1HeapRegion* hr);
   void compact_humongous_obj(G1HeapRegion* hr);
-  void free_non_overlapping_regions(uint src_start_idx, uint dest_start_idx, uint num_regions);
+
+  void cleanup_humongous_regions(G1HeapRegion* src_hr, uint dest_start_idx, uint num_regions);
 
   static void copy_object_to_new_location(oop obj);
 

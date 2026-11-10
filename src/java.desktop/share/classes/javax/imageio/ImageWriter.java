@@ -409,10 +409,12 @@ public abstract class ImageWriter implements ImageTranscoder {
                                 ImageWriteParam param);
 
     // comment inherited
+    @Override
     public abstract IIOMetadata convertStreamMetadata(IIOMetadata inData,
                                                       ImageWriteParam param);
 
     // comment inherited
+    @Override
     public abstract IIOMetadata
         convertImageMetadata(IIOMetadata inData,
                              ImageTypeSpecifier imageType,

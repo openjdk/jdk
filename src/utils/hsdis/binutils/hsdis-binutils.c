@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -591,7 +591,7 @@ static void init_disassemble_info_from_bfd(struct disassemble_info* dinfo,
 #endif
   dinfo->skip_zeroes = sizeof(void*) * 2;
   dinfo->skip_zeroes_at_end = sizeof(void*)-1;
-  dinfo->disassembler_needs_relocs = FALSE;
+  dinfo->disassembler_needs_relocs = false;
 
   if (bfd_big_endian(abfd))
     dinfo->display_endian = dinfo->endian = BFD_ENDIAN_BIG;

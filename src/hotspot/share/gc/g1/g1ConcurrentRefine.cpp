@@ -123,12 +123,12 @@ void G1ConcurrentRefineThreadControl::stop() {
   }
 }
 
-G1ConcurrentRefineSweepState::G1ConcurrentRefineSweepState(uint max_reserved_regions) :
+G1ConcurrentRefineSweepState::G1ConcurrentRefineSweepState(uint max_num_regions) :
   _state(State::Idle),
   _sweep_table(new G1CardTableClaimTable(G1CollectedHeap::get_chunks_per_region_for_merge())),
   _stats()
 {
-  _sweep_table->initialize(max_reserved_regions);
+  _sweep_table->initialize(max_num_regions);
 }
 
 G1ConcurrentRefineSweepState::~G1ConcurrentRefineSweepState() {

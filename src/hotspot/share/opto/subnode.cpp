@@ -337,23 +337,33 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   return nullptr;
 }
 
-//------------------------------sub--------------------------------------------
-// A subtract node differences it's two inputs.
-const Type *SubINode::sub( const Type *t1, const Type *t2 ) const {
-  const TypeInt *r0 = t1->is_int(); // Handy access
-  const TypeInt *r1 = t2->is_int();
-  int32_t lo = java_subtract(r0->_lo, r1->_hi);
-  int32_t hi = java_subtract(r0->_hi, r1->_lo);
+// A subtract node computes the difference of its two inputs.
+const Type* SubINode::sub(const Type* t1, const Type* t2) const {
+  const TypeInt* range0 = t1->is_int();
+  const TypeInt* range1 = t2->is_int();
 
-  // We next check for 32-bit overflow.
-  // If that happens, we just assume all integers are possible.
-  if( (((r0->_lo ^ r1->_hi) >= 0) ||    // lo ends have same signs OR
-       ((r0->_lo ^      lo) >= 0)) &&   // lo results have same signs AND
-      (((r0->_hi ^ r1->_lo) >= 0) ||    // hi ends have same signs OR
-       ((r0->_hi ^      hi) >= 0)) )    // hi results have same signs
-    return TypeInt::make(lo,hi,MAX2(r0->_widen,r1->_widen));
-  else                          // Overflow; assume all integers
-    return TypeInt::INT;
+  jlong lo_sub = (jlong)range0->_lo - (jlong)range1->_hi;
+  jlong hi_sub = (jlong)range0->_hi - (jlong)range1->_lo;
+
+  const jlong jint_wrap_offset = (jlong)max_juint + 1;
+
+  if (hi_sub < min_jint) {
+    // The entire range underflows.
+    lo_sub += jint_wrap_offset;
+    hi_sub += jint_wrap_offset;
+  } else if (lo_sub > max_jint) {
+    // The entire range overflows.
+    lo_sub -= jint_wrap_offset;
+    hi_sub -= jint_wrap_offset;
+  } else if (lo_sub < min_jint || hi_sub > max_jint) {
+    // The range crosses one or both jint boundaries.
+    lo_sub = min_jint;
+    hi_sub = max_jint;
+  }
+
+  return TypeInt::make(checked_cast<jint>(lo_sub),
+                       checked_cast<jint>(hi_sub),
+                       MAX2(range0->_widen, range1->_widen));
 }
 
 //=============================================================================
@@ -994,9 +1004,9 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
   const TypePtr *r1 = t2->is_ptr();
 
   // Undefined inputs makes for an undefined result
-  if( TypePtr::above_centerline(r0->_ptr) ||
-      TypePtr::above_centerline(r1->_ptr) )
+  if (TypePtr::is_top(r0->_ptr) || TypePtr::is_top(r1->_ptr)) {
     return Type::TOP;
+  }
 
   if (r0 == r1 && r0->singleton()) {
     // Equal pointer constants (klasses, nulls, etc.)
@@ -1134,9 +1144,19 @@ Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* uncast_in1 = in(1)->uncast();
   Node* uncast_in2 = in(2)->uncast();
   if (uncast_in1->is_ValueType() && phase->type(uncast_in2)->is_zero_type()) {
-    // Null checking a scalarized but nullable value type. Check the null marker
-    // input instead of the oop input to avoid keeping buffer allocations alive.
-    return new CmpINode(uncast_in1->as_ValueType()->get_null_marker(), phase->intcon(0));
+    Node* null_marker = uncast_in1->as_ValueType()->get_null_marker();
+    const TypeInt* null_marker_type = phase->type(null_marker)->isa_int();
+    bool null_marker_is_known = null_marker_type != nullptr && null_marker_type->is_con();
+    if (can_reshape || null_marker_is_known) {
+      // Null checking a scalarized but nullable value type. Check the null marker
+      // input instead of the oop input to avoid keeping buffer allocations alive.
+      return new CmpINode(uncast_in1->as_ValueType()->get_null_marker(), phase->intcon(0));
+    } else {
+      // Keep the CmpP during parsing so that the parser can recognize the compare-against-null
+      // pattern
+      phase->record_for_igvn(this);
+      return nullptr;
+    }
   }
   if (uncast_in1->is_ValueType() || uncast_in2->is_ValueType()) {
     // In C2 IR, CmpP on value objects is a pointer comparison, not a value comparison.
@@ -2212,16 +2232,32 @@ const Type* ReverseLNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-Node* ReverseINode::Identity(PhaseGVN* phase) {
-  if (in(1)->Opcode() == Op_ReverseI) {
-    return in(1)->in(1);
+static Node* simplify_involution(PhaseGVN* phase, Node* involution) {
+  if (involution->in(1)->Opcode() == involution->Opcode()) {
+    Node* original = involution->in(1)->in(1);
+    const TypeInt* type = phase->type(original)->isa_int();
+    // Operations on sub-int types might not be "real" involutions for values outside their type range,
+    // for example, a ReverseBytesS node with an input larger than short.
+    // Make sure not to drop potential truncations.
+    if (type == nullptr || involution->bottom_type()->is_int()->contains(type)) {
+      return original;
+    }
   }
-  return this;
+  return involution;
+}
+
+Node* NegNode::Identity(PhaseGVN* phase) {
+  return simplify_involution(phase, this);
+}
+
+Node* ReverseBytesNode::Identity(PhaseGVN* phase) {
+  return simplify_involution(phase, this);
+}
+
+Node* ReverseINode::Identity(PhaseGVN* phase) {
+  return simplify_involution(phase, this);
 }
 
 Node* ReverseLNode::Identity(PhaseGVN* phase) {
-  if (in(1)->Opcode() == Op_ReverseL) {
-    return in(1)->in(1);
-  }
-  return this;
+  return simplify_involution(phase, this);
 }

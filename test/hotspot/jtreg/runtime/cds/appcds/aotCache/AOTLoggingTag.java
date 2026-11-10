@@ -87,7 +87,7 @@ public class AOTLoggingTag {
         printTestCase("Production Run: errors should be printed with [aot] decoration");
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTCache=nosuchfile.aot",
-            "-XX:AOTMode=on",
+            "-XX:AOTMode=required",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
         out.shouldMatch("\\[aot *\\] An error has occurred while processing the AOT cache\\. Run with -Xlog:aot for details\\.");

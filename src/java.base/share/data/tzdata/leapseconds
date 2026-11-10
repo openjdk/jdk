@@ -21,7 +21,7 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-# Allowance for leap seconds added to each time zone file.
+# Leap seconds (1972-2016) optionally added to TZif files.
 
 # This file is in the public domain.
 
@@ -29,7 +29,7 @@
 # NIST/IERS format leap-seconds.list file, which can be copied from
 # <https://hpiers.obspm.fr/iers/bul/bulc/ntp/leap-seconds.list>
 # or via a less-secure protocol and with different comments and
-# less volatile last-modified and expiration timestamps, from
+# less volatile timestamp metadata, from
 # <ftp://ftp.boulder.nist.gov/pub/time/leap-seconds.list>.
 # For more about leap-seconds.list, please see
 # The NTP Timescale and Leap Seconds
@@ -41,10 +41,8 @@
 # (ITU-R) Recommendation TF.460-6 (02/2002)
 # <https://www.itu.int/rec/R-REC-TF.460-6-200202-I/>.
 # The International Earth Rotation and Reference Systems Service (IERS)
-# periodically uses leap seconds to keep UTC to within 0.9 s of UT1
-# (a proxy for Earth's angle in space as measured by astronomers)
-# and publishes leap second data in a copyrighted file
-# <https://hpiers.obspm.fr/iers/bul/bulc/Leap_Second.dat>.
+# periodically used leap seconds to keep UTC to within 0.9 s of UT1
+# (a proxy for Earth's angle in space as measured by astronomers).
 # See: Levine J. Coordinated Universal Time and the leap second.
 # URSI Radio Sci Bull. 2016;89(4):30-6. doi:10.23919/URSIRSB.2016.7909995
 # <https://ieeexplore.ieee.org/document/7909995>.
@@ -56,8 +54,8 @@
 # of UTC.
 
 # All leap-seconds are Stationary (S) at the given UTC time.
-# The correction (+ or -) is made at the given time, so in the unlikely
-# event of a negative leap second, a line would look like this:
+# The correction (+ or -) is made at the given time, so if a negative
+# leap second had ever occurred, a line would have looked like this:
 # Leap	YEAR	MON	DAY	23:59:59	-	S
 # Typical lines look like this:
 # Leap	YEAR	MON	DAY	23:59:60	+	S
@@ -90,8 +88,9 @@ Leap	2015	Jun	30	23:59:60	+	S
 Leap	2016	Dec	31	23:59:60	+	S
 
 # UTC timestamp when this leap second list expires.
-# Any additional leap seconds will come after this.
-# This Expires line is commented out for now,
+# The idea was that any additional leap seconds would come after this.
+# This timestamp is obsolete as there will be no more leap seconds.
+# This Expires line is commented out, to avoid confusion, and
 # so that pre-2020a zic implementations do not reject this file.
 #Expires 2027	Jun	28	00:00:00
 
@@ -99,10 +98,9 @@ Leap	2016	Dec	31	23:59:60	+	S
 # "#updated" gives the last time the leap seconds data changed
 # or, if this file was derived from the IERS leap-seconds.list,
 # the last time that file changed in any way.
-# "#expires" gives the first time this file might be wrong;
-# if this file was derived from the IERS leap-seconds.list,
-# this is typically a bit less than one year after "updated".
 #updated 1783323897 (2026-07-06 07:44:57 UTC)
+# "#expires" gives the first time this file might be wrong.
+# This timestamp is obsolete as there will be no more leap seconds.
 #expires 1814140800 (2027-06-28 00:00:00 UTC)
 
 #	Updated through IERS Bulletin C (https://hpiers.obspm.fr/iers/bul/bulc/bulletinc.dat)
