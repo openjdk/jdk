@@ -169,7 +169,7 @@
     --table-border-color: #747474;
     --tab-border-radius: 2px 2px 0 0;
     --hairline-border-width: 1px;
-    --hairline-border-color: #6c6c6c;
+    --hairline-border-color: #565656;
     --search-input-background-color: #202224;
     --search-input-text-color: #d0d0d0;
     --search-border-light-color: #505050;
@@ -235,10 +235,10 @@
 @media (min-resolution: 2x) {
     :root {
         --hairline-border-width: 0.8px;
-        --hairline-border-color: #6c6c6c;
+        --hairline-border-color: #a4a4a4;
     }
     :root[data-theme="theme-dark"] {
-        --hairline-border-color: #6c6c6c;
+        --hairline-border-color: #565656;
     }
 }
 /*
