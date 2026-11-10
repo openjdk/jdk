@@ -2942,14 +2942,6 @@ encode %{
     __ bind(done);
   %}
 
-  enc_class enc_cmove_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL mem ) %{
-    int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
-    Label done;
-    __ bso($crx$$CondRegister, done);
-    __ ld($dst$$Register, Idisp, $mem$$base$$Register);
-    __ bind(done);
-  %}
-
   enc_class enc_bc(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
     Label d;   // dummy
     __ bind(d);
@@ -4428,19 +4420,6 @@ operand indOffset16NarrowAlg4_klass(iRegNsrc reg, immL16Alg4 offset) %{
 //
 // This operand is used for loading and storing temporary values on
 // the stack where a match requires a value to flow through memory.
-operand stackSlotL(sRegL reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegL);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
 operand stackSlotP(sRegP reg) %{
   constraint(ALLOC_IN_RC(stack_slots));
   op_cost(100);
@@ -4458,19 +4437,6 @@ operand stackSlotF(sRegF reg) %{
   constraint(ALLOC_IN_RC(stack_slots));
   op_cost(100);
   //match(RegF);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotD(sRegD reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegD);
   format %{ "[sp+$reg]" %}
   interface(MEMORY_INTER) %{
     base(0x1);   // R1_SP
@@ -8953,32 +8919,6 @@ instruct moveI2D_reg(regD dst, iRegIsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-//---------- Chain stack slots between similar types --------
-
-// These are needed so that the rules below can match.
-
-// Load long from stack slot
-instruct stkL_to_regL(iRegLdst dst, stackSlotL src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LD      $dst, $src \t// long" %}
-  size(4);
-  ins_encode( enc_ld(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Store long to stack slot
-instruct regL_to_stkL(stackSlotL dst, iRegLsrc src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STD     $src, $dst \t// long" %}
-  size(4);
-  ins_encode( enc_std(src, dst) ); // rs=rt
-  ins_pipe(pipe_class_memory);
-%}
-
 //----------Moves between int and float
 instruct moveF2I_reg_reg(iRegIdst dst, regF src, regF tmp) %{
   match(Set dst (MoveF2I src));
@@ -9378,17 +9318,6 @@ instruct convL2I_reg(iRegIdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVI   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
 instruct cmovI_bso_reg_con0(iRegIdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE src);
@@ -9496,17 +9425,6 @@ instruct zeroExtendL_regL(iRegLdst dst, iRegLsrc src, immL_32bits mask) %{
   ins_encode %{
     __ clrldi($dst$$Register, $src$$Register, 32);
   %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVL   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
 
