@@ -59,6 +59,9 @@ runs:
       working-directory: jtreg/src
       shell: bash
       if: (steps.get-cached.outputs.cache-hit != 'true')
+      env:
+        # Sometimes the server rejects wget's default User-Agent.
+        WGET_OPTIONS: "--user-agent=Mozilla/5.0"
 
     - name: 'Upload JTReg artifact'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
