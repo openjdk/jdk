@@ -12273,25 +12273,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
-
-  void generate_atomic_entry_points() {
-    if (! UseLSE) {
-      return;
-    }
-
-#ifndef __ARM_FEATURE_ATOMICS
-    ptrdiff_t count = aarch64_atomic_ops_end - aarch64_atomic_ops;
-    for (ptrdiff_t i = 0; i < count; i++) {
-      AtomicAccess::store(&aarch64_atomic_ops[i], lse_aarch64_atomic_ops[i]);
-    }
-#endif // __ARM_FEATURE_ATOMICS
-  }
-
-#undef ATOMIC_STUB
-
-#endif // LINUX
-
   static void save_return_registers(MacroAssembler* masm) {
     if (ValueTypeReturnedAsFields) {
       masm->push(RegSet::range(r0, r7), sp);
@@ -13644,12 +13625,6 @@ class StubGenerator: public StubCodeGenerator {
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
     StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
-
-#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
-
-    generate_atomic_entry_points();
-
-#endif // LINUX
 
 #ifdef COMPILER2
     if (UseSecondarySupersTable) {

@@ -105,6 +105,20 @@ static bool has_neoverse_n1_errata_1542419() {
            (major_rev_num == 4 && minor_rev_num == 0)));
 }
 
+
+static void install_atomic_entry_points() {
+  if (! UseLSE) {
+    return;
+  }
+
+#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
+  ptrdiff_t count = aarch64_atomic_ops_end - aarch64_atomic_ops;
+  for (ptrdiff_t i = 0; i < count; i++) {
+    AtomicAccess::store(&aarch64_atomic_ops[i], lse_aarch64_atomic_ops[i]);
+  }
+#endif // __ARM_FEATURE_ATOMICS
+}
+
 void VM_Version::initialize() {
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
@@ -305,6 +319,10 @@ void VM_Version::initialize() {
   CHECK_CPU_FEATURE(UseCRC32, CRC32, supports_crc32(), "CRC32" MULTI_INST_WARNING_MSG);
   CHECK_CPU_FEATURE(UseLSE, LSE, supports_lse(), "LSE" MULTI_INST_WARNING_MSG);
   CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), "AES" MULTI_INST_WARNING_MSG);
+
+  // Once we know if UseLSE is enabled, immediately install the LSE
+  // entries.
+  install_atomic_entry_points();
 
   if (_cpu == CPU_ARM &&
       model_is_in({ CPU_MODEL_ARM_NEOVERSE_V1, CPU_MODEL_ARM_NEOVERSE_V2,
