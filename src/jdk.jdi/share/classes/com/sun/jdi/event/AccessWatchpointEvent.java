@@ -41,6 +41,10 @@ import com.sun.jdi.request.AccessWatchpointRequest;
  * <p>
  * Field modifications are not considered field accesses.
  *
+ * @apiNote The instance fields of {@linkplain Class#isValue() value classes} are
+ * strictly-initialized. Consequently, events for watched instance fields of a value
+ * class are not generated during construction of an instance of the value class.
+ *
  * @see AccessWatchpointRequest
  * @see EventQueue
  * @see VirtualMachine

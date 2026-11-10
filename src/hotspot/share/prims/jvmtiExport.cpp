@@ -2289,8 +2289,8 @@ static bool should_skip_field_event_during_strict_initialization(JavaThread* thr
     return true;
   }
 
-  // Skip a field event for a static field when the class declaring the field is being
-  // initialized by the event thread and the class declares strictly-initialized static fields.
+  // Skip field event for a static field when the class declaring the field is being initialized
+  // by the event thread and the class declares strictly-initialized static fields.
   if (fd.is_static()) {
     InstanceKlass* ik = fd.field_holder();
     return ik->has_strict_static_fields() && ik->is_reentrant_initialization(thread);
@@ -2302,7 +2302,7 @@ static bool should_skip_field_event_during_strict_initialization(JavaThread* thr
     return false;
   }
 
-  // Skip a field event for an instance field when the object containing the field is being
+  // Skip field event for an instance field when the object containing the field is being
   // constructed by the event thread and the object's class, or any of its superclasses,
   // has strictly-initialized instance fields.
   ResourceMark rm(thread);

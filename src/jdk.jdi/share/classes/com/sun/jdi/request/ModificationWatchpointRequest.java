@@ -54,6 +54,10 @@ import com.sun.jdi.event.ModificationWatchpointEvent;
  * when the class declaring the field is being initialized by the event thread
  * and the class declares strictly-initialized static fields.
  *
+ * @apiNote The instance fields of {@linkplain Class#isValue() value classes} are
+ * strictly-initialized. Consequently, events for watched instance fields of a value
+ * class are not generated during construction of an instance of the value class.
+ *
  * @see ModificationWatchpointEvent
  * @see AccessWatchpointRequest
  * @see EventQueue

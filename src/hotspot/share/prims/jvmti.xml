@@ -6639,6 +6639,11 @@ class C2 extends C1 implements I2 {
        object's class, or any of its superclasses, has
        <externallink id="../api/java.base/java/lang/reflect/Field.html#isStrictInit()">
        strictly-initialized<sup>PREVIEW</sup></externallink> instance fields.
+       For this purpose, the VM considers an object to be under construction
+       if the event thread has an active constructor invocation where slot 0
+       of the local variable array contains a reference to the object, and
+       the constructor's declaring class, or any of its superclasses, has
+       strictly-initialized instance fields.
        </li>
        <li>
        An event for a watched static field is not generated when the class
@@ -6654,7 +6659,7 @@ class C2 extends C1 implements I2 {
       <externallink id="../api/java.base/java/lang/Class.html#isValue()">
       value classes<sup>PREVIEW</sup></externallink> are strictly-initialized.
       Consequently, events for watched instance fields of a value class are not
-      generated while an instance of the value class is being constructed.
+      generated during construction of an instance of the value class.
     </intro>
 
     <function id="SetFieldAccessWatch" num="41">

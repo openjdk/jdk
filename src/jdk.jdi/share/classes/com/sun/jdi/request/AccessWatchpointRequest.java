@@ -57,6 +57,10 @@ import com.sun.jdi.event.EventSet;
  * Note that the modification
  * of a Field is not considered an access.
  *
+ * @apiNote The instance fields of {@linkplain Class#isValue() value classes} are
+ * strictly-initialized. Consequently, events for watched instance fields of a value
+ * class are not generated during construction of an instance of the value class.
+ *
  * @see AccessWatchpointEvent
  * @see ModificationWatchpointRequest
  * @see EventQueue
