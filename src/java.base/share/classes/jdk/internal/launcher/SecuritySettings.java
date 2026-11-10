@@ -164,7 +164,7 @@ public final class SecuritySettings {
 
     private static void printSecurityProviderConfig(boolean verbose, boolean fromLauncher) {
         ostream.println(INDENT + (fromLauncher
-                ? "Security provider static configuration: (in order of preference):"
+                ? "Security provider static configuration (in order of preference):"
                 : "Currently registered security providers (in order of preference):"));
         for (Provider p : Security.getProviders()) {
             if (verbose) {
