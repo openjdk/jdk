@@ -569,14 +569,36 @@ class UnixPath implements Path {
             return this;
         }
 
+        // find the first "." or ".." name element
+        int first = 0;
+        for (; first < count; first++) {
+            int start = offsets[first];
+            if (path[start] == '.') {
+                int len = (first == (count - 1))
+                        ? (path.length - start)
+                        : (offsets[first + 1] - start - 1);
+              if (len == 1 || (len == 2 && path[start + 1] == '.')) {
+                  break;
+              }
+            }
+        }
+        if (first == count) {
+            return this;    // no "." or ".." name element
+        }
+
         int[] lengths = new int[count];       // lengths of name elements
         int[] names = new int[count];         // indices of remaining name elements
-        int remaining = 0;                    // number of name elements remaining
+        int remaining = first;                // number of name elements remaining
         boolean isAbsolute = isAbsolute();
 
-        // Process name elements in one pass, the outcome of which is the indices
-        // of the remaining name elements
-        for (int i = 0; i < count; i++) {
+        // lengths/indices for the name elements before the first "." or ".."
+        for (int i = 0; i < first; i++) {
+            lengths[i] = offsets[i + 1] - offsets[i] - 1;
+            names[i] = i;
+         }
+
+        // process name elements from the first "." or ".."
+        for (int i = first; i < count; i++) {
             int start = offsets[i];
             int len = (i == (count - 1))
                     ? (path.length - start)

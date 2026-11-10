@@ -1411,7 +1411,7 @@ public class PathOps {
             .normalize("C:\\foo");
         test("C:\\.\\foo")
             .normalize("C:\\foo");
-        test("C:/foo//./bar/../../gus/")
+        test("C:\\foo\\.\\bar\\..\\..\\gus/")
             .normalize("C:\\gus");
         test("C:\\foo\\..")
             .normalize("C:\\");
@@ -2186,6 +2186,10 @@ public class PathOps {
             .normalize("");
         test(".../../..")
             .normalize("..");
+        test("foo/.../bar/..")
+            .normalize("foo/...");
+        test("foo/../...")
+            .normalize("...");
         test("../foo")
             .normalize("../foo");
         test("../../foo")

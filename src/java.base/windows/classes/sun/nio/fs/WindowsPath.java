@@ -493,14 +493,35 @@ class WindowsPath implements Path {
             return this;
         }
 
+        // find the first "." or ".." name element
+        int first = 0;
+        for (; first < count; first++) {
+            int start = offsets[first];
+            if (path.charAt(start) == '.') {
+                int len = (first == (count - 1))
+                        ? (path.length() - start)
+                        : (offsets[first + 1] - start - 1);
+                if (len == 1 || (len == 2 && path.charAt(start + 1) == '.')) {
+                    break;
+                }
+            }
+        }
+        if (first == count) {
+            return this;    // no "." or ".." name element
+        }
+
         int[] names = new int[count];    // indices of remaining name elements
-        int remaining = 0;               // number of name elements remaining
+        int remaining = first;           // number of name elements remaining
         boolean ignoreLeadingDotDot = isAbsolute()
                 || type == WindowsPathType.DIRECTORY_RELATIVE;
 
-        // Process name elements in one pass, the outcome of which is the indices
-        // of the remaining name elements
-        for (int i = 0; i < count; i++) {
+        // name elements before the first "." or ".."
+        for (int i = 0; i < first; i++) {
+            names[i] = i;
+        }
+
+        // process name elements from the first "." or ".."
+        for (int i = first; i < count; i++) {
             int start = offsets[i];
             int len = (i == (count - 1))
                     ? (path.length() - start)
@@ -513,9 +534,7 @@ class WindowsPath implements Path {
                     if (remaining > 0) {
                         int previous = names[remaining - 1];
                         int previousStart = offsets[previous];
-                        int previousLength = (previous == (count - 1))
-                                ? (path.length() - previousStart)
-                                : (offsets[previous + 1] - previousStart - 1);
+                        int previousLength = offsets[previous + 1] - previousStart - 1;
                         if ((previousLength != 2)
                                 || (path.charAt(previousStart) != '.')
                                 || (path.charAt(previousStart + 1) != '.')) {
