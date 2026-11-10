@@ -51,9 +51,10 @@ int pathmap_open(const char* name) {
     return open(name, O_RDONLY);
   }
 
-
   if (strlen(alt_root) + strlen(name) > PATH_MAX) {
     // Buffer too small.
+    print_error("SA_ALTROOT length(%d) + filename length(%d) is bigger than PATH_MAX(%d)\n",
+                strlen(alt_root), strlen(name), PATH_MAX);
     return -1;
   }
 
