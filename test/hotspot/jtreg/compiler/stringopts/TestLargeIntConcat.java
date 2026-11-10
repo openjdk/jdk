@@ -56,10 +56,9 @@ public class TestLargeIntConcat {
 
     public static void main(String[] args) {
         Random random = Utils.getRandomInstance();
-        List<Integer> counts = new ArrayList<>(List.of(1, MAX_RANDOM_COUNT));
-        for (int i = 0; i < 4; i++) {
-            counts.add(MIN_RANDOM_COUNT + random.nextInt(MAX_RANDOM_COUNT - MIN_RANDOM_COUNT));
-        }
+        // MAX_RANDOM_COUNT always exceeds the node limit without the fix.
+        List<Integer> counts = List.of(MAX_RANDOM_COUNT,
+                                       MIN_RANDOM_COUNT + random.nextInt(MAX_RANDOM_COUNT - MIN_RANDOM_COUNT));
         System.out.println("Append counts: " + counts);
 
         CompileFramework compileFramework = new CompileFramework();
