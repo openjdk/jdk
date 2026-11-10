@@ -220,7 +220,7 @@ import java.util.stream.Collectors;
  * </pre></blockquote>
  *
  * @spec https://www.unicode.org/reports/tr35
- *      Unicode Locale Data Markup Language (LDML)
+ *      Unicode Common Locale Data {@literal &} Rules (CLDR)
  * @see NumberFormat.Style
  * @see NumberFormat
  * @see DecimalFormat
@@ -466,7 +466,7 @@ public final class CompactNumberFormat extends NumberFormat {
      *        or if the given {@code pluralRules} contains an invalid syntax
      *
      * @spec https://www.unicode.org/reports/tr35
-     *      Unicode Locale Data Markup Language (LDML)
+     *      Unicode Common Locale Data {@literal &} Rules (CLDR)
      * @see DecimalFormat#DecimalFormat(java.lang.String, DecimalFormatSymbols)
      * @see DecimalFormatSymbols
      * @since 14
@@ -1300,7 +1300,7 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     // Patterns for plurals syntax validation
-    private static final String EXPR = "([niftvwe])\\s*(([/%])\\s*(\\d+))*+";
+    private static final String EXPR = "([niftvwec])\\s*(([/%])\\s*(\\d+))*+";
     private static final String RELATION = "(!?=)";
     private static final String VALUE_RANGE = "((\\d+)\\.\\.(\\d+)|\\d+)";
     private static final String CONDITION = EXPR + "\\s*" +
@@ -2604,7 +2604,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 .allMatch(r -> relationCheck(r, input)));
     }
 
-    private static final String NAMED_EXPR = "(?<op>[niftvwe])\\s*((?<div>[/%])\\s*(?<val>\\d+))*";
+    private static final String NAMED_EXPR = "(?<op>[niftvwec])\\s*((?<div>[/%])\\s*(?<val>\\d+))*";
     private static final String NAMED_RELATION = "(?<rel>!?=)";
     private static final String NAMED_VALUE_RANGE = "(?<start>\\d+)\\.\\.(?<end>\\d+)|(?<value>\\d+)";
     private static final Pattern EXPR_PATTERN = Pattern.compile(NAMED_EXPR);

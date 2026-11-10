@@ -21,19 +21,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="cs">Kichecki</language>
 			<language type="de">Kĩnjeremani</language>
 			<language type="el">Kigiriki</language>
-			<language type="en">Gĩthungũ</language>
+			<language type="en">Gĩthũngũ</language>
 			<language type="es">Kihispania</language>
 			<language type="fa">Kiajemi</language>
 			<language type="fr">Kĩbaranja</language>
 			<language type="ha">Kihausa</language>
 			<language type="hi">Kĩhĩndĩ</language>
+			<language type="hi_Latn">Kĩhĩndĩ (Kĩratini)</language>
+			<language type="hi_Latn" alt="variant">Kĩhĩndĩ (Gĩthũngũ)</language>
 			<language type="hu">Kihungari</language>
 			<language type="id">Kiindonesia</language>
 			<language type="ig">Kiigbo</language>
 			<language type="it">Kĩtaliano</language>
 			<language type="ja">Kĩnjabani</language>
 			<language type="jv">Kijava</language>
-			<language type="ki">Gikuyu</language>
+			<language type="ki">Gĩgĩkũyũ</language>
 			<language type="km">Kikambodia</language>
 			<language type="ko">Kikorea</language>
 			<language type="ms">Kimalesia</language>
@@ -58,6 +60,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh">Kĩcaina</language>
 			<language type="zu">Kizulu</language>
 		</languages>
+		<scripts>
+			<script type="Arab">Kĩarabu</script>
+			<script type="Latn">Kĩratini</script>
+		</scripts>
 		<territories>
 			<territory type="AD">Andora</territory>
 			<territory type="AE">Falme za Kiarabu</territory>
@@ -288,6 +294,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a b c d e g h iĩ j k m n o r t uũ w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[f l p q s v x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E G H I J K M N O R T U W Y]</exemplarCharacters>
+		<exemplarCharacters type="numbers" draft="contributed">[{ NBHY } \- ‑ , . % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -336,35 +344,49 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">JEN</month>
-							<month type="2">WKR</month>
-							<month type="3">WGT</month>
-							<month type="4">WKN</month>
-							<month type="5">WTN</month>
-							<month type="6">WTD</month>
-							<month type="7">WMJ</month>
-							<month type="8">WNN</month>
-							<month type="9">WKD</month>
-							<month type="10">WIK</month>
-							<month type="11">WMW</month>
-							<month type="12">DIT</month>
+							<month type="1">MGA</month>
+							<month type="2">MGE</month>
+							<month type="3">KH</month>
+							<month type="4">MŨTH</month>
+							<month type="5">MGNJ</month>
+							<month type="6">GATH</month>
+							<month type="7">GATHN</month>
+							<month type="8">MWNY</month>
+							<month type="9">MŨGK</month>
+							<month type="10">MWTH</month>
+							<month type="11">KNY</month>
+							<month type="12">GAT</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">Njenuarĩ</month>
-							<month type="2">Mwere wa kerĩ</month>
-							<month type="3">Mwere wa gatatũ</month>
-							<month type="4">Mwere wa kana</month>
-							<month type="5">Mwere wa gatano</month>
-							<month type="6">Mwere wa gatandatũ</month>
-							<month type="7">Mwere wa mũgwanja</month>
-							<month type="8">Mwere wa kanana</month>
-							<month type="9">Mwere wa kenda</month>
-							<month type="10">Mwere wa ikũmi</month>
-							<month type="11">Mwere wa ikũmi na ũmwe</month>
-							<month type="12">Ndithemba</month>
+							<month type="1">Mũgaa</month>
+							<month type="2">Mũgetho</month>
+							<month type="3">Kĩhu</month>
+							<month type="4">Mũthatũ</month>
+							<month type="5">Mũgiranjara</month>
+							<month type="6">Gathathanwa</month>
+							<month type="7">Gathano</month>
+							<month type="8">Mworia Nyoni</month>
+							<month type="9">Mũgaa wa Kerĩ</month>
+							<month type="10">Mwania Thenge</month>
+							<month type="11">Kanyua Hũngũ</month>
+							<month type="12">Gatumu</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">MGA</month>
+							<month type="2">MGE</month>
+							<month type="3">KH</month>
+							<month type="4">MŨTH</month>
+							<month type="5">MGNJ</month>
+							<month type="6">GATH</month>
+							<month type="7">GATHN</month>
+							<month type="8">MWNY</month>
+							<month type="9">MŨGK</month>
+							<month type="10">MWTH</month>
+							<month type="11">KNY</month>
+							<month type="12">GAT</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">J</month>
 							<month type="2">K</month>
@@ -379,30 +401,71 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">I</month>
 							<month type="12">D</month>
 						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Mũgaa</month>
+							<month type="2">Mũgetho</month>
+							<month type="3">Kĩhu</month>
+							<month type="4">Mũthatũ</month>
+							<month type="5">Mũgĩranjara</month>
+							<month type="6">Gathathanwa</month>
+							<month type="7">Gathano</month>
+							<month type="8">Mworia Nyoni</month>
+							<month type="9">Mũgaa wa Kerĩ</month>
+							<month type="10">Mwania Thenge</month>
+							<month type="11">Kanyua Hũngũ</month>
+							<month type="12">Gatumu</month>
+						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
 							<day type="sun">KMA</day>
-							<day type="mon">NTT</day>
-							<day type="tue">NMN</day>
-							<day type="wed">NMT</day>
-							<day type="thu">ART</day>
-							<day type="fri">NMA</day>
-							<day type="sat">NMM</day>
+							<day type="mon">MWA</day>
+							<day type="tue">WAĨ</day>
+							<day type="wed">WETŨ</day>
+							<day type="thu">WEN</day>
+							<day type="fri">WETO</day>
+							<day type="sat">NJU</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">K</day>
+							<day type="mon">MW</day>
+							<day type="tue">WA</day>
+							<day type="wed">WTŨ</day>
+							<day type="thu">WN</day>
+							<day type="fri">WTO</day>
+							<day type="sat">MŨT</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">KMA</day>
+							<day type="mon">MWA</day>
+							<day type="tue">WAĨ</day>
+							<day type="wed">WETŨ</day>
+							<day type="thu">WEN</day>
+							<day type="fri">WETO</day>
+							<day type="sat">NJU</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Kiumia</day>
-							<day type="mon">Njumatatũ</day>
-							<day type="tue">Njumaine</day>
-							<day type="wed">Njumatana</day>
-							<day type="thu">Aramithi</day>
-							<day type="fri">Njumaa</day>
-							<day type="sat">Njumamothi</day>
+							<day type="mon">Mwambĩrĩrio</day>
+							<day type="tue">Waĩrĩ</day>
+							<day type="wed">Wetatũ</day>
+							<day type="thu">Wena</day>
+							<day type="fri">Wetano</day>
+							<day type="sat">Njuuma</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">KMA</day>
+							<day type="mon">MWA</day>
+							<day type="tue">WAĨ</day>
+							<day type="wed">WETŨ</day>
+							<day type="thu">WEN</day>
+							<day type="fri">WETO</day>
+							<day type="sat">MŨT</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">K</day>
 							<day type="mon">N</day>
@@ -411,6 +474,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">A</day>
 							<day type="fri">N</day>
 							<day type="sat">N</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">KMA</day>
+							<day type="mon">MWA</day>
+							<day type="tue">WAĨ</day>
+							<day type="wed">WETŨ</day>
+							<day type="thu">WEN</day>
+							<day type="fri">WETO</day>
+							<day type="sat">MŨT</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Kiumia</day>
+							<day type="mon">Mwambĩrĩrio</day>
+							<day type="tue">Waĩrĩ</day>
+							<day type="wed">Wetatũ</day>
+							<day type="thu">Wena</day>
+							<day type="fri">Wetano</day>
+							<day type="sat">Njuuma</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -436,12 +517,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am">Kiroko</dayPeriod>
 							<dayPeriod type="pm">Hwaĩ-inĩ</dayPeriod>
 						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">Kĩroko</dayPeriod>
+							<dayPeriod type="pm">Hwaĩ-inĩ</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">Kĩroko</dayPeriod>
+							<dayPeriod type="pm">Hwaĩ-inĩ</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">Kĩroko</dayPeriod>
+							<dayPeriod type="pm">Hwaĩ-inĩ</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">Kĩroko</dayPeriod>
+							<dayPeriod type="pm">Hwaĩ-inĩ</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">Kĩroko</dayPeriod>
+							<dayPeriod type="pm">Hwaĩ-inĩ</dayPeriod>
+						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">Mbere ya Kristo</era>
-						<era type="1">Thutha wa Kristo</era>
+						<era type="0">Mbere ya Kristũ</era>
+						<era type="1">Thutha wa Kristũ</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">MK</era>
@@ -495,18 +598,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<availableFormats>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, MMMM d</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
+						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">dd-MM-YYYY</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">dd-MM-YYYY</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">dd-MM-YYYY E</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM ‑ MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -516,12 +631,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year">
 				<displayName>Mwaka</displayName>
+				<relative type="-1">mwaka mũhĩtũku</relative>
+				<relative type="0">mwaka ũyũ</relative>
+				<relative type="1">mwaka ũroka</relative>
+			</field>
+			<field type="year-short">
+				<relative type="-1">mwaka mũhĩtũku</relative>
+				<relative type="0">mwaka ũyũ</relative>
+				<relative type="1">mwaka ũroka</relative>
+			</field>
+			<field type="year-narrow">
+				<relative type="-1">mwaka mũhĩtũku</relative>
+				<relative type="0">mwaka ũyũ</relative>
+				<relative type="1">mwaka ũroka</relative>
 			</field>
 			<field type="month">
 				<displayName>Mweri</displayName>
+				<relative type="-1">mweri mũhĩtũku</relative>
+				<relative type="0">mweri ũyũ</relative>
+				<relative type="1">mweri mũku</relative>
+			</field>
+			<field type="month-short">
+				<relative type="-1">mweri mũhĩtũku</relative>
+				<relative type="0">mweri ũyũ</relative>
+				<relative type="1">mweri mũku</relative>
+			</field>
+			<field type="month-narrow">
+				<relative type="-1">mweri mũhĩtũku</relative>
+				<relative type="0">mweri ũyũ</relative>
+				<relative type="1">mweri mũku</relative>
 			</field>
 			<field type="week">
-				<displayName>Kiumia</displayName>
+				<displayName>kiumia</displayName>
+				<relative type="-1">kiumia kĩhĩtũku</relative>
+				<relative type="0">kiumia tũrĩ</relative>
+				<relative type="1">kiumia kĩroka</relative>
+				<relativePeriod>kiumia kĩa {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<relative type="-1">kiumia kĩhĩtũku</relative>
+				<relative type="0">kiumia tũrĩ</relative>
+				<relative type="1">kiumia kĩroka</relative>
+				<relativePeriod>kiumia kĩa {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<relative type="-1">kiumia hĩtũku</relative>
+				<relative type="0">kiumia ĩno</relative>
+				<relative type="1">kiumia njũku</relative>
+				<relativePeriod>kiumia kĩa {0}</relativePeriod>
 			</field>
 			<field type="day">
 				<displayName>Mũthenya</displayName>
@@ -532,6 +689,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekday">
 				<displayName>Mũthenya kiumia-inĩ</displayName>
 			</field>
+			<field type="sun">
+				<relative type="-1">Kiumia gĩthiru</relative>
+				<relative type="0">Kiumia gĩkĩ</relative>
+				<relative type="1">Kiumia gĩũku</relative>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">Kiumia gĩthiru</relative>
+				<relative type="0">Kiumia gĩkĩ</relative>
+				<relative type="1">Kiumia gĩũku</relative>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1">Kiumia gĩthiru</relative>
+				<relative type="0">Kiumia gĩkĩ</relative>
+				<relative type="1">Kiumia gĩũku</relative>
+			</field>
 			<field type="hour">
 				<displayName>Ithaa</displayName>
 			</field>
@@ -539,12 +711,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Ndagĩka</displayName>
 			</field>
 			<field type="second">
-				<displayName>Sekunde</displayName>
+				<displayName>ica</displayName>
 			</field>
 			<field type="zone">
 				<displayName>Mũcooro wa mathaa</displayName>
 			</field>
 		</fields>
+		<timeZoneNames>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Mũbango wa Ithaa rĩa Thĩ</standard>
+				</long>
+				<short>
+					<standard>MIT</standard>
+				</short>
+			</zone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>Mathaa ma Abirika ya Gatagatĩ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>Mathaa ma Abirika ya Irathĩro</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>Mathaa ma Abirika ya Mũhuro</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<standard>Mathaa ma Abirika ya Ithũĩro</standard>
+				</long>
+			</metazone>
+			<!-- <metazone type="Cape_Verde">
+				 Mising full group
+				 <long>
+				 <generic>Mathaa ma Cape Verde</generic>
+				 </long>
+				 </metazone>
+			-->
+			<metazone type="GMT">
+				<long>
+					<standard>GMT</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
 	</dates>
 	<numbers>
 		<currencyFormats numberSystem="latn">
