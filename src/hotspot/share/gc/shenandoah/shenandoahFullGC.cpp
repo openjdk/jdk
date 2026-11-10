@@ -35,6 +35,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -203,6 +204,10 @@ void ShenandoahFullGC::do_it() {
     heap->tlabs_retire(ResizeTLAB);
   }
 
+  // Release CAS alloc regions before Full GC walks the heap.
+  heap->allocator()->release_mutator_alloc_regions_under_lock();
+  heap->allocator()->release_collector_alloc_regions_under_lock();
+
   OrderAccess::fence();
 
   phase1_mark_heap();
@@ -246,6 +251,8 @@ void ShenandoahFullGC::do_it() {
 
   heap->set_full_gc_move_in_progress(false);
   heap->set_full_gc_in_progress(false);
+
+  heap->allocator()->reserve_mutator_alloc_regions_under_lock();
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_fullgc(_generation);
@@ -593,7 +600,7 @@ public:
 
     // Record current region occupancy: this communicates empty regions are free
     // to the rest of Full GC code.
-    r->set_new_top(r->top());
+    r->set_new_top(r->plain_top());
   }
 };
 
@@ -1015,7 +1022,7 @@ public:
       // else, generational mode compaction has already established affiliation.
       r->make_regular_bypass();
       if (ZapUnusedHeapArea) {
-        SpaceMangler::mangle_region(MemRegion(r->top(), r->end()));
+        SpaceMangler::mangle_region(MemRegion(r->plain_top(), r->end()));
       }
     }
 
