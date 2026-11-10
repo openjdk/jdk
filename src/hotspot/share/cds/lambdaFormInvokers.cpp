@@ -129,7 +129,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
   guarantee(cds_klass != nullptr, "jdk/internal/misc/CDS must exist!");
 
-  assert(CDSConfig::current_thread_is_dumper(), "not supposed to be called from other threads");
+  assert(CDSConfig::in_dumper_thread(), "not supposed to be called from other threads");
   {
     // Stop other threads from recording into _lambdaform_lines.
     MutexLocker ml(Thread::current(), LambdaFormInvokers_lock);
@@ -290,12 +290,12 @@ void LambdaFormInvokers::read_static_archive_invokers() {
 
 void LambdaFormInvokers::serialize(SerializeClosure* soc) {
   soc->do_ptr(&_static_archive_invokers);
-  if (soc->reading() && CDSConfig::is_dumping_final_static_archive()) {
+  if (soc->reading() && CDSConfig::is_dumping_aot_cache()) {
     if (!CDSConfig::is_dumping_aot_linked_classes()) {
       // See CDSConfig::is_dumping_regenerated_lambdaform_invokers() -- a dynamic archive can
       // regenerate lambda form invokers only if the base archive does not contain aot-linked classes.
-      // If so, we copy the contents of _static_archive_invokers (from the preimage) into
-      //_lambdaform_lines, which will be written as _static_archive_invokers into final static archive.
+      // If so, we copy the contents of _static_archive_invokers (from the AOT configuration) into
+      //_lambdaform_lines, which will be written as _static_archive_invokers into the AOT cache.
       LambdaFormInvokers::read_static_archive_invokers();
     }
     _static_archive_invokers = nullptr;

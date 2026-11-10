@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,8 +116,12 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
     report(false, scale_unit);
   } else if (_baseline.value()) {
     MemBaseline& baseline = MemTracker::get_baseline();
-    baseline.baseline(MemTracker::tracking_level() != NMT_detail);
-    output()->print_cr("Baseline taken");
+    bool success = baseline.baseline(MemTracker::tracking_level() != NMT_detail);
+    if (success) {
+      output()->print_cr("Baseline taken");
+    } else {
+      MemReporterBase::report_detail_failure(output(), "Summary baseline taken");
+    }
   } else if (_summary_diff.value()) {
     MemBaseline& baseline = MemTracker::get_baseline();
     if (baseline.baseline_type() >= MemBaseline::Summary_baselined) {
@@ -149,8 +153,11 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
 
 void NMTDCmd::report(bool summaryOnly, size_t scale_unit) {
   MemBaseline baseline;
-  baseline.baseline(summaryOnly);
-  if (summaryOnly) {
+  bool success = baseline.baseline(summaryOnly);
+  if (!success) {
+    MemReporterBase::report_detail_failure(output());
+  }
+  if (summaryOnly || !success) {
     MemSummaryReporter rpt(baseline, output(), scale_unit);
     rpt.report();
   } else {
@@ -167,8 +174,11 @@ void NMTDCmd::report_diff(bool summaryOnly, size_t scale_unit) {
     "Not a detail baseline");
 
   MemBaseline baseline;
-  baseline.baseline(summaryOnly);
-  if (summaryOnly) {
+  bool success = baseline.baseline(summaryOnly);
+  if (!success) {
+    MemReporterBase::report_detail_failure(output());
+  }
+  if (summaryOnly || !success) {
     MemSummaryDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
     rpt.report_diff();
   } else {

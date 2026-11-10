@@ -40,6 +40,20 @@ class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend RiscvHwprobe;
+
+ public:
+  enum class AtomicAccessMode : uint8_t {
+    RVWMO,
+    RVWMO_ZALASR,
+    ZTSO
+  };
+
+  enum class AtomicCasMode : uint8_t {
+    BASELINE,
+    ZACAS,
+    ZACAS_ZABHA
+  };
+
  private:
 
   // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
@@ -285,8 +299,6 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zicond      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicond))                                 \
   /* Zicsr Control and Status Register (CSR) Instructions */                                              \
   decl(Zicsr       ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
-  /* Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space. */             \
-  decl(Zic64b      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZic64b))                                 \
   /* Zifencei Instruction-Fetch Fence */                                                                  \
   decl(Zifencei    ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
   /* Zihintpause Pause instruction HINT */                                                                \
@@ -440,7 +452,6 @@ private:
     RV_ENABLE_EXTENSION(UseZba)                      \
     RV_ENABLE_EXTENSION(UseZbb)                      \
     RV_ENABLE_EXTENSION(UseZbs)                      \
-    RV_ENABLE_EXTENSION(UseZic64b)                   \
     RV_ENABLE_EXTENSION(UseZicbop)                   \
     RV_ENABLE_EXTENSION(UseZihintpause)              \
 
@@ -457,7 +468,6 @@ private:
     RV_ENABLE_EXTENSION(UseZcb)                     \
     RV_ENABLE_EXTENSION(UseZfa)                     \
     RV_ENABLE_EXTENSION(UseZfhmin)                  \
-    RV_ENABLE_EXTENSION(UseZic64b)                  \
     RV_ENABLE_EXTENSION(UseZicbop)                  \
     RV_ENABLE_EXTENSION(UseZicond)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
@@ -512,18 +522,23 @@ private:
   static uint32_t cpu_vector_length();
   static uint32_t _initial_vector_length;
 
-  // Native AtomicAccess dispatches on this instead of UseZalasr. UseZalasr is
-  // set from command-line and extension detection before VM_Version::initialize()
-  // runs the toolchain-psABI and UseZtso mutual-exclusion checks, so during
-  // startup UseZalasr may be transiently true even on configurations where those
-  // checks would later disable it. AtomicAccess is invoked from os::init_2,
-  // vm_init_globals, ObjectSynchronizer::initialize and other subsystems that
-  // run before init_globals() calls VM_Version_init(), so dispatching on
-  // UseZalasr directly can either SIGILL (CPU lacks the extension) or emit
-  // Zalasr sequences that later get paired with the incompatible pre-psABI
-  // atomics mapping. This flag is false by default and is latched to the final
-  // UseZalasr value after all validation completes.
-  static bool _use_zalasr_atomics;
+  // Native AtomicAccess dispatches on this instead of reading UseZalasr and
+  // UseZtso separately. UseZalasr is set from command-line and extension
+  // detection before VM_Version::initialize() runs the toolchain-psABI and
+  // UseZtso mutual-exclusion checks, so during startup it may be transiently
+  // true even on configurations where those checks would later disable it.
+  // AtomicAccess is invoked from os::init_2, vm_init_globals,
+  // ObjectSynchronizer::initialize and other subsystems that run before
+  // init_globals() calls VM_Version_init(), so dispatching on UseZalasr
+  // directly can either SIGILL (CPU lacks the extension) or emit Zalasr
+  // sequences that later get paired with the incompatible pre-psABI atomics
+  // mapping. This mode is RVWMO by default and is latched to the final flag
+  // values after all validation completes.
+  static AtomicAccessMode _atomic_access_mode;
+
+  // Keep native CAS on the baseline ISA until CPU feature initialization
+  // completes, then latch the final Zacas/Zabha configuration.
+  static AtomicCasMode _atomic_cas_mode;
 
   static void common_initialize();
 
@@ -536,7 +551,10 @@ private:
   static void initialize();
   static void initialize_cpu_information();
 
-  static bool use_zalasr_atomics() { return _use_zalasr_atomics; }
+  static uint32_t initial_vector_length() { return _initial_vector_length; }
+
+  static AtomicAccessMode atomic_access_mode() { return _atomic_access_mode; }
+  static AtomicCasMode atomic_cas_mode() { return _atomic_cas_mode; }
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 

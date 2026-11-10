@@ -25,6 +25,7 @@
 #include "cds/aotHeap.inline.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotModules.hpp"
+#include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -295,7 +296,7 @@ void AOTModules::ArchivedProperty::runtime_check() const {
   const char* new_label1;
   const char* new_label2;
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_aot_cache()) {
     old_label1 = "in AOTConfiguration";
     old_label2 = ", AOTConfiguration =";
     new_label1 = "for current JVM";
@@ -334,7 +335,7 @@ void AOTModules::ArchivedProperty::runtime_check() const {
     AOTMetaspace::report_loading_error("Disabling full module graph");
     CDSConfig::disable_full_module_graph();
 
-    if (CDSConfig::is_dumping_final_static_archive()) {
+    if (CDSConfig::is_dumping_aot_cache()) {
       AOTMetaspace::unrecoverable_writing_error("mismatched module options");
     }
   }
@@ -556,9 +557,15 @@ void AOTModules::remove_unshareable_info() {
 }
 
 void AOTModules::serialize(SerializeClosure* f) {
+  // These tables are used for loading cached modules in a retaining JVM. However,
+  // these tables should not be written into the AOT configuration file (which
+  // doesn't cache modules).
+  AOTWriteClosureDisabler disable_if(CDSConfig::is_redumping_aot_configuration());
+
   _archived_boot_loader_data.serialize(f);
   _archived_platform_loader_data.serialize(f);
   _archived_system_loader_data.serialize(f);
+
   f->do_ptr(&_archived_javabase_moduleEntry);
   f->do_int(&_platform_loader_root_index);
   f->do_int(&_system_loader_root_index);

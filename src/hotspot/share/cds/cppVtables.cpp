@@ -231,8 +231,8 @@ enum ClonedVtableKind {
 // the following holds true:
 //     _orig_cpp_vtptrs[ConstantPool_Kind] == ((intptr_t**)cp)[0]
 //
-// _archived_cpp_vtptrs is a map of all the vptprs used by classes in a preimage. E.g., for
-//    InstanceKlass* k = a class loaded from the preimage;
+// _archived_cpp_vtptrs is a map of all the vptprs used by classes in an input archive. E.g., for
+//    InstanceKlass* k = a class loaded from the input archive;
 //    ConstantPool* cp = k->constants();
 // the following holds true:
 //     _archived_cpp_vtptrs[ConstantPool_Kind] == ((intptr_t**)cp)[0]
@@ -265,8 +265,8 @@ char* CppVtables::_vtables_serialized_base = nullptr;
 void CppVtables::dumptime_init(ArchiveBuilder* builder) {
   assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
-    // When dumping final archive, _index[kind] at this point is in the preimage.
+  if (CDSConfig::is_dumping_with_input_archive()) {
+    // At this point, _index[kind] is in the input archive.
     // Remember these vtable pointers in _archived_cpp_vtptrs, as _index[kind] will now be rewritten
     // to point to the runtime vtable data.
     for (int i = 0; i < _num_cloned_vtable_kinds; i++) {
