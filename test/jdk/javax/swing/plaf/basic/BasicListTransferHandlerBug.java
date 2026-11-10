@@ -55,6 +55,6 @@ public class BasicListTransferHandlerBug {
             if (!actual.contains(expected)) {
                 throw new RuntimeException("Expected: " + expected + "\nActual: " + actual);
             }
-        }); 
+        });
     }
 }
