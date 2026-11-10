@@ -95,7 +95,7 @@ public interface HTMLTableSectionElement extends HTMLElement {
      * @return  The newly created row.
      * @exception DOMException
      *    INDEX_SIZE_ERR: Raised if the specified index is greater than the
-     *   number of rows of if the index is neagative.
+     *   number of rows of if the index is negative.
      */
     public HTMLElement insertRow(int index)
                                  throws DOMException;
