@@ -577,9 +577,9 @@ class UnixPath implements Path {
                 int len = (first == (count - 1))
                         ? (path.length - start)
                         : (offsets[first + 1] - start - 1);
-              if (len == 1 || (len == 2 && path[start + 1] == '.')) {
-                  break;
-              }
+                if (len == 1 || (len == 2 && path[start + 1] == '.')) {
+                    break;
+                }
             }
         }
         if (first == count) {
