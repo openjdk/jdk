@@ -781,7 +781,7 @@ const TypeInteger* IfNode::filtered_integer_type(PhaseGVN* gvn, Node* val, Node*
 
 const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj) {
   const TypeInteger* t = filtered_integer_type(gvn, val, if_proj, T_INT);
-  return t == nullptr ? nullptr : t->is_int();
+  return t == nullptr ? nullptr : t->as_int();
 }
 
 //------------------------------fold_compares----------------------------
@@ -1561,7 +1561,7 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
   Node_Stack<Node> stack(2);
 
   assert(r->Opcode() == Op_LoadRange, "unexpected range check");
-  const TypeInt* array_size = igvn->type(r)->is_int();
+  const TypeInt* array_size = igvn->type(r)->as_int();
 
   stack.push(l, 0);
 
@@ -1574,7 +1574,7 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
       Node* use = n->raw_out(i);
       if (stack.size() == 1) {
         if (use->Opcode() == Op_ConvI2L) {
-          const TypeLong* bounds = use->as_Type()->type()->is_long();
+          const TypeLong* bounds = use->as_Type()->type()->as_long();
           if (bounds->_lo <= array_size->_lo && bounds->_hi >= array_size->_hi &&
               (bounds->_lo != array_size->_lo || bounds->_hi != array_size->_hi)) {
             stack.set_index(i+1);
@@ -1614,8 +1614,8 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
             }
           }
         }
-      } else if (use->in(0) == nullptr && (igvn->type(use)->isa_long() ||
-                                        igvn->type(use)->isa_ptr())) {
+      } else if (use->in(0) == nullptr && (igvn->type(use)->is_long() ||
+                                           igvn->type(use)->is_ptr())) {
         stack.set_index(i+1);
         stack.push(use, 0);
         break;
@@ -2261,7 +2261,7 @@ static int subsuming_bool_test_encode(Node* node) {
 // If the test is constant & we match, then we are the input Control
 Node* IfProjNode::Identity(PhaseGVN* phase) {
   // Can only optimize if cannot go the other way
-  const TypeTuple *t = phase->type(in(0))->is_tuple();
+  const TypeTuple* t = phase->type(in(0))->as_tuple();
   if (t == TypeTuple::IFNEITHER || (always_taken(t) &&
        // During parsing (GVN) we don't remove dead code aggressively.
        // Cut off dead branch and let PhaseRemoveUseless take care of it.

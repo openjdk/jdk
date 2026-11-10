@@ -1337,7 +1337,7 @@ Node* VPointer::make_pointer_expression(Node* iv_value, Node* ctrl) const {
       assert(s.scaleI().is_one(), "must be long variable");
       Node* scaleL = igvn.longcon(s.scaleL().value());
       Node* variable = (s.variable() == iv) ? iv_value : s.variable();
-      if (variable->bottom_type()->isa_ptr() != nullptr) {
+      if (variable->bottom_type()->is_ptr()) {
         // Use a ctrl that is late enough, so that we do not
         // evaluate the cast before a SafePoint.
         variable = new CastP2XNode(ctrl, variable);

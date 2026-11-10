@@ -3751,11 +3751,11 @@ static void path_to_constant(FILE *fp, FormDict &globals,
     if (         strcmp(optype,"ConI") == 0 ) {
       fprintf(fp, "_leaf->get_int()");
     } else if ( (strcmp(optype,"ConP") == 0) ) {
-      fprintf(fp, "_leaf->bottom_type()->is_ptr()");
+      fprintf(fp, "_leaf->bottom_type()->as_ptr()");
     } else if ( (strcmp(optype,"ConN") == 0) ) {
-      fprintf(fp, "_leaf->bottom_type()->is_narrowoop()");
+      fprintf(fp, "_leaf->bottom_type()->as_narrowoop()");
     } else if ( (strcmp(optype,"ConNKlass") == 0) ) {
-      fprintf(fp, "_leaf->bottom_type()->is_narrowklass()");
+      fprintf(fp, "_leaf->bottom_type()->as_narrowklass()");
     } else if ( (strcmp(optype,"ConH") == 0) ) {
       fprintf(fp, "_leaf->geth()");
     } else if ( (strcmp(optype,"ConF") == 0) ) {

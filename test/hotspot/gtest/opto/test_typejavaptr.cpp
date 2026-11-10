@@ -506,10 +506,10 @@ public:
 
   const TypePtrMirror* meet(const TypePtrMirror* o) const { ShouldNotReachHere(); }
   const TypePtrMirror* join(const TypePtrMirror* o) const { ShouldNotReachHere(); }
-  const TypePtrMirror* is_ptr()                     const { ShouldNotReachHere(); }
+  const TypePtrMirror* as_ptr()                     const { ShouldNotReachHere(); }
 
-  virtual const TypeOopPtrMirror*   is_oopptr()   const { ShouldNotReachHere(); }
-  virtual const TypeKlassPtrMirror* is_klassptr() const { ShouldNotReachHere(); }
+  virtual const TypeOopPtrMirror*   as_oopptr()   const { ShouldNotReachHere(); }
+  virtual const TypeKlassPtrMirror* as_klassptr() const { ShouldNotReachHere(); }
 
   virtual void dump_on(outputStream& st) const {
     st.print("AnyPtr:");
@@ -568,11 +568,11 @@ public:
   constexpr const TypePtrMirror* speculative()    const { return nullptr; }
   constexpr int                  inline_depth()   const { return 0; }
 
-  virtual const TypeOopPtrMirror*  is_oopptr()  const override { return this; }
-  virtual const TypeInstPtrMirror* is_instptr() const = 0;
-  virtual const TypeAryPtrMirror*  is_aryptr()  const = 0;
+  const TypeOopPtrMirror* as_oopptr() const override { return this; }
+  virtual const TypeInstPtrMirror* as_instptr() const = 0;
+  virtual const TypeAryPtrMirror*  as_aryptr()  const = 0;
 
-  virtual void dump_on(outputStream& st) const override = 0;
+  void dump_on(outputStream& st) const override = 0;
 };
 
 static constexpr size_t TypeInstPtr_samples_size() {
@@ -638,8 +638,8 @@ public:
 
   constexpr const ciInstanceKlassMirror* instance_klass() const { return _klass; }
 
-  virtual const TypeInstPtrMirror* is_instptr() const override { return this; }
-  virtual const TypeAryPtrMirror*  is_aryptr()  const override { ShouldNotReachHere(); }
+  const TypeInstPtrMirror* as_instptr() const override { return this; }
+  const TypeAryPtrMirror*  as_aryptr()  const override { ShouldNotReachHere(); }
 
   virtual void dump_on(outputStream& st) const override {
     st.print("InstPtr:");
@@ -737,7 +737,7 @@ public:
   }
 
   const ArySizeType* operator->() const { return this; }
-  const ArySizeType& is_int()     const { assert(!_empty, "must not be empty"); return *this; }
+  const ArySizeType& as_int()     const { assert(!_empty, "must not be empty"); return *this; }
   const ArySizeType& isa_int()    const { return *this; }
 
   constexpr bool contains(int len) const {
@@ -914,10 +914,10 @@ public:
   bool is_atomic()        const { return true; }
   Type::Offset field_offset() const { return Type::Offset::bottom; }
 
-  virtual const TypeInstPtrMirror* is_instptr() const override { ShouldNotReachHere(); }
-  virtual const TypeAryPtrMirror*  is_aryptr()  const override { return this; }
+  const TypeInstPtrMirror* as_instptr() const override { ShouldNotReachHere(); }
+  const TypeAryPtrMirror*  as_aryptr()  const override { return this; }
 
-  virtual void dump_on(outputStream& st) const override {
+  void dump_on(outputStream& st) const override {
     st.print("AryPtr:");
     dump_ptr(st);
     st.print(" - ");
@@ -1223,9 +1223,9 @@ public:
   constexpr InterfaceSet interfaces()     const { return _interfaces; }
   constexpr bool         klass_is_exact() const { return ptr() == TypePtr::Constant; }
 
-  virtual const TypeKlassPtrMirror*     is_klassptr()     const { return this; }
-  virtual const TypeInstKlassPtrMirror* is_instklassptr() const = 0;
-  virtual const TypeAryKlassPtrMirror*  is_aryklassptr()  const = 0;
+  const TypeKlassPtrMirror* as_klassptr() const override { return this; }
+  virtual const TypeInstKlassPtrMirror* as_instklassptr() const = 0;
+  virtual const TypeAryKlassPtrMirror*  as_aryklassptr()  const = 0;
 };
 
 static constexpr size_t TypeInstKlassPtr_samples_size() {
@@ -1288,10 +1288,10 @@ public:
 
   constexpr const ciInstanceKlassMirror* instance_klass() const { return _klass; }
 
-  virtual const TypeInstKlassPtrMirror* is_instklassptr() const override { return this; }
-  virtual const TypeAryKlassPtrMirror*  is_aryklassptr()  const override { ShouldNotReachHere(); }
+  const TypeInstKlassPtrMirror* as_instklassptr() const override { return this; }
+  const TypeAryKlassPtrMirror*  as_aryklassptr()  const override { ShouldNotReachHere(); }
 
-  virtual void dump_on(outputStream& st) const override {
+  void dump_on(outputStream& st) const override {
     st.print("InstKlassPtr:");
     dump_ptr(st);
     st.print(" - ");
@@ -1496,10 +1496,10 @@ public:
   bool is_atomic()        const { return true; }
   bool is_refined_type()  const { return false; }
 
-  virtual const TypeInstKlassPtrMirror* is_instklassptr() const override { ShouldNotReachHere(); }
-  virtual const TypeAryKlassPtrMirror*  is_aryklassptr()  const override { return this; }
+  const TypeInstKlassPtrMirror* as_instklassptr() const override { ShouldNotReachHere(); }
+  const TypeAryKlassPtrMirror*  as_aryklassptr()  const override { return this; }
 
-  virtual void dump_on(outputStream& st) const override {
+  void dump_on(outputStream& st) const override {
     st.print("AryKlassPtr:");
     dump_ptr(st);
     st.print(" - ");
@@ -1726,9 +1726,9 @@ public:
 
       const typename PtrType::InstType* type_inst;
       if constexpr (PtrType::is_oopptr_type) {
-        type_inst = type->is_oopptr()->is_instptr();
+        type_inst = type->as_oopptr()->as_instptr();
       } else {
-        type_inst = type->is_klassptr()->is_instklassptr();
+        type_inst = type->as_klassptr()->as_instklassptr();
       }
 
       if (type_is_exact) {
@@ -1743,9 +1743,9 @@ public:
     if (type->base() == Type::InstPtr || type->base() == Type::InstKlassPtr) {
       const typename PtrType::InstType* type_inst;
       if constexpr (PtrType::is_oopptr_type) {
-        type_inst = type->is_oopptr()->is_instptr();
+        type_inst = type->as_oopptr()->as_instptr();
       } else {
-        type_inst = type->is_klassptr()->is_instklassptr();
+        type_inst = type->as_klassptr()->as_instklassptr();
       }
 
       return !type_is_exact && type_inst->instance_klass()->is_java_lang_Object() &&
@@ -1754,9 +1754,9 @@ public:
 
     const typename PtrType::AryType* type_ary;
     if constexpr (PtrType::is_oopptr_type) {
-      type_ary = type->is_oopptr()->is_aryptr();
+      type_ary = type->as_oopptr()->as_aryptr();
     } else {
-      type_ary = type->is_klassptr()->is_aryklassptr();
+      type_ary = type->as_klassptr()->as_aryklassptr();
     }
     auto type_elem = type_ary->elem();
     auto ary_klass = klass->as_ary();
@@ -1791,9 +1791,9 @@ public:
     }
     assert(type->ptr() == TypePtr::BotPTR || type->ptr() == TypePtr::NotNull || type->ptr() == TypePtr::Constant, "only AnyPtr can be top or null");
 
-    auto type_oop = type->is_oopptr();
+    auto type_oop = type->as_oopptr();
     if (_pointee.klass()->is_ary() && type->base() == Type::AryPtr &&
-        !type_oop->is_aryptr()->size()->contains(_pointee.array_length())) {
+        !type_oop->as_aryptr()->size()->contains(_pointee.array_length())) {
       return false;
     }
 
@@ -1890,7 +1890,7 @@ public:
     }
 
     assert(type->ptr() == TypePtr::BotPTR || type->ptr() == TypePtr::NotNull || type->ptr() == TypePtr::Constant, "only AnyPtr can be top or null");
-    return OopPtrMirror::klass_satisfies(_klass, type->is_klassptr(), false);
+    return OopPtrMirror::klass_satisfies(_klass, type->as_klassptr(), false);
   }
 
   void dump_on(outputStream& st) const {
@@ -1982,9 +1982,9 @@ static void test_meet_join() {
       if (join->base() != Type::AnyPtr) {
         const PtrType* typed_join;
         if constexpr (PtrType::is_oopptr_type) {
-          typed_join = join->is_oopptr();
+          typed_join = join->as_oopptr();
         } else {
-          typed_join = join->is_klassptr();
+          typed_join = join->as_klassptr();
         }
 
         // Verify that join must be a subset of both t1 and t2

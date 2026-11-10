@@ -434,7 +434,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
     return size;            // Self copy, no move
 
 #ifdef TODO
-  if (bottom_type()->isa_vect() != nullptr) {
+  if (bottom_type()->is_vect()) {
   }
 #endif
 

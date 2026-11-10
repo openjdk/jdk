@@ -26,6 +26,7 @@
 #define SHARE_OPTO_TYPE_HPP
 
 #include "ci/ciValueKlass.hpp"
+#include "metaprogramming/dependentAlwaysFalse.hpp"
 #include "opto/adlcVMDeps.hpp"
 #include "opto/compile.hpp"
 #include "opto/rangeinference.hpp"
@@ -180,7 +181,6 @@ private:
   typedef struct {
     BasicType            basic_type;
     const char*          msg;
-    bool                 isa_oop;
     uint                 ideal_reg;
   } TypeInfo;
 
@@ -303,58 +303,129 @@ public:
   virtual float getf() const;
   double getd() const;
 
+  // Testing and casting:
+  // - is_* checks whether `this` is of the given kind.
+  // - isa_* checks whether `this` is of the given kind and casts. Returns nullptr in case of failure.
+  // - as_* asserts `this` is of the given kind and casts. Never returns nullptr.
+
+  // Int
+  [[nodiscard]] bool is_int() const;
+  [[nodiscard]] const TypeInt* isa_int() const;
+  [[nodiscard]] const TypeInt* as_int() const;
+
+  // Long
+  [[nodiscard]] bool is_long() const;
+  [[nodiscard]] const TypeLong* isa_long() const;
+  [[nodiscard]] const TypeLong* as_long() const;
+
+  // Either int or long. To use only with bt == T_INT || bt == T_LONG
+  [[nodiscard]] bool is_integer(BasicType bt) const;
+  [[nodiscard]] const TypeInteger* isa_integer(BasicType bt) const;
+  [[nodiscard]] const TypeInteger* as_integer(BasicType bt) const;
+
+  // Double{Top,Con,Bot}
+  [[nodiscard]] bool is_double() const;
+
+  // DoubleCon
+  [[nodiscard]] bool is_double_constant() const;
+  [[nodiscard]] const TypeD* isa_double_constant() const;
+  [[nodiscard]] const TypeD* as_double_constant() const;
+
+  // HalfFloat{Top,Con,Bot}
+  [[nodiscard]] bool is_half_float() const;
+
+  // HalfFloatCon
+  [[nodiscard]] bool is_half_float_constant() const;
+  [[nodiscard]] const TypeH* isa_half_float_constant() const;
+  [[nodiscard]] const TypeH* as_half_float_constant() const;
+
+  // Float{Top,Con,Bot}
+  [[nodiscard]] bool is_float() const;
+
+  // FloatCon
+  [[nodiscard]] bool is_float_constant() const;
+  [[nodiscard]] const TypeF* isa_float_constant() const;
+  [[nodiscard]] const TypeF* as_float_constant() const;
+
+  // Collection of fields, NOT a pointer
+  [[nodiscard]] bool is_tuple() const;
+  [[nodiscard]] const TypeTuple* as_tuple() const;
+
+  // Array, NOT array pointer
+  [[nodiscard]] bool is_ary() const;
+  [[nodiscard]] const TypeAry* isa_ary() const;
+  [[nodiscard]] const TypeAry* as_ary() const;
+
+  // Vector
+  [[nodiscard]] bool is_vect() const;
+  [[nodiscard]] const TypeVect* isa_vect() const;
+  [[nodiscard]] const TypeVect* as_vect() const;
+
+  // Predicate/Mask Vector
+  [[nodiscard]] bool is_pvectmask() const;
+  [[nodiscard]] const TypePVectMask* isa_pvectmask() const;
+  [[nodiscard]] const TypePVectMask* as_pvectmask() const;
+
+  // Ptr
+  [[nodiscard]] bool is_ptr() const;
+  [[nodiscard]] const TypePtr* isa_ptr() const;
+  [[nodiscard]] const TypePtr* as_ptr() const;
+
+  // NOT Java oop
+  [[nodiscard]] bool is_rawptr() const;
+  [[nodiscard]] const TypeRawPtr* isa_rawptr() const;
+  [[nodiscard]] const TypeRawPtr* as_rawptr() const;
+
+  // Java-style GC'd pointer
+  [[nodiscard]] bool is_narrowoop() const;
+  [[nodiscard]] const TypeNarrowOop* isa_narrowoop() const;
+  [[nodiscard]] const TypeNarrowOop* as_narrowoop() const;
+
+  // compressed klass pointer
+  [[nodiscard]] bool is_narrowklass() const;
+  [[nodiscard]] const TypeNarrowKlass* isa_narrowklass() const;
+  [[nodiscard]] const TypeNarrowKlass* as_narrowklass() const;
+
+  // Oop (instance and arrays)
+  [[nodiscard]] bool is_oopptr() const;
+  [[nodiscard]] const TypeOopPtr* isa_oopptr() const;
+  [[nodiscard]] const TypeOopPtr* as_oopptr() const;
+
+  // InstPtr
+  [[nodiscard]] bool is_instptr() const;
+  [[nodiscard]] const TypeInstPtr* isa_instptr() const;
+  [[nodiscard]] const TypeInstPtr* as_instptr() const;
+
+  // AryPtr
+  [[nodiscard]] bool is_aryptr() const;
+  [[nodiscard]] const TypeAryPtr* isa_aryptr() const;
+  [[nodiscard]] const TypeAryPtr* as_aryptr() const;
+
+  // MetadataPtr
+  [[nodiscard]] bool is_metadataptr() const;
+  [[nodiscard]] const TypeMetadataPtr* isa_metadataptr() const;
+  [[nodiscard]] const TypeMetadataPtr* as_metadataptr() const;
+
+  // KlassPtr
+  [[nodiscard]] bool is_klassptr() const;
+  [[nodiscard]] const TypeKlassPtr* isa_klassptr() const;
+  [[nodiscard]] const TypeKlassPtr* as_klassptr() const;
+
+  // InstKlassPtr
+  [[nodiscard]] bool is_instklassptr() const;
+  [[nodiscard]] const TypeInstKlassPtr* isa_instklassptr() const;
+  [[nodiscard]] const TypeInstKlassPtr* as_instklassptr() const;
+
+  // AryKlassPtr
+  [[nodiscard]] bool is_aryklassptr() const;
+  [[nodiscard]] const TypeAryKlassPtr* isa_aryklassptr() const;
+  [[nodiscard]] const TypeAryKlassPtr* as_aryklassptr() const;
+
   // This has the same semantics as std::dynamic_cast<TypeClass*>(this)
   template <typename TypeClass>
   const TypeClass* try_cast() const;
-
-  const TypeInt    *is_int() const;
-  const TypeInt    *isa_int() const;             // Returns null if not an Int
-  const TypeInteger* is_integer(BasicType bt) const;
-  const TypeInteger* isa_integer(BasicType bt) const;
-  const TypeLong   *is_long() const;
-  const TypeLong   *isa_long() const;            // Returns null if not a Long
-  const TypeD      *isa_double() const;          // Returns null if not a Double{Top,Con,Bot}
-  const TypeD      *is_double_constant() const;  // Asserts it is a DoubleCon
-  const TypeD      *isa_double_constant() const; // Returns null if not a DoubleCon
-  const TypeH      *isa_half_float() const;          // Returns null if not a HalfFloat{Top,Con,Bot}
-  const TypeH      *is_half_float_constant() const;  // Asserts it is a HalfFloatCon
-  const TypeH      *isa_half_float_constant() const; // Returns null if not a HalfFloatCon
-  const TypeF      *isa_float() const;           // Returns null if not a Float{Top,Con,Bot}
-  const TypeF      *is_float_constant() const;   // Asserts it is a FloatCon
-  const TypeF      *isa_float_constant() const;  // Returns null if not a FloatCon
-  const TypeTuple  *is_tuple() const;            // Collection of fields, NOT a pointer
-  const TypeAry    *is_ary() const;              // Array, NOT array pointer
-  const TypeAry    *isa_ary() const;             // Returns null of not ary
-  const TypeVect   *is_vect() const;             // Vector
-  const TypeVect   *isa_vect() const;            // Returns null if not a Vector
-  const TypePVectMask *is_pvectmask() const;     // Predicate/Mask Vector
-  const TypePVectMask *isa_pvectmask() const;    // Returns null if not a Vector Predicate/Mask
-  const TypePtr    *is_ptr() const;              // Asserts it is a ptr type
-  const TypePtr    *isa_ptr() const;             // Returns null if not ptr type
-  const TypeRawPtr *isa_rawptr() const;          // NOT Java oop
-  const TypeRawPtr *is_rawptr() const;           // Asserts is rawptr
-  const TypeNarrowOop  *is_narrowoop() const;    // Java-style GC'd pointer
-  const TypeNarrowOop  *isa_narrowoop() const;   // Returns null if not oop ptr type
-  const TypeNarrowKlass *is_narrowklass() const; // compressed klass pointer
-  const TypeNarrowKlass *isa_narrowklass() const;// Returns null if not oop ptr type
-  const TypeOopPtr   *isa_oopptr() const;        // Returns null if not oop ptr type
-  const TypeOopPtr   *is_oopptr() const;         // Java-style GC'd pointer
-  const TypeInstPtr  *isa_instptr() const;       // Returns null if not InstPtr
-  const TypeInstPtr  *is_instptr() const;        // Instance
-  const TypeAryPtr   *isa_aryptr() const;        // Returns null if not AryPtr
-  const TypeAryPtr   *is_aryptr() const;         // Array oop
-
   template <typename TypeClass>
   const TypeClass* cast() const;
-
-  const TypeMetadataPtr   *isa_metadataptr() const;   // Returns null if not oop ptr type
-  const TypeMetadataPtr   *is_metadataptr() const;    // Java-style GC'd pointer
-  const TypeKlassPtr      *isa_klassptr() const;      // Returns null if not KlassPtr
-  const TypeKlassPtr      *is_klassptr() const;       // assert if not KlassPtr
-  const TypeInstKlassPtr  *isa_instklassptr() const;  // Returns null if not IntKlassPtr
-  const TypeInstKlassPtr  *is_instklassptr() const;   // assert if not IntKlassPtr
-  const TypeAryKlassPtr   *isa_aryklassptr() const;   // Returns null if not AryKlassPtr
-  const TypeAryKlassPtr   *is_aryklassptr() const;    // assert if not AryKlassPtr
 
   virtual bool      is_finite() const;           // Has a finite value
   virtual bool      is_nan()    const;           // Is not a number (NaN)
@@ -471,7 +542,6 @@ public:
   BasicType basic_type() const       { return _type_info[_base].basic_type; }
   uint ideal_reg() const             { return _type_info[_base].ideal_reg; }
   const char* msg() const            { return _type_info[_base].msg; }
-  bool isa_oop_ptr() const           { return _type_info[_base].isa_oop; }
 
   // Mapping from CI type system to compiler type:
   static const Type* get_typeflow_type(ciType* type);
@@ -804,9 +874,9 @@ public:
   static const TypeInt* make(jint lo, jint hi, int widen);
   static const TypeInt* make_unsigned(juint ulo, juint uhi, int widen);
   static const Type* make_or_top(const TypeIntPrototype<jint, juint>& t, int widen);
-  static const TypeInt* make(const TypeIntPrototype<jint, juint>& t, int widen) { return make_or_top(t, widen)->is_int(); }
+  static const TypeInt* make(const TypeIntPrototype<jint, juint>& t, int widen) { return make_or_top(t, widen)->as_int(); }
   static const TypeInt* make(const TypeIntMirror<jint, juint>& t, int widen) {
-    return (new TypeInt(TypeIntPrototype<jint, juint>{{t._lo, t._hi}, {t._ulo, t._uhi}, t._bits}, widen))->hashcons()->is_int();
+    return (new TypeInt(TypeIntPrototype<jint, juint>{{t._lo, t._hi}, {t._ulo, t._uhi}, t._bits}, widen))->hashcons()->as_int();
   }
 
   // Check for single integer
@@ -859,7 +929,7 @@ public:
   static const TypeInt* SYMINT; // symmetric range [-max_jint..max_jint]
   static const TypeInt* TYPE_DOMAIN; // alias for TypeInt::INT
 
-  static const TypeInt* as_self(const Type* t) { return t->is_int(); }
+  static const TypeInt* as_self(const Type* t) { return t->as_int(); }
 #ifndef PRODUCT
   virtual void dump2(Dict& d, uint depth, outputStream* st) const;
   void dump_verbose() const;
@@ -895,9 +965,9 @@ public:
   static const TypeLong* make(jlong lo, jlong hi, int widen);
   static const TypeLong* make_unsigned(julong ulo, julong uhi, int widen);
   static const Type* make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen);
-  static const TypeLong* make(const TypeIntPrototype<jlong, julong>& t, int widen) { return make_or_top(t, widen)->is_long(); }
+  static const TypeLong* make(const TypeIntPrototype<jlong, julong>& t, int widen) { return make_or_top(t, widen)->as_long(); }
   static const TypeLong* make(const TypeIntMirror<jlong, julong>& t, int widen) {
-    return (new TypeLong(TypeIntPrototype<jlong, julong>{{t._lo, t._hi}, {t._ulo, t._uhi}, t._bits}, widen))->hashcons()->is_long();
+    return (new TypeLong(TypeIntPrototype<jlong, julong>{{t._lo, t._hi}, {t._ulo, t._uhi}, t._bits}, widen))->hashcons()->as_long();
   }
 
   // Check for single integer
@@ -939,7 +1009,7 @@ public:
   static const TypeLong* TYPE_DOMAIN; // alias for TypeLong::LONG
 
   // static convenience methods.
-  static const TypeLong* as_self(const Type* t) { return t->is_long(); }
+  static const TypeLong* as_self(const Type* t) { return t->as_long(); }
 
 #ifndef PRODUCT
   virtual void dump2(Dict& d, uint, outputStream* st) const;// Specialized per-Type dumping
@@ -1435,7 +1505,7 @@ public:
   }
 
   bool is_same_java_type_as(const TypePtr* other) const {
-    return is_same_java_type_as_helper(other->is_oopptr());
+    return is_same_java_type_as_helper(other->as_oopptr());
   }
 
   virtual bool is_same_java_type_as_helper(const TypeOopPtr* other) const {
@@ -1540,16 +1610,20 @@ public:
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
 #endif
 private:
-  const TypeOopPtr* is_reference_type(const Type* other) const {
-    return other->isa_oopptr();
+  const TypeOopPtr* as_reference_type(const Type* other) const {
+    return other->as_oopptr();
   }
 
-  const TypeAryPtr* is_array_type(const TypeOopPtr* other) const {
-    return other->isa_aryptr();
+  bool is_array_type(const TypeOopPtr* other) const {
+    return other->is_aryptr();
   }
 
-  const TypeInstPtr* is_instance_type(const TypeOopPtr* other) const {
-    return other->isa_instptr();
+  const TypeAryPtr* as_array_type(const TypeOopPtr* other) const {
+    return other->as_aryptr();
+  }
+
+  bool is_instance_type(const TypeOopPtr* other) const {
+    return other->is_instptr();
   }
 };
 
@@ -1668,7 +1742,7 @@ public:
 
 private:
   virtual bool is_meet_same_type_as(const TypePtr* other) const {
-    return _klass->equals(other->is_instptr()->_klass) && _interfaces->eq(other->is_instptr()->_interfaces);
+    return _klass->equals(other->as_instptr()->_klass) && _interfaces->eq(other->as_instptr()->_interfaces);
   }
 
 };
@@ -1918,7 +1992,7 @@ public:
     return is_java_subtype_of_helper(other, klass_is_exact(), other->klass_is_exact());
   }
   bool is_same_java_type_as(const TypePtr* other) const {
-    return is_same_java_type_as_helper(other->is_klassptr());
+    return is_same_java_type_as_helper(other->as_klassptr());
   }
 
   bool maybe_java_subtype_of(const TypeKlassPtr* other) const {
@@ -1962,16 +2036,20 @@ public:
   };
 
 private:
-  const TypeKlassPtr* is_reference_type(const Type* other) const {
-    return other->isa_klassptr();
+  const TypeKlassPtr* as_reference_type(const Type* other) const {
+    return other->as_klassptr();
   }
 
-  const TypeAryKlassPtr* is_array_type(const TypeKlassPtr* other) const {
-    return other->isa_aryklassptr();
+  bool is_array_type(const TypeKlassPtr* other) const {
+    return other->is_aryklassptr();
   }
 
-  const TypeInstKlassPtr* is_instance_type(const TypeKlassPtr* other) const {
-    return other->isa_instklassptr();
+  const TypeAryKlassPtr* as_array_type(const TypeKlassPtr* other) const {
+    return other->as_aryklassptr();
+  }
+
+  bool is_instance_type(const TypeKlassPtr* other) const {
+    return other->is_instklassptr();
   }
 };
 
@@ -2087,7 +2165,7 @@ public:
   bool is_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
   bool maybe_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
 
-  bool  is_loaded() const { return (_elem->isa_klassptr() ? _elem->is_klassptr()->is_loaded() : true); }
+  bool is_loaded() const { return (_elem->is_klassptr() ? _elem->as_klassptr()->is_loaded() : true); }
 
   static const TypeAryKlassPtr* make(PTR ptr, const Type* elem, ciKlass* k, Offset offset, bool not_flat, bool not_null_free, bool flat, bool null_free, bool atomic, bool refined_type);
   static const TypeAryKlassPtr* make(ciKlass* klass, InterfaceHandling interface_handling);
@@ -2146,10 +2224,11 @@ protected:
            ptrtype->offset() == OffsetTop, "no real offsets");
   }
 
-  virtual const TypeNarrowPtr *isa_same_narrowptr(const Type *t) const = 0;
-  virtual const TypeNarrowPtr *is_same_narrowptr(const Type *t) const = 0;
-  virtual const TypeNarrowPtr *make_same_narrowptr(const TypePtr *t) const = 0;
-  virtual const TypeNarrowPtr *make_hash_same_narrowptr(const TypePtr *t) const = 0;
+  virtual bool is_same_narrowptr(const Type* t) const = 0;
+  virtual const TypeNarrowPtr* isa_same_narrowptr(const Type* t) const = 0;
+  virtual const TypeNarrowPtr* as_same_narrowptr(const Type* t) const = 0;
+  virtual const TypeNarrowPtr* make_same_narrowptr(const TypePtr* t) const = 0;
+  virtual const TypeNarrowPtr* make_hash_same_narrowptr(const TypePtr* t) const = 0;
   // Do not allow interface-vs.-noninterface joins to collapse to top.
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
 public:
@@ -2190,19 +2269,23 @@ protected:
   TypeNarrowOop( const TypePtr* ptrtype): TypeNarrowPtr(NarrowOop, ptrtype) {
   }
 
-  virtual const TypeNarrowPtr *isa_same_narrowptr(const Type *t) const {
-    return t->isa_narrowoop();
-  }
-
-  virtual const TypeNarrowPtr *is_same_narrowptr(const Type *t) const {
+  bool is_same_narrowptr(const Type* t) const override {
     return t->is_narrowoop();
   }
 
-  virtual const TypeNarrowPtr *make_same_narrowptr(const TypePtr *t) const {
+  const TypeNarrowPtr* isa_same_narrowptr(const Type* t) const override {
+    return t->isa_narrowoop();
+  }
+
+  const TypeNarrowPtr* as_same_narrowptr(const Type* t) const override {
+    return t->as_narrowoop();
+  }
+
+  const TypeNarrowPtr* make_same_narrowptr(const TypePtr* t) const override {
     return new TypeNarrowOop(t);
   }
 
-  virtual const TypeNarrowPtr *make_hash_same_narrowptr(const TypePtr *t) const {
+  const TypeNarrowPtr* make_hash_same_narrowptr(const TypePtr* t) const override {
     return (const TypeNarrowPtr*)((new TypeNarrowOop(t))->hashcons());
   }
 
@@ -2217,11 +2300,11 @@ public:
   static const TypeNarrowOop *BOTTOM;
   static const TypeNarrowOop *NULL_PTR;
 
-  virtual const TypeNarrowOop* remove_speculative() const;
-  virtual const Type* cleanup_speculative() const;
+  const TypeNarrowOop* remove_speculative() const override;
+  const Type* cleanup_speculative() const override;
 
 #ifndef PRODUCT
-  virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
+  void dump2(Dict& d, uint depth, outputStream* st) const override;
 #endif
 };
 
@@ -2234,19 +2317,23 @@ protected:
   TypeNarrowKlass( const TypePtr* ptrtype): TypeNarrowPtr(NarrowKlass, ptrtype) {
   }
 
-  virtual const TypeNarrowPtr *isa_same_narrowptr(const Type *t) const {
-    return t->isa_narrowklass();
-  }
-
-  virtual const TypeNarrowPtr *is_same_narrowptr(const Type *t) const {
+  bool is_same_narrowptr(const Type* t) const override {
     return t->is_narrowklass();
   }
 
-  virtual const TypeNarrowPtr *make_same_narrowptr(const TypePtr *t) const {
+  const TypeNarrowPtr* isa_same_narrowptr(const Type* t) const override {
+    return t->isa_narrowklass();
+  }
+
+  const TypeNarrowPtr* as_same_narrowptr(const Type* t) const override {
+    return t->as_narrowklass();
+  }
+
+  const TypeNarrowPtr* make_same_narrowptr(const TypePtr* t) const override {
     return new TypeNarrowKlass(t);
   }
 
-  virtual const TypeNarrowPtr *make_hash_same_narrowptr(const TypePtr *t) const {
+  const TypeNarrowPtr* make_hash_same_narrowptr(const TypePtr* t) const override {
     return (const TypeNarrowPtr*)((new TypeNarrowKlass(t))->hashcons());
   }
 
@@ -2257,7 +2344,7 @@ public:
   static const TypeNarrowKlass *NULL_PTR;
 
 #ifndef PRODUCT
-  virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
+  void dump2(Dict& d, uint depth, outputStream* st) const override;
 #endif
 };
 
@@ -2323,10 +2410,9 @@ public:
   // Convenience common pre-built types.
 };
 
-//------------------------------accessors--------------------------------------
 inline bool Type::is_ptr_to_narrowoop() const {
 #ifdef _LP64
-  return (isa_oopptr() != nullptr && is_oopptr()->is_ptr_to_narrowoop_nv());
+  return is_oopptr() && as_oopptr()->is_ptr_to_narrowoop_nv();
 #else
   return false;
 #endif
@@ -2334,7 +2420,7 @@ inline bool Type::is_ptr_to_narrowoop() const {
 
 inline bool Type::is_ptr_to_narrowklass() const {
 #ifdef _LP64
-  return (isa_oopptr() != nullptr && is_oopptr()->is_ptr_to_narrowklass_nv());
+  return is_oopptr() && as_oopptr()->is_ptr_to_narrowklass_nv();
 #else
   return false;
 #endif
@@ -2355,260 +2441,353 @@ inline double Type::getd() const {
   return ((TypeD*)this)->_d;
 }
 
-inline const TypeInteger *Type::is_integer(BasicType bt) const {
-  assert((bt == T_INT && _base == Int) || (bt == T_LONG && _base == Long), "Not an Int");
-  return (TypeInteger*)this;
+inline bool Type::is_int() const {
+  return _base == Int;
 }
 
-inline const TypeInteger *Type::isa_integer(BasicType bt) const {
-  return (((bt == T_INT && _base == Int) || (bt == T_LONG && _base == Long)) ? (TypeInteger*)this : nullptr);
+inline const TypeInt* Type::isa_int() const {
+  return is_int() ? (TypeInt*)this : nullptr;
 }
 
-inline const TypeInt *Type::is_int() const {
-  assert( _base == Int, "Not an Int" );
+inline const TypeInt* Type::as_int() const {
+  assert(is_int(), "Not an Int");
   return (TypeInt*)this;
 }
 
-inline const TypeInt *Type::isa_int() const {
-  return ( _base == Int ? (TypeInt*)this : nullptr);
+inline bool Type::is_long() const {
+  return _base == Long;
 }
 
-inline const TypeLong *Type::is_long() const {
-  assert( _base == Long, "Not a Long" );
+inline const TypeLong* Type::isa_long() const {
+  return is_long() ? (TypeLong*)this : nullptr;
+}
+
+inline const TypeLong* Type::as_long() const {
+  assert(is_long(), "Not a Long");
   return (TypeLong*)this;
 }
 
-inline const TypeLong *Type::isa_long() const {
-  return ( _base == Long ? (TypeLong*)this : nullptr);
+inline bool Type::is_integer(BasicType bt) const {
+  return (bt == T_INT && _base == Int) || (bt == T_LONG && _base == Long);
 }
 
-inline const TypeH* Type::isa_half_float() const {
-  return ((_base == HalfFloatTop ||
-           _base == HalfFloatCon ||
-           _base == HalfFloatBot) ? (TypeH*)this : nullptr);
+inline const TypeInteger* Type::isa_integer(BasicType bt) const {
+  return is_integer(bt) ? (TypeInteger*)this : nullptr;
 }
 
-inline const TypeH* Type::is_half_float_constant() const {
-  assert( _base == HalfFloatCon, "Not a HalfFloat" );
-  return (TypeH*)this;
+inline const TypeInteger* Type::as_integer(BasicType bt) const {
+  assert(is_integer(bt), bt == T_INT ? "Not an Int" : "Not a Long");
+  return (TypeInteger*)this;
+}
+
+inline bool Type::is_half_float() const {
+  return _base == HalfFloatTop ||
+         _base == HalfFloatCon ||
+         _base == HalfFloatBot;
+}
+
+inline bool Type::is_half_float_constant() const {
+  return _base == HalfFloatCon;
 }
 
 inline const TypeH* Type::isa_half_float_constant() const {
-  return (_base == HalfFloatCon ? (TypeH*)this : nullptr);
+  return is_half_float_constant() ? (TypeH*)this : nullptr;
 }
 
-inline const TypeF *Type::isa_float() const {
-  return ((_base == FloatTop ||
-           _base == FloatCon ||
-           _base == FloatBot) ? (TypeF*)this : nullptr);
+inline const TypeH* Type::as_half_float_constant() const {
+  assert(is_half_float_constant(), "Not a HalfFloatCon");
+  return (TypeH*)this;
 }
 
-inline const TypeF *Type::is_float_constant() const {
-  assert( _base == FloatCon, "Not a Float" );
+inline bool Type::is_float() const {
+  return _base == FloatTop ||
+         _base == FloatCon ||
+         _base == FloatBot;
+}
+
+inline bool Type::is_float_constant() const {
+  return _base == FloatCon;
+}
+
+inline const TypeF* Type::isa_float_constant() const {
+  return is_float_constant() ? (TypeF*)this : nullptr;
+}
+
+inline const TypeF* Type::as_float_constant() const {
+  assert(is_float_constant(), "Not a FloatCon");
   return (TypeF*)this;
 }
 
-inline const TypeF *Type::isa_float_constant() const {
-  return ( _base == FloatCon ? (TypeF*)this : nullptr);
+inline bool Type::is_double() const {
+  return _base == DoubleTop ||
+         _base == DoubleCon ||
+         _base == DoubleBot;
 }
 
-inline const TypeD *Type::isa_double() const {
-  return ((_base == DoubleTop ||
-           _base == DoubleCon ||
-           _base == DoubleBot) ? (TypeD*)this : nullptr);
+inline bool Type::is_double_constant() const {
+  return _base == DoubleCon;
 }
 
-inline const TypeD *Type::is_double_constant() const {
-  assert( _base == DoubleCon, "Not a Double" );
+inline const TypeD* Type::isa_double_constant() const {
+  return is_double_constant() ? (TypeD*)this : nullptr;
+}
+
+inline const TypeD* Type::as_double_constant() const {
+  assert(is_double_constant(), "Not a DoubleCon");
   return (TypeD*)this;
 }
 
-inline const TypeD *Type::isa_double_constant() const {
-  return ( _base == DoubleCon ? (TypeD*)this : nullptr);
+inline bool Type::is_tuple() const {
+  return _base == Tuple;
 }
 
-inline const TypeTuple *Type::is_tuple() const {
-  assert( _base == Tuple, "Not a Tuple" );
+inline const TypeTuple* Type::as_tuple() const {
+  assert(is_tuple(), "Not a Tuple");
   return (TypeTuple*)this;
 }
 
-inline const TypeAry *Type::is_ary() const {
-  assert( _base == Array , "Not an Array" );
+inline bool Type::is_ary() const {
+  return _base == Array;
+}
+
+inline const TypeAry* Type::isa_ary() const {
+  return is_ary() ? (TypeAry*)this : nullptr;
+}
+
+inline const TypeAry* Type::as_ary() const {
+  assert(is_ary(), "Not an Array");
   return (TypeAry*)this;
 }
 
-inline const TypeAry *Type::isa_ary() const {
-  return ((_base == Array) ? (TypeAry*)this : nullptr);
+inline bool Type::is_vect() const {
+  return _base >= VectorMask && _base <= VectorZ;
 }
 
-inline const TypePVectMask *Type::is_pvectmask() const {
-  assert( _base == VectorMask, "Not a Vector Mask" );
-  return (TypePVectMask*)this;
+inline const TypeVect* Type::isa_vect() const {
+  return is_vect() ? (TypeVect*)this : nullptr;
 }
 
-inline const TypePVectMask *Type::isa_pvectmask() const {
-  return (_base == VectorMask) ? (TypePVectMask*)this : nullptr;
-}
-
-inline const TypeVect *Type::is_vect() const {
-  assert( _base >= VectorMask && _base <= VectorZ, "Not a Vector" );
+inline const TypeVect* Type::as_vect() const {
+  assert(is_vect(), "Not a Vector");
   return (TypeVect*)this;
 }
 
-inline const TypeVect *Type::isa_vect() const {
-  return (_base >= VectorMask && _base <= VectorZ) ? (TypeVect*)this : nullptr;
+inline bool Type::is_pvectmask() const {
+  return _base == VectorMask;
 }
 
-inline const TypePtr *Type::is_ptr() const {
-  // AnyPtr is the first Ptr and KlassPtr the last, with no non-ptrs between.
-  assert(_base >= AnyPtr && _base <= AryKlassPtr, "Not a pointer");
+inline const TypePVectMask* Type::isa_pvectmask() const {
+  return is_pvectmask() ? (TypePVectMask*)this : nullptr;
+}
+
+inline const TypePVectMask* Type::as_pvectmask() const {
+  assert(is_pvectmask(), "Not a Vector Mask");
+  return (TypePVectMask*)this;
+}
+
+inline bool Type::is_ptr() const {
+  // AnyPtr is the first Ptr and AryKlassPtr the last, with no non-ptrs between.
+  return _base >= AnyPtr && _base <= AryKlassPtr;
+}
+
+inline const TypePtr* Type::isa_ptr() const {
+  return is_ptr() ? (TypePtr*)this : nullptr;
+}
+
+inline const TypePtr* Type::as_ptr() const {
+  assert(is_ptr(), "Not a pointer");
   return (TypePtr*)this;
 }
 
-inline const TypePtr *Type::isa_ptr() const {
-  // AnyPtr is the first Ptr and KlassPtr the last, with no non-ptrs between.
-  return (_base >= AnyPtr && _base <= AryKlassPtr) ? (TypePtr*)this : nullptr;
+inline bool Type::is_rawptr() const {
+  return _base == RawPtr;
 }
 
-inline const TypeOopPtr *Type::is_oopptr() const {
-  // OopPtr is the first and KlassPtr the last, with no non-oops between.
-  assert(_base >= OopPtr && _base <= AryPtr, "Not a Java pointer" ) ;
-  return (TypeOopPtr*)this;
+inline const TypeRawPtr* Type::isa_rawptr() const {
+  return is_rawptr() ? (TypeRawPtr*)this : nullptr;
 }
 
-inline const TypeOopPtr *Type::isa_oopptr() const {
-  // OopPtr is the first and KlassPtr the last, with no non-oops between.
-  return (_base >= OopPtr && _base <= AryPtr) ? (TypeOopPtr*)this : nullptr;
-}
-
-inline const TypeRawPtr *Type::isa_rawptr() const {
-  return (_base == RawPtr) ? (TypeRawPtr*)this : nullptr;
-}
-
-inline const TypeRawPtr *Type::is_rawptr() const {
-  assert( _base == RawPtr, "Not a raw pointer" );
+inline const TypeRawPtr* Type::as_rawptr() const {
+  assert(is_rawptr(), "Not a raw pointer");
   return (TypeRawPtr*)this;
 }
 
-inline const TypeInstPtr *Type::isa_instptr() const {
-  return (_base == InstPtr) ? (TypeInstPtr*)this : nullptr;
+inline bool Type::is_narrowoop() const {
+  return _base == NarrowOop;
 }
 
-inline const TypeInstPtr *Type::is_instptr() const {
-  assert( _base == InstPtr, "Not an object pointer" );
-  return (TypeInstPtr*)this;
+inline const TypeNarrowOop* Type::isa_narrowoop() const {
+  return is_narrowoop() ? (TypeNarrowOop*)this : nullptr;
 }
 
-inline const TypeAryPtr *Type::isa_aryptr() const {
-  return (_base == AryPtr) ? (TypeAryPtr*)this : nullptr;
-}
-
-inline const TypeAryPtr *Type::is_aryptr() const {
-  assert( _base == AryPtr, "Not an array pointer" );
-  return (TypeAryPtr*)this;
-}
-
-inline const TypeNarrowOop *Type::is_narrowoop() const {
-  // OopPtr is the first and KlassPtr the last, with no non-oops between.
-  assert(_base == NarrowOop, "Not a narrow oop" ) ;
+inline const TypeNarrowOop* Type::as_narrowoop() const {
+  assert(is_narrowoop(), "Not a narrow oop");
   return (TypeNarrowOop*)this;
 }
 
-inline const TypeNarrowOop *Type::isa_narrowoop() const {
-  // OopPtr is the first and KlassPtr the last, with no non-oops between.
-  return (_base == NarrowOop) ? (TypeNarrowOop*)this : nullptr;
+inline bool Type::is_narrowklass() const {
+  return _base == NarrowKlass;
 }
 
-inline const TypeNarrowKlass *Type::is_narrowklass() const {
-  assert(_base == NarrowKlass, "Not a narrow oop" ) ;
+inline const TypeNarrowKlass* Type::isa_narrowklass() const {
+  return is_narrowklass() ? (TypeNarrowKlass*)this : nullptr;
+}
+
+inline const TypeNarrowKlass* Type::as_narrowklass() const {
+  assert(is_narrowklass(), "Not a narrow klass");
   return (TypeNarrowKlass*)this;
 }
 
-inline const TypeNarrowKlass *Type::isa_narrowklass() const {
-  return (_base == NarrowKlass) ? (TypeNarrowKlass*)this : nullptr;
+inline bool Type::is_oopptr() const {
+  // OopPtr is the first and AryPtr the last, with no non-oops between.
+  return _base >= OopPtr && _base <= AryPtr;
 }
 
-inline const TypeMetadataPtr *Type::is_metadataptr() const {
-  // MetadataPtr is the first and CPCachePtr the last
-  assert(_base == MetadataPtr, "Not a metadata pointer" ) ;
+inline const TypeOopPtr* Type::isa_oopptr() const {
+  return is_oopptr() ? (TypeOopPtr*)this : nullptr;
+}
+
+inline const TypeOopPtr* Type::as_oopptr() const {
+  assert(is_oopptr(), "Not a Java pointer");
+  return (TypeOopPtr*)this;
+}
+
+inline bool Type::is_instptr() const {
+  return _base == InstPtr;
+}
+
+inline const TypeInstPtr* Type::isa_instptr() const {
+  return is_instptr() ? (TypeInstPtr*)this : nullptr;
+}
+
+inline const TypeInstPtr* Type::as_instptr() const {
+  assert(is_instptr(), "Not an object pointer");
+  return (TypeInstPtr*)this;
+}
+
+inline bool Type::is_aryptr() const {
+  return _base == AryPtr;
+}
+
+inline const TypeAryPtr* Type::isa_aryptr() const {
+  return is_aryptr() ? (TypeAryPtr*)this : nullptr;
+}
+
+inline const TypeAryPtr* Type::as_aryptr() const {
+  assert(is_aryptr(), "Not an array pointer");
+  return (TypeAryPtr*)this;
+}
+
+inline bool Type::is_metadataptr() const {
+  return _base == MetadataPtr;
+}
+
+inline const TypeMetadataPtr* Type::isa_metadataptr() const {
+  return is_metadataptr() ? (TypeMetadataPtr*)this : nullptr;
+}
+
+inline const TypeMetadataPtr* Type::as_metadataptr() const {
+  assert(is_metadataptr(), "Not a metadata pointer");
   return (TypeMetadataPtr*)this;
 }
 
-inline const TypeMetadataPtr *Type::isa_metadataptr() const {
-  return (_base == MetadataPtr) ? (TypeMetadataPtr*)this : nullptr;
+inline bool Type::is_klassptr() const {
+  return _base >= KlassPtr && _base <= AryKlassPtr;
 }
 
-inline const TypeKlassPtr *Type::isa_klassptr() const {
-  return (_base >= KlassPtr && _base <= AryKlassPtr ) ? (TypeKlassPtr*)this : nullptr;
+inline const TypeKlassPtr* Type::isa_klassptr() const {
+  return is_klassptr() ? (TypeKlassPtr*)this : nullptr;
 }
 
-inline const TypeKlassPtr *Type::is_klassptr() const {
-  assert(_base >= KlassPtr && _base <= AryKlassPtr, "Not a klass pointer");
+inline const TypeKlassPtr* Type::as_klassptr() const {
+  assert(is_klassptr(), "Not a klass pointer");
   return (TypeKlassPtr*)this;
 }
 
-inline const TypeInstKlassPtr *Type::isa_instklassptr() const {
-  return (_base == InstKlassPtr) ? (TypeInstKlassPtr*)this : nullptr;
+inline bool Type::is_instklassptr() const {
+  return _base == InstKlassPtr;
 }
 
-inline const TypeInstKlassPtr *Type::is_instklassptr() const {
-  assert(_base == InstKlassPtr, "Not a klass pointer");
+inline const TypeInstKlassPtr* Type::isa_instklassptr() const {
+  return is_instklassptr() ? (TypeInstKlassPtr*)this : nullptr;
+}
+
+inline const TypeInstKlassPtr* Type::as_instklassptr() const {
+  assert(is_instklassptr(), "Not an instance klass pointer");
   return (TypeInstKlassPtr*)this;
 }
 
-inline const TypeAryKlassPtr *Type::isa_aryklassptr() const {
-  return (_base == AryKlassPtr) ? (TypeAryKlassPtr*)this : nullptr;
+inline bool Type::is_aryklassptr() const {
+  return _base == AryKlassPtr;
 }
 
-inline const TypeAryKlassPtr *Type::is_aryklassptr() const {
-  assert(_base == AryKlassPtr, "Not a klass pointer");
+inline const TypeAryKlassPtr* Type::isa_aryklassptr() const {
+  return is_aryklassptr() ? (TypeAryKlassPtr*)this : nullptr;
+}
+
+inline const TypeAryKlassPtr* Type::as_aryklassptr() const {
+  assert(is_aryklassptr(), "Not an array klass pointer");
   return (TypeAryKlassPtr*)this;
 }
 
 inline const TypePtr* Type::make_ptr() const {
-  return (_base == NarrowOop) ? is_narrowoop()->get_ptrtype() :
-                              ((_base == NarrowKlass) ? is_narrowklass()->get_ptrtype() :
-                                                       isa_ptr());
+  return is_narrowoop()
+           ? as_narrowoop()->get_ptrtype()
+           : (is_narrowklass()
+                ? as_narrowklass()->get_ptrtype()
+                : isa_ptr());
 }
 
 inline const TypeOopPtr* Type::make_oopptr() const {
-  return (_base == NarrowOop) ? is_narrowoop()->get_ptrtype()->isa_oopptr() : isa_oopptr();
+  return is_narrowoop() ? as_narrowoop()->get_ptrtype()->isa_oopptr() : isa_oopptr();
 }
 
 inline const TypeNarrowOop* Type::make_narrowoop() const {
-  return (_base == NarrowOop) ? is_narrowoop() :
-                                (isa_ptr() ? TypeNarrowOop::make(is_ptr()) : nullptr);
+  return is_narrowoop()
+           ? as_narrowoop()
+           : (is_ptr() ? TypeNarrowOop::make(as_ptr()) : nullptr);
 }
 
 inline const TypeNarrowKlass* Type::make_narrowklass() const {
-  return (_base == NarrowKlass) ? is_narrowklass() :
-                                  (isa_ptr() ? TypeNarrowKlass::make(is_ptr()) : nullptr);
+  return is_narrowklass()
+           ? as_narrowklass()
+           : (is_ptr() ? TypeNarrowKlass::make(as_ptr()) : nullptr);
 }
 
 inline bool Type::is_floatingpoint() const {
-  if( (_base == HalfFloatCon)  || (_base == HalfFloatBot) ||
-      (_base == FloatCon)  || (_base == FloatBot) ||
-      (_base == DoubleCon) || (_base == DoubleBot) )
-    return true;
-  return false;
+  return _base == HalfFloatCon || _base == HalfFloatBot ||
+         _base == FloatCon     || _base == FloatBot     ||
+         _base == DoubleCon    || _base == DoubleBot;
 }
 
 inline bool Type::is_valueklassptr() const {
-  return isa_instptr() != nullptr && is_instptr()->instance_klass()->is_value_klass();
+  return is_instptr() && as_instptr()->instance_klass()->is_value_klass();
 }
 
 inline ciValueKlass* Type::value_klass() const {
-  return make_ptr()->is_instptr()->instance_klass()->as_value_klass();
+  return make_ptr()->as_instptr()->instance_klass()->as_value_klass();
+}
+
+template <typename T>
+const T* Type::cast() const {
+  static_assert(DependentAlwaysFalse<T>, "No Type::cast<T>() specialization found for this type");
+  return nullptr;
 }
 
 template <>
 inline const TypeInt* Type::cast<TypeInt>() const {
-  return is_int();
+  return as_int();
 }
 
 template <>
 inline const TypeLong* Type::cast<TypeLong>() const {
-  return is_long();
+  return as_long();
+}
+
+template <typename T>
+const T* Type::try_cast() const {
+  static_assert(DependentAlwaysFalse<T>, "No Type::try_cast<T>() specialization found for this type");
+  return nullptr;
 }
 
 template <>
@@ -2630,6 +2809,7 @@ inline const TypeLong* Type::try_cast<TypeLong>() const {
 // For type queries and asserts
 #define is_intptr_t  is_long
 #define isa_intptr_t isa_long
+#define as_intptr_t  as_long
 #define find_intptr_t_type find_long_type
 #define find_intptr_t_con  find_long_con
 #define TypeX        TypeLong
@@ -2678,6 +2858,7 @@ inline const TypeLong* Type::try_cast<TypeLong>() const {
 // For type queries and asserts
 #define is_intptr_t  is_int
 #define isa_intptr_t isa_int
+#define as_intptr_t  as_int
 #define find_intptr_t_type find_int_type
 #define find_intptr_t_con  find_int_con
 #define TypeX        TypeInt
