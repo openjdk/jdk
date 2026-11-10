@@ -4415,37 +4415,6 @@ operand indOffset16NarrowAlg4_klass(iRegNsrc reg, immL16Alg4 offset) %{
   %}
 %}
 
-//----------Special Memory Operands--------------------------------------------
-// Stack Slot Operand
-//
-// This operand is used for loading and storing temporary values on
-// the stack where a match requires a value to flow through memory.
-operand stackSlotP(sRegP reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegP);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotF(sRegF reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegF);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
 // Operands for expressing Control Flow
 // NOTE: Label is a predefined operand which should not be redefined in
 //       the AD file. It is generically handled within the ADLC.
