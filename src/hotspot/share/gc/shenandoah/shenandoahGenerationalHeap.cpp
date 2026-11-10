@@ -65,14 +65,6 @@ protected:
   }
 };
 
-size_t ShenandoahGenerationalHeap::calculate_min_plab() {
-  return PLAB::min_size();
-}
-
-size_t ShenandoahGenerationalHeap::calculate_max_plab() {
-  return ShenandoahHeapRegion::max_tlab_size_words();
-}
-
 // Returns size in bytes
 size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc() const {
   return MIN2(ShenandoahHeapRegion::max_tlab_size_bytes(), young_generation()->available());
@@ -80,8 +72,6 @@ size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc() const {
 
 ShenandoahGenerationalHeap::ShenandoahGenerationalHeap() :
   _age_census(nullptr),
-  _min_plab_size(calculate_min_plab()),
-  _max_plab_size(calculate_max_plab()),
   _regulator_thread(nullptr),
   _young_gen_memory_pool(nullptr),
   _old_gen_memory_pool(nullptr) {
@@ -253,7 +243,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
           if ((copy == nullptr) && (size < ShenandoahThreadLocalData::gclab_size(thread))) {
             // GCLAB allocation failed because we are bumping up against the limit on young evacuation reserve.  Try resetting
             // the desired GCLAB size and retry GCLAB allocation to avoid cascading of shared memory allocations.
-            ShenandoahThreadLocalData::set_gclab_size(thread, PLAB::min_size());
+            ShenandoahThreadLocalData::set_gclab_size(thread, plab_min_size());
             copy = allocate_from_gclab(thread, size);
             // If we still get nullptr, we'll try a shared allocation below.
           }
@@ -292,7 +282,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
 
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
-      if (!is_promotion || !has_plab || (size > PLAB::min_size())) {
+      if (!is_promotion || !has_plab || (size > plab_min_size())) {
         ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, TO_GENERATION, is_promotion);
         copy = allocate_memory(req);
         alloc_from_lab = false;
@@ -447,9 +437,10 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
 
   ShenandoahYoungGeneration* young_gen = young_generation();
   size_t young_capacity = young_gen->max_capacity();
-  size_t young_usage = young_gen->used(); // includes humongous waste
+  // Raw values: stable while mutators CAS allocate, and alloc-region remnant can't be reserved.
+  size_t young_usage = free_set()->young_used_raw(); // includes humongous waste
   size_t young_available = ((young_capacity >= young_usage)? young_capacity - young_usage: 0);
-  size_t freeset_available = free_set()->available_locked();
+  size_t freeset_available = free_set()->available_locked_raw();
   if (young_available > freeset_available) {
     young_available = freeset_available;
   }

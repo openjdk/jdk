@@ -34,10 +34,11 @@ typedef ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::Collector>   
 typedef ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::OldCollector> ShenandoahOldCollectorAllocator;
 
 // ShenandoahAllocator is the single entry point for memory allocations. Humongous
-// requests are served directly via ShenandoahFreeSet; all other requests are routed
-// to the appropriate per-partition allocator (mutator, collector, or old-collector).
-// Both paths run under the heap lock.
+// requests are served directly via ShenandoahFreeSet under the heap lock; all other
+// requests are routed to the appropriate per-partition CAS allocator (mutator,
+// collector, or old-collector).
 class ShenandoahAllocator : public CHeapObj<mtGC> {
+  friend class VMStructs;
 private:
   ShenandoahFreeSet*                  _free_set;
   ShenandoahMutatorAllocator          _mutator_alloc;
@@ -49,15 +50,24 @@ public:
 
   // Allocate memory from heap for a request. Humongous requests are served directly via
   // ShenandoahFreeSet; all other requests are routed to the mutator, collector, or
-  // old-collector partition allocator based on request type. The heap lock is taken
-  // on both paths (here for humongous, inside the partition allocator otherwise).
+  // old-collector partition allocator based on request type.
   // Returns nullptr if the request cannot be satisfied. Sets in_new_region to indicate
   // whether the returned address is the first allocation in a freshly acquired region.
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // Release the cached alloc region in every partition allocator. Call before the
-  // free set is rebuilt, since rebuild may reclassify region affiliation/membership.
-  void release_alloc_regions();
+  // Release collector (and old-collector) cached alloc regions at GC phase boundaries.
+  void release_collector_alloc_regions();
+
+  void release_collector_alloc_regions_under_lock();
+
+  void release_mutator_alloc_regions_under_lock();
+
+  void reserve_collector_alloc_regions_under_lock();
+
+  void reserve_mutator_alloc_regions_under_lock();
+
+  // Pre-charged but unconsumed bytes in cached alloc regions (accounting correction).
+  size_t remnant_bytes(ShenandoahFreeSetPartitionId partition) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP

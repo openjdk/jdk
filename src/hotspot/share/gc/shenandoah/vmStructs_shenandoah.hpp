@@ -24,25 +24,43 @@
 #ifndef SHARE_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP
 #define SHARE_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP
 
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahPartitionAllocator.hpp"
 #include "runtime/atomic.hpp"
+
+// Concrete typedefs for vmStructs/SA (mirrors vmStructs_z.hpp approach for templated types).
+typedef ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::Mutator>      ShenandoahMutatorPartitionAllocator;
+typedef ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::Collector>    ShenandoahCollectorPartitionAllocator;
+typedef ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::OldCollector> ShenandoahOldCollectorPartitionAllocator;
 
 #define VM_STRUCTS_SHENANDOAH(nonstatic_field, volatile_nonstatic_field, static_field)                        \
   nonstatic_field(ShenandoahHeap, _num_regions,                    size_t)                                    \
   nonstatic_field(ShenandoahHeap, _regions,                        ShenandoahHeapRegion**)                    \
   nonstatic_field(ShenandoahHeap, _log_min_obj_alignment_in_bytes, int)                                       \
   nonstatic_field(ShenandoahHeap, _free_set,                       ShenandoahFreeSet*)                        \
+  nonstatic_field(ShenandoahHeap, _allocator,                      ShenandoahAllocator*)                      \
+  nonstatic_field(ShenandoahAllocator, _mutator_alloc,             ShenandoahMutatorPartitionAllocator)       \
+  nonstatic_field(ShenandoahAllocator, _collector_alloc,           ShenandoahCollectorPartitionAllocator)     \
+  nonstatic_field(ShenandoahAllocator, _old_collector_alloc,       ShenandoahOldCollectorPartitionAllocator)  \
+  nonstatic_field(ShenandoahMutatorPartitionAllocator, _alloc_region_count, const uint)                       \
+  nonstatic_field(ShenandoahMutatorPartitionAllocator, _alloc_regions[0], Atomic<ShenandoahHeapRegion*>)      \
+  nonstatic_field(ShenandoahCollectorPartitionAllocator, _alloc_region_count, const uint)                     \
+  nonstatic_field(ShenandoahCollectorPartitionAllocator, _alloc_regions[0], Atomic<ShenandoahHeapRegion*>)    \
+  nonstatic_field(ShenandoahOldCollectorPartitionAllocator, _alloc_region_count, const uint)                  \
+  nonstatic_field(ShenandoahOldCollectorPartitionAllocator, _alloc_regions[0], Atomic<ShenandoahHeapRegion*>) \
   volatile_nonstatic_field(ShenandoahHeap, _committed,             Atomic<size_t>)                            \
   static_field(ShenandoahHeapRegion, RegionSizeBytes,              size_t)                                    \
   static_field(ShenandoahHeapRegion, RegionSizeBytesShift,         size_t)                                    \
+  static_field(ShenandoahHeap, _plab_min_size,                     size_t)                                    \
   nonstatic_field(ShenandoahHeapRegion, _state,                    Atomic<ShenandoahHeapRegion::RegionState>) \
   nonstatic_field(ShenandoahHeapRegion, _index,                    size_t const)                              \
   nonstatic_field(ShenandoahHeapRegion, _bottom,                   HeapWord* const)                           \
-  nonstatic_field(ShenandoahHeapRegion, _top,                      HeapWord*)                                 \
+  volatile_nonstatic_field(ShenandoahHeapRegion, _top,             HeapWord*)                                 \
   nonstatic_field(ShenandoahHeapRegion, _end,                      HeapWord* const)                           \
   nonstatic_field(ShenandoahFreeSet, _total_global_used,           size_t)                                    \
 
@@ -69,5 +87,11 @@
   declare_toplevel_type(Atomic<ShenandoahHeapRegion::RegionState>)            \
   declare_toplevel_type(ShenandoahFreeSet)                                    \
   declare_toplevel_type(ShenandoahFreeSet*)                                   \
+  declare_toplevel_type(Atomic<ShenandoahHeapRegion*>)                        \
+  declare_toplevel_type(ShenandoahAllocator)                                  \
+  declare_toplevel_type(ShenandoahAllocator*)                                 \
+  declare_toplevel_type(ShenandoahMutatorPartitionAllocator)                  \
+  declare_toplevel_type(ShenandoahCollectorPartitionAllocator)                \
+  declare_toplevel_type(ShenandoahOldCollectorPartitionAllocator)             \
 
 #endif // SHARE_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP

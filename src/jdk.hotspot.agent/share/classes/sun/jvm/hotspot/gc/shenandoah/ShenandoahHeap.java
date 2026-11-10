@@ -44,6 +44,7 @@ import sun.jvm.hotspot.utilities.Observer;
 public class ShenandoahHeap extends CollectedHeap {
     private static CIntegerField numRegions;
     private static AddressField  globalFreeSet;
+    private static AddressField  allocatorField;
     private static CIntegerField committed;
     private static AddressField  regions;
     private static CIntegerField logMinObjAlignmentInBytes;
@@ -61,6 +62,7 @@ public class ShenandoahHeap extends CollectedHeap {
         Type type = db.lookupType("ShenandoahHeap");
         numRegions = type.getCIntegerField("_num_regions");
         globalFreeSet = type.getAddressField("_free_set");
+        allocatorField = type.getAddressField("_allocator");
         committed = type.getCIntegerField("_committed");
         regions = type.getAddressField("_regions");
         logMinObjAlignmentInBytes = type.getCIntegerField("_log_min_obj_alignment_in_bytes");
@@ -91,7 +93,18 @@ public class ShenandoahHeap extends CollectedHeap {
     public long used() {
         Address globalFreeSetAddress = globalFreeSet.getValue(addr);
         ShenandoahFreeSet freeset = VMObjectFactory.newObject(ShenandoahFreeSet.class, globalFreeSetAddress);
-        return freeset.used();
+        // The free set pre-charges each active CAS alloc region's remaining capacity as used; subtract
+        // the unconsumed remnant of the allocator's cached alloc regions, as ShenandoahFreeSet::global_used()
+        // does. Saturating, since raw used and the remnant are not read atomically. The allocator may not
+        // be installed yet (e.g. a core captured during VM initialization).
+        long rawUsed = freeset.used();
+        ShenandoahAllocator allocator = allocator();
+        long correction = allocator == null ? 0 : allocator.remnantBytes();
+        return rawUsed > correction ? rawUsed - correction : 0;
+    }
+
+    public ShenandoahAllocator allocator() {
+        return VMObjectFactory.newObject(ShenandoahAllocator.class, allocatorField.getValue(addr));
     }
 
     public long committed() {

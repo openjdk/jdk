@@ -125,6 +125,12 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
         return EndField.getValue(addr);
     }
 
+    // Unconsumed capacity (end - top) pre-charged to used at reserve time. Only meaningful for
+    // active CAS alloc regions.
+    public long remnantBytes() {
+        return EndField.getValue(addr).minus(TopField.getValue(addr));
+    }
+
     @Override
     public int hashCode() {
         return Long.hashCode(index());

@@ -28,6 +28,7 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
@@ -258,11 +259,22 @@ private:
   HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
 
   // Frequently updated fields
-  HeapWord* _top;
+  shenandoah_padding(0);
+  // Bumped with CAS while the region is an active CAS alloc region. A CAS alloc region is never
+  // allocated from once it has less than PLAB::min_size() free, so an exhausted region can be
+  // released off-safepoint even though threads may still hold a stale reference to it.
+  HeapWord* volatile _top;
+  shenandoah_padding(1);
 
   size_t _tlab_allocs;
   size_t _gclab_allocs;
   size_t _plab_allocs;
+
+  // Top when the region was activated as a CAS alloc region.
+  // It's written under the heap lock at activation, and read and cleared by whichever thread wins the slot CAS.
+  Atomic<HeapWord*> _top_at_alloc_region_activation;
+  // Shared (non-LAB) CAS alloc words in the current activation, only maintained with UseTLAB.
+  Atomic<size_t> _shared_cas_alloc_words;
 
   Atomic<size_t> _live_data;
   Atomic<size_t> _critical_pins;
@@ -282,6 +294,14 @@ private:
 
   // This is only read/written by a gc worker to avoid unnecessary bitmap resets
   bool _needs_bitmap_reset;
+
+  // Role while the region is an active CAS alloc region; read on the barrier fast path.
+  enum AllocRegionType {
+    _not_alloc_region,
+    _mutator_alloc_region,
+    _gc_alloc_region
+  };
+  Atomic<AllocRegionType> _alloc_region_type;
 
   // If this is a humongous region, this index identifies the corresponding humongous start region.
   // If this is not a humongous region, this field is not used. In debug builds, it is assigned the value
@@ -394,13 +414,21 @@ public:
   inline size_t garbage_before_padded_for_promote() const;
 
   HeapWord* get_top_at_evac_start() const { return _top_at_evac_start; }
-  void record_top_at_evac_start()         { _top_at_evac_start = _top; }
+  void record_top_at_evac_start()         { _top_at_evac_start = top(); }
 
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
   // Allocate fill after top
   inline HeapWord* allocate_fill(size_t word_size);
+
+  // Allocate object with CAS, return nullptr if full or not enough space for the req.
+  // Never allocates once the region has less than PLAB::min_size() free.
+  ALWAYSINLINE HeapWord* allocate_atomic(ShenandoahAllocRequest &req, bool& ready_to_replenish);
+
+  // Allocate lab with CAS, return nullptr if full or not enough space for the req.
+  // Never allocates once the region has less than PLAB::min_size() free.
+  ALWAYSINLINE HeapWord* allocate_lab_atomic(ShenandoahAllocRequest &req, bool& ready_to_replenish);
 
   inline void clear_live_data();
   void set_live_data(size_t s);
@@ -475,8 +503,13 @@ public:
   // Find humongous start region that this region belongs to
   inline uint32_t humongous_start_region() const;
 
-  HeapWord* top() const         { return _top;     }
-  void set_top(HeapWord* v)     { _top = v;        }
+  // May advance concurrently while the region is an active CAS alloc region.
+  HeapWord* top() const         { return AtomicAccess::load(&_top); }
+
+  void set_top(HeapWord* v) {
+    assert(!is_atomic_alloc_region(), "Must not be an atomic alloc region");
+    AtomicAccess::store(&_top, v);
+  }
 
   HeapWord* new_top() const     { return _new_top; }
   void set_new_top(HeapWord* v) { _new_top = v;    }
@@ -488,6 +521,7 @@ public:
   size_t used() const           { return byte_size(bottom(), top()); }
   size_t used_before_promote() const { return byte_size(bottom(), get_top_before_promote()); }
   size_t free() const           { return byte_size(top(),    end()); }
+  size_t free_words() const     { return pointer_delta(end(), top()); }
 
   // Does this region contain this address?
   bool contains(HeapWord* p) const {
@@ -538,6 +572,27 @@ public:
 
   inline void unset_needs_bitmap_reset() {
     _needs_bitmap_reset = false;
+  }
+
+  inline void set_active_alloc_region(bool is_gc_alloc_region) {
+    shenandoah_assert_heaplocked();
+    assert(!is_atomic_alloc_region(), "Must not be an atomic alloc region");
+    _top_at_alloc_region_activation.store_relaxed(top());
+    if (UseTLAB) {
+      _shared_cas_alloc_words.store_relaxed(0);
+    }
+    _alloc_region_type.release_store(is_gc_alloc_region ? _gc_alloc_region : _mutator_alloc_region);
+  }
+
+  // Defined in shenandoahHeapRegion.inline.hpp (depends on ShenandoahHeap via is_young()).
+  inline void unset_active_alloc_region();
+
+  bool is_atomic_alloc_region() const {
+    return _alloc_region_type.load_acquire() != _not_alloc_region;
+  }
+
+  bool is_gc_alloc_region() const {
+    return _alloc_region_type.load_acquire() == _gc_alloc_region;
   }
 
   // Self-forward accounting: set by an evacuating thread after it successfully
