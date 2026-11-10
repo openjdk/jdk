@@ -135,7 +135,7 @@ private:
 public:
   void init();
   bool runtime_check() const;
-  void print(outputStream* st) const;
+  void print(outputStream* st, bool actual_jvm_config = false) const;
 };
 
 class FileMapHeader: private CDSFileMapHeaderBase {

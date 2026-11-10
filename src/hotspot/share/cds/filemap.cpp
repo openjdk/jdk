@@ -152,11 +152,11 @@ void CDSMustMatchFlags::print_info() const {
   }
 }
 
-void CDSMustMatchFlags::print(outputStream* st) const {
+void CDSMustMatchFlags::print(outputStream* st, bool actual_jvm_config) const {
 #define PRINT_CDS_MUST_MATCH_FLAG(n) \
   st->print("- %-s ", #n);                   \
   st->sp(int(_max_name_width - strlen(#n))); \
-  do_print(st, _v_##n);                      \
+  do_print(st, actual_jvm_config ? n : _v_##n); \
   st->cr();
   CDS_MUST_MATCH_FLAGS_DO(PRINT_CDS_MUST_MATCH_FLAG);
 #undef PRINT_CDS_MUST_MATCH_FLAG
@@ -390,9 +390,9 @@ void FileMapHeader::print(outputStream* st, bool output_for_diff, bool actual_jv
   st->print_cr("- verify_remote:                            %d", actual_jvm_config ? BytecodeVerificationRemote : _verify_remote);
   if (!output_for_diff) {
     st->print_cr("- has_platform_or_app_classes:              %d", _has_platform_or_app_classes);
+    st->print_cr("- requested_base_address:                   " INTPTR_FORMAT, p2i(_requested_base_address));
+    st->print_cr("- mapped_base_address:                      " INTPTR_FORMAT, p2i(_mapped_base_address));
   }
-  st->print_cr("- requested_base_address:                   " INTPTR_FORMAT, p2i(actual_jvm_config ? (char*)SharedBaseAddress : _requested_base_address));
-  st->print_cr("- mapped_base_address:                      " INTPTR_FORMAT, p2i(actual_jvm_config ? (char*)SharedBaseAddress : _mapped_base_address));
 
   st->print_cr("- object_streaming_mode:                    %d", actual_jvm_config ? (CDSConfig::is_using_archive() ? AOTHeap::is_loading_streaming_mode() : AOTHeap::is_writing_streaming_mode()) : _object_streaming_mode);
   if (!output_for_diff) {
@@ -417,10 +417,18 @@ void FileMapHeader::print(outputStream* st, bool output_for_diff, bool actual_jv
   }
   st->print_cr("- has_full_module_graph                     %d", actual_jvm_config ? CDSConfig::is_using_full_module_graph() : _has_full_module_graph);
   st->print_cr("- has_valhalla_patched_classes              %d", actual_jvm_config ? Arguments::is_valhalla_enabled() : _has_valhalla_patched_classes);
-  if (output_for_diff) {
-    _must_match.print(st);
-  }
+  _must_match.print(st, actual_jvm_config);
   st->print_cr("- has_aot_linked_classes                    %d", actual_jvm_config ? AOTClassLinking : _has_aot_linked_classes);
+
+  st->print_cr("- type_profile_level:                       %u", actual_jvm_config ? TypeProfileLevel : _type_profile_level);
+  st->print_cr("- type_profile_args_limit:                  %d", actual_jvm_config ? TypeProfileArgsLimit : _type_profile_args_limit);
+  st->print_cr("- type_profile_parms_limit:                 %d", actual_jvm_config ? TypeProfileParmsLimit : _type_profile_parms_limit);
+  st->print_cr("- type_profile_width:                       %zd", actual_jvm_config ? TypeProfileWidth : _type_profile_width);
+  st->print_cr("- bci_profile_width:                        %zd", actual_jvm_config ? BciProfileWidth : _bci_profile_width);
+  st->print_cr("- type_profile_casts:                       %d", actual_jvm_config ? TypeProfileCasts : _type_profile_casts);
+  st->print_cr("- profile_traps:                            %d", actual_jvm_config ? ProfileTraps : _profile_traps);
+  st->print_cr("- profile_exception_handlers:               %d", actual_jvm_config ? ProfileExceptionHandlers : _profile_exception_handlers);
+  st->print_cr("- spec_trap_limit_extra_entries:            %d", actual_jvm_config ? SpecTrapLimitExtraEntries : _spec_trap_limit_extra_entries);
 }
 
 bool FileMapInfo::validate_class_location() {
