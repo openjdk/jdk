@@ -8998,6 +8998,22 @@ instruct convI2L_reg_reg(iRegLNoSp dst, iRegIorL2I src)
   ins_pipe(ialu_reg);
 %}
 
+// AND preserves the canonical sign extension of an int register.
+instruct convI2L_andI_reg_imm(iRegLNoSp dst, iRegI src, immI_simm12 mask) %{
+  match(Set dst (ConvI2L (AndI src mask)));
+
+  ins_cost(ALU_COST);
+  format %{ "andi  $dst, $src, $mask\t#@convI2L_andI_reg_imm" %}
+
+  ins_encode %{
+    __ andi(as_Register($dst$$reg),
+            as_Register($src$$reg),
+            (int32_t)($mask$$constant));
+  %}
+
+  ins_pipe(ialu_reg_imm);
+%}
+
 // Fused int-producer + ConvI2L rules.
 instruct convI2L_addI_reg_reg(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (ConvI2L (AddI src1 src2)));
