@@ -280,7 +280,7 @@ bool ShenandoahAdaptiveHeuristics::humongous_regions_under_budget(size_t max_hum
     accept_trigger_with_type(OTHER);
     return true;
   }
-  log_info(gc, ergo)("ruiamzn - Min humongous threshold: max humongous allocatable: " PROPERFMT
+  log_debug(gc, ergo)("Min humongous threshold: max humongous allocatable: " PROPERFMT
                       " (%zu regions), max requested: " PROPERFMT " (%zu regions), not triggering",
                       PROPERFMTARGS(max_humongous_budget_byte),
                       max_humongous_budget_byte / ShenandoahHeapRegion::region_size_bytes(),

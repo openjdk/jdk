@@ -1818,7 +1818,7 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
         const size_t run = free_set()->empty_region_array()[i];
         humongous_budget += (k == 0) ? run : (run / k) * k;
       }
-      log_info(gc, ergo)("ruiamzn - Humongous budget: %zu regions for request size %zu regions, %zu runs",
+      log_debug(gc, ergo)("Humongous budget: %zu regions for request size %zu regions, %zu runs",
                          humongous_budget, k, empty_region_array_size);
       _humongous_budget_region_count.store_relaxed(humongous_budget);
     }
