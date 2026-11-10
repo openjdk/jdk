@@ -391,7 +391,7 @@ public final class SharedUtils {
     }
 
     public static boolean isSigned(MemoryLayout layout) {
-        return !(layout instanceof OfIntegral integral) || integral.isSigned();
+        return layout instanceof OfIntegral integral && integral.isSigned();
     }
 
     @ForceInline
