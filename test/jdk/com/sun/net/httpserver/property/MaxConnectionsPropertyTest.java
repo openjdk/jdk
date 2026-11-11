@@ -39,7 +39,6 @@ import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
@@ -127,7 +126,11 @@ class MaxConnectionsPropertyTest {
                     var lastSocket = sockets.get(maxConnectionCount);
                     assertThrows(SocketException.class, () -> {
                         connectAndWriteRequest(server.getAddress(), lastSocket, "/?socket=last");
-                        assertEquals(-1, lastSocket.getInputStream().read(), "did not receive EOF");
+                        if (lastSocket.getInputStream().read() == -1) {
+                            // `assertThrows` expects `SocketException` to verify disconnect.
+                            // Use `SocketException` to signal EOF.
+                            throw new SocketException("EOF");
+                        }
                     });
 
                 } finally {
