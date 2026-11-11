@@ -579,7 +579,7 @@ public class TransPatterns extends TreeTranslator {
                 }
 
                 if ((validCaseLabelList && !previousCompletesNormally) ||
-                        c.guard != null) {
+                        (c.guard != null || hasSyntheticGuards(clearedPatterns))) {
                     List<JCPatternCaseLabel> labels = clearedPatterns.stream().map(cp -> (JCPatternCaseLabel)cp).collect(List.collector());
                     bindingContext = new BasicBindingContext();
                     VarSymbol prevCurrentValue = currentValue;
@@ -701,8 +701,11 @@ public class TransPatterns extends TreeTranslator {
         }
     }
 
-    // Duplicates the block statement where needed.
-    // Processes cases in place, e.g.
+    // Processes cases where a fallthrough into a case with a guard happens
+    // the guards (both explicit and synthetic) need to be skipped in this case
+    // will inject a "boolean fallthrough" variable before the switch, and set
+    // it to true if the fallthrough is happening:
+    //
     // switch (obj) {
     //     case Integer _ when ((Integer) obj) > 0:
     //     case String _  when !((String) obj).isEmpty():
@@ -710,12 +713,13 @@ public class TransPatterns extends TreeTranslator {
     //     ...
     // }
     // =>
+    // boolean fallthrough = false;
     // switch (typeSwitch(...)) {
     //     case 0:
     //         if (!((Integer)obj) > 0) { ... }
-    //         return 1;
+    //         fallthrough = true;
     //     case 1:
-    //         if (!((String)obj).isEmpty()) { ... }
+    //         if (!(fallthrough || ((String)obj).isEmpty()) { ... }
     //         return 1;
     //     ...
     // }
@@ -730,7 +734,7 @@ public class TransPatterns extends TreeTranslator {
         while (cases.nonEmpty()) {
             var currentCase = cases.head;
 
-            if ((currentCase.guard != null || currentCase.labels.stream().anyMatch(cl -> cl instanceof JCPatternCaseLabel p && p.syntheticGuard != null)) &&
+            if ((currentCase.guard != null || hasSyntheticGuards(currentCase.labels)) &&
                 previous != null &&
                 previous.caseKind == CaseKind.STATEMENT &&
                 previous.completesNormally) {
@@ -768,6 +772,12 @@ public class TransPatterns extends TreeTranslator {
                     }
                 }
             }.scan(c.stats);
+        }
+
+        private boolean hasSyntheticGuards(List<JCCaseLabel> labels) {
+            return labels.stream()
+                         .anyMatch(cl -> cl instanceof JCPatternCaseLabel p &&
+                                         p.syntheticGuard != null);
         }
 
     void appendBreakIfNeeded(JCTree switchTree, List<JCCase> cases, JCCase c) {
