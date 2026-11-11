@@ -16,12 +16,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Arab" alt="variant">persisk-arabiska</script>
 		</scripts>
 		<keys>
-			<key type="timezone" draft="contributed">tidszon</key>
+			<key type="timezone">tidszon</key>
 		</keys>
-		<types>
-			<type key="collation" type="pinyin" draft="unconfirmed">kinesiska i pinyin-sorteringsordning</type>
-			<type key="collation" type="stroke" draft="unconfirmed">kinesiska i strecksorteringsordning</type>
-		</types>
 	</localeDisplayNames>
 	<characters>
 		<ellipsis type="word-final">{0}…</ellipsis>
@@ -31,16 +27,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<dates>
 		<calendars>
 			<calendar type="gregorian">
-				<quarters>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">K1</quarter>
-							<quarter type="2">K2</quarter>
-							<quarter type="3">K3</quarter>
-							<quarter type="4">K4</quarter>
-						</quarterWidth>
-					</quarterContext>
-				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">fm.</dayPeriod>
+							<dayPeriod type="pm">em.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">fm.</dayPeriod>
+							<dayPeriod type="pm">em.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">fm.</dayPeriod>
+							<dayPeriod type="pm">em.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">fm.</dayPeriod>
+							<dayPeriod type="pm">em.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">fm.</dayPeriod>
+							<dayPeriod type="pm">em.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">fm.</dayPeriod>
+							<dayPeriod type="pm">em.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -86,6 +102,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+						<numericTimeSeparator>.</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -199,18 +219,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
-		<fields>
-			<field type="year-short">
-				<relative type="-1">förra året</relative>
-				<relative type="0">i år</relative>
-				<relative type="1">nästa år</relative>
-			</field>
-			<field type="year-narrow">
-				<relative type="-1">förra året</relative>
-				<relative type="0">i år</relative>
-				<relative type="1">nästa år</relative>
-			</field>
-		</fields>
+		<timeZoneNames>
+			<zone type="Asia/Oral">
+				<exemplarCity>Uralsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity>Aktobe</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>Kustanaj</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>Kyzylorda</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astrahan</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity>Hô Chi Minh-staden</exemplarCity>
+			</zone>
+			<metazone type="Cocos">
+				<long>
+					<standard>Kokosöarnas tid</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
 	</dates>
 	<numbers>
 		<symbols numberSystem="latn">
