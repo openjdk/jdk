@@ -1282,8 +1282,9 @@ public:
   bool for_merge_stores_igvn() const { return (_flags & Flag_for_merge_stores_igvn) != 0; }
 
   // Is 'n' possibly a loop entry (i.e. a Parse Predicate projection)?
-  static bool may_be_loop_entry(Node* n);
-
+  static bool may_be_loop_entry(Node* n) {
+    return n != nullptr && n->is_IfProj() && n->in(0)->is_ParsePredicate();
+  }
 //----------------- Optimization
 
   // Get the worst-case Type output for this Node.
@@ -1585,80 +1586,107 @@ public:
 };
 
 template <typename T>
-bool Node::is(const Node*) {
-  static_assert(DependentAlwaysFalse<T>, "No Node::is<T>(const Node*) specialization found for this type");
-  return false;
+bool Node::is(const Node* n) {
+  if (n == nullptr) {
+    return false;
+  }
+  if constexpr (false) {
+    return false;
+  }
+#define NODE_IS_CASES(type)                            \
+  else if constexpr (std::is_same_v<T, type##Node>) {  \
+    return n->is_##type();                             \
+  }
+NODE_METHODS(NODE_IS_CASES)
+#undef NODE_IS_CASES
+  else {
+    static_assert(DependentAlwaysFalse<T>, "Node::is<T>(const Node*) does not support this type.");
+    return false;
+  }
 }
 
 template <typename T>
-T* Node::isa(Node*) {
-  static_assert(DependentAlwaysFalse<T>, "No Node::isa<T>(Node*) specialization found for this type");
-  return nullptr;
+T* Node::isa(Node* n) {
+  if (n == nullptr) {
+    return nullptr;
+  }
+  if constexpr (false) {
+    return nullptr;
+  }
+#define NODE_ISA_NONCONST_CASES(type)                  \
+  else if constexpr (std::is_same_v<T, type##Node>) {  \
+    return n->isa_##type();                            \
+  }
+NODE_METHODS(NODE_ISA_NONCONST_CASES)
+#undef NODE_ISA_CONST_CASES
+  else {
+    static_assert(DependentAlwaysFalse<T>, "Node::isa<T>(Node*) does not support this type.");
+    return nullptr;
+  }
 }
 
 template <typename T>
-const T* Node::isa(const Node*) {
-  static_assert(DependentAlwaysFalse<T>, "No Node::isa<T>(const Node*) specialization found for this type");
-  return nullptr;
+const T* Node::isa(const Node* n) {
+  if (n == nullptr) {
+    return nullptr;
+  }
+  if constexpr (false) {
+    return nullptr;
+  }
+#define NODE_ISA_CONST_CASES(type)                     \
+  else if constexpr (std::is_same_v<T, type##Node>) {  \
+    return n->isa_##type();                            \
+  }
+NODE_METHODS(NODE_ISA_CONST_CASES)
+#undef NODE_ISA_CONST_CASES
+  else {
+    static_assert(DependentAlwaysFalse<T>, "Node::isa<T>(const Node*) does not support this type.");
+    return nullptr;
+  }
 }
 
 template <typename T>
 T* Node::isa(std::nullptr_t) {
-  static_assert(DependentAlwaysFalse<T>, "No Node::isa<T>(std::nullptr_t) specialization found for this type");
   return nullptr;
 }
 
 template <typename T>
-T* Node::as(Node*) {
-  static_assert(DependentAlwaysFalse<T>, "No Node::as<T>(Node*) specialization found for this type");
-  return nullptr;
+T* Node::as(Node* n) {
+  assert(n != nullptr, "invalid null node");
+  if constexpr (false) {
+    return nullptr;
+  }
+#define NODE_AS_NONCONST_CASES(type)                   \
+  else if constexpr (std::is_same_v<T, type##Node>) {  \
+    return n->as_##type();                             \
+  }
+NODE_METHODS(NODE_AS_NONCONST_CASES)
+#undef NODE_AS_NONCONST_CASES
+  else {
+    static_assert(DependentAlwaysFalse<T>, "Node::as<T>(Node*) does not support this type.");
+    return nullptr;
+  }
 }
 
 template <typename T>
-const T* Node::as(const Node*) {
-  static_assert(DependentAlwaysFalse<T>, "No Node::as<T>(const Node*) specialization found for this type");
-  return nullptr;
+const T* Node::as(const Node* n) {
+  assert(n != nullptr, "invalid null node");
+  if constexpr (false) {
+    return nullptr;
+  }
+#define NODE_AS_CONST_CASES(type)                      \
+  else if constexpr (std::is_same_v<T, type##Node>) {  \
+    return n->as_##type();                             \
+  }
+NODE_METHODS(NODE_AS_CONST_CASES)
+#undef NODE_AS_CONST_CASES
+  else {
+    static_assert(DependentAlwaysFalse<T>, "Node::as<T>(const Node*) does not support this type.");
+    return nullptr;
+  }
 }
 
-#define DEFINE_CLASS_TEMPLATED_QUERY(type)                        \
-template <>                                                       \
-inline bool Node::is<type##Node>(const Node* n) {                 \
-  if (n == nullptr) return false;                                 \
-  return n->is_##type();                                          \
-}                                                                 \
-template <>                                                       \
-inline type##Node* Node::isa<type##Node>(Node* n) {               \
-  if (n == nullptr) return nullptr;                               \
-  return n->isa_##type();                                         \
-}                                                                 \
-template <>                                                       \
-inline const type##Node* Node::isa<type##Node>(const Node* n) {   \
-  if (n == nullptr) return nullptr;                               \
-  return n->isa_##type();                                         \
-}                                                                 \
-template <>                                                       \
-inline type##Node* Node::isa<type##Node>(std::nullptr_t) {        \
-  return nullptr;                                                 \
-}                                                                 \
-template <>                                                       \
-inline type##Node* Node::as<type##Node>(Node* n) {                \
-  assert(n != nullptr, "invalid null node");                      \
-  return n->as_##type();                                          \
-}                                                                 \
-template <>                                                       \
-inline const type##Node* Node::as<type##Node>(const Node* n) {    \
-  assert(n != nullptr, "invalid null node");                      \
-  return n->as_##type();                                          \
-}                                                                 \
-
-NODE_METHODS(DEFINE_CLASS_TEMPLATED_QUERY)
-
-#undef DEFINE_CLASS_TEMPLATED_QUERY
 #undef NODE_METHODS
-
-inline bool Node::may_be_loop_entry(Node* n) {
-  return is<IfProjNode>(n) && n->in(0)->is_ParsePredicate();
-}
 
 inline bool not_a_node(const Node* n) {
   if (n == nullptr)                return true;
