@@ -2700,7 +2700,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
-// If changed SubI inputs, check AndI users for AndI(SubI(0, x), 1) -> AndI(x, 1) opportunity.
+  // If changed SubI inputs, check AndI users for AndI(SubI(0, x), 1) -> AndI(x, 1) opportunity.
   if (use_op == Op_SubI) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
       return u->Opcode() == Op_AndI;
