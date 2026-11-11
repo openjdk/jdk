@@ -1621,6 +1621,8 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode* call) {
 
 Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
   Node* adr = off_heap_plus_addr(base, offset);
+  assert(C->get_alias_index(_igvn.type(adr)->isa_ptr()) == Compile::AliasIdxRaw,
+         "Computed slice mismatch");
   Node* value = LoadNode::make(_igvn, ctl, mem, adr, value_type, bt, MemNode::unordered);
   transform_later(value);
   return value;
@@ -1629,6 +1631,8 @@ Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offs
 
 Node* PhaseMacroExpand::make_store_raw(Node* ctl, Node* mem, Node* base, int offset, Node* value, BasicType bt) {
   Node* adr = off_heap_plus_addr(base, offset);
+  assert(C->get_alias_index(_igvn.type(adr)->isa_ptr()) == Compile::AliasIdxRaw,
+         "Computed slice mismatch");
   mem = StoreNode::make(_igvn, ctl, mem, adr, value, bt, MemNode::unordered);
   transform_later(mem);
   return mem;
