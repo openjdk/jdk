@@ -1058,7 +1058,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               continue;
             }
 
-            if (UseFPUForSpilling && n->is_MachCall() && !uup && !dup ) {
+            if (NOT_AMD64(UseFPUForSpilling &&) n->is_MachCall() && !uup && !dup ) {
               // The use at the call can force the def down so insert
               // a split before the use to allow the def more freedom.
               int delta = split_USE(MachSpillCopyNode::CallUse, def,b,n,inpidx,maxlrg,dup,false, splits,slidx);
