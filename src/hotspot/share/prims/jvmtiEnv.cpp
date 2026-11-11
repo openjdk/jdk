@@ -2514,8 +2514,11 @@ JvmtiEnv::SetBreakpoint(Method* method, jlocation location) {
   ResourceMark rm;
   JvmtiBreakpoint bp(method, location);
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
-  if (jvmti_breakpoints.set(bp) == JVMTI_ERROR_DUPLICATE)
-    return JVMTI_ERROR_DUPLICATE;
+
+  jvmtiError err = (jvmtiError) jvmti_breakpoints.set(bp);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
 
   if (TraceJVMTICalls) {
     jvmti_breakpoints.print();

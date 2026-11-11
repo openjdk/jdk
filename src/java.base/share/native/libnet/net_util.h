@@ -164,9 +164,6 @@ NET_SetSockOpt(int fd, int level, int opt, const void *arg, int len);
 JNIEXPORT int JNICALL
 NET_Bind(int fd, SOCKETADDRESS *sa, int len);
 
-JNIEXPORT jint JNICALL
-NET_EnableFastTcpLoopback(int fd);
-
 unsigned short in_cksum(unsigned short *addr, int len);
 
 jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);

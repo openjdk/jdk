@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, Red Hat, Inc.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,16 @@
 
 /*
  * @test
- * @bug 8029661 8325164 8368073 8368514 8368520
+ * @bug 8029661 8325164 8368073 8368514 8368520 8396708
  * @summary Test TLS 1.2 and TLS 1.3
  * @modules java.base/sun.security.internal.spec
  *          java.base/sun.security.util
  *          java.base/com.sun.crypto.provider
  * @library /test/lib ../..
  * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.2
- *      -Djdk.tls.useExtendedMasterSecret=false
  *      -Djdk.tls.client.enableSessionTicketExtension=false FipsModeTLS
- * @comment SunPKCS11 does not support (TLS1.2) SunTlsExtendedMasterSecret yet.
- *   Stateless resumption doesn't currently work with NSS-FIPS, see JDK-8368669.
- *   NSS-FIPS does not support ML-KEM, so configures the list of named groups.
+ * @comment Stateless resumption doesn't currently work with NSS-FIPS, see JDK-8368669.
+ *          NSS-FIPS does not support ML-KEM, so configures the list of named groups.
  * @run main/othervm/timeout=120
  *      -Djdk.tls.client.protocols=TLSv1.3
  *      -Djdk.tls.namedGroups=x25519,secp256r1,secp384r1,secp521r1,x448,ffdhe2048,ffdhe3072,ffdhe4096,ffdhe6144,ffdhe8192
@@ -135,6 +133,7 @@ public final class FipsModeTLS extends SecmodTest {
                 KeyGenerator.getInstance(
                         "SunTls12RsaPremasterSecret", sunPKCS11NSSProvider);
                 KeyGenerator.getInstance("SunTls12Prf", sunPKCS11NSSProvider);
+                KeyGenerator.getInstance("SunTls12ExtendedMasterSecret", sunPKCS11NSSProvider);
             }
         } catch (NoSuchAlgorithmException e) {
             return false;

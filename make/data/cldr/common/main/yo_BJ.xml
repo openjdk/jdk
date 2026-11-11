@@ -49,6 +49,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ksb">Sháńbálà</language>
 			<language type="ku">Kɔdishì</language>
 			<language type="ku" menu="core">Èdè Kɔ́dìshì</language>
+			<language type="ku" menu="extension">Èdè Kùmáǹjì</language>
 			<language type="kw">Èdè Kɔ́nììshì</language>
 			<language type="lb">Lùshɛ́mbɔ́ɔ̀gì</language>
 			<language type="mul">Ɔlɔ́pɔ̀ èdè</language>
@@ -63,6 +64,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="oc">Èdè Ɔ̀kísítáànì</language>
 			<language type="om">Òròmɔ́</language>
 			<language type="os">Ɔshɛ́tíìkì</language>
+			<language type="pms">Èdè Pídímɔ̀ntísì</language>
 			<language type="prg">Púrúshíànù</language>
 			<language type="pt">Èdè Pɔtogí</language>
 			<language type="pt_BR">Èdè Pɔtogí (Orilɛ̀-èdè Bràsíl)</language>
@@ -218,7 +220,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VI">Etikun Fagini ti Amɛrika</territory>
 			<territory type="VN">Fɛtinami</territory>
 			<territory type="WS">Samɔ</territory>
-			<territory type="XA">ìsɔ̀rɔ̀sí irɔ́</territory>
+			<territory type="XA">Ìsɔ̀rɔ̀sí irɔ́</territory>
 			<territory type="XB">Agbègbè irɔ́</territory>
 			<territory type="ZA">Gúúshù Áfíríkà</territory>
 			<territory type="ZM">Shamibia</territory>
@@ -232,12 +234,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<keys>
 			<key type="calendar">Kàlɛ́ńdà</key>
 			<key type="cf">Ònà Ìgbekalɛ̀ owó</key>
+			<key type="colBackwards">Títo Àmì Ohùn Láti Ɛ̀yìn</key>
+			<key type="colCaseFirst">Ìshètò Lɛ́tà ńlá/lɛ́tà kéreré</key>
+			<key type="colCaseLevel">Títò nípasɛ̀ shíshe ìyàtɔ̀ láàárín àwɔn lɛ́tà ńlá àti kékeré</key>
 			<key type="collation">Ètò Ɛlɛ́sɛɛsɛ</key>
+			<key type="colNormalization">Ètò tó she déédéé</key>
+			<key type="colNumeric">Shíshètò nípasɛ̀ nɔ́ńbà</key>
+			<key type="colReorder">Àtúntò ɔ̀nà ìkɔ̀wé/Lɛ́tà ńlá</key>
+			<key type="d0">She àyípadà ibùdó</key>
+			<key type="dx">Ìyɔkúrò Àlàfo Ìwé Atúmɔ̀ Èdè</key>
 			<key type="em">Ìgbékalɛ̀ Ɛ̀mójì</key>
+			<key type="fw">Ɔjɔ́ kìíní ɔ̀sɛ̀</key>
+			<key type="h0">Àdàpɔ̀</key>
+			<key type="i0">Ɔ̀nà Ìgbéwɔlé</key>
+			<key type="k0">Àtɛ bɔ́tìnì</key>
+			<key type="kv">púpɔ̀ jùlɔ tí a fojúfò</key>
 			<key type="lw">Àwɔn Ìdá Ìlà Láàárín Àwɔn Ɔ̀rɔ̀</key>
+			<key type="m0">She àyípadà àwɔn Òfin</key>
 			<key type="ms">Èto Ìdiwɔ̀n</key>
+			<key type="mu">Ìwɔ̀n Òshùwɔ̀n</key>
 			<key type="numbers">Àwɔn nɔ́ńbà</key>
+			<key type="s0">She àyípadà Orísun</key>
 			<key type="ss">Ìdá Gbólóhùn Lɛ́yìn Ìgékúrú</key>
+			<key type="t">She àyípadà</key>
+			<key type="t0">Tí Ɛ̀rɔ Túmɔ̀</key>
+			<key type="va">Ɛ̀dà ìbílɛ̀</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Kàlɛ́ńdà Buddhist</type>
@@ -249,9 +270,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic-amete-alem" scope="core">Kàlɛ́ńdà Etiópíà</type>
 			<type key="calendar" type="gregorian">Kàlɛ́ńdà Gregory</type>
 			<type key="calendar" type="hebrew">Kàlɛ́ńdà Hébérù</type>
+			<type key="calendar" type="indian" scope="core">Ti orílɛ́-èdè India</type>
 			<type key="calendar" type="islamic">Kàlɛ́ńdà Lárúbáwá</type>
 			<type key="calendar" type="islamic-civil">Kàlɛ́ńdà ti Musulumi</type>
 			<type key="calendar" type="islamic-civil" scope="core">Híjìrí (kàlɛ́ńdà oní-àtòkɔ ti arà-ìlú)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Híjrí, rírí òshùpá Saudi</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Híjìrì (oní tábìlì, ìgbà ìbílɛ̀)</type>
 			<type key="calendar" type="islamic-umalqura">Kàlɛ́ńdà Musulumi</type>
 			<type key="calendar" type="iso8601">Kàlɛ́ńdà ISO-8601</type>
 			<type key="calendar" type="japanese">Kàlɛ́ńdà ti Jàpánù</type>
@@ -263,60 +287,103 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="cf" type="account" scope="core">Ìshirò owó</type>
 			<type key="cf" type="standard">Ònà ìgbekalɛ̀ owó tó jɛ́ àjùmɔ̀lò</type>
 			<type key="cf" type="standard" scope="core">Àjùmɔ̀lò</type>
+			<type key="colCaseFirst" type="lower" scope="core">Lɛ́tà kéreré</type>
+			<type key="colCaseFirst" type="no" scope="core">Lɛ́tà kéreré</type>
+			<type key="colCaseFirst" type="upper" scope="core">Lɛ́tà ńlá</type>
+			<type key="collation" type="dictionary" scope="core">Ìwé atúmɔ̀ èdè</type>
 			<type key="collation" type="ducet">Ètò Ɛlɛ́sɛɛsɛ Àkùàyàn Unicode</type>
+			<type key="collation" type="phonebook" scope="core">Ìwé nɔ́ńbà tɛlifóònù</type>
+			<type key="collation" type="phonetic" scope="core">Ìró ɔ̀rɔ̀</type>
 			<type key="collation" type="search">Ìshàwárí Ète-Gbogbogbò</type>
 			<type key="collation" type="search" scope="core">Shàwárí</type>
+			<type key="collation" type="searchjl" scope="core">Kɔ́ńsónáǹtì Kòríà àkɔ́kɔ́</type>
 			<type key="collation" type="standard" scope="core">Àjùmɔ̀lò</type>
+			<type key="collation" type="traditional" scope="core">Ti ìbílɛ̀</type>
+			<type key="collation" type="unihan" scope="core">Ètò Ìkɔ̀wé Orílɛ̀-Èdè Sháínà</type>
+			<type key="colStrength" type="primary" scope="core">Àwɔn Lɛ́tà Ìpìlɛ̀ Nìkan</type>
+			<type key="colStrength" type="quaternary" scope="core">Ìpìlɛ̀, Àwɔn àmì ohùn, Irú lɛ́tà, Àwɔn oríshi, Kana</type>
+			<type key="colStrength" type="secondary" scope="core">Ìpìlɛ̀, Àwɔn àmì ohùn</type>
+			<type key="colStrength" type="tertiary" scope="core">Ìpìlɛ̀, Àwɔn àmì ohùn, Irú lɛ́tà, Àwɔn oríshi</type>
+			<type key="d0" type="fwidth">Sí Ìwɔ̀n fífɛ̀ kíkún</type>
+			<type key="d0" type="hwidth">Shí Ààbɔ̀ ìwɔ́n fífɛ̀</type>
 			<type key="em" type="emoji" scope="core">Ɛ̀mójì</type>
 			<type key="em" type="text" scope="core">àtɛ̀jíshɛ́</type>
+			<type key="kv" type="currency" scope="core">Sún àwɔn àyè, àmì ìpín gbólóhùn, gbogbo àmi</type>
+			<type key="kv" type="punct" scope="core">Sún àwɔn àyè, àmì ìpín gbólóhùn</type>
+			<type key="kv" type="space" scope="core">Sún àwɔn àyè, àmì ìpín gbólóhùn</type>
+			<type key="kv" type="symbol" scope="core">Sún àwɔn àyè, àmì ìpín gbólóhùn, àmì tí kìí she ti owó</type>
 			<type key="lb" type="loose" scope="core">Tó dɛ̀</type>
 			<type key="lw" type="breakall" scope="core">Fɔ́ gbogbo ɛ̀</type>
 			<type key="lw" type="keepall" scope="core">Pa gbogbo ɛ̀ mɔ́</type>
 			<type key="lw" type="phrase" scope="core">Fi sílɛ̀ ní àpólà</type>
+			<type key="m0" type="bgn">Àtúnkɔ àwɔn lɛ́tà sí èdè mìíràn ti US BGN</type>
+			<type key="m0" type="ungegn">Àtúnkɔ àwɔn lɛ́tà sí èdè mìíràn ti UN GEGN</type>
 			<type key="ms" type="metric">Èto Mɛ́tíríìkì</type>
 			<type key="ms" type="metric" scope="core">Mɛ́tíríìkì</type>
 			<type key="ms" type="uksystem">Èto Ìdiwɔ̀n Ɔba</type>
 			<type key="ms" type="ussystem">Èto Ìdiwɔ̀n US</type>
 			<type key="numbers" type="arab">àwɔn díjítì Làrubáwá-Índíà</type>
 			<type key="numbers" type="arabext">Àwɔn Díjíìtì Lárúbáwá-Índíà fífɛ̀</type>
+			<type key="numbers" type="arabext" scope="core">Nɔ́ńbà Lárúbáwá tó gbòòrò</type>
 			<type key="numbers" type="armn">Àwɔn nɔ́ńbà Àmɛ́níà</type>
 			<type key="numbers" type="armnlow">Àwɔn Nɔ́ńbà Kékèké ti Amɛ́ríkà</type>
+			<type key="numbers" type="armnlow" scope="core">Lɛ́tà kékeré ti Àmɛ́níà</type>
 			<type key="numbers" type="beng">Àwɔn díjíìtì Báńgílà</type>
 			<type key="numbers" type="cakm">Àwɔn díjíìtì Shakma</type>
 			<type key="numbers" type="deva">Àwɔn díjììtì Defanagárì</type>
 			<type key="numbers" type="ethi">Àwɔn nɔ́ńbà Ɛtiópíìkì</type>
+			<type key="numbers" type="finance" scope="core">Ìshúná</type>
 			<type key="numbers" type="fullwide">Àwɔn Díjíìtì Fífɛ̀-Ɛ̀kún</type>
+			<type key="numbers" type="fullwide" scope="core">Ìwɔ̀n fífɛ̀ kíkún</type>
 			<type key="numbers" type="geor">Àwɔn nɔ́ńbà Jɔ́jíà</type>
 			<type key="numbers" type="grek">Àwɔn nɔ́ńbà Gíríìkì</type>
 			<type key="numbers" type="greklow">Àwɔn Nɔ́ńbà Gíríìkì Kékèké</type>
+			<type key="numbers" type="greklow" scope="core">Lɛ́tà kékéré ti Gíríìkì</type>
 			<type key="numbers" type="gujr">Àwɔn díjíìtì Gùjárátì</type>
 			<type key="numbers" type="guru">Àwɔn Díjíìtì Gurumukì</type>
+			<type key="numbers" type="hanidays" scope="core">kàlɛ́ńdà òshùpá Han fún àwɔn kàlɛ́ńdà ìbílɛ̀</type>
 			<type key="numbers" type="hanidec">Àwɔn nɔ́ńbà Dɛ́símà Sháìnà</type>
-			<type key="numbers" type="hans">Àwɔn nɔ́ńbà Ìrɔ̀rùn ti Sháìnà</type>
+			<type key="numbers" type="hanidec" scope="core">Ètò nɔ́ńbà tí ó ń lo àwɔn àwòrán ìshirò tí ó jɛ́ ti èdè Sháínà gɛ́gɛ́ bí iye.</type>
+			<type key="numbers" type="hans">Àwɔn nɔ́ńbà Ìrɔ̀rùn ti Sháínà</type>
 			<type key="numbers" type="hansfin">Àwɔn nɔ́ńbà Ìshúná Ìrɔ̀rùn Sháìnà</type>
+			<type key="numbers" type="hansfin" scope="core">Ìshúná owó Sháínà ìrɔ̀rùn</type>
 			<type key="numbers" type="hant">Àwɔn nɔ́ńbà Ìbílɛ̀ Sháìnà</type>
 			<type key="numbers" type="hantfin">Àwɔn nɔ́ńbà Ìshúná Ìbílɛ̀ Sháìnà</type>
+			<type key="numbers" type="hantfin" scope="core">Ìshúná owó Sháínà ìbílɛ̀</type>
 			<type key="numbers" type="hebr">Àwɔn nɔ́ńbà Hébérù</type>
 			<type key="numbers" type="java">Àwɔn díjíìtì Jafaniisi</type>
 			<type key="numbers" type="jpan">Àwɔn nɔ́ńbà Jápànù</type>
 			<type key="numbers" type="jpanfin">Àwɔn nɔ́ńbà Ìshúná Jàpáànù</type>
+			<type key="numbers" type="jpanfin" scope="core">Ìshúná owó Jàpáànù</type>
+			<type key="numbers" type="jpanyear" scope="core">Ìlànà kíkɔ nɔ́ńbà ɔdún àkɔ́kɔ́ ti Gannen</type>
 			<type key="numbers" type="khmr">Àwɔn díjíìtì Kɛ́mɛ̀</type>
 			<type key="numbers" type="knda">Àwɔn díjíìtì kanada</type>
+			<type key="numbers" type="lanatham" scope="core">Ìkɔ̀wé Tai Tham Tham (ti ìjɔ Krístì)</type>
 			<type key="numbers" type="laoo">Àwɔn díjíìtì Láó</type>
 			<type key="numbers" type="latn">Díjíítì Ìwɔ̀ Oòrùn</type>
+			<type key="numbers" type="mathsanb" scope="core">Sans-serif matimátíìkì tó nípɔn</type>
 			<type key="numbers" type="mlym">Àwɔn díjíìtì Málàyálámù</type>
 			<type key="numbers" type="mtei">Àwɔn díjíìtì Mete Mayeki</type>
 			<type key="numbers" type="mymr">Àwɔn díjíìtì Myánmarí</type>
+			<type key="numbers" type="mymrepka" scope="core">Èdè Ìbílɛ̀ Karen Ti Ìlà Oòrùn Myanmar</type>
+			<type key="numbers" type="native">Àwɔn Díjíìtì ìbílɛ̀</type>
+			<type key="numbers" type="native" scope="core">Àwɔn díjíìtì ìbílɛ̀</type>
 			<type key="numbers" type="olck">Àwɔn díjíìtì Shiki</type>
 			<type key="numbers" type="orya">Àwɔn díjíìtì Òdíà</type>
+			<type key="numbers" type="outlined" scope="core">Tí wɔ́n fa ilà yíká</type>
 			<type key="numbers" type="roman">Àwɔn díjíìtì Rómánù</type>
+			<type key="numbers" type="roman" scope="core">Lɛ́tà ńlá ti Rómánù</type>
 			<type key="numbers" type="romanlow">Àwɔn díjíìtì Rómánù Kékeré</type>
+			<type key="numbers" type="romanlow" scope="core">lɛ́tà kéreré ti Rómánù</type>
 			<type key="numbers" type="taml">Àwɔn díjíìtì Ìbílɛ̀ Támílù</type>
 			<type key="numbers" type="tamldec">Àwɔn díjíìtì Tàmílù</type>
 			<type key="numbers" type="telu">Àwɔn díjíìtì Télúgù</type>
 			<type key="numbers" type="thai">Àwɔn díjíìtì Thai</type>
 			<type key="numbers" type="tibt">Àwɔn díjíìtì Tibetán</type>
+			<type key="numbers" type="traditional" scope="core">Àwɔn nɔ́ńbà ìbìlɛ̀</type>
 			<type key="numbers" type="vaii">Àwɔn díjíìtì Fai</type>
+			<type key="t0" type="und">Ìtumɔ̀ èdè Ɛ̀rɔ tí a kò sɔ ní pàtó</type>
+			<type key="va" type="posix" scope="core">ɛ̀yà POSIX</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Mɛ́tíríìkì</measurementSystemName>
@@ -433,6 +500,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dayPeriods>
 				<eras>
 					<eraNames>
+						<era type="0">Sháájú Kírístì</era>
 						<era type="0" alt="variant">Sáájú ìgbà mímɔ̀</era>
 					</eraNames>
 				</eras>
@@ -461,6 +529,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="quarter">
 				<displayName>Ìdá mɛ́rin</displayName>
+				<relative type="-1">ìdámɛ́rin tó kɔjá</relative>
+				<relative type="0">ìdámɛ́rin yìí</relative>
+				<relative type="1">ìdamɛ́ri tó ń bɔ̀</relative>
 			</field>
 			<field type="month">
 				<relative type="-1">óshù tó kɔjá</relative>
@@ -497,10 +568,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Ɔjɔ́ tó wà láàárín ɔ̀sɛ̀</displayName>
 			</field>
 			<field type="weekday-short">
-				<displayName>ɔjɔ́ inú ɔshɛ̀.</displayName>
+				<displayName>Ɔjɔ́ inú ɔ̀shɛ̀</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>Ɔjɔ́ inú ɔ̀shɛ̀</displayName>
 			</field>
 			<field type="weekdayOfMonth">
-				<displayName>ɔjɔ́ ɔshɛ̀ inú oshù</displayName>
+				<displayName>Ɔjɔ́ ɔ̀shɛ̀ inú oshù</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>Ɔjɔ́ ɔ̀shɛ̀ inú oshù</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>Ɔjɔ́ ɔ̀shɛ̀ inú oshù</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">Ɔjɔ́ Àìkú tó kɔjá</relative>
@@ -515,7 +595,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="mon">
 				<relative type="-1">ɔjɔ́ Ajé tó kɔjá</relative>
 				<relative type="0">ɔjɔ́ Ajé yìí</relative>
-				<relative type="1">next Monday</relative>
+				<relative type="1">Ɔjɔ́ ajé tó ń bɔ̀</relative>
+			</field>
+			<field type="mon-short">
+				<relative type="-1">ɔjɔ́ Ajé tó kɔjá</relative>
+				<relative type="0">ɔjɔ́ Ajé yìí</relative>
+				<relative type="1">Ɔjɔ́ ajé tó ń bɔ̀</relative>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">ɔjɔ́ Ajé tó kɔjá</relative>
+				<relative type="0">ɔjɔ́ Ajé yìí</relative>
+				<relative type="1">Ɔjɔ́ ajé tó ń bɔ̀</relative>
 			</field>
 			<field type="tue">
 				<relative type="-1">Ìshɛ́gun tókɔ́já</relative>
@@ -652,16 +742,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Curacao">
 				<exemplarCity>ìlú Kurashao</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Àkókò Sɔmà Gɛɛsi</daylight>
-				</long>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Àkókò Àfɛnukò Airiisi</daylight>
-				</long>
-			</zone>
 			<zone type="America/Marigot">
 				<exemplarCity>ìlú Marigɔ́ɔ̀tì</exemplarCity>
 			</zone>
@@ -695,6 +775,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Thomas">
 				<exemplarCity>ìlú St Tɔ́màsì</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Àkókò Ékà</generic>
+					<standard>Àkókò Ékà Àfɛnukò</standard>
+					<daylight>Àkókò Ékà Ìgbà ɛ̀rùn</daylight>
+				</long>
+			</metazone>
 			<metazone type="Africa_Western">
 				<long>
 					<standard>Àkókò Ìwɔ̀-Oòrùn Afírikà</standard>
@@ -833,6 +920,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Àkókò Sɔmà Bangladesh</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Àkɔ́kɔ̀ ilɛ̀ Gɛ̀ɛ́sì</generic>
+					<daylight>Àkókò Ɛ̀rùn ilɛ̀ Gɛɛsi</daylight>
+				</long>
+			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
 					<generic>Àkókò Képú Fáàdì</generic>
@@ -932,6 +1025,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Àkókò Àwɔn Erekusu Gilibati</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Àkókò Greenland</generic>
+					<standard>Àkókò Àfenukò Greenland</standard>
+					<daylight>Ìgbà Ɛ̀rùn Greenland</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Àkókò Ìlà oorùn Greenland</generic>
@@ -959,7 +1059,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Àkókò Hawaii-Aleutian</generic>
-					<standard>Àkókò Àfɛnukò Hawaii-Aleutian</standard>
+					<standard>Àkókò Àfɛnukò ti Hawaii-Aleutian</standard>
 					<daylight>Àkókò Ojúmɔmɔ Hawaii-Aleutian</daylight>
 				</long>
 			</metazone>
@@ -973,8 +1073,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Hovd">
 				<long>
 					<generic>Àkókò Hofidi</generic>
-					<standard>Àkókò Ìfɛnukòsí Hofidi</standard>
-					<daylight>Àkókò Sɔmà Hofidi</daylight>
+					<standard>Àkókò Ìfɛnukò Hofidi</standard>
+					<daylight>Àkókò Ìgbà Ɛ̀rùn Hofidi</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
@@ -992,6 +1092,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Àkókò Irani</generic>
 					<standard>Àkókò Àfɛnukò Irani</standard>
 					<daylight>Àkókò Ojúmɔmɔ Irani</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Àkókò orílɛ́-èdè Ireland</generic>
+					<daylight>Àkókò Àfɛnukò orílɛ́-èdè Ireland</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -1013,6 +1119,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Àkókò Japan</generic>
 					<standard>Àkókò Ìfɛnukòsí Japan</standard>
 					<daylight>Àkókò Sɔmà Japan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Àkókò Kamchatka</generic>
+					<standard>Àkókò Kamchatka Àfɛnukò</standard>
+					<daylight>Àkókò Kamchatka Ìgbà Ɛrùn</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Western">
@@ -1180,11 +1293,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Àkókò Sɔmà Sakhalin</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>Àkókò Sàmárà</generic>
+					<standard>Àkókò Sàmárà Àfɛnukò</standard>
+					<daylight>Àkókò Ìgbà ɛ̀rùn Sàmárà</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Àkókò Samoa</generic>
 					<standard>Àkókò Àfɛnukò Samoa</standard>
-					<daylight>Àkókò Ojúmɔmɔ Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -1219,6 +1337,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Àkókò Tonga</generic>
 					<standard>Àkókò Àfɛnukò Tonga</standard>
 					<daylight>Àkókò Sɔmà Tonga</daylight>
+				</long>
+			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Àkókò Tɔ́kì</generic>
+					<standard>Àkókò Tɔ́kì Àfɛnukò</standard>
+					<daylight>Àkókò Ìgbàɛ̀rùn Tɔ́kì</daylight>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">
@@ -1745,7 +1870,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XCG">
 				<displayName>Owó ìlú Kùrásɔ̀ àti Saint Mátìnì</displayName>
-				<displayName count="other">Owó ìlú Kùrásɔ̀ àti Saint Mátìnì</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>Faransì ìwɔ̀-oorùn Afíríkà</displayName>

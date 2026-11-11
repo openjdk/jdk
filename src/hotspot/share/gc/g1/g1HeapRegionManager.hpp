@@ -202,7 +202,8 @@ public:
     _free_list.add_ordered(list);
   }
 
-  // Allocate a free region with specific node index. If fails allocate with next node index.
+  // Allocate a free region on a specific node. If that fails, use the next available
+  // on another node.
   G1HeapRegion* allocate_free_region(G1HeapRegionType type, uint requested_node_index);
 
   // Allocate a humongous object from the free list

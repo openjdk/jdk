@@ -52,7 +52,8 @@ static constexpr bool toolchain_uses_psabi_atomics() {
 }
 
 uint32_t VM_Version::_initial_vector_length = 0;
-bool VM_Version::_use_zalasr_atomics = false;
+VM_Version::AtomicAccessMode VM_Version::_atomic_access_mode = AtomicAccessMode::RVWMO;
+VM_Version::AtomicCasMode VM_Version::_atomic_cas_mode = AtomicCasMode::BASELINE;
 
 #define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
 VM_Version::ext_##PRETTY##RVExtFeatureValue VM_Version::ext_##PRETTY;
@@ -76,6 +77,7 @@ RV_NON_EXT_FEATURE_FLAGS(DEF_RV_NON_EXT_FEATURE)
 #undef ADD_RV_EXT_FEATURE_IN_LIST
 
 VM_Version::RVExtFeatures* VM_Version::_rv_ext_features = new VM_Version::RVExtFeatures();
+VM_Version::RVExtFeatures VM_Version::_rv_ext_features_disabled_by_aot_cache;
 
 void VM_Version::useRVA20U64Profile() {
   RV_USE_RVA20U64;
@@ -114,17 +116,9 @@ void VM_Version::common_initialize() {
     useRVA23U64Profile();
   }
 
-  if (UseZic64b) {
-    if (CacheLineSize != 64) {
-      assert(!FLAG_IS_DEFAULT(CacheLineSize), "default cache line size should be 64 bytes");
-      warning("CacheLineSize is assumed to be 64 bytes because Zic64b is enabled");
-      FLAG_SET_DEFAULT(CacheLineSize, 64);
-    }
-  } else {
-    if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
-      warning("CacheLineSize must be a power of 2");
-      FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
-    }
+  if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
+    warning("CacheLineSize must be a power of 2");
+    FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
   }
 
   if (FLAG_IS_DEFAULT(UseFMA)) {
@@ -211,10 +205,24 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseZalasr, false);
   }
 
-  // Latch the native AtomicAccess dispatch flag only after every UseZalasr
-  // adjustment above has settled. See the comment on _use_zalasr_atomics in
-  // vm_version_riscv.hpp.
-  _use_zalasr_atomics = UseZalasr;
+  // Latch the native AtomicAccess dispatch mode only after every UseZalasr and
+  // UseZtso adjustment above has settled. See the comment on
+  // _atomic_access_mode in vm_version_riscv.hpp.
+  if (UseZalasr && !UseZtso) {
+    _atomic_access_mode = AtomicAccessMode::RVWMO_ZALASR;
+  } else if (UseZtso) {
+    _atomic_access_mode = AtomicAccessMode::ZTSO;
+  } else {
+    _atomic_access_mode = AtomicAccessMode::RVWMO;
+  }
+
+  if (UseZacas && UseZabha) {
+    _atomic_cas_mode = AtomicCasMode::ZACAS_ZABHA;
+  } else if (UseZacas) {
+    _atomic_cas_mode = AtomicCasMode::ZACAS;
+  } else {
+    _atomic_cas_mode = AtomicCasMode::BASELINE;
+  }
 
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
@@ -222,19 +230,6 @@ void VM_Version::common_initialize() {
     }
   } else {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
-  }
-
-  if (UseZicboz && zicboz_block_size.value() > 0) {
-    assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
-    if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
-      FLAG_SET_DEFAULT(UseBlockZeroing, true);
-    }
-    if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * zicboz_block_size.value());
-    }
-  } else if (UseBlockZeroing) {
-    warning("Block zeroing is not available");
-    FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
   if (UseRVV) {
@@ -562,10 +557,17 @@ int VM_Version::cpu_features_size() {
 }
 
 void VM_Version::store_cpu_features(void* buf) {
+  assert(is_aligned(buf, cpu_features_alignment()), "sanity check");
   memcpy(buf, RVExtFeatures::current(), sizeof(RVExtFeatures));
 }
 
+void VM_Version::get_cpu_features_disabled_by_aot_cache(void* buf) {
+  assert(is_aligned(buf, cpu_features_alignment()), "sanity check");
+  memcpy(buf, &_rv_ext_features_disabled_by_aot_cache, sizeof(RVExtFeatures));
+}
+
 bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {
+  assert(is_aligned(features_buffer, cpu_features_alignment()), "sanity check");
   RVExtFeatures* features_to_test = (RVExtFeatures*)features_buffer;
   return RVExtFeatures::current()->verify_aot_code_cache_features(features_to_test);
 }
@@ -597,11 +599,14 @@ void VM_Version::insert_features_names(RVExtFeatures* features, stringStream& ss
 }
 
 void VM_Version::get_cpu_features_name(void* features_buffer, stringStream& ss) {
+  assert(is_aligned(features_buffer, cpu_features_alignment()), "sanity check");
   RVExtFeatures* features = (RVExtFeatures*)features_buffer;
   insert_features_names(features, ss);
 }
 
 void VM_Version::get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) {
+  assert(is_aligned(features_set1, cpu_features_alignment()), "sanity check");
+  assert(is_aligned(features_set2, cpu_features_alignment()), "sanity check");
   RVExtFeatures* rv_ext_features_set1 = (RVExtFeatures*)features_set1;
   RVExtFeatures* rv_ext_features_set2 = (RVExtFeatures*)features_set2;
   const char* sep = "";
