@@ -22,11 +22,14 @@
  */
 
 import jdk.test.lib.format.Format;
+import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -47,35 +50,44 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  * @bug 8393415
  * @summary Verify `getInputStream` on fixed content
  * @library /test/lib
- * @run junit ${test.main.class}
+ *
+ * @comment `othervm` is needed for the globally configured SSL context
+ * @run junit/othervm ${test.main.class}
  */
 
-class ResponseStreamFixed {
+class ResponseInputStreamFixedContentTest {
+
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
+
+    static {
+        SSLContext.setDefault(SSL_CONTEXT);
+    }
+
+    private static final InetAddress LO_ADDRESS = InetAddress.getLoopbackAddress();
 
     private static final Charset CHARSET = US_ASCII;
 
     static Stream<Arguments> args() {
         return Stream
-                .of("GET", "POST").flatMap(method -> Stream
-                        .of(0, 42).flatMap(contentLength -> Stream
-                                .of(false, true).map(keepAlive ->
-                                        Arguments.of(method, contentLength, keepAlive))));
+                .of(false, true).flatMap(secure -> Stream
+                        .of("GET", "POST").flatMap(method -> Stream
+                                .of(0, 42).flatMap(contentLength -> Stream
+                                        .of(false, true).map(keepAlive ->
+                                                Arguments.of(secure, method, contentLength, keepAlive)))));
     }
 
     @ParameterizedTest
     @MethodSource("args")
-    void test(String method, int contentLength, boolean keepAlive) throws Exception {
-        try (var serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress())) {
+    void test(boolean secure, String method, int contentLength, boolean keepAlive) throws Exception {
+        try (var serverSocket = createSocket(secure);
+             var executor = Executors.newSingleThreadExecutor()) {
 
-            // Connect to the server
-            var connection1 = connect(method, "/connection1", serverSocket);
+            // Establish the 1st connection and issue the 1st request
+            var connection1 = createConnection(secure, method, "/connection1", serverSocket);
+            var response1CodeFuture = executor.submit(connection1::getResponseCode);
 
             // Accept the client socket
-            try (var client1Socket = serverSocket.accept();
-                 var executor = Executors.newSingleThreadExecutor()) {
-
-                // Kick-start the request #1
-                var response1CodeFuture = executor.submit(connection1::getResponseCode);
+            try (var client1Socket = serverSocket.accept()) {
 
                 // Make the server tick
                 var response1Body =
@@ -86,14 +98,12 @@ class ResponseStreamFixed {
                 int response1Code = response1CodeFuture.get();
                 verifyResponse(contentLength, response1Code, connection1, response1Body);
 
-                // Connect to the server a 2nd time.
+                // Issue the 2nd request.
                 //
                 // Depending on the configured `keepAlive`, this should either
                 // reuse the earlier connection that should have been pooled, or
                 // create a new one.
-                var connection2 = connect(method, "/connection2", serverSocket);
-
-                // Kick-start the request #2
+                var connection2 = createConnection(secure, method, "/connection2", serverSocket);
                 var response2CodeFuture = executor.submit(connection2::getResponseCode);
 
                 // Determine where shall the request #2 is served from
@@ -116,19 +126,24 @@ class ResponseStreamFixed {
 
     }
 
-    private static HttpURLConnection connect(
-            String method, String path, ServerSocket serverSocket)
+    private static ServerSocket createSocket(boolean secure) throws IOException {
+        return secure
+                ? SSLServerSocketFactory.getDefault().createServerSocket(0, 0, LO_ADDRESS)
+                : new ServerSocket(0, 0, LO_ADDRESS);
+    }
+
+    private static HttpURLConnection createConnection(
+            boolean secure, String method, String path, ServerSocket serverSocket)
             throws Exception {
         var connection = (HttpURLConnection) URIBuilder
                 .newBuilder()
-                .scheme("http")
+                .scheme(secure ? "https" : "http")
                 .loopback()
                 .port(serverSocket.getLocalPort())
                 .path(path)
                 .toURL()
                 .openConnection(Proxy.NO_PROXY);
         connection.setRequestMethod(method);
-        connection.connect();
         return connection;
     }
 
