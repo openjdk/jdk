@@ -288,6 +288,11 @@
           "Maximum allowed edges in the interference graphs")               \
           range(0, max_juint)                                               \
                                                                             \
+  product(uint, RegSplitLimit, 20*M, DIAGNOSTIC,                            \
+          "Maximum product of spill and CFG block counts during Split "     \
+          "in the Register Allocator")                                      \
+          range(0, max_juint)                                               \
+                                                                            \
   develop(bool, UseUniqueSubclasses, true,                                  \
           "Narrow an abstract reference to the unique concrete subclass")   \
                                                                             \
@@ -418,6 +423,14 @@
           "1 = Prefer alignment with vector store (default)"                \
           "2 = Prefer alignment with vector load.")                         \
           range(0, 2)                                                       \
+                                                                            \
+  product(uint, SuperWordAutomaticAlignmentThreshold, 256, DIAGNOSTIC,      \
+          "Heuristic threshold for compile time check that decides if a"    \
+          "loop accesses sufficient bytes so that automatic alignment is"   \
+          "profitable. Loops that access fewer bytes are too small, and"    \
+          "the overheads of alignment probably outweigh the performance"    \
+          "gained by making sure the accesses are aligned."                 \
+          "0 = Always align.")                                              \
                                                                             \
   product(uint, AutoVectorizationOverrideProfitability, 1, DIAGNOSTIC,      \
           "Override the auto vectorization profitability heuristics."       \
@@ -821,7 +834,7 @@
   product(bool, IncrementalInlineForceCleanup, false, DIAGNOSTIC,           \
           "do cleanup after every iteration of incremental inlining")       \
                                                                             \
-  product(bool, IncrementalInlineVector, true, DIAGNOSTIC,                  \
+  product(bool, IncrementalInlineVector, false, DIAGNOSTIC,                 \
           "Inline fallback implementation of failed vector intrinsics")     \
                                                                             \
   product(intx, LiveNodeCountInliningCutoff, 40000,                         \
@@ -938,8 +951,8 @@
   product(bool, PreloadReduceTraps, true, DIAGNOSTIC,                       \
           "Preload code should avoid traps as much as possible.")           \
                                                                             \
-  develop(bool, KillPathsReachableByDeadTypeNode, true,                     \
-          "When a Type node becomes top, make paths where the node is "     \
+  develop(bool, KillPathsReachableByDeadDataNode, true,                     \
+          "When a data node becomes top, make paths where the node is "     \
           "used dead by replacing them with a Halt node. Turning this off " \
           "could corrupt the graph in rare cases and should be used with "  \
           "care.")                                                          \
@@ -1010,6 +1023,9 @@
                                                                             \
   product(bool, UseAOTCodeCounters, true, DIAGNOSTIC,                       \
           "Use AOT code counter to trigger JIT compilation")                \
+                                                                            \
+  product(bool, PreferCallBasedUncommonTraps, false, EXPERIMENTAL,          \
+          "Prefer MachCall-based uncommon trap sequences.")                 \
 
 // end of C2_FLAGS
 

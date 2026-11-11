@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, 2026, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -677,11 +678,11 @@ address StubGenerator::generate_intpoly_assign() {
   //   MontgomeryIntPolynP256:  5 = 4 + 1
   //   IntegerPolynomial1305:   5 = 4 + 1
   //   IntegerPolynomial25519:  5 = 4 + 1
+  //   IntegerPolynomialP384:   7 = 4 + 2 + 1
   //   IntegerPolynomialP256:  10 = 8 + 2
   //   Curve25519OrderField:   10 = 8 + 2
   //   Curve25519OrderField:   10 = 8 + 2
   //   P256OrderField:         10 = 8 + 2
-  //   IntegerPolynomialP384:  14 = 8 + 4 + 2
   //   P384OrderField:         14 = 8 + 4 + 2
   //   IntegerPolynomial448:   16 = 8 + 8
   //   Curve448OrderField:     16 = 8 + 8
@@ -707,12 +708,15 @@ address StubGenerator::generate_intpoly_assign() {
   const Register aLimbs  = c_rarg1;
   const Register bLimbs  = c_rarg2;
   const Register length  = c_rarg3;
+  Register tmp = r10;
+
+  assert_different_registers(set, aLimbs, bLimbs, length, tmp);
+
   XMMRegister A = xmm0;
   XMMRegister B = xmm1;
   XMMRegister select = xmm2;
 
-  Register tmp = r9;
-  Label L_Length5, L_Length10, L_Length14, L_Length16, L_Length19, L_DefaultLoop, L_Done;
+  Label L_Length5, L_Length7, L_Length10, L_Length14, L_Length16, L_Length19, L_DefaultLoop, L_Done;
 
   __ negq(set);
   if (UseAVX > 2) {
@@ -727,6 +731,8 @@ address StubGenerator::generate_intpoly_assign() {
   //   number of limbs which is not a secret)
   __ cmpl(length, 5);
   __ jcc(Assembler::equal, L_Length5);
+  __ cmpl(length, 7);
+  __ jcc(Assembler::equal, L_Length7);
   __ cmpl(length, 10);
   __ jcc(Assembler::equal, L_Length10);
   __ cmpl(length, 14);
@@ -751,6 +757,12 @@ address StubGenerator::generate_intpoly_assign() {
   __ bind(L_Length5); // 1 + 4
   assign_scalar(aLimbs, bLimbs, 0, set, tmp, _masm);
   assign_avx   (aLimbs, bLimbs, 8, select, A, B, Assembler::AVX_256bit, _masm);
+  __ jmp(L_Done);
+
+  __ bind(L_Length7); // 1 + 2 + 4
+  assign_scalar(aLimbs, bLimbs, 0, set, tmp, _masm);
+  assign_avx(aLimbs, bLimbs, 8, select, A, B, Assembler::AVX_128bit, _masm);
+  assign_avx(aLimbs, bLimbs, 24, select, A, B, Assembler::AVX_256bit, _masm);
   __ jmp(L_Done);
 
   __ bind(L_Length10); // 2 + 8

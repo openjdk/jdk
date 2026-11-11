@@ -25,6 +25,7 @@
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotCompressedPointers.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
@@ -36,7 +37,6 @@
 #include "classfile/klassFactory.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
@@ -47,7 +47,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -130,7 +129,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
   guarantee(cds_klass != nullptr, "jdk/internal/misc/CDS must exist!");
 
-  assert(CDSConfig::current_thread_is_dumper(), "not supposed to be called from other threads");
+  assert(CDSConfig::in_dumper_thread(), "not supposed to be called from other threads");
   {
     // Stop other threads from recording into _lambdaform_lines.
     MutexLocker ml(Thread::current(), LambdaFormInvokers_lock);
@@ -195,7 +194,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
         // Fake it, so that it will be included into the archive.
         klass->set_shared_classpath_index(0);
         // Set the "generated" bit, so it won't interfere with JVMTI.
-        // See SystemDictionaryShared::find_builtin_class().
+        // See AOTSystemDictionary::find_builtin_class().
         klass->set_is_aot_generated_class();
       }
     } else {
@@ -240,7 +239,7 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   result->set_is_aot_generated_class();
   if (!klass->in_aot_cache()) {
     log_info(aot, lambda)("regenerate_class excluding klass %s %s", class_name, klass->name()->as_C_string());
-    SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
+    AOTSystemDictionary::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
   }
   log_info(aot, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
                  class_name, p2i(klass), p2i(result));
@@ -291,12 +290,12 @@ void LambdaFormInvokers::read_static_archive_invokers() {
 
 void LambdaFormInvokers::serialize(SerializeClosure* soc) {
   soc->do_ptr(&_static_archive_invokers);
-  if (soc->reading() && CDSConfig::is_dumping_final_static_archive()) {
+  if (soc->reading() && CDSConfig::is_dumping_aot_cache()) {
     if (!CDSConfig::is_dumping_aot_linked_classes()) {
       // See CDSConfig::is_dumping_regenerated_lambdaform_invokers() -- a dynamic archive can
       // regenerate lambda form invokers only if the base archive does not contain aot-linked classes.
-      // If so, we copy the contents of _static_archive_invokers (from the preimage) into
-      //_lambdaform_lines, which will be written as _static_archive_invokers into final static archive.
+      // If so, we copy the contents of _static_archive_invokers (from the AOT configuration) into
+      //_lambdaform_lines, which will be written as _static_archive_invokers into the AOT cache.
       LambdaFormInvokers::read_static_archive_invokers();
     }
     _static_archive_invokers = nullptr;

@@ -146,7 +146,9 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool do_locks_coarsening = EliminateLocks;
   bool do_superword = UseSuperWord;
   bool do_stringopts = OptimizeStringConcat;
+  bool aot_compile = env->is_aot_compile();
   bool for_aot_preload = (task->compile_reason() == CompileTask::Reason_AOTCompileForPreload);
+  assert(!for_aot_preload || aot_compile, "sanity");
   assert(!for_aot_preload || (ClassInitBarrierMode > 0), "sanity");
 
   while (!env->failing()) {
@@ -160,6 +162,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
                     do_locks_coarsening,
                     do_superword,
                     do_stringopts,
+                    aot_compile,
                     for_aot_preload,
                     install_code);
     Compile C(env, target, entry_bci, options, directive);

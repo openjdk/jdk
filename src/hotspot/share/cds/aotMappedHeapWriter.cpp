@@ -22,12 +22,13 @@
  *
  */
 
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotMappedHeap.hpp"
 #include "cds/aotMappedHeapWriter.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/modules.hpp"
@@ -196,7 +197,7 @@ oop AOTMappedHeapWriter::requested_obj_from_buffer_offset(size_t offset) {
 
 oop AOTMappedHeapWriter::source_obj_to_requested_obj(oop src_obj) {
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
-  HeapShared::CachedOopInfo* p = HeapShared::get_cached_oop_info(src_obj);
+  AOTHeap::CachedOopInfo* p = AOTHeap::get_cached_oop_info(src_obj);
   if (p != nullptr) {
     return requested_obj_from_buffer_offset(p->buffer_offset());
   } else {
@@ -354,7 +355,7 @@ void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassSh
 // - objects that have no pointers
 static int oop_sorting_rank(oop o) {
   bool has_oop_ptr, has_native_ptr;
-  HeapShared::get_pointer_info(o, has_oop_ptr, has_native_ptr);
+  AOTHeap::get_pointer_info(o, has_oop_ptr, has_native_ptr);
 
   if (has_oop_ptr) {
     if (!has_native_ptr) {
@@ -408,7 +409,7 @@ void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtC
   for (int i = 0; i < _source_objs_order->length(); i++) {
     int src_obj_index = _source_objs_order->at(i)._index;
     oop src_obj = _source_objs->at(src_obj_index);
-    HeapShared::CachedOopInfo* info = HeapShared::get_cached_oop_info(src_obj);
+    AOTHeap::CachedOopInfo* info = AOTHeap::get_cached_oop_info(src_obj);
     assert(info != nullptr, "must be");
     size_t buffer_offset = copy_one_source_obj_to_buffer(src_obj);
     info->set_buffer_offset(buffer_offset);
@@ -416,10 +417,9 @@ void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtC
 
     OopHandle handle(Universe::vm_global(), src_obj);
     _buffer_offset_to_source_obj_table->put_when_absent(buffer_offset, handle);
-    _buffer_offset_to_source_obj_table->maybe_grow();
 
     if (java_lang_Module::is_instance(src_obj)) {
-      Modules::check_archived_module_oop(src_obj);
+      AOTModules::check_archived_module_oop(src_obj);
     }
   }
 
@@ -769,7 +769,7 @@ private:
     int field_offset = pointer_delta_as_int((char*)p, cast_from_oop<char*>(_src_obj));
     T* field_addr = (T*)(_buffered_obj + field_offset);
     oop referent = load_source_oop_from_buffer<T>(field_addr);
-    referent = HeapShared::maybe_remap_referent(_is_java_lang_ref, field_offset, referent);
+    referent = AOTHeap::maybe_remap_referent(_is_java_lang_ref, field_offset, referent);
     AOTMappedHeapWriter::relocate_field_in_buffer<T>(field_addr, referent, _oopmap);
   }
 };
@@ -795,7 +795,7 @@ void AOTMappedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClass
   for (int i = 0; i < _source_objs_order->length(); i++) {
     int src_obj_index = _source_objs_order->at(i)._index;
     oop src_obj = _source_objs->at(src_obj_index);
-    HeapShared::CachedOopInfo* info = HeapShared::get_cached_oop_info(src_obj);
+    AOTHeap::CachedOopInfo* info = AOTHeap::get_cached_oop_info(src_obj);
     assert(info != nullptr, "must be");
     oop requested_obj = requested_obj_from_buffer_offset(info->buffer_offset());
     update_header_for_requested_obj(requested_obj, src_obj, src_obj->klass());
@@ -805,7 +805,7 @@ void AOTMappedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClass
     mark_native_pointers(src_obj);
   };
 
-  // Relocate HeapShared::roots(), which is created in copy_roots_to_buffer() and
+  // Relocate AOTHeap::roots(), which is created in copy_roots_to_buffer() and
   // doesn't have a corresponding src_obj, so we can't use EmbeddedOopRelocator on it.
   for (size_t seg_idx = 0; seg_idx < _heap_root_segments.count(); seg_idx++) {
     size_t seg_offset = _heap_root_segments.segment_offset(seg_idx);
@@ -823,7 +823,7 @@ void AOTMappedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClass
       size_t elem_offset = objArrayOopDesc::base_offset_in_bytes() + elem_size * i;
       HeapWord* elem_addr = (HeapWord*)(buffered_obj + elem_offset);
       oop obj = NativeAccess<>::oop_load(elem_addr);
-      obj = HeapShared::maybe_remap_referent(false /* is_reference_field */, elem_offset, obj);
+      obj = AOTHeap::maybe_remap_referent(false /* is_reference_field */, elem_offset, obj);
       if (UseCompressedOops) {
         relocate_field_in_buffer<narrowOop>((narrowOop*)elem_addr, obj, heap_info->oopmap());
       } else {
@@ -846,13 +846,13 @@ void AOTMappedHeapWriter::mark_native_pointer(oop src_obj, int field_offset) {
     info._src_obj = src_obj;
     info._field_offset = field_offset;
     _native_pointers->append(info);
-    HeapShared::set_has_native_pointers(src_obj);
+    AOTHeap::set_has_native_pointers(src_obj);
     _num_native_ptrs ++;
   }
 }
 
 void AOTMappedHeapWriter::mark_native_pointers(oop orig_obj) {
-  HeapShared::do_metadata_offsets(orig_obj, [&](int offset) {
+  AOTHeap::do_metadata_offsets(orig_obj, [&](int offset) {
     mark_native_pointer(orig_obj, offset);
   });
 }
@@ -868,7 +868,7 @@ void AOTMappedHeapWriter::compute_ptrmap(AOTMappedHeapInfo* heap_info) {
     NativePointerInfo info = _native_pointers->at(i);
     oop src_obj = info._src_obj;
     int field_offset = info._field_offset;
-    HeapShared::CachedOopInfo* p = HeapShared::get_cached_oop_info(src_obj);
+    AOTHeap::CachedOopInfo* p = AOTHeap::get_cached_oop_info(src_obj);
     // requested_field_addr = the address of this field in the requested space
     oop requested_obj = requested_obj_from_buffer_offset(p->buffer_offset());
     Metadata** requested_field_addr = (Metadata**)(cast_from_oop<address>(requested_obj) + field_offset);

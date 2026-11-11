@@ -24,7 +24,7 @@
 
 #include "cds/aotCacheAccess.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/aotHeap.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciField.hpp"
@@ -67,7 +67,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
 #include "oops/trainingData.hpp"
@@ -1205,6 +1204,7 @@ void ciEnv::register_method(ciMethod* target,
                             OopMapSet* oop_map_set,
                             ExceptionHandlerTable* handler_table,
                             ImplicitExceptionTable* inc_table,
+                            GrowableArray<ciMethod*>* java_callees,
                             AbstractCompiler* compiler,
                             bool has_clinit_barriers,
                             bool for_aot_preload,
@@ -1276,7 +1276,7 @@ void ciEnv::register_method(ciMethod* target,
       assert(!method->is_synchronized() || nm->has_monitors(), "");
 
 #if INCLUDE_CDS
-      if (task()->is_aot_compile()) {
+      if (is_aot_compile()) {
 #ifdef ASSERT
         LogStreamHandle(Trace, aot, codecache, nmethod) log;
         if (log.is_enabled()) {
@@ -1290,7 +1290,7 @@ void ciEnv::register_method(ciMethod* target,
           log.print_cr("%s", ss.freeze());
         }
 #endif
-        AOTCodeEntry* aot_code_entry = AOTCodeCache::store_nmethod(nm, compiler, for_aot_preload);
+        AOTCodeEntry* aot_code_entry = AOTCodeCache::store_nmethod(nm, java_callees, compiler, for_aot_preload);
         if (aot_code_entry != nullptr) {
           aot_code_entry->set_has_vectors(debug_info()->has_vectors());
           nm->set_aot_code_entry(aot_code_entry);
@@ -2010,7 +2010,7 @@ InstanceKlass::ClassState ciEnv::compute_init_state_for_aot_compile(InstanceKlas
       // are initialized in production run, but they are not recorded as init dependencies.
       // CI query should report their status as if in production run, otherwise AOT
       // code would have uncommon traps at invokedynamic calls.
-      if (HeapShared::is_core_java_lang_invoke_klass(ik)) {
+      if (AOTHeap::is_core_java_lang_invoke_klass(ik)) {
         log_trace(aot, compilation)("%d: core_java_lang_invoke: (%s) %s", task()->compile_id(), InstanceKlass::state2name(ik->init_state()), ik->external_name());
         return InstanceKlass::ClassState::fully_initialized;
       }
