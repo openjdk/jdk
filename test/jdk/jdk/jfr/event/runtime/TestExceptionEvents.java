@@ -26,6 +26,7 @@ package jdk.jfr.event.runtime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
@@ -35,8 +36,9 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-/**
+/*
  * @test
+ * @bug 8397069
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
@@ -57,7 +59,8 @@ public class TestExceptionEvents {
         testThrowableException();
         testError();
         testErrorAndException();
-        testCauseMessage();
+        testErrorConstructors();
+        testThrowableConstructors();
         testThrottling();
     }
 
@@ -125,27 +128,91 @@ public class TestExceptionEvents {
         }
     }
 
-    private static void testCauseMessage() throws Exception {
-        Exception cause1 = new Exception("cause1-message");
-        Exception cause2 = new Exception("cause2-message");
+    private static void testThrowableConstructors() throws Exception {
+        Exception cause = new Exception("cause-message");
         try (Recording r = new Recording()) {
             r.enable(EXCEPTION_EVENT_NAME).withStackTrace();
             r.enable(ERROR_EVENT_NAME).withStackTrace();
             r.start();
             try {
-                throw new Error(cause1);
-            } catch (Error e) {
+                throw new Throwable();
+            } catch (Throwable e) {
             }
             try {
-                throw new Throwable(cause2);
+                throw new Throwable("throwable-message");
             } catch (Throwable e) {
+            }
+            try {
+                throw new Throwable(cause);
+            } catch (Throwable e) {
+            }
+            try {
+                throw new Throwable("throwable-message-and-cause", cause);
+            } catch (Throwable e) {
+            }
+            try {
+                throw new MyThrowable("my-throwable-message", cause, true, true);
+            } catch (MyThrowable e) {
             }
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
-            checkEvents(events, EXCEPTION_EVENT_NAME, cause1.toString(), 1, Error.class);
-            checkEvents(events, ERROR_EVENT_NAME, cause1.toString(), 1, Error.class);
-            checkEvents(events, EXCEPTION_EVENT_NAME, cause2.toString(), 1, Throwable.class);
+            // new Throwable()
+            checkEvents(events, EXCEPTION_EVENT_NAME, null, 1, Throwable.class);
+            // new Throwable("throwable-message");
+            checkEvents(events, EXCEPTION_EVENT_NAME, "throwable-message", 1, Throwable.class);
+            // new Throwable(cause)
+            checkEvents(events, EXCEPTION_EVENT_NAME, cause.toString(), 1, Throwable.class);
+            // new Throwable("throwable-message-and-cause", cause);
+            checkEvents(events, EXCEPTION_EVENT_NAME, "throwable-message-and-cause", 1, Throwable.class);
+            // new MyThrowable("my-throwable-message", cause, true, true);
+            checkEvents(events, EXCEPTION_EVENT_NAME, "my-throwable-message", 1, MyThrowable.class);
         }
+    }
+
+    private static void testErrorConstructors() throws Exception {
+        Exception cause = new Exception("cause-message");
+        try (Recording r = new Recording()) {
+            r.enable(EXCEPTION_EVENT_NAME).withStackTrace();
+            r.enable(ERROR_EVENT_NAME).withStackTrace();
+            r.start();
+            try {
+                throw new Error();
+            } catch (Error e) {
+            }
+            try {
+                throw new Error("error-message");
+            } catch (Error e) {
+            }
+            try {
+                throw new Error(cause);
+            } catch (Error e) {
+            }
+            try {
+                throw new Error("error-message-and-cause", cause);
+            } catch (Error e) {
+            }
+            try {
+                throw new MyError("my-error-message", cause, true, true);
+            } catch (MyError e) {
+            }
+            r.stop();
+            List<RecordedEvent> events = Events.fromRecording(r);
+            // new Error()
+            checkErrorEvents(events, null, Error.class);
+            // new Error("error-message");
+            checkErrorEvents(events, "error-message", Error.class);
+            // new Error(cause)
+            checkErrorEvents(events, cause.toString(), Error.class);
+            // new Error("error-message-and-cause", cause);
+            checkErrorEvents(events, "error-message-and-cause", Error.class);
+            // new MyError("my-error-message", cause, true, true);
+            checkErrorEvents(events, "my-error-message", MyError.class);
+        }
+    }
+
+    private static void checkErrorEvents(List<RecordedEvent> events, String expectedMessage, Class<?> expectedClass) throws Exception {
+        checkEvents(events, EXCEPTION_EVENT_NAME, expectedMessage, 1, expectedClass);
+        checkEvents(events, ERROR_EVENT_NAME, expectedMessage, 1, expectedClass);
     }
 
     private static void testThrottling() throws Exception {
@@ -239,7 +306,10 @@ public class TestExceptionEvents {
         int count = 0;
         for (RecordedEvent event : ofType(events, eventType)) {
             String message = Events.assertField(event, "message").getValue();
-            if (expectedMessage.equals(message)) {
+            if (Objects.equals(expectedMessage, message)) {
+                if (message == null && !isThrownFromTestClass(event)) {
+                    continue;
+                }
                 RecordedThread t = event.getThread();
                 if (!t.getJavaName().equals(THREAD_NAME)) {
                     System.out.println(event);
@@ -247,7 +317,7 @@ public class TestExceptionEvents {
                 }
                 String className = event.getClass("thrownClass").getName();
                 if (!className.equals(expectedClass.getName())) {
-                    throw new Exception("Incorrect exception class name, expected: " + className);
+                    throw new Exception("Incorrect exception class name, expected: " + expectedClass.getName());
                 }
                 RecordedFrame topFrame = event.getStackTrace().getFrames().get(0);
                 if (!topFrame.getMethod().getName().equals("<init>")) {
@@ -258,8 +328,19 @@ public class TestExceptionEvents {
             }
         }
         if (count != expectedCount) {
-            throw new Exception("Expected " + expectedCount + " events with message: " + expectedMessage);
+            throw new Exception("Expected " + expectedCount + " events, but found " + count + " with the message: " + expectedMessage);
         }
+    }
+
+    private static boolean isThrownFromTestClass(RecordedEvent event) {
+        for (RecordedFrame f : event.getStackTrace().getFrames()) {
+            if (f.isJavaFrame()) {
+                if (f.getMethod().getType().getName().equals(TestExceptionEvents.class.getName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static class MyRuntimeException extends RuntimeException {
@@ -278,11 +359,19 @@ public class TestExceptionEvents {
         public MyError(String message) {
             super(message);
         }
+
+        public MyError(String message, Exception cause, boolean enableSuppression, boolean writableStackTrace) {
+            super(message, cause, enableSuppression, writableStackTrace);
+        }
     }
 
     private static class MyThrowable extends Throwable {
         public MyThrowable(String message) {
             super(message);
+        }
+
+        public MyThrowable(String message, Exception cause, boolean enableSuppression, boolean writableStackTrace) {
+            super(message, cause, enableSuppression, writableStackTrace);
         }
     }
 }
