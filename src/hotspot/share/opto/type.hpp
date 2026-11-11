@@ -2743,34 +2743,22 @@ inline ciValueKlass* Type::value_klass() const {
 
 template <typename T>
 const T* Type::cast() const {
-  static_assert(DependentAlwaysFalse<T>, "No Type::cast<T>() specialization found for this type");
-  return nullptr;
-}
-
-template <>
-inline const TypeInt* Type::cast<TypeInt>() const {
-  return as_int();
-}
-
-template <>
-inline const TypeLong* Type::cast<TypeLong>() const {
-  return as_long();
+  static_assert(std::is_same_v<T, TypeInt> || std::is_same_v<T, TypeLong>);
+  if constexpr (std::is_same_v<T, TypeInt>) {
+    return as_int();
+  } else {
+    return as_long();
+  }
 }
 
 template <typename T>
 const T* Type::try_cast() const {
-  static_assert(DependentAlwaysFalse<T>, "No Type::try_cast<T>() specialization found for this type");
-  return nullptr;
-}
-
-template <>
-inline const TypeInt* Type::try_cast<TypeInt>() const {
-  return isa_int();
-}
-
-template <>
-inline const TypeLong* Type::try_cast<TypeLong>() const {
-  return isa_long();
+  static_assert(std::is_same_v<T, TypeInt> || std::is_same_v<T, TypeLong>);
+  if constexpr (std::is_same_v<T, TypeInt>) {
+    return isa_int();
+  } else {
+    return isa_long();
+  }
 }
 
 // ===============================================================
