@@ -266,7 +266,7 @@ inline constexpr bool different_registers(R first_register, Rx... more_registers
 }
 
 #ifndef ASSERT
-#define assert_different_registers(...)
+#define assert_different_registers(...) do { } while (false)
 #else
 
 bool fill_assert_different_registers_arguments(const char* args_string, size_t args_count, const char* args[], int arg_lengths[]);
