@@ -495,9 +495,9 @@ public class TransPatterns extends TreeTranslator {
                 appendBreakIfNeeded(tree, cases, c.head);
             }
             cases = newCases.toList();
-            patchCompletingNormallyCases(cases);
-            cases = processCases(tree, cases);
             ListBuffer<JCStatement> statements = new ListBuffer<>();
+            statements.appendList(patchCompletingNormallyCases(tree, cases));
+            cases = processCases(tree, cases);
             VarSymbol temp = new VarSymbol(Flags.SYNTHETIC,
                     names.fromString("selector" + variableIndex++ + target.syntheticNameChar() + "temp"),
                     seltype,
@@ -620,6 +620,11 @@ public class TransPatterns extends TreeTranslator {
                             test = accTest;
                         }
 
+                        if (c.fallThroughGuardBypass != null) {
+                            test = makeBinary(Tag.OR, c.fallThroughGuardBypass, test);
+                            c.fallThroughGuardBypass = null;
+                        }
+
                         c.stats = translate(c.stats);
                         JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);
                         continueSwitch.target = tree;
@@ -714,32 +719,36 @@ public class TransPatterns extends TreeTranslator {
     //         return 1;
     //     ...
     // }
-    private static void patchCompletingNormallyCases(List<JCCase> cases) {
+    private List<JCStatement> patchCompletingNormallyCases(JCTree swtch, List<JCCase> cases) {
+        VarSymbol fallthrough = new VarSymbol(Flags.SYNTHETIC,
+                names.fromString("fallthrough" + variableIndex++ + target.syntheticNameChar()),
+                syms.booleanType,
+                currentMethodSym);
+        boolean usedFallThroughToGuarded = false;
+        JCCase previous = null;
+
         while (cases.nonEmpty()) {
             var currentCase = cases.head;
 
-            if (currentCase.caseKind == CaseKind.STATEMENT &&
-                currentCase.completesNormally &&
-                cases.tail.nonEmpty() &&
-                (cases.tail.head.guard != null || cases.tail.head.labels.stream().anyMatch(cl -> cl instanceof JCPatternCaseLabel p && p.syntheticGuard != null))) {
-                ListBuffer<JCStatement> newStatements = new ListBuffer<>();
-                List<JCCase> copyFrom = cases;
-
-                while (copyFrom.nonEmpty()) {
-                    newStatements.appendList(copyFrom.head.stats);
-
-                    if (!copyFrom.head.completesNormally) {
-                        break;
-                    }
-
-                    copyFrom = copyFrom.tail;
-                };
-
-                currentCase.stats = newStatements.toList();
-                currentCase.completesNormally = false;
+            if ((currentCase.guard != null || currentCase.labels.stream().anyMatch(cl -> cl instanceof JCPatternCaseLabel p && p.syntheticGuard != null)) &&
+                previous != null &&
+                previous.caseKind == CaseKind.STATEMENT &&
+                previous.completesNormally) {
+                usedFallThroughToGuarded = true;
+                previous.stats = previous.stats.append(make.Exec(make.Assign(make.Ident(fallthrough), makeLit(syms.booleanType, 1)).setType(syms.booleanType)));
+                currentCase.fallThroughGuardBypass = make.Ident(fallthrough);
             }
 
+            previous = currentCase;
+
             cases = cases.tail;
+        }
+        if (usedFallThroughToGuarded) {
+            return List.of(
+                make.at(swtch.pos).VarDef(fallthrough, makeLit(syms.booleanType, 0))
+            );
+        } else {
+            return List.nil();
         }
     }
 
