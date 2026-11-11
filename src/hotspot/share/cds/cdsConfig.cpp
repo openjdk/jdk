@@ -509,7 +509,7 @@ void CDSConfig::check_aotmode_off() {
 
 void CDSConfig::check_aotmode_auto_or_on() {
   if (AOTMode != nullptr && strcmp(AOTMode, "on") == 0) {
-    warning("Option -XX:AOTMode-on was deprecated in version 28 and will likely be "
+    warning("Option -XX:AOTMode=on was deprecated in version 28 and will likely be "
             "removed in a future release. Use option -XX:AOTMode=required instead.");
   }
 
