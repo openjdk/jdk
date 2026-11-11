@@ -594,9 +594,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 #endif
 
 #ifndef PRODUCT
-  if (_flow->has_irreducible_entry()) {
-    C->set_parsed_irreducible_loop(true);
-  }
 
   methods_parsed++;
   // add method size here to guarantee that inlined methods are added too

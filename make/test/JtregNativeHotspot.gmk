@@ -92,7 +92,7 @@ else
   HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeGetCreatedJavaVMs := java.base:libjvm
 
   HOTSPOT_JTREG_EXCLUDE += libNativeException.c exeGetProcessorInfo.c \
-      libTestWindowsStackOverflow.c
+      libStackLimit.cpp libTestWindowsStackOverflow.c
 endif
 
 ################################################################################

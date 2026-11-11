@@ -2707,11 +2707,11 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 }
 
 static bool grow_windows_stack_to(address target) {
-  PNT_TIB tib = (PNT_TIB)NtCurrentTeb();
+  const volatile NT_TIB* tib = (NT_TIB*)NtCurrentTeb();
 
   // Touch the page immediately below the current stack limit. Windows handles
   // this as ordinary stack growth: it commits more stack, lowers StackLimit,
-  // and installs a new moving guard. Re-read StackLimit after every touch
+  // and installs a new moving guard.  Re-read StackLimit after every touch
   // because Windows may grow the stack by more than one page at a time.
   while (target < (address)tib->StackLimit) {
     address old_limit = (address)tib->StackLimit;

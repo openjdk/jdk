@@ -67,9 +67,6 @@
 class Scheduling {
 
 private:
-  // Arena to use
-  Arena *_arena;
-
   // Control-Flow Graph info
   PhaseCFG *_cfg;
 
@@ -80,20 +77,20 @@ private:
   uint _node_bundling_limit;
 
   // List of scheduled nodes. Generated in reverse order
-  Node_List _scheduled;
+  Node_List<Node> _scheduled;
 
   // List of nodes currently available for choosing for scheduling
-  Node_List _available;
+  Node_List<Node> _available;
 
   // For each instruction beginning a bundle, the number of following
   // nodes to be bundled with it.
   Bundle *_node_bundling_base;
 
   // Mapping from register to Node
-  Node_List _reg_node;
+  Node_List<Node> _reg_node;
 
   // Free list for pinch nodes.
-  Node_List _pinch_free_list;
+  Node_List<Node> _pinch_free_list;
 
   // Number of uses of this node within the containing basic block.
   short *_uses;
@@ -226,6 +223,7 @@ PhaseOutput::PhaseOutput()
     _node_bundling_limit(0),
     _node_bundling_base(nullptr),
     _orig_pc_slot_offset_in_bytes(0),
+    _java_callees(nullptr),
     _buf_sizes(),
     _block(nullptr),
     _index(0) {
@@ -510,11 +508,24 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
         MachNode* mach = nj->as_Mach();
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
         reloc_size += mach->reloc();
-        if (mach->is_MachCall()) {
-          // add size information for trampoline stub
+        // CallStubImpl reserves space and relocations in the stub section for
+        // per-call trampolines (AArch64/PPC) or address stubs (RISC-V).
+        // To-interpreter stubs are accounted for separately below.
+        if (mach->is_MachUncommonTrap()) {
+          // Add size information for call stub.
           // class CallStubImpl is platform-specific and defined in the *.ad files.
-          stub_size  += CallStubImpl::size_call_trampoline();
-          reloc_size += CallStubImpl::reloc_call_trampoline();
+          stub_size  += CallStubImpl::size_call_stub();
+          reloc_size += CallStubImpl::reloc_call_stub();
+
+          // No nop is needed to disambiguate from another safepoint.
+          assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0 &&
+                 (uint)mach->as_MachUncommonTrap()->ret_addr_offset() < mach->size(C->regalloc()),
+                 "Safepoint address should be offset from the first instruction and should not point after the node");
+        } else if (mach->is_MachCall()) {
+          // Add size information for call stub.
+          // class CallStubImpl is platform-specific and defined in the *.ad files.
+          stub_size  += CallStubImpl::size_call_stub();
+          reloc_size += CallStubImpl::reloc_call_stub();
 
           MachCallNode *mcall = mach->as_MachCall();
           // This destination address is NOT PC-relative
@@ -532,6 +543,7 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
           // nop to disambiguate the two safepoints.
           // ScheduleAndBundle() can rearrange nodes in a block,
           // check for all offsets inside this block.
+          assert(mach->ideal_Opcode() == Op_SafePoint, "An unexpected safepoint node, which might need handling above");
           if (last_call_adr >= blk_starts[i]) {
             blk_size += nop_size;
           }
@@ -754,13 +766,11 @@ static jint array_description_value(const TypeAryPtr* ary_type) {
       .with_null_restricted(is_element_value && array_klass->is_elem_null_free())
       .with_non_atomic(is_element_value && !array_klass->is_elem_atomic());
 
-  LayoutKind layout_kind = LayoutKind::REFERENCE;
-  Klass::KlassKind kind = Klass::RefArrayKlassKind;
   if (ary_type->is_flat()) {
-    layout_kind = array_klass->as_flat_array_klass()->layout_kind();
-    kind = Klass::FlatArrayKlassKind;
+    return (jint)ArrayDescription::flat(properties, array_klass->as_flat_array_klass()->flat_layout()).value();
+  } else {
+    return (jint)ArrayDescription::reference(properties).value();
   }
-  return (jint)ArrayDescription(kind, properties, layout_kind).value();
 }
 
 
@@ -1058,7 +1068,6 @@ bool PhaseOutput::contains_as_scalarized_obj(JVMState* jvms, MachSafePointNode* 
 void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   // Handle special safepoint nodes for synchronization
   MachSafePointNode *sfn   = mach->as_MachSafePoint();
-  MachCallNode      *mcall;
 
   int safepoint_pc_offset = current_offset;
   bool return_oop = false;
@@ -1067,11 +1076,10 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   bool arg_escape = false;
 
   // Add the safepoint in the DebugInfoRecorder
-  if( !mach->is_MachCall() ) {
-    mcall = nullptr;
-    C->debug_info()->add_safepoint(safepoint_pc_offset, sfn->_oop_map);
-  } else {
-    mcall = mach->as_MachCall();
+  if (mach->is_MachUncommonTrap()) {
+    safepoint_pc_offset += mach->as_MachUncommonTrap()->ret_addr_offset();
+  } else if (mach->is_MachCall()) {
+    MachCallNode* mcall = mach->as_MachCall();
 
     if (mcall->is_MachCallJava()) {
       arg_escape = mcall->as_MachCallJava()->_arg_escape;
@@ -1085,8 +1093,8 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       return_scalarized = true;
     }
     safepoint_pc_offset += mcall->ret_addr_offset();
-    C->debug_info()->add_safepoint(safepoint_pc_offset, mcall->_oop_map);
   }
+  C->debug_info()->add_safepoint(safepoint_pc_offset, sfn->_oop_map);
 
   // Loop over the JVMState list to add scope information
   // Do not skip safepoints with a null method, they need monitor info
@@ -1505,6 +1513,13 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
   uint* jmp_rule   = NEW_RESOURCE_ARRAY(uint,nblocks);
 #endif
 
+#if INCLUDE_CDS
+  VectorSet callee_visited;
+  if (C->is_aot_compile() && ValueTypePassFieldsAsArgs) {
+    _java_callees = new(C->comp_arena()) GrowableArray<ciMethod*>(C->comp_arena(), 8, 0, nullptr);
+  }
+#endif
+
   // Create an array of unused labels, one for each basic block, if printing is enabled
 #if defined(SUPPORT_OPTO_ASSEMBLY)
   int* node_offsets      = nullptr;
@@ -1592,12 +1607,34 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
           current_offset = masm->offset();
         }
 
+#if INCLUDE_CDS
+        // Record callees for AOT code when Valhalla is enabled
+        // to cache their fingerprint which are verified when
+        // AOT code is loaded in production run.
+        if (C->is_aot_compile() && ValueTypePassFieldsAsArgs &&
+            mach->is_MachCallJava() && mach->as_MachCallJava()->_method != nullptr) {
+          ciMethod* m = mach->as_MachCallJava()->_method;
+          if (!callee_visited.test_set(m->ident())) {
+            _java_callees->append(m);
+          }
+        }
+#endif
         // align the instruction if necessary
         int padding = mach->compute_padding(current_offset);
         // Make sure safepoint node for polling is distinct from a call's
         // return by adding a nop if needed.
-        if (is_sfn && !is_mcall && padding == 0 && current_offset == last_call_offset) {
-          padding = nop_size;
+        if (padding == 0 && current_offset == last_call_offset) {
+          if (is_mcall) {
+            assert(mach->as_MachCall()->ret_addr_offset() > 0,
+                   "Safepoint address should be offset from the first instruction");
+          } else if (mach->is_MachUncommonTrap()) {
+            assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0 &&
+                   (uint)mach->as_MachUncommonTrap()->ret_addr_offset() < mach->size(C->regalloc()),
+                   "Safepoint address should be offset from the first instruction and should not point after the node");
+          } else if (is_sfn) {
+            assert(mach->ideal_Opcode() == Op_SafePoint, "An unexpected safepoint node, which might need handling above");
+            padding = nop_size;
+          }
         }
         if (padding == 0 && mach->avoid_back_to_back(MachNode::AVOID_BEFORE) &&
             current_offset == last_avoid_back_to_back_offset) {
@@ -2045,8 +2082,7 @@ uint Scheduling::_total_instructions_per_bundle[Pipeline::_max_instrs_per_cycle+
 // Initializer for class Scheduling
 
 Scheduling::Scheduling(Arena *arena, Compile &compile)
-        : _arena(arena),
-          _cfg(compile.cfg()),
+        : _cfg(compile.cfg()),
           _regalloc(compile.regalloc()),
           _scheduled(arena),
           _available(arena),
@@ -3359,6 +3395,7 @@ void PhaseOutput::install_code(ciMethod*         target,
                               _oop_map_set,
                               &_handler_table,
                               inc_table(),
+                              _java_callees,
                               compiler,
                               C->has_clinit_barriers(),
                               C->for_aot_preload(),

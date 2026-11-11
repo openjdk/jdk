@@ -247,10 +247,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayState* state, bool stole
 }
 
 MAYBE_INLINE_EVACUATION
-void G1ParScanThreadState::start_partial_objarray(oop from_obj,
-                                                  oop to_obj) {
-  assert(from_obj->is_forwarded(), "precondition");
-  assert(from_obj->forwardee() == to_obj, "precondition");
+void G1ParScanThreadState::start_partial_objarray(oop to_obj) {
   assert(to_obj->is_objArray(), "precondition");
   assert(!_scanner.do_metadata(), "precondition");
   assert(_scanner.skip_card_mark_set(), "precondition");
@@ -428,13 +425,16 @@ void G1ParScanThreadState::do_iterate_object(oop const obj,
                                              G1HeapRegionAttr const region_attr,
                                              G1HeapRegionAttr const dest_attr,
                                              uint age) {
+    assert(old->is_forwarded(), "precondition");
+    assert(old->forwardee() == obj, "precondition");
+
     // Most objects are not arrays, so do one array check rather than
     // checking for each array category for each object.
     if (klass->is_array_klass()) {
       assert(!klass->is_stack_chunk_instance_klass(), "must be");
 
       if (klass->is_objArray_klass()) {
-        start_partial_objarray(old, obj);
+        start_partial_objarray(obj);
       } else {
         // Nothing needs to be done for typeArrays.  Body doesn't contain
         // any oops to scan, and the type in the klass will already be handled

@@ -835,8 +835,9 @@ public:
   void process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range, ClosureType* oops,
                         bool use_write_table, uint worker_id);
 
+  // Scan part of the humongous object that begins in start_region.
   template <typename ClosureType>
-  void process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
+  void process_humongous_clusters(ShenandoahHeapRegion* start_region, size_t first_cluster, size_t count,
                                   HeapWord* end_of_range, ClosureType* oops, bool use_write_table);
 
   template <typename ClosureType>
@@ -940,14 +941,12 @@ public:
 class ShenandoahScanRememberedTask : public WorkerTask {
  private:
   ShenandoahObjToScanQueueSet* _queue_set;
-  ShenandoahObjToScanQueueSet* _old_queue_set;
   ShenandoahReferenceProcessor* _rp;
   ShenandoahRegionChunkIterator* _work_list;
   bool _is_concurrent;
 
  public:
   ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
-                               ShenandoahObjToScanQueueSet* old_queue_set,
                                ShenandoahReferenceProcessor* rp,
                                ShenandoahRegionChunkIterator* work_list,
                                bool is_concurrent);

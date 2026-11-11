@@ -172,8 +172,6 @@ void ShenandoahFullGC::do_it() {
     Universe::verify();
   }
 
-  heap->set_full_gc_in_progress(true);
-
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
   assert(Thread::current()->is_VM_thread(), "Do full GC only while world is stopped");
 
@@ -181,6 +179,9 @@ void ShenandoahFullGC::do_it() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_heapdump_pre);
     heap->pre_full_gc_dump(_gc_timer);
   }
+
+  // Set it after pre_full_gc_dump() to allow heap dumps to run.
+  heap->set_full_gc_in_progress(true);
 
   {
     ShenandoahGCPhase prepare_phase(ShenandoahPhaseTimings::full_gc_prepare);
@@ -617,7 +618,7 @@ public:
       }
     } else if (r->is_humongous_continuation()) {
       // If we hit continuation, the non-live humongous starts should have been trashed already
-      assert(r->humongous_start_region()->has_live(), "Region %zu should have live", r->index());
+      assert(_heap->get_region(r->humongous_start_region())->has_live(), "Region %zu should have live", r->index());
     } else if (r->is_regular()) {
       if (!r->has_live()) {
         r->make_trash_immediate();
@@ -1088,7 +1089,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
           if (c == new_start) {
             r->make_humongous_start_bypass(original_affiliation);
           } else {
-            r->make_humongous_cont_bypass(original_affiliation);
+            r->make_humongous_cont_bypass(original_affiliation, checked_cast<uint32_t>(new_start));
           }
 
           // Trailing region may be non-full, record the remainder there

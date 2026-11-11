@@ -115,6 +115,8 @@ public class TestZGCWithAOTHeap {
                               unlockDiagnostic,
                               execGC,
                               "-Xmx4m",
+                              "-XX:+ZCollectionIntervalOnly",      // Avoid gazillions of GCs that make the test sometimes time out
+                              "-XX:ZCollectionIntervalMinor=0.01", // But we can run a couple of GCs to test that works
                               coops,
                               coh,
                               "-Xlog:cds,aot,aot+heap",

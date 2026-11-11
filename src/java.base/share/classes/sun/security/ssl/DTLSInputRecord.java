@@ -583,6 +583,10 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         }
     }
 
+    private record HandshakeReassemblyState(
+            int messageLength, List<HoleDescriptor> holes) {
+    }
+
     private static final class HandshakeFlight implements Cloneable {
         static final byte HF_UNKNOWN = SSLHandshake.NOT_APPLICABLE.id;
 
@@ -594,7 +598,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         int         maxRecordEpoch;     // maximum record sequence number
         long        maxRecordSeq;       // maximum record sequence number
 
-        HashMap<Byte, List<HoleDescriptor>> holesMap;
+        HashMap<Byte, HandshakeReassemblyState> holesMap;
 
         // A map used to check duplicated handshake messages.
         HashMap<Byte, Integer> messageSeqMap;
@@ -647,6 +651,9 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         // The handshake flight in progress.
         HandshakeFlight handshakeFlight = new HandshakeFlight();
 
+        // Expected handshake type for each (epoch, message_seq) pair.
+        private final Map<Integer, Byte> messageTypes = new HashMap<>();
+
         // The preceding handshake flight.
         HandshakeFlight precedingFlight = null;
 
@@ -689,6 +696,13 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
             // Clean up the retransmission messages if necessary.
             cleanUpRetransmit(hsf);
+
+            int messageKey = (hsf.recordEpoch << 16) | hsf.messageSeq;
+            Byte type = messageTypes.putIfAbsent(
+                    messageKey, hsf.handshakeType);
+            if (type != null && type != hsf.handshakeType) {
+                throw new SSLProtocolException("Inconsistent DTLS handshake fragments");
+            }
 
             // Is it the first message of next flight?
             //
@@ -734,30 +748,43 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             boolean fragmented = (hsf.fragmentOffset) != 0 ||
                     (hsf.fragmentLength != hsf.messageLength);
 
-            List<HoleDescriptor> holes =
+            HandshakeReassemblyState reassemblyState =
                     handshakeFlight.holesMap.get(hsf.handshakeType);
-            if (holes == null) {
+            List<HoleDescriptor> holes;
+
+            if (reassemblyState == null) {
                 if (!fragmented) {
                     holes = Collections.emptyList();
                 } else {
                     holes = new LinkedList<>();
                     holes.add(new HoleDescriptor(0, hsf.messageLength));
                 }
-                handshakeFlight.holesMap.put(hsf.handshakeType, holes);
-                handshakeFlight.messageSeqMap.put(hsf.handshakeType, hsf.messageSeq);
-            } else if (holes.isEmpty()) {
-                // Have got the full handshake message.  This record may be
-                // a handshake message retransmission.  Discard this record.
-                //
-                // It's OK to discard retransmission as the handshake hash
-                // is computed as if each handshake message had been sent
-                // as a single fragment.
-                if (SSLLogger.isOn() &&
-                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
-                    SSLLogger.fine("Have got the full message, discard it.");
+
+                handshakeFlight.holesMap.put(hsf.handshakeType,
+                        new HandshakeReassemblyState(hsf.messageLength, holes));
+                handshakeFlight.messageSeqMap.put(
+                        hsf.handshakeType, hsf.messageSeq);
+            } else {
+                if (reassemblyState.messageLength() != hsf.messageLength) {
+                    throw new SSLProtocolException(
+                            "Inconsistent DTLS handshake fragments");
                 }
 
-                return;
+                holes = reassemblyState.holes();
+                if (holes.isEmpty()) {
+                    // Have got the full handshake message.  This record may be
+                    // a handshake message retransmission.  Discard this record.
+                    //
+                    // It's OK to discard retransmission as the handshake hash
+                    // is computed as if each handshake message had been sent
+                    // as a single fragment.
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
+                        SSLLogger.fine("Have got the full message, discard it.");
+                    }
+
+                    return;
+                }
             }
 
             if (fragmented) {
@@ -1253,6 +1280,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             // cleanup handshake message sequence numbers map
             handshakeFlight.messageSeqMap.clear();
 
+            messageTypes.clear();
+
             // Ready to accept new input record.
             flightIsReady = false;
             needToCheckFlight = false;
@@ -1531,9 +1560,9 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 //
                 // a full handshake
                 //
-                List<HoleDescriptor> holes = handshakeFlight.holesMap.get(
+                HandshakeReassemblyState reassemblyState = handshakeFlight.holesMap.get(
                         SSLHandshake.SERVER_HELLO_DONE.id);
-                if ((holes == null) || !holes.isEmpty()) {
+                if ((reassemblyState == null) || !reassemblyState.holes().isEmpty()) {
                     // Not yet got the final message of the flight.
                     if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
@@ -1692,14 +1721,10 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         }
 
         private boolean hasCompleted(byte handshakeType) {
-            List<HoleDescriptor> holes =
+            HandshakeReassemblyState reassemblyState =
                     handshakeFlight.holesMap.get(handshakeType);
-            if (holes == null) {
-                // not yet received this kind of handshake message
-                return false;
-            }
-
-            return holes.isEmpty();  // no fragment hole for complete message
+            // No fragment holes remain for a complete message.
+            return reassemblyState != null && reassemblyState.holes().isEmpty();
         }
 
         private boolean hasCompleted(

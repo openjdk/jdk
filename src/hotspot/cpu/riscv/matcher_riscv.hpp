@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -113,6 +113,10 @@
   // and move it piece-by-piece.  Only happens when passing doubles into
   // C code as the Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
+
+  // Use MachUncommonTrapNode for representing uncommon trap sequences.
+  // This is an alternative to representing uncommon traps as runtime calls.
+  static const bool use_mach_uncommon_trap_node = true;
 
   // Are floats converted to double when stored to stack during
   // deoptimization?

@@ -257,7 +257,6 @@ public:
   void on_arena_chunk_deallocation(size_t size, uint64_t stamp);
 
   void print_peak_state_on(outputStream* st) const;
-  void print_error_state_on(outputStream* st) const;
 
   size_t limit() const                  { return _limit; }
   bool   hit_limit() const              { return _hit_limit; }
