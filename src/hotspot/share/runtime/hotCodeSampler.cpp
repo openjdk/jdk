@@ -89,9 +89,6 @@ bool ThreadSampler::sample_all_java_threads() {
     bool created = false;
     Pair<nmethod*, int>* sampled_nm = _samples.put_if_absent(compile_id, Pair(nm, 0), &created);
     sampled_nm->second++;
-    if (created) {
-      _samples.maybe_grow();
-    }
   }
   return true;
 }

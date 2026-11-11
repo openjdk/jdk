@@ -12,18 +12,236 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="quc">Kʼicheʼ</language>
+			<language type="en">inglés</language>
+			<language type="quc">kʼicheʼ</language>
 		</languages>
+		<scripts>
+			<script type="Latn">Latin</script>
+		</scripts>
 		<territories>
+			<territory type="GT">Guatemala</territory>
 			<territory type="MK">Macedonia del Norte</territory>
 		</territories>
+		<codePatterns>
+			<codePattern type="language">Chʼabʼal: {0}</codePattern>
+			<codePattern type="script">Tzʼibʼ: {0}</codePattern>
+			<codePattern type="territory">Rulewal: {0}</codePattern>
+		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[aä {aʼ} {bʼ} {ch} {chʼ} e {eʼ} i {iʼ} j k {kʼ} l m n o p q {qʼ} r s t {tz} {tzʼ} {tʼ} u {uʼ} v w x y]</exemplarCharacters>
+		<exemplarCharacters>[a {aa} {bʼ} {ch} {chʼ} e {ee} i {ii} j k {kʼ} l m n o {oo} p q {qʼ} r s t {tz} {tzʼ} {tʼ} u {uu} w x y ʼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c d f g h ñ z]</exemplarCharacters>
 		<exemplarCharacters type="index">[AÄ {Bʼ} {CH} {CHʼ} E I J K {Kʼ} L M N O P Q {Qʼ} R S T {TZ} {TZʼ} {Tʼ} U V W X Y]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[{‐‑} – — , ; ! ? . … {'‘’} {&quot;“”} ( ) § @ * / {\\\-} {\\\:} {\\\[} {\\\]} {\\\&amp;} # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yyyyMd">dd/MM/y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">Nabʼe ikʼ</month>
+							<month type="2">Ukabʼ ikʼ</month>
+							<month type="3">Urox ikʼ</month>
+							<month type="4">Ukaj ikʼ</month>
+							<month type="5">Uroʼ ikʼ</month>
+							<month type="6">Uwaq ikʼ</month>
+							<month type="7">Uwuq ikʼ</month>
+							<month type="8">Uwajxaq ikʼ</month>
+							<month type="9">Ubʼelej ikʼ</month>
+							<month type="10">Ulajuj ikʼ</month>
+							<month type="11">Rujulaʼj ikʼ</month>
+							<month type="12">Rukabʼlaʼj ikʼ</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="wide">
+							<month type="1">Nabʼe ikʼ</month>
+							<month type="2">Ukabʼ ikʼ</month>
+							<month type="3">Urox ikʼ</month>
+							<month type="4">Ukaj ikʼ</month>
+							<month type="5">Uroʼ ikʼ</month>
+							<month type="6">Uwaq ikʼ</month>
+							<month type="7">Uwuq ikʼ</month>
+							<month type="8">Uwajxaq ikʼ</month>
+							<month type="9">Ubʼelej ikʼ</month>
+							<month type="10">Ulajuj ikʼ</month>
+							<month type="11">Rujulaʼj ikʼ</month>
+							<month type="12">Rukabʼlaʼj ikʼ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">Nabʼe qʼij</day>
+							<day type="mon">Ukabʼ qʼij</day>
+							<day type="tue">Urox qʼij</day>
+							<day type="wed">Ukaj qʼij</day>
+							<day type="thu">Roʼ qʼij</day>
+							<day type="fri">Uwaq qʼij</day>
+							<day type="sat">Wuq qʼij</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="wide">
+							<day type="sun">Nabʼe qʼij</day>
+							<day type="mon">Ukabʼ qʼij</day>
+							<day type="tue">Urox qʼij</day>
+							<day type="wed">Ukaj qʼij</day>
+							<day type="thu">Roʼ qʼij</day>
+							<day type="fri">Uwaq qʼij</day>
+							<day type="sat">Wuq qʼij</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">R1</quarter>
+							<quarter type="2">R2</quarter>
+							<quarter type="3">R3</quarter>
+							<quarter type="4">R4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">RCH1</quarter>
+							<quarter type="2">RCH2</quarter>
+							<quarter type="3">RCH3</quarter>
+							<quarter type="4">RCH4</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">R1</quarter>
+							<quarter type="2">12</quarter>
+							<quarter type="3">R3</quarter>
+							<quarter type="4">R4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">RCH1</quarter>
+							<quarter type="2">RCH2</quarter>
+							<quarter type="3">RCH3</quarter>
+							<quarter type="4">RCH4</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">Aqʼabʼil</dayPeriod>
+							<dayPeriod type="pm">Kbʼeqʼij</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">Maji Kiyoʼla Qawaʼ Jesus</era>
+						<era type="0" alt="variant">Najter Qʼe Kutan</era>
+						<era type="1">Qa Kutan</era>
+						<era type="1" alt="variant">Qa Kutanil</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">MYQJ</era>
+						<era type="0" alt="variant">NQʼK</era>
+						<era type="1">QK</era>
+						<era type="1" alt="variant">QKL</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
+					<availableFormats>
+						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d-MMM-y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">MMMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, MMMM d, y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<regionFormat>Uqʼijil {0}</regionFormat>
+			<regionFormat type="daylight">Upauqʼijil {0}</regionFormat>
+			<regionFormat type="standard">Junuwach uqʼijil {0}</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>tiempo universal coordinado</standard>
+				</long>
+			</zone>
+			<metazone type="GMT">
+				<long>
+					<standard>Greenwich Unikʼijal Uqʼijil</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
 	<numbers>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="other">0 mil</pattern>
+					<pattern type="10000" count="other">00 mil</pattern>
+					<pattern type="100000" count="other">000 mil</pattern>
+					<pattern type="1000000" count="other">0 millón</pattern>
+					<pattern type="10000000" count="other">00 millones</pattern>
+					<pattern type="100000000" count="other">000 millón</pattern>
+					<pattern type="1000000000" count="other">0 mil de millones</pattern>
+					<pattern type="10000000000" count="other">00 mil de millones</pattern>
+					<pattern type="100000000000" count="other">000 mil de millones</pattern>
+					<pattern type="1000000000000" count="other">0 trillón</pattern>
+					<pattern type="10000000000000" count="other">00 trillones</pattern>
+					<pattern type="100000000000000" count="other">000 trillones</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" count="other">0M</pattern>
+					<pattern type="10000" count="other">00M</pattern>
+					<pattern type="100000" count="other">000M</pattern>
+					<pattern type="1000000" count="other">0MM</pattern>
+					<pattern type="10000000" count="other">00MM</pattern>
+					<pattern type="100000000" count="other">000MM</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="other">¤0M</pattern>
+					<pattern type="10000" count="other">¤00M</pattern>
+					<pattern type="100000" count="other">¤000M</pattern>
+					<pattern type="1000000" count="other">¤0MM</pattern>
+					<pattern type="10000000" count="other">¤00MM</pattern>
+					<pattern type="100000000" count="other">¤000MM</pattern>
+					<pattern type="1000000000" count="other">¤0M'.'M'.'</pattern>
+					<pattern type="10000000000" count="other">¤00M'.'M'.'</pattern>
+					<pattern type="100000000000" count="other">¤000M'.'M'.'</pattern>
+					<pattern type="1000000000000" count="other">¤0T</pattern>
+					<pattern type="10000000000000" count="other">¤00T</pattern>
+					<pattern type="100000000000000" count="other">¤000T</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencies>
 			<currency type="GTQ">
 				<symbol>Q</symbol>

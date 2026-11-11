@@ -94,7 +94,7 @@ public class AOTCodeTestUnknownExternAddress {
             "-XX:CompileCommand=compileonly,TestUnknownAddress::test*",
             "-Xcomp", "-XX:-TieredCompilation",
             "-Xlog:aot+codecache+init=debug",
-            "-XX:AOTMode=on",
+            "-XX:AOTMode=required",
             "-XX:AOTCache=" + aotCacheFile,
             "-cp", appJar, appClass);
 

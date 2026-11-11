@@ -31,14 +31,14 @@ import compiler.lib.ir_framework.TestFramework;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.Arrays;
 
 import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8373591
- * @summary Verify that StringLatin1::inflate, StringUTF16::compress, and
- *          StringCoding::implEncodeAsciiArray are scheduled properly
+ * @bug 8373591 8393492
+ * @summary Verify that several memory access intrinsics are scheduled properly
  * @library /test/lib /
  * @modules java.base/java.lang:+open
  * @run driver ${test.main.class}
@@ -70,7 +70,7 @@ public class TestAntiDependency {
     public static void main(String[] args) {
         var testFramework = new TestFramework();
         testFramework.setDefaultWarmup(1);
-        testFramework.addFlags("--add-opens=java.base/java.lang=ALL-UNNAMED");
+        testFramework.addFlags("--add-opens=java.base/java.lang=ALL-UNNAMED", "-XX:CompileCommand=inline,*::hashCode");
         testFramework.start();
     }
 
@@ -92,6 +92,11 @@ public class TestAntiDependency {
         return dst[0];
     }
 
+    @Run(test = "testStringCompress")
+    public void runStringCompress() throws Throwable {
+        Asserts.assertEQ(0, testStringCompress());
+    }
+
     @Test
     static int testStringInflate() throws Throwable {
         char[] dst = new char[4];
@@ -105,6 +110,11 @@ public class TestAntiDependency {
         INFLATE_HANDLE.invokeExact(src, 0, dst, 0, 4);
         src[0] = 1;
         return dst[0];
+    }
+
+    @Run(test = "testStringInflate")
+    public void runStringInflate() throws Throwable {
+        Asserts.assertEQ(0, testStringInflate());
     }
 
     @Test
@@ -122,10 +132,44 @@ public class TestAntiDependency {
         return dst[0];
     }
 
-    @Run(test = {"testStringCompress", "testStringInflate", "testEncodeISO"})
-    public void run() throws Throwable {
-        Asserts.assertEQ(0, testStringCompress());
-        Asserts.assertEQ(0, testStringInflate());
+    @Run(test = "testEncodeISO")
+    public void runEncodeISO() throws Throwable {
         Asserts.assertEQ(0, testEncodeISO());
+    }
+
+    @Test
+    static boolean testAryEq(byte[] a1, byte[] a2) {
+        // The second store must introduce no trap
+        a1[0] = 0;
+
+        // The backend must have enough information to calculate the anti-dependencies of this node
+        boolean result = Arrays.equals(a1, a2);
+        a1[0] = 1;
+        return result;
+    }
+
+    @Run(test = "testAryEq")
+    public void runAryEq() {
+        byte[] a1 = new byte[100];
+        byte[] a2 = new byte[100];
+        Asserts.assertEQ(true, testAryEq(a1, a2));
+    }
+
+    @Test
+    static int testVectorizedHashCode() {
+        int[] a = new int[100];
+        consume(a, null);
+
+        // The backend must have enough information to calculate the anti-dependencies of this node
+        int result = Arrays.hashCode(a);
+        a[0] = 1;
+        return result;
+    }
+
+    @Run(test = "testVectorizedHashCode")
+    public void runVectorizedHashCode() {
+        int[] a = new int[100];
+        int expected = Arrays.hashCode(a);
+        Asserts.assertEQ(expected, testVectorizedHashCode());
     }
 }

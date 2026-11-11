@@ -26,7 +26,7 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/foreignGlobals.hpp"
 #include "prims/foreignGlobals.inline.hpp"
 #include "prims/vmstorage.hpp"

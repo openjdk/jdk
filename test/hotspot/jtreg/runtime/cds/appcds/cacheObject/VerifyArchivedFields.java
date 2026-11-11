@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class VerifyArchivedFields {
     // Note: -XX:VerifyArchivedFields=2 will force a GC every time when
-    // HeapShared::initialize_from_archived_subgraph(Klass* k, ...) is called. This ensures
+    // AOTHeap::initialize_from_archived_subgraph(Klass* k, ...) is called. This ensures
     // that it's safe to do a GC even when the oop->klass() of some archived heap objects
     // are not yet loaded into the system dictionary.
     public static void main(String[] args) throws Exception {

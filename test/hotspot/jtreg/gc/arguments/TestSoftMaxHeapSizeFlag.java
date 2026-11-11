@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,10 @@ public class TestSoftMaxHeapSizeFlag {
     private static final long betweenXmsAndXmx = (Xms + Xmx) / 2;
 
     public static void main(String args[]) throws Exception {
-        // Test default value
+        // Test default value; expect 0 or Xmx
         ProcessTools.executeTestJava("-Xms" + Xms, "-Xmx" + Xmx,
                                      "-XX:+PrintFlagsFinal", "-version")
-                    .shouldMatch("SoftMaxHeapSize[ ]+=[ ]+" + Xmx)
+                    .shouldMatch("(SoftMaxHeapSize[ ]+=[ ]+" + 0 + ")|(SoftMaxHeapSize[ ]+=[ ]+" + Xmx + ")")
                     .shouldHaveExitValue(0);
 
         // Test setting small value

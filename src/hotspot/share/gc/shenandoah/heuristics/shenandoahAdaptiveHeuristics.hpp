@@ -29,7 +29,6 @@
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
 #include "gc/shenandoah/shenandoahCycleDuration.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "utilities/numberSeq.hpp"
 
 
@@ -37,8 +36,7 @@
  * The adaptive heuristic tracks the allocation behavior and average cycle
  * time of the application. It attempts to start a cycle with enough time
  * to complete before the available memory is exhausted. It errors on the
- * side of starting cycles early to avoid allocation failures (degenerated
- * cycles).
+ * side of starting cycles early to avoid allocation failures.
  *
  * This heuristic limits the number of regions for evacuation such that the
  * evacuation reserve is respected. This helps it avoid allocation failures
@@ -56,14 +54,9 @@ public:
   // before we need to start the next GC.
   void start_idle_span() override;
 
-  void record_success_concurrent() override;
-  void record_degenerated(bool is_generational_global) override;
+  void record_concurrent_completion() override;
 
   bool should_start_gc() override;
-
-  const char* name() override     { return "Adaptive"; }
-  bool is_diagnostic() override   { return false; }
-  bool is_experimental() override { return false; }
 
   // In preparation for a span during which GC will be idle, compute the headroom adjustment that will be used to
   // detect when GC needs to trigger.
@@ -113,20 +106,17 @@ protected:
   // bytes of headroom at which we should trigger GC
   size_t _headroom_adjustment;
 
-  void add_degenerated_gc_time(double timestamp_at_start, double duration);
-
   // A conservative minimum threshold of free space that we'll try to maintain when possible.
   // For example, we might trigger a concurrent gc if we are likely to drop below
   // this threshold, or we might consider this when dynamically resizing generations
   // in the generational case. Controlled by global flag ShenandoahMinFreeThreshold.
-  size_t min_free_threshold(size_t capacity) const;
+  static size_t min_free_threshold(size_t capacity);
 
   void accept_trigger_with_type(Trigger trigger_type) {
     _last_trigger = trigger_type;
     accept_trigger();
   }
 
-  bool trigger_min_free_threshold(size_t available, size_t capacity);
   bool trigger_learning(size_t available, size_t capacity);
   bool trigger_average_allocation_rate(const ShenandoahAnticipatedConsumption& rate, size_t allocatable_bytes);
   bool trigger_accelerating_allocation_rate(const ShenandoahAnticipatedConsumption& rate, size_t allocatable_bytes);
