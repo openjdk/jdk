@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,13 @@ package sun.net.www;
 
 import java.io.*;
 import java.util.concurrent.locks.ReentrantLock;
-import sun.net.www.http.ChunkedInputStream;
 
+import jdk.internal.util.Preconditions;
 
 public class MeteredStream extends FilterInputStream {
 
-    // Instance variables.
-    /* if expected != -1, after we've read >= expected, we're "closed" and return -1
-     * from subsequent read() 's
-     */
     protected boolean closed = false;
-    protected long expected;
+    protected final long expected;
     protected long count = 0;
     protected long markedCount = 0;
     protected int markLimit = -1;
@@ -45,49 +41,43 @@ public class MeteredStream extends FilterInputStream {
 
     public MeteredStream(InputStream is, long expected)
     {
+        assert expected > 0 : "Invalid content length: " + expected;
         super(is);
 
         this.expected = expected;
     }
 
-    private final void justRead(long n) throws IOException {
+    private void justRead(long n) throws IOException {
         assert isLockHeldByCurrentThread();
 
         if (n == -1) {
             if (expected > count) {
                 throw new IOException("Premature EOF");
             }
+        } else {
 
-            /*
-             * don't close automatically when mark is set and is valid;
-             * cannot reset() after close()
-             */
-            if (!isMarked()) {
-                close();
+            // Increment the position
+            assert count <= (expected - n) : "Excessive read: " + n;
+            count += n;
+
+            // If read beyond the markLimit, invalidate the mark
+            if (count - markedCount > markLimit) {
+                markLimit = -1;
             }
-            return;
+
         }
 
-        count += n;
-
-        /**
-         * If read beyond the markLimit, invalidate the mark
-         */
-        if (count - markedCount > markLimit) {
-            markLimit = -1;
+        // Auto-close if there are no marks and the expected length is consumed.
+        //
+        // We avoid auto-close while marked, since the user might invoke
+        // `reset()` after reading the last byte.
+        //
+        // We auto-close to speed up the release of resources. For instance,
+        // see `KeepAliveStream::close`.
+        if (!isMarked() && (n == -1 || count >= expected)) {
+            close();
         }
 
-        if (isMarked()) {
-            return;
-        }
-
-        // if expected length is known, we could determine if
-        // read overrun.
-        if (expected > 0)   {
-            if (count >= expected) {
-                close();
-            }
-        }
     }
 
     /**
@@ -112,7 +102,8 @@ public class MeteredStream extends FilterInputStream {
     public int read() throws java.io.IOException {
         lock();
         try {
-            if (closed) return -1;
+            long remaining = expected - count;
+            if (closed || remaining < 1) return -1;
             int c = in.read();
             if (c != -1) {
                 justRead(1);
@@ -127,11 +118,18 @@ public class MeteredStream extends FilterInputStream {
 
     public int read(byte b[], int off, int len)
                 throws java.io.IOException {
+        Preconditions.checkFromIndexSize(
+                off, len, b.length,     // Implicit null check on `b`
+                Preconditions.AIOOBE_FORMATTER);
+        if (len < 1) {
+            return 0;
+        }
         lock();
         try {
-            if (closed) return -1;
-
-            int n = in.read(b, off, len);
+            long remaining = expected - count;
+            if (closed || remaining < 1) return -1;
+            int trimmedLength = (int) Math.min(len, remaining);
+            int n = in.read(b, off, trimmedLength);
             justRead(n);
             return n;
         } finally {
@@ -140,20 +138,17 @@ public class MeteredStream extends FilterInputStream {
     }
 
     public long skip(long n) throws IOException {
+        if (n < 1) {
+            return 0;
+        }
         lock();
         try {
-            // REMIND: what does skip do on EOF????
-            if (closed) return 0;
-
-            if (in instanceof ChunkedInputStream) {
-                n = in.skip(n);
-            } else {
-                // just skip min(n, num_bytes_left)
-                long min = (n > expected - count) ? expected - count : n;
-                n = in.skip(min);
-            }
-            justRead(n);
-            return n;
+            long remaining = expected - count;
+            if (closed || remaining < 1) return 0;
+            long maxSkip = Math.min(n, remaining);
+            long skipped = in.skip(maxSkip);
+            justRead(skipped);
+            return skipped;
         } finally {
             unlock();
         }
@@ -174,7 +169,9 @@ public class MeteredStream extends FilterInputStream {
     public int available() throws IOException {
         lock();
         try {
-            return closed ? 0 : in.available();
+            if (closed) return 0;
+            long remaining = expected - count;
+            return (int) Math.min(remaining, in.available());
         } finally {
             unlock();
         }
