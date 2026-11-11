@@ -22,10 +22,13 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "jvm_io.h"
 #include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -38,6 +41,7 @@ uint64_t Abstract_VM_Version::_features = 0;
 const char* Abstract_VM_Version::_features_string = "";
 const char* Abstract_VM_Version::_cpu_info_string = "";
 uint64_t Abstract_VM_Version::_cpu_features = 0;
+uint64_t Abstract_VM_Version::_cpu_features_disabled_by_aot_cache = 0;
 
 #ifndef SUPPORTS_NATIVE_CX8
 bool Abstract_VM_Version::_supports_cx8 = false;
@@ -386,4 +390,17 @@ const char* Abstract_VM_Version::cpu_description(void) {
   }
   strncpy(tmp, _cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
   return tmp;
+}
+
+void* Abstract_VM_Version::get_aot_cache_cpu_features() {
+  void* archived_cpu_features = nullptr;
+  if (UseAOTCacheCpuFeaturesOnly) {
+    archived_cpu_features = AOTMetaspace::get_archived_cpu_features();
+    if (archived_cpu_features == nullptr) {
+      // If we get nullptr, it means there is a mismatch in cpu feature size, which
+      // is handled later by verification checks in AOTCodeCache. For now silently disable this option.
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+    }
+  }
+  return archived_cpu_features;
 }

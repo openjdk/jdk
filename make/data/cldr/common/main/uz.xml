@@ -57,7 +57,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bi">bislama</language>
 			<language type="bin">bini</language>
 			<language type="bla">siksika</language>
-			<language type="blo">Anii</language>
+			<language type="blo">anii</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bengal</language>
 			<language type="bo">tibet</language>
@@ -339,6 +339,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pcm">kreol (Nigeriya)</language>
 			<language type="pis">pijin</language>
 			<language type="pl">polyakcha</language>
+			<language type="pms">pyemont</language>
 			<language type="pqm">maliset-passamakvoddi</language>
 			<language type="prg">pruss</language>
 			<language type="ps">pushtu</language>
@@ -466,7 +467,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">nyengatu</language>
 			<language type="yue">kanton</language>
 			<language type="yue" alt="menu">xitoy, kanton</language>
-			<language type="za">Chjuan</language>
+			<language type="za">chjuan</language>
 			<language type="zgh">tamazigxt</language>
 			<language type="zh">xitoy</language>
 			<language type="zh" alt="menu">xitoy, mandarin</language>
@@ -858,15 +859,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">taqvim</key>
 			<key type="cf">valyuta formati</key>
+			<key type="colAlternate">belgilarni hisobga olmasdan saralash</key>
+			<key type="colBackwards">urgʻu boʻyicha teskari saralash</key>
+			<key type="colCaseFirst">yuqori yoki quyi registr boʻyicha saralash</key>
+			<key type="colCaseLevel">registrni hisobga olgan holda saralash</key>
 			<key type="collation">saralash tartibi</key>
+			<key type="colNormalization">normallashtirilgan saralash</key>
+			<key type="colNumeric">raqamli saralash</key>
+			<key type="colReorder">qayta saralash (yozuv/blok)</key>
+			<key type="colStrength">saralash samaradorligi</key>
 			<key type="currency">valyuta</key>
+			<key type="d0">oʻzgartirish manzili</key>
+			<key type="dx">koʻchirishning lugʻat qoidalaridan istisnolar</key>
 			<key type="em">emoji namoyishi</key>
+			<key type="fw">haftaning birinchi kuni</key>
+			<key type="h0">aralash</key>
 			<key type="hc">soat tizimi (12 yoki 24)</key>
+			<key type="i0">kiritish uslubi</key>
+			<key type="k0">klaviatura</key>
+			<key type="kv">eng yuqori rad etilgan</key>
 			<key type="lb">qatorni uzish uslubi</key>
 			<key type="lw">so‘z ko‘chirish uslubi</key>
+			<key type="m0">oʻgirish qoidalari</key>
 			<key type="ms">o‘lchov tizimi</key>
+			<key type="mu">oʻlchov birligi</key>
 			<key type="numbers">raqamlar</key>
+			<key type="rg">qoʻshimcha maʼlumotlar uchun mintaqa</key>
+			<key type="s0">oʻzgartirish manbasi</key>
+			<key type="sd">mintaqa boʻlinmasi</key>
 			<key type="ss">qisqartirilgandan keyin gapning uzilishi</key>
+			<key type="t">oʻzgartirish</key>
+			<key type="t0">mashinaviy tarjima</key>
+			<key type="timezone">Vaqt mintaqasi</key>
+			<key type="va">mahalliy sozlamalar varianti</key>
+			<key type="x">shaxsiy</key>
+			<key type="x0">shaxsiy oʻzgartirish</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">buddizm taqvimi</type>
@@ -885,15 +912,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian" scope="core">grigorian</type>
 			<type key="calendar" type="hebrew">yahudiy taqvimi</type>
 			<type key="calendar" type="hebrew" scope="core">yahudiy</type>
+			<type key="calendar" type="indian" scope="core">hind milliy</type>
 			<type key="calendar" type="islamic">hijriy taqvim</type>
 			<type key="calendar" type="islamic" scope="core">hijriy</type>
 			<type key="calendar" type="islamic-civil">jadvalli hijriy taqvim</type>
 			<type key="calendar" type="islamic-civil" scope="core">jadvalli hijriy</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">hijriy, Saudiya Arabistoni kuzatuvi</type>
 			<type key="calendar" type="islamic-tbla">jadvalli hijriy taqvim (astronomik davr)</type>
 			<type key="calendar" type="islamic-tbla" scope="core">jadvalli hijriy (atronomik davr)</type>
 			<type key="calendar" type="islamic-umalqura">hijriy taqvim (Ummul Quro)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">hijriy (Ummul Quro)</type>
 			<type key="calendar" type="iso8601">ISO-8601 taqvimi</type>
+			<type key="calendar" type="iso8601" scope="core">gregorian</type>
 			<type key="calendar" type="japanese">yapon taqvimi</type>
 			<type key="calendar" type="japanese" scope="core">yapon</type>
 			<type key="calendar" type="persian">fors taqvimi</type>
@@ -904,15 +934,46 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="cf" type="account" scope="core">moliyaviy</type>
 			<type key="cf" type="standard">standart valyuta formati</type>
 			<type key="cf" type="standard" scope="core">standart</type>
+			<type key="colCaseFirst" type="lower" scope="core">quyi registr</type>
+			<type key="colCaseFirst" type="no" scope="core">quyi registr</type>
+			<type key="colCaseFirst" type="upper" scope="core">yuqori registr</type>
+			<type key="collation" type="compat" scope="core">moslik</type>
+			<type key="collation" type="dictionary" scope="core">lugʻat</type>
 			<type key="collation" type="ducet">standart Unicode saralash tartibi</type>
 			<type key="collation" type="ducet" scope="core">standart Unicode</type>
+			<type key="collation" type="emoji" scope="core">emoji</type>
+			<type key="collation" type="eor" scope="core">yevropa qoidalari</type>
+			<type key="collation" type="phonebook" scope="core">telefon kitobi</type>
+			<type key="collation" type="phonetic" scope="core">fonetik</type>
+			<type key="collation" type="pinyin" scope="core">pinyin</type>
 			<type key="collation" type="search">qidiruv</type>
 			<type key="collation" type="search" scope="core">qidiruv</type>
+			<type key="collation" type="searchjl" scope="core">koreyscha boshlangʻich undoshlar</type>
 			<type key="collation" type="standard">standart saralash tartibi</type>
 			<type key="collation" type="standard" scope="core">standart</type>
+			<type key="collation" type="stroke" scope="core">chiziqli</type>
+			<type key="collation" type="traditional" scope="core">anʼanaviy</type>
+			<type key="collation" type="unihan" scope="core">radikal-chiziqli</type>
+			<type key="collation" type="zhuyin" scope="core">zhuyin</type>
+			<type key="colReorder" type="currency" scope="core">valyuta</type>
+			<type key="colReorder" type="digit" scope="core">raqamlar</type>
+			<type key="colReorder" type="punct" scope="core">punktuatsiya</type>
+			<type key="colReorder" type="space" scope="core">boʻsh joy</type>
+			<type key="colReorder" type="symbol" scope="core">belgi</type>
+			<type key="colStrength" type="identical" scope="core">hammasi</type>
+			<type key="colStrength" type="primary" scope="core">faqat asosiy harflar</type>
+			<type key="colStrength" type="quaternary" scope="core">asosiy, urgʻu, registr, variantlar, kana</type>
+			<type key="colStrength" type="secondary" scope="core">asosiy, urgʻu</type>
+			<type key="colStrength" type="tertiary" scope="core">asosiy, urgʻu, registr, variantlar</type>
+			<type key="d0" type="fwidth">toʻliq kenglikdagi belgilar</type>
+			<type key="d0" type="hwidth">yarim kenglikdagi belgilar</type>
 			<type key="em" type="default" scope="core">birlamchi</type>
 			<type key="em" type="emoji" scope="core">emoji</type>
 			<type key="em" type="text" scope="core">matn</type>
+			<type key="hc" type="c12">12 soatlik tizim</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 soatlik tizim</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 soatlik tizim (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 soatlik tizim (1–12)</type>
@@ -921,6 +982,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 soatlik tizim (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">boʻsh joy, punktuatsiya, barcha belgilar</type>
+			<type key="kv" type="punct" scope="core">boʻsh joy, punktuatsiya</type>
+			<type key="kv" type="space" scope="core">boʻsh joy, punktuatsiya</type>
+			<type key="kv" type="symbol" scope="core">boʻsh joy, punktuatsiya, valyuta boʻlmagan belgilar</type>
 			<type key="lb" type="loose">qatorni yumshoq uzish</type>
 			<type key="lb" type="loose" scope="core">yumshoq</type>
 			<type key="lb" type="normal">qatorni odatiy uzish</type>
@@ -931,6 +996,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="lw" type="keepall" scope="core">hammasini saqlash</type>
 			<type key="lw" type="normal" scope="core">oddiy uslub</type>
 			<type key="lw" type="phrase" scope="core">iboralarda saqlash</type>
+			<type key="m0" type="bgn">US BGN transliteratsiyasi</type>
+			<type key="m0" type="ungegn">UN GEGN transliteratsiyasi</type>
 			<type key="ms" type="metric">metrik tizim</type>
 			<type key="ms" type="metric" scope="core">metrik</type>
 			<type key="ms" type="uksystem">Britaniya o‘lchov tizimi</type>
@@ -939,47 +1006,82 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">AQSH</type>
 			<type key="numbers" type="arab">arab-hind raqamlari</type>
 			<type key="numbers" type="arabext">kengaytirilgan arab-hind raqamlari</type>
+			<type key="numbers" type="arabext" scope="core">kengaytirilgan arab-hind</type>
 			<type key="numbers" type="armn">arman raqamlari</type>
 			<type key="numbers" type="armnlow">arman kichik raqamlari</type>
+			<type key="numbers" type="armnlow" scope="core">arman kichik</type>
 			<type key="numbers" type="beng">bengal raqamlari</type>
 			<type key="numbers" type="cakm">chakma raqamlari</type>
 			<type key="numbers" type="deva">devanagari raqamlari</type>
 			<type key="numbers" type="ethi">habash raqamlari</type>
+			<type key="numbers" type="finance" scope="core">moliyaviy</type>
 			<type key="numbers" type="fullwide">to‘liq enli raqamlar</type>
+			<type key="numbers" type="fullwide" scope="core">toʻliq enli</type>
 			<type key="numbers" type="geor">gruzin raqamlari</type>
 			<type key="numbers" type="grek">grek raqamlari</type>
 			<type key="numbers" type="greklow">kichik grek raqamlari</type>
+			<type key="numbers" type="greklow" scope="core">grek kichik</type>
 			<type key="numbers" type="gujr">gujarot raqamlari</type>
 			<type key="numbers" type="guru">gurmukxi raqamlari</type>
+			<type key="numbers" type="hanidays" scope="core">anʼanaviy taqvimlar uchun oy kunlarini Han iyerogliflari bilan raqamlash</type>
 			<type key="numbers" type="hanidec">xitoy o‘nli raqamlari</type>
+			<type key="numbers" type="hanidec" scope="core">raqamlar sifatida xitoy iyerogliflaridan foydalaniladigan pozitsion oʻnlik sanoq tizimi</type>
 			<type key="numbers" type="hans">soddalashgan xitoy raqamlari</type>
 			<type key="numbers" type="hansfin">soddalashgan xitoy raqamlari (moliyaviy)</type>
+			<type key="numbers" type="hansfin" scope="core">soddalashgan xitoy (moliyaviy)</type>
 			<type key="numbers" type="hant">an’anaviy xitoy raqamlari</type>
 			<type key="numbers" type="hantfin">an’anaviy xitoy raqamlari (moliyaviy)</type>
+			<type key="numbers" type="hantfin" scope="core">anʼanaviy xitoy (moliyaviy)</type>
 			<type key="numbers" type="hebr">ivrit raqamlari</type>
 			<type key="numbers" type="java">yava raqamlari</type>
 			<type key="numbers" type="jpan">yapon raqamlari</type>
 			<type key="numbers" type="jpanfin">yapon raqamlari (moliyaviy)</type>
+			<type key="numbers" type="jpanfin" scope="core">yapon (moliyaviy)</type>
+			<type key="numbers" type="jpanyear" scope="core">yapon Gannen birinchi yil nomlanishi</type>
 			<type key="numbers" type="khmr">kxmer raqamlari</type>
 			<type key="numbers" type="knda">kannada raqamlari</type>
+			<type key="numbers" type="lanatham" scope="core">tai tham tham (diniy)</type>
 			<type key="numbers" type="laoo">laos raqamlari</type>
 			<type key="numbers" type="latn">zamonaviy arab raqamlari</type>
+			<type key="numbers" type="mathbold" scope="core">matematik (qalin)</type>
+			<type key="numbers" type="mathdbl" scope="core">matematik (ikki chiziqli)</type>
+			<type key="numbers" type="mathmono" scope="core">matematik (bir kenglikdagi)</type>
+			<type key="numbers" type="mathsanb" scope="core">matematik (qalin chiziqlarsiz)</type>
+			<type key="numbers" type="mathsans" scope="core">matematik (chiziqlarsiz)</type>
 			<type key="numbers" type="mlym">malayalam raqamlari</type>
 			<type key="numbers" type="mtei">manipuri raqamlari</type>
-			<type key="numbers" type="mymr">birma raqamlari</type>
+			<type key="numbers" type="mymr">myanma raqamlari</type>
+			<type key="numbers" type="mymrepka" scope="core">myanma sharqiy pwo karen</type>
+			<type key="numbers" type="mymrpao" scope="core">myanma pao</type>
+			<type key="numbers" type="mymrshan" scope="core">myanma shan</type>
+			<type key="numbers" type="mymrtlng" scope="core">myanma tai laing</type>
+			<type key="numbers" type="native">tabiiy raqamlar</type>
+			<type key="numbers" type="native" scope="core">tub xalqlar raqamlari</type>
 			<type key="numbers" type="olck">ol chiki taqamlari</type>
 			<type key="numbers" type="orya">oriya raqamlari</type>
+			<type key="numbers" type="outlined" scope="core">chizilgan</type>
 			<type key="numbers" type="roman">rim raqamlari</type>
+			<type key="numbers" type="roman" scope="core">rim katta</type>
 			<type key="numbers" type="romanlow">kichik rim raqamlari</type>
+			<type key="numbers" type="romanlow" scope="core">rim kichik</type>
+			<type key="numbers" type="segment" scope="core">segmentli</type>
 			<type key="numbers" type="taml">an’anaviy tamil raqamlari</type>
 			<type key="numbers" type="tamldec">tamil raqamlari</type>
+			<type key="numbers" type="tamldec" scope="core">zamonaviy tamil</type>
 			<type key="numbers" type="telu">telugu raqamlari</type>
 			<type key="numbers" type="thai">tay raqamlari</type>
 			<type key="numbers" type="tibt">tibet raqamlari</type>
+			<type key="numbers" type="traditional" scope="core">anʼanaviy raqamlar</type>
 			<type key="numbers" type="vaii">vay raqamlari</type>
 			<type key="ss" type="none" scope="core">oʻchiq</type>
 			<type key="ss" type="standard" scope="core">yoniq</type>
+			<type key="t0" type="und">tahrirsiz mashinaviy tarjima</type>
+			<type key="va" type="posix" scope="core">POSIX varianti</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">oʻchiq</typeValue>
+			<typeValue type="yes">yoniq</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metrik</measurementSystemName>
 			<measurementSystemName type="UK">Buyuk Britaniya</measurementSystemName>
@@ -1028,6 +1130,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1052,21 +1157,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Bh">B h</dateFormatItem>
 						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
 						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBh">E, B h</dateFormatItem>
 						<dateFormatItem id="EBhm">E, B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E, B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Eh">E, h (a)</dateFormatItem>
 						<dateFormatItem id="Ehm">E, h:mm (a)</dateFormatItem>
 						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E, h:mm:ss (a)</dateFormatItem>
 						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y (G)</dateFormatItem>
-						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyM">MM-y (G)</dateFormatItem>
+						<dateFormatItem id="GyMd">dd.MM.y (G)</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, dd-MM-y (G)</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM, y (G)</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d-MMM, y (G)</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d-MMM, y (G)</dateFormatItem>
 						<dateFormatItem id="h">h (a)</dateFormatItem>
 						<dateFormatItem id="hm">h:mm (a)</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss (a)</dateFormatItem>
+						<dateFormatItem id="hv">h (a) v</dateFormatItem>
 						<dateFormatItem id="Md">dd.MM</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
 						<dateFormatItem id="MMMd">d-MMM</dateFormatItem>
@@ -1146,6 +1256,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d-MMM – E, d-MMM</greatestDifference>
 							<greatestDifference id="M">E, d-MMM – E, d-MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d MMMM</greatestDifference>
+							<greatestDifference id="M">d-MMMM – d-MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y (G)</greatestDifference>
@@ -1394,6 +1508,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1432,6 +1549,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM, G y</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d-MMM, G y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d-MMM, G y</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM, G y</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d-MMMM, G y</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d-MMMM, G y</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a (v)</dateFormatItem>
@@ -1444,6 +1564,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMd">d-MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d-MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d-MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d-MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM, W-'hafta'</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM, W-'hafta'</dateFormatItem>
 						<dateFormatItem id="yM">MM.y</dateFormatItem>
@@ -1453,12 +1574,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d-MMM, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d-MMM, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d-MMMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d-MMMM, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">y, QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y, QQQQ</dateFormatItem>
 						<dateFormatItem id="yw" count="one">Y, w-'hafta'</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y, w-'hafta'</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Time-Day-Of-Week">{1}, {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">B h – B h</greatestDifference>
 							<greatestDifference id="h">B h – h</greatestDifference>
@@ -1545,6 +1675,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">E, d-MMM – E, d-MMM</greatestDifference>
 							<greatestDifference id="M">E, d-MMM – E, d-MMM</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d-MMMM</greatestDifference>
+							<greatestDifference id="M">d-MMMM – d-MMMM</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">MM/y – MM/y</greatestDifference>
 							<greatestDifference id="y">MM/y – MM/y</greatestDifference>
@@ -1620,6 +1754,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</eras>
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="GyM">MM-y (G)</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, dd-MM-y (G)</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM, y (G)</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d-MMM, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">MMMM, y G</dateFormatItem>
@@ -2189,6 +2325,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Pacific/Easter">
 				<exemplarCity>Pasxa oroli</exemplarCity>
 			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity>Koyayke</exemplarCity>
+			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity>Punta-Arenas</exemplarCity>
 			</zone>
@@ -2288,11 +2427,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Libreville">
 				<exemplarCity>Librevil</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Britaniya yozgi vaqti</daylight>
-				</long>
-			</zone>
 			<zone type="America/Cayenne">
 				<exemplarCity>Kayenna</exemplarCity>
 			</zone>
@@ -2353,11 +2487,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Jayapura">
 				<exemplarCity>Jaypur</exemplarCity>
 			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Irlandiya yozgi vaqti</daylight>
-				</long>
-			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>Quddus</exemplarCity>
 			</zone>
@@ -2396,6 +2525,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Pnompen</exemplarCity>
+			</zone>
+			<zone type="Pacific/Enderbury">
+				<exemplarCity>Kanton oroli</exemplarCity>
 			</zone>
 			<zone type="Pacific/Tarawa">
 				<exemplarCity>Tarava</exemplarCity>
@@ -2808,6 +2940,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>Xarare</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Akri vaqti</generic>
+					<standard>Akri standart vaqti</standard>
+					<daylight>Akri yozgi vaqti</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Afgʻoniston vaqti</standard>
@@ -2983,6 +3122,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Braziliya yozgi vaqti</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Britaniya vaqti</generic>
+					<daylight>Britaniya yozgi vaqti</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>Bruney-Dorussalom vaqti</standard>
@@ -3156,6 +3301,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Grinvich o‘rtacha vaqti</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Grenlandiya vaqti</generic>
+					<standard>Grenlandiya standart vaqti</standard>
+					<daylight>Grenlandiya yozgi vaqti</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Sharqiy Grenlandiya vaqti</generic>
@@ -3182,7 +3334,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Gavayi-aleut standart vaqti</standard>
+					<standard>Gavayi vaqti</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3243,6 +3395,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Eron yozgi vaqti</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Irlandiya vaqti</generic>
+					<daylight>Irlandiya standart vaqti</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Irkutsk vaqti</generic>
@@ -3262,6 +3420,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Yaponiya vaqti</generic>
 					<standard>Yaponiya standart vaqti</standard>
 					<daylight>Yaponiya yozgi vaqti</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Kamchatka vaqti</generic>
+					<standard>Kamchatka standart vaqti</standard>
+					<daylight>Kamchatka yozgi vaqti</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3526,11 +3691,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Saxalin yozgi vaqti</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>Samara vaqti</generic>
+					<standard>Samara standart vaqti</standard>
+					<daylight>Samara yozgi vaqti</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa vaqti</generic>
 					<standard>Samoa standart vaqti</standard>
-					<daylight>Samoa yozgi vaqti</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3597,6 +3767,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Chuuk vaqti</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Turkiya vaqti</generic>
+					<standard>Turkiya standart vaqti</standard>
+					<daylight>Turkiya yozgi vaqti</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Turkmaniston vaqti</generic>
@@ -3614,6 +3791,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Urugvay vaqti</generic>
 					<standard>Urugvay standart vaqti</standard>
 					<daylight>Urugvay yozgi vaqti</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Urumchi vaqti</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -3772,8 +3954,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
-					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern>#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
 					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -4292,8 +4474,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>Karib guldeni</displayName>
-				<displayName count="one">Karib guldeni</displayName>
-				<displayName count="other">Karib guldeni</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>G‘arbiy Afrika CFA franki</displayName>
@@ -4317,8 +4497,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>Zimbabve oltini</displayName>
-				<displayName count="one">Zimbabve oltini</displayName>
-				<displayName count="other">Zimbabve oltini</displayName>
 			</currency>
 		</currencies>
 		<minimalPairs>
@@ -4521,11 +4699,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-item">
 				<displayName>elementlar</displayName>
-			</unit>
-			<unit type="concentr-part">
-				<displayName>qism</displayName>
-				<unitPattern count="one">{0} qismi</unitPattern>
-				<unitPattern count="other">{0} qismi</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0} milliondan ulush</unitPattern>
@@ -5118,7 +5291,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} zivert</unitPattern>
 			</unit>
 			<unit type="energy-gray">
-				<displayName>Grey</displayName>
+				<displayName>grey</displayName>
 				<unitPattern count="one">{0} grey</unitPattern>
 				<unitPattern count="other">{0} grey</unitPattern>
 			</unit>
@@ -5138,12 +5311,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} veber</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
-				<displayName>yorug‘lik</displayName>
 				<unitPattern count="one">{0} yorug‘lik tezligi</unitPattern>
 				<unitPattern count="other">{0} yorug‘lik tezligi</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
-				<displayName>milliarddan ulush</displayName>
 				<unitPattern count="one">{0} milliarddan ulush</unitPattern>
 				<unitPattern count="other">{0} milliarddan ulush</unitPattern>
 			</unit>
@@ -5895,8 +6066,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>milliarddan ulush</displayName>
-				<unitPattern count="one">{0} ppb</unitPattern>
-				<unitPattern count="other">{0} ppb</unitPattern>
 			</unit>
 			<unit type="duration-night">
 				<displayName>kecha</displayName>
@@ -5937,11 +6106,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ft²</unitPattern>
 				<unitPattern count="other">{0} ft²</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>qism</displayName>
-				<unitPattern count="one">{0} qismi</unitPattern>
-				<unitPattern count="other">{0} qismi</unitPattern>
-			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
@@ -5951,7 +6115,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>%</displayName>
 			</unit>
 			<unit type="concentr-ofglucose">
-				<displayName>Glk</displayName>
 				<unitPattern count="one">{0} Glk</unitPattern>
 				<unitPattern count="other">{0} Glk</unitPattern>
 			</unit>
@@ -6002,10 +6165,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} o.k.</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
-			<unit type="pressure-ofhg">
-				<unitPattern count="one">{0} Hg</unitPattern>
-				<unitPattern count="other">{0} Hg</unitPattern>
-			</unit>
 			<unit type="speed-mile-per-hour">
 				<unitPattern count="one">{0} mi/h</unitPattern>
 				<unitPattern count="other">{0} mi/h</unitPattern>
@@ -6023,19 +6182,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}L</unitPattern>
 			</unit>
 			<unit type="energy-calorie-it">
-				<displayName>kal-IT</displayName>
 				<unitPattern count="one">{0} kal-IT</unitPattern>
 				<unitPattern count="other">{0} kal-IT</unitPattern>
 			</unit>
 			<unit type="energy-gray">
-				<displayName>Gr</displayName>
 				<unitPattern count="one">{0} Gr</unitPattern>
 				<unitPattern count="other">{0} Gr</unitPattern>
-			</unit>
-			<unit type="speed-light-speed">
-				<displayName>yorug‘lik</displayName>
-				<unitPattern count="one">{0} yorug‘lik</unitPattern>
-				<unitPattern count="other">{0} yorug‘lik</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>ppb</displayName>
