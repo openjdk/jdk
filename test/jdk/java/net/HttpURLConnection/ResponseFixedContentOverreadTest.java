@@ -48,14 +48,14 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 /*
  * @test
  * @bug 8393415
- * @summary Verify `getInputStream` on fixed content
+ * @summary Stress overreads on fixed content responses
  * @library /test/lib
  *
  * @comment `othervm` is needed for the globally configured SSL context
  * @run junit/othervm ${test.main.class}
  */
 
-class ResponseInputStreamFixedContentTest {
+class ResponseFixedContentOverreadTest {
 
     private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
@@ -96,7 +96,7 @@ class ResponseInputStreamFixedContentTest {
 
                 // Verify the response #1 body
                 int response1Code = response1CodeFuture.get();
-                verifyResponse(contentLength, response1Code, connection1, response1Body);
+                verifyResponseByOverreading(contentLength, response1Code, connection1, response1Body);
 
                 // Issue the 2nd request.
                 //
@@ -116,7 +116,7 @@ class ResponseInputStreamFixedContentTest {
 
                     // Verify the response #2 body
                     int response2Code = response2CodeFuture.get();
-                    verifyResponse(contentLength, response2Code, connection2, response2Body);
+                    verifyResponseByOverreading(contentLength, response2Code, connection2, response2Body);
 
                 }
 
@@ -191,7 +191,8 @@ class ResponseInputStreamFixedContentTest {
                cs.charAt(l - 2) == '\r' && cs.charAt(l - 1) == '\n';
     }
 
-    private static void verifyResponse(
+    /** Verifies the response by trying to overread its content. */
+    private static void verifyResponseByOverreading(
             int contentLength,
             int responseCode,
             HttpURLConnection connection,
@@ -217,7 +218,7 @@ class ResponseInputStreamFixedContentTest {
         }
 
         // Read the rest of the response body.
-        // `+ 8192` slack to trigger excessive read, which should not be possible.
+        // `+ 8192` slack to trigger overread, which should not be possible.
         var buffer = new byte[contentLength + 8192];
         for (int readLength;
              0 < (readLength = responseInputStream.read(buffer, 0, buffer.length));) {
