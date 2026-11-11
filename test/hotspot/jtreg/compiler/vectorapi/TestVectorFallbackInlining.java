@@ -84,29 +84,22 @@ public class TestVectorFallbackInlining {
             "-XX:CompileCommand=inline,jdk.internal.vm.vector.VectorSupport::insert";
 
     public static void main(String[] args) {
-        // Note: Some platforms don't activate EnableVectorSupport by default. Required here.
         // Left at its default value, only slice is selected.
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
                                    FORCE_INLINE_SLICE_FALLBACK,
-                                   FORCE_INLINE_INSERT_FALLBACK,
-                                   "-XX:+UnlockExperimentalVMOptions",
-                                   "-XX:+EnableVectorSupport");
+                                   FORCE_INLINE_INSERT_FALLBACK);
         // Explicitly enabled, so every operation is selected.
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
                                    FORCE_INLINE_SLICE_FALLBACK,
                                    FORCE_INLINE_INSERT_FALLBACK,
-                                   "-XX:+IncrementalInlineVector",
-                                   "-XX:+UnlockExperimentalVMOptions",
-                                   "-XX:+EnableVectorSupport");
+                                   "-XX:+IncrementalInlineVector");
         // Explicitly disabled, so no operation is selected. Only slice needs a separate
         // class, see TestSliceFallbackNotInlined.
         new TestFramework(TestSliceFallbackNotInlined.class)
                 .addFlags("--add-modules=jdk.incubator.vector",
                           FORCE_INLINE_SLICE_FALLBACK,
                           FORCE_INLINE_INSERT_FALLBACK,
-                          "-XX:-IncrementalInlineVector",
-                          "-XX:+UnlockExperimentalVMOptions",
-                          "-XX:+EnableVectorSupport")
+                          "-XX:-IncrementalInlineVector")
                 .start();
     }
 
