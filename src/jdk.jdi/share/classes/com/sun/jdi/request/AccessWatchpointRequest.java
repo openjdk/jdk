@@ -32,7 +32,7 @@ import com.sun.jdi.event.EventSet;
 /**
  * Request for notification when the contents of a field are accessed
  * in the target VM.
- * The event will be triggered when the specified field is accessed
+ * This event will be triggered when the specified field is accessed
  * by Java programming language code or by a
  * Java Native Interface (JNI) get function (<code>Get&lt;Type&gt;Field,
  * GetStatic&lt;Type&gt;Field</code>).

@@ -31,7 +31,7 @@ import com.sun.jdi.event.ModificationWatchpointEvent;
 
 /**
  * Request for notification when a field is set.
- * The event will be triggered when a value is assigned to the specified
+ * This event will be triggered when a value is assigned to the specified
  * field with a Java programming
  * language statement (assignment, increment, etc) or by a
  * Java Native Interface (JNI) set function (<code>Set&lt;Type&gt;Field,

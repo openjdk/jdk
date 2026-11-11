@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8390009
  * @summary Test FieldAccess/FieldModification events sent for fields in objects and
  *    classes with strictly-initialized fields
  * @enablePreview
