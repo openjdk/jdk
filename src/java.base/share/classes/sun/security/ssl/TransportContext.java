@@ -364,7 +364,12 @@ final class TransportContext implements ConnectionContext {
 
         // shutdown the transport
         if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
-            SSLLogger.severe("Fatal (" + alert + "): " + diagnostic, cause);
+            if (transport instanceof SSLSocketImpl socket) {
+                SSLLogger.severe("Fatal (" + alert + "): " + diagnostic,
+                        socket.getDebugInfo(), cause);
+            } else {
+                SSLLogger.severe("Fatal (" + alert + "): " + diagnostic, cause);
+            }
         }
 
         // remember the close reason
@@ -642,6 +647,13 @@ final class TransportContext implements ConnectionContext {
         inputRecord.finishHandshake();
         outputRecord.finishHandshake();
         isNegotiated = true;
+
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE) &&
+                transport instanceof SSLSocketImpl socket) {
+            SSLLogger.fine("SSL handshake completed", socket.getDebugInfo(),
+                    "protocol=" + conSession.getProtocol() +
+                    ", cipherSuite=" + conSession.getCipherSuite());
+        }
 
         // Tell folk about handshake completion, but do it in a separate thread.
         if (transport instanceof SSLSocket &&
