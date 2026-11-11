@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 6880672 6896573 6899694 6976036 7013585 7018258 8003981 8226297
+ * @bug 6880672 6896573 6899694 6976036 7013585 7018258 8003981 8226297 8343778
  * @library /test/lib
+ * @compile/module=java.base java/util/SortingHelper.java
  * @compile/module=java.base java/util/SortingHelper.java
  * @build Sorting
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_arraySort,_arrayPartition Sorting -shortrun
@@ -38,8 +39,10 @@
 
 import java.io.PrintStream;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Random;
 import java.util.SortingHelper;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jdk.test.lib.valueclass.AsValueClass;
 
@@ -153,6 +156,7 @@ public class Sorting {
             testRange(length, random);
             testStability(length, random);
             testValueClass(length, random);
+            testThrowingComparator(length, random);
         }
     }
 
@@ -172,6 +176,31 @@ public class Sorting {
         checkSorted(points, byXThenY);
 
         out.println();
+    }
+
+    private void testThrowingComparator(int length, TestRandom random) {
+        printTestName("Test throwing comparator", random, length);
+
+        final String msg = "Buggy comparator";
+        final Pair[] pairs = buildRandom(length, Integer.MAX_VALUE, random);
+        // Using 1.2 to ensure that the exception happens late in the number of comparisons
+        final AtomicInteger failAfter = new AtomicInteger((int)(length * 1.2d));
+        final Comparator<Pair> compair = new Comparator<Pair>() {
+            @Override
+            public int compare(Pair o1, Pair o2) {
+                if (failAfter.decrementAndGet() == 0)
+                    throw new IllegalStateException(msg);
+
+                return pairComparator.compare(o1, o2);
+            }
+        };
+        try {
+            sortingHelper.sort(pairs, compair);
+            fail("Shouldn't reach here");
+        } catch (IllegalStateException ise) {
+            if (!Objects.toString(ise.getMessage()).endsWith(msg)) // parallelSort may recreate the exception and prepend info
+                fail(sortingHelper + " throw unexpected IllegalStateException: " + ise.getMessage());
+        }
     }
 
     private void testEmptyArray() {
