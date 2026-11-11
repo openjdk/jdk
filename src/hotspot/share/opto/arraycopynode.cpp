@@ -420,6 +420,10 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 // Check whether the fast path arraycopy can be used:
 // - Return false: We could not prove that the fast path is safe
 // - Return true:  We might use the fast path
+//
+// Note that we do not need to check atomicity for flat arrays. Atomic flat layouts can only have an element size of
+// 1, 2, 4, or 8 bytes. We can use the corresponding primitive arraycopy stubs which copy the elements atomically.
+// Flat arrays with elements larger than 8 bytes cannot have an atomic layout.
 bool ArrayCopyNode::can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const TypeAryPtr* dest_ary) const {
   assert(src_ary != nullptr && dest_ary != nullptr, "must be array pointers");
 
@@ -446,11 +450,6 @@ bool ArrayCopyNode::can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bool needs_barriers = bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), dest_elem_bt, false, false,
                                                             BarrierSetC2::Optimization);
-
-  if (src_ary->is_atomic()) {
-    // The arraycopy stub can only copy non-atomic flat arrays.
-    return false;
-  }
 
   if (src_ary->elem()->value_klass()->contains_oops() && needs_barriers) {
     // The flat array could contain oops which require barriers which we cannot handle.
