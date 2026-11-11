@@ -2404,6 +2404,7 @@ void MacroAssembler::null_check(Register reg, int offset) {
 }
 
 void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert_different_registers(markword, rscratch2);
   mov(rscratch2, markWord::value_type_pattern_mask);
   andr(markword, markword, rscratch2);
@@ -2413,6 +2414,7 @@ void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_va
 }
 
 void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert_different_registers(tmp, rscratch1);
   if (can_be_null) {
     cbz(object, not_value_type);
@@ -2426,16 +2428,19 @@ void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, L
 }
 
 void MacroAssembler::test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert(temp_reg == noreg, "not needed"); // keep signature uniform with x86
   tbnz(flags, ResolvedFieldEntry::is_null_free_value_type_shift, is_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   assert(temp_reg == noreg, "not needed"); // keep signature uniform with x86
   tbz(flags, ResolvedFieldEntry::is_null_free_value_type_shift, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
+  assert(UseFieldFlattening, "should not be used without field flattening enabled");
   assert(temp_reg == noreg, "not needed"); // keep signature uniform with x86
   tbnz(flags, ResolvedFieldEntry::is_flat_shift, is_flat);
 }
@@ -2452,23 +2457,28 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
 }
 
 void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array);
 }
 
 void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg,
                                                   Label&is_non_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
 }
 
 void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array);
 }
 
 void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array) {
+  assert(Arguments::is_valhalla_enabled(), "should not be used without value types enabled");
   test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
 }
 
 void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  assert(UseArrayFlattening, "should not be used without array flattening enabled");
   tst(lh, Klass::_lh_array_tag_flat_value_bit_inplace);
   br(Assembler::NE, is_flat_array);
 }
@@ -2822,13 +2832,21 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   dmb(Assembler::barrier(order_constraint));
 }
 
-bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
-  if (ldst_can_merge(rt, adr, size_in_bytes, is_store)) {
-    merge_ldst(rt, adr, size_in_bytes, is_store);
+template <typename T>
+bool MacroAssembler::try_merge_ldst(T rt, const Address& adr,
+                                    unsigned size_in_bytes, AccessDir dir) {
+  constexpr bool is_simd = std::is_same<T, FloatRegister>::value;
+  static_assert(is_simd || std::is_same<T, Register>::value,
+                "unsupported register parameter type");
+  if (!can_form_ldst_pair(size_in_bytes, is_simd)) {
+    return false;
+  }
+
+  if (ldst_can_merge(rt, adr, size_in_bytes, dir)) {
+    merge_ldst(rt, adr, size_in_bytes, dir);
     code()->clear_last_merge_candidate();
     return true;
   } else {
-    assert(size_in_bytes == 8 || size_in_bytes == 4, "only 8 bytes or 4 bytes load/store is supported.");
     const uint64_t mask = size_in_bytes - 1;
     if (adr.getMode() == Address::base_plus_offset &&
         (adr.offset() & mask) == 0) { // only supports base_plus_offset.
@@ -2840,29 +2858,41 @@ bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size
 
 void MacroAssembler::ldr(Register Rx, const Address &adr) {
   // We always try to merge two adjacent loads into one ldp.
-  if (!try_merge_ldst(Rx, adr, 8, false)) {
+  if (!try_merge_ldst(Rx, adr, 8, LOAD)) {
     Assembler::ldr(Rx, adr);
   }
 }
 
 void MacroAssembler::ldrw(Register Rw, const Address &adr) {
   // We always try to merge two adjacent loads into one ldp.
-  if (!try_merge_ldst(Rw, adr, 4, false)) {
+  if (!try_merge_ldst(Rw, adr, 4, LOAD)) {
     Assembler::ldrw(Rw, adr);
   }
 }
 
 void MacroAssembler::str(Register Rx, const Address &adr) {
   // We always try to merge two adjacent stores into one stp.
-  if (!try_merge_ldst(Rx, adr, 8, true)) {
+  if (!try_merge_ldst(Rx, adr, 8, STORE)) {
     Assembler::str(Rx, adr);
   }
 }
 
 void MacroAssembler::strw(Register Rw, const Address &adr) {
   // We always try to merge two adjacent stores into one stp.
-  if (!try_merge_ldst(Rw, adr, 4, true)) {
+  if (!try_merge_ldst(Rw, adr, 4, STORE)) {
     Assembler::strw(Rw, adr);
+  }
+}
+
+void MacroAssembler::ldr(FloatRegister Rq, SIMD_RegVariant T, const Address& adr) {
+  if (!try_merge_ldst(Rq, adr, (1 << T), LOAD)) {
+    Assembler::ldr(Rq, T, adr);
+  }
+}
+
+void MacroAssembler::str(FloatRegister Rq, SIMD_RegVariant T, const Address& adr) {
+  if (!try_merge_ldst(Rq, adr, (1 << T), STORE)) {
+    Assembler::str(Rq, T, adr);
   }
 }
 
@@ -4018,14 +4048,21 @@ bool MacroAssembler::merge_alignment_check(Register base,
 
 // Checks whether current and previous loads/stores can be merged.
 // Returns true if it can be merged, else false.
-bool MacroAssembler::ldst_can_merge(Register rt,
-                                    const Address &adr,
-                                    size_t cur_size_in_bytes,
-                                    bool is_store) const {
+template <typename T>
+bool MacroAssembler::ldst_can_merge(T rt,
+                                    const Address& adr,
+                                    unsigned cur_size_in_bytes,
+                                    AccessDir dir) const {
+  constexpr bool is_simd = std::is_same<T, FloatRegister>::value;
+  static_assert(is_simd || std::is_same<T, Register>::value,
+                "unsupported register parameter type");
+  assert(can_form_ldst_pair(cur_size_in_bytes, is_simd),
+         "only supports 32/64-bit for integers and additionally 128-bit for FP/SIMD merging.");
+
   address prev = pc() - NativeInstruction::instruction_size;
   address last = code()->last_merge_candidate();
 
-  if (last == nullptr || !nativeInstruction_at(last)->is_Imm_LdSt()) {
+  if (last == nullptr || !nativeInstruction_at(last)->is_Imm_LdSt<T>()) {
     return false;
   }
 
@@ -4033,13 +4070,13 @@ bool MacroAssembler::ldst_can_merge(Register rt,
     return false;
   }
 
-  NativeLdSt* prev_ldst = NativeLdSt_at(prev);
+  NativeLdSt<T>* prev_ldst = NativeLdSt_at<T>(prev);
   size_t prev_size_in_bytes = prev_ldst->size_in_bytes();
 
-  assert(prev_size_in_bytes == 4 || prev_size_in_bytes == 8, "only supports 64/32bit merging.");
-  assert(cur_size_in_bytes == 4 || cur_size_in_bytes == 8, "only supports 64/32bit merging.");
+  assert(can_form_ldst_pair(prev_size_in_bytes, is_simd),
+         "only supports 32/64-bit for integers and additionally 128-bit for FP/SIMD merging.");
 
-  if (cur_size_in_bytes != prev_size_in_bytes || is_store != prev_ldst->is_store()) {
+  if (cur_size_in_bytes != prev_size_in_bytes || dir != prev_ldst->dir()) {
     return false;
   }
 
@@ -4060,14 +4097,18 @@ bool MacroAssembler::ldst_can_merge(Register rt,
     return false;
   }
 
-  // Following cases can not be merged:
-  // ldr x2, [x2, #8]
-  // ldr x3, [x2, #16]
-  // or:
+  // Following case can not be merged:
   // ldr x2, [x3, #8]
   // ldr x2, [x3, #16]
   // If t1 and t2 is the same in "ldp t1, t2, [xn, #imm]", we'll get SIGILL.
-  if (!is_store && (adr.base() == prev_ldst->target() || rt == prev_ldst->target())) {
+  T prev_rt = prev_ldst->target();
+  if (dir == LOAD && rt == prev_rt) {
+    return false;
+  }
+  // Following case can not be merged:
+  // ldr x2, [x2, #8]
+  // ldr x3, [x2, #16]
+  if (dir == LOAD && same_register(adr.base(), prev_rt)) {
     return false;
   }
 
@@ -4085,16 +4126,19 @@ bool MacroAssembler::ldst_can_merge(Register rt,
 }
 
 // Merge current load/store with previous load/store into ldp/stp.
-void MacroAssembler::merge_ldst(Register rt,
-                                const Address &adr,
-                                size_t cur_size_in_bytes,
-                                bool is_store) {
+template <typename T>
+void MacroAssembler::merge_ldst(T rt,
+                                const Address& adr,
+                                unsigned cur_size_in_bytes,
+                                AccessDir dir) {
+  static_assert(std::is_same<T, FloatRegister>::value ||
+                std::is_same<T, Register>::value, "unsupported register parameter type");
+  assert(ldst_can_merge(rt, adr, cur_size_in_bytes, dir) == true,
+                        "cur and prev must be able to be merged.");
 
-  assert(ldst_can_merge(rt, adr, cur_size_in_bytes, is_store) == true, "cur and prev must be able to be merged.");
-
-  Register rt_low, rt_high;
+  T rt_low, rt_high;
   address prev = pc() - NativeInstruction::instruction_size;
-  NativeLdSt* prev_ldst = NativeLdSt_at(prev);
+  NativeLdSt<T>* prev_ldst = NativeLdSt_at<T>(prev);
 
   int64_t offset;
 
@@ -4112,22 +4156,18 @@ void MacroAssembler::merge_ldst(Register rt,
   // Overwrite previous generated binary.
   code_section()->set_end(prev);
 
-  const size_t sz = prev_ldst->size_in_bytes();
-  assert(sz == 8 || sz == 4, "only supports 64/32bit merging.");
-  if (!is_store) {
-    BLOCK_COMMENT("merged ldr pair");
-    if (sz == 8) {
-      ldp(rt_low, rt_high, adr_p);
-    } else {
-      ldpw(rt_low, rt_high, adr_p);
-    }
-  } else {
-    BLOCK_COMMENT("merged str pair");
-    if (sz == 8) {
-      stp(rt_low, rt_high, adr_p);
-    } else {
-      stpw(rt_low, rt_high, adr_p);
-    }
+  const unsigned sz = (unsigned)prev_ldst->size_in_bytes();
+  SIMD_RegVariant variant = sz == 16 ? Q : elemBytes_to_regVariant(sz);
+  switch (dir) {
+    case LOAD:
+      BLOCK_COMMENT("merged ldr pair");
+      load_pair(rt_low, rt_high, adr_p, variant);
+      break;
+    case STORE:
+      BLOCK_COMMENT("merged str pair");
+      store_pair(rt_low, rt_high, adr_p, variant);
+      break;
+    default: ShouldNotReachHere();
   }
 }
 
@@ -5695,11 +5735,13 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
 }
 
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   ldr(offset, Address(value_klass, ValueKlass::adr_members_offset()));
   ldrw(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
 void MacroAssembler::payload_address(Register oop, Register data, Register value_klass) {
+  assert(Arguments::is_valhalla_enabled(), "Must be");
   // ((address) (void*) o) + vk->payload_offset();
   Register offset = (data == oop) ? rscratch1 : data;
   payload_offset(value_klass, offset);
@@ -5887,7 +5929,11 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
   code_section()->relocate(inst_mark(), dest.rspec());
   // 8143067: Ensure that the adrp can reach the dest from anywhere within
   // the code cache so that if it is relocated we know it will still reach
-  if (offset_high >= -(1<<20) && offset_low < (1<<20)) {
+  // For AOT code force far distance for external_word relocation.
+  const bool force_far = AOTCodeCache::is_on_for_dump() &&
+                         (dest.rspec().type() == relocInfo::external_word_type) &&
+                         !CodeCache::contains(dest.target());
+  if (!force_far && offset_high >= -(1<<20) && offset_low < (1<<20)) {
     _adrp(reg1, dest.target());
   } else {
     uint64_t target = (uint64_t)dest.target();
@@ -7079,7 +7125,14 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
 
   if (vk != nullptr) {
     // Called from C1, where the return type is statically known.
-    movptr(klass, (intptr_t)vk->get_ValueKlass());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump()) {
+      mov_metadata(klass, vk->constant_encoding());
+    } else
+#endif
+    {
+      movptr(klass, (intptr_t)vk->get_ValueKlass());
+    }
     jint lh = vk->layout_helper();
     assert(lh != Klass::_lh_neutral_value, "value class in return type must have been resolved");
     if (UseTLAB && !Klass::layout_helper_needs_slow_path(lh)) {
@@ -7118,7 +7171,22 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
     }
     // 3. Initialize its fields with a value class specific handler
     if (vk != nullptr) {
-      far_call(RuntimeAddress(vk->pack_handler())); // no need for call info as this will not safepoint.
+#if INCLUDE_CDS
+      if (AOTCodeCache::is_on_for_dump()) {
+        // in AOT compiled code call the pack handler indirectly via
+        // the klass. The handler's blob does not currently get saved
+        // to the archive. So, a direct call to the handler address
+        // cannot be injected into a caller that is saved and
+        // restored.
+        mov_metadata(tmp1, vk->constant_encoding());
+        ldr(tmp1, Address(tmp1, ValueKlass::adr_members_offset()));
+        ldr(tmp1, Address(tmp1, ValueKlass::pack_handler_offset()));
+        blr(tmp1);
+      } else
+#endif
+      {
+        far_call(RuntimeAddress(vk->pack_handler())); // no need for call info as this will not safepoint.
+      }
     } else {
       ldr(tmp1, Address(klass, ValueKlass::adr_members_offset()));
       ldr(tmp1, Address(tmp1, ValueKlass::pack_handler_offset()));
@@ -7152,6 +7220,7 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
 
 // Move a value between registers/stack slots and update the reg_state
 bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   assert(from->is_valid() && to->is_valid(), "source and destination must be valid");
   if (reg_state[to->value()] == reg_written) {
     return true; // Already written
@@ -7214,6 +7283,7 @@ bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState re
 // Calculate the extra stack space required for packing or unpacking value
 // args and adjust the stack pointer
 int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   int sp_inc = args_on_stack * VMRegImpl::stack_slot_size;
   sp_inc = align_up(sp_inc, StackAlignmentInBytes);
   assert(sp_inc > 0, "sanity");
@@ -7245,6 +7315,7 @@ int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
 bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
                                          VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
                                          RegState reg_state[]) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   assert(sig->at(sig_index)._bt == T_VOID, "should be at end delimiter");
   assert(from->is_valid(), "source must be valid");
   bool progress = false;
@@ -7391,6 +7462,7 @@ bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int
 bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
                                        VMRegPair* from, int from_count, int& from_index, VMReg to,
                                        RegState reg_state[], Register val_array) {
+  assert(ValueTypePassFieldsAsArgs, "Must be");
   assert(sig->at(sig_index)._bt == T_METADATA, "should be at delimiter");
   assert(to->is_valid(), "destination must be valid");
 

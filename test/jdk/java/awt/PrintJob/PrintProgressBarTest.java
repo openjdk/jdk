@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6328248
+ * @bug 6328248 8386573
  * @summary JProgessBar should be printed on paper with PrintJob
  * @key printer
  * @library /java/awt/regtesthelpers
@@ -31,29 +31,33 @@
  * @run main/manual PrintProgressBarTest
  */
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.SwingConstants;
 import java.awt.Graphics;
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
+import java.awt.ComponentOrientation;
+import java.awt.GridLayout;
 import java.awt.PrintJob;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Properties;
 
 public class PrintProgressBarTest {
 
+
     private static final String INSTRUCTIONS = """
-        This test shows a frame with a progressbar and a "Print" button.
+        This test shows a frame with 2 horizontal progressbars
+        with LTR and RTL orientation respectively and 1 vertical progressbar
+        and a "Print" button.
             1. Click the 'Print' button on the frame
             2. Select a printer/pdf-printer in the print dialog and proceed
-               If the progressbar is printed along with progress string
+               If the progressbars are printed along with progress string
                test PASSED else FAILED.
         """;
+
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
@@ -65,15 +69,35 @@ public class PrintProgressBarTest {
     }
 
     private static JFrame createTestUI() {
-        JPanel panel = new JPanel(new FlowLayout());
-        JProgressBar bar = new JProgressBar();
-        bar.setOpaque(true);
-        bar.setStringPainted(true);
-        bar.setValue(50);
-        panel.add("Center", bar);
+        JPanel mainPanel = new JPanel(new GridLayout(1, 2, 10, 10));
+        JPanel leftPanel = new JPanel(new GridLayout(2, 1, 10, 10));
+        JProgressBar ltrBar = new JProgressBar(JProgressBar.HORIZONTAL);
+        ltrBar.setOpaque(true);
+        ltrBar.setStringPainted(true);
+        ltrBar.setValue(50);
+        ltrBar.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+
+        JProgressBar rtlBar = new JProgressBar(JProgressBar.HORIZONTAL);
+        rtlBar.setOpaque(true);
+        rtlBar.setStringPainted(true);
+        rtlBar.setValue(50);
+        rtlBar.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+
+        leftPanel.add(ltrBar);
+        leftPanel.add(rtlBar);
+
+        JProgressBar vertBar = new JProgressBar(JProgressBar.VERTICAL);
+        vertBar.setOpaque(true);
+        vertBar.setStringPainted(true);
+        vertBar.setValue(50);
+        mainPanel.add(leftPanel);
+        mainPanel.add(vertBar);
 
         JFrame frame = new JFrame("Print Progressbar");
-        frame.setContentPane(panel);
+        frame.setSize(450, 300);
+        frame.setLayout(new BorderLayout(10, 10));
+        frame.add(mainPanel, BorderLayout.CENTER);
+
         JButton b = new JButton("Print");
         b.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ev) {
@@ -82,7 +106,8 @@ public class PrintProgressBarTest {
                 if (pj != null) {
                     try {
                         Graphics g = pj.getGraphics();
-                        panel.printAll(g);
+                        g.translate(20, 20);
+                        mainPanel.printAll(g);
                         g.dispose();
                         pj.end();
                     } catch (ClassCastException cce) {
@@ -94,8 +119,8 @@ public class PrintProgressBarTest {
             }
         });
 
-        frame.setSize(200, 150);
-        frame.add(b);
+        frame.add(b, BorderLayout.SOUTH);
+        ((JPanel)frame.getContentPane()).setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         return frame;
     }
 

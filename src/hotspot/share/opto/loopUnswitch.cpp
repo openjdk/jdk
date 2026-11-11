@@ -141,7 +141,7 @@ bool IdealLoopTree::policy_unswitching(PhaseIdealLoop* phase) const {
 // Check the absence of any If node that can be used for Loop Unswitching. In that case, no Loop Unswitching can be done.
 bool IdealLoopTree::no_unswitch_candidate() const {
   ResourceMark rm;
-  Node_List dont_care;
+  Node_List<IfNode> dont_care;
   return _phase->find_unswitch_candidates(this, dont_care) == nullptr;
 }
 
@@ -162,7 +162,7 @@ bool IdealLoopTree::no_unswitch_candidate() const {
 //
 // Note that for both (2) and (3a), if there are multiple flat array checks, then the candidate's FlatArrayCheckNode is
 // later updated in Loop Unswitching to perform a flat array check on all collected flat array checks.
-IfNode* PhaseIdealLoop::find_unswitch_candidates(const IdealLoopTree* loop, Node_List& flat_array_checks) const {
+IfNode* PhaseIdealLoop::find_unswitch_candidates(const IdealLoopTree* loop, Node_List<IfNode>& flat_array_checks) const {
   IfNode* unswitch_candidate = find_unswitch_candidate_from_idoms(loop);
   if (unswitch_candidate != nullptr && !unswitch_candidate->is_flat_array_check(&_igvn)) {
     // Case (1)
@@ -176,7 +176,7 @@ IfNode* PhaseIdealLoop::find_unswitch_candidates(const IdealLoopTree* loop, Node
     return unswitch_candidate;
   } else if (flat_array_checks.size() > 0) {
     // Case (3a): Pick first one found as candidate (there could be multiple).
-    return flat_array_checks[0]->as_If();
+    return flat_array_checks[0];
   }
 
   // Case (3b): No suitable unswitch candidate found.
@@ -212,13 +212,13 @@ IfNode* PhaseIdealLoop::find_unswitch_candidate_from_idoms(const IdealLoopTree* 
 }
 
 // Collect all flat array checks in the provided 'flat_array_checks' list.
-void PhaseIdealLoop::collect_flat_array_checks(const IdealLoopTree* loop, Node_List& flat_array_checks) const {
+void PhaseIdealLoop::collect_flat_array_checks(const IdealLoopTree* loop, Node_List<IfNode>& flat_array_checks) const {
   assert(flat_array_checks.size() == 0, "should be empty initially");
   for (uint i = 0; i < loop->_body.size(); i++) {
     Node* next = loop->_body.at(i);
     if (next->is_If() && next->as_If()->is_flat_array_check(&_igvn) && loop->is_invariant(next->in(1)) &&
         !loop->is_loop_exit(next)) {
-      flat_array_checks.push(next);
+      flat_array_checks.push(next->as_If());
     }
   }
 }
@@ -236,14 +236,14 @@ void PhaseIdealLoop::collect_flat_array_checks(const IdealLoopTree* loop, Node_L
 // - False-path-loop: We keep all flat array checks in this loop (i.e. a slow path loop).
 class UnswitchCandidate : public StackObj {
   PhaseIdealLoop* const _phase;
-  const Node_List& _old_new;
+  const Node_List<Node>& _old_new;
   Node* const _original_loop_entry;
   // If _candidate is a flat array check, this list contains all non-loop-exiting flat array checks in the loop body.
-  Node_List _flat_array_check_candidates;
+  Node_List<IfNode> _flat_array_check_candidates;
   IfNode* const _candidate;
 
  public:
-  UnswitchCandidate(IdealLoopTree* loop, const Node_List& old_new)
+  UnswitchCandidate(IdealLoopTree* loop, const Node_List<Node>& old_new)
       : _phase(loop->_phase),
         _old_new(old_new),
         _original_loop_entry(loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl)),
@@ -298,7 +298,7 @@ class UnswitchCandidate : public StackObj {
 
   void remove_flat_array_checks(IfProjNode* dominating_proj) const {
     for (uint i = 0; i < _flat_array_check_candidates.size(); i++) {
-      IfNode* flat_array_check = _flat_array_check_candidates.at(i)->as_If();
+      IfNode* flat_array_check = _flat_array_check_candidates.at(i);
       _phase->igvn().rehash_node_delayed(flat_array_check);
       _phase->dominated_by(dominating_proj, flat_array_check);
     }
@@ -483,11 +483,11 @@ class OriginalLoop : public StackObj {
   LoopNode* const _loop_head;
   LoopNode* const _outer_loop_head; // OuterStripMinedLoopNode if loop strip mined, else just the loop head.
   IdealLoopTree* const _loop;
-  Node_List& _old_new;
+  Node_List<Node>& _old_new;
   PhaseIdealLoop* const _phase;
 
  public:
-  OriginalLoop(IdealLoopTree* loop, Node_List& old_new)
+  OriginalLoop(IdealLoopTree* loop, Node_List<Node>& old_new)
       : _loop_head(loop->_head->as_Loop()),
         _outer_loop_head(loop->_head->as_Loop()->skip_strip_mined()),
         _loop(loop),
@@ -566,7 +566,7 @@ class OriginalLoop : public StackObj {
 };
 
 // See comments below file header for more information about Loop Unswitching.
-void PhaseIdealLoop::do_unswitching(IdealLoopTree* loop, Node_List& old_new) {
+void PhaseIdealLoop::do_unswitching(IdealLoopTree* loop, Node_List<Node>& old_new) {
   assert(LoopUnswitching, "LoopUnswitching must be enabled");
 
   LoopNode* original_head = loop->_head->as_Loop();
@@ -599,7 +599,7 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree* loop, Node_List& old_new) {
   C->set_major_progress();
 }
 
-void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) {
+void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List<Node>& old_new) {
 #ifndef PRODUCT
   if (TraceLoopOpts || TraceLoopMultiversioning) {
     tty->print("Multiversion ");
@@ -837,7 +837,7 @@ void PhaseIdealLoop::revert_to_normal_loop(const LoopNode* loop_head) {
 }
 
 // Hoist invariant CheckCastPPNodes out of each unswitched loop version to the appropriate loop selector If projection.
-void PhaseIdealLoop::hoist_invariant_check_casts(const IdealLoopTree* loop, const Node_List& old_new,
+void PhaseIdealLoop::hoist_invariant_check_casts(const IdealLoopTree* loop, const Node_List<Node>& old_new,
                                                  const UnswitchCandidate& unswitch_candidate,
                                                  const IfNode* loop_selector) {
   ResourceMark rm;
@@ -870,7 +870,7 @@ void PhaseIdealLoop::hoist_invariant_check_casts(const IdealLoopTree* loop, cons
 }
 
 // Enable more optimizations possibilities in the next IGVN round.
-void PhaseIdealLoop::add_unswitched_loop_version_bodies_to_igvn(IdealLoopTree* loop, const Node_List& old_new) {
+void PhaseIdealLoop::add_unswitched_loop_version_bodies_to_igvn(IdealLoopTree* loop, const Node_List<Node>& old_new) const {
   loop->record_for_igvn();
   for (int i = loop->_body.size() - 1; i >= 0; i--) {
     Node* n = loop->_body[i];

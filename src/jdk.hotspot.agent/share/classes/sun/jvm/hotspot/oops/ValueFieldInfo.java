@@ -27,14 +27,13 @@ package sun.jvm.hotspot.oops;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObject;
-import sun.jvm.hotspot.types.Type;
-import sun.jvm.hotspot.types.TypeDataBase;
-import sun.jvm.hotspot.types.WrongTypeException;
-
+import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.types.Field;
 
 public class ValueFieldInfo extends VMObject {
 
     private static MetadataField klassField;
+    private static Field optionalFlatLayoutField;
 
     static {
         VM.registerVMInitializedObserver((_, _) -> initialize(VM.getVM().getTypeDataBase()));
@@ -44,6 +43,7 @@ public class ValueFieldInfo extends VMObject {
         Type type = db.lookupType("ValueFieldInfo");
 
         klassField = new MetadataField(type.getAddressField("_klass"), 0);
+        optionalFlatLayoutField = type.getField("_optional_flat_layout");
     }
 
     public ValueFieldInfo(Address addr) {
@@ -54,4 +54,7 @@ public class ValueFieldInfo extends VMObject {
         return (ValueKlass)klassField.getValue(this);
     }
 
+    public OptionalFlatLayout getOptionalFlatLayout() {
+        return new OptionalFlatLayout(addr.addOffsetTo(optionalFlatLayoutField.getOffset()));
+    }
 }

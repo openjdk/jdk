@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,38 +95,46 @@ public class PSStreamPrintService extends StreamPrintService
         super(out);
     }
 
+    @Override
     public String getOutputFormat() {
         return PSStreamPrinterFactory.psMimeType;
     }
 
 
+    @Override
     public DocFlavor[] getSupportedDocFlavors() {
         return PSStreamPrinterFactory.getFlavors();
     }
 
+    @Override
     public DocPrintJob createPrintJob() {
         return new PSStreamPrintJob(this);
     }
 
+    @Override
     public boolean usesClass(Class<?> c) {
         return (c == sun.print.PSPrinterJob.class);
     }
 
+    @Override
     public String getName() {
         return "Postscript output";
     }
 
+    @Override
     public void addPrintServiceAttributeListener(
                          PrintServiceAttributeListener listener) {
         return;
     }
 
+    @Override
     public void removePrintServiceAttributeListener(
                             PrintServiceAttributeListener listener) {
         return;
     }
 
 
+    @Override
     public <T extends PrintServiceAttribute>
         T getAttribute(Class<T> category)
     {
@@ -144,6 +152,7 @@ public class PSStreamPrintService extends StreamPrintService
             return null;
         }
     }
+    @Override
     public PrintServiceAttributeSet getAttributes() {
         PrintServiceAttributeSet attrs = new HashPrintServiceAttributeSet();
         attrs.add(ColorSupported.SUPPORTED);
@@ -151,6 +160,7 @@ public class PSStreamPrintService extends StreamPrintService
         return AttributeSetUtilities.unmodifiableView(attrs);
     }
 
+    @Override
     public boolean isDocFlavorSupported(DocFlavor flavor) {
         DocFlavor [] flavors = getSupportedDocFlavors();
         for (int f=0; f<flavors.length; f++) {
@@ -162,12 +172,14 @@ public class PSStreamPrintService extends StreamPrintService
     }
 
 
+    @Override
     public Class<?>[] getSupportedAttributeCategories() {
         Class<?>[] cats = new Class<?>[suppAttrCats.length];
         System.arraycopy(suppAttrCats, 0, cats, 0, cats.length);
         return cats;
     }
 
+    @Override
     public boolean
         isAttributeCategorySupported(Class<? extends Attribute> category)
     {
@@ -188,6 +200,7 @@ public class PSStreamPrintService extends StreamPrintService
     }
 
 
+    @Override
     public Object
         getDefaultAttributeValue(Class<? extends Attribute> category)
     {
@@ -249,6 +262,7 @@ public class PSStreamPrintService extends StreamPrintService
     }
 
 
+    @Override
     public Object
         getSupportedAttributeValues(Class<? extends Attribute> category,
                                     DocFlavor flavor,
@@ -401,6 +415,7 @@ public class PSStreamPrintService extends StreamPrintService
         return false;
     }
 
+    @Override
     public boolean isAttributeValueSupported(Attribute attr,
                                              DocFlavor flavor,
                                              AttributeSet attributes) {
@@ -462,6 +477,7 @@ public class PSStreamPrintService extends StreamPrintService
         return true;
     }
 
+    @Override
     public AttributeSet getUnsupportedAttributes(DocFlavor flavor,
                                                  AttributeSet attributes) {
 
@@ -496,10 +512,12 @@ public class PSStreamPrintService extends StreamPrintService
         }
     }
 
+    @Override
     public ServiceUIFactory getServiceUIFactory() {
         return null;
     }
 
+    @Override
     public String toString() {
         return "PSStreamPrintService: " + getName();
     }
@@ -507,12 +525,14 @@ public class PSStreamPrintService extends StreamPrintService
     /* Stream services have an output stream which cannot be shared,
      * so two services are equal only if they are the same object.
      */
+    @Override
     public boolean equals(Object obj) {
         return (obj == this ||
                  (obj instanceof PSStreamPrintService &&
                  ((PSStreamPrintService)obj).getName().equals(getName())));
     }
 
+   @Override
    public int hashCode() {
         return this.getClass().hashCode()+getName().hashCode();
     }

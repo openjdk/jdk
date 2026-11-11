@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zAdaptiveHeap.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -41,6 +42,14 @@
 
 static const ZStatSubPhase ZSubPhaseConcurrentReferencesProcess("Concurrent References Process", ZGenerationId::old);
 static const ZStatSubPhase ZSubPhaseConcurrentReferencesEnqueue("Concurrent References Enqueue", ZGenerationId::old);
+
+class ZLRUMaxHeapPolicy : public AbstractLRUReferencePolicy {
+public:
+  // Capture state (of-the-VM) information needed to evaluate the policy
+  void setup() final {
+    set_max_interval((jlong)ZAdaptiveHeap::soft_ref_delay());
+  }
+};
 
 static ReferenceType reference_type(zaddress reference) {
   return InstanceKlass::cast(to_oop(reference)->klass())->reference_type();
@@ -122,7 +131,7 @@ ZReferenceProcessor::ZReferenceProcessor(ZWorkers* workers)
 
 void ZReferenceProcessor::set_soft_reference_policy(bool clear_all_soft_references) {
   static AlwaysClearPolicy always_clear_policy;
-  static LRUMaxHeapPolicy lru_max_heap_policy;
+  static ZLRUMaxHeapPolicy lru_max_heap_policy;
 
   _uses_clear_all_soft_reference_policy = clear_all_soft_references;
 
