@@ -260,11 +260,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (_cpu == CPU_ARM &&
-      model_is_in({ CPU_MODEL_ARM_NEOVERSE_N1, CPU_MODEL_ARM_NEOVERSE_V1,
-                    CPU_MODEL_ARM_NEOVERSE_N2, CPU_MODEL_ARM_NEOVERSE_V2,
-                    CPU_MODEL_ARM_NEOVERSE_N3, CPU_MODEL_ARM_NEOVERSE_V3,
-                    CPU_MODEL_ARM_NEOVERSE_V3AE })) {
+  if (is_neoverse()) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
