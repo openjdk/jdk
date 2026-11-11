@@ -427,7 +427,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 bool ArrayCopyNode::can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const TypeAryPtr* dest_ary) const {
   assert(src_ary != nullptr && dest_ary != nullptr, "must be array pointers");
 
-  if (src_ary->maybe_incompatible_arraycopy_layout(dest_ary)) {
+  if (!src_ary->has_compatible_arraycopy_layout(dest_ary)) {
     // We don't know whether src and dest have the same layout.
     return false;
   }
@@ -441,19 +441,14 @@ bool ArrayCopyNode::can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const
   assert(dest_ary->is_flat(), "same flatness");
   assert(src_ary->is_null_free() == dest_ary->is_null_free(), "same nullness");
   assert(src_ary->is_atomic() == dest_ary->is_atomic(), "same atomicity");
+  assert(is_reference_type(dest_ary->elem()->array_element_basic_type(), true), "must be for flat arrays");
 
-  BasicType dest_elem_bt = dest_ary->elem()->array_element_basic_type();
-  if (is_reference_type(dest_elem_bt, true)) {
-    dest_elem_bt = T_OBJECT;
-  }
-
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bool needs_barriers = bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), dest_elem_bt, false, false,
-                                                            BarrierSetC2::Optimization);
-
-  if (src_ary->elem()->value_klass()->contains_oops() && needs_barriers) {
-    // The flat array could contain oops which require barriers which we cannot handle.
-    return false;
+  if (src_ary->elem()->value_klass()->contains_oops()) {
+    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+    bool needs_barriers = bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), T_OBJECT, false, false,
+                                                              BarrierSetC2::Optimization);
+    // When a flat array contains oops, we require GC barriers which we cannot handle
+    return !needs_barriers;
   }
   return true;
 }
