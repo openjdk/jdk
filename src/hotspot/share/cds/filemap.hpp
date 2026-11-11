@@ -219,7 +219,7 @@ public:
   void set_base_archive_name_size(unsigned int s)           { _generic_header._base_archive_name_size = s;   }
 
   bool is_static()                         const { return magic() == CDS_ARCHIVE_MAGIC; }
-  bool is_training()                       const { return magic() == AOT_CONFIGURATION_MAGIC; }
+  bool is_aot_configuration()              const { return magic() == AOT_CONFIGURATION_MAGIC; }
   size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }
   address narrow_oop_base()                const { return _narrow_oop_base; }

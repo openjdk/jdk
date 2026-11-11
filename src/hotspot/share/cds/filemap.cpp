@@ -2101,7 +2101,7 @@ bool FileMapHeader::validate() {
     return false;
   }
 
-  if (is_static() || is_training()) {
+  if (is_static() || is_aot_configuration()) {
     const char* err = nullptr;
     if (Arguments::is_valhalla_enabled()) {
       if (!_has_valhalla_patched_classes) {
