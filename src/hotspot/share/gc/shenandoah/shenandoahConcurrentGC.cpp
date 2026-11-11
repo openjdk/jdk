@@ -1343,9 +1343,7 @@ void ShenandoahConcurrentGC::op_reset_after_collect() {
     if (!_do_old_gc_bootstrap && !heap->is_concurrent_old_mark_in_progress()) {
       heap->young_generation()->reset_mark_bitmap<false>();
     }
-    if (heap->mode()->is_generational()) {
-      heap->old_generation()->card_scan()->mark_read_table_as_clean();
-    }
+    heap->old_generation()->card_scan()->mark_read_table_as_clean();
   } else {
     _generation->reset_mark_bitmap<false>();
   }
