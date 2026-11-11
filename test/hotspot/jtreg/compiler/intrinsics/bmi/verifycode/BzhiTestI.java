@@ -83,5 +83,6 @@ public class BzhiTestI extends BmiIntrinsicBase.BmiTestCase {
         BmiIntrinsicBase.verifyTestCase(BzhiTestI::new, TestBzhiI.BzhiIExpr.class.getDeclaredMethods());
         BmiIntrinsicBase.verifyTestCase(BzhiTestI::new, TestBzhiI.BzhiICommutativeExpr.class.getDeclaredMethods());
         BmiIntrinsicBase.verifyTestCase(BzhiTestI::new, TestBzhiI.BzhiIShiftedSourceExpr.class.getDeclaredMethods());
+        BmiIntrinsicBase.verifyTestCase(BzhiTestI::new, TestBzhiI.BzhiISameValueExpr.class.getDeclaredMethods());
     }
 }

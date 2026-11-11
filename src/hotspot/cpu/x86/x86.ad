@@ -12773,22 +12773,44 @@ instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src,  immI_Pow2M1 mask, rR
   ins_pipe(ialu_reg_reg);
 %}
 
-// BZHI keeps all of src for counts >= 32, but Java int shifts only use the low 5 bits of the count
-instruct bzhiI_rReg_rReg(rRegI dst, rRegI src, immI_1 one, immI_M1 minus_one, rFlagsReg cr)
+instruct andI_rReg_imm31(rRegI dst, rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_bmi2());
-  match(Set dst (AndI src (AddI (LShiftI one dst) minus_one)));
-  effect(KILL cr);
-  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+  effect(USE_DEF dst, KILL cr);
 
-  ins_cost(200);
-  format %{ "andl    $dst, 31\n\t"
-            "bzhil   $dst, $src, $dst\t# low bits mask" %}
+  format %{ "andl    $dst, 31" %}
   ins_encode %{
     __ andl($dst$$Register, 31);
-    __ bzhil($dst$$Register, $src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Only used after andI_rReg_imm31 on the count, so the count is below 32 and CF is cleared
+instruct bzhiI_rReg_rReg_rReg(rRegI dst, rRegI src, rRegI count, rFlagsReg cr)
+%{
+  effect(DEF dst, USE src, USE count, KILL cr);
+  flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
+
+  format %{ "bzhil   $dst, $src, $count\t# low bits mask" %}
+  ins_encode %{
+    __ bzhil($dst$$Register, $src$$Register, $count$$Register);
   %}
   ins_pipe(ialu_reg_reg);
+%}
+
+// BZHI keeps all of src for counts >= 32, but Java int shifts only use the low 5 bits of the count.
+// The mask is a separate node, so the register allocator copies the count first when src or a
+// later use still needs it.
+instruct bzhiI_rReg_rReg(rRegI dst, rRegI src, rRegI count, immI_1 one, immI_M1 minus_one, rFlagsReg cr)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (AndI src (AddI (LShiftI one count) minus_one)));
+  effect(KILL cr);
+
+  ins_cost(200);
+  expand %{
+    andI_rReg_imm31(count, cr);
+    bzhiI_rReg_rReg_rReg(dst, src, count, cr);
+  %}
 %}
 
 // And Register with Immediate

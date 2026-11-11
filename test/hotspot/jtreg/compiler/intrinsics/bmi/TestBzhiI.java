@@ -56,6 +56,9 @@ public class TestBzhiI {
         BMITestRunner.runTests(BzhiIShiftedSourceExpr.class, args,
                                "-XX:+IgnoreUnrecognizedVMOptions",
                                "-XX:+UseBMI2Instructions");
+        BMITestRunner.runTests(BzhiISameValueExpr.class, args,
+                               "-XX:+IgnoreUnrecognizedVMOptions",
+                               "-XX:+UseBMI2Instructions");
     }
 
     public static class BzhiIExpr extends Expr.BMIBinaryIntExpr {
@@ -113,6 +116,18 @@ public class TestBzhiI {
 
         public int intExpr(Expr.MemI src, Expr.MemI bits) {
             return ((src.value << 3) + bits.value) & ((1 << bits.value) - 1);
+        }
+    }
+
+    // the source is also the count, so both can end up in one register
+    public static class BzhiISameValueExpr extends Expr.BMIUnaryIntExpr {
+
+        public int intExpr(int src) {
+            return src & ((1 << src) - 1);
+        }
+
+        public int intExpr(Expr.MemI src) {
+            return src.value & ((1 << src.value) - 1);
         }
     }
 }
