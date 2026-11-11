@@ -37,7 +37,7 @@
  * @bug 8067144
  * @summary -Xlog:deoptimization=debug tries to print realloc'ed objects even when there are none
  *
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
  *                   -XX:+UnlockDiagnosticVMOptions -XX:-DisplayVMOutput
