@@ -183,6 +183,7 @@ private:
 
   ShenandoahHeap* _heap;
   ShenandoahCardTable* _card_table;
+  bool _is_read_table_clean;
   size_t _card_shift;
   size_t _total_card_count;
   HeapWord* _whole_heap_base;   // Points to first HeapWord of data contained within heap memory
