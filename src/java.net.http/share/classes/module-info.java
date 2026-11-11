@@ -34,7 +34,7 @@
  * Unless otherwise specified below, all values can be set in the {@code conf/net.properties}
  * file. In all cases, values can be specified as system properties on the command line,
  * in which case, any value in {@code conf/net.properties} is overridden. No guarantee is
- * provided that property values can be set programatically with {@code System.setProperty()}.
+ * provided that property values can be set programmatically with {@code System.setProperty()}.
  * Other implementations of this API may choose not to support these properties.
  * <ul>
  * <li><p><b>{@systemProperty jdk.httpclient.allowRestrictedHeaders}</b> (default: see below)<br>

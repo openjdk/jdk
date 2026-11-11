@@ -218,11 +218,11 @@ public:
   bool is_loaded()    const { return _loaded; }
   void set_loaded()         { _loaded = true; }
 
-  bool is_verified()  const;
+  bool is_verified()  const NOT_CDS_RETURN_(false);
   void set_verified();
 
   // Use atomic access to _not_entrant field.
-  bool not_entrant() const;
+  bool not_entrant() const NOT_CDS_RETURN_(false);
   void set_not_entrant();
   bool try_set_not_entrant();
 
