@@ -1451,15 +1451,15 @@ jint G1CollectedHeap::initialize() {
   Universe::check_alignment(reserved_byte_size, G1HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(reserved_byte_size, HeapAlignment, "g1 heap");
 
-  // Ensure that the maximum region count (based on the max region index) we allow can fit the reservation.
-  const size_t max_region_count = (1u << (sizeof(RegionIdx_t) * BitsPerByte - 1));
+  // Ensure that the maximum number of regions (based on the max region index) we allow can fit the reservation.
+  const size_t max_num_regions_by_index = (1u << (sizeof(RegionIdx_t) * BitsPerByte - 1));
   size_t num_regions_for_reservation = reserved_byte_size / G1HeapRegion::GrainBytes;
 
-  if (num_regions_for_reservation > max_region_count) {
+  if (num_regions_for_reservation > max_num_regions_by_index) {
     vm_exit_during_initialization(err_msg("Requested heap size (%zu%s) would exceed maximum region count %zu at region size %zu. Decrease maximum heap size.",
                                           byte_size_in_proper_unit(reserved_byte_size),
                                           proper_unit_for_byte_size(reserved_byte_size),
-                                          max_region_count,
+                                          max_num_regions_by_index,
                                           G1HeapRegion::GrainBytes));
   }
 
