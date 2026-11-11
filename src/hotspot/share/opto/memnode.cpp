@@ -5239,7 +5239,8 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool 
   }
   Node* adr = st->in(MemNode::Address);
   intptr_t offset;
-  AllocateNode* alloc = AllocateNode::Ideal_allocation(adr, phase, offset);
+  Node* base = AddPNode::Ideal_base_and_offset(adr, phase, offset);
+  AllocateNode* alloc = AllocateNode::Ideal_allocation(base);
   if (alloc == nullptr)
     return FAIL;                // inscrutable address
   if (alloc != allocation())
@@ -5304,25 +5305,19 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool 
               int other_alias_idx = phase->C->get_alias_index(other_t_adr);
               if (other_alias_idx == alias_idx) {
                 // A load from the same memory slice as the store right
-                // after the InitializeNode. We check the control of the
-                // object/array that is loaded from. If it's the same as
-                // the store control then we cannot capture the store.
+                // after the InitializeNode. We try to prove that pointers
+                // are independent. If not, we don't capture.
                 assert(!n->is_Store(), "2 stores to same slice on same control?");
-                Node* base = other_adr;
-                if (base->is_Phi()) {
-                  // In rare case, base may be a PhiNode and it may read
-                  // the same memory slice between InitializeNode and store.
+                intptr_t _other_offset;
+                Node* other_base = AddPNode::Ideal_base_and_offset(other_adr, phase, _other_offset);
+                if (other_base == nullptr) {
                   failed = true;
                   break;
                 }
-                assert(base->is_AddP(), "should be addp but is %s", base->Name());
-                base = base->in(AddPNode::Base);
-                if (base != nullptr) {
-                  base = base->uncast();
-                  if (base->is_Proj() && base->in(0) == alloc) {
-                    failed = true;
-                    break;
-                  }
+                AllocateNode* other_alloc = AllocateNode::Ideal_allocation(other_base);
+                if (!MemNode::detect_ptr_independence(base, alloc, other_base, other_alloc, phase)) {
+                  failed = true;
+                  break;
                 }
               }
             }

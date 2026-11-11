@@ -4049,6 +4049,7 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
         case relocInfo::poll_type:             return "poll";
         case relocInfo::poll_return_type:      return "poll_return";
         case relocInfo::trampoline_stub_type:  return "trampoline_stub";
+        case relocInfo::address_stub_type:     return "address_stub";
         case relocInfo::post_call_nop_type:    return "post_call_nop";
         case relocInfo::barrier_type: {
           barrier_Relocation* const reloc = iter.barrier_reloc();
