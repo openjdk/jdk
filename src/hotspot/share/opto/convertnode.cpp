@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -804,6 +804,42 @@ Node* ConvI2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       case Op_AddI:  return new AddLNode(cx, cy);
       case Op_SubI:  return new SubLNode(cx, cy);
       default:       ShouldNotReachHere();
+    }
+  }
+
+  // Convert ConvI2L(AndI(ConvL2I(x), mask)) to AndL(x, mask) if the mask is
+  // non-negative. The result of the AND is then in [0, mask] and hence
+  // non-negative, so ConvI2L only zero-extends it. Masking the sign extension
+  // of x with the (also zero-extended) mask has the same effect, so both
+  // conversions and the AndI become redundant:
+  //   (long)((int)x & mask) == x & mask   if mask >= 0
+  // Masks with bit 31 set must be left alone: the AND result can then be
+  // negative, and ConvI2L sign-extends it, which AndL does not.
+  if (z->Opcode() == Op_AndI) {
+    // Don't do this for nodes which have more than one user: the AndI would
+    // stay in the graph and we'd end up computing the mask twice. This matters
+    // in particular for array indexes, where the AndI is still needed by the
+    // range check while the ConvI2L is folded into the addressing mode for
+    // free.
+    if (z->outcnt() > 1) {
+      return nullptr;
+    }
+
+    Node* convl2i = nullptr;
+    Node* mask_node = nullptr;
+    if (z->in(1)->Opcode() == Op_ConvL2I) {
+      convl2i = z->in(1);
+      mask_node = z->in(2);
+    } else if (z->in(2)->Opcode() == Op_ConvL2I) {
+      convl2i = z->in(2);
+      mask_node = z->in(1);
+    }
+    const TypeInt* tmask = (mask_node != nullptr) ? phase->type(mask_node)->isa_int() : nullptr;
+    if (tmask != nullptr && tmask->is_con() && tmask->get_con() >= 0) {
+      Node* x = convl2i->in(1);
+      if (phase->type(x) != Type::TOP) {
+        return new AndLNode(x, phase->longcon(tmask->get_con()));
+      }
     }
   }
 #endif //_LP64

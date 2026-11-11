@@ -1326,6 +1326,10 @@ bool Node::has_special_unique_user() const {
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
+  } else if (op == Op_AndI) {
+    // Condition for ConvI2L(AndI(ConvL2I(x), mask)) ==> AndL(x, mask), see
+    // ConvI2LNode::Ideal: the rewrite requires the AndI to have a single user
+    return n->Opcode() == Op_ConvI2L && n->in(1) == this;
   } else if (op == Op_SubI || op == Op_SubL) {
     // Condition for subI(x,subI(y,z)) ==> subI(addI(x,z),y)
     return n->Opcode() == op && n->in(2) == this;
