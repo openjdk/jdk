@@ -29,10 +29,10 @@
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *      -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
- *      compiler.c2.Test8007294
+ *      ${test.main.class}
  */
 
-package compiler.c2;
+package compiler.memoryinitialization.store_capture;
 
 public class Test8007294 {
 
