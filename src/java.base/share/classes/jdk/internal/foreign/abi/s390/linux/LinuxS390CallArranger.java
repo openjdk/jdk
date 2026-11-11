@@ -31,7 +31,7 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.*;
+import java.lang.foreign.ValueLayout;
 
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.ABIDescriptor;
@@ -254,7 +254,7 @@ public class LinuxS390CallArranger {
                     // But we only do it for unsigned values here since this saves
                     // on argument slots for the downcall stub. Signed values will be
                     // sign-extended when being moved into the destination register.
-                    if (layout instanceof  ValueLayout.OfIntegral integral
+                    if (layout instanceof ValueLayout.OfIntegral integral
                             && !integral.isSigned() && carrier != long.class) {
                         bindings.cast(carrier, long.class, false)
                                 .vmStore(storage, long.class);
