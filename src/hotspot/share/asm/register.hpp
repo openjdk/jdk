@@ -265,24 +265,42 @@ inline constexpr bool different_registers(R first_register, Rx... more_registers
   return different_registers(AbstractRegSet<R>(first_register), more_registers...);
 }
 
+#ifndef ASSERT
+#define assert_different_registers(...)
+#else
+
+bool fill_assert_different_registers_arguments(const char* args_string, size_t args_count, const char* args[], int arg_lengths[]);
+
 template<typename R, typename... Rx>
-inline void assert_different_registers_impl(const char* file, int line, R first_register, Rx... more_registers) {
-#ifdef ASSERT
+inline void assert_different_registers_impl(const char* file, int line, const char* args_string, R first_register, Rx... more_registers) {
   if (!different_registers(first_register, more_registers...)) {
     const R regs[] = { first_register, more_registers... };
+
+    // Extract information about the args to get better assert messages.
+    const char* args[ARRAY_SIZE(regs)];
+    int arg_lengths[ARRAY_SIZE(regs)];
+    const bool args_ok = fill_assert_different_registers_arguments(args_string, ARRAY_SIZE(regs), args, arg_lengths);
+
     // Find a duplicate entry.
     for (size_t i = 0; i < ARRAY_SIZE(regs) - 1; ++i) {
       for (size_t j = i + 1; j < ARRAY_SIZE(regs); ++j) {
         if (regs[i]->is_valid()) {
-          assert_with_file_and_line(regs[i] != regs[j], file, line, "regs[%zu] and regs[%zu] are both: %s",
-              i, j, regs[i]->name());
+          if (args_ok) {
+            // Argument parsing succeeded, print more information.
+            assert_with_file_and_line(regs[i] != regs[j], file, line, "%.*s and %.*s are both: %s in assert_different_registers(%s)",
+                arg_lengths[i], args[i], arg_lengths[j], args[j], regs[i]->name(), args_string);
+          } else {
+            assert_with_file_and_line(regs[i] != regs[j], file, line, "regs[%zu] and regs[%zu] are both: %s in assert_different_registers(%s)",
+                i, j, regs[i]->name(), args_string);
+          }
         }
       }
     }
   }
-#endif
 }
 
-#define assert_different_registers(...) assert_different_registers_impl(__FILE__, __LINE__, __VA_ARGS__)
+#define assert_different_registers(...) assert_different_registers_impl(__FILE__, __LINE__, #__VA_ARGS__, __VA_ARGS__)
+
+#endif // ASSERT
 
 #endif // SHARE_ASM_REGISTER_HPP
