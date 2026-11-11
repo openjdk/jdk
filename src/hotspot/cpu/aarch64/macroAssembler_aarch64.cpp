@@ -6165,8 +6165,9 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
          "start offset must be 8-byte-aligned or be the klass offset");
   assert(base_offset != start_offset, "must include the length field");
   extra_length = extra_length / elem_size; // We count in elements, not bytes.
+  const int min_stub_input_bytes = 96; // 8 compared inline + 8 alignment + 80-byte loop iteration
   int stubThreshold = (VM_Version::is_neoverse() || VM_Version::is_apple())
-                      ? 96 >> log_elem_size
+                      ? min_stub_input_bytes >> log_elem_size
                       : 3 * 64 + (UseSIMDForArrayEquals ? 0 : 16);
 
   assert(elem_size == 1 || elem_size == 2, "must be char or byte");
