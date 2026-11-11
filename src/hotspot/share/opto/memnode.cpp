@@ -4332,7 +4332,7 @@ const Type* SCMemProjNode::Value(PhaseGVN* phase) const
 
 //=============================================================================
 //----------------------------------LoadStoreNode------------------------------
-LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const Type* rt, uint required )
+LoadStoreNode::LoadStoreNode(Node* c, Node* mem, Node* adr, Node* val, const Type* rt, uint required)
   : Node(required),
     _type(rt),
     _barrier_data(0)
@@ -4444,7 +4444,7 @@ void LoadStoreNode::dump_spec(outputStream* st) const {
 
 //=============================================================================
 //----------------------------------LoadStoreConditionalNode--------------------
-LoadStoreConditionalNode::LoadStoreConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex ) : LoadStoreNode(c, mem, adr, val, TypeInt::BOOL, 5) {
+LoadStoreConditionalNode::LoadStoreConditionalNode(Node* c, Node* mem, Node* adr, Node* val, Node* ex) : LoadStoreNode(c, mem, adr, val, TypeInt::BOOL, 5) {
   init_req(ExpectedIn, ex );
 }
 
