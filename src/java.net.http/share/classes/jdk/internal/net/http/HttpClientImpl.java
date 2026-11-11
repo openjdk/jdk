@@ -1135,8 +1135,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             Executor executor = exchangeExecutor == null
                     ? this.delegatingExecutor : exchangeExecutor;
 
-            MultiExchange<T> mex = new MultiExchange<>(userRequest,
-                                                            requestImpl,
+            MultiExchange<T> mex = new MultiExchange<>(requestImpl,
                                                             this,
                                                             responseHandler,
                                                             pushPromiseHandler);

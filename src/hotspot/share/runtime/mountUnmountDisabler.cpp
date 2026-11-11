@@ -27,10 +27,12 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/spinYield.hpp"
 
 volatile int MountUnmountDisabler::_global_vthread_transition_disable_count = 0;
 volatile int MountUnmountDisabler::_active_disablers = 0;
@@ -93,7 +95,7 @@ class JVMTIEndTransition : public StackObj {
       if (!_is_mount && _current->is_carrier_thread_suspended()) {
         MonitorLocker ml(VThreadTransition_lock);
         while (_current->is_carrier_thread_suspended()) {
-          ml.wait(200);
+          ml.wait();
         }
       }
 
@@ -152,7 +154,7 @@ void MountUnmountDisabler::start_transition(JavaThread* current, oop vthread, bo
       // Block while transitions are disabled
       MonitorLocker ml(VThreadTransition_lock);
       while (is_start_transition_disabled(current, vth())) {
-        ml.wait(200);
+        ml.wait();
       }
     }
 
@@ -273,19 +275,25 @@ MountUnmountDisabler::~MountUnmountDisabler() {
 // disable transitions for one virtual thread
 void
 MountUnmountDisabler::disable_transition_for_one() {
-  MonitorLocker ml(VThreadTransition_lock);
-  while (exclusive_operation_ongoing()) {
-    ml.wait(10);
-  }
+  JavaThread* current = JavaThread::current();
 
-  inc_active_disablers();
-  java_lang_Thread::inc_vthread_transition_disable_count(_vthread());
+  {
+    MonitorLocker ml(VThreadTransition_lock);
+    while (exclusive_operation_ongoing()) {
+      ml.wait();
+    }
+    inc_active_disablers();
+    java_lang_Thread::inc_vthread_transition_disable_count(_vthread());
+  }
 
   // Prevent load of transition flag from floating up.
   OrderAccess::storeload();
 
+  SpinYield spy;
   while (java_lang_Thread::is_in_vthread_transition(_vthread())) {
-    ml.wait(10); // wait while the virtual thread is in transition
+    // Wait while the virtual thread is in transition
+    ThreadBlockInVM tbivm(current);
+    spy.wait();
   }
 
   // Start of the critical section. If the target is unmounted, we need an acquire
@@ -295,37 +303,40 @@ MountUnmountDisabler::disable_transition_for_one() {
   // carrierThread to float up.
   // This pairs with the release barrier in end_transition().
   OrderAccess::acquire();
-  JVMTI_ONLY(JavaThread::current()->set_is_vthread_transition_disabler(true);)
+  JVMTI_ONLY(current->set_is_vthread_transition_disabler(true);)
 }
 
 // disable transitions for all virtual threads
 void
 MountUnmountDisabler::disable_transition_for_all() {
-  DEBUG_ONLY(JavaThread* thread = JavaThread::current();)
-  DEBUG_ONLY(thread->set_is_disabler_at_start(true);)
+  JavaThread* current = JavaThread::current();
+  DEBUG_ONLY(current->set_is_disabler_at_start(true);)
 
-  MonitorLocker ml(VThreadTransition_lock);
-  while (exclusive_operation_ongoing()) {
-    ml.wait(10);
-  }
-  if (_is_exclusive) {
-    set_exclusive_operation_ongoing(true);
-    while (active_disablers() > 0) {
-      ml.wait(10);
+  {
+    MonitorLocker ml(VThreadTransition_lock);
+    while (exclusive_operation_ongoing()) {
+      ml.wait();
     }
+    if (_is_exclusive) {
+      set_exclusive_operation_ongoing(true);
+      while (active_disablers() > 0) {
+        ml.wait();
+      }
+    }
+    inc_active_disablers();
+    inc_global_vthread_transition_disable_count();
   }
-  inc_active_disablers();
-  inc_global_vthread_transition_disable_count();
 
   // Prevent loads of transition flag from floating up. Technically not
   // required since JavaThreadIteratorWithHandle includes full fence.
   OrderAccess::storeload();
 
-  // Block while some mount/unmount transitions are in progress.
-  // Debug version fails and prints diagnostic information.
+  SpinYield spy;
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     while (jt->is_in_vthread_transition()) {
-      ml.wait(10);
+      // Wait while the virtual thread is in transition
+      ThreadBlockInVM tbivm(current);
+      spy.wait();
     }
   }
 
@@ -336,8 +347,8 @@ MountUnmountDisabler::disable_transition_for_all() {
   // carrierThread to float up.
   // This pairs with the release barrier in end_transition().
   OrderAccess::acquire();
-  JVMTI_ONLY(JavaThread::current()->set_is_vthread_transition_disabler(true);)
-  DEBUG_ONLY(thread->set_is_disabler_at_start(false);)
+  JVMTI_ONLY(current->set_is_vthread_transition_disabler(true);)
+  DEBUG_ONLY(current->set_is_disabler_at_start(false);)
 }
 
 // enable transitions for one virtual thread

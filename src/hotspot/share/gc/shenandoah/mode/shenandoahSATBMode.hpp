@@ -32,9 +32,6 @@ class ShenandoahHeuristics;
 class ShenandoahSATBMode : public ShenandoahMode {
 public:
   virtual void initialize_flags() const;
-  virtual const char* name()     { return "Snapshot-At-The-Beginning (SATB)"; }
-  virtual bool is_diagnostic()   { return false; }
-  virtual bool is_experimental() { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHSATBMODE_HPP

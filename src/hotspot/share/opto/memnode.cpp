@@ -497,6 +497,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
     Node* frame = igvn->transform(new ParmNode(phase->C->start(), TypeFunc::FramePtr));
     Node* halt = igvn->transform(new HaltNode(ctl, frame, "unsafe off-heap access with zero address"));
     phase->C->root()->add_req(halt);
+    igvn->_worklist.push(phase->C->root());
     return this;
   }
 
@@ -2419,8 +2420,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     const TypeInstPtr* tinst = tp->is_instptr();
     BasicType bt = value_basic_type();
 
-    // Fold loads of the field map
-    if (tinst != nullptr) {
+    // Fold the field map loads only when stable folding is enabled
+    if (FoldStableValues && tinst != nullptr) {
       ciInstanceKlass* ik = tinst->instance_klass();
       int offset = tinst->offset();
       if (ik == phase->C->env()->Class_klass()) {
@@ -2496,7 +2497,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
       }
       if (klass->is_flat_array_klass() && tkls->offset() == in_bytes(FlatArrayKlass::layout_kind_offset())) {
         assert(Opcode() == Op_LoadI, "must load an int from _layout_kind");
-        return TypeInt::make(static_cast<jint>(klass->as_flat_array_klass()->layout_kind()));
+        return TypeInt::make(static_cast<jint>(klass->as_flat_array_klass()->flat_layout().layout_kind()));
       }
       // Class encoding and some class's values may change between runs.
       // Force loading them when AOT code is generated.
@@ -2580,8 +2581,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     if (mem->is_Parm() && mem->in(0)->is_Start()) {
       assert(mem->as_Parm()->_con == TypeFunc::Memory, "must be memory Parm");
       // TODO 8350865 Scalar replacement does not work well for flat arrays.
-      // Escape Analysis assumes that arrays are always zeroed during allocation which is not true for null-free arrays
-      // ConnectionGraph::split_unique_types will re-wire the memory of loads from such arrays around the allocation
+      // Scalar replacement assumes that arrays are zero-initialized, which is not true for null-free arrays.
+      // ConnectionGraph::split_unique_types will re-wire the memory of loads from such arrays around the allocation.
       // TestArrays::test6 and test152 and TestBasicFunctionality::test20 are affected by this.
       if (tp->isa_aryptr() && tp->is_aryptr()->is_flat() && tp->is_aryptr()->is_null_free()) {
         intptr_t offset = 0;
@@ -3968,14 +3969,23 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
     }
   }
 
-  // Store of zero anywhere into a freshly-allocated object?
-  // Then the store is useless.
+  // Check if this store is redundant with the initialization of a freshly allocated object
   // (It must already have been captured by the InitializeNode.)
   if (result == this && ReduceFieldZeroing) {
-    // a newly allocated object is already all-zeroes everywhere
-    if (mem->is_Proj() && mem->in(0)->is_Allocate() &&
-        (phase->type(val)->is_zero_type() || mem->in(0)->in(AllocateNode::InitValue) == val)) {
-      result = mem;
+    if (mem->is_Proj() && mem->in(0)->is_Allocate()) {
+      AllocateNode* alloc = mem->in(0)->as_Allocate();
+      Node* init_value = alloc->in(AllocateNode::InitValue);
+      if (init_value == nullptr && phase->type(val)->is_zero_type()) {
+        // No initial value. A zero store is redundant because memory is already zeroed.
+        result = mem;
+      } else if (init_value == val && alloc->is_AllocateArray()) {
+        // Initial value. A store with the same value is redundant if it initializes
+        // the entire array element. This is only guaranteed with a non-flat array.
+        const TypeAryKlassPtr* ary_klass = phase->type(alloc->in(AllocateNode::KlassNode))->isa_aryklassptr();
+        if (ary_klass != nullptr && ary_klass->is_not_flat()) {
+          result = mem;
+        }
+      }
     }
 
     if (result == this && phase->type(val)->is_zero_type()) {
@@ -5229,7 +5239,8 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool 
   }
   Node* adr = st->in(MemNode::Address);
   intptr_t offset;
-  AllocateNode* alloc = AllocateNode::Ideal_allocation(adr, phase, offset);
+  Node* base = AddPNode::Ideal_base_and_offset(adr, phase, offset);
+  AllocateNode* alloc = AllocateNode::Ideal_allocation(base);
   if (alloc == nullptr)
     return FAIL;                // inscrutable address
   if (alloc != allocation())
@@ -5294,25 +5305,19 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool 
               int other_alias_idx = phase->C->get_alias_index(other_t_adr);
               if (other_alias_idx == alias_idx) {
                 // A load from the same memory slice as the store right
-                // after the InitializeNode. We check the control of the
-                // object/array that is loaded from. If it's the same as
-                // the store control then we cannot capture the store.
+                // after the InitializeNode. We try to prove that pointers
+                // are independent. If not, we don't capture.
                 assert(!n->is_Store(), "2 stores to same slice on same control?");
-                Node* base = other_adr;
-                if (base->is_Phi()) {
-                  // In rare case, base may be a PhiNode and it may read
-                  // the same memory slice between InitializeNode and store.
+                intptr_t _other_offset;
+                Node* other_base = AddPNode::Ideal_base_and_offset(other_adr, phase, _other_offset);
+                if (other_base == nullptr) {
                   failed = true;
                   break;
                 }
-                assert(base->is_AddP(), "should be addp but is %s", base->Name());
-                base = base->in(AddPNode::Base);
-                if (base != nullptr) {
-                  base = base->uncast();
-                  if (base->is_Proj() && base->in(0) == alloc) {
-                    failed = true;
-                    break;
-                  }
+                AllocateNode* other_alloc = AllocateNode::Ideal_allocation(other_base);
+                if (!MemNode::detect_ptr_independence(base, alloc, other_base, other_alloc, phase)) {
+                  failed = true;
+                  break;
                 }
               }
             }
