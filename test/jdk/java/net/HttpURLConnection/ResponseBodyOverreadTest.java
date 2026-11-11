@@ -48,14 +48,14 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 /*
  * @test
  * @bug 8393415
- * @summary Stress overreads on fixed content responses
+ * @summary Stress response body overread
  * @library /test/lib
  *
  * @comment `othervm` is needed for the globally configured SSL context
  * @run junit/othervm ${test.main.class}
  */
 
-class ResponseFixedContentOverreadTest {
+class ResponseBodyOverreadTest {
 
     private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
@@ -69,16 +69,28 @@ class ResponseFixedContentOverreadTest {
 
     static Stream<Arguments> args() {
         return Stream
-                .of(false, true).flatMap(secure -> Stream
-                        .of("GET", "POST").flatMap(method -> Stream
-                                .of(0, 42).flatMap(contentLength -> Stream
-                                        .of(false, true).map(keepAlive ->
-                                                Arguments.of(secure, method, contentLength, keepAlive)))));
+                // Fixed-vs-Chunked content
+                .of(false, true).flatMap(chunked -> Stream
+                        // Cleartext-vs-Encrypted connection
+                        .of(false, true).flatMap(secure -> Stream
+                                // Request method
+                                .of("GET", "POST").flatMap(method -> Stream
+                                        // Response body length
+                                        .of(0, 42).flatMap(contentLength -> Stream
+                                                // Keep-Alive
+                                                .of(false, true).map(keepAlive ->
+                                                        Arguments.of(chunked, secure, method, contentLength, keepAlive))))));
     }
 
     @ParameterizedTest
     @MethodSource("args")
-    void test(boolean secure, String method, int contentLength, boolean keepAlive) throws Exception {
+    void test(
+            boolean chunked,
+            boolean secure,
+            String method,
+            int contentLength,
+            boolean keepAlive)
+            throws Exception {
         try (var serverSocket = createSocket(secure);
              var executor = Executors.newSingleThreadExecutor()) {
 
@@ -92,11 +104,12 @@ class ResponseFixedContentOverreadTest {
                 // Make the server tick
                 var response1Body =
                         readRequestAndWriteResponse(
-                                contentLength, keepAlive, client1Socket, 'a');
+                                chunked, contentLength, keepAlive, client1Socket, 'a');
 
                 // Verify the response #1 body
                 int response1Code = response1CodeFuture.get();
-                verifyResponseByOverreading(contentLength, response1Code, connection1, response1Body);
+                verifyResponseByOverreading(
+                        contentLength, response1Code, connection1, response1Body);
 
                 // Issue the 2nd request.
                 //
@@ -112,11 +125,12 @@ class ResponseFixedContentOverreadTest {
                     // Make the server tick
                     var response2Body =
                             readRequestAndWriteResponse(
-                                    contentLength, keepAlive, client2Socket, 'b');
+                                    chunked, contentLength, keepAlive, client2Socket, 'b');
 
                     // Verify the response #2 body
                     int response2Code = response2CodeFuture.get();
-                    verifyResponseByOverreading(contentLength, response2Code, connection2, response2Body);
+                    verifyResponseByOverreading(
+                            contentLength, response2Code, connection2, response2Body);
 
                 }
 
@@ -148,27 +162,38 @@ class ResponseFixedContentOverreadTest {
     }
 
     private static String readRequestAndWriteResponse(
-            int contentLength, boolean keepAlive, Socket clientSocket, char distinctChar)
+            boolean chunked, int contentLength, boolean keepAlive, Socket clientSocket, char distinguisher)
             throws IOException {
 
         // Consume the request
         readUntilEmptyLine(clientSocket.getInputStream());
 
         // Create the response body
-        var paddingChar = 'x';
-        assertNotEquals(paddingChar, distinctChar);
-        var responseBody = (distinctChar +                                   // A distinct character for `read()`
-                ("" + paddingChar).repeat(Math.max(0, contentLength - 3)) +  // The sequence for `read(byte[], int, int)`
-                "\r\n")                                                      // Aid for human eyes
+        var padding = 'x';
+        assertNotEquals(padding, distinguisher);
+        var responseBody = "%s%s"
+                .formatted(distinguisher, ("" + padding).repeat(Math.max(0, contentLength - 1)))
                 .substring(0, contentLength);
+        var encodedResponseBody = new StringBuilder();
+        if (chunked) {
+            if (contentLength > 0) {
+                encodedResponseBody.append("%x\r\n%s\r\n".formatted(contentLength, responseBody));
+            }
+            encodedResponseBody.append("0\r\n\r\n");
+        } else {
+            encodedResponseBody.append(responseBody);
+        }
 
         // Write the response
+        var contentHeader = chunked
+                ? "Transfer-Encoding: chunked\r\n"
+                : "Content-Length: %s\r\n".formatted(contentLength);
         var response =
                 "HTTP/1.1 200 OK\r\n" +
                         "Connection: %s\r\n".formatted(keepAlive ? "keep-alive" : "close") +
-                        "Content-Length: %s\r\n".formatted(contentLength) +
+                        contentHeader +
                         "\r\n" +
-                        responseBody +
+                        encodedResponseBody +
                         "\r\nTHESE EXTRA BYTES SHOULD NEVER BE READ!\r\n";
         clientSocket.getOutputStream().write(response.getBytes(CHARSET));
         return responseBody;
