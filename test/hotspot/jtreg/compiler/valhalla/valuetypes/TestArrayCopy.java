@@ -932,7 +932,7 @@ public class TestArrayCopy {
                      "testMergedNullableNullFreeAtomic",
                      "testMergedNullableNullFreeNonAtomic",
                      "testFastPathMacroExpansion",
-                     "testSlowPathAtomic",
+                     "testFastPathAtomic",
                      "testAbstract"})
         static void run() {
             boolean flag = RAND.nextBoolean();
@@ -1000,7 +1000,7 @@ public class TestArrayCopy {
             verifySame(SRC_NULL_FREE_NON_ATOMIC_SIZE_10, DEST_NULL_FREE_NON_ATOMIC_SIZE_10);
 
             initDest(DEST_NULL_FREE_ATOMIC);
-            testSlowPathAtomic();
+            testFastPathAtomic();
             verifySame(SRC_NULL_FREE_ATOMIC, DEST_NULL_FREE_ATOMIC);
 
             initDest(DEST_NULL_FREE_NON_ATOMIC);
@@ -1131,9 +1131,9 @@ public class TestArrayCopy {
         }
 
         @Test
-        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Matching layout but atomic -> slow path
-            failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
-        static void testSlowPathAtomic() {
+        @IR(counts = { IRNode.JINT_ARRAYCOPY, "1" }, // Matching layout and atomic -> fast path
+            failOn = { IRNode.SLOW_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no slow path
+        static void testFastPathAtomic() {
             System.arraycopy(SRC_NULL_FREE_ATOMIC, 0,
                              DEST_NULL_FREE_ATOMIC, 0, LEN);
         }
