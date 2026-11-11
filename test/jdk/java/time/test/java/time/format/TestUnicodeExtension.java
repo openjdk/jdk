@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8176841 8202537 8244245 8265315 8284840 8296248 8306116 8333582
- *      8346948 8354548
+ *      8346948 8354548 8384532
  * @summary Tests java.time classes deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
@@ -341,7 +341,7 @@ public class TestUnicodeExtension {
     Object[][] shortTZID() {
         return new Object[][] {
             // LDML's short ID, Expected Zone,
-            // Based on timezone.xml from CLDR v48
+            // Based on timezone.xml from CLDR v49
             {"adalv", "Europe/Andorra"},
             {"aedxb", "Asia/Dubai"},
             {"afkbl", "Asia/Kabul"},
@@ -462,6 +462,7 @@ public class TestUnicodeExtension {
             {"chzrh", "Europe/Zurich"},
             {"ciabj", "Africa/Abidjan"},
             {"ckrar", "Pacific/Rarotonga"},
+            {"clcxq", "America/Coyhaique"},
             {"clipc", "Pacific/Easter"},
             {"clpuq", "America/Punta_Arenas"},
             {"clscl", "America/Santiago"},
@@ -473,7 +474,7 @@ public class TestUnicodeExtension {
             {"cnurc", "Asia/Urumqi"},
             {"cobog", "America/Bogota"},
             {"crsjo", "America/Costa_Rica"},
-            {"cst6cdt", "America/Chicago"},
+            {"cst6cdt", "CST6CDT"},
             {"cuhav", "America/Havana"},
             {"cvrai", "Atlantic/Cape_Verde"},
             {"cxxch", "Indian/Christmas"},
@@ -496,7 +497,7 @@ public class TestUnicodeExtension {
             {"esceu", "Africa/Ceuta"},
             {"eslpa", "Atlantic/Canary"},
             {"esmad", "Europe/Madrid"},
-            {"est5edt", "America/New_York"},
+            {"est5edt", "EST5EDT"},
             {"etadd", "Africa/Addis_Ababa"},
             {"fihel", "Europe/Helsinki"},
             {"fimhq", "Europe/Mariehamn"},
@@ -605,7 +606,7 @@ public class TestUnicodeExtension {
             {"mqfdf", "America/Martinique"},
             {"mrnkc", "Africa/Nouakchott"},
             {"msmni", "America/Montserrat"},
-            {"mst7mdt", "America/Denver"},
+            {"mst7mdt", "MST7MDT"},
             {"mtmla", "Europe/Malta"},
             {"muplu", "Indian/Mauritius"},
             {"mvmle", "Indian/Maldives"},
@@ -653,7 +654,7 @@ public class TestUnicodeExtension {
             {"pmmqc", "America/Miquelon"},
             {"pnpcn", "Pacific/Pitcairn"},
             {"prsju", "America/Puerto_Rico"},
-            {"pst8pdt", "America/Los_Angeles"},
+            {"pst8pdt", "PST8PDT"},
             {"ptfnc", "Atlantic/Madeira"},
             {"ptlis", "Europe/Lisbon"},
             {"ptpdl", "Atlantic/Azores"},

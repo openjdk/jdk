@@ -123,8 +123,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="dar">даргински</language>
 			<language type="dav">таита</language>
 			<language type="de">немачки</language>
-			<language type="de_AT">аустријски немачки</language>
-			<language type="de_CH">швајцарски високи немачки</language>
+			<language type="de_CH">стандардни немачки (Швајцарска)</language>
 			<language type="del">делаверски</language>
 			<language type="den">слејви</language>
 			<language type="dgr">догрипски</language>
@@ -171,8 +170,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fo">фарски</language>
 			<language type="fon">фон</language>
 			<language type="fr">француски</language>
-			<language type="fr_CA">канадски француски</language>
-			<language type="fr_CH">швајцарски француски</language>
 			<language type="frc">кајунски француски</language>
 			<language type="frm">средњефранцуски</language>
 			<language type="fro">старофранцуски</language>
@@ -416,6 +413,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">пали</language>
 			<language type="pis">пиџин</language>
 			<language type="pl">пољски</language>
+			<language type="pms">пијемонтски</language>
 			<language type="pon">понпејски</language>
 			<language type="pqm">малисепасамакводи</language>
 			<language type="prg">пруски</language>
@@ -1087,18 +1085,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">редослед сортирања</key>
 			<key type="colNormalization">нормализовано сортирање</key>
 			<key type="colNumeric">нумеричко сортирање</key>
-			<key type="colStrength">сортирање према јачини</key>
+			<key type="colReorder">промена редоследа према писму или групи карактера</key>
+			<key type="colStrength">критеријум сортирања</key>
 			<key type="currency">валута</key>
+			<key type="d0">одредиште претварања</key>
+			<key type="dx">изузеци од прелома речника</key>
 			<key type="em">презентација емоџија</key>
+			<key type="fw">први дан у недељи</key>
+			<key type="h0">помешано</key>
 			<key type="hc">приказивање времена (12- или 24-часовно)</key>
+			<key type="i0">начин уноса</key>
+			<key type="k0">тастатура</key>
+			<key type="kv">Најигнорисаније</key>
 			<key type="lb">стил прелома реда</key>
 			<key type="lw">преломи редова унутар речи</key>
+			<key type="m0">правила претварања</key>
 			<key type="ms">систем мерних јединица</key>
+			<key type="mu">мерна јединица</key>
 			<key type="numbers">бројеви</key>
+			<key type="rg">регион за додатне податке</key>
+			<key type="s0">извор трансформације</key>
+			<key type="sd">подела региона</key>
 			<key type="ss">Прелом реченице после скраћенице</key>
+			<key type="t">трансформација</key>
+			<key type="t0">машински превод</key>
 			<key type="timezone">Временска зона</key>
 			<key type="va">Варијанта локалитета</key>
 			<key type="x">Приватна употреба</key>
+			<key type="x0">трансформација за приватну употребу</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">будистички календар</type>
@@ -1118,15 +1132,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">хебрејски календар</type>
 			<type key="calendar" type="hebrew" scope="core">хебрејски</type>
 			<type key="calendar" type="indian">Индијски национални календар</type>
+			<type key="calendar" type="indian" scope="core">индијски национални</type>
 			<type key="calendar" type="islamic">исламски календар</type>
 			<type key="calendar" type="islamic" scope="core">исламски</type>
 			<type key="calendar" type="islamic-civil">исламски цивилни календар</type>
 			<type key="calendar" type="islamic-civil" scope="core">исламски цивилни</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">исламски Саудијске Арабије</type>
 			<type key="calendar" type="islamic-tbla">исламски астрономски календар</type>
 			<type key="calendar" type="islamic-tbla" scope="core">исламски астрономски</type>
 			<type key="calendar" type="islamic-umalqura">исламски календар (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">исламски (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 календар</type>
+			<type key="calendar" type="iso8601" scope="core">грегоријански</type>
 			<type key="calendar" type="japanese">јапански календар</type>
 			<type key="calendar" type="japanese" scope="core">јапански</type>
 			<type key="calendar" type="persian">персијски календар</type>
@@ -1142,8 +1159,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no" draft="contributed">Сортирај акценте нормално</type>
 			<type key="colBackwards" type="yes" draft="contributed">Сортирај акценте обрнуто</type>
 			<type key="colCaseFirst" type="lower" draft="contributed">Сортирај прво мала слова</type>
+			<type key="colCaseFirst" type="lower" scope="core">мало слово</type>
 			<type key="colCaseFirst" type="no" draft="contributed">Сортирај нормалан редослед великих и малих слова</type>
+			<type key="colCaseFirst" type="no" scope="core">мало слово</type>
 			<type key="colCaseFirst" type="upper" draft="contributed">Сортирај прво велика слова</type>
+			<type key="colCaseFirst" type="upper" scope="core">мало слово</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Сортирај без обзира на велика и мала слова</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Сортирај мала и велика слова</type>
 			<type key="collation" type="compat">претходни редослед сортирања, због компатибилности</type>
@@ -1152,7 +1172,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="dictionary" scope="core">речник</type>
 			<type key="collation" type="ducet">подразумевани Unicode редослед сортирања</type>
 			<type key="collation" type="ducet" scope="core">подразумевани Unicode</type>
+			<type key="collation" type="emoji" scope="core">емоџи</type>
 			<type key="collation" type="eor" draft="contributed">европска правила редоследа</type>
+			<type key="collation" type="eor" scope="core">европска правила</type>
 			<type key="collation" type="phonebook">сортирање као телефонски именик</type>
 			<type key="collation" type="phonebook" scope="core">телефонски именик</type>
 			<type key="collation" type="phonetic">фонетски редослед сортирања</type>
@@ -1162,6 +1184,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="search">претрага опште намене</type>
 			<type key="collation" type="search" scope="core">претрага</type>
 			<type key="collation" type="searchjl" draft="contributed">Претрага према хангул почетном сугласнику</type>
+			<type key="collation" type="searchjl" scope="core">корејски почетни консонант</type>
 			<type key="collation" type="standard">стандардни редослед сортирања</type>
 			<type key="collation" type="standard" scope="core">стандардни</type>
 			<type key="collation" type="stroke">сортирање по броју потеза</type>
@@ -1176,17 +1199,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colNormalization" type="yes" draft="contributed">Сортирај Unicode нормализовано</type>
 			<type key="colNumeric" type="no" draft="contributed">Сортирај цифре појединачно</type>
 			<type key="colNumeric" type="yes" draft="contributed">Сортирај цифре нумерички</type>
+			<type key="colReorder" type="currency" scope="core">валута</type>
+			<type key="colReorder" type="digit" scope="core">цифре</type>
+			<type key="colReorder" type="punct" scope="core">интерпункција</type>
+			<type key="colReorder" type="space" scope="core">бео простор</type>
+			<type key="colReorder" type="symbol" scope="core">симбол</type>
 			<type key="colStrength" type="identical" draft="contributed">Сортирај све</type>
+			<type key="colStrength" type="identical" scope="core">све</type>
 			<type key="colStrength" type="primary" draft="contributed">Сортирај само основна слова</type>
+			<type key="colStrength" type="primary" scope="core">само основна слова</type>
 			<type key="colStrength" type="quaternary" draft="contributed">Сортирај акценте/мала и велика слова/ширину/кана симболе</type>
+			<type key="colStrength" type="quaternary" scope="core">основна, акценти, велико/мало слово, варијанте, кана</type>
 			<type key="colStrength" type="secondary" draft="contributed">Сортирај акценте</type>
+			<type key="colStrength" type="secondary" scope="core">основна, акценти</type>
 			<type key="colStrength" type="tertiary" draft="contributed">Сортирај акценте/мала и велика слова/ширину</type>
+			<type key="colStrength" type="tertiary" scope="core">основна, акценти, велико/мало слово, варијанте</type>
 			<type key="d0" type="fwidth">пуна ширина</type>
 			<type key="d0" type="hwidth">пола ширине</type>
 			<type key="d0" type="npinyin" draft="contributed">Нумеричка</type>
 			<type key="em" type="default" scope="core">подразумевано</type>
 			<type key="em" type="emoji" scope="core">емоџи</type>
 			<type key="em" type="text" scope="core">текст</type>
+			<type key="hc" type="c12">12-часовни систем</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24-часовни систем</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12-часовни систем (0-11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12-часовни систем (1-12)</type>
@@ -1195,6 +1232,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24-часовни систем (1-24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Shift размаци, интерпункција, сви симболи</type>
+			<type key="kv" type="punct" scope="core">Shift размаци, интерпункција</type>
+			<type key="kv" type="space" scope="core">Shift размаци, интерпункција</type>
+			<type key="kv" type="symbol" scope="core">Shift размаци, интерпункција, симболи који не представљају валуту</type>
 			<type key="lb" type="loose">размакнути стил прелома реда</type>
 			<type key="lb" type="loose" scope="core">размакнути</type>
 			<type key="lb" type="normal">нормални стил прелома реда</type>
@@ -1215,51 +1256,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">САД</type>
 			<type key="numbers" type="arab">арапско-индијске цифре</type>
 			<type key="numbers" type="arabext">продужене арапско-индијске цифре</type>
+			<type key="numbers" type="arabext" scope="core">продужени арапско-индијски</type>
 			<type key="numbers" type="armn">јерменски бројеви</type>
 			<type key="numbers" type="armnlow">мали јерменски бројеви</type>
+			<type key="numbers" type="armnlow" scope="core">мали јерменски</type>
 			<type key="numbers" type="beng">бенгалске цифре</type>
 			<type key="numbers" type="cakm">чакма цифре</type>
 			<type key="numbers" type="deva">девангари цифре</type>
 			<type key="numbers" type="ethi">етиопски бројеви</type>
 			<type key="numbers" type="finance" draft="contributed">Финансијски бројеви</type>
+			<type key="numbers" type="finance" scope="core">финансијски</type>
 			<type key="numbers" type="fullwide">цифре пуне ширине</type>
+			<type key="numbers" type="fullwide" scope="core">пуне ширине</type>
 			<type key="numbers" type="geor">грузијски бројеви</type>
 			<type key="numbers" type="grek">грчки бројеви</type>
 			<type key="numbers" type="greklow">мали грчки бројеви</type>
+			<type key="numbers" type="greklow" scope="core">мали грчки</type>
 			<type key="numbers" type="gujr">гуџаратске цифре</type>
 			<type key="numbers" type="guru">гурмуки цифре</type>
+			<type key="numbers" type="hanidays" scope="core">нумерисање дана у месецу хан знаковима за традиционалне календаре</type>
 			<type key="numbers" type="hanidec">кинески децимални бројеви</type>
+			<type key="numbers" type="hanidec" scope="core">позициони децимални систем који користи кинеске идеограме за бројеве као цифре</type>
 			<type key="numbers" type="hans">поједностављени кинески бројеви</type>
 			<type key="numbers" type="hansfin">поједностављени кинески финансијски бројеви</type>
+			<type key="numbers" type="hansfin" scope="core">поједностављени кинески финансијски</type>
 			<type key="numbers" type="hant">традиционални кинески бројеви</type>
 			<type key="numbers" type="hantfin">традиционални кинески финансијски бројеви</type>
+			<type key="numbers" type="hantfin" scope="core">традиционални кинески финансијски</type>
 			<type key="numbers" type="hebr">хебрејски бројеви</type>
 			<type key="numbers" type="java">јаванске цифре</type>
 			<type key="numbers" type="jpan">јапански бројеви</type>
 			<type key="numbers" type="jpanfin">јапански финансијски бројеви</type>
+			<type key="numbers" type="jpanfin" scope="core">јапански финансијски</type>
+			<type key="numbers" type="jpanyear" scope="core">јапанско ганен нумерисање прве године</type>
 			<type key="numbers" type="khmr">кмерске цифре</type>
 			<type key="numbers" type="knda">канада цифре</type>
+			<type key="numbers" type="lanatham" scope="core">тајски (црквени)</type>
 			<type key="numbers" type="laoo">лаошке цифре</type>
 			<type key="numbers" type="latn">западне цифре</type>
+			<type key="numbers" type="mathbold" scope="core">математички подебљани</type>
+			<type key="numbers" type="mathdbl" scope="core">математички двоструко повучени</type>
+			<type key="numbers" type="mathmono" scope="core">математички једноразмачни</type>
+			<type key="numbers" type="mathsanb" scope="core">математички безсерифни подебљани</type>
+			<type key="numbers" type="mathsans" scope="core">математички безсерифни</type>
 			<type key="numbers" type="mlym">малајалам цифре</type>
 			<type key="numbers" type="mong" draft="contributed">монголске цифре</type>
 			<type key="numbers" type="mtei">митеи мајек цифре</type>
 			<type key="numbers" type="mymr">мијанмарске цифре</type>
+			<type key="numbers" type="mymrepka" scope="core">мијанмарски источни пво карен</type>
+			<type key="numbers" type="mymrpao" scope="core">мијанмарски пао</type>
+			<type key="numbers" type="mymrshan" scope="core">мијанмарски шан</type>
+			<type key="numbers" type="mymrtlng" scope="core">мијанмарски таи лаинг</type>
 			<type key="numbers" type="native">локалне цифре</type>
+			<type key="numbers" type="native" scope="core">локалне цифре</type>
 			<type key="numbers" type="olck">ол чики цифре</type>
 			<type key="numbers" type="orya">орија цифре</type>
+			<type key="numbers" type="outlined" scope="core">контурно</type>
 			<type key="numbers" type="roman">римски бројеви</type>
+			<type key="numbers" type="roman" scope="core">велики римски</type>
 			<type key="numbers" type="romanlow">мали римски бројеви</type>
+			<type key="numbers" type="romanlow" scope="core">мали римски</type>
+			<type key="numbers" type="segment" scope="core">сегментирани</type>
 			<type key="numbers" type="taml">тамилски бројеви</type>
 			<type key="numbers" type="tamldec">тамилске цифре</type>
+			<type key="numbers" type="tamldec" scope="core">модерни тамилски</type>
 			<type key="numbers" type="telu">телугу цифре</type>
 			<type key="numbers" type="thai">тајске цифре</type>
 			<type key="numbers" type="tibt">тибетанске цифре</type>
 			<type key="numbers" type="traditional" draft="contributed">Традиционални бројеви</type>
+			<type key="numbers" type="traditional" scope="core">традиционални бројеви</type>
 			<type key="numbers" type="vaii">ваи цифре</type>
 			<type key="ss" type="none" scope="core">Укључено</type>
 			<type key="ss" type="standard" scope="core">Искључено</type>
+			<type key="t0" type="und">неспецификован машински превод</type>
+			<type key="va" type="posix" scope="core">POSIX варијанта</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">искључено</typeValue>
+			<typeValue type="yes">укључено</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">метрички</measurementSystemName>
 			<measurementSystemName type="UK">британски</measurementSystemName>
@@ -1401,15 +1476,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMMEd">E, d. MMM y. G</dateFormatItem>
 						<dateFormatItem id="hm">hh:mm a</dateFormatItem>
 						<dateFormatItem id="hms">hh:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hv">HH v</dateFormatItem>
 						<dateFormatItem id="Md">d.M.</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M.</dateFormatItem>
 						<dateFormatItem id="MMdd">MM-dd</dateFormatItem>
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
-						<dateFormatItem id="MMMdd">dd.MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd">E, d. MMM</dateFormatItem>
+						<dateFormatItem id="MMMdd">d.MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMEd">E, d. MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E d. MMMM</dateFormatItem>
 						<dateFormatItem id="y">y. G</dateFormatItem>
 						<dateFormatItem id="yyyy">y. G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M.y. GGGGG</dateFormatItem>
@@ -1425,6 +1499,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ y. G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="numeric">{0}–{1}.</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
@@ -1464,6 +1541,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, dd. – E, dd. MMM</greatestDifference>
 							<greatestDifference id="M">E, dd. MMM – E, dd. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y. G</greatestDifference>
@@ -1703,6 +1784,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1732,23 +1816,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y. G</dateFormatItem>
-						<dateFormatItem id="GyMd">d.MM.y. GGGGG</dateFormatItem>
+						<dateFormatItem id="GyM">M. y. G</dateFormatItem>
+						<dateFormatItem id="GyMd">d.M.y. GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E d.M.y. G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y. G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y. G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d. MMM y. G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E d. MMM y. G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y. G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d. MMMM y. G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E d. MMMM y. G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hv">HH v</dateFormatItem>
+						<dateFormatItem id="M">L.</dateFormatItem>
 						<dateFormatItem id="Md">d. M.</dateFormatItem>
-						<dateFormatItem id="MEd">E, d. M.</dateFormatItem>
-						<dateFormatItem id="MMdd">dd.MM.</dateFormatItem>
+						<dateFormatItem id="MEd">E d. M.</dateFormatItem>
+						<dateFormatItem id="MMdd">d.M.</dateFormatItem>
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
-						<dateFormatItem id="MMMdd">dd.MMM</dateFormatItem>
+						<dateFormatItem id="MMMdd">d.MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMEd">E, d. MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E d. MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM: W. 'недеља'</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="few">MMMM: W. 'недеља'</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM: W. 'недеља'</dateFormatItem>
@@ -1762,6 +1851,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d. MMM y.</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d. MMM y.</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y.</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d. MMM y.</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E d. MMMM y.</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y.</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y.</dateFormatItem>
 						<dateFormatItem id="yw" count="one">w. 'недеља' 'у' Y.</dateFormatItem>
@@ -1769,6 +1860,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yw" count="other">w. 'недеља' 'у' Y.</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1801,12 +1895,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">dd.–dd. MMM</greatestDifference>
+							<greatestDifference id="d">d–d. MMM</greatestDifference>
 							<greatestDifference id="M">dd. MMM – dd. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, dd. – E, dd. MMM</greatestDifference>
 							<greatestDifference id="M">E, dd. MMM – E, dd. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y–y.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M – M. y.</greatestDifference>
@@ -1946,246 +2047,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</eras>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="GyM">M. y. G</dateFormatItem>
-						<dateFormatItem id="GyMEd">G dd. MM. y, E</dateFormatItem>
+						<dateFormatItem id="MMMdd">d. MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="japanese">
 				<eras>
 					<eraAbbr>
-						<era type="0">Таика (645–650)</era>
-						<era type="1">Хакучи (650–671)</era>
-						<era type="2">Хакухо (672–686)</era>
-						<era type="3">Шучо (686–701)</era>
-						<era type="4">Таихо (701–704)</era>
-						<era type="5">Кеиун (704–708)</era>
-						<era type="6">Вадо (708–715)</era>
-						<era type="7">Реики (715–717)</era>
-						<era type="8">Јоро (717–724)</era>
-						<era type="9">Јинки (724–729)</era>
-						<era type="10">Темпио (729–749)</era>
-						<era type="11">Темпио-кампо (749-749)</era>
-						<era type="12">Темпио-шохо (749-757)</era>
-						<era type="13">Темпио-хођи (757-765)</era>
-						<era type="14">Темпо-ђинго (765-767)</era>
-						<era type="15">Ђинго-кеиун (767-770)</era>
-						<era type="16">Хоки (770–780)</era>
-						<era type="17">Тен-о (781-782)</era>
-						<era type="18">Енрјаку (782–806)</era>
-						<era type="19">Даидо (806–810)</era>
-						<era type="20">Конин (810–824)</era>
-						<era type="21">Тенчо (824–834)</era>
-						<era type="22">Шова (834–848)</era>
-						<era type="23">Кајо (848–851)</era>
-						<era type="24">Нињу (851–854)</era>
-						<era type="25">Саико (854–857)</era>
-						<era type="26">Тенан (857–859)</era>
-						<era type="27">Јоган (859–877)</era>
-						<era type="28">Генкеи (877–885)</era>
-						<era type="29">Ниња (885–889)</era>
-						<era type="30">Кампјо (889–898)</era>
-						<era type="31">Шотаи (898–901)</era>
-						<era type="32">Енђи (901–923)</era>
-						<era type="33">Енчо (923–931)</era>
-						<era type="34">Шохеи (931–938)</era>
-						<era type="35">Тенгјо (938–947)</era>
-						<era type="36">Тенриаку (947–957)</era>
-						<era type="37">Тентоку (957–961)</era>
-						<era type="38">Ова (961–964)</era>
-						<era type="39">Кохо (964–968)</era>
-						<era type="40">Ана (968–970)</era>
-						<era type="41">Тенроку (970–973)</era>
-						<era type="42">Тен-ен (973-976)</era>
-						<era type="43">Јоген (976–978)</era>
-						<era type="44">Тенген (978–983)</era>
-						<era type="45">Еикан (983–985)</era>
-						<era type="46">Кана (985–987)</era>
-						<era type="47">Еи-ен (987-989)</era>
-						<era type="48">Еисо (989–990)</era>
-						<era type="49">Шорјаку (990–995)</era>
-						<era type="50">Чотоку (995–999)</era>
-						<era type="51">Чохо (999–1004)</era>
-						<era type="52">Канко (1004–1012)</era>
-						<era type="53">Чова (1012–1017)</era>
-						<era type="54">Канин (1017–1021)</era>
-						<era type="55">Ђиан (1021–1024)</era>
-						<era type="56">Мању (1024–1028)</era>
-						<era type="57">Чоген (1028–1037)</era>
-						<era type="58">Чорјаку (1037–1040)</era>
-						<era type="59">Чокју (1040–1044)</era>
-						<era type="60">Кантоку (1044–1046)</era>
-						<era type="61">Еишо (1046–1053)</era>
-						<era type="62">Тенђи (1053–1058)</era>
-						<era type="63">Кохеи (1058–1065)</era>
-						<era type="64">Ђирјаку (1065–1069)</era>
-						<era type="65">Енкју (1069–1074)</era>
-						<era type="66">Шохо (1074–1077)</era>
-						<era type="67">Шорјаку (1077–1081)</era>
-						<era type="68">Еишо (1081–1084)</era>
-						<era type="69">Отоку (1084–1087)</era>
-						<era type="70">Канђи (1087–1094)</era>
-						<era type="71">Кахо (1094–1096)</era>
-						<era type="72">Еичо (1096–1097)</era>
-						<era type="73">Шотоку (1097–1099)</era>
-						<era type="74">Кова (1099–1104)</era>
-						<era type="75">Чођи (1104–1106)</era>
-						<era type="76">Кашо (1106–1108)</era>
-						<era type="77">Тенин (1108–1110)</era>
-						<era type="78">Тен-еи (1110-1113)</era>
-						<era type="79">Еикју (1113–1118)</era>
-						<era type="80">Ђен-еи (1118-1120)</era>
-						<era type="81">Хоан (1120–1124)</era>
-						<era type="82">Тенђи (1124–1126)</era>
-						<era type="83">Даиђи (1126–1131)</era>
-						<era type="84">Теншо (1131–1132)</era>
-						<era type="85">Чошао (1132–1135)</era>
-						<era type="86">Хоен (1135–1141)</era>
-						<era type="87">Еиђи (1141–1142)</era>
-						<era type="88">Кођи (1142–1144)</era>
-						<era type="89">Тењо (1144–1145)</era>
-						<era type="90">Кјуан (1145–1151)</era>
-						<era type="91">Нинпеи (1151–1154)</era>
-						<era type="92">Кјују (1154–1156)</era>
-						<era type="93">Хоген (1156–1159)</era>
-						<era type="94">Хеиђи (1159–1160)</era>
-						<era type="95">Еирјаку (1160–1161)</era>
-						<era type="96">Охо (1161–1163)</era>
-						<era type="97">Чокан (1163–1165)</era>
-						<era type="98">Еиман (1165–1166)</era>
-						<era type="99">Нин-ан (1166-1169)</era>
-						<era type="100">Као (1169–1171)</era>
-						<era type="101">Шоан (1171–1175)</era>
-						<era type="102">Анген (1175–1177)</era>
-						<era type="103">Ђишо (1177–1181)</era>
-						<era type="104">Јова (1181–1182)</era>
-						<era type="105">Ђуеи (1182–1184)</era>
-						<era type="106">Генрјуку (1184–1185)</era>
-						<era type="107">Бунђи (1185–1190)</era>
-						<era type="108">Кенкју (1190–1199)</era>
-						<era type="109">Шођи (1199–1201)</era>
-						<era type="110">Кенин (1201–1204)</era>
-						<era type="111">Генкју (1204–1206)</era>
-						<era type="112">Кен-еи (1206-1207)</era>
-						<era type="113">Шоген (1207–1211)</era>
-						<era type="114">Кенрјаку (1211–1213)</era>
-						<era type="115">Кенпо (1213–1219)</era>
-						<era type="116">Шокју (1219–1222)</era>
-						<era type="117">Ђу (1222–1224)</era>
-						<era type="118">Ђенин (1224–1225)</era>
-						<era type="119">Кароку (1225–1227)</era>
-						<era type="120">Антеи (1227–1229)</era>
-						<era type="121">Канки (1229–1232)</era>
-						<era type="122">Ђоеи (1232–1233)</era>
-						<era type="123">Темпуку (1233–1234)</era>
-						<era type="124">Бунрјаку (1234–1235)</era>
-						<era type="125">Катеи (1235–1238)</era>
-						<era type="126">Рјакунин (1238–1239)</era>
-						<era type="127">Ен-о (1239-1240)</era>
-						<era type="128">Нињи (1240–1243)</era>
-						<era type="129">Канген (1243–1247)</era>
-						<era type="130">Хођи (1247–1249)</era>
-						<era type="131">Кенчо (1249–1256)</era>
-						<era type="132">Коген (1256–1257)</era>
-						<era type="133">Шока (1257–1259)</era>
-						<era type="134">Шоген (1259–1260)</era>
-						<era type="135">Бун-о (1260-1261)</era>
-						<era type="136">Кочо (1261–1264)</era>
-						<era type="137">Бун-еи (1264-1275)</era>
-						<era type="138">Кенђи (1275–1278)</era>
-						<era type="139">Коан (1278–1288)</era>
-						<era type="140">Шу (1288–1293)</era>
-						<era type="141">Еинин (1293–1299)</era>
-						<era type="142">Шоан (1299–1302)</era>
-						<era type="143">Кенген (1302–1303)</era>
-						<era type="144">Каген (1303–1306)</era>
-						<era type="145">Токуђи (1306–1308)</era>
-						<era type="146">Енкеи (1308–1311)</era>
-						<era type="147">Очо (1311–1312)</era>
-						<era type="148">Шова (1312–1317)</era>
-						<era type="149">Бунпо (1317–1319)</era>
-						<era type="150">Ђено (1319–1321)</era>
-						<era type="151">Ђенкјо (1321–1324)</era>
-						<era type="152">Шочу (1324–1326)</era>
-						<era type="153">Кареки (1326–1329)</era>
-						<era type="154">Гентоку (1329–1331)</era>
-						<era type="155">Генко (1331–1334)</era>
-						<era type="156">Кему (1334–1336)</era>
-						<era type="157">Енген (1336–1340)</era>
-						<era type="158">Кококу (1340–1346)</era>
-						<era type="159">Шохеи (1346–1370)</era>
-						<era type="160">Кентоку (1370–1372)</era>
-						<era type="161">Бучу (1372–1375)</era>
-						<era type="162">Тењу (1375–1379)</era>
-						<era type="163">Корјаку (1379–1381)</era>
-						<era type="164">Кова (1381–1384)</era>
-						<era type="165">Генчу (1384–1392)</era>
-						<era type="166">Меитоку (1384–1387)</era>
-						<era type="167">Какеи (1387–1389)</era>
-						<era type="168">Ку (1389–1390)</era>
-						<era type="169">Меитоку (1390–1394)</era>
-						<era type="170">Оеи (1394–1428)</era>
-						<era type="171">Шочо (1428–1429)</era>
-						<era type="172">Еикјо (1429–1441)</era>
-						<era type="173">Какитсу (1441–1444)</era>
-						<era type="174">Бун-ан (1444-1449)</era>
-						<era type="175">Хотоку (1449–1452)</era>
-						<era type="176">Кјотоку (1452–1455)</era>
-						<era type="177">Кошо (1455–1457)</era>
-						<era type="178">Чороку (1457–1460)</era>
-						<era type="179">Каншо (1460–1466)</era>
-						<era type="180">Буншо (1466–1467)</era>
-						<era type="181">Онин (1467–1469)</era>
-						<era type="182">Бунмеи (1469–1487)</era>
-						<era type="183">Чокјо (1487–1489)</era>
-						<era type="184">Ентоку (1489–1492)</era>
-						<era type="185">Меио (1492–1501)</era>
-						<era type="186">Бунки (1501–1504)</era>
-						<era type="187">Еишо (1504–1521)</era>
-						<era type="188">Таиеи (1521–1528)</era>
-						<era type="189">Кјороку (1528–1532)</era>
-						<era type="190">Тенмон (1532–1555)</era>
-						<era type="191">Кођи (1555–1558)</era>
-						<era type="192">Еироку (1558–1570)</era>
-						<era type="193">Генки (1570–1573)</era>
-						<era type="194">Теншо (1573–1592)</era>
-						<era type="195">Бунроку (1592–1596)</era>
-						<era type="196">Кеичо (1596–1615)</era>
-						<era type="197">Генва (1615–1624)</era>
-						<era type="198">Кан-еи (1624-1644)</era>
-						<era type="199">Шохо (1644–1648)</era>
-						<era type="200">Кеиан (1648–1652)</era>
-						<era type="201">Шу (1652–1655)</era>
-						<era type="202">Меирјаку (1655–1658)</era>
-						<era type="203">Мањи (1658–1661)</era>
-						<era type="204">Канбун (1661–1673)</era>
-						<era type="205">Енпо (1673–1681)</era>
-						<era type="206">Тенва (1681–1684)</era>
-						<era type="207">Јокјо (1684–1688)</era>
-						<era type="208">Генроку (1688–1704)</era>
-						<era type="209">Хоеи (1704–1711)</era>
-						<era type="210">Шотоку (1711–1716)</era>
-						<era type="211">Кјохо (1716–1736)</era>
-						<era type="212">Генбун (1736–1741)</era>
-						<era type="213">Канпо (1741–1744)</era>
-						<era type="214">Енкјо (1744–1748)</era>
-						<era type="215">Кан-ен (1748-1751)</era>
-						<era type="216">Хорјаку (1751–1764)</era>
-						<era type="217">Меива (1764–1772)</era>
-						<era type="218">Ан-еи (1772-1781)</era>
-						<era type="219">Тенмеи (1781–1789)</era>
-						<era type="220">Кансеи (1789–1801)</era>
-						<era type="221">Кјова (1801–1804)</era>
-						<era type="222">Бунка (1804–1818)</era>
-						<era type="223">Бунсеи (1818–1830)</era>
-						<era type="224">Тенпо (1830–1844)</era>
-						<era type="225">Кока (1844–1848)</era>
-						<era type="226">Каеи (1848–1854)</era>
-						<era type="227">Ансеи (1854–1860)</era>
-						<era type="228">Ман-ен (1860-1861)</era>
-						<era type="229">Бункју (1861–1864)</era>
-						<era type="230">Генђи (1864–1865)</era>
-						<era type="231">Кеико (1865–1868)</era>
 						<era type="232">Меиђи</era>
 						<era type="233">Таишо</era>
 						<era type="234">Шова</era>
@@ -3205,9 +3074,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Либревил</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Британија, летње време</daylight>
-				</long>
 				<exemplarCity>Лондон</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -3298,9 +3164,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Џајапура</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Ирска, стандардно време</daylight>
-				</long>
 				<exemplarCity>Даблин</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -4035,13 +3898,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Аљаска, летње време</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>Алмати време</generic>
-					<standard>Алмати стандардно време</standard>
-					<daylight>Алмати летње рачунање времена</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>Амазон време</generic>
@@ -4089,20 +3945,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Апија време</generic>
 					<standard>Апија, стандардно време</standard>
 					<daylight>Апија, летње време</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>Акватау време</generic>
-					<standard>Акватау стандардно време</standard>
-					<daylight>Акватау летње рачунање времена</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>Акутобе време</generic>
-					<standard>Акутобе стандардно време</standard>
-					<daylight>Акутобе летње рачунање времена</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -4204,6 +4046,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Бразилија време</generic>
 					<standard>Бразилија, стандардно време</standard>
 					<daylight>Бразилија, летње време</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Британија време</generic>
+					<daylight>Британија, летње време</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -4397,6 +4245,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>GMT</standard>
 				</short>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Гренланд</generic>
+					<standard>Гренланд, стандардно време</standard>
+					<daylight>Гренланд, летње време</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Источни Гренланд</generic>
@@ -4411,11 +4266,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Западни Гренланд, летње време</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>Гуам стандардно време</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Заливско време</standard>
@@ -4428,14 +4278,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Хавајско-алеутско стандардно време</standard>
+					<standard>Хаваји, стандардно време</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>Хавајско-алеутско време</generic>
-					<standard>Хавајско-алеутско стандардно време</standard>
-					<daylight>Хавајско-алеутско летње време</daylight>
+					<generic>Хаваји и Алеутска острва, време</generic>
+					<standard>Хаваји и Алеутска острва, стандардно време</standard>
+					<daylight>Хаваји и Алеутска острва, летње време</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -4489,6 +4339,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Иран, летње време</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Ирска време</generic>
+					<daylight>Ирска, стандардно време</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Иркуцк време</generic>
@@ -4512,9 +4368,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic>Петропавловско-камчатско време</generic>
-					<standard>Петропавловско-камчатско стандардно време</standard>
-					<daylight>Петропавловско-камчатско летње рачунање времена</daylight>
+					<generic>Камчатка, време</generic>
+					<standard>Камчатка, стандардно време</standard>
+					<daylight>Камчатка, летње време</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -4556,11 +4412,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Киргистан време</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>Шри Ланка време</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>Острва Лајн време</standard>
@@ -4571,13 +4422,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Лорд Хов време</generic>
 					<standard>Лорд Хов, стандардно време</standard>
 					<daylight>Лорд Хов, летње време</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>Макао време</generic>
-					<standard>Макао стандардно време</standard>
-					<daylight>Макао летње рачунање времена</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -4695,11 +4539,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Фернандо де Нороња, летње време</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>Северна Маријанска Острва време</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Новосибирск време</generic>
@@ -4779,13 +4618,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Пјонгјаншко време</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>Кизилорда време</generic>
-					<standard>Кизилорда стандардно време</standard>
-					<daylight>Кизилорда летње рачунање времена</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Реинион време</standard>
@@ -4812,9 +4644,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Самоа време</generic>
 					<standard>Самоа, стандардно време</standard>
-					<daylight>Самоа, летње време</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4905,6 +4735,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Уругвај време</generic>
 					<standard>Уругвај, стандардно време</standard>
 					<daylight>Уругвај, летње време</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Урумчи време</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -5025,28 +4860,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<decimalFormatLength type="short">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 хиљ'.'</pattern>
+					<pattern type="1000" count="few">0 хиљ'.'</pattern>
 					<pattern type="1000" count="other">0 хиљ'.'</pattern>
 					<pattern type="10000" count="one">00 хиљ'.'</pattern>
+					<pattern type="10000" count="few">00 хиљ'.'</pattern>
 					<pattern type="10000" count="other">00 хиљ'.'</pattern>
 					<pattern type="100000" count="one">000 хиљ'.'</pattern>
+					<pattern type="100000" count="few">000 хиљ'.'</pattern>
 					<pattern type="100000" count="other">000 хиљ'.'</pattern>
 					<pattern type="1000000" count="one">0 мил'.'</pattern>
+					<pattern type="1000000" count="few">0 мил'.'</pattern>
 					<pattern type="1000000" count="other">0 мил'.'</pattern>
 					<pattern type="10000000" count="one">00 мил'.'</pattern>
+					<pattern type="10000000" count="few">00 мил'.'</pattern>
 					<pattern type="10000000" count="other">00 мил'.'</pattern>
 					<pattern type="100000000" count="one">000 мил'.'</pattern>
+					<pattern type="100000000" count="few">000 мил'.'</pattern>
 					<pattern type="100000000" count="other">000 мил'.'</pattern>
 					<pattern type="1000000000" count="one">0 млрд'.'</pattern>
+					<pattern type="1000000000" count="few">0 млрд'.'</pattern>
 					<pattern type="1000000000" count="other">0 млрд'.'</pattern>
 					<pattern type="10000000000" count="one">00 млрд'.'</pattern>
+					<pattern type="10000000000" count="few">00 млрд'.'</pattern>
 					<pattern type="10000000000" count="other">00 млрд'.'</pattern>
 					<pattern type="100000000000" count="one">000 млрд'.'</pattern>
+					<pattern type="100000000000" count="few">000 млрд'.'</pattern>
 					<pattern type="100000000000" count="other">000 млрд'.'</pattern>
 					<pattern type="1000000000000" count="one">0 бил'.'</pattern>
+					<pattern type="1000000000000" count="few">0 бил'.'</pattern>
 					<pattern type="1000000000000" count="other">0 бил'.'</pattern>
 					<pattern type="10000000000000" count="one">00 бил'.'</pattern>
+					<pattern type="10000000000000" count="few">00 бил'.'</pattern>
 					<pattern type="10000000000000" count="other">00 бил'.'</pattern>
 					<pattern type="100000000000000" count="one">000 бил'.'</pattern>
+					<pattern type="100000000000000" count="few">000 бил'.'</pattern>
 					<pattern type="100000000000000" count="other">000 бил'.'</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
@@ -5502,12 +5349,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">кинески јуан (острвски)</displayName>
 				<displayName count="few">кинеска јуана (острвска)</displayName>
 				<displayName count="other">кинеских јуана (острвских)</displayName>
-			</currency>
-			<currency type="CNX">
-				<displayName draft="provisional">Долар кинеске народне банке</displayName>
-				<displayName count="one" draft="provisional">долар кинеске народне банке</displayName>
-				<displayName count="few" draft="provisional">долара кинеске народне банке</displayName>
-				<displayName count="other" draft="provisional">долара кинеске народне банке</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>кинески јуан</displayName>
@@ -6760,9 +6601,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>карипски гулден</displayName>
-				<displayName count="one">карипски гулден</displayName>
-				<displayName count="few">карипски гулден</displayName>
-				<displayName count="other">карипски гулден</displayName>
 			</currency>
 			<currency type="XDR">
 				<displayName>Посебна цртаћа права</displayName>
@@ -6910,9 +6748,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>зимбабвеанско злато</displayName>
-				<displayName count="one">зимбабвеанско злато</displayName>
-				<displayName count="few">зимбабвеанско злато</displayName>
-				<displayName count="other">зимбабвеанско злато</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName>Зимбабвеански долар (2009)</displayName>
@@ -7387,9 +7222,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-part">
 				<displayName>делови</displayName>
-				<unitPattern count="one">{0} део</unitPattern>
-				<unitPattern count="few">{0} дела</unitPattern>
-				<unitPattern count="other">{0} делова</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
 				<gender>feminine</gender>
@@ -9678,9 +9510,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="speed-beaufort">
 				<displayName>Bf</displayName>
-				<unitPattern count="one">B {0}</unitPattern>
-				<unitPattern count="few">B {0}</unitPattern>
-				<unitPattern count="other">B {0}</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>степени Фаренхајта</displayName>
@@ -9780,17 +9609,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="concentr-part">
-				<displayName>део</displayName>
-				<unitPattern count="one">{0} део</unitPattern>
-				<unitPattern count="few">{0} дела</unitPattern>
-				<unitPattern count="other">{0} делова</unitPattern>
-			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
@@ -9891,11 +9711,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} кс</unitPattern>
 				<unitPattern count="other">{0} кс</unitPattern>
 			</unit>
-			<unit type="speed-beaufort">
-				<unitPattern count="one">B {0}</unitPattern>
-				<unitPattern count="few">B {0}</unitPattern>
-				<unitPattern count="other">B {0}</unitPattern>
-			</unit>
 			<unit type="volume-liter">
 				<displayName>l</displayName>
 			</unit>
@@ -9926,9 +9741,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} qt Imp</unitPattern>
 				<unitPattern count="few">{0} qt Imp</unitPattern>
 				<unitPattern count="other">{0} qt Imp</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>cal [IT]</displayName>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>

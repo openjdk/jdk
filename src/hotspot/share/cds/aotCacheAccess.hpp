@@ -125,6 +125,7 @@ public:
     set_pointer((address*)ptr, (address)value);
   }
   static void set_pointer(address* ptr, address value);
+  static void* archived_cpu_features(int& cpu_features_size);
 };
 
 #endif // SHARE_CDS_AOTCACHEACCESS_HPP

@@ -798,11 +798,13 @@ void CDSConfig::setup_compiler_args() {
     if (is_using_archive()) {
       // Re-training
       FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, true);
       if (AOTReplayTraining) {
         AOTCodeCache::enable_caching();
       }
     } else {
       FLAG_SET_ERGO(AOTReplayTraining, false);
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
       AOTCodeCache::disable_caching();
     }
     disable_dumping_aot_code(); // No AOT code generation during training run
@@ -815,6 +817,7 @@ void CDSConfig::setup_compiler_args() {
 
     FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
+    FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
     // Generate AOT code only when training data enabled
     if (AOTReplayTraining) {
       AOTCodeCache::enable_caching();
@@ -830,6 +833,11 @@ void CDSConfig::setup_compiler_args() {
     } else {
       AOTCodeCache::disable_caching();
     }
+    if (AOTCodeCache::is_caching_enabled()) {
+      FLAG_SET_ERGO_IF_DEFAULT(UseAOTCacheCpuFeaturesOnly, true);
+    } else {
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+    }
   } else {
     disable_profile_and_compiled_code();
   }
@@ -839,6 +847,7 @@ void CDSConfig::setup_compiler_args() {
 void CDSConfig::disable_profile_and_compiled_code() {
   FLAG_SET_ERGO(AOTReplayTraining, false);
   FLAG_SET_ERGO(AOTRecordTraining, false);
+  FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
   disable_dumping_aot_code();
   AOTCodeCache::disable_caching();
 }
