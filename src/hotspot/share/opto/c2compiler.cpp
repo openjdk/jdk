@@ -311,6 +311,9 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_bigIntegerLeftShiftWorker:
     if (StubRoutines::bigIntegerLeftShift() == nullptr) return false;
     break;
+  case vmIntrinsics::_quad_keccak:
+    if (StubRoutines::quad_keccak() == nullptr) return false;
+    break;
   case vmIntrinsics::_encodeAsciiArray:
     if (!Matcher::match_rule_supported(Op_EncodeISOArray) || !Matcher::supports_encode_ascii_array) return false;
     break;
@@ -645,9 +648,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_doubleIsFinite:
     if (!Matcher::match_rule_supported(Op_IsFiniteD)) return false;
-    break;
-  case vmIntrinsics::_quad_keccak:
-    if (StubRoutines::quad_keccak() == nullptr) return false;
     break;
   case vmIntrinsics::_hashCode:
   case vmIntrinsics::_identityHashCode:
