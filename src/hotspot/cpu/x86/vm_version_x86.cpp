@@ -1194,15 +1194,15 @@ void VM_Version::get_processor_features() {
         FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
       }
     } else {
-      if (supports_sse4_1()) {
+      if (supports_sse4_2()) {
         if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
           FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
         }
       } else if (UseAESCTRIntrinsics) {
         // The AES-CTR intrinsic stubs require AES instruction support (of course)
-        // but also require sse4.1 mode or higher for instructions it use.
+        // but also require sse4.2 mode or higher for instructions it use.
         if (!FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
-          warning("X86 AES-CTR intrinsics require SSE4.1 instructions or higher. Intrinsics will be disabled.");
+          warning("X86 AES-CTR intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
         }
         FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
       }

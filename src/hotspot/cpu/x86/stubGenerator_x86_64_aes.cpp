@@ -154,15 +154,15 @@ static address counter_mask_add_1234_addr() {
 }
 
 ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_ADD[] = {
-  // arranged for vpunpck{l,h}qdq
+  // Sequence 0-1, arranged for vpunpck{l,h}qdq
   0x0000000000000000ULL, 0x0000000000000001ULL,
   0x0000000000000000ULL, 0x0000000000000000ULL,
 
-  // [0:15] Sequence 0-8
+  // Sequence 0-3, arranged for vpunpck{l,h}qdq
   0x0000000000000000ULL, 0x0000000000000002ULL,
   0x0000000000000001ULL, 0x0000000000000003ULL,
 
-  // [0:15] Sequence 0-8
+  // Sequence 0-7, arranged for vpunpck{l,h}qdq
   0x0000000000000000ULL, 0x0000000000000004ULL,
   0x0000000000000001ULL, 0x0000000000000005ULL,
   0x0000000000000002ULL, 0x0000000000000006ULL,
@@ -183,33 +183,37 @@ class AESAssembler : public MacroAssembler {
 public:
   AESAssembler(Assembler *as) : MacroAssembler(as->code()){}
 
-  // ctr = ctr_i-n + [ b b b ]
-  // ctr += [ b b b ]
-  // ctr += [ 0 1 2 ]
-  // Why VPANDN to detect Carry bit? Proof:
-  // Truth table for the Full Adder (for the MSB of the lower 64-bit limb)
-  // ctr  i  Cin   Out  Cout
-  //  0   0   0  |  0    0
-  //  0   0   1  |  1    0
-  //  0   1   0  |  1    0   (impossible; i=1)
-  //  0   1   1  |  0    1   (impossible; i=1)
-  //  1   0   0  |  1    0
-  //  1   0   1  |  0    1
-  //  1   1   0  |  0    1   (impossible; i=1)
-  //  1   1   1  |  1    1   (impossible; i=1)
-  //
-  // Remove impossible i values and unknown Cin, copy the rest:
-  // ctr Out   Cout
-  //  0   0  |  0
-  //  0   1  |  0
-  //  1   1  |  0
-  //  1   0  |  1
-  // Therefore: Cout = ctr AND ~Out (Q.E.D.)
   void add128(XMMRegister CtrLow, XMMRegister CtrHigh, XMMRegister Increment, XMMRegister Tmp1, XMMRegister Tmp2, XMMRegister Tmp3, KRegister tmp4, int vector_len) {
     assert(UseAVX > 0 || vector_len == Assembler::AVX_128bit, "Invalid");
+
+    // There is no carry bit output with AVX VPADDQ operations. On AVX512, we can use unsigned compare
+    // to detect (from the input and result) if a rollover happened. Without unsigned compare, we have to get creative.
+    // Turns out we can also use VPANDN to detect if carry had happened.
+    //
+    // As proof, look at FULL ADDER truth table for the MSB of an ADD operation:
+    //       Out, Carryout = FullAdder(CTR_63rd_bit, increment, Carryin)
+    // (Note: increment is a small positive number, so the MSB of it, at 64th position will be zero)
+    //
+    // CTR incr Cin  Out  Cout
+    //  0   0   0  |  0    0
+    //  0   0   1  |  1    0
+    //  0   1   0  |  1    0   (impossible; increment MSB=1)
+    //  0   1   1  |  0    1   (impossible; increment MSB=1)
+    //  1   0   0  |  1    0
+    //  1   0   1  |  0    1
+    //  1   1   0  |  0    1   (impossible; increment MSB=1)
+    //  1   1   1  |  1    1   (impossible; increment MSB=1)
+    //
+    // Remove impossible increment values and we only care about Carryout:
+    // CTR Out   Cout
+    //  0   0  |  0
+    //  0   1  |  0
+    //  1   1  |  0
+    //  1   0  |  1
+    // Therefore: Cout = ctr AND ~Out (Q.E.D.)
     XMMRegister Carry = Tmp1;
     XMMRegister Zero = Tmp2;
-    if (vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl()) {
+    if (VM_Version::supports_avx512vl()) {
       vpternlogq(Carry, 0xFF, Carry, Carry, vector_len);
       vpaddq(CtrLow, CtrLow, Increment, vector_len);
       evpcmpuq(tmp4, CtrLow, Increment, Assembler::lt, vector_len);
@@ -285,7 +289,7 @@ public:
 
   void vbroadcasti128(XMMRegister dst, Address src, int vector_len) {
     if (vector_len == Assembler::AVX_512bit) {
-      evbroadcasti64x2(dst, src, vector_len);
+      evbroadcasti32x4(dst, src, vector_len);
     } else if (vector_len == Assembler::AVX_256bit) {
       MacroAssembler::vbroadcasti128(dst, src, vector_len);
     } else {
@@ -342,7 +346,7 @@ public:
     }
   }
 
-  void vpxor(XMMRegister dst, XMMRegister nds, Address src, int vector_len, XMMRegister scratch = xmm1) {
+  void vpxor(XMMRegister dst, XMMRegister nds, Address src, int vector_len, XMMRegister scratch = xnoreg) {
     assert(UseAVX > 0 || vector_len == Assembler::AVX_128bit, "Invalid");
     if (UseAVX > 0) {
       MacroAssembler::vpxor(dst, nds, src, vector_len);
@@ -351,6 +355,8 @@ public:
         movdqu(dst, src);
         pxor(dst, nds);
       } else {
+        assert(scratch != xnoreg, "");
+        assert_different_registers(dst, scratch);
         movdqu(scratch, src);
         pxor(dst, scratch);
       }
@@ -422,11 +428,11 @@ public:
 //
 //         incr rest of counters
 //         LOOP:
-//           full aesrounds(4 per key)
-//           if (len<4*blocksPerReg*16) goto LastSet
-//           XOR data // 4 full registers
-//           incr 4 counters
-//           len -= 4*blocksPerReg*16
+//           full aesrounds(maxParallel per key)
+//           if (len<maxParallel*blocksPerReg*16) goto LastSet
+//           XOR data // maxParallel full registers
+//           incr maxParallel counters
+//           len -= maxParallel*blocksPerReg*16
 //           if (len!=0) goto LOOP
 //                  else goto Scrub
 //   }
@@ -493,20 +499,15 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   start = __ pc();
   __ enter();
 
-  // Save Registers and deal with arguments first
-  __ push_ppx(r12);
-  __ push_ppx(r13);
-  __ push_ppx(r14);
-
   const Register src = c_rarg0; // source array address
   const Register dst = c_rarg1; // destination array address
   const Register key = c_rarg2; // key array address
   const Register ctr = c_rarg3; // counter byte array initialized from counter array address
                                 // and updated with the incremented counter in the end
 #ifdef _WIN64
-  const Register len = rsi;     // c_rarg4
-  const Register savedCtr = rdi;// c_rarg5
-  const Register usedAddr = r10;// c_rarg6
+  const Register len = rsi;     // 5th arg, on stack
+  const Register savedCtr = rdi;// 6th arg, on stack
+  const Register usedAddr = r10;// 7th arg, on stack
 
   __ push_ppx(rsi);
   __ push_ppx(rdi);
@@ -516,7 +517,7 @@ static address generate_counterModeAES(StubGenerator *stubgen,
 #else
   const Register len      = c_rarg4;
   const Register savedCtr = c_rarg5;
-  const Register usedAddr = r10; // c_rarg6
+  const Register usedAddr = r10; // 7th arg, on stack
 
   __ movptr(usedAddr, Address(rbp, 2 * wordSize));
 #endif
@@ -529,7 +530,7 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   const Register tmp = r14;
 
   Label UsedLoop, UsedLoopDone, LastSet, LastReg, Last2Block, LastBlock;
-  Label Last4Byte, Last2Byte, LastByte, ExitLabel, SingleBlock, Scrub;
+  Label Last4Byte, Last2Byte, LastByte, ExitLabel, SingleBlock, Scrub, NoEarlyRet;
 
   // Registers, need to allocate:
   //              AVX_512bit | AVX_256bit&AVX_128bit
@@ -538,13 +539,13 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   // - 15 keys         Regs  | Regs&Stack
 
   // Constants/parameters
-  int totalRegs = vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl() ? 32 : 16;
+  int totalRegs = VM_Version::supports_avx512vl() ? 32 : 16;
   int keyRegs = totalRegs - 5 - maxParallel; // 5 temps
   keyRegs = keyRegs > 15 ? 15 : keyRegs;
   int blocksPerReg = vector_len == Assembler::AVX_512bit ? 4 :
                      vector_len == Assembler::AVX_256bit ? 2 : 1;
 
-  // Each key (that doesnt have a register) takes 16 bytes
+  // Each key (that doesn't have a register) takes 16 bytes
   int totalStackBytes = 16*(15 - keyRegs);
   char comments[64];
 
@@ -562,9 +563,25 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   for (int i = 0; i<maxParallel; i++, _next = _next->successor()) {
     Ctr[i] = _next;
   }
-  for (int i = 0; i<15 && _next->is_valid(); i++, _next = _next->successor()) {
+  for (int i = 0; i < keyRegs && _next->is_valid(); i++, _next = _next->successor()) {
     Keys[i] = _next;
   }
+
+  // if (len <= 0) return len
+  __ movl(pos, len);
+  __ cmpl(len, 0);
+  __ jcc(Assembler::greater, NoEarlyRet);
+#ifdef _WIN64
+  __ pop_ppx(rdi);
+  __ pop_ppx(rsi);
+#endif
+  __ leave(); // required for proper stackwalking of RuntimeStub frame
+  __ ret(0);
+
+  __ BIND(NoEarlyRet);
+  __ push_ppx(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r14);
 
   if (totalStackBytes > 0) {
     // Buy and align stack
@@ -574,13 +591,8 @@ static address generate_counterModeAES(StubGenerator *stubgen,
     __ subptr(rsp, totalStackBytes); // Enough to store all keys
   }
 
-  // if (len == 0) return len
-  __ movl(pos, len);
-  __ cmpl(len, 0);
-  __ jcc(Assembler::belowEqual, ExitLabel);
-
   // use up any counter already created by previous encryption invocation
-  // its at most 15 bytes
+  // it's at most 15 bytes
   // while (used < 16 && len-- > 0) {out[pos++] = in[pos] ^ encryptedCounter[used++];}
   // No OptoLoopAlignment, case not common enough
   __ movl(pos, 0);
@@ -617,7 +629,7 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   __ pextrq(nextCtrHigh, CtrHigh, 0x0);
   // storing nextCtr{Low,High} delayed, get to AES faster
 
-  // First iteration Incremenent is aranged for the unpack to work
+  // First iteration Increment is arranged for the unpack to work
   // After first iteration, Increment is a constant step
   auto incCtrPair = [&](int i) {
     __ add128(CtrLow, CtrHigh, Increment, Tmp, Ctr[i], Ctr[i+1], k1, vector_len);
@@ -652,7 +664,7 @@ static address generate_counterModeAES(StubGenerator *stubgen,
         __ vbroadcasti128(KeyReg, Address(rsp, stackOffset), vector_len);
       }
       if (KeyReg != Tmp && KeyReg->encoding() > 15 && !VM_Version::supports_vaes()) {
-        // aesenc cant use higher bank, but we want to still use those registers
+        // aesenc can't use higher bank, but we want to still use those registers
         __ vmovdqu(Tmp, KeyReg, vector_len);
         KeyReg = Tmp;
       }
@@ -661,12 +673,14 @@ static address generate_counterModeAES(StubGenerator *stubgen,
       }
     }
   };
+  // Generate first 10 rounds
+  // keyRounds parameter only needed to detect last round, so set it to -1
   keysAndRounds(true, 0, 10, -1, 2);
 
   auto xorDataAndIncCtr = [&](int parallel) {
     for (int i = 0; i<parallel; i+=2) {
-      __ vpxor(Ctr[i], Ctr[i], Address(src, pos, Address::times_1, i*blocksPerReg*16), vector_len);
-      __ vpxor(Ctr[i+1], Ctr[i+1], Address(src, pos, Address::times_1, (i+1)*blocksPerReg*16), vector_len);
+      __ vpxor(Ctr[i], Ctr[i], Address(src, pos, Address::times_1, i*blocksPerReg*16), vector_len, Tmp);
+      __ vpxor(Ctr[i+1], Ctr[i+1], Address(src, pos, Address::times_1, (i+1)*blocksPerReg*16), vector_len, Tmp);
       __ vmovdqu(Address(dst, pos, Address::times_1, i*blocksPerReg*16), Ctr[i], vector_len);
       __ vmovdqu(Address(dst, pos, Address::times_1, (i+1)*blocksPerReg*16), Ctr[i+1], vector_len);
 
@@ -799,8 +813,8 @@ static address generate_counterModeAES(StubGenerator *stubgen,
 
     __ cmpl(len, 16);
     __ jcc(Assembler::below, LastBlock);
-    __ vpxor(LastCtr, LastCtr, Address(src, pos, Address::times_1, 0), Assembler::AVX_128bit);
-    __ vmovdqu(Address(dst, pos, Address::times_1, 0), LastCtr, Assembler::AVX_128bit);
+    __ vpxor(Tmp, LastCtr, Address(src, pos, Address::times_1, 0), Assembler::AVX_128bit);
+    __ vmovdqu(Address(dst, pos, Address::times_1, 0), Tmp, Assembler::AVX_128bit);
     __ incrementl(pos, 16); // output
     // not decrementing len on purpose
     __ jmp(ExitLabel);
@@ -820,7 +834,7 @@ static address generate_counterModeAES(StubGenerator *stubgen,
     __ cmpl(len, blocksPerReg*16);
     __ jcc(Assembler::below, LastReg);
 
-    __ vpxor(Ctr[i], Ctr[i], Address(src, pos, Address::times_1, 0), vector_len);
+    __ vpxor(Ctr[i], Ctr[i], Address(src, pos, Address::times_1, 0), vector_len, Tmp);
     __ vmovdqu(Address(dst, pos, Address::times_1, 0), Ctr[i], vector_len);
     __ incrementl(pos, blocksPerReg*16);
     __ decrementl(len, blocksPerReg*16);
@@ -912,20 +926,20 @@ static address generate_counterModeAES(StubGenerator *stubgen,
     __ movq(rsp, rbp);
     __ pop_ppx(rbp);
   }
+
+  __ pop_ppx(r14);
+  __ pop_ppx(r13);
+  __ pop_ppx(r12);
 #ifdef _WIN64
   __ pop_ppx(rdi);
   __ pop_ppx(rsi);
 #endif
-  __ pop_ppx(r14);
-  __ pop_ppx(r13);
-  __ pop_ppx(r12);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
 
+  __ ret(0);
   // record the stub entry and end
   stubgen->store_archive_data(stub_id, start, __ pc());
-
-  __ ret(0);
   return start;
 }
 
@@ -956,7 +970,7 @@ void StubGenerator::generate_aes_stubs() {
     } else if (VM_Version::supports_vaes()) {
       vector_len = Assembler::AVX_256bit;
     } else {
-      assert(VM_Version::supports_aes() && VM_Version::supports_sse4_1(), "AESNI intrinsic unsupported");
+      assert(VM_Version::supports_aes() && VM_Version::supports_sse4_2(), "AESNI intrinsic unsupported");
     }
 
     int parallel = 4; // experimentally best. Needs to be even, tested 2&4&6
