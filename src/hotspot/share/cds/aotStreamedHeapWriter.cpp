@@ -275,7 +275,7 @@ void AOTStreamedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, m
 
 template <typename T>
 void update_buffered_object_field(address buffered_obj, int field_offset, T value) {
-  T* field_addr = cast_to_oop(buffered_obj)->field_addr<T>(field_offset);
+  T* field_addr = reinterpret_cast<T*>(buffered_obj + field_offset);
   *field_addr = value;
 }
 
