@@ -5021,6 +5021,7 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
   if (target_path_size == 0) {
     DWORD errcode = ::GetLastError();
     log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%lu.", errcode);
+    ::CloseHandle(hFile);
     return nullptr;
   }
 
@@ -5032,6 +5033,8 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
   if (res != target_path_size - 1) {
     DWORD errcode = ::GetLastError();
     log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%lu.", errcode);
+    ::CloseHandle(hFile);
+    FREE_C_HEAP_ARRAY(path_to_target);
     return nullptr;
   }
 
