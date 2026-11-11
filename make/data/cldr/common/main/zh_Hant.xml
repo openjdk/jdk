@@ -352,7 +352,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lil">利洛威特文</language>
 			<language type="liv">利伏尼亞文</language>
 			<language type="lkt">拉科塔文</language>
-			<language type="lld" draft="unconfirmed">拉定文</language>
+			<language type="lld" draft="contributed">拉定文</language>
 			<language type="lmo">倫巴底文</language>
 			<language type="ln">林加拉文</language>
 			<language type="lo">寮文</language>
@@ -1261,18 +1261,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">排序</key>
 			<key type="colNormalization">正規化排序</key>
 			<key type="colNumeric">數字排序</key>
+			<key type="colReorder">語系文字/區塊重新排序</key>
 			<key type="colStrength">排序強度</key>
 			<key type="currency">貨幣</key>
+			<key type="d0">轉換目標</key>
+			<key type="dx">字典斷詞排除項目</key>
 			<key type="em">表情符號展示</key>
+			<key type="fw">一週起始日</key>
+			<key type="h0">混合</key>
 			<key type="hc">時間週期（12 小時制與 24 小時制）</key>
+			<key type="i0">輸入法</key>
+			<key type="k0">鍵盤</key>
+			<key type="kv">略過的最高級別項目</key>
 			<key type="lb">換行樣式</key>
 			<key type="lw">單字內的換行</key>
+			<key type="m0">轉換規則</key>
 			<key type="ms">度量單位系統</key>
+			<key type="mu">度量單位</key>
 			<key type="numbers">數字</key>
+			<key type="rg">補充資料專用區域</key>
+			<key type="s0">轉換來源</key>
+			<key type="sd">區域次分區</key>
 			<key type="ss">縮寫後斷句</key>
+			<key type="t">轉換</key>
+			<key type="t0">機器翻譯</key>
 			<key type="timezone">時區</key>
 			<key type="va">區域變異</key>
 			<key type="x">私人使用</key>
+			<key type="x0">私人使用轉換</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">佛曆</type>
@@ -1292,16 +1308,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">希伯來曆</type>
 			<type key="calendar" type="hebrew" scope="core">希伯來曆</type>
 			<type key="calendar" type="indian">印度國曆</type>
+			<type key="calendar" type="indian" scope="core">印度國定曆</type>
 			<type key="calendar" type="islamic">伊斯蘭曆</type>
 			<type key="calendar" type="islamic" scope="core">伊斯蘭曆</type>
 			<type key="calendar" type="islamic-civil">伊斯蘭民用曆</type>
 			<type key="calendar" type="islamic-civil" scope="core">表格式伊斯蘭曆（民用紀元）</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">伊斯蘭新月曆</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">伊斯蘭曆（沙烏地阿拉伯觀月制）</type>
 			<type key="calendar" type="islamic-tbla">伊斯蘭天文曆</type>
 			<type key="calendar" type="islamic-tbla" scope="core">表格式伊斯蘭曆（天文紀元）</type>
 			<type key="calendar" type="islamic-umalqura">伊斯蘭曆（烏姆庫拉）</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">伊斯蘭曆（烏姆庫拉）</type>
 			<type key="calendar" type="iso8601">ISO 8601 國際曆法</type>
+			<type key="calendar" type="iso8601" scope="core">公曆</type>
 			<type key="calendar" type="japanese">和曆</type>
 			<type key="calendar" type="japanese" scope="core">和曆</type>
 			<type key="calendar" type="persian">波斯曆</type>
@@ -1317,8 +1336,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no" draft="contributed">正常排序重音</type>
 			<type key="colBackwards" type="yes" draft="contributed">依反向重音排序</type>
 			<type key="colCaseFirst" type="lower" draft="contributed">優先排序小寫</type>
+			<type key="colCaseFirst" type="lower" scope="core">小寫</type>
 			<type key="colCaseFirst" type="no" draft="contributed">正常大小寫順序排序</type>
+			<type key="colCaseFirst" type="no" scope="core">小寫</type>
 			<type key="colCaseFirst" type="upper" draft="contributed">優先排序大寫</type>
+			<type key="colCaseFirst" type="upper" scope="core">大寫</type>
 			<type key="colCaseLevel" type="no" draft="contributed">不分大小寫排序</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">依大小寫排序</type>
 			<type key="collation" type="compat">舊制排序</type>
@@ -1328,7 +1350,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="ducet">預設 Unicode 排序</type>
 			<type key="collation" type="ducet" scope="core">預設 Unicode</type>
 			<type key="collation" type="emoji" draft="contributed">表情符號</type>
+			<type key="collation" type="emoji" scope="core">表情符號</type>
 			<type key="collation" type="eor" draft="contributed">歐洲排序規則</type>
+			<type key="collation" type="eor" scope="core">歐洲規則</type>
 			<type key="collation" type="phonebook">電話簿排序</type>
 			<type key="collation" type="phonebook" scope="core">電話簿</type>
 			<type key="collation" type="phonetic">發音排序</type>
@@ -1338,6 +1362,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="search">一般用途搜尋</type>
 			<type key="collation" type="search" scope="core">搜尋</type>
 			<type key="collation" type="searchjl">依諺文聲母搜尋</type>
+			<type key="collation" type="searchjl" scope="core">韓文初聲子音</type>
 			<type key="collation" type="standard">標準排序</type>
 			<type key="collation" type="standard" scope="core">標準</type>
 			<type key="collation" type="stroke">筆畫排序</type>
@@ -1352,17 +1377,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colNormalization" type="yes" draft="contributed">依正規化排序 Unicode</type>
 			<type key="colNumeric" type="no" draft="contributed">個別排序數字</type>
 			<type key="colNumeric" type="yes" draft="contributed">依數字順序排序數字</type>
+			<type key="colReorder" type="currency" scope="core">貨幣</type>
+			<type key="colReorder" type="digit" scope="core">數字</type>
+			<type key="colReorder" type="punct" scope="core">標點符號</type>
+			<type key="colReorder" type="space" scope="core">空白字元</type>
+			<type key="colReorder" type="symbol" scope="core">符號</type>
 			<type key="colStrength" type="identical" draft="contributed">全部排序</type>
+			<type key="colStrength" type="identical" scope="core">全部</type>
 			<type key="colStrength" type="primary" draft="contributed">僅排序基礎字母</type>
+			<type key="colStrength" type="primary" scope="core">僅限基礎字母</type>
 			<type key="colStrength" type="quaternary" draft="contributed">排序重音/大小寫/全半形/假名</type>
+			<type key="colStrength" type="quaternary" scope="core">基礎、重音、大小寫、變體、假名</type>
 			<type key="colStrength" type="secondary" draft="contributed">排序重音</type>
+			<type key="colStrength" type="secondary" scope="core">基礎、重音</type>
 			<type key="colStrength" type="tertiary" draft="contributed">排序重音/大小寫/全半形</type>
+			<type key="colStrength" type="tertiary" scope="core">基礎、重音、大小寫、變體</type>
 			<type key="d0" type="fwidth">全形</type>
 			<type key="d0" type="hwidth">半形</type>
 			<type key="d0" type="npinyin" draft="contributed">數字</type>
 			<type key="em" type="default" scope="core">預設</type>
 			<type key="em" type="emoji" scope="core">表情符號</type>
 			<type key="em" type="text" scope="core">文字</type>
+			<type key="hc" type="c12">12 小時制</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24 小時制</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12 小時制 (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 小時制 (1–12)</type>
@@ -1371,6 +1410,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 小時制 (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">略過空格、標點符號、所有符號</type>
+			<type key="kv" type="punct" scope="core">略過空格、標點符號</type>
+			<type key="kv" type="space" scope="core">略過空格、標點符號</type>
+			<type key="kv" type="symbol" scope="core">略過空格、標點符號、非貨幣符號</type>
 			<type key="lb" type="loose">寬鬆換行樣式</type>
 			<type key="lb" type="loose" scope="core">寬鬆</type>
 			<type key="lb" type="normal">一般換行樣式</type>
@@ -1392,8 +1435,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="ahom" draft="contributed">阿洪姆數字</type>
 			<type key="numbers" type="arab">阿拉伯-印度數字</type>
 			<type key="numbers" type="arabext">阿拉伯-印度擴充數字</type>
+			<type key="numbers" type="arabext" scope="core">阿拉伯-印度擴充</type>
 			<type key="numbers" type="armn">亞美尼亞數字</type>
 			<type key="numbers" type="armnlow">小寫亞美尼亞數字</type>
+			<type key="numbers" type="armnlow" scope="core">小寫亞美尼亞</type>
 			<type key="numbers" type="bali" draft="contributed">峇里文數字</type>
 			<type key="numbers" type="beng">孟加拉數字</type>
 			<type key="numbers" type="brah" draft="contributed">婆羅米數字</type>
@@ -1403,37 +1448,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="deva">梵文數字</type>
 			<type key="numbers" type="ethi">衣索比亞數字</type>
 			<type key="numbers" type="finance" draft="contributed">金融數字</type>
+			<type key="numbers" type="finance" scope="core">財務</type>
 			<type key="numbers" type="fullwide">全形數字</type>
+			<type key="numbers" type="fullwide" scope="core">全形</type>
 			<type key="numbers" type="geor">喬治亞數字</type>
 			<type key="numbers" type="gonm" draft="contributed">馬薩拉姆貢地數字</type>
 			<type key="numbers" type="grek">希臘數字</type>
 			<type key="numbers" type="greklow">小寫希臘數字</type>
+			<type key="numbers" type="greklow" scope="core">小寫希臘</type>
 			<type key="numbers" type="gujr">古吉拉特數字</type>
 			<type key="numbers" type="guru">古爾穆奇數字</type>
+			<type key="numbers" type="hanidays" scope="core">傳統曆法的漢字日期計數方式</type>
 			<type key="numbers" type="hanidec">中文十進位數字</type>
+			<type key="numbers" type="hanidec" scope="core">使用中文數字表意文字為數碼的位值十進位制</type>
 			<type key="numbers" type="hans">小寫簡體中文數字</type>
 			<type key="numbers" type="hansfin">大寫簡體中文數字</type>
+			<type key="numbers" type="hansfin" scope="core">大寫簡體中文</type>
 			<type key="numbers" type="hant">小寫繁體中文數字</type>
 			<type key="numbers" type="hantfin">大寫繁體中文數字</type>
+			<type key="numbers" type="hantfin" scope="core">大寫繁體中文</type>
 			<type key="numbers" type="hebr">希伯來數字</type>
 			<type key="numbers" type="hmng" draft="contributed">帕哈苗數字</type>
 			<type key="numbers" type="java">爪哇文數字</type>
 			<type key="numbers" type="jpan">小寫日文數字</type>
 			<type key="numbers" type="jpanfin">大寫日文數字</type>
+			<type key="numbers" type="jpanfin" scope="core">大寫日文</type>
+			<type key="numbers" type="jpanyear" scope="core">日文元年紀年法</type>
 			<type key="numbers" type="kali" draft="contributed">克耶數字</type>
 			<type key="numbers" type="khmr">高棉數字</type>
 			<type key="numbers" type="knda">坎那達數字</type>
 			<type key="numbers" type="lana" draft="contributed">老傣文數字</type>
 			<type key="numbers" type="lanatham" draft="contributed">蘭納文數字</type>
+			<type key="numbers" type="lanatham" scope="core">蘭納文（宗教用）</type>
 			<type key="numbers" type="laoo">寮國數字</type>
 			<type key="numbers" type="latn">阿拉伯數字</type>
 			<type key="numbers" type="lepc" draft="contributed">西納文數字</type>
 			<type key="numbers" type="limb" draft="contributed">林布文數字</type>
 			<type key="numbers" type="mathbold" draft="contributed">數學粗體數字</type>
+			<type key="numbers" type="mathbold" scope="core">數學粗體</type>
 			<type key="numbers" type="mathdbl" draft="contributed">數學雙重數字</type>
+			<type key="numbers" type="mathdbl" scope="core">數學雙線體</type>
 			<type key="numbers" type="mathmono" draft="contributed">數學等寬數字</type>
+			<type key="numbers" type="mathmono" scope="core">數學等寬體</type>
 			<type key="numbers" type="mathsanb" draft="contributed">數學無襯線粗體數字</type>
+			<type key="numbers" type="mathsanb" scope="core">數學無襯線粗體</type>
 			<type key="numbers" type="mathsans" draft="contributed">數學無襯線數字</type>
+			<type key="numbers" type="mathsans" scope="core">數學無襯線體</type>
 			<type key="numbers" type="mlym">馬來亞拉姆數字</type>
 			<type key="numbers" type="modi" draft="contributed">莫笛數字</type>
 			<type key="numbers" type="mong">蒙古數字</type>
@@ -1441,17 +1501,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="mtei">曼尼普爾數字</type>
 			<type key="numbers" type="mymr">緬甸數字</type>
 			<type key="numbers" type="mymrepka" draft="unconfirmed">緬甸東山地克倫數字</type>
+			<type key="numbers" type="mymrepka" scope="core">緬甸東部波克倫族</type>
 			<type key="numbers" type="mymrpao" draft="unconfirmed">緬甸勃歐數字</type>
+			<type key="numbers" type="mymrpao" scope="core">緬甸巴歐族</type>
 			<type key="numbers" type="mymrshan" draft="contributed">緬甸撣文數字</type>
+			<type key="numbers" type="mymrshan" scope="core">緬甸撣族</type>
 			<type key="numbers" type="mymrtlng" draft="contributed">緬甸傣族數字</type>
+			<type key="numbers" type="mymrtlng" scope="core">緬甸紅傣族</type>
 			<type key="numbers" type="native">原始數字</type>
+			<type key="numbers" type="native" scope="core">原始數字</type>
 			<type key="numbers" type="nkoo" draft="contributed">曼德數字</type>
 			<type key="numbers" type="olck">桑塔利文數字</type>
 			<type key="numbers" type="orya">歐迪亞數字</type>
 			<type key="numbers" type="osma" draft="contributed">奧斯曼亞數字</type>
+			<type key="numbers" type="outlined" scope="core">輪廓</type>
 			<type key="numbers" type="roman">羅馬數字</type>
+			<type key="numbers" type="roman" scope="core">大寫羅馬</type>
 			<type key="numbers" type="romanlow">小寫羅馬數字</type>
+			<type key="numbers" type="romanlow" scope="core">小寫羅馬</type>
 			<type key="numbers" type="saur" draft="contributed">索拉什特拉文數字</type>
+			<type key="numbers" type="segment" scope="core">分段</type>
 			<type key="numbers" type="shrd" draft="contributed">夏拉達數字</type>
 			<type key="numbers" type="sind" draft="contributed">信德數字</type>
 			<type key="numbers" type="sinh" draft="contributed">僧伽羅數字</type>
@@ -1461,16 +1530,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="talu" draft="contributed">新傣仂文數字</type>
 			<type key="numbers" type="taml">坦米爾數字</type>
 			<type key="numbers" type="tamldec">坦米爾數字</type>
+			<type key="numbers" type="tamldec" scope="core">現代坦米爾</type>
 			<type key="numbers" type="telu">泰盧固數字</type>
 			<type key="numbers" type="thai">泰文數字</type>
 			<type key="numbers" type="tibt">藏文數字</type>
 			<type key="numbers" type="tirh" draft="contributed">提爾胡塔數字</type>
 			<type key="numbers" type="traditional" draft="contributed">傳統數字</type>
+			<type key="numbers" type="traditional" scope="core">傳統數字</type>
 			<type key="numbers" type="vaii">瓦伊文數字</type>
 			<type key="numbers" type="wara" draft="contributed">瓦蘭齊地數字</type>
 			<type key="ss" type="none" scope="core">關閉</type>
 			<type key="ss" type="standard" scope="core">開啟</type>
+			<type key="t0" type="und">未指定的機器翻譯</type>
+			<type key="va" type="posix" scope="core">POSIX 變體</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">關閉</typeValue>
+			<typeValue type="yes">開啟</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">公制</measurementSystemName>
 			<measurementSystemName type="UK">英制</measurementSystemName>
@@ -2235,6 +2312,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">G y年QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="numeric">{0}日至{1}日</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d日至d日</greatestDifference>
 						</intervalFormatItem>
@@ -2287,6 +2367,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL至LLLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">M月d日–d日</greatestDifference>
+							<greatestDifference id="M">M月d日–M月d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">G y至y</greatestDifference>
@@ -2473,11 +2557,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="relative">
@@ -2488,18 +2572,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
 						<dateTimeFormat type="relative">
 							<pattern>{1}{0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="relative">
@@ -2533,6 +2611,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">Gy年M月</dateFormatItem>
 						<dateFormatItem id="GyMMMd">Gy年M月d日</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">Gy年M月d日 E</dateFormatItem>
+						<dateFormatItem id="GyMMMM">Gy年M月</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">Gy年M月d日</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">Gy年M月d日 E</dateFormatItem>
 						<dateFormatItem id="h">Bh時</dateFormatItem>
 						<dateFormatItem id="H">H時</dateFormatItem>
 						<dateFormatItem id="hm">Bh:mm</dateFormatItem>
@@ -2550,6 +2631,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMd">M月d日</dateFormatItem>
 						<dateFormatItem id="MMMEd">M月d日E</dateFormatItem>
 						<dateFormatItem id="MMMMd">M月d日</dateFormatItem>
+						<dateFormatItem id="MMMMEd">M月d日E</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM的第W週</dateFormatItem>
 						<dateFormatItem id="y">y年</dateFormatItem>
 						<dateFormatItem id="yM">y/M</dateFormatItem>
@@ -2561,11 +2643,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">y年M月d日</dateFormatItem>
 						<dateFormatItem id="yMMMEd">y年M月d日E</dateFormatItem>
 						<dateFormatItem id="yMMMM">y年M月</dateFormatItem>
+						<dateFormatItem id="yMMMMd">y年M月d日</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">y年M月d日 E</dateFormatItem>
 						<dateFormatItem id="yQQQ">y年QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y年QQQQ</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y年的第w週</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Date-Timezone">{1} {0}</appendItem>
+						<appendItem request="Day-Of-Week">{0}{1}</appendItem>
+						<appendItem request="Era">{1}{0}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{1}{0}</appendItem>
+					</appendItems>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="numeric">{0}–{1}日</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">Bh時 – Bh時</greatestDifference>
 							<greatestDifference id="h">Bh–h時</greatestDifference>
@@ -2676,6 +2769,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL至LLLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMMd日–d日</greatestDifference>
+							<greatestDifference id="M">M月d日至M月d日</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y至y</greatestDifference>
@@ -2919,238 +3016,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="japanese">
 				<eras>
 					<eraAbbr>
-						<era type="0">大化</era>
-						<era type="1">白雉</era>
-						<era type="2">白鳳</era>
-						<era type="3">朱鳥</era>
-						<era type="4">大寶</era>
-						<era type="5">慶雲</era>
-						<era type="6">和銅</era>
-						<era type="7">靈龜</era>
-						<era type="8">養老</era>
-						<era type="9">神龜</era>
-						<era type="10">天平</era>
-						<era type="11">天平感寶</era>
-						<era type="12">天平勝寶</era>
-						<era type="13">天平寶字</era>
-						<era type="14">天平神護</era>
-						<era type="15">神護景雲</era>
-						<era type="16">寶龜</era>
-						<era type="17">天應</era>
-						<era type="18">延曆</era>
-						<era type="19">大同</era>
-						<era type="20">弘仁</era>
-						<era type="21">天長</era>
-						<era type="22">承和</era>
-						<era type="23">嘉祥</era>
-						<era type="24">仁壽</era>
-						<era type="25">齊衡</era>
-						<era type="26">天安</era>
-						<era type="27">貞觀</era>
-						<era type="28">元慶</era>
-						<era type="29">仁和</era>
-						<era type="30">寬平</era>
-						<era type="31">昌泰</era>
-						<era type="32">延喜</era>
-						<era type="33">延長</era>
-						<era type="34">承平</era>
-						<era type="35">天慶</era>
-						<era type="36">天曆</era>
-						<era type="37">天德</era>
-						<era type="38">應和</era>
-						<era type="39">康保</era>
-						<era type="40">安和</era>
-						<era type="41">天祿</era>
-						<era type="42">天延</era>
-						<era type="43">貞元</era>
-						<era type="44">天元</era>
-						<era type="45">永觀</era>
-						<era type="46">寬和</era>
-						<era type="47">永延</era>
-						<era type="48">永祚</era>
-						<era type="49">正曆</era>
-						<era type="50">長德</era>
-						<era type="51">長保</era>
-						<era type="52">寬弘</era>
-						<era type="53">長和</era>
-						<era type="54">寬仁</era>
-						<era type="55">治安</era>
-						<era type="56">萬壽</era>
-						<era type="57">長元</era>
-						<era type="58">長曆</era>
-						<era type="59">長久</era>
-						<era type="60">寬德</era>
-						<era type="61">永承</era>
-						<era type="62">天喜</era>
-						<era type="63">康平</era>
-						<era type="64">治曆</era>
-						<era type="65">延久</era>
-						<era type="66">承保</era>
-						<era type="67">承曆</era>
-						<era type="68">永保</era>
-						<era type="69">應德</era>
-						<era type="70">寬治</era>
-						<era type="71">嘉保</era>
-						<era type="72">永長</era>
-						<era type="73">承德</era>
-						<era type="74">康和</era>
-						<era type="75">長治</era>
-						<era type="76">嘉承</era>
-						<era type="77">天仁</era>
-						<era type="78">天永</era>
-						<era type="79">永久</era>
-						<era type="80">元永</era>
-						<era type="81">保安</era>
-						<era type="82">天治</era>
-						<era type="83">大治</era>
-						<era type="84">天承</era>
-						<era type="85">長承</era>
-						<era type="86">保延</era>
-						<era type="87">永治</era>
-						<era type="88">康治</era>
-						<era type="89">天養</era>
-						<era type="90">久安</era>
-						<era type="91">仁平</era>
-						<era type="92">久壽</era>
-						<era type="93">保元</era>
-						<era type="94">平治</era>
-						<era type="95">永曆</era>
-						<era type="96">應保</era>
-						<era type="97">長寬</era>
-						<era type="98">永萬</era>
-						<era type="99">仁安</era>
-						<era type="100">嘉應</era>
-						<era type="101">承安</era>
-						<era type="102">安元</era>
-						<era type="103">治承</era>
-						<era type="104">養和</era>
-						<era type="105">壽永</era>
-						<era type="106">元曆</era>
-						<era type="107">文治</era>
-						<era type="108">建久</era>
-						<era type="109">正治</era>
-						<era type="110">建仁</era>
-						<era type="111">元久</era>
-						<era type="112">建永</era>
-						<era type="113">承元</era>
-						<era type="114">建曆</era>
-						<era type="115">建保</era>
-						<era type="116">承久</era>
-						<era type="117">貞應</era>
-						<era type="118">元仁</era>
-						<era type="119">嘉祿</era>
-						<era type="120">安貞</era>
-						<era type="121">寬喜</era>
-						<era type="122">貞永</era>
-						<era type="123">天福</era>
-						<era type="124">文曆</era>
-						<era type="125">嘉禎</era>
-						<era type="126">曆仁</era>
-						<era type="127">延應</era>
-						<era type="128">仁治</era>
-						<era type="129">寬元</era>
-						<era type="130">寶治</era>
-						<era type="131">建長</era>
-						<era type="132">康元</era>
-						<era type="133">正嘉</era>
-						<era type="134">正元</era>
-						<era type="135">文應</era>
-						<era type="136">弘長</era>
-						<era type="137">文永</era>
-						<era type="138">建治</era>
-						<era type="139">弘安</era>
-						<era type="140">正應</era>
-						<era type="141">永仁</era>
-						<era type="142">正安</era>
-						<era type="143">乾元</era>
-						<era type="144">嘉元</era>
-						<era type="145">德治</era>
-						<era type="146">延慶</era>
-						<era type="147">應長</era>
-						<era type="148">正和</era>
-						<era type="149">文保</era>
-						<era type="150">元應</era>
-						<era type="151">元亨</era>
-						<era type="152">正中</era>
-						<era type="153">嘉曆</era>
-						<era type="154">元德</era>
-						<era type="155">元弘</era>
-						<era type="156">建武</era>
-						<era type="157">延元</era>
-						<era type="158">興國</era>
-						<era type="159">正平</era>
-						<era type="160">建德</era>
-						<era type="161">文中</era>
-						<era type="162">天授</era>
-						<era type="163">康曆</era>
-						<era type="164">弘和</era>
-						<era type="165">元中</era>
-						<era type="166">至德</era>
-						<era type="167">嘉慶</era>
-						<era type="168">康應</era>
-						<era type="169">明德</era>
-						<era type="170">應永</era>
-						<era type="171">正長</era>
-						<era type="172">永享</era>
-						<era type="173">嘉吉</era>
-						<era type="174">文安</era>
-						<era type="175">寶德</era>
-						<era type="176">享德</era>
-						<era type="177">康正</era>
-						<era type="178">長祿</era>
-						<era type="179">寬正</era>
-						<era type="180">文正</era>
-						<era type="181">應仁</era>
-						<era type="182">文明</era>
-						<era type="183">長享</era>
-						<era type="184">延德</era>
-						<era type="185">明應</era>
-						<era type="186">文龜</era>
-						<era type="187">永正</era>
-						<era type="188">大永</era>
-						<era type="189">享祿</era>
-						<era type="190">天文</era>
-						<era type="191">弘治</era>
-						<era type="192">永祿</era>
-						<era type="193">元龜</era>
-						<era type="194">天正</era>
-						<era type="195">文祿</era>
-						<era type="196">慶長</era>
-						<era type="197">元和</era>
-						<era type="198">寬永</era>
-						<era type="199">正保</era>
-						<era type="200">慶安</era>
-						<era type="201">承應</era>
-						<era type="202">明曆</era>
-						<era type="203">萬治</era>
-						<era type="204">寬文</era>
-						<era type="205">延寶</era>
-						<era type="206">天和</era>
-						<era type="207">貞享</era>
-						<era type="208">元祿</era>
-						<era type="209">寶永</era>
-						<era type="210">正德</era>
-						<era type="211">享保</era>
-						<era type="212">元文</era>
-						<era type="213">寬保</era>
-						<era type="214">延享</era>
-						<era type="215">寬延</era>
-						<era type="216">寶曆</era>
-						<era type="217">明和</era>
-						<era type="218">安永</era>
-						<era type="219">天明</era>
-						<era type="220">寬政</era>
-						<era type="221">享和</era>
-						<era type="222">文化</era>
-						<era type="223">文政</era>
-						<era type="224">天保</era>
-						<era type="225">弘化</era>
-						<era type="226">嘉永</era>
-						<era type="227">安政</era>
-						<era type="228">萬延</era>
-						<era type="229">文久</era>
-						<era type="230">元治</era>
-						<era type="231">慶應</era>
 						<era type="232">明治</era>
 						<era type="233">大正</era>
 						<era type="234">昭和</era>
@@ -3158,238 +3023,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="236">令和</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0" draft="contributed">大化</era>
-						<era type="1" draft="contributed">白雉</era>
-						<era type="2" draft="contributed">白鳳</era>
-						<era type="3" draft="contributed">朱鳥</era>
-						<era type="4" draft="contributed">大寶</era>
-						<era type="5" draft="contributed">慶雲</era>
-						<era type="6" draft="contributed">和銅</era>
-						<era type="7" draft="contributed">靈龜</era>
-						<era type="8" draft="contributed">養老</era>
-						<era type="9" draft="contributed">神龜</era>
-						<era type="10" draft="contributed">天平</era>
-						<era type="11" draft="contributed">天平感寶</era>
-						<era type="12" draft="contributed">天平勝寶</era>
-						<era type="13" draft="contributed">天平寶字</era>
-						<era type="14" draft="contributed">天平神護</era>
-						<era type="15" draft="contributed">神護景雲</era>
-						<era type="16" draft="contributed">寶龜</era>
-						<era type="17" draft="contributed">天應</era>
-						<era type="18" draft="contributed">延曆</era>
-						<era type="19" draft="contributed">大同</era>
-						<era type="20" draft="contributed">弘仁</era>
-						<era type="21" draft="contributed">天長</era>
-						<era type="22" draft="contributed">承和</era>
-						<era type="23" draft="contributed">嘉祥</era>
-						<era type="24" draft="contributed">仁壽</era>
-						<era type="25" draft="contributed">齊衡</era>
-						<era type="26" draft="contributed">天安</era>
-						<era type="27" draft="contributed">貞觀</era>
-						<era type="28" draft="contributed">元慶</era>
-						<era type="29" draft="contributed">仁和</era>
-						<era type="30" draft="contributed">寬平</era>
-						<era type="31" draft="contributed">昌泰</era>
-						<era type="32" draft="contributed">延喜</era>
-						<era type="33" draft="contributed">延長</era>
-						<era type="34" draft="contributed">承平</era>
-						<era type="35" draft="contributed">天慶</era>
-						<era type="36" draft="contributed">天曆</era>
-						<era type="37" draft="contributed">天德</era>
-						<era type="38" draft="contributed">應和</era>
-						<era type="39" draft="contributed">康保</era>
-						<era type="40" draft="contributed">安和</era>
-						<era type="41" draft="contributed">天祿</era>
-						<era type="42" draft="contributed">天延</era>
-						<era type="43" draft="contributed">貞元</era>
-						<era type="44" draft="contributed">天元</era>
-						<era type="45" draft="contributed">永觀</era>
-						<era type="46" draft="contributed">寬和</era>
-						<era type="47" draft="contributed">永延</era>
-						<era type="48" draft="contributed">永祚</era>
-						<era type="49" draft="contributed">正曆</era>
-						<era type="50" draft="contributed">長德</era>
-						<era type="51" draft="contributed">長保</era>
-						<era type="52" draft="contributed">寬弘</era>
-						<era type="53" draft="contributed">長和</era>
-						<era type="54" draft="contributed">寬仁</era>
-						<era type="55" draft="contributed">治安</era>
-						<era type="56" draft="contributed">萬壽</era>
-						<era type="57" draft="contributed">長元</era>
-						<era type="58" draft="contributed">長曆</era>
-						<era type="59" draft="contributed">長久</era>
-						<era type="60" draft="contributed">寬德</era>
-						<era type="61" draft="contributed">永承</era>
-						<era type="62" draft="contributed">天喜</era>
-						<era type="63" draft="contributed">康平</era>
-						<era type="64" draft="contributed">治曆</era>
-						<era type="65" draft="contributed">延久</era>
-						<era type="66" draft="contributed">承保</era>
-						<era type="67" draft="contributed">承曆</era>
-						<era type="68" draft="contributed">永保</era>
-						<era type="69" draft="contributed">應德</era>
-						<era type="70" draft="contributed">寬治</era>
-						<era type="71" draft="contributed">嘉保</era>
-						<era type="72" draft="contributed">永長</era>
-						<era type="73" draft="contributed">承德</era>
-						<era type="74" draft="contributed">康和</era>
-						<era type="75" draft="contributed">長治</era>
-						<era type="76" draft="contributed">嘉承</era>
-						<era type="77" draft="contributed">天仁</era>
-						<era type="78" draft="contributed">天永</era>
-						<era type="79" draft="contributed">永久</era>
-						<era type="80" draft="contributed">元永</era>
-						<era type="81" draft="contributed">保安</era>
-						<era type="82" draft="contributed">天治</era>
-						<era type="83" draft="contributed">大治</era>
-						<era type="84" draft="contributed">天承</era>
-						<era type="85" draft="contributed">長承</era>
-						<era type="86" draft="contributed">保延</era>
-						<era type="87" draft="contributed">永治</era>
-						<era type="88" draft="contributed">康治</era>
-						<era type="89" draft="contributed">天養</era>
-						<era type="90" draft="contributed">久安</era>
-						<era type="91" draft="contributed">仁平</era>
-						<era type="92" draft="contributed">久壽</era>
-						<era type="93" draft="contributed">保元</era>
-						<era type="94" draft="contributed">平治</era>
-						<era type="95" draft="contributed">永曆</era>
-						<era type="96" draft="contributed">應保</era>
-						<era type="97" draft="contributed">長寬</era>
-						<era type="98" draft="contributed">永萬</era>
-						<era type="99" draft="contributed">仁安</era>
-						<era type="100" draft="contributed">嘉應</era>
-						<era type="101" draft="contributed">承安</era>
-						<era type="102" draft="contributed">安元</era>
-						<era type="103" draft="contributed">治承</era>
-						<era type="104" draft="contributed">養和</era>
-						<era type="105" draft="contributed">壽永</era>
-						<era type="106" draft="contributed">元曆</era>
-						<era type="107" draft="contributed">文治</era>
-						<era type="108" draft="contributed">建久</era>
-						<era type="109" draft="contributed">正治</era>
-						<era type="110" draft="contributed">建仁</era>
-						<era type="111" draft="contributed">元久</era>
-						<era type="112" draft="contributed">建永</era>
-						<era type="113" draft="contributed">承元</era>
-						<era type="114" draft="contributed">建曆</era>
-						<era type="115" draft="contributed">建保</era>
-						<era type="116" draft="contributed">承久</era>
-						<era type="117" draft="contributed">貞應</era>
-						<era type="118" draft="contributed">元仁</era>
-						<era type="119" draft="contributed">嘉祿</era>
-						<era type="120" draft="contributed">安貞</era>
-						<era type="121" draft="contributed">寬喜</era>
-						<era type="122" draft="contributed">貞永</era>
-						<era type="123" draft="contributed">天福</era>
-						<era type="124" draft="contributed">文曆</era>
-						<era type="125" draft="contributed">嘉禎</era>
-						<era type="126" draft="contributed">曆仁</era>
-						<era type="127" draft="contributed">延應</era>
-						<era type="128" draft="contributed">仁治</era>
-						<era type="129" draft="contributed">寬元</era>
-						<era type="130" draft="contributed">寶治</era>
-						<era type="131" draft="contributed">建長</era>
-						<era type="132" draft="contributed">康元</era>
-						<era type="133" draft="contributed">正嘉</era>
-						<era type="134" draft="contributed">正元</era>
-						<era type="135" draft="contributed">文應</era>
-						<era type="136" draft="contributed">弘長</era>
-						<era type="137" draft="contributed">文永</era>
-						<era type="138" draft="contributed">建治</era>
-						<era type="139" draft="contributed">弘安</era>
-						<era type="140" draft="contributed">正應</era>
-						<era type="141" draft="contributed">永仁</era>
-						<era type="142" draft="contributed">正安</era>
-						<era type="143" draft="contributed">乾元</era>
-						<era type="144" draft="contributed">嘉元</era>
-						<era type="145" draft="contributed">德治</era>
-						<era type="146" draft="contributed">延慶</era>
-						<era type="147" draft="contributed">應長</era>
-						<era type="148" draft="contributed">正和</era>
-						<era type="149" draft="contributed">文保</era>
-						<era type="150" draft="contributed">元應</era>
-						<era type="151" draft="contributed">元亨</era>
-						<era type="152" draft="contributed">正中</era>
-						<era type="153" draft="contributed">嘉曆</era>
-						<era type="154" draft="contributed">元德</era>
-						<era type="155" draft="contributed">元弘</era>
-						<era type="156" draft="contributed">建武</era>
-						<era type="157" draft="contributed">延元</era>
-						<era type="158" draft="contributed">興國</era>
-						<era type="159" draft="contributed">正平</era>
-						<era type="160" draft="contributed">建德</era>
-						<era type="161" draft="contributed">文中</era>
-						<era type="162" draft="contributed">天授</era>
-						<era type="163" draft="contributed">康曆</era>
-						<era type="164" draft="contributed">弘和</era>
-						<era type="165" draft="contributed">元中</era>
-						<era type="166" draft="contributed">至德</era>
-						<era type="167" draft="contributed">嘉慶</era>
-						<era type="168" draft="contributed">康應</era>
-						<era type="169" draft="contributed">明德</era>
-						<era type="170" draft="contributed">應永</era>
-						<era type="171" draft="contributed">正長</era>
-						<era type="172" draft="contributed">永享</era>
-						<era type="173" draft="contributed">嘉吉</era>
-						<era type="174" draft="contributed">文安</era>
-						<era type="175" draft="contributed">寶德</era>
-						<era type="176" draft="contributed">享德</era>
-						<era type="177" draft="contributed">康正</era>
-						<era type="178" draft="contributed">長祿</era>
-						<era type="179" draft="contributed">寬正</era>
-						<era type="180" draft="contributed">文正</era>
-						<era type="181" draft="contributed">應仁</era>
-						<era type="182" draft="contributed">文明</era>
-						<era type="183" draft="contributed">長享</era>
-						<era type="184" draft="contributed">延德</era>
-						<era type="185" draft="contributed">明應</era>
-						<era type="186" draft="contributed">文龜</era>
-						<era type="187" draft="contributed">永正</era>
-						<era type="188" draft="contributed">大永</era>
-						<era type="189" draft="contributed">享祿</era>
-						<era type="190" draft="contributed">天文</era>
-						<era type="191" draft="contributed">弘治</era>
-						<era type="192" draft="contributed">永祿</era>
-						<era type="193" draft="contributed">元龜</era>
-						<era type="194" draft="contributed">天正</era>
-						<era type="195" draft="contributed">文祿</era>
-						<era type="196" draft="contributed">慶長</era>
-						<era type="197" draft="contributed">元和</era>
-						<era type="198" draft="contributed">寬永</era>
-						<era type="199" draft="contributed">正保</era>
-						<era type="200" draft="contributed">慶安</era>
-						<era type="201" draft="contributed">承應</era>
-						<era type="202" draft="contributed">明曆</era>
-						<era type="203" draft="contributed">萬治</era>
-						<era type="204" draft="contributed">寬文</era>
-						<era type="205" draft="contributed">延寶</era>
-						<era type="206" draft="contributed">天和</era>
-						<era type="207" draft="contributed">貞享</era>
-						<era type="208" draft="contributed">元祿</era>
-						<era type="209" draft="contributed">寶永</era>
-						<era type="210" draft="contributed">正德</era>
-						<era type="211" draft="contributed">享保</era>
-						<era type="212" draft="contributed">元文</era>
-						<era type="213" draft="contributed">寬保</era>
-						<era type="214" draft="contributed">延享</era>
-						<era type="215" draft="contributed">寬延</era>
-						<era type="216" draft="contributed">寶曆</era>
-						<era type="217" draft="contributed">明和</era>
-						<era type="218" draft="contributed">安永</era>
-						<era type="219" draft="contributed">天明</era>
-						<era type="220" draft="contributed">寬政</era>
-						<era type="221" draft="contributed">享和</era>
-						<era type="222" draft="contributed">文化</era>
-						<era type="223" draft="contributed">文政</era>
-						<era type="224" draft="contributed">天保</era>
-						<era type="225" draft="contributed">弘化</era>
-						<era type="226" draft="contributed">嘉永</era>
-						<era type="227" draft="contributed">安政</era>
-						<era type="228" draft="contributed">萬延</era>
-						<era type="229" draft="contributed">文久</era>
-						<era type="230" draft="contributed">元治</era>
-						<era type="231" draft="contributed">慶應</era>
 						<era type="232" draft="contributed">明治</era>
 						<era type="233" draft="contributed">大正</era>
 						<era type="234" draft="contributed">昭和</era>
@@ -3420,6 +3053,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="contributed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern draft="contributed">{1} {0}</pattern>
@@ -4239,9 +3877,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>自由市</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>英國夏令時間</daylight>
-				</long>
 				<exemplarCity>倫敦</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -4332,9 +3967,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>加亞布拉</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>愛爾蘭標準時間</daylight>
-				</long>
 				<exemplarCity>都柏林</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -5068,18 +4700,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>阿拉斯加標準時間</standard>
 					<daylight>阿拉斯加夏令時間</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AKT</generic>
-					<standard draft="contributed">AKST</standard>
-					<daylight draft="contributed">AKDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>阿拉木圖時間</generic>
-					<standard>阿拉木圖標準時間</standard>
-					<daylight>阿拉木圖夏令時間</daylight>
-				</long>
 			</metazone>
 			<metazone type="Amazon">
 				<long>
@@ -5094,11 +4714,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>中部標準時間</standard>
 					<daylight>中部夏令時間</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">CT</generic>
-					<standard draft="contributed">CST</standard>
-					<daylight draft="contributed">CDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
@@ -5106,11 +4721,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>東部標準時間</standard>
 					<daylight>東部夏令時間</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ET</generic>
-					<standard draft="contributed">EST</standard>
-					<daylight draft="contributed">EDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
@@ -5118,11 +4728,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>山區標準時間</standard>
 					<daylight>山區夏令時間</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">MT</generic>
-					<standard draft="contributed">MST</standard>
-					<daylight draft="contributed">MDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
@@ -5130,11 +4735,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>太平洋標準時間</standard>
 					<daylight>太平洋夏令時間</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">PT</generic>
-					<standard draft="contributed">PST</standard>
-					<daylight draft="contributed">PDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Anadyr">
 				<long>
@@ -5148,20 +4748,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>阿皮亞時間</generic>
 					<standard>阿皮亞標準時間</standard>
 					<daylight>阿皮亞夏令時間</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>阿克陶時間</generic>
-					<standard>阿克陶標準時間</standard>
-					<daylight>阿克陶夏令時間</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>阿克托比時間</generic>
-					<standard>阿克托比標準時間</standard>
-					<daylight>阿克托比夏令時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -5198,11 +4784,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>大西洋標準時間</standard>
 					<daylight>大西洋夏令時間</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AT</generic>
-					<standard draft="contributed">AST</standard>
-					<daylight draft="contributed">ADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
@@ -5268,6 +4849,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>巴西利亞時間</generic>
 					<standard>巴西利亞標準時間</standard>
 					<daylight>巴西利亞夏令時間</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>英國時間</generic>
+					<daylight>英國夏令時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -5451,6 +5038,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard draft="contributed">GMT</standard>
 				</short>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>格陵蘭時間</generic>
+					<standard>格陵蘭標準時間</standard>
+					<daylight>格陵蘭夏令時間</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>格陵蘭東部時間</generic>
@@ -5465,11 +5059,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>格陵蘭西部夏令時間</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>關島標準時間</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>波斯灣海域標準時間</standard>
@@ -5482,11 +5071,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>夏威夷-阿留申標準時間</standard>
+					<standard>夏威夷時間</standard>
 				</long>
-				<short>
-					<standard draft="contributed">HAST</standard>
-				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
@@ -5494,11 +5080,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>夏威夷-阿留申標準時間</standard>
 					<daylight>夏威夷-阿留申夏令時間</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">HAT</generic>
-					<standard draft="contributed">HAST</standard>
-					<daylight draft="contributed">HADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
@@ -5549,6 +5130,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>伊朗時間</generic>
 					<standard>伊朗標準時間</standard>
 					<daylight>伊朗夏令時間</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>愛爾蘭時間</generic>
+					<daylight>愛爾蘭標準時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -5618,11 +5205,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>吉爾吉斯時間</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>蘭卡時間</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>萊恩群島時間</standard>
@@ -5633,13 +5215,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>豪勳爵島時間</generic>
 					<standard>豪勳爵島標準時間</standard>
 					<daylight>豪勳爵島夏令時間</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>澳門時間</generic>
-					<standard>澳門標準時間</standard>
-					<daylight>澳門夏令時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -5757,11 +5332,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>費爾南多 - 迪諾羅尼亞夏令時間</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>北馬里亞納群島時間</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>新西伯利亞時間</generic>
@@ -5841,13 +5411,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>平壤時間</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>克孜勒奧爾達時間</generic>
-					<standard>克孜勒奧爾達標準時間</standard>
-					<daylight>克孜勒奧爾達夏令時間</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>留尼旺時間</standard>
@@ -5874,9 +5437,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>薩摩亞時間</generic>
 					<standard>薩摩亞標準時間</standard>
-					<daylight>薩摩亞夏令時間</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -5967,6 +5528,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>烏拉圭時間</generic>
 					<standard>烏拉圭標準時間</standard>
 					<daylight>烏拉圭夏令時間</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>烏魯木齊時間</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -6378,7 +5944,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ERN">
 				<displayName>厄利垂亞納可法</displayName>
-				<displayName count="other">厄利垂亞納可法</displayName>
 			</currency>
 			<currency type="ESA">
 				<displayName draft="contributed">西班牙比塞塔（會計單位）</displayName>
@@ -6600,7 +6165,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="MDL">
 				<displayName>摩爾多瓦列伊</displayName>
-				<displayName count="other">摩爾多瓦列伊</displayName>
 			</currency>
 			<currency type="MGA">
 				<displayName>馬達加斯加阿里亞里</displayName>
@@ -6678,11 +6242,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>奈及利亞奈拉</displayName>
 			</currency>
 			<currency type="NIC">
-				<displayName>尼加拉瓜科多巴</displayName>
+				<displayName>尼加拉瓜科多巴（1988–1991）</displayName>
+				<displayName count="other">尼加拉瓜科多巴（1988–1991）</displayName>
 			</currency>
 			<currency type="NIO">
 				<displayName>尼加拉瓜科多巴</displayName>
-				<displayName count="other">尼加拉瓜科多巴</displayName>
 			</currency>
 			<currency type="NLG">
 				<displayName>荷蘭盾</displayName>
@@ -6925,7 +6489,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XAF">
 				<displayName>中非法郎</displayName>
-				<displayName count="other">中非法郎</displayName>
 			</currency>
 			<currency type="XAG">
 				<displayName draft="contributed">白銀</displayName>
@@ -6950,7 +6513,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>加勒比盾</displayName>
-				<displayName count="other">加勒比盾</displayName>
 			</currency>
 			<currency type="XDR">
 				<displayName>特殊提款權</displayName>
@@ -6966,14 +6528,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XOF">
 				<displayName>西非法郎</displayName>
-				<displayName count="other">西非法郎</displayName>
 			</currency>
 			<currency type="XPD">
 				<displayName draft="contributed">帕拉狄昂</displayName>
 			</currency>
 			<currency type="XPF">
 				<displayName>太平洋法郎</displayName>
-				<displayName count="other">太平洋法郎</displayName>
 			</currency>
 			<currency type="XPT">
 				<displayName draft="contributed">白金</displayName>
@@ -7036,7 +6596,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>辛巴威金</displayName>
-				<displayName count="other">辛巴威金</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName>辛巴威元 (2009)</displayName>
@@ -7120,11 +6679,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">每公升 {0} 毫莫耳</unitPattern>
 			</unit>
 			<unit type="concentr-part">
-				<displayName>比例</displayName>
 				<unitPattern count="other">{0} 比例</unitPattern>
 			</unit>
 			<unit type="concentr-ofglucose">
-				<displayName>葡萄糖</displayName>
 				<unitPattern count="other">{0} 葡萄糖</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
@@ -7308,10 +6865,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} 公升</unitPattern>
 				<perUnitPattern>每公升 {0}</perUnitPattern>
 			</unit>
-			<unit type="volume-fluid-ounce-metric">
-				<displayName>公制液盎司</displayName>
-				<unitPattern count="other">{0}公制液盎司</unitPattern>
-			</unit>
 			<unit type="volume-gallon">
 				<perUnitPattern>每加侖 {0}</perUnitPattern>
 			</unit>
@@ -7323,27 +6876,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} 球面度</unitPattern>
 			</unit>
 			<unit type="concentr-katal">
-				<displayName>開特</displayName>
 				<unitPattern count="other">{0} 開特</unitPattern>
 			</unit>
 			<unit type="electric-coulomb">
-				<displayName>庫侖</displayName>
 				<unitPattern count="other">{0} 庫侖</unitPattern>
 			</unit>
 			<unit type="electric-farad">
-				<displayName>法拉</displayName>
 				<unitPattern count="other">{0} 法拉</unitPattern>
 			</unit>
 			<unit type="electric-henry">
-				<displayName>亨利</displayName>
 				<unitPattern count="other">{0} 亨利</unitPattern>
 			</unit>
 			<unit type="electric-siemens">
-				<displayName>西門子</displayName>
 				<unitPattern count="other">{0} 西門子</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>卡路里-IT</displayName>
 			</unit>
 			<unit type="energy-becquerel">
 				<displayName>貝克勒</displayName>
@@ -7368,10 +6913,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="magnetic-weber">
 				<displayName>韋伯</displayName>
 				<unitPattern count="other">{0} 韋伯</unitPattern>
-			</unit>
-			<unit type="speed-light-speed">
-				<displayName>光速</displayName>
-				<unitPattern count="other">{0} 倍光速</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>十億分點濃度</displayName>
@@ -8225,7 +7766,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}個項目</unitPattern>
 			</unit>
 			<unit type="concentr-part">
-				<displayName>比例</displayName>
 				<unitPattern count="other">{0} 比例</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
@@ -8233,9 +7773,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-mole">
 				<unitPattern count="other">{0}莫耳</unitPattern>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>葡萄糖</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<unitPattern count="other">{0}升/公里</unitPattern>
@@ -8405,10 +7942,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-yard">
 				<unitPattern count="other">{0}碼</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<unitPattern count="other">{0}英尺</unitPattern>
-				<perUnitPattern>{0}/英尺</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<unitPattern count="other">{0}吋</unitPattern>
@@ -8618,10 +8151,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-cup-metric">
 				<unitPattern count="other">{0}公制杯</unitPattern>
 			</unit>
-			<unit type="volume-fluid-ounce-metric">
-				<displayName>公制液盎司</displayName>
-				<unitPattern count="other">{0}公制液盎司</unitPattern>
-			</unit>
 			<unit type="volume-acre-foot">
 				<unitPattern count="other">{0}英畝英尺</unitPattern>
 			</unit>
@@ -8679,27 +8208,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<unitPattern count="other">{0}英制夸脫</unitPattern>
 			</unit>
-			<unit type="concentr-katal">
-				<displayName>開特</displayName>
-			</unit>
-			<unit type="electric-coulomb">
-				<displayName>庫侖</displayName>
-			</unit>
-			<unit type="electric-farad">
-				<displayName>法拉</displayName>
-			</unit>
-			<unit type="electric-henry">
-				<displayName>亨利</displayName>
-				<unitPattern count="other">{0} 亨利</unitPattern>
-			</unit>
-			<unit type="electric-siemens">
-				<displayName>西門子</displayName>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>卡路里-IT</displayName>
-			</unit>
 			<unit type="speed-light-speed">
-				<displayName>光速</displayName>
 				<unitPattern count="other">{0}倍光速</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">

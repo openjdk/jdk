@@ -159,6 +159,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMEd">E, dd MMM, y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d" draft="unconfirmed">d/M – d/M</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">d/M – d/M</greatestDifference>

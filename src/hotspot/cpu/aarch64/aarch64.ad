@@ -16522,7 +16522,7 @@ instruct expandBitsL_reg(iRegLNoSp dst, iRegL src, iRegL mask,
 %}
 
 
-instruct expandBitsL_memcon(iRegINoSp dst, memory8 mem, immL mask,
+instruct expandBitsL_memcon(iRegLNoSp dst, memory8 mem, immL mask,
                          vRegF tdst, vRegF tsrc, vRegF tmask) %{
   match(Set dst (ExpandBits (LoadL mem) mask));
   effect(TEMP tdst, TEMP tsrc, TEMP tmask);

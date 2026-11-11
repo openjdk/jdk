@@ -232,7 +232,7 @@ bool AOTCodeCache::is_using_code() {
 // This is used before AOTCodeCache is initialized
 // but after AOT (CDS) Cache flags consistency is checked.
 bool AOTCodeCache::maybe_dumping_code() {
-  return AOTCodeCaching && CDSConfig::is_dumping_final_static_archive();
+  return AOTCodeCaching && CDSConfig::is_dumping_aot_cache();
 }
 
 // Next methods could be called regardless of AOT code cache status.
@@ -243,12 +243,6 @@ void AOTCodeCache::enable_caching() {
   load_info_log().print_cr("AOT Code Cache is not supported on this platform");
   disable_caching();
 #else
-  if (Arguments::is_valhalla_enabled()) {
-    // Disable AOT code caching when Valhalla is enabled.
-    load_info_log().print_cr("AOT Code Caching is not supported with Valhalla");
-    disable_caching();
-    return;
-  }
   FLAG_SET_ERGO_IF_DEFAULT(AOTCodeCaching, true);
   FLAG_SET_ERGO_IF_DEFAULT(AOTStubCaching, true);
   FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
@@ -293,7 +287,7 @@ uint AOTCodeCache::max_aot_code_size() {
 }
 
 bool AOTCodeCache::is_code_load_thread_on() {
-  return AOTCodeCaching && !CDSConfig::is_dumping_final_static_archive();
+  return AOTCodeCaching && !CDSConfig::is_dumping_aot_cache();
 }
 
 // It is called from AOTMetaspace::initialize_shared_spaces()
@@ -307,14 +301,9 @@ void AOTCodeCache::initialize() {
   }
   assert(!FLAG_IS_DEFAULT(AOTCache), "AOTCache should be specified");
 
-  if (VerifyOops && ValueTypePassFieldsAsArgs) {
-    load_info_log().print_cr("AOT Adapter Caching is not supported with VerifyOops + ValueTypePassFieldsAsArgs.");
-    FLAG_SET_ERGO(AOTAdapterCaching, false);
-  }
-
   bool is_dumping = false;
   bool is_using   = false;
-  if (CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes()) {
+  if (CDSConfig::is_dumping_aot_cache() && CDSConfig::is_dumping_aot_linked_classes()) {
     is_dumping = is_caching_enabled();
   } else if (CDSConfig::is_using_archive() && CDSConfig::is_using_aot_linked_classes()) {
     is_using = is_caching_enabled();
@@ -751,6 +740,10 @@ void AOTCodeCache::Config::record() {
   _avoidUnalignedAccesses = AvoidUnalignedAccesses;
 #endif
 
+#if defined(RISCV64) && defined(COMPILER2)
+  _alignVector = AlignVector;
+#endif
+
 #ifdef COMPILER2
   _reduceInitialCardMarks = ReduceInitialCardMarks;
   _c2_ea_state = get_c2_ea_state();
@@ -823,21 +816,24 @@ bool AOTCodeCache::Header::verify_c2_state() const {
 
 bool AOTCodeCache::Header::verify_cpu_features(AOTCodeCache* cache) const {
   LogStreamHandle(Debug, aot, codecache, init) log;
-  if (_cpu_features_size != (uint)VM_Version::cpu_features_size()) {
+  int cpu_features_size;
+  void* cached_cpu_features_buffer = AOTCacheAccess::archived_cpu_features(cpu_features_size);
+  if (cached_cpu_features_buffer == nullptr) {
+    load_failure_log().print_cr("AOT Code Cache disabled: no cpu features found in AOT cache");
+    return false;
+  }
+  if (cpu_features_size != VM_Version::cpu_features_size()) {
     if (load_failure_log().is_enabled()) {
       ResourceMark rm;
       load_failure_log().print_cr("AOT Code Cache disabled: different cpu features size %d vs current %d",
-                                  _cpu_features_size, (uint)VM_Version::cpu_features_size());
+                                  cpu_features_size, (uint)VM_Version::cpu_features_size());
     }
     // Assert in debug VM
     assert(false, "different cpu features size %d vs current %d",
-           _cpu_features_size, (uint)VM_Version::cpu_features_size());
+           cpu_features_size, (uint)VM_Version::cpu_features_size());
     return false;
   }
 
-  uint offset = _cpu_features_offset;
-  assert(is_aligned(offset, DATA_ALIGNMENT), "should be");
-  void* cached_cpu_features_buffer = (void *)cache->addr(offset);
   if (log.is_enabled()) {
     ResourceMark rm; // required for stringStream::as_string()
     stringStream ss;
@@ -960,6 +956,14 @@ bool AOTCodeCache::Config::verify() const {
   }
 #endif // (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
 
+#if defined(RISCV64) && defined(COMPILER2)
+  // Cached vector accesses may be unaligned even when the runtime requires alignment.
+  if (!_alignVector && AlignVector) {
+    log_config_mismatch(_alignVector, AlignVector, "AlignVector");
+    return false;
+  }
+#endif
+
   uint current_jvmti_state = AOTCodeCache::get_jvmti_state();
   if (AOTCodeCaching &&_jvmti_state != current_jvmti_state) {
     load_failure_log().print_cr("AOT nmethod loading disabled: incompatible JVMTI state: %u vs current %u", _jvmti_state, current_jvmti_state);
@@ -972,7 +976,6 @@ bool AOTCodeCache::Config::verify() const {
 // Layout of AOT code cache
 //
 // Header
-// CPU features data
 // AOT preload code entries 'AOTCodeEntry preload_entries[preload_entries_count]' array
 // AOT preload code
 // AOT entries for adapters, stubs, code 'AOTCodeEntry load_entries[entries_count]' array
@@ -1026,24 +1029,12 @@ bool AOTCodeCache::Header::verify(uint load_size) const {
     return false;
   }
 
-  // Check CPU features data
-  uint cpu_offset = cpu_features_offset();
-  uint cpu_size   = cpu_features_size();
-  size_t head_end = align_up(sizeof(Header), DATA_ALIGNMENT);
-  if ((size_t)cpu_offset != head_end) {
-    load_failure_log().print_cr("AOT Code Cache disabled: CPU features offset %u is invalid", cpu_offset);
-    return 0;
-  }
-  size_t cpu_end  = verify_section(cpu_offset, cpu_size, sizeof(char), head_end, "CPU features");
-  if (cpu_end == 0) {
-    return false;
-  }
-
   // Check preload entries
   uint preload_offset = preload_entries_offset();
   uint preload_count  = preload_entries_count();
   size_t entry_size   = sizeof(AOTCodeEntry);
-  size_t preload_end  = verify_section(preload_offset, preload_count, entry_size, cpu_end, "preload entries");
+  size_t head_end = align_up(sizeof(Header), DATA_ALIGNMENT);
+  size_t preload_end  = verify_section(preload_offset, preload_count, entry_size, head_end, "preload entries");
   if (preload_end == 0) {
     return false;
   }
@@ -1728,15 +1719,6 @@ static int preload_cmp(const void *i, const void *j) {
   return a > b ? 1 : a < b ? -1 : 0;
 }
 
-char* AOTCodeCache::store_cpu_features(char* buffer, uint buffer_size) {
-  // Align to 8 bytes - see Aarch64 version of get_cpu_features_name()
-  precond(is_aligned(buffer, DATA_ALIGNMENT));
-  VM_Version::store_cpu_features(buffer);
-  log_debug(aot, codecache, exit)("CPU features recorded in AOTCodeCache: %s", VM_Version::features_string());
-  buffer += buffer_size;
-  return align_up(buffer, DATA_ALIGNMENT);
-}
-
 bool AOTCodeCache::finish_write() {
   if (!align_write()) {
     return false;
@@ -1768,9 +1750,7 @@ bool AOTCodeCache::finish_write() {
     uint entries_size = (uint)align_up(code_count * sizeof(AOTCodeEntry), DATA_ALIGNMENT); // In bytes
     // _write_position should include code and strings
     uint code_alignment = code_count * DATA_ALIGNMENT; // We align_up code size when storing it.
-    uint cpu_features_size = VM_Version::cpu_features_size();
-    uint total_size = header_size + _write_position + code_alignment + search_size + entries_size +
-                      align_up(cpu_features_size, DATA_ALIGNMENT);
+    uint total_size = header_size + _write_position + code_alignment + search_size + entries_size;
     assert(total_size < max_aot_code_size(), "AOT Code size (" UINT32_FORMAT " bytes) is greater than AOTCodeMaxSize(" UINT32_FORMAT " bytes).", total_size, max_aot_code_size());
 
     // Allocate in AOT Cache buffer
@@ -1778,12 +1758,6 @@ bool AOTCodeCache::finish_write() {
     assert(buffer != nullptr, "CDS should already throw OOM error");
     char* start = align_up(buffer, DATA_ALIGNMENT);
     char* current = start + header_size; // Skip header
-
-    current = align_up(current, DATA_ALIGNMENT);
-    uint cpu_features_offset = current - start;
-    current = store_cpu_features(current, cpu_features_size);
-    assert(is_aligned(current, DATA_ALIGNMENT), "sanity check");
-    assert(current < start + total_size, "sanity check");
 
     // Create ordered search table for entries [id, index];
     uint* search = NEW_C_HEAP_ARRAY(uint, search_count, mtCode);
@@ -1902,7 +1876,6 @@ bool AOTCodeCache::finish_write() {
     // Finalize header
     AOTCodeCache::Header* header = (AOTCodeCache::Header*)start;
     header->init(size,
-                 cpu_features_size, cpu_features_offset,
                  preload_entries_cnt, preload_entries_offset,
                  entries_count, new_entries_offset, search_table_offset,
                  (uint)strings_count, strings_offset,
@@ -1918,7 +1891,6 @@ bool AOTCodeCache::finish_write() {
     if (log.is_enabled()) {
       log.print_cr("  AOT code cache size: %u bytes", size);
       log.print_cr("    header size:        %u", header_size);
-      log.print_cr("    CPU features data:  %u", cpu_features_size);
       log.print_cr("    total code size:    %u (max code's size: %u)", code_size, max_size);
       log.print_cr("    entries size:       %u", entries_size);
       log.print_cr("    entry search table: %u", search_size);
@@ -2632,7 +2604,8 @@ void AOTCodeCache::publish_stub_addresses(CodeBlob &code_blob, BlobId blob_id, A
   }
 }
 
-AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, AbstractCompiler* compiler, bool for_preload) {
+AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, GrowableArray<ciMethod*>* java_callees,
+                                          AbstractCompiler* compiler, bool for_preload) {
   if (!is_dumping_code()) {
     return nullptr;
   }
@@ -2652,7 +2625,7 @@ AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, AbstractCompiler* compile
   assert(comp_level == CompLevel_simple || comp_level == CompLevel_limited_profile || comp_level == CompLevel_full_optimization, "must be");
 
   TraceTime t1("Total time to store AOT code", &_t_totalStore, enable_timers(), false);
-  AOTCodeEntry* entry = cache->write_nmethod(nm, for_preload);
+  AOTCodeEntry* entry = cache->write_nmethod(nm, java_callees, for_preload);
   {
     ResourceMark rm;
     const char* name = nm->method()->name_and_sig_as_C_string();
@@ -2665,7 +2638,7 @@ AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, AbstractCompiler* compile
   return entry;
 }
 
-AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, bool for_preload) {
+AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, GrowableArray<ciMethod*>* java_callees, bool for_preload) {
   assert(!nm->has_clinit_barriers() || (ClassInitBarrierMode > 0), "sanity");
   _compile_id = nm->compile_id();
   _comp_level = nm->comp_level();
@@ -2738,6 +2711,39 @@ AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, bool for_preload) {
       return nullptr;
     }
   }
+
+  if (ValueTypePassFieldsAsArgs) {
+    // Record method fingerprint to match it on load.
+    if (!write_fingerprint(method)) {
+      if (lookup_failed() && !failed()) {
+        // Skip this method and reposition file
+        set_write_position(entry_position);
+      }
+      return nullptr;
+    }
+    // Record not inlined Java callee fingerprints
+    int callee_cnt = java_callees == nullptr ? 0 : java_callees->length();
+    if (!write_int(callee_cnt)) {
+      return nullptr;
+    }
+    for (int i = 0; i < callee_cnt; i++) {
+      Method* m = java_callees->at(i)->get_Method();
+      if (!write_method(m)) {
+        if (lookup_failed() && !failed()) {
+          // Skip this method and reposition file
+          set_write_position(entry_position);
+        }
+        return nullptr;
+      }
+      if (!write_fingerprint(m)) {
+        if (lookup_failed() && !failed()) {
+          // Skip this method and reposition file
+          set_write_position(entry_position);
+        }
+        return nullptr;
+      }
+    }
+  } // ValueTypePassFieldsAsArgs
 
   // Write nmethod's code blob
   if (!align_write()) {
@@ -2871,6 +2877,7 @@ bool AOTCodeCache::load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, Abs
 // Cached nmethod layout
 // - id (encoded Method*)
 // - name of method
+// - method's adapter fingerprint
 // - copy of nmethod
 // - relocation_size
 // - relocations
@@ -2921,6 +2928,39 @@ bool AOTCodeReader::compile_nmethod(ciEnv* env, ciMethod* target, AbstractCompil
     log_info(aot, codecache, nmethod)("%d (A%s%d) '%s' AOT nmethod id: " UINT32_FORMAT_X_0 "%s: %sloading from AOT Code Cache",
              compile_id(), (preload ? "P" : ""), comp_level(), target_name, id,
              (clinit_brs ? ", has clinit barriers" : ""), (preload ? "pre" : ""));
+
+    if (ValueTypePassFieldsAsArgs) {
+      // Verify recorded method fingerprint.
+      if (!verify_fingerprint(method())) {
+        return false;
+      }
+      // Verify recorded not inlined Java callee fingerprints
+      int callee_cnt;
+      if (!read_int(&callee_cnt)) {
+        return false;
+      }
+      if (callee_cnt < 0) {
+        set_lookup_failed("Damaged AOT code: negative callee count");
+        return false;
+      }
+      for (int i = 0; i < callee_cnt; i++) {
+        DataKind kind;
+        if (!read_kind(&kind)) {
+          return false;
+        }
+        if (kind != DataKind::Method) {
+          set_lookup_failed("Invalid DataKind when Method is expected");
+          return false;
+        }
+        Method* m = read_method();
+        if (m == nullptr) {
+          return false;
+        }
+        if (!verify_fingerprint(m)) {
+          return false;
+        }
+      }
+    } // ValueTypePassFieldsAsArgs
   }
 
   if (!align_read_position(DATA_ALIGNMENT)) {
@@ -3601,6 +3641,52 @@ Metadata* AOTCodeReader::read_metadata(JavaThread* thread) {
   return m;
 }
 
+bool AOTCodeCache::write_fingerprint(Method* method) {
+  if (method->adapter() == nullptr) {
+    ResourceMark rm;
+    log_debug(aot, codecache, metadata)("%d (A%d): Method is missing adapter: %s",
+              compile_id(), comp_level(), method->name_and_sig_as_C_string());
+    set_lookup_failed();
+    return false;
+  }
+  AdapterFingerPrint* fp = method->adapter()->fingerprint();
+  int sz = BytesPerWord * method->adapter()->fingerprint_size();
+  if (!write_int(sz)) {
+    return false;
+  }
+  if (!align_write_bytes(BytesPerWord)) {
+    return false;
+  }
+  if (!write_bytes((address)fp, sz)) {
+    return false;
+  }
+  return true;
+}
+
+bool AOTCodeReader::verify_fingerprint(Method* method) {
+  int fp_size = BytesPerWord * method->adapter()->fingerprint_size();
+  int archived_fp_size;
+  if (!read_int(&archived_fp_size)) {
+    return false;
+  }
+  if (archived_fp_size != fp_size) {
+    set_lookup_failed("Cached method's adapter fingerprint size is different from the expected");
+    return false; // Skip this nmethod
+  }
+  if (!align_read_position(BytesPerWord)) {
+    return false;
+  }
+  AdapterFingerPrint* archived_fp;
+  if (!get_set_read_position((address*)&archived_fp, (uint)fp_size)) {
+    return false;
+  }
+  if (!method->adapter()->fingerprint_equals(archived_fp)) {
+    set_lookup_failed("Cached method's adapter fingerprint is different from the expected");
+    return false; // Skip this nmethod
+  }
+  return true;
+}
+
 bool AOTCodeCache::write_method(Method* method) {
   ResourceMark rm; // To method's name printing
   if (AOTCacheAccess::can_generate_aot_code(method)) {
@@ -3676,18 +3762,11 @@ bool AOTCodeCache::write_klass(Klass* klass) {
     can_write = AOTCacheAccess::can_generate_aot_code(klass);
     ObjArrayKlass* oak = ObjArrayKlass::cast(klass);
     array_dim = oak->dimension();
-    if (klass->is_refined_objArray_klass()) {
-      // Preserve property of object array
-      Klass::KlassKind kind;
-      LayoutKind layout;
-      if (klass->is_flatArray_klass()) {
-        kind = Klass::FlatArrayKlassKind;
-        layout = FlatArrayKlass::cast(klass)->layout_kind();
-      } else {
-        kind = Klass::RefArrayKlassKind;
-        layout = LayoutKind::REFERENCE;
-      }
-      array_desc = ArrayDescription(kind, oak->properties(), layout).value();
+    // Preserve property of object array
+    if (klass->is_flatArray_klass()) {
+      array_desc = ArrayDescription::flat(oak->properties(), FlatArrayKlass::cast(klass)->layout_kind()).value();
+    } else if (klass->is_refArray_klass()) {
+      array_desc = ArrayDescription::reference(oak->properties()).value();
     }
     klass = oak->bottom_klass(); // overwrites klass
   }

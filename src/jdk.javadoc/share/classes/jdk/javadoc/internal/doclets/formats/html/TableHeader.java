@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import jdk.javadoc.internal.html.HtmlTree;
  * The attribute {@code scope="col"} is automatically added to each header cell.
  * In addition, a series of style class names can be specified, to be applied one per cell.
  */
-public class TableHeader extends Content {
+public class TableHeader {
 
     /**
      * The content to be put in each of the {@code <th>} cells in the header row.
@@ -129,27 +129,10 @@ public class TableHeader extends Content {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @implSpec This implementation always returns {@code false}.
-     *
-     * @return {@code false}
-     */
-    @Override
-    public boolean isEmpty() {
-        return false;
-    }
-
-    @Override
-    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
-        return toContent().write(out, newline, atNewline);
-    }
-
-    /**
      * Converts this header to a {@link Content} object, for use in an {@link HtmlTree}.
      * @return a Content object
      */
-    private Content toContent() {
+    public Content toContent() {
         Content header = new ContentBuilder();
         int i = 0;
         for (Content cellContent : cellContents) {

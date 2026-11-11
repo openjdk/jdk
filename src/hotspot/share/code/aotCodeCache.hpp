@@ -689,6 +689,10 @@ protected:
     bool _avoidUnalignedAccesses;
 #endif
 
+#if defined(RISCV64) && defined(COMPILER2)
+    bool _alignVector;
+#endif
+
 #ifdef COMPILER2
     bool _reduceInitialCardMarks;
     uint _c2_ea_state;
@@ -712,12 +716,10 @@ protected:
   private:
     // Here should be version and other verification fields
     enum {
-      AOT_CODE_VERSION = 2   // Bump this number in releases where Header layout changes
+      AOT_CODE_VERSION = 3   // Bump this number in releases where Header layout changes
     };
     uint   _version;         // AOT code version (should match when reading code cache)
     uint   _cache_size;      // cache size in bytes
-    uint   _cpu_features_size;
-    uint   _cpu_features_offset;   // offset in the cache where cpu features are stored
     uint   _preload_entries_count; // entries for pre-loading code
     uint   _preload_entries_offset;
     uint   _entries_count;   // number of recorded entries
@@ -741,7 +743,6 @@ protected:
 
   public:
     void init(uint cache_size,
-              uint cpu_features_size,     uint cpu_features_offset,
               uint preload_entries_count, uint preload_entries_offset,
               uint entries_count,         uint entries_offset,
               uint search_table_offset,
@@ -752,8 +753,6 @@ protected:
               uint extrs2_length,         uint final_extrs_length) {
       _version                = AOT_CODE_VERSION;
       _cache_size             = cache_size;
-      _cpu_features_size      = cpu_features_size;
-      _cpu_features_offset    = cpu_features_offset;
       _preload_entries_count  = preload_entries_count;
       _preload_entries_offset = preload_entries_offset;
       _entries_count          = entries_count;
@@ -773,8 +772,6 @@ protected:
     }
 
     uint cache_size()     const { return _cache_size; }
-    uint cpu_features_size()   const { return _cpu_features_size; }
-    uint cpu_features_offset() const { return _cpu_features_offset; }
     uint preload_entries_count()  const { return _preload_entries_count; }
     uint preload_entries_offset() const { return _preload_entries_offset; }
     uint entries_count()  const { return _entries_count; }
@@ -843,8 +840,6 @@ private:
   //
   // @0: Header (all the fixed fields that size and place objects in the ac region.
   // See AOTCodeCache::Header::verify for a detailed walk through what follows.
-  //
-  // @cpu_features_offset: uchar[cpu_features_size]  same layout as VM_Version
   //
   // @preload_entries_offset: AOTCodeEntry[preload_entries_count] "preload" AP4 code
   // Sorted by compile_id (from the training run).
@@ -963,7 +958,6 @@ public:
   AOTCodeEntry* search_entry(AOTCodeEntry::Kind kind, uint id, uint comp_level);
   void invalidate_entry(AOTCodeEntry* entry);
 
-  char* store_cpu_features(char* buffer, uint buffer_size);
   static uint get_jvmti_state();
 
   bool finish_write();
@@ -972,6 +966,7 @@ public:
 
   bool write_klass(Klass* klass);
   bool write_method(Method* method);
+  bool write_fingerprint(Method* method);
 
   bool write_relocations(CodeBlob& code_blob, RelocIterator& iter,
                          bool assert_for_unknown_external_address,
@@ -1008,7 +1003,7 @@ private:
                                   const char* name,
                                   AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
 
-  AOTCodeEntry* write_nmethod(nmethod* nm, bool for_preload);
+  AOTCodeEntry* write_nmethod(nmethod* nm, GrowableArray<ciMethod*>* java_callees, bool for_preload);
 
 public:
   // save and restore API for adapters
@@ -1029,7 +1024,8 @@ public:
   static CodeBlob* load_multi_stub_blob(BlobId id, AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
 
   // save and restore API nmethods
-  static AOTCodeEntry* store_nmethod(nmethod* nm, AbstractCompiler* compiler, bool for_preload) NOT_CDS_RETURN_(nullptr);
+  static AOTCodeEntry* store_nmethod(nmethod* nm, GrowableArray<ciMethod*>* java_callees,
+                                     AbstractCompiler* compiler, bool for_preload) NOT_CDS_RETURN_(nullptr);
 
   static bool load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, AbstractCompiler* compiler) NOT_CDS_RETURN_(false);
 
@@ -1188,6 +1184,7 @@ private:
 
   Klass* read_klass(JavaThread* thread);
   Method* read_method();
+  bool verify_fingerprint(Method* method);
 
   oop read_oop(JavaThread* thread);
   Metadata* read_metadata(JavaThread* thread);
