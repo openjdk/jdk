@@ -11928,7 +11928,7 @@ instruct repl2F_reg_Ex(iRegLdst dst, regF src) %{
   match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 2 &&
             Matcher::vector_element_basic_type(n) == T_FLOAT);
-  ins_cost(2 * DEFAULT_COST);
+  ins_cost(3 * DEFAULT_COST);
   expand %{
     iRegIdst tmpI;
     regF tmpF;
