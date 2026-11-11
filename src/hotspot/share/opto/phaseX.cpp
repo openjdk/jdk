@@ -36,6 +36,7 @@
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
+#include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
@@ -2822,6 +2823,19 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       if (u2->Opcode() == Op_AddL) {
         add_users_to_worklist_if(worklist, u2, [](Node* u1) {
           return u1->Opcode() == Op_MaxL || u1->Opcode() == Op_MinL;
+        });
+      }
+    }
+  }
+  // Check for MinI/MaxI(MinI/MaxI(AddI(x, conx), other), AddI(y, cony))
+  //   -> MinI/MaxI(AddI(x, MinI/MaxI(conx, cony)), other), where all
+  // operations are either MinI or MaxI. This requires a 3-hop
+  // notification like above.
+  if (use_op == Op_AddI) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      if (Node* u2 = use->fast_out(i); u2 != nullptr && u2->is_MinMax()) {
+        add_users_to_worklist_if(worklist, u2, [](Node* u1) {
+          return u1->is_MinMax();
         });
       }
     }
