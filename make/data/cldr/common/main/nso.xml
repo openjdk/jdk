@@ -141,6 +141,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am">a</dayPeriod>
 							<dayPeriod type="pm">p</dayPeriod>
 						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">mesong</dayPeriod>
+							<dayPeriod type="pm">thapama</dayPeriod>
+						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
@@ -197,6 +201,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">-</numericDateSeparator>
+						<numericTimeSeparator draft="provisional">:</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} 'ka' {0}</pattern>
@@ -229,10 +237,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMMW" count="other">'beke' 'ya' 'bo' W 'ya' MMM</dateFormatItem>
 						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">y MMMM d, EEE</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'beke' 'ya' 'bo' w 'ya' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'beke' 'ya' 'bo' w 'ya' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
 							<greatestDifference id="h">h–h a</greatestDifference>
@@ -327,6 +342,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
+			<regionFormat>Nako ya {0}</regionFormat>
+			<regionFormat type="daylight">Nako le Hlabile {0}</regionFormat>
+			<regionFormat type="standard">Nako ya Tlwaelo ya {0}</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Nako ya Legohle yeo e Rulagantšwego</standard>
+				</long>
+			</zone>
 			<metazone type="GMT">
 				<long>
 					<standard>Nako Palogare ya Greenwich</standard>

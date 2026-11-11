@@ -1,7 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 
 #
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,13 @@
 # questions.
 #
 
-javac -d . ../../../../../../../make/jdk/src/classes/build/tools/spp/Spp.java
+# Toggle Bash strict mode
+set -euo pipefail
+
+# Switch to the directory this script is located in
+cd "$(dirname "$0")"
+
+SPP="../../../../../../../make/jdk/src/classes/build/tools/spp/Spp.java"
 
 genBin() {
   for MS in "Heap" "Direct"
@@ -36,7 +42,7 @@ genBin() {
         if [ "$RO" == "RO" ] ; then
           extraArgs="-KRO"
         fi
-        java build.tools.spp.Spp -be -nel -K$1 -Dtype=$1 -DType=$2 -DFulltype=$3 \
+        java $SPP -be -nel -K$1 -Dtype=$1 -DType=$2 -DFulltype=$3 \
               $extraArgs \
               -Kview \
               -DMs=$MS \
@@ -54,10 +60,10 @@ genBin() {
 gen() {
     out=$2Buffers.java
     rm -f $out
-    java build.tools.spp.Spp -be -nel -K$1 -Dtype=$1 -DType=$2 -DFulltype=$3 \
+    java $SPP -be -nel -K$1 -Dtype=$1 -DType=$2 -DFulltype=$3 \
           -DCarrierBW=$4 -iX-Buffers.java.template -o$out
 
-    java build.tools.spp.Spp -be -nel -K$1 -Dtype=$1 -DType=$2 -DFulltype=$3 \
+    java $SPP -be -nel -K$1 -Dtype=$1 -DType=$2 -DFulltype=$3 \
           -DMs=Heap -Dms=heap -DSWAP="" -DRO="" -iX-Buffers-bin.java.template -o$out
 
     if [ "$1" == "byte" ] ; then

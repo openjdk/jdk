@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,10 +509,7 @@ public class PKIXParameters implements CertPathParameters {
      * @see #getDate
      */
     public void setDate(Date date) {
-        if (date != null)
-            this.date = (Date) date.clone();
-        else
-            date = null;
+        this.date = date != null ? (Date) date.clone() : null;
     }
 
     /**

@@ -1878,7 +1878,7 @@ private:
   Node* try_move_store_before_loop(Node* n, Node *n_ctrl);
   void try_move_store_after_loop(Node* n);
   void move_flat_array_check_out_of_loop(Node* n);
-  bool identical_backtoback_ifs(Node *n);
+  bool has_identical_back_to_back_ifs(Node* n);
   bool flat_array_element_type_check(Node *n);
   bool can_split_if(Node *n_ctrl);
   bool cannot_split_division(const Node* n, const Node* region) const;
@@ -2067,8 +2067,6 @@ public:
   void update_addp_chain_base(const AddPNode* x, const Node* old_base, Node* new_base) const;
 
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
-
-  void pin_nodes_dependent_on(Node* ctrl, bool old_iff_is_rangecheck);
 
   void collect_flat_array_checks(const IdealLoopTree* loop, Node_List<IfNode>& flat_array_checks) const;
 

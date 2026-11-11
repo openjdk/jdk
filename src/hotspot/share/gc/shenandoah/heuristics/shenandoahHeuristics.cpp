@@ -39,6 +39,26 @@
 #include "runtime/globals_extension.hpp"
 #include "utilities/quickSort.hpp"
 
+ShenandoahHeuristicsFlag::Heuristic ShenandoahHeuristicsFlag::_value = Heuristic::ADAPTIVE;
+void ShenandoahHeuristicsFlag::initialize() {
+  if (ShenandoahGCHeuristics == nullptr) {
+    vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
+  }
+  if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
+    _value = Heuristic::ADAPTIVE;
+  } else if (strcmp(ShenandoahGCHeuristics, "passive") == 0) {
+    _value = Heuristic::PASSIVE;
+  } else if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
+    _value = Heuristic::AGGRESSIVE;
+  } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
+    _value = Heuristic::STATIC;
+  } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
+    _value = Heuristic::COMPACT;
+  } else {
+    vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
+  }
+}
+
 // sort by decreasing garbage (so most garbage comes first)
 int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
   if (a.get_garbage() > b.get_garbage()) {
@@ -62,7 +82,7 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
-  _metaspace_oom()
+  _bytes_used_at_end_of_gc(0)
 {
   size_t num_regions = ShenandoahHeap::heap()->num_regions();
   assert(num_regions > 0, "Sanity");
@@ -170,6 +190,7 @@ void ShenandoahHeuristics::record_cycle_start() {
 
 void ShenandoahHeuristics::record_cycle_end() {
   _last_cycle_end = os::elapsedTime();
+  _bytes_used_at_end_of_gc = _space_info->used();
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->mode()->is_generational()) {
@@ -270,12 +291,6 @@ bool ShenandoahHeuristics::can_unload_classes() {
   return ClassUnloading;
 }
 
-bool ShenandoahHeuristics::should_unload_classes() {
-  if (!can_unload_classes()) return false;
-  if (has_metaspace_oom()) return true;
-  return ClassUnloadingWithConcurrentMark;
-}
-
 void ShenandoahHeuristics::initialize() {
   // Nothing to do by default.
 }
@@ -300,3 +315,38 @@ void ShenandoahHeuristics::assert_humongous_mark_consistency(ShenandoahHeapRegio
          BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
 }
 #endif
+
+bool ShenandoahHeuristics::trigger_allocation_threshold(const size_t used, const size_t capacity) {
+  if (ShenandoahAllocationThreshold == 0) {
+    // Trigger is disabled
+    return false;
+  }
+
+  const size_t threshold_bytes_allocated = capacity / 100 * ShenandoahAllocationThreshold;
+  const size_t bytes_allocated = used > _bytes_used_at_end_of_gc ? used - _bytes_used_at_end_of_gc : 0;
+  log_debug(gc, ergo)("trigger allocation threshold: used: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
+                      "allocated_since_gc_start: "  PROPERFMT,
+                      PROPERFMTARGS(used), PROPERFMTARGS(capacity), PROPERFMTARGS(bytes_allocated));
+
+  if (bytes_allocated > threshold_bytes_allocated) {
+    log_trigger("Allocation. " PROPERFMT " allocated, above " PROPERFMT " threshold",
+                PROPERFMTARGS(bytes_allocated), PROPERFMTARGS(threshold_bytes_allocated));
+    accept_trigger();
+    return true;
+  }
+  return false;
+}
+
+bool ShenandoahHeuristics::trigger_min_free_threshold(const size_t available, const size_t capacity) {
+  const size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
+  log_debug(gc, ergo)("trigger min free threshold: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT,
+                      PROPERFMTARGS(available), PROPERFMTARGS(capacity));
+
+  if (available < min_threshold) {
+    log_trigger("Occupancy. " PROPERFMT " free, below " PROPERFMT " threshold",
+                PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
+    accept_trigger();
+    return true;
+  }
+  return false;
+}

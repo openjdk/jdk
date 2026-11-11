@@ -40,16 +40,11 @@ PartialArrayState::PartialArrayState(objArrayOop array,
     _length(length),
     _chunk_size(chunk_size),
     _index(index),
-    _refcount(1)
+    _num_remaining_chunks((length - index) / chunk_size)
 {
-  assert(index <= length, "precondition");
+  assert(index < length, "precondition");
   assert(chunk_size > 0, "precondition");
   assert((length - index) % chunk_size == 0, "whole chunks remain");
-}
-
-void PartialArrayState::add_references(size_t count) {
-  size_t new_count = _refcount.add_then_fetch(count, memory_order_relaxed);
-  assert(new_count >= count, "reference count overflow");
 }
 
 class PartialArrayStateAllocator::FreeListEntry {
@@ -93,9 +88,9 @@ PartialArrayState* PartialArrayStateAllocator::allocate(objArrayOop array,
 }
 
 void PartialArrayStateAllocator::release(PartialArrayState* state) {
-  size_t refcount = state->_refcount.sub_then_fetch(1u, memory_order_release);
-  if (refcount != 0) {
-    assert(refcount + 1 != 0, "refcount underflow");
+  size_t num_remaining_chunks = state->_num_remaining_chunks.sub_then_fetch(1u, memory_order_release);
+  if (num_remaining_chunks != 0) {
+    assert(num_remaining_chunks + 1 != 0, "remaining chunk count underflow");
   } else {
     OrderAccess::acquire();
     // Don't need to call destructor; can't if not destructible.

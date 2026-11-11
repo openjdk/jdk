@@ -218,11 +218,11 @@ public:
   bool is_loaded()    const { return _loaded; }
   void set_loaded()         { _loaded = true; }
 
-  bool is_verified()  const;
+  bool is_verified()  const NOT_CDS_RETURN_(false);
   void set_verified();
 
   // Use atomic access to _not_entrant field.
-  bool not_entrant() const;
+  bool not_entrant() const NOT_CDS_RETURN_(false);
   void set_not_entrant();
   bool try_set_not_entrant();
 
@@ -552,15 +552,13 @@ public:
 
 #if defined(RISCV64) && !defined(ZERO)
 #define AOTCODECACHE_CONFIGS_RISCV_DO(do_var, do_fun) \
-  do_var(intx,  BlockZeroingLowLimit)                   /* zero blocks stub */ \
-  do_var(bool,  UseBlockZeroing)                        /* zero blocks stub and nmethods */ \
+  do_var(intx,  BlockZeroingLowLimit)                   /* array clear nmethods */ \
   do_var(bool,  UseConservativeFence)                   /* fence encoding in stubs and nmethods */ \
   do_var(bool,  UseCtxFencei)                           /* method entry barrier stub */ \
   do_var(bool,  UseSecondarySupersCache)                /* secondary supers cache in nmethods */ \
   do_var(bool,  UseZabha)                               /* narrow cmpxchg selection in nmethods */ \
   do_var(bool,  UsePopCountInstruction)                 /* other platforms record it in CPU features */ \
   do_fun(int,   SatpMode,                               (int)VM_Version::satp_mode.value()) \
-  do_fun(int,   RVZicbozBlockSize,                      (int)VM_Version::zicboz_block_size.value()) \
   // END
 #else
 #define AOTCODECACHE_CONFIGS_RISCV_DO(do_var, do_fun)
@@ -691,6 +689,10 @@ protected:
     bool _avoidUnalignedAccesses;
 #endif
 
+#if defined(RISCV64) && defined(COMPILER2)
+    bool _alignVector;
+#endif
+
 #ifdef COMPILER2
     bool _reduceInitialCardMarks;
     uint _c2_ea_state;
@@ -714,12 +716,10 @@ protected:
   private:
     // Here should be version and other verification fields
     enum {
-      AOT_CODE_VERSION = 2   // Bump this number in releases where Header layout changes
+      AOT_CODE_VERSION = 3   // Bump this number in releases where Header layout changes
     };
     uint   _version;         // AOT code version (should match when reading code cache)
     uint   _cache_size;      // cache size in bytes
-    uint   _cpu_features_size;
-    uint   _cpu_features_offset;   // offset in the cache where cpu features are stored
     uint   _preload_entries_count; // entries for pre-loading code
     uint   _preload_entries_offset;
     uint   _entries_count;   // number of recorded entries
@@ -743,7 +743,6 @@ protected:
 
   public:
     void init(uint cache_size,
-              uint cpu_features_size,     uint cpu_features_offset,
               uint preload_entries_count, uint preload_entries_offset,
               uint entries_count,         uint entries_offset,
               uint search_table_offset,
@@ -754,8 +753,6 @@ protected:
               uint extrs2_length,         uint final_extrs_length) {
       _version                = AOT_CODE_VERSION;
       _cache_size             = cache_size;
-      _cpu_features_size      = cpu_features_size;
-      _cpu_features_offset    = cpu_features_offset;
       _preload_entries_count  = preload_entries_count;
       _preload_entries_offset = preload_entries_offset;
       _entries_count          = entries_count;
@@ -775,8 +772,6 @@ protected:
     }
 
     uint cache_size()     const { return _cache_size; }
-    uint cpu_features_size()   const { return _cpu_features_size; }
-    uint cpu_features_offset() const { return _cpu_features_offset; }
     uint preload_entries_count()  const { return _preload_entries_count; }
     uint preload_entries_offset() const { return _preload_entries_offset; }
     uint entries_count()  const { return _entries_count; }
@@ -846,8 +841,6 @@ private:
   // @0: Header (all the fixed fields that size and place objects in the ac region.
   // See AOTCodeCache::Header::verify for a detailed walk through what follows.
   //
-  // @cpu_features_offset: uchar[cpu_features_size]  same layout as VM_Version
-  //
   // @preload_entries_offset: AOTCodeEntry[preload_entries_count] "preload" AP4 code
   // Sorted by compile_id (from the training run).
   // Queued for load at startup, in that order (see preload_aot_code).
@@ -884,6 +877,7 @@ private:
   uint*         _search_entries; // sorted by ID table [id, index] @search_table_offset
   AOTCodeEntry* _store_entries;  // Used when writing cache
   uint          _store_entries_cnt; // total entries count
+  uint          _store_nmethod_cnt; // total nmethod count
 
   // These guys can stash data to help log messages in the APH.  Move to the writer obj?
   uint _compile_id;
@@ -965,7 +959,6 @@ public:
   AOTCodeEntry* search_entry(AOTCodeEntry::Kind kind, uint id, uint comp_level);
   void invalidate_entry(AOTCodeEntry* entry);
 
-  char* store_cpu_features(char* buffer, uint buffer_size);
   static uint get_jvmti_state();
 
   bool finish_write();
@@ -974,6 +967,7 @@ public:
 
   bool write_klass(Klass* klass);
   bool write_method(Method* method);
+  bool write_fingerprint(Method* method);
 
   bool write_relocations(CodeBlob& code_blob, RelocIterator& iter,
                          bool assert_for_unknown_external_address,
@@ -1010,7 +1004,7 @@ private:
                                   const char* name,
                                   AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
 
-  AOTCodeEntry* write_nmethod(nmethod* nm, bool for_preload);
+  AOTCodeEntry* write_nmethod(nmethod* nm, GrowableArray<ciMethod*>* java_callees, bool for_preload);
 
 public:
   // save and restore API for adapters
@@ -1031,7 +1025,8 @@ public:
   static CodeBlob* load_multi_stub_blob(BlobId id, AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
 
   // save and restore API nmethods
-  static AOTCodeEntry* store_nmethod(nmethod* nm, AbstractCompiler* compiler, bool for_preload) NOT_CDS_RETURN_(nullptr);
+  static AOTCodeEntry* store_nmethod(nmethod* nm, GrowableArray<ciMethod*>* java_callees,
+                                     AbstractCompiler* compiler, bool for_preload) NOT_CDS_RETURN_(nullptr);
 
   static bool load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, AbstractCompiler* compiler) NOT_CDS_RETURN_(false);
 
@@ -1039,11 +1034,11 @@ public:
   // publish all entries for a code blob in code cache address table
   static void publish_stub_addresses(CodeBlob &code_blob, BlobId id, AOTStubData *stub_data) NOT_CDS_RETURN;
 
-  static uint store_entries_cnt() {
-    if (is_on_for_dump()) {
-      return cache()->_store_entries_cnt;
+  static uint store_nmethod_cnt() {
+    if (is_on()) {
+      return cache()->_store_nmethod_cnt;
     }
-    return -1;
+    return 0;
   }
 
 // Static access
@@ -1190,6 +1185,7 @@ private:
 
   Klass* read_klass(JavaThread* thread);
   Method* read_method();
+  bool verify_fingerprint(Method* method);
 
   oop read_oop(JavaThread* thread);
   Metadata* read_metadata(JavaThread* thread);
