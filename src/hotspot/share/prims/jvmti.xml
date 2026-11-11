@@ -6635,14 +6635,14 @@ class C2 extends C1 implements I2 {
      <ul>
        <li>
        An event for a watched instance field is not generated while the object
-       containing the field is being constructed by the event thread, if the
-       object's class, or any of its superclasses, has
+       containing the field is being constructed by the event thread if the
+       object's class or any of its superclasses has
        <externallink id="../api/java.base/java/lang/reflect/Field.html#isStrictInit()">
        strictly-initialized<sup>PREVIEW</sup></externallink> instance fields.
        For this purpose, the VM considers an object to be under construction
        if the event thread has an active constructor invocation where slot 0
-       of the local variable array contains a reference to the object, and
-       the constructor's declaring class, or any of its superclasses, has
+       of the local variable array contains a reference to the object and
+       the constructor's declaring class or any of its superclasses has
        strictly-initialized instance fields.
        </li>
        <li>

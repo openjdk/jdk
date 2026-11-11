@@ -47,8 +47,8 @@ import com.sun.jdi.event.EventSet;
  * managed by the {@link EventRequestManager}.
  * <p>
  * A notification is not generated for an instance field while the object
- * containing the field is being constructed by the event thread, if the
- * object's class, or any of its superclasses, has
+ * containing the field is being constructed by the event thread if the
+ * object's class or any of its superclasses has
  * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized}
  * instance fields. A notification is also not generated for a static field
  * when the class declaring the field is being initialized by the event thread
