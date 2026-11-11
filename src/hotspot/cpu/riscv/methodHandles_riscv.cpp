@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -110,8 +110,8 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, vmIntr
     switch (iid) {
       case vmIntrinsicID::_invokeBasic:
         // Require compiled LambdaForm class to be fully initialized.
-        __ lbu(t0, Address(method_holder, InstanceKlass::init_state_offset()));
-        __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+        __ la(t0, Address(method_holder, InstanceKlass::init_state_offset()));
+        __ lbu_acquire(t0, t0);
         __ mv(t1, InstanceKlass::fully_initialized);
         __ beq(t0, t1, L_ok);
         break;
@@ -123,8 +123,8 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, vmIntr
       case vmIntrinsicID::_linkToSpecial:
       case vmIntrinsicID::_linkToInterface:
         // Class initialization check is too strong here. Just ensure that class initialization has been initiated.
-        __ lbu(t0, Address(method_holder, InstanceKlass::init_state_offset()));
-        __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+        __ la(t0, Address(method_holder, InstanceKlass::init_state_offset()));
+        __ lbu_acquire(t0, t0);
         __ mv(t1, InstanceKlass::being_initialized);
         __ bge(t0, t1, L_ok);
 
@@ -166,7 +166,11 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     __ BIND(run_compiled_code);
   }
 
-  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_offset() :
+  // The following jump might pass a value type argument that was erased to Object as oop to a
+  // callee that expects value type arguments to be passed as fields. We need to call the compiled
+  // value entry (_code->value_entry_point() or _adapter->c2i_value_entry()) which will take care
+  // of translating between the calling conventions.
+  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_value_offset() :
                                                      Method::from_interpreted_offset();
   __ ld(t1, Address(method, entry_offset));
   __ jr(t1);

@@ -76,7 +76,7 @@ class JvmtiFramePop {
 // It records what frames on a threads stack should post frame_pop events when they're exited.
 //
 
-class JvmtiFramePops : public CHeapObj<mtInternal> {
+class JvmtiFramePops : public CHeapObj<mtServiceability> {
  private:
   GrowableArray<int>* _pops;
 
@@ -108,7 +108,7 @@ class JvmtiFramePops : public CHeapObj<mtInternal> {
 // 3: Location of last executed instruction, used to filter out duplicate
 //    events due to instruction rewriting.
 
-class JvmtiEnvThreadState : public CHeapObj<mtInternal> {
+class JvmtiEnvThreadState : public CHeapObj<mtServiceability> {
 private:
   friend class JvmtiEnv;
   JvmtiThreadState  *_state;

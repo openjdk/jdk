@@ -79,6 +79,20 @@ char ciSymbol::char_at(int i) {
 bool ciSymbol::starts_with(const char* prefix, int len) const {
   GUARDED_VM_ENTRY(return get_symbol()->starts_with(prefix, len);)
 }
+bool ciSymbol::starts_with(char prefix_char) const {
+  GUARDED_VM_ENTRY(return get_symbol()->starts_with(prefix_char);)
+}
+
+// ------------------------------------------------------------------
+// ciSymbol::ends_with
+//
+// Tests if the symbol ends with the given suffix.
+bool ciSymbol::ends_with(const char* suffix, int len) const {
+  GUARDED_VM_ENTRY(return get_symbol()->ends_with(suffix, len);)
+}
+bool ciSymbol::ends_with(char suffix_char) const {
+  GUARDED_VM_ENTRY(return get_symbol()->ends_with(suffix_char);)
+}
 
 bool ciSymbol::is_signature_polymorphic_name()  const {
   GUARDED_VM_ENTRY(return MethodHandles::is_signature_polymorphic_name(get_symbol());)

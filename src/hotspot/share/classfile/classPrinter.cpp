@@ -159,7 +159,7 @@ public:
     }
 
     if (has_mode(_flags, ClassPrinter::PRINT_CLASS_DETAILS)) {
-      _st->print("InstanceKlass: ");
+      _st->print("InstanceKlass (kind=%d): ", ik->kind());
       ik->print_on(_st);
       oop mirror = ik->java_mirror();
       if (mirror != nullptr) {

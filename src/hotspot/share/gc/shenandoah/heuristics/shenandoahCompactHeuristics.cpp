@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,8 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
-ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* space_info) :
-  ShenandoahHeuristics(space_info),
-  _bytes_used_at_end_of_gc(0) {
+void ShenandoahCompactHeuristics::configure() {
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
-  SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahUncommit);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahAlwaysClearSoftRefs);
   SHENANDOAH_ERGO_ENABLE_FLAG(UseStringDeduplication);
@@ -46,40 +43,28 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* sp
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahGarbageThreshold,     10);
 }
 
+ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* space_info) :
+  ShenandoahHeuristics(space_info)
+{
+  configure();
+}
+
 bool ShenandoahCompactHeuristics::should_start_gc() {
   const size_t used = _space_info->used();
   const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t available = _space_info->soft_mutator_available();
-  const size_t bytes_allocated = used > _bytes_used_at_end_of_gc ? used - _bytes_used_at_end_of_gc : 0;
 
-  log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
-                "allocated_since_gc_start: "  PROPERFMT,
-                PROPERFMTARGS(available), PROPERFMTARGS(capacity), PROPERFMTARGS(bytes_allocated));
-
-  const size_t threshold_bytes_allocated = capacity / 100 * ShenandoahAllocationThreshold;
-  const size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
-
-  if (available < min_threshold) {
-    log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
-                PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
-    accept_trigger();
+  if (trigger_min_free_threshold(available, capacity)) {
     return true;
   }
 
-  if (bytes_allocated > threshold_bytes_allocated) {
-    log_trigger("Allocated since last cycle started (" PROPERFMT ") is larger than allocation threshold (" PROPERFMT ")",
-                PROPERFMTARGS(bytes_allocated), PROPERFMTARGS(threshold_bytes_allocated));
-    accept_trigger();
+  if (trigger_allocation_threshold(used, capacity)) {
     return true;
   }
 
   return ShenandoahHeuristics::should_start_gc();
 }
 
-void ShenandoahCompactHeuristics::record_cycle_end() {
-  ShenandoahHeuristics::record_cycle_end();
-  _bytes_used_at_end_of_gc = _space_info->used();
-}
 
 void ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                         RegionData* data, size_t size,

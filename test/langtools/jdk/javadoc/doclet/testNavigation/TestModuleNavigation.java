@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8196027 8196202 8320458 8342705 8371021
+ * @bug 8196027 8196202 8320458 8342705 8371021 8377548
  * @summary test navigation links
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -86,7 +86,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#module">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""",
                 """
                     <nav role="navigation" class="toc" aria-label="Table of contents">
@@ -102,7 +102,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#tree">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""");
 
         checkOutput("deprecated-list.html", true,
@@ -114,7 +114,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#deprecated">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""");
 
         checkOutput("index-all.html", true,
@@ -126,7 +126,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li class="nav-bar-cell1-rev">Index</li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#index">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""");
 
         checkOutput("search.html", true,
@@ -138,7 +138,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li class="nav-bar-cell1-rev">Search</li>
                     <li><a href="help-doc.html#search">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""");
 
         checkOutput("help-doc.html", true,
@@ -150,7 +150,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li class="nav-bar-cell1-rev">Help</li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""",
                 """
                     <nav role="navigation" class="toc" aria-label="Table of contents">
@@ -167,7 +167,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="../../index-all.html">Index</a></li>
                     <li><a href="../../search.html">Search</a></li>
                     <li><a href="../../help-doc.html#package">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""",
                 """
                     <nav role="navigation" class="toc" aria-label="Table of contents">
@@ -184,7 +184,7 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="../../index-all.html">Index</a></li>
                     <li><a href="../../search.html">Search</a></li>
                     <li><a href="../../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
+                    <script type="text/javascript">initTheme();</script>
                     </ul>""",
                 """
                     <nav role="navigation" class="toc" aria-label="Table of contents">

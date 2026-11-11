@@ -22,8 +22,8 @@
  *
  */
 
+#include "cds/aotHeap.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -96,7 +96,7 @@ class KeepAliveObjectsTable : public HashTable<oop, bool,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared,
-    HeapShared::oop_address_hash> {};
+    AOTHeap::oop_address_hash> {};
 
 static KeepAliveObjectsTable* _keep_alive_objs_table;
 static OopHandle _keep_alive_objs_array;
@@ -173,9 +173,9 @@ void AOTReferenceObjSupport::init_keep_alive_objs_table() {
   assert_at_safepoint(); // _keep_alive_objs_table uses raw oops
   oop a = _keep_alive_objs_array.resolve();
   if (a != nullptr) {
-    precond(a->is_objArray());
+    precond(a->is_refArray());
     precond(AOTReferenceObjSupport::is_enabled());
-    objArrayOop array = objArrayOop(a);
+    refArrayOop array = oop_cast<refArrayOop>(a);
 
     _keep_alive_objs_table = new (mtClass)KeepAliveObjectsTable();
     for (int i = 0; i < array->length(); i++) {
@@ -194,8 +194,8 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
     // is not running.
     //
     // This code is called on every object found by AOTArtifactFinder. When dumping the
-    // preimage archive, AOTArtifactFinder should not find any Reference objects.
-    precond(!CDSConfig::is_dumping_preimage_static_archive());
+    // AOT configuration, AOTArtifactFinder should not find any Reference objects.
+    precond(!CDSConfig::is_dumping_aot_configuration());
     precond(CDSConfig::allow_only_single_java_thread());
 
     precond(AOTReferenceObjSupport::is_enabled());
@@ -226,7 +226,7 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
                            PTR_FORMAT ")", p2i(_null_queue.resolve()));
       log_error(aot, heap)("%s", (referent == nullptr) ?
                            "referent cannot be null" : "referent is not registered with CDS.keepAlive()");
-      HeapShared::debug_trace();
+      AOTHeap::debug_trace();
       AOTMetaspace::unrecoverable_writing_error();
     }
 

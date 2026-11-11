@@ -441,6 +441,11 @@ public final class BandedSampleModel extends ComponentSampleModel
      */
     public int[] getPixels(int x, int y, int w, int h,
                            int[] iArray, DataBuffer data) {
+
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int x1 = x + w;
         int y1 = y + h;
 
@@ -543,6 +548,10 @@ public final class BandedSampleModel extends ComponentSampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int[] samples;
         if (iArray != null) {
            samples = iArray;
@@ -669,7 +678,7 @@ public final class BandedSampleModel extends ComponentSampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code iArray} or {code data} is {@code null}.
+     * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code iArray} is too small to hold the input.
      */
@@ -689,7 +698,7 @@ public final class BandedSampleModel extends ComponentSampleModel
      * {@inheritDoc}
      * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
-     * not in bounds, or {@code w} or {@code h} is negative.
+     * not in bounds, or {@code w} or {@code h} is negative,
      * or if {@code iArray} is too small to hold the input.
      */
     public void setPixels(int x, int y, int w, int h,
@@ -702,6 +711,13 @@ public final class BandedSampleModel extends ComponentSampleModel
         {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
+        }
+
+        if (iArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
         }
 
         for (int k = 0; k < numBands; k++) {
@@ -787,6 +803,14 @@ public final class BandedSampleModel extends ComponentSampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
+
+        if (iArray == null) {
+            throw new NullPointerException("Array must not be null");
+        }
+        if (data == null) {
+            throw new NullPointerException("DataBuffer must not be null");
+        }
+
         int lineOffset = y*scanlineStride + x + bandOffsets[b];
         int srcOffset = 0;
         int bank = bankIndices[b];

@@ -58,6 +58,14 @@ class RegisterSaver {
 
   // During deoptimization only the result register need to be restored
   // all the other values have already been extracted.
+
+  // Push frame and save argument registers.
+  static void push_frame_and_save_argument_registers(MacroAssembler* masm, Register r_temp,
+                                                     int frame_size, int total_args,
+                                                     const VMRegPair* regs);
+  // Restore argument registers and pop frame.
+  static void restore_argument_registers_and_pop_frame(MacroAssembler* masm, int frame_size,
+                                                       int total_args, const VMRegPair* regs);
   static void restore_result_registers(MacroAssembler* masm, bool save_vectors);
 
   // Constants and data structures:

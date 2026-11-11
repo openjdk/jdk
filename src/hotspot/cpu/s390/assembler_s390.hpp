@@ -3155,8 +3155,10 @@ class Assembler : public AbstractAssembler {
 
   inline void z_basr(Register r1, Register r2);
   inline void z_brasl(Register r1, address a);
-  inline void z_brct(Register r1, address a);
-  inline void z_brct(Register r1, Label& L);
+  inline void z_brct( Register r1, address a);
+  inline void z_brct( Register r1, Label& L);
+  inline void z_brctg(Register r1, address a);
+  inline void z_brctg(Register r1, Label& L);
 
   inline void z_brxh(Register r1, Register r3, address a);
   inline void z_brxh(Register r1, Register r3, Label& L);
@@ -3278,6 +3280,15 @@ class Assembler : public AbstractAssembler {
   }
   static bool is_z_nop(address x) {
     return is_z_nop(* (short *) x);
+  }
+  // A post-call NOP is encoded as CLFI SP, imm32 (RIL-a format, 6 bytes).
+  // Byte 0 = 0xC2 (opcode1), byte 1 = 0xFF (R1=SP=15 in bits 39..36,
+  // opcode2=0xF in bits 35..32). The 4-byte imm32 carries the payload.
+  // Result goes only to the condition code, which is caller-scratch after a call.
+  static bool is_post_call_nop(address x) {
+    // Check the first 2 bytes for the CLFI SP opcode signature (0xC2 0xFF).
+    // Only 2 bytes are read to avoid a page-boundary out-of-bounds access.
+    return (*(unsigned short*) x) == (unsigned short)((0xc2 << 8) | 0xff);
   }
   static bool is_z_illtrap(address x) {
     return *(uint8_t*)x == 0u;

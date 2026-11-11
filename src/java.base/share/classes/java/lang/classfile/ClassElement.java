@@ -50,6 +50,7 @@ public sealed interface ClassElement extends ClassFileElement
                 FieldModel, MethodModel,
                 CustomAttribute, CompilationIDAttribute, DeprecatedAttribute,
                 EnclosingMethodAttribute, InnerClassesAttribute,
+                LoadableDescriptorsAttribute,
                 ModuleAttribute, ModuleHashesAttribute, ModuleMainClassAttribute,
                 ModulePackagesAttribute, ModuleResolutionAttribute, ModuleTargetAttribute,
                 NestHostAttribute, NestMembersAttribute, PermittedSubclassesAttribute,

@@ -31,6 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.parser.TestClassParser;
 import compiler.lib.ir_framework.shared.*;
+import compiler.lib.ir_framework.shared.TestExecutionPolicy;
 import compiler.lib.ir_framework.test.TestVM;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
@@ -146,6 +147,7 @@ public class TestFramework {
                     "LogCompilation",
                     "UseCompactObjectHeaders",
                     "UseFMA",
+                    "AOTCache",
                     // Riscv
                     "UseRVV",
                     "UseZbb",
@@ -157,8 +159,6 @@ public class TestFramework {
 
     public static final boolean VERBOSE = Boolean.getBoolean("Verbose");
     public static final boolean PRINT_RULE_MATCHING_TIME = Boolean.getBoolean("PrintRuleMatchingTime");
-    public static final boolean TESTLIST = !System.getProperty("Test", "").isEmpty();
-    public static final boolean EXCLUDELIST = !System.getProperty("Exclude", "").isEmpty();
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");
     // Only used for internal testing and should not be used for normal user testing.
 
@@ -177,6 +177,7 @@ public class TestFramework {
     private static boolean toggleBool;
 
     private final Class<?> testClass;
+    private final TestExecutionPolicy testExecutionPolicy;
     private Set<Class<?>> helperClasses;
     private List<Scenario> scenarios;
     private Set<Integer> scenarioIndices;
@@ -211,6 +212,7 @@ public class TestFramework {
     public TestFramework(Class<?> testClass) {
         TestRun.check(testClass != null, "Test class cannot be null");
         this.testClass = testClass;
+        this.testExecutionPolicy = new TestExecutionPolicy();
         if (VERBOSE) {
             System.out.println("Test class: " + testClass);
         }
@@ -656,6 +658,18 @@ public class TestFramework {
     }
 
     /**
+     * Checks if deopt of {@code m} is stable at the specified {@code compLevel}.
+     *
+     * @param m the method to be checked.
+     * @param compLevel the compilation level.
+     * @return {@code true} if deopt of {@code m} is stable at {@code compLevel};
+     *         {@code false} otherwise.
+     */
+    public static boolean isStableDeopt(Method m, CompLevel compLevel) {
+        return TestVM.isStableDeopt(m, compLevel);
+    }
+
+    /**
      * Returns a different boolean each time this method is invoked (switching between {@code false} and {@code true}).
      * The very first invocation returns {@code false}. Note that this method could be used by different tests and
      * thus the first invocation for a test could be {@code true} or {@code false} depending on how many times
@@ -779,7 +793,7 @@ public class TestFramework {
             builder.append(System.lineSeparator());
         }
         System.err.println(builder);
-        if (!VERBOSE && !REPORT_STDOUT && !TESTLIST && !EXCLUDELIST) {
+        if (!VERBOSE && !REPORT_STDOUT && !testExecutionPolicy.isTestOrExcludePolicyActive()) {
             // Provide a hint to the user how to get additional output/debugging information.
             System.err.println(RERUN_HINT);
         }
@@ -789,7 +803,7 @@ public class TestFramework {
     private static String getScenarioTitleAndFlags(Scenario scenario) {
         StringBuilder builder = new StringBuilder();
         String title = "Scenario #" + scenario.getIndex();
-        builder.append(title).append(System.lineSeparator()).append("=".repeat(title.length()))
+        builder.append(title).append(System.lineSeparator()).repeat("=", title.length())
                .append(System.lineSeparator());
         builder.append("Scenario flags: [").append(String.join(", ", scenario.getFlags())).append("]")
                .append(System.lineSeparator());

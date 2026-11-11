@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
         this.stream = stream;
     }
 
+    @Override
     public int read() throws IOException {
         checkClosed();
         bitOffset = 0;
@@ -73,6 +74,7 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
         }
     }
 
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         checkClosed();
 
@@ -103,6 +105,7 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
         }
     }
 
+    @Override
     public void flushBefore(long pos) throws IOException {
         super.flushBefore(pos); // this will call checkClosed() for us
         cache.disposeBefore(pos);
@@ -118,6 +121,7 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
      * @see #isCachedMemory
      * @see #isCachedFile
      */
+    @Override
     public boolean isCached() {
         return true;
     }
@@ -131,6 +135,7 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
      * @see #isCached
      * @see #isCachedMemory
      */
+    @Override
     public boolean isCachedFile() {
         return false;
     }
@@ -144,6 +149,7 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
      * @see #isCached
      * @see #isCachedFile
      */
+    @Override
     public boolean isCachedMemory() {
         return true;
     }
@@ -152,6 +158,7 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
      * Closes this {@code MemoryCacheImageInputStream}, freeing
      * the cache.  The source {@code InputStream} is not closed.
      */
+    @Override
     public void close() throws IOException {
         super.close();
         stream = null;

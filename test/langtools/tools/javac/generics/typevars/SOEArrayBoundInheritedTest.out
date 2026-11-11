@@ -1,0 +1,2 @@
+SOEArrayBoundInheritedTest.java:17:20: compiler.err.type.found.req: U[], (compiler.misc.type.req.class)
+1 error

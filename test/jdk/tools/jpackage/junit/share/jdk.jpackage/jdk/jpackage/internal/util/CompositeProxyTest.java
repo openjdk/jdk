@@ -42,7 +42,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.CompositeProxy.InvokeTunnel;
-import jdk.jpackage.test.JUnitUtils.StringArrayConverter;
+import jdk.jpackage.test.JUnitUtils.ArrayConverter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.converter.ConvertWith;
@@ -847,7 +847,7 @@ class CompositeProxyTest {
         "static-foo",
         "static-foo,private-foo,no-foo",
     })
-    void testMissingImplementer(@ConvertWith(StringArrayConverter.class) String[] slicesSpec) throws NoSuchMethodException, SecurityException {
+    void testMissingImplementer(@ConvertWith(ArrayConverter.class) String[] slicesSpec) throws NoSuchMethodException, SecurityException {
 
         interface A {
             void foo();
@@ -934,7 +934,7 @@ class CompositeProxyTest {
         "'b,a',false",
     })
     void testAmbiguousImplementers(
-            @ConvertWith(StringArrayConverter.class) String[] slicesSpec,
+            @ConvertWith(ArrayConverter.class) String[] slicesSpec,
             boolean withObjectConflictResolver) throws NoSuchMethodException, SecurityException {
 
         interface A {

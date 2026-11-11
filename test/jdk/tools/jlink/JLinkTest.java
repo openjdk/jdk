@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.test.lib.util.FileUtils;
 import tests.Helper;
 import tests.JImageGenerator;
 
@@ -45,13 +46,14 @@ import tests.JImageGenerator;
  * @bug 8189777 8194922 8206962 8240349 8163382 8165735 8166810 8173717 8321139
  * @author Jean-Francois Denise
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
- * @library ../lib
+ * @library ../lib /test/lib
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build tests.*
+ * @build jdk.test.lib.util.FileUtils
  * @run main/othervm/timeout=480 -Xmx1g JLinkTest
  */
 public class JLinkTest {
@@ -110,10 +112,12 @@ public class JLinkTest {
              // No --module-path specified. $JAVA_HOME/jmods should be assumed.
              // The following should succeed as it uses only system modules.
              String imageDir = "bug818977-no-modulepath";
+             Path image = helper.createNewImageDir(imageDir);
              JImageGenerator.getJLinkTask()
-                     .output(helper.createNewImageDir(imageDir))
+                     .output(image)
                      .addMods("jdk.jshell")
                      .call().assertSuccess();
+             FileUtils.deleteFileTreeWithRetry(image);
         }
 
         {
@@ -121,11 +125,13 @@ public class JLinkTest {
              // $JAVA_HOME/jmods should be added automatically.
              // The following should succeed as it uses only system modules.
              String imageDir = "bug8189777-invalid-modulepath";
+             Path image = helper.createNewImageDir(imageDir);
              JImageGenerator.getJLinkTask()
                      .modulePath("does_not_exist_path")
-                     .output(helper.createNewImageDir(imageDir))
+                     .output(image)
                      .addMods("jdk.jshell")
                      .call().assertSuccess();
+             FileUtils.deleteFileTreeWithRetry(image);
         }
 
         {
@@ -139,11 +145,13 @@ public class JLinkTest {
 
         {
             String moduleName = "bug8134651";
+            Path image1 = helper.createNewImageDir(moduleName);
             JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath())
-                    .output(helper.createNewImageDir(moduleName))
+                    .output(image1)
                     .addMods("leaf1")
                     .call().assertSuccess();
+            FileUtils.deleteFileTreeWithRetry(image1);
             JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath())
                     .addMods("leaf1")
@@ -155,11 +163,13 @@ public class JLinkTest {
                     .addMods("leaf1")
                     .call().assertFailure("Error: no value given for --module-path");
             // do not include standard module path - should be added automatically
+            Path image2 = helper.createNewImageDir(moduleName);
             JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath(false))
-                    .output(helper.createNewImageDir(moduleName))
+                    .output(image2)
                     .addMods("leaf1")
                     .call().assertSuccess();
+            FileUtils.deleteFileTreeWithRetry(image2);
             // no --module-path. default sys mod path is assumed - but that won't contain 'leaf1' module
             JImageGenerator.getJLinkTask()
                     .output(helper.createNewImageDir(moduleName))
@@ -170,18 +180,22 @@ public class JLinkTest {
         {
             String moduleName = "m"; // 8163382
             Path jmod = helper.generateDefaultJModule(moduleName).assertSuccess();
+            Path imageM = helper.createNewImageDir(moduleName);
             JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath())
-                    .output(helper.createNewImageDir(moduleName))
+                    .output(imageM)
                     .addMods("m")
                     .call().assertSuccess();
+            FileUtils.deleteFileTreeWithRetry(imageM);
             moduleName = "mod";
             jmod = helper.generateDefaultJModule(moduleName).assertSuccess();
+            Path imageMod = helper.createNewImageDir(moduleName);
             JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath())
-                    .output(helper.createNewImageDir(moduleName))
+                    .output(imageMod)
                     .addMods("m")
                     .call().assertSuccess();
+            FileUtils.deleteFileTreeWithRetry(imageMod);
         }
 
         {
@@ -196,13 +210,15 @@ public class JLinkTest {
                     // second --module-path does not have that module
                     .call().assertFailure("Error: Module m_8165735 not found");
 
+            Path imageRepeatedPath = helper.createNewImageDir(moduleName);
             JImageGenerator.getJLinkTask()
                     .modulePath(".") // first --module-path overridden later
                     .repeatedModulePath(helper.defaultModulePath())
-                    .output(helper.createNewImageDir(moduleName))
+                    .output(imageRepeatedPath)
                     .addMods(moduleName)
                     // second --module-path has that module
                     .call().assertSuccess();
+            FileUtils.deleteFileTreeWithRetry(imageRepeatedPath);
 
             JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath())
@@ -212,13 +228,15 @@ public class JLinkTest {
                     .addMods(moduleName)
                     .call().assertFailure("Error: Module m_8165735dependency not found, required by m_8165735");
 
+            Path imageRepeatedLimit = helper.createNewImageDir(moduleName);
             JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath())
-                    .output(helper.createNewImageDir(moduleName))
+                    .output(imageRepeatedLimit)
                     .limitMods("java.base")
                     .repeatedLimitMods(moduleName) // second --limit-modules overrides first
                     .addMods(moduleName)
                     .call().assertSuccess();
+            FileUtils.deleteFileTreeWithRetry(imageRepeatedLimit);
         }
 
         {
@@ -269,6 +287,7 @@ public class JLinkTest {
             String[] files = {Helper.getDebugSymbolsExtension()};
             Path imageDir = helper.generateDefaultImage(userOptions, moduleName).assertSuccess();
             helper.checkImage(imageDir, moduleName, res, files);
+            FileUtils.deleteFileTreeWithRetry(imageDir);
         }
 
         // filter out + Skip debug + compress with filter + sort resources
@@ -282,6 +301,7 @@ public class JLinkTest {
             String[] res = {".jcov", "/META-INF/"};
             Path imageDir = helper.generateDefaultImage(userOptions2, moduleName).assertSuccess();
             helper.checkImage(imageDir, moduleName, res, null);
+            FileUtils.deleteFileTreeWithRetry(imageDir);
         }
 
         // module-info.class should not be excluded
@@ -439,5 +459,6 @@ public class JLinkTest {
         helper.generateDefaultJModule(moduleName, "composite2");
         Path imageDir = helper.generateDefaultImage(userOptions, moduleName).assertSuccess();
         helper.checkImage(imageDir, moduleName, null, null);
+        FileUtils.deleteFileTreeWithRetry(imageDir);
     }
 }

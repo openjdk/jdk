@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-StackMapFrame::StackMapFrame(u2 max_locals, u2 max_stack, ClassVerifier* v) :
+StackMapFrame::StackMapFrame(u2 max_locals, u2 max_stack, AssertUnsetFieldTable* initial_strict_fields, ClassVerifier* v) :
                       _offset(0), _locals_size(0), _stack_size(0),
                       _stack_mark(0), _max_locals(max_locals),
-                      _max_stack(max_stack), _flags(0), _verifier(v) {
+                      _max_stack(max_stack), _flags(0), _assert_unset_fields(initial_strict_fields), _verifier(v) {
   Thread* thr = v->thread();
   _locals = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, max_locals);
   _stack = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, max_stack);
@@ -47,10 +47,82 @@ StackMapFrame::StackMapFrame(u2 max_locals, u2 max_stack, ClassVerifier* v) :
   }
 }
 
-StackMapFrame* StackMapFrame::frame_in_exception_handler(u1 flags) {
+void StackMapFrame::unsatisfied_strict_fields_error(InstanceKlass* klass, int bci) {
+  // Default these to `<Unknown>` as they will be replaced with the correct
+  // values by the `find_unset` lambda as we only call this code when
+  // an error has already been determined.  This just provides a safe
+  // obvious fallback value.
+  Symbol* name = vmSymbols::unknown_class_name();
+  Symbol* sig = vmSymbols::unknown_class_name();
+  int num_uninit_fields = assert_unset_fields()->number_of_entries();
+
+  verifier()->verify_error(
+    ErrorContext::bad_strict_fields(bci, this),
+    "All strict fields must be initialized before super(): %d field(s) in %s",
+    num_uninit_fields,
+    klass->name()->as_C_string()
+  );
+  print_strict_fields(assert_unset_fields());
+}
+
+void StackMapFrame::print_strict_fields(AssertUnsetFieldTable* table) {
+  ResourceMark rm;
+  if (table != nullptr) {
+    auto printfields = [&] (const NameAndSig& key, const bool& value) {
+      log_info(verification)("Strict field: %s%s",
+                            key._name->as_C_string(),
+                            key._signature->as_C_string());
+    };
+    table->iterate_all(printfields);
+  } else {
+    log_info(verification)("No strict fields");
+  }
+}
+
+StackMapFrame* StackMapFrame::frame_in_exception_handler(VerificationType broken_type, u1 flags) {
   Thread* thr = _verifier->thread();
   VerificationType* stack = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, 1);
-  StackMapFrame* frame = new StackMapFrame(_offset, flags, _locals_size, 0, _max_locals, _max_stack, _locals, stack, _verifier);
+  VerificationType* locals = _locals;
+  bool have_uninitialized = broken_type.is_uninitialized();
+  guarantee(have_uninitialized || broken_type.is_bogus(), "must be uninitialized or top");
+
+  // Return a StackMapFrame with a potentially modified local variable
+  // array and an empty operand stack with one unused slot.  The caller
+  // will push the exception type for each handler into this slot.
+  //
+  // JVMS 4.10.1.9 says, "The rule for invokespecial of an <init> method
+  // is the sole motivation for passing back a distinct exception stack
+  // frame."  In that case, the so-called "broken object" must be replaced
+  // by top (in the locals only, since the operand stack gets reset).
+  // In the JVMS Prolog code, the adjusted locals are called ExceptionLocals.
+  // If this routine is called for any other bytecode in a handler range,
+  // not invokespecial <init>, the passed "broken object" must be top.
+  // The frame flags are unchanged, including possibly flagThisUninit.
+  //
+  // If the local array is not changed, the original input array is
+  // shared as part of the returned frame.
+  if (have_uninitialized) {
+    bool found = false;
+    VerificationType* new_locals = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, _max_locals);
+    for (int32_t i = 0; i < _max_locals; i++) {
+      if (local_at(i) == broken_type) {
+        found = true;
+        new_locals[i] = VerificationType::top_type();
+      } else {
+        new_locals[i] = _locals[i];
+      }
+    }
+    // Throw away the array if no substitution was needed
+    if (!found) {
+      FREE_RESOURCE_ARRAY_IN_THREAD(thr, new_locals, _max_locals);
+    } else {
+      locals = new_locals;
+    }
+  }
+
+  StackMapFrame* frame = new StackMapFrame(_offset, flags, _locals_size, 0,
+                                           _max_locals, _max_stack, locals, stack,
+                                           _assert_unset_fields, _verifier);
   return frame;
 }
 
@@ -80,7 +152,7 @@ VerificationType StackMapFrame::set_locals_from_arg(
   if (!m->is_static()) {
     init_local_num++;
     // add one extra argument for instance method
-    if (m->name() == vmSymbols::object_initializer_name() &&
+    if (m->is_object_constructor() &&
        thisKlass.name() != vmSymbols::java_lang_Object()) {
       _locals[0] = VerificationType::uninitialized_this_type();
       _flags |= FLAG_THIS_UNINIT;
@@ -188,13 +260,23 @@ bool StackMapFrame::is_assignable_to(
     return false;
   }
 
-  if ((_flags | target->flags()) == target->flags()) {
-    return true;
-  } else {
+  if ((_flags | target->flags()) != target->flags()) {
     *ctx = ErrorContext::bad_flags(target->offset(),
         (StackMapFrame*)this, (StackMapFrame*)target);
     return false;
   }
+
+  // Check that assert unset fields are compatible
+  bool compatible = verify_unset_fields_compatibility(target->assert_unset_fields());
+  if (!compatible) {
+    print_strict_fields(assert_unset_fields());
+    print_strict_fields(target->assert_unset_fields());
+    *ctx = ErrorContext::strict_fields_mismatch(target->offset(),
+        (StackMapFrame*)this, (StackMapFrame*)target);
+    return false;
+  }
+
+  return true;
 }
 
 VerificationType StackMapFrame::pop_stack_ex(VerificationType type, TRAPS) {

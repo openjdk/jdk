@@ -98,7 +98,8 @@ tier3_part1 = \
     :jdk_svc \
     -:jdk_svc_sanity \
     -:svc_tools \
-    :jdk_since_checks
+    :jdk_since_checks \
+    :jdk_json
 
 # The jpackage tests on Windows require permissions that aren't always present
 tier3_jpackage = \
@@ -137,7 +138,16 @@ jdk_lang = \
     jdk/internal/math \
     jdk/internal/vm \
     jdk/modules \
-    jni/nullCaller
+    jni/nullCaller \
+    valhalla
+
+# valhalla lworld tests
+jdk_valhalla = \
+    valhalla \
+    java/lang/instrument/valhalla \
+    com/sun/jdi/valhalla \
+    java/lang/reflect/valhalla
+
 
 # All of the java.util package
 jdk_util = \
@@ -145,6 +155,12 @@ jdk_util = \
     :jdk_collections \
     :jdk_concurrent \
     :jdk_stream
+
+valhalla_adopted = \
+    java/util/Collections/AddAll.java \
+    java/util/Arrays \
+    java/util/Collections \
+    java/util/HashMap
 
 # All util components not part of some other util category
 jdk_util_other = \
@@ -400,6 +416,9 @@ jdk_vector_sanity = \
     jdk/incubator/vector/VectorHash.java \
     jdk/incubator/vector/VectorRuns.java
 
+jdk_json = \
+    jdk/incubator/json
+
 #############################
 
 #
@@ -636,6 +655,7 @@ jdk_security_manual_no_input = \
     com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java \
     com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java \
     sun/security/smartcardio/TestChannel.java \
+    sun/security/smartcardio/TestCleaner.java \
     sun/security/smartcardio/TestConnect.java \
     sun/security/smartcardio/TestConnectAgain.java \
     sun/security/smartcardio/TestControl.java \

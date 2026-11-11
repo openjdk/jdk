@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@ package jdk.jfr.tool;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 import jdk.jfr.Event;
 import jdk.jfr.Name;
@@ -69,14 +71,16 @@ public class TestAssemble {
             r.stop();
             recordings[i] = r;
         }
-        Path dir = Paths.get("reconstruction-parts");
+        Path dir = Paths.get("reconstruction-parts").toAbsolutePath();
         Files.createDirectories(dir);
 
         long expectedCount = 0;
+        Path[] files = new Path[RECORDING_COUNT];
         for (int i = 0; i < RECORDING_COUNT; i++) {
-            Path tmp = dir.resolve("chunk-part-" + i + ".jfr");
-            recordings[i].dump(tmp);
-            expectedCount += countEventInRecording(tmp);
+            Path file = dir.resolve("chunk-part-" + i + ".jfr");
+            recordings[i].dump(file);
+            expectedCount += countEventInRecording(file);
+            files[i] = file;
         }
 
         Path repository = Repository.getRepository().getRepositoryPath();
@@ -112,13 +116,48 @@ public class TestAssemble {
         output = ExecuteHelper.jfr("assemble", directory, destination);
         System.out.println(output.getOutput());
         output.shouldContain("Finished.");
-
         long reconstructedCount = countEventInRecording(destinationPath);
         Asserts.assertEquals(expectedCount, reconstructedCount);
+        Files.delete(destinationPath);
+
+        // Test unfinished and updated
+        writeUnfinished(files[1]);
+        writeUpdating(files[2]);
+        output = ExecuteHelper.jfr("assemble", dir.toString(), destination);
+        System.out.println(output.getOutput());
+        output.shouldContain("Skipping");
+        output.shouldContain("Truncating");
+        reconstructedCount = countEventInRecording(destinationPath);
+        Asserts.assertEquals(RECORDING_COUNT - 1L, reconstructedCount);
+        Files.delete(destinationPath);
+
         // Cleanup
         for (int i = 0; i < RECORDING_COUNT; i++) {
             recordings[i].close();
         }
+    }
+
+    private static void writeUpdating(Path path) throws IOException {
+        try (RandomAccessFile raf = new RandomAccessFile(path.toFile(), "rw")) {
+            raf.seek(64); // file state position
+            raf.write(255); // means the JVM is currently modifying header
+            appendJunk(raf);
+        }
+    }
+
+    private static void writeUnfinished(Path path) throws IOException {
+        try (RandomAccessFile raf = new RandomAccessFile(path.toFile(), "rw")) {
+            raf.seek(64); // file state position
+            raf.write(42); // generation 42 (not finished)
+            appendJunk(raf);
+        }
+    }
+
+    private static void appendJunk(RandomAccessFile raf) throws IOException {
+        byte[] junk = new byte[131072];
+        Arrays.fill(junk, (byte)42);
+        raf.seek(raf.length());
+        raf.write(junk);
     }
 
     private static long countEventInRecording(Path file) throws IOException {

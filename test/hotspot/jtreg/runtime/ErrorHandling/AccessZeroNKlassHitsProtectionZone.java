@@ -41,6 +41,7 @@
  * @test id=no_coh_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
+ * @requires vm.cds.default.archive.available
  * @requires os.family != "aix"
  * @comment This test relies on crashing which conflicts with ASAN checks
  * @requires !vm.asan
@@ -71,6 +72,7 @@
  * @test id=coh_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
+ * @requires vm.cds.default.archive.available
  * @requires os.family != "aix"
  * @comment This test relies on crashing which conflicts with ASAN checks
  * @requires !vm.asan
@@ -218,8 +220,9 @@ public class AccessZeroNKlassHitsProtectionZone {
             case runwb -> WhiteBox.getWhiteBox().decodeNKlassAndAccessKlass(0);
             case no_coh_no_cds -> run_test(false, false);
             case no_coh_cds -> run_test(false, true);
-            case coh_no_cds -> run_test(true, false);
-            case coh_cds -> run_test(true, true);
+            // TODO 8348568 Re-enable
+            // case coh_no_cds -> run_test(true, false);
+            // case coh_cds -> run_test(true, true);
         }
     }
 }

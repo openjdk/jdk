@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,17 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "jvm_io.h"
 #include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 const char* Abstract_VM_Version::_s_vm_release = Abstract_VM_Version::vm_release();
 const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Version::internal_vm_info_string();
@@ -37,6 +41,7 @@ uint64_t Abstract_VM_Version::_features = 0;
 const char* Abstract_VM_Version::_features_string = "";
 const char* Abstract_VM_Version::_cpu_info_string = "";
 uint64_t Abstract_VM_Version::_cpu_features = 0;
+uint64_t Abstract_VM_Version::_cpu_features_disabled_by_aot_cache = 0;
 
 #ifndef SUPPORTS_NATIVE_CX8
 bool Abstract_VM_Version::_supports_cx8 = false;
@@ -140,31 +145,28 @@ const char* Abstract_VM_Version::vm_vendor() {
 
 
 // The VM info string should be a constant, but its value cannot be finalized until after VM arguments
-// have been fully processed. And we want to avoid dynamic memory allocation which will cause ASAN
-// report error, so we enumerate all the cases by static const string value.
+// have been fully processed. The result is C-heap allocated, and should be freed by the caller.
 const char* Abstract_VM_Version::vm_info_string() {
+  stringStream ss;
   switch (Arguments::mode()) {
-    case Arguments::_int:
-      if (is_vm_statically_linked()) {
-        return CDSConfig::is_using_archive() ? "interpreted mode, static, sharing" : "interpreted mode, static";
-      } else {
-        return CDSConfig::is_using_archive() ? "interpreted mode, sharing" : "interpreted mode";
-      }
-    case Arguments::_mixed:
-      if (is_vm_statically_linked()) {
-        return CDSConfig::is_using_archive() ? "mixed mode, static, sharing" : "mixed mode, static";
-      } else {
-        return CDSConfig::is_using_archive() ? "mixed mode, sharing" : "mixed mode";
-      }
-    case Arguments::_comp:
-      if (is_vm_statically_linked()) {
-        return CDSConfig::is_using_archive() ? "compiled mode, static, sharing" : "compiled mode, static";
-      } else {
-        return CDSConfig::is_using_archive() ? "compiled mode, sharing" : "compiled mode";
-      }
+  case Arguments::_int:   ss.print("%s", "interpreted mode"); break;
+  case Arguments::_mixed: ss.print("%s", "mixed mode"); break;
+  case Arguments::_comp:  ss.print("%s", "compiled mode"); break;
+  default: ShouldNotReachHere();
   }
-  ShouldNotReachHere();
-  return "";
+
+  if (is_vm_statically_linked()) {
+    ss.print("%s", ", static");
+  }
+  if (CDSConfig::is_dumping_aot_configuration()) {
+    ss.print("%s", ", aot training");
+  } else if (CDSConfig::is_dumping_aot_cache()) {
+    ss.print("%s", ", aot assembly");
+  } else if (CDSConfig::is_using_archive()) {
+    ss.print("%s", CDSConfig::new_aot_flags_used() ? ", aot production" : ", sharing");
+  }
+
+  return ss.as_string(/*c_heap=*/true);
 }
 
 // NOTE: do *not* use stringStream. this function is called by
@@ -388,4 +390,17 @@ const char* Abstract_VM_Version::cpu_description(void) {
   }
   strncpy(tmp, _cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
   return tmp;
+}
+
+void* Abstract_VM_Version::get_aot_cache_cpu_features() {
+  void* archived_cpu_features = nullptr;
+  if (UseAOTCacheCpuFeaturesOnly) {
+    archived_cpu_features = AOTMetaspace::get_archived_cpu_features();
+    if (archived_cpu_features == nullptr) {
+      // If we get nullptr, it means there is a mismatch in cpu feature size, which
+      // is handled later by verification checks in AOTCodeCache. For now silently disable this option.
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+    }
+  }
+  return archived_cpu_features;
 }

@@ -55,7 +55,7 @@ public:
 
   bool do_heap_region(G1HeapRegion* r) override {
     G1HeapRegionRemSet* rem_set = r->rem_set();
-    _sampled_code_root_rs_length += rem_set->code_roots_list_length();
+    _sampled_code_root_rs_length += rem_set->code_roots_length();
     return false;
   }
 

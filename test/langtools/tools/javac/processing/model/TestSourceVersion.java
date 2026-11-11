@@ -103,7 +103,7 @@ public class TestSourceVersion {
             Set.of("open", "module", "requires", "transitive", "exports",
                    "opens", "to", "uses", "provides", "with",
                    // Assume "record" and "sealed" will be restricted keywords.
-                   "record", "sealed");
+                   "record", "sealed", "value");
 
         for (String key : restrictedKeywords) {
             for (SourceVersion version : SourceVersion.values()) {
@@ -131,6 +131,18 @@ public class TestSourceVersion {
             Predicate<String> isNameVersion = (String s) -> isName(s, version);
 
             for  (String name : List.of("yield", "foo.yield", "yield.foo")) {
+                check(false, name, isKeywordVersion, "keyword", version);
+                check(true, name,  isNameVersion, "name", version);
+            }
+        }
+    }
+
+    private static void testValue() {
+        for (SourceVersion version : SourceVersion.values()) {
+            Predicate<String> isKeywordVersion = (String s) -> isKeyword(s, version);
+            Predicate<String> isNameVersion = (String s) -> isName(s, version);
+
+            for  (String name : List.of("value", "foo.value", "value.foo")) {
                 check(false, name, isKeywordVersion, "keyword", version);
                 check(true, name,  isNameVersion, "name", version);
             }

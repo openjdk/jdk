@@ -25,8 +25,8 @@
 #include "code/nmethod.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionBounds.inline.hpp"
@@ -102,14 +102,14 @@ void G1HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   }
 }
 
-void G1HeapRegion::handle_evacuation_failure(bool retain) {
+void G1HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   move_to_old();
 
   _rem_set->clean_code_roots(this);
-  _rem_set->clear(true /* only_cardset */, retain /* keep_tracked */);
+  assert(!_rem_set->has_card_set_group(), "must not have a card set group");
 }
 
 void G1HeapRegion::unlink_from_list() {
@@ -123,11 +123,11 @@ void G1HeapRegion::hr_clear(bool clear_space) {
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   uninstall_surv_rate_group();
-  uninstall_cset_group();
+  uninstall_card_set_group();
   set_free();
   reset_pre_dummy_top();
 
-  rem_set()->clear();
+  rem_set()->clear_code_roots();
 
   _parsable_bottom.store_relaxed(bottom());
   _garbage_bytes.store_relaxed(0);
@@ -193,9 +193,6 @@ void G1HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
-  G1CSetCandidateGroup* cset_group = new G1CSetCandidateGroup();
-  cset_group->add(this);
-
   _bot->update_for_block(bottom(), obj_top);
   if (fill_size > 0) {
     _bot->update_for_block(obj_top, obj_top + fill_size);
@@ -216,21 +213,16 @@ void G1HeapRegion::clear_humongous() {
   assert(is_humongous(), "pre-condition");
 
   assert(capacity() == G1HeapRegion::GrainBytes, "pre-condition");
-  if (is_starts_humongous()) {
-    G1CSetCandidateGroup* cset_group = _rem_set->cset_group();
-    assert(cset_group != nullptr, "pre-condition %u missing cardset", hrm_index());
-    uninstall_cset_group();
-    cset_group->clear();
-    delete cset_group;
-  }
   _humongous_start_region = nullptr;
 }
 
 void G1HeapRegion::prepare_remset_for_scan() {
   if (is_young()) {
-    uninstall_cset_group();
+    uninstall_card_set_group();
   }
-  _rem_set->reset_table_scanner();
+  if (in_collection_set() || has_index_in_opt_cset()) {
+    _rem_set->reset_code_root_table_scanner();
+  }
 }
 
 G1HeapRegion::G1HeapRegion(uint hrm_index,
@@ -263,7 +255,7 @@ G1HeapRegion::G1HeapRegion(uint hrm_index,
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
 
-  _rem_set = new G1HeapRegionRemSet(this);
+  _rem_set = new G1HeapRegionRemSet();
   initialize();
 }
 
@@ -391,7 +383,7 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
   }
 
   G1HeapRegionRemSet* hrrs = rem_set();
-  size_t code_roots_length = hrrs->code_roots_list_length();
+  size_t code_roots_length = hrrs->code_roots_length();
 
   // if this region is empty then there should be no entries
   // on its code root list
@@ -432,7 +424,7 @@ void G1HeapRegion::print_on(outputStream* st) const {
   if (in_collection_set()) {
     st->print("|CS");
   } else if (is_collection_set_candidate()) {
-    G1CollectionSetCandidates* candidates = G1CollectedHeap::heap()->collection_set()->candidates();
+    G1CollectionSetCandidates* candidates = G1CollectedHeap::heap()->collection_set_candidates();
     st->print("|%s", candidates->get_short_type_str(this));
   } else {
     st->print("|  ");
@@ -624,7 +616,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     bool failed() const {
       if (_from != _to && !_from->is_young() &&
           _to->rem_set()->is_complete() &&
-          _from->rem_set()->cset_group() != _to->rem_set()->cset_group()) {
+          _from->rem_set()->card_set_group() != _to->rem_set()->card_set_group()) {
         const CardValue clean = G1CardTable::clean_card_val();
         return !(_to->rem_set()->contains_reference(this->_p) ||
                  (this->_containing_obj->is_objArray() ?

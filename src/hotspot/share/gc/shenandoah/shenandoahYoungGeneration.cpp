@@ -77,13 +77,6 @@ bool ShenandoahYoungGeneration::is_concurrent_mark_in_progress() {
   return ShenandoahHeap::heap()->is_concurrent_young_mark_in_progress();
 }
 
-void ShenandoahYoungGeneration::reserve_task_queues(uint workers) {
-  ShenandoahGeneration::reserve_task_queues(workers);
-  if (is_old_marking_active()) {
-    _old_gen_task_queues->reserve(workers);
-  }
-}
-
 bool ShenandoahYoungGeneration::contains(oop obj) const {
   return ShenandoahHeap::heap()->is_in_young(obj);
 }
@@ -92,7 +85,6 @@ ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(Shenandoa
   _young_heuristics = new ShenandoahYoungHeuristics(this);
   _heuristics = _young_heuristics;
   _heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedYoungGCInterval);
-  confirm_heuristics_mode();
   return _heuristics;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,18 @@
 /*
  * @test
  * @modules java.base/jdk.internal.misc
- * @run testng TestValueLayouts
+ * @run junit TestValueLayouts
  */
 
-import org.testng.annotations.*;
 
 import java.lang.foreign.*;
 import java.nio.ByteOrder;
 import jdk.internal.misc.Unsafe;
 
 import static java.lang.foreign.ValueLayout.*;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class TestValueLayouts {
 
@@ -141,10 +142,10 @@ public class TestValueLayouts {
               Class<?> carrier,
               long byteSize,
               long byteAlignment) {
-        assertEquals(layout.carrier(), carrier);
-        assertEquals(layout.byteSize(), byteSize);
-        assertEquals(layout.order(), ByteOrder.nativeOrder());
-        assertEquals(layout.byteAlignment(), byteAlignment);
+        assertEquals(carrier, layout.carrier());
+        assertEquals(byteSize, layout.byteSize());
+        assertEquals(ByteOrder.nativeOrder(), layout.order());
+        assertEquals(byteAlignment, layout.byteAlignment());
         assertTrue(layout.name().isEmpty());
 
     }

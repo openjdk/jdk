@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -79,10 +79,6 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     jstring jGetFunctionList)
 {
     HINSTANCE hModule;
-    int i = 0;
-    CK_ULONG ulCount = 0;
-    CK_C_GetInterfaceList C_GetInterfaceList = NULL;
-    CK_INTERFACE_PTR iList = NULL;
     CK_C_GetInterface C_GetInterface = NULL;
     CK_INTERFACE_PTR interface = NULL;
     CK_C_GetFunctionList C_GetFunctionList = NULL;
@@ -129,22 +125,27 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     /*
      * Get function pointer to C_GetInterfaceList
      */
-    C_GetInterfaceList = (CK_C_GetInterfaceList) GetProcAddress(hModule,
+    CK_C_GetInterfaceList C_GetInterfaceList = (CK_C_GetInterfaceList) GetProcAddress(hModule,
             "C_GetInterfaceList");
     if (C_GetInterfaceList != NULL) {
+        CK_ULONG ulCount = 0;
         TRACE0("Found C_GetInterfaceList func\n");
         rv = (C_GetInterfaceList)(NULL, &ulCount);
         if (rv == CKR_OK) {
             /* get copy of interfaces */
-            iList = (CK_INTERFACE_PTR)
-                    malloc(ulCount*sizeof(CK_INTERFACE));
-            rv = C_GetInterfaceList(iList, &ulCount);
-            for (i=0; i < (int)ulCount; i++) {
-                printf("interface %s version %d.%d funcs %p flags 0x%lu\n",
-                        iList[i].pInterfaceName,
-                        ((CK_VERSION *)iList[i].pFunctionList)->major,
-                        ((CK_VERSION *)iList[i].pFunctionList)->minor,
-                        iList[i].pFunctionList, iList[i].flags);
+            CK_INTERFACE_PTR iList = (CK_INTERFACE_PTR) malloc(ulCount*sizeof(CK_INTERFACE));
+            if (iList == NULL) {
+                TRACE0("Connect: error allocating interface list\n");
+            } else {
+                rv = C_GetInterfaceList(iList, &ulCount);
+                for (int i=0; i < (int)ulCount; i++) {
+                    printf("interface %s version %d.%d funcs %p flags 0x%lu\n",
+                            iList[i].pInterfaceName,
+                            ((CK_VERSION *)iList[i].pFunctionList)->major,
+                            ((CK_VERSION *)iList[i].pFunctionList)->minor,
+                            iList[i].pFunctionList, iList[i].flags);
+                }
+                free(iList);
             }
         } else {
             TRACE0("Connect: error polling interface list size\n");

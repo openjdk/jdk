@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,6 +190,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(getter)
   method_entry(setter)
   method_entry(abstract)
+  method_entry(object_init)
   method_entry(java_lang_math_sin  )
   method_entry(java_lang_math_cos  )
   method_entry(java_lang_math_tan  )
@@ -260,6 +261,10 @@ void TemplateInterpreterGenerator::generate_all() {
     address return_continuation = Interpreter::_normal_table.entry(Bytecodes::_return).entry(vtos);
     vmassert(return_continuation != nullptr, "return entry not generated yet");
     Interpreter::_deopt_reexecute_return_entry = generate_deopt_entry_for(vtos, 0, return_continuation);
+  }
+
+  { CodeletMark cm(_masm, "continuation popframe reexecute entry");
+    Interpreter::_cont_popframe_reexecute_entry = generate_cont_popframe_reexecute_entry();
   }
 
 }
@@ -417,6 +422,7 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::empty                  : break;
   case Interpreter::getter                 : break;
   case Interpreter::setter                 : break;
+  case Interpreter::object_init            : break;
   case Interpreter::abstract               : entry_point = generate_abstract_entry(); break;
   default:
     entry_point = generate_intrinsic_entry(kind); // process the rest
@@ -429,14 +435,17 @@ address TemplateInterpreterGenerator::generate_method_entry(
 
   // We expect the normal and native entry points to be generated first so we can reuse them.
   if (native) {
+    assert(kind != Interpreter::object_init, "Not supported");
     entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::native_synchronized : Interpreter::native);
     if (entry_point == nullptr) {
       entry_point = generate_native_entry(synchronized);
     }
   } else {
-    entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::zerolocals_synchronized : Interpreter::zerolocals);
+    entry_point = kind == Interpreter::object_init ?
+                  Interpreter::entry_for_kind(Interpreter::object_init) :
+                  Interpreter::entry_for_kind(synchronized ? Interpreter::zerolocals_synchronized : Interpreter::zerolocals);
     if (entry_point == nullptr) {
-      entry_point = generate_normal_entry(synchronized);
+      entry_point = generate_normal_entry(synchronized, kind == Interpreter::object_init);
     }
   }
 

@@ -122,6 +122,7 @@ Mutex*   JfrStacktrace_lock           = nullptr;
 Monitor* JfrMsg_lock                  = nullptr;
 Mutex*   JfrBuffer_lock               = nullptr;
 Mutex*   SuspendedThreadTask_lock     = nullptr;
+Mutex*   JfrEpochShift_lock           = nullptr;
 #endif
 
 Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
@@ -154,7 +155,7 @@ Mutex*   ClassListFile_lock           = nullptr;
 Mutex*   UnregisteredClassesTable_lock= nullptr;
 Mutex*   LambdaFormInvokers_lock      = nullptr;
 Mutex*   ScratchObjects_lock          = nullptr;
-Mutex*   FinalImageRecipes_lock       = nullptr;
+Mutex*   AOTMetaspaceRecipes_lock     = nullptr;
 #endif // INCLUDE_CDS
 Mutex*   Bootclasspath_lock           = nullptr;
 
@@ -282,6 +283,7 @@ void mutex_init() {
   MUTEX_DEFN(JfrMsg_lock                     , PaddedMonitor, event);
   MUTEX_DEFN(JfrStacktrace_lock              , PaddedMutex  , event);
   MUTEX_DEFN(SuspendedThreadTask_lock        , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(JfrEpochShift_lock              , PaddedMutex  , service-5); // lets keep this just above event
 #endif
 
   MUTEX_DEFN(ContinuationRelativize_lock     , PaddedMonitor, nosafepoint-3);
@@ -303,7 +305,7 @@ void mutex_init() {
   MUTEX_DEFN(UnregisteredClassesTable_lock   , PaddedMutex  , nosafepoint-1);
   MUTEX_DEFN(LambdaFormInvokers_lock         , PaddedMutex  , safepoint);
   MUTEX_DEFL(ScratchObjects_lock             , PaddedMutex  , DumpTimeTable_lock);
-  MUTEX_DEFN(FinalImageRecipes_lock          , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(AOTMetaspaceRecipes_lock          , PaddedMutex  , nosafepoint);
 #endif // INCLUDE_CDS
   MUTEX_DEFN(Bootclasspath_lock              , PaddedMutex  , nosafepoint);
 

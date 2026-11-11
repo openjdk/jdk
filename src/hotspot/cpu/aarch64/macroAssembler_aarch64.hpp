@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +36,12 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "runtime/signature.hpp"
+
+
+class ciValueKlass;
 
 class OopMap;
 struct GtestFriendToMacroAssembler;
@@ -99,7 +105,6 @@ class MacroAssembler: public Assembler {
     KlassDecodeNone,
     KlassDecodeZero,
     KlassDecodeXor,
-    KlassDecodeMovk,
     KlassDecodeFallback
   };
 
@@ -189,9 +194,33 @@ class MacroAssembler: public Assembler {
   void ldrw(Register Rw, const Address &adr);
   void str(Register Rx, const Address &adr);
   void strw(Register Rx, const Address &adr);
+  void ldr(FloatRegister Rt, SIMD_RegVariant T, const Address& adr);
+  void ldr(FloatRegister Rt, SIMD_RegVariant T, address dest) = delete;
+  void str(FloatRegister Rt, SIMD_RegVariant T, const Address& adr);
+  void str(FloatRegister Rt, SIMD_RegVariant T, address dest) = delete;
+
+#define DEFINE_LDR_STR_FUNCS(suffix, elem_kind)              \
+  void ldr##suffix(FloatRegister Rq, address dest) = delete; \
+                                                             \
+  void ldr##suffix(FloatRegister Rq, const Address& adr) {   \
+    MacroAssembler::ldr(Rq, elem_kind, adr);                 \
+  }                                                          \
+                                                             \
+  void str##suffix(FloatRegister Rq, address dest) = delete; \
+                                                             \
+  void str##suffix(FloatRegister Rq, const Address& adr) {   \
+    MacroAssembler::str(Rq, elem_kind, adr);                 \
+  }
+
+  DEFINE_LDR_STR_FUNCS(q, Q)
+  DEFINE_LDR_STR_FUNCS(d, D)
+  DEFINE_LDR_STR_FUNCS(s, S)
+
+#undef DEFINE_LDR_STR_FUNCS
 
   // Frame creation and destruction shared between JITs.
-  void build_frame(int framesize);
+  DEBUG_ONLY(void build_frame(int framesize);)
+  void build_frame(int framesize DEBUG_ONLY(COMMA bool zap_rfp_lr_spills));
   void remove_frame(int framesize);
 
   virtual void _call_Unimplemented(address call_site) {
@@ -710,6 +739,26 @@ public:
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
 
+  // markWord tests, kills markWord reg
+  void test_markword_is_value_type(Register markword, Label& is_value_type);
+
+  // ValueKlass queries, kills temp_reg
+  void test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null = true);
+
+  void test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free);
+  void test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free);
+  void test_field_is_flat(Register flags, Register temp_reg, Label& is_flat);
+
+  // Check oops for special arrays, i.e. flat arrays and/or null-free arrays
+  void test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label);
+  void test_flat_array_oop(Register klass, Register temp_reg, Label& is_flat_array);
+  void test_non_flat_array_oop(Register oop, Register temp_reg, Label&is_non_flat_array);
+  void test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array);
+  void test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array);
+
+  // Check array klass layout helper for flat or null-free arrays...
+  void test_flat_array_layout(Register lh, Label& is_flat_array);
+
   static address target_addr_for_insn(address insn_addr);
 
   // Required platform-specific helpers for Label::patch_instructions.
@@ -936,6 +985,8 @@ public:
   void load_method_holder(Register holder, Register method);
 
   // oop manipulations
+  void load_metadata(Register dst, Register src);
+
   void load_narrow_klass_compact(Register dst, Register src);
   void load_narrow_klass(Register dst, Register src);
   void load_klass(Register dst, Register src, Register tmp);
@@ -952,6 +1003,10 @@ public:
 
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
+
+  // value type data payload offsets...
+  void payload_offset(Register value_klass, Register offset);
+  void payload_address(Register oop, Register data, Register value_klass);
 
   void load_heap_oop(Register dst, Address src, Register tmp1,
                      Register tmp2, DecoratorSet decorators = 0);
@@ -1011,6 +1066,7 @@ public:
   void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
 
   // allocation
+
   void tlab_allocate(
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
@@ -1484,6 +1540,13 @@ public:
 
   void adrp(Register reg1, const Address &dest, uint64_t &byte_offset);
 
+  void verified_entry(Compile* C, int sp_inc, bool do_stack_bang = true);
+
+  // Value type specific methods
+  #include "asm/macroAssembler_common.hpp"
+
+  void save_stack_increment(int sp_inc, int frame_size);
+
   void tableswitch(Register index, jint lowbound, jint highbound,
                    Label &jumptable, Label &jumptable_end, int stride = 1) {
     adr(rscratch1, jumptable);
@@ -1538,26 +1601,32 @@ public:
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);
 
 // Ensure that the inline code and the stub use the same registers.
-#define ARRAYS_HASHCODE_REGISTERS \
-  do {                      \
-    assert(result == r0  && \
-           ary    == r1  && \
-           cnt    == r2  && \
-           vdata0 == v3  && \
-           vdata1 == v2  && \
-           vdata2 == v1  && \
-           vdata3 == v0  && \
-           vmul0  == v4  && \
-           vmul1  == v5  && \
-           vmul2  == v6  && \
-           vmul3  == v7  && \
-           vpow   == v12 && \
-           vpowm  == v13, "registers must match aarch64.ad"); \
+#define ARRAYS_HASHCODE_REGISTERS   \
+  do {                              \
+    assert(result   == r0  &&       \
+           ary      == r1  &&       \
+           cnt      == r2  &&       \
+           blocks   == r3  &&       \
+           tail     == r4  &&       \
+           sum      == r5  &&       \
+           v_block0 == v0  &&       \
+           v_block1 == v1  &&       \
+           v_block2 == v2  &&       \
+           v_block3 == v3  &&       \
+           v_p0     == v4  &&       \
+           v_p1     == v5  &&       \
+           v_p2     == v6  &&       \
+           v_p3     == v7  &&       \
+           v_input1 == v12 &&       \
+           v_input2 == v13,         \
+           "registers must match aarch64.ad"); \
   } while (0)
 
-  void string_equals(Register a1, Register a2, Register result, Register cnt1);
+  void string_equals(Register a1, Register a2, Register result, Register cnt1, Register a1_hi, Register a2_hi);
 
   void fill_words(Register base, Register cnt, Register value);
+  void fill_words(Register base, uint64_t cnt, Register value);
+
   address zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
   void zero_dcache_blocks(Register base, Register cnt);
@@ -1683,14 +1752,30 @@ private:
 
   bool merge_alignment_check(Register base, size_t size, int64_t cur_offset, int64_t prev_offset) const;
 
+  // Returns true if a load/store of the given element size can be combined into an LDP/STP pair
+  // instruction.
+  // For scalar types, 4- and 8-byte accesses are supported.
+  // For SIMD types, 16-byte accesses are additionally supported.
+  bool can_form_ldst_pair(size_t size_in_bytes, bool is_simd) const {
+    return size_in_bytes == 4 || size_in_bytes == 8 || (is_simd && size_in_bytes == 16);
+  }
+
+  template <typename T1, typename T2>
+  static bool same_register(T1 reg1, T2 reg2) {
+    return std::is_same<T1, T2>::value && reg1->raw_encoding() == reg2->raw_encoding();
+  }
+
   // Check whether two loads/stores can be merged into ldp/stp.
-  bool ldst_can_merge(Register rx, const Address &adr, size_t cur_size_in_bytes, bool is_store) const;
+  template <typename T>
+  bool ldst_can_merge(T rx, const Address& adr, unsigned cur_size_in_bytes, AccessDir dir) const;
 
   // Merge current load/store with previous load/store into ldp/stp.
-  void merge_ldst(Register rx, const Address &adr, size_t cur_size_in_bytes, bool is_store);
+  template <typename T>
+  void merge_ldst(T rx, const Address& adr, unsigned cur_size_in_bytes, AccessDir dir);
 
   // Try to merge two loads/stores into ldp/stp. If success, returns true else false.
-  bool try_merge_ldst(Register rt, const Address &adr, size_t cur_size_in_bytes, bool is_store);
+  template <typename T>
+  bool try_merge_ldst(T rt, const Address& adr, unsigned cur_size_in_bytes, AccessDir dir);
 
 public:
   void spill(Register Rx, bool is64, int offset) {

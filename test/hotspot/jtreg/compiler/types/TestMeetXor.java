@@ -27,7 +27,7 @@
  * @bug 8267332
  * @summary Test meet on xor
  * @library /test/lib /
- * @run main/othervm compiler.types.TestMeetXor -Xbatch -XX::CompileCommand=dontinline,*::test*
+ * @run main/othervm -Xbatch -XX:CompileCommand=dontinline,*::test* ${test.main.class}
  */
 
 package compiler.types;

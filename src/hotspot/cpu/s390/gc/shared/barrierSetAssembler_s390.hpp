@@ -64,8 +64,11 @@ public:
                                                Register tmp, Label& slow_path);
 
   virtual void nmethod_entry_barrier(MacroAssembler* masm);
+  virtual void c2i_entry_barrier(MacroAssembler* masm, Register tmp1, Register tmp2, Register tmp3);
 
   virtual void barrier_stubs_init() {}
+
+  virtual void check_oop(MacroAssembler* masm, Register oop, const char* msg);
 
 #ifdef COMPILER2
   OptoReg::Name refine_register(const Node* node,

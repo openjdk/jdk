@@ -122,6 +122,7 @@ public class ApplicableIRRulesPrinter {
         "asimdhp",
         // RISCV64
         "rvv",
+        "zbb",
         "zbkb",
         "zfh",
         "zvbb",
@@ -137,23 +138,21 @@ public class ApplicableIRRulesPrinter {
      * - indices of all @IR rules that should be applied, separated by a comma
      * - "-1" if no @IR rule should not be applied
      */
-    public void emitApplicableIRRules(Method m, boolean skipped) {
+    public void emitApplicableIRRules(Method m) {
         method = m;
         int i = 0;
         ArrayList<Integer> validRules = new ArrayList<>();
         IR[] irAnnos = m.getAnnotationsByType(IR.class);
-        if (!skipped) {
-            for (IR irAnno : irAnnos) {
-                ruleIndex = i + 1;
-                try {
-                    if (shouldApplyIrRule(irAnno, m.getName(), ruleIndex, irAnnos.length)) {
-                        validRules.add(ruleIndex);
-                    }
-                } catch (TestFormatException e) {
-                    // Catch logged failure and continue to check other IR annotations.
+        for (IR irAnno : irAnnos) {
+            ruleIndex = i + 1;
+            try {
+                if (shouldApplyIrRule(irAnno, m.getName(), ruleIndex, irAnnos.length)) {
+                    validRules.add(ruleIndex);
                 }
-                i++;
+            } catch (TestFormatException e) {
+                // Catch logged failure and continue to check other IR annotations.
             }
+            i++;
         }
 
         if (irAnnos.length == 0 || validRules.isEmpty()) {
@@ -441,16 +440,21 @@ public class ApplicableIRRulesPrinter {
         return returnValue;
     }
 
+    @SuppressWarnings("preview")
     private boolean check(String flag, String value) {
         if (flag.isEmpty()) {
             TestFormat.failNoThrow("Provided empty flag" + failAt());
             return false;
         }
+        Object actualFlagValue = WHITE_BOX.getStringVMFlag(flag);
+        if (actualFlagValue != null) {
+            return value.equals(actualFlagValue);
+        }
         if (value.isEmpty()) {
             TestFormat.failNoThrow("Provided empty value for flag " + flag + failAt());
             return false;
         }
-        Object actualFlagValue = WHITE_BOX.getBooleanVMFlag(flag);
+        actualFlagValue = WHITE_BOX.getBooleanVMFlag(flag);
         if (actualFlagValue != null) {
             return checkBooleanFlag(flag, value, (Boolean) actualFlagValue);
         }
@@ -462,9 +466,8 @@ public class ApplicableIRRulesPrinter {
         if (actualFlagValue != null) {
             return checkFlag(Double::parseDouble, "floating point", flag, value, (Double) actualFlagValue);
         }
-        actualFlagValue = WHITE_BOX.getStringVMFlag(flag);
-        if (actualFlagValue != null) {
-            return value.equals(actualFlagValue);
+        if (flag.equals("enable-valhalla")) {
+            return checkBooleanFlag(flag, value, Integer.class.isValue());
         }
 
         // This could be improved if the Whitebox offers a "isVMFlag" function. For now, just check if we can actually set

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ class CheckedTest extends BaseTest {
         NONE, RETURN_ONLY, TEST_INFO_ONLY, BOTH
     }
 
-    public CheckedTest(DeclaredTest test, Method checkMethod, Check checkSpecification, Parameter parameter, boolean excludedByUser) {
-        super(test, excludedByUser);
+    public CheckedTest(DeclaredTest test, Method checkMethod, Check checkSpecification, Parameter parameter) {
+        super(test);
         // Make sure we can also call non-public or public methods in package private classes
         checkMethod.setAccessible(true);
         this.checkMethod = checkMethod;
@@ -62,7 +62,7 @@ class CheckedTest extends BaseTest {
 
     @Override
     public String toString() {
-        return "Checked Test: @Check " + checkMethod.getName() + " - @Test: " + testMethod.getName();
+        return "@Test: " + testMethod.getName() + " -> @Check: " + checkMethod.getName();
     }
 
     @Override

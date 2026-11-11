@@ -43,7 +43,8 @@ class PcDesc {
     PCDESC_return_oop                = 1 << 1,
     PCDESC_rethrow_exception         = 1 << 2,
     PCDESC_has_ea_local_in_scope     = 1 << 3,
-    PCDESC_arg_escape                = 1 << 4
+    PCDESC_arg_escape                = 1 << 4,
+    PCDESC_return_scalarized         = 1 << 5
   };
 
   int _flags;
@@ -87,6 +88,8 @@ class PcDesc {
   bool     return_oop()                    const { return (_flags & PCDESC_return_oop) != 0;     }
   void set_return_oop(bool z)                    { set_flag(PCDESC_return_oop, z); }
 
+  bool     return_scalarized()             const { return (_flags & PCDESC_return_scalarized) != 0; }
+  void set_return_scalarized(bool z)             { set_flag(PCDESC_return_scalarized, z); }
   // Indicates if there are objects in scope that, based on escape analysis, are local to the
   // compiled method or local to the current thread, i.e. NoEscape or ArgEscape
   bool     has_ea_local_in_scope()         const { return (_flags & PCDESC_has_ea_local_in_scope) != 0; }

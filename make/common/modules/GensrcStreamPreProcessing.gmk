@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,12 @@ ifeq ($(INCLUDE), true)
 include Execute.gmk
 include $(TOPDIR)/make/ToolsJdk.gmk
 
-NON_BYTE_NUMBER_TYPES := char short int long float double
+NON_BYTE_INTEGER_TYPES := char short int long
+NON_BYTE_NUMBER_TYPES := $(NON_BYTE_INTEGER_TYPES) float double
 NUMBER_TYPES := byte $(NON_BYTE_NUMBER_TYPES)
+INTEGER_NUMBER_TYPES := byte $(NON_BYTE_INTEGER_TYPES)
 PRIMITIVE_TYPES := boolean $(NUMBER_TYPES)
+BITWISE_PRIMITIVE_TYPES := boolean $(INTEGER_NUMBER_TYPES)
 
 ################################################################################
 # The Conv function converts a type given as first argument (as a normal Java

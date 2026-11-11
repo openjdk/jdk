@@ -2617,7 +2617,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
          * - family name is not the same as the full name of an installed font
          * - full name is not the same as the family name of an installed font
          * The last two of these may initially look odd but the reason is
-         * that (unfortunately) Font constructors do not distinuguish these.
+         * that (unfortunately) Font constructors do not distinguish these.
          * An extreme example of such a problem would be a font which has
          * family name "Dialog.Plain" and full name of "Dialog".
          * The one arguably overly stringent restriction here is that if an

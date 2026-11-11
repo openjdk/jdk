@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import jdk.internal.access.JavaLangAccess;
@@ -213,22 +214,25 @@ public abstract class Poller {
 
     /**
      * Parks the current thread until a file descriptor is ready for the given op.
+     * @param blocker the object that the thread is polling
      * @param fdVal the file descriptor
      * @param event POLLIN or POLLOUT
      * @param nanos the waiting time or 0 to wait indefinitely
      * @param isOpen supplies a boolean to indicate if the enclosing object is open
      */
-    public static void poll(int fdVal, int event, long nanos, BooleanSupplier isOpen) throws IOException {
-        POLLER_GROUP.poll(fdVal, event, nanos, isOpen);
+    public static void poll(Object blocker, int fdVal, int event, long nanos,
+                            BooleanSupplier isOpen) throws IOException {
+        POLLER_GROUP.poll(blocker, fdVal, event, nanos, isOpen);
     }
 
     /**
      * Parks the current thread until a Selector's file descriptor is ready.
+     * @param blocker the object that the thread is polling
      * @param fdVal the Selector's file descriptor
      * @param nanos the waiting time or 0 to wait indefinitely
      */
-    public static void pollSelector(int fdVal, long nanos) throws IOException {
-        POLLER_GROUP.pollSelector(fdVal, nanos);
+    public static void pollSelector(Object blocker, int fdVal, long nanos) throws IOException {
+        POLLER_GROUP.pollSelector(blocker, fdVal, nanos);
     }
 
     /**
@@ -241,14 +245,15 @@ public abstract class Poller {
     /**
      * Parks the current thread until a file descriptor is ready.
      */
-    private void poll(int fdVal, long nanos, BooleanSupplier isOpen) throws IOException {
+    private void poll(Object blocker, int fdVal, long nanos,
+                      BooleanSupplier isOpen) throws IOException {
         startPoll(fdVal);
         try {
             if (isOpen.getAsBoolean() && !isShutdown()) {
                 if (nanos > 0) {
-                    LockSupport.parkNanos(nanos);
+                    LockSupport.parkNanos(blocker, nanos);
                 } else {
-                    LockSupport.park();
+                    LockSupport.park(blocker);
                 }
             }
         } finally {
@@ -318,7 +323,7 @@ public abstract class Poller {
             int polled = 0;
             while (!isShutdown()) {
                 if (polled == 0) {
-                    masterPoller.poll(fdVal(), 0, () -> true);  // park
+                    masterPoller.poll(this, fdVal(), 0, () -> true);  // park
                 } else {
                     Thread.yield();
                 }
@@ -364,13 +369,14 @@ public abstract class Poller {
         /**
          * Parks the current thread until a file descriptor is ready for the given op.
          */
-        abstract void poll(int fdVal, int event, long nanos, BooleanSupplier isOpen) throws IOException;
+        abstract void poll(Object blocker, int fdVal, int event, long nanos,
+                           BooleanSupplier isOpen) throws IOException;
 
         /**
          * Parks the current thread until a Selector's file descriptor is ready.
          */
-        void pollSelector(int fdVal, long nanos) throws IOException {
-            poll(fdVal, Net.POLLIN, nanos, () -> true);
+        void pollSelector(Object blocker, int fdVal, long nanos) throws IOException {
+            poll(blocker, fdVal, Net.POLLIN, nanos, () -> true);
         }
 
         /**
@@ -413,7 +419,11 @@ public abstract class Poller {
     }
 
     /**
-     * SYSTEM_THREADS poller group. The read and write pollers are system-wide platform threads.
+     * SYSTEM_THREADS poller group. The read and write pollers are system-wide platform
+     * threads. To avoid a file descriptor being registered with both a read and write
+     * poller at the same time, the poller group can be configured to run without a
+     * write poller, in which case polling for POLLOUT does timed-parked to force the
+     * caller to retry write ops until they succeed (or fail).
      */
     private static class SystemThreadsPollerGroup extends PollerGroup {
         // system-wide read and write pollers
@@ -459,16 +469,30 @@ public abstract class Poller {
         }
 
         private Poller writePoller(int fdVal) {
-            int index = provider().fdValToIndex(fdVal, writePollers.length);
-            return writePollers[index];
+            if (writePollers.length > 0) {
+                int index = provider().fdValToIndex(fdVal, writePollers.length);
+                return writePollers[index];
+            } else {
+                return null;
+            }
         }
 
         @Override
-        void poll(int fdVal, int event, long nanos, BooleanSupplier isOpen) throws IOException {
-            Poller poller = (event == Net.POLLIN)
-                    ? readPoller(fdVal)
-                    : writePoller(fdVal);
-            poller.poll(fdVal, nanos, isOpen);
+        void poll(Object blocker, int fdVal, int event, long nanos,
+                  BooleanSupplier isOpen) throws IOException {
+            if (event == Net.POLLIN) {
+                readPoller(fdVal).poll(blocker, fdVal, nanos, isOpen);
+            } else {
+                Poller writePoller = writePoller(fdVal);
+                if (writePoller != null) {
+                    writePoller.poll(blocker, fdVal, nanos, isOpen);
+                } else {
+                    // random delay in [50ms, 120ms)
+                    int max = ThreadLocalRandom.current().nextInt(50_000_000, 120_000_000);
+                    long delay = (nanos > 0) ? Math.min(nanos, max) : max;
+                    LockSupport.parkNanos(blocker, delay);
+                }
+            }
         }
 
         @Override
@@ -556,16 +580,17 @@ public abstract class Poller {
         }
 
         @Override
-        void poll(int fdVal, int event, long nanos, BooleanSupplier isOpen) throws IOException {
+        void poll(Object blocker, int fdVal, int event, long nanos,
+                  BooleanSupplier isOpen) throws IOException {
             Poller poller = (event == Net.POLLIN)
                     ? readPoller(fdVal)
                     : writePoller(fdVal);
-            poller.poll(fdVal, nanos, isOpen);
+            poller.poll(blocker, fdVal, nanos, isOpen);
         }
 
         @Override
-        void pollSelector(int fdVal, long nanos) throws IOException {
-            masterPoller.poll(fdVal, nanos, () -> true);
+        void pollSelector(Object blocker, int fdVal, long nanos) throws IOException {
+            masterPoller.poll(blocker, fdVal, nanos, () -> true);
         }
 
         @Override
@@ -684,26 +709,27 @@ public abstract class Poller {
         }
 
         @Override
-        void poll(int fdVal, int event, long nanos, BooleanSupplier isOpen) throws IOException {
+        void poll(Object blocker, int fdVal, int event, long nanos,
+                  BooleanSupplier isOpen) throws IOException {
             // for POLLIN, get the read poller for this carrier
             if (event == Net.POLLIN
                     && Thread.currentThread().isVirtual()
                     && ContinuationSupport.isSupported()) {
-                readPoller().poll(fdVal, nanos, isOpen);
+                readPoller().poll(blocker, fdVal, nanos, isOpen);
                 return;
             }
 
             // -XX:-VMContinuations or POLLIN from platform thread does master poller
             if (event == Net.POLLIN) {
-                masterPoller.poll(fdVal, nanos, isOpen);
+                masterPoller.poll(blocker, fdVal, nanos, isOpen);
             } else {
-                writePoller(fdVal).poll(fdVal, nanos, isOpen);
+                writePoller(fdVal).poll(blocker, fdVal, nanos, isOpen);
             }
         }
 
         @Override
-        void pollSelector(int fdVal, long nanos) throws IOException {
-            masterPoller.poll(fdVal, nanos, () -> true);
+        void pollSelector(Object blocker, int fdVal, long nanos) throws IOException {
+            masterPoller.poll(blocker, fdVal, nanos, () -> true);
         }
 
         /**

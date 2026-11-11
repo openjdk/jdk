@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.event.InputEvent;
+import javax.swing.DesktopManager;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
@@ -45,7 +46,6 @@ import static sun.awt.OSInfo.*;
  * @author Alexandr Scherbatiy
  * @modules java.desktop/sun.awt
  * @run main/othervm -Dsun.java2d.uiScale=2 bug8069348
- * @run main/othervm -Dsun.java2d.d3d=true -Dsun.java2d.uiScale=2 bug8069348
  */
 public class bug8069348 {
 
@@ -64,10 +64,6 @@ public class bug8069348 {
 
     public static void main(String[] args) throws Exception {
 
-        if (!isSupported()) {
-            return;
-        }
-
         try {
 
             SwingUtilities.invokeAndWait(bug8069348::createAndShowGUI);
@@ -83,14 +79,10 @@ public class bug8069348 {
             int dx = screenBounds.width / 2;
             int dy = screenBounds.height / 2;
 
-            robot.mouseMove(x, y);
+            dragInternalFrame(dx, dy);
             robot.waitForIdle();
 
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseMove(x + dx, y + dy);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle();
-
+            waitForFrameBounds(robot, screenBounds.x + dx, screenBounds.y + dy);
             int cx = screenBounds.x + screenBounds.width + dx / 2;
             int cy = screenBounds.y + screenBounds.height + dy / 2;
 
@@ -120,11 +112,36 @@ public class bug8069348 {
         System.out.println("Test Passed");
     }
 
-    private static boolean isSupported() {
-        String d3d = System.getProperty("sun.java2d.d3d");
-        System.out.println("d3d " + d3d);
-        return !Boolean.getBoolean(d3d) || getOSType() == OSType.WINDOWS;
+    private static void dragInternalFrame(int dx, int dy) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            DesktopManager dm = internalFrame.getDesktopPane().getDesktopManager();
+            Rectangle bounds = internalFrame.getBounds();
+
+            dm.beginDraggingFrame(internalFrame);
+            try {
+                dm.dragFrame(internalFrame, bounds.x + dx, bounds.y + dy);
+            } finally {
+                dm.endDraggingFrame(internalFrame);
+            }
+        });
     }
+
+    private static void waitForFrameBounds(Robot robot, int x, int y)
+            throws Exception {
+        for (int i = 0; i < 10; i++) {
+            Rectangle bounds = getInternalFrameScreenBounds();
+            if (bounds.x == x && bounds.y == y) {
+                return;
+            }
+            robot.delay(100);
+            robot.waitForIdle();
+        }
+
+        Rectangle bounds = getInternalFrameScreenBounds();
+        throw new RuntimeException("Internal frame was not dragged to expected"
+                + " location. Expected: " + x + ", " + y
+                + "; actual: " + bounds.x + ", " + bounds.y);
+     }
 
     private static Rectangle getInternalFrameScreenBounds() throws Exception {
         Rectangle[] points = new Rectangle[1];

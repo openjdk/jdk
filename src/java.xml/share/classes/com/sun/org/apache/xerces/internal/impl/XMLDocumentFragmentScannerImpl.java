@@ -2023,7 +2023,8 @@ public class XMLDocumentFragmentScannerImpl
     String checkAccess(String systemId, String allowedProtocols) throws IOException {
         String baseSystemId = fEntityScanner.getBaseSystemId();
         String expandedSystemId = XMLEntityManager.expandSystemId(systemId, baseSystemId, fStrictURI);
-        return SecuritySupport.checkAccess(expandedSystemId, allowedProtocols, JdkConstants.ACCESS_EXTERNAL_ALL);
+        return SecuritySupport.checkAccess(expandedSystemId, fSecurityManager,
+            XMLConstants.ACCESS_EXTERNAL_DTD, allowedProtocols);
     }
 
     //

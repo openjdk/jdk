@@ -29,7 +29,7 @@
 
 // See if this register (or pairs, or vector) already contains the value.
 static bool register_contains_value(Node* val, OptoReg::Name reg, int n_regs,
-                                    const Node_List &value) {
+                                    const Node_List<Node>& value) {
   for (int i = 0; i < n_regs; i++) {
     OptoReg::Name nreg = OptoReg::add(reg,-i);
     if (value[nreg] != val)
@@ -76,7 +76,7 @@ bool PhaseChaitin::may_be_copy_of_callee( Node *def ) const {
 
 //------------------------------yank-----------------------------------
 // Helper function for yank_if_dead
-int PhaseChaitin::yank(Node *old, Block *current_block, Node_List *value, Node_List *regnd) {
+int PhaseChaitin::yank(Node* old, Block* current_block, Node_List<Node>* value, Node_List<Node>* regnd) {
   int blk_adjust=0;
   Block *oldb = _cfg.get_block_for_node(old);
   oldb->find_remove(old);
@@ -126,8 +126,8 @@ static bool expected_yanked_node(Node *old, Node *orig_old) {
 //------------------------------yank_if_dead-----------------------------------
 // Removed edges from 'old'.  Yank if dead.  Return adjustment counts to
 // iterators in the current block.
-int PhaseChaitin::yank_if_dead_recurse(Node *old, Node *orig_old, Block *current_block,
-                                       Node_List *value, Node_List *regnd) {
+int PhaseChaitin::yank_if_dead_recurse(Node* old, Node* orig_old, Block* current_block,
+                                       Node_List<Node>* value, Node_List<Node>* regnd) {
   int blk_adjust=0;
   if (old->outcnt() == 0 && old != C->top()) {
 #ifdef ASSERT
@@ -161,7 +161,7 @@ int PhaseChaitin::yank_if_dead_recurse(Node *old, Node *orig_old, Block *current
 // Use the prior value instead of the current value, in an effort to make
 // the current value go dead.  Return block iterator adjustment, in case
 // we yank some instructions from this block.
-int PhaseChaitin::use_prior_register( Node *n, uint idx, Node *def, Block *current_block, Node_List *value, Node_List *regnd ) {
+int PhaseChaitin::use_prior_register(Node* n, uint idx, Node* def, Block* current_block, Node_List<Node>* value, Node_List<Node>* regnd) {
   // No effect?
   if( def == n->in(idx) ) return 0;
   // Def is currently dead and can be removed?  Do not resurrect
@@ -228,7 +228,7 @@ Node *PhaseChaitin::skip_copies( Node *c ) {
 
 //------------------------------elide_copy-------------------------------------
 // Remove (bypass) copies along Node n, edge k.
-int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *value, Node_List *regnd, bool can_change_regs ) {
+int PhaseChaitin::elide_copy(Node* n, int k, Block* current_block, Node_List<Node>* value, Node_List<Node>* regnd, bool can_change_regs) {
   int blk_adjust = 0;
 
   uint nk_idx = _lrg_map.live_range_id(n->in(k));
@@ -355,7 +355,7 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *v
 //
 bool PhaseChaitin::eliminate_copy_of_constant(Node* val, Node* n,
                                               Block *current_block,
-                                              Node_List& value, Node_List& regnd,
+                                              Node_List<Node>& value, Node_List<Node>& regnd,
                                               OptoReg::Name nreg, OptoReg::Name nreg2) {
   if (value[nreg] != val && val->is_Con() &&
       value[nreg] != nullptr && value[nreg]->is_Con() &&
@@ -503,16 +503,16 @@ void PhaseChaitin::post_allocate_copy_removal() {
 
   // Need a mapping from basic block Node_Lists.  We need a Node_List to
   // map from register number to value-producing Node.
-  Node_List **blk2value = NEW_RESOURCE_ARRAY( Node_List *, _cfg.number_of_blocks() + 1);
-  memset(blk2value, 0, sizeof(Node_List*) * (_cfg.number_of_blocks() + 1));
+  Node_List<Node>** blk2value = NEW_RESOURCE_ARRAY(Node_List<Node>*, _cfg.number_of_blocks() + 1);
+  memset(blk2value, 0, sizeof(Node_List<Node>*) * (_cfg.number_of_blocks() + 1));
   // Need a mapping from basic block Node_Lists.  We need a Node_List to
   // map from register number to register-defining Node.
-  Node_List **blk2regnd = NEW_RESOURCE_ARRAY( Node_List *, _cfg.number_of_blocks() + 1);
-  memset(blk2regnd, 0, sizeof(Node_List*) * (_cfg.number_of_blocks() + 1));
+  Node_List<Node>** blk2regnd = NEW_RESOURCE_ARRAY(Node_List<Node>*, _cfg.number_of_blocks() + 1);
+  memset(blk2regnd, 0, sizeof(Node_List<Node>*) * (_cfg.number_of_blocks() + 1));
 
   // We keep unused Node_Lists on a free_list to avoid wasting
   // memory.
-  GrowableArray<Node_List*> free_list = GrowableArray<Node_List*>(16);
+  GrowableArray<Node_List<Node>*> free_list = GrowableArray<Node_List<Node>*>(16);
 
   // For all blocks
   for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
@@ -561,8 +561,8 @@ void PhaseChaitin::post_allocate_copy_removal() {
 
     // Extract Node_List mappings.  If 'freed' is non-zero, we just popped
     // 'freed's blocks off the list
-    Node_List &regnd = *(free_list.is_empty() ? new Node_List(_max_reg) : free_list.pop());
-    Node_List &value = *(free_list.is_empty() ? new Node_List(_max_reg) : free_list.pop());
+    Node_List<Node>& regnd = *(free_list.is_empty() ? new Node_List<Node>(_max_reg) : free_list.pop());
+    Node_List<Node>& value = *(free_list.is_empty() ? new Node_List<Node>(_max_reg) : free_list.pop());
     assert( !freed || blk2value[freed->_pre_order] == &value, "" );
     // Set mappings as OUR mappings
     blk2value[block->_pre_order] = &value;
@@ -588,7 +588,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
         if (pb == freed) {
           continue; // Did self already via freelist
         }
-        Node_List &p_regnd = *blk2regnd[pb->_pre_order];
+        Node_List<Node>& p_regnd = *blk2regnd[pb->_pre_order];
         for (uint k = 0; k < (uint)_max_reg; k++) {
           if (regnd[k] != p_regnd[k]) { // Conflict on reaching defs?
             value.map(k, nullptr); // Then no value handy

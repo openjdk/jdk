@@ -41,7 +41,7 @@ class G1CardSet;
 class G1CardSetConfiguration;
 class G1CollectedHeap;
 class G1CMBitMap;
-class G1CSetCandidateGroup;
+class G1CardSetGroup;
 class G1Predictions;
 class G1HeapRegionRemSet;
 class G1HeapRegionSetBase;
@@ -54,7 +54,7 @@ class nmethod;
                 p2i((_hr_)->bottom()), p2i((_hr_)->top()), p2i((_hr_)->end())
 
 // sentinel value for hrm_index
-#define G1_NO_HRM_INDEX ((uint) -1)
+#define G1_NO_HRM_INDEX (UINT_MAX)
 
 // A G1HeapRegion is the smallest piece of a G1CollectedHeap that
 // can be collected independently.
@@ -518,8 +518,8 @@ public:
   void install_surv_rate_group(G1SurvRateGroup* surv_rate_group);
   void uninstall_surv_rate_group();
 
-  void install_cset_group(G1CSetCandidateGroup* cset_group);
-  void uninstall_cset_group();
+  void install_card_set_group(G1CardSetGroup* card_set_group);
+  void uninstall_card_set_group();
 
   void record_surv_words_in_group(size_t words_survived);
 
@@ -528,7 +528,7 @@ public:
   inline static bool is_in_parsable_area(const void* const addr, const void* const pb);
 
   // Update the region state after a failed evacuation.
-  void handle_evacuation_failure(bool retain);
+  void handle_evacuation_failure();
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for

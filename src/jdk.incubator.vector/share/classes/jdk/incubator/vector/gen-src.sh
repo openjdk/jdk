@@ -24,6 +24,12 @@
 # questions.
 #
 
+# Toggle Bash strict mode
+set -euo pipefail
+
+# Switch to the directory this script is located in
+cd "$(dirname "$0")"
+
 # For manual invocation.
 # You can regenerate the source files,
 # and you can clean them up.
@@ -44,9 +50,7 @@ case $* in
 --help|*)       echo "Usage: $0 [--generate [file] | --clean | --revert | --list]"; exit 1;;
 esac
 
-javac -d . ../../../../../../../make/jdk/src/classes/build/tools/spp/Spp.java
-
-SPP=build.tools.spp.Spp
+SPP="../../../../../../../make/jdk/src/classes/build/tools/spp/Spp.java"
 
 typeprefix=
 
@@ -202,9 +206,15 @@ do
     shuffletype=${typeprefix}${Type}Shuffle${bits}
     bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
     fpvectortype=${typeprefix}${Fptype}Vector${bits}
-    vectorindexbits=$((bits * 4 / sizeInBytes))
 
-    numLanes=$((bits / (sizeInBytes * 8)))
+    if [[ $bits == Max ]]; then
+      vectorindexbits=Max
+      numLanes=Max
+    else
+      vectorindexbits=$((bits * 4 / sizeInBytes))
+      numLanes=$((bits / (sizeInBytes * 8)))
+    fi
+
     if [[ "${numLanes}" == "1" ]]; then
         lanes=1L
     elif [[ "${numLanes}" == "2" ]]; then
@@ -260,6 +270,3 @@ do
   done
 
 done
-
-rm -fr build
-

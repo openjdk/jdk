@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 #ifndef SHARE_OOPS_ARRAYKLASS_HPP
 #define SHARE_OOPS_ARRAYKLASS_HPP
 
+#include "oops/arrayProperties.hpp"
 #include "oops/klass.hpp"
+#include "oops/layoutKind.hpp"
+#include "utilities/integerCast.hpp"
 
 class fieldDescriptor;
 class klassVtable;
@@ -35,18 +38,24 @@ class ObjArrayKlass;
 
 class ArrayKlass: public Klass {
   friend class VMStructs;
+
+ public:
+  static ArrayProperties array_properties_from_layout(LayoutKind lk);
+
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ArrayKlass::metaspace_pointers_do().
-  const int               _dimension;         // This is n'th-dimensional array.
+  int                     _dimension;         // This is n'th-dimensional array.
   ObjArrayKlass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
   ArrayKlass* volatile    _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
+
+  const ArrayProperties   _properties;
 
  protected:
   // Constructors
   // The constructor with the Symbol argument does the real array
   // initialization, the other is a dummy
-  ArrayKlass(int n, Symbol* name, KlassKind kind);
+  ArrayKlass(int n, Symbol* name, KlassKind kind, ArrayProperties props);
   ArrayKlass();
 
  public:
@@ -63,6 +72,9 @@ class ArrayKlass: public Klass {
 
   // Instance variables
   int dimension() const                 { return _dimension;      }
+
+  ArrayProperties properties() const    { return _properties; }
+  static ByteSize properties_offset()   { return byte_offset_of(ArrayKlass, _properties); }
 
   ObjArrayKlass* higher_dimension() const     { return _higher_dimension; }
   inline ObjArrayKlass* higher_dimension_acquire() const; // load with acquire semantics
@@ -106,6 +118,8 @@ class ArrayKlass: public Klass {
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces) override;
 
+  oop component_mirror() const;
+
   // Sizing
   static int static_size(int header_size);
 
@@ -136,6 +150,77 @@ class ArrayKlass: public Klass {
   void verify_on(outputStream* st) override;
 
   void oop_verify_on(oop obj, outputStream* st) override;
+};
+
+class ArrayDescription : public StackObj {
+  // Layout for uint32_t encoding
+  //
+  // 31             24 23            16 15                           0
+  // +----------------+----------------+-----------------------------+
+  // |      Unused    | encoded layout |      ArrayProperties        |
+  // +----------------+----------------+-----------------------------+
+  //      8 bits           8 bits                16 bits
+  static constexpr uint32_t _encoded_layout_shift = 16;
+  static constexpr uint32_t _unused_shift = 8 + _encoded_layout_shift;
+
+  static constexpr uint32_t _properties_mask = (1u << _encoded_layout_shift) - 1;
+  static constexpr uint32_t _encoded_layout_mask = (1u << (_unused_shift - _encoded_layout_shift)) - 1;
+
+  ArrayDescription(ArrayProperties p, OptionalFlatLayout ofl)
+    : _properties(),
+      _optional_flat_layout(ofl) {
+    // Atomicity depends on the layout kind, which might be different than what
+    // the given properties says
+    const bool non_atomic = ofl.is_flat() && !ofl.get().is_atomic();
+    _properties = p.with_non_atomic(non_atomic);
+  }
+
+public:
+  ArrayProperties    _properties;
+  OptionalFlatLayout _optional_flat_layout;
+
+  static ArrayDescription reference(ArrayProperties p) {
+    return ArrayDescription(p, OptionalFlatLayout::non_flat());
+  }
+
+  static ArrayDescription flat(ArrayProperties p, FlatLayout flat_layout) {
+    return ArrayDescription(p, flat_layout);
+  }
+
+  uint32_t value() const {
+    assert((_properties.value() & ~_properties_mask) == 0, "array properties do not fit into encoding");
+
+    uint32_t encoded_layout_value = static_cast<uint32_t>(FlatLayoutEncoding::encode(_optional_flat_layout));
+    assert((encoded_layout_value & ~_encoded_layout_mask) == 0, "encoded layout does not fit into encoding");
+
+    return _properties.value() | (encoded_layout_value << _encoded_layout_shift);
+  }
+
+  static ArrayDescription from_value(uint32_t value) {
+    ArrayProperties properties(value & _properties_mask);
+
+    uint32_t encoded_layout_value = (value >> _encoded_layout_shift) & _encoded_layout_mask;
+    OptionalFlatLayout ofl = FlatLayoutEncoding::decode(integer_cast<jint>(encoded_layout_value));
+
+    return ArrayDescription(properties, ofl);
+  }
+
+  bool is_flat() const {
+    return _optional_flat_layout.is_flat();
+  }
+
+  FlatLayout flat_layout() const {
+    return _optional_flat_layout.get();
+  }
+
+  bool operator==(const ArrayDescription& other) const {
+    return _properties == other._properties &&
+           _optional_flat_layout == other._optional_flat_layout;
+  }
+
+  bool operator!=(const ArrayDescription& other) const {
+    return !operator==(other);
+  }
 };
 
 #endif // SHARE_OOPS_ARRAYKLASS_HPP

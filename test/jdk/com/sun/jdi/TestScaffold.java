@@ -558,9 +558,10 @@ abstract public class TestScaffold extends TargetAdapter {
         // and set property 'test.thread.factory' so test could use DebuggeeWrapper.isVirtual() method
         String testThreadFactoryName = DebuggeeWrapper.getTestThreadFactoryName();
         if (testThreadFactoryName != null && !argInfo.targetAppCommandLine.isEmpty()) {
-            argInfo.targetVMArgs += "-D" + DebuggeeWrapper.PROPERTY_NAME + "=" + testThreadFactoryName;
+            argInfo.targetVMArgs += "-D" + DebuggeeWrapper.PROPERTY_NAME + "=" + testThreadFactoryName + " ";
             argInfo.targetAppCommandLine = DebuggeeWrapper.class.getName() + ' ' + argInfo.targetAppCommandLine;
-        } else if ("true".equals(System.getProperty("test.enable.preview"))) {
+        }
+        if ("true".equals(System.getProperty("test.enable.preview"))) {
             // the test specified @enablePreview.
             argInfo.targetVMArgs += "--enable-preview ";
         }

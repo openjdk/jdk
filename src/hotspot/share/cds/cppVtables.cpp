@@ -29,15 +29,19 @@
 #include "cds/cppVtables.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/flatArrayKlass.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/instanceStackChunkKlass.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/refArrayKlass.hpp"
 #include "oops/trainingData.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include "oops/valueKlass.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -62,13 +66,16 @@
 // the virtual printing functions in AnyObj).
 
 using GrowableArray_ModuleEntry_ptr = GrowableArray<ModuleEntry*>;
+using GrowableArray_SigEntry = GrowableArray<SigEntry>;
 
 #define DEBUG_CPP_VTABLE_TYPES_DO(f) \
   f(GrowableArray_ModuleEntry_ptr) \
+  f(GrowableArray_SigEntry) \
 
 #endif
 
 // Currently, the archive contains ONLY the following types of objects that have C++ vtables.
+// NOTE: this table must be in-sync with sun.jvm.hotspot.memory.FileMapInfo::populateMetadataTypeArray().
 #define CPP_VTABLE_TYPES_DO(f) \
   f(ConstantPool) \
   f(InstanceKlass) \
@@ -79,8 +86,11 @@ using GrowableArray_ModuleEntry_ptr = GrowableArray<ModuleEntry*>;
   f(Method) \
   f(MethodData) \
   f(MethodCounters) \
-  f(ObjArrayKlass) \
   f(TypeArrayKlass) \
+  f(ObjArrayKlass) \
+  f(RefArrayKlass) \
+  f(FlatArrayKlass) \
+  f(ValueKlass) \
   f(KlassTrainingData) \
   f(MethodTrainingData) \
   f(CompileTrainingData) \
@@ -221,8 +231,8 @@ enum ClonedVtableKind {
 // the following holds true:
 //     _orig_cpp_vtptrs[ConstantPool_Kind] == ((intptr_t**)cp)[0]
 //
-// _archived_cpp_vtptrs is a map of all the vptprs used by classes in a preimage. E.g., for
-//    InstanceKlass* k = a class loaded from the preimage;
+// _archived_cpp_vtptrs is a map of all the vptprs used by classes in an input archive. E.g., for
+//    InstanceKlass* k = a class loaded from the input archive;
 //    ConstantPool* cp = k->constants();
 // the following holds true:
 //     _archived_cpp_vtptrs[ConstantPool_Kind] == ((intptr_t**)cp)[0]
@@ -255,8 +265,8 @@ char* CppVtables::_vtables_serialized_base = nullptr;
 void CppVtables::dumptime_init(ArchiveBuilder* builder) {
   assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
-    // When dumping final archive, _index[kind] at this point is in the preimage.
+  if (CDSConfig::is_dumping_with_input_archive()) {
+    // At this point, _index[kind] is in the input archive.
     // Remember these vtable pointers in _archived_cpp_vtptrs, as _index[kind] will now be rewritten
     // to point to the runtime vtable data.
     for (int i = 0; i < _num_cloned_vtable_kinds; i++) {
@@ -343,6 +353,39 @@ void CppVtables::zero_archived_vtables() {
 
 bool CppVtables::is_valid_shared_method(const Method* m) {
   assert(AOTMetaspace::in_aot_cache(m), "must be");
-  return vtable_of(m) == _index[Method_Kind]->cloned_vtable() ||
-         vtable_of(m) == _archived_cpp_vtptrs[Method_Kind];
+  const intptr_t* vt = vtable_of(m);
+  // _archived_cpp_vtptrs[kind] is not null only during AOT assembly phase
+  const intptr_t* archived_vt = _archived_cpp_vtptrs[Method_Kind];
+  return vt == _index[Method_Kind]->cloned_vtable() ||
+         (archived_vt != nullptr && vt == archived_vt);
 }
+
+#define CPP_VTABLE_KLASS_DO(f) \
+  f(InstanceKlass) \
+  f(InstanceClassLoaderKlass) \
+  f(InstanceMirrorKlass) \
+  f(InstanceRefKlass) \
+  f(InstanceStackChunkKlass) \
+  f(TypeArrayKlass) \
+  f(ObjArrayKlass) \
+  f(RefArrayKlass) \
+  f(FlatArrayKlass) \
+  f(ValueKlass)
+
+#define KLASS_CHECK(c) \
+  archived_vt = _archived_cpp_vtptrs[c##_Kind]; \
+  if (vt == _index[c##_Kind]->cloned_vtable() || \
+      (archived_vt != nullptr && vt == archived_vt)) { \
+    return true; \
+  }
+
+bool CppVtables::is_valid_shared_klass(const Klass* k) {
+  assert(AOTMetaspace::in_aot_cache(k), "must be");
+  const intptr_t* vt = vtable_of(k);
+  intptr_t* archived_vt;
+  CPP_VTABLE_KLASS_DO(KLASS_CHECK);
+  return false;
+}
+
+#undef KLASS_CHECK
+#undef CPP_VTABLE_KLASS_DO

@@ -250,53 +250,30 @@ inline void LockStack::oops_do(OopClosure* cl) {
 }
 
 inline void OMCache::set_monitor(ObjectMonitor *monitor) {
-  const int end = OMCache::CAPACITY - 1;
-
   oop obj = monitor->object_peek();
   assert(obj != nullptr, "must be alive");
   assert(monitor == ObjectSynchronizer::get_monitor_from_table(obj), "must exist in table");
 
-  OMCacheEntry to_insert = {obj, monitor};
-
-  for (int i = 0; i < end; ++i) {
-    if (_entries[i]._oop == obj ||
-        _entries[i]._monitor == nullptr ||
-        _entries[i]._monitor->is_being_async_deflated()) {
-      // Use stale slot.
-      _entries[i] = to_insert;
-      return;
-    }
-    // Swap with the most recent value.
-    ::swap(to_insert, _entries[i]);
-  }
-  _entries[end] = to_insert;
+  _monitor = monitor;
+  _obj     = obj;
 }
 
 inline ObjectMonitor* OMCache::get_monitor(oop o) {
-  for (int i = 0; i < CAPACITY; ++i) {
-    if (_entries[i]._oop == o) {
-      assert(_entries[i]._monitor != nullptr, "monitor must exist");
-      if (_entries[i]._monitor->is_being_async_deflated()) {
-        // Bad monitor
-        // Shift down rest
-        for (; i < CAPACITY - 1; ++i) {
-          _entries[i] = _entries[i + 1];
-        }
-        // Clear end
-        _entries[i] = {};
-        return nullptr;
-      }
-      return _entries[i]._monitor;
+  if (_obj == o) {
+    assert(_monitor != nullptr, "monitor must exist");
+    if (!_monitor->is_being_async_deflated()) {
+      return _monitor;
     }
+    // Bad monitor, so clear the cache.
+    _obj     = nullptr;
+    _monitor = nullptr;
   }
   return nullptr;
 }
 
 inline void OMCache::clear() {
-  for (size_t i = 0; i < CAPACITY; ++i) {
-    // Clear
-    _entries[i] = {};
-  }
+  _obj     = nullptr;
+  _monitor = nullptr;
 }
 
 #endif // SHARE_RUNTIME_LOCKSTACK_INLINE_HPP

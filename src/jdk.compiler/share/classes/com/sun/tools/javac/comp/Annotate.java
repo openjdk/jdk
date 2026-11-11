@@ -97,6 +97,7 @@ public class Annotate {
     private final Symtab syms;
     private final TypeEnvs typeEnvs;
     private final Types types;
+    private final Preview preview;
 
     private final Attribute theUnfinishedDefaultValue;
     private final String sourceName;
@@ -116,6 +117,7 @@ public class Annotate {
         syms = Symtab.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         types = Types.instance(context);
+        preview = Preview.instance(context);
 
         theUnfinishedDefaultValue =  new Attribute.Error(syms.errType);
 

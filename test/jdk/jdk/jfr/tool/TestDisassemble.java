@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,15 +55,18 @@ public class TestDisassemble {
         Path recordingFileB = Paths.get("many-chunks-B-" + dateText + ".jfr");
         Path recordingFileC = Paths.get("many-chunks-C-" + dateText + ".jfr");
         Path recordingFileD = Paths.get("many-chunks-D-" + dateText + ".jfr");
+        Path recordingFileE = Paths.get("many-chunks-E-" + dateText + ".jfr");
         makeRecordingWithChunks(6, recordingFileA);
         Files.copy(recordingFileA, recordingFileB);
         Files.copy(recordingFileA, recordingFileC);
         Files.copy(recordingFileA, recordingFileD);
+        Files.copy(recordingFileA, recordingFileE);
 
         String fileAText = recordingFileA.toAbsolutePath().toString();
         String fileBText = recordingFileB.toAbsolutePath().toString();
         String fileCText = recordingFileC.toAbsolutePath().toString();
         String fileDText = recordingFileD.toAbsolutePath().toString();
+        String fileEText = recordingFileE.toAbsolutePath().toString();
 
         OutputAnalyzer output = ExecuteHelper.jfr("disassemble");
         output.shouldContain("missing file");
@@ -108,6 +111,10 @@ public class TestDisassemble {
         for (long i = 0; i < Long.parseLong(chunks); i++) {
             verifyRecording(chunkFilePrefix + String.format("%0" + chunks.length() + "d", i) + ".jfr");
         }
+
+        // test JDK-8392857
+        output = ExecuteHelper.jfr("disassemble", "--max-size", "10000", "--max-chunks", "3", fileEText);
+        output.shouldNotContain("number of chunks in recording");
     }
 
     private static void verifyRecording(String name) throws IOException {

@@ -50,7 +50,7 @@ inline bool JNIHandles::is_global_tagged(jobject handle) {
 
 inline oop* JNIHandles::local_ptr(jobject handle) {
   assert(is_local_tagged(handle), "precondition");
-  STATIC_ASSERT(TypeTag::local == 0);
+  static_assert(TypeTag::local == 0);
   return reinterpret_cast<oop*>(handle);
 }
 
@@ -102,12 +102,6 @@ inline oop JNIHandles::resolve_no_keepalive(jobject handle) {
     result = resolve_impl<AS_NO_KEEPALIVE, false /* external_guard */>(handle);
   }
   return result;
-}
-
-inline bool JNIHandles::is_same_object(jobject handle1, jobject handle2) {
-  oop obj1 = resolve_no_keepalive(handle1);
-  oop obj2 = resolve_no_keepalive(handle2);
-  return obj1 == obj2;
 }
 
 inline oop JNIHandles::resolve_non_null(jobject handle) {

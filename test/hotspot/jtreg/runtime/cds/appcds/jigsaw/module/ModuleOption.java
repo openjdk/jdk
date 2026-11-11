@@ -42,6 +42,7 @@ public class ModuleOption {
         // e.g. JDK 22:     "java 22"
         //      JDK 22.0.1: "java 22.0.1"
         final String versionPattern = "java.[0-9][0-9].*";
+        final String noOptimizedModuleHandling = "optimized module handling: disabled because archive was created without optimized module handling";
         String archiveName = TestCommon.getNewArchiveName("module-option");
         TestCommon.setCurrentArchiveName(archiveName);
 
@@ -60,8 +61,10 @@ public class ModuleOption {
             "-version");
         oa.shouldHaveExitValue(0)
           // version of the jdk.httpserver module, e.g. java 22-ea
-          .shouldMatch(versionPattern)
-          .shouldMatch("aot,module.*Restored from archive: entry.0x.*name jdk.httpserver");
+          .shouldMatch(versionPattern);
+        if (!oa.contains(noOptimizedModuleHandling)) {
+            oa.shouldMatch("aot,module.*Restored from archive: entry.0x.*name jdk.httpserver");
+        }
 
         // different module specified during runtime
         oa = TestCommon.execCommon(
