@@ -254,6 +254,10 @@ void ZGeneration::select_relocation_set(bool promote_all) {
   // Select relocation set
   selector.select();
 
+  // Update statistics
+  stat_relocation()->at_select_relocation_set(selector.stats());
+  stat_heap()->at_select_relocation_set(selector.stats());
+
   // Selecting tenuring threshold must be done after select
   // which produces the liveness data, but before install,
   // which consumes the tenuring threshold.
@@ -274,10 +278,6 @@ void ZGeneration::select_relocation_set(bool promote_all) {
   for (ZForwarding* forwarding; rs_iter.next(&forwarding);) {
     _forwarding_table.insert(forwarding);
   }
-
-  // Update statistics
-  stat_relocation()->at_select_relocation_set(selector.stats());
-  stat_heap()->at_select_relocation_set(selector.stats());
 }
 
 ZRelocationSetParallelIterator ZGeneration::relocation_set_parallel_iterator() {
