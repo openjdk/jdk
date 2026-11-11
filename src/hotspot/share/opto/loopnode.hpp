@@ -1878,7 +1878,7 @@ private:
   Node* try_move_store_before_loop(Node* n, Node *n_ctrl);
   void try_move_store_after_loop(Node* n);
   void move_flat_array_check_out_of_loop(Node* n);
-  bool identical_backtoback_ifs(Node *n);
+  bool has_identical_back_to_back_ifs(Node* n);
   bool flat_array_element_type_check(Node *n);
   bool can_split_if(Node *n_ctrl);
   bool cannot_split_division(const Node* n, const Node* region) const;
