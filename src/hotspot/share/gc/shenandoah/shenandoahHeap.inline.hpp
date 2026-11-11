@@ -72,10 +72,6 @@ inline WorkerThreads* ShenandoahHeap::workers() const {
   return _workers;
 }
 
-inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
-  return _safepoint_workers;
-}
-
 inline void ShenandoahHeap::notify_gc_progress() {
   _gc_no_progress_count.store_relaxed((size_t) 0);
 
@@ -237,8 +233,6 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
 
   PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
   if (gclab == nullptr) {
-    assert(!thread->is_Java_thread() && !thread->is_Worker_thread(),
-           "Performance: thread should have GCLAB: %s", thread->name());
     // No GCLABs in this thread, fallback to shared allocation
     return nullptr;
   }
@@ -548,7 +542,7 @@ inline void ShenandoahHeap::marked_object_oop_iterate(ShenandoahHeapRegion* regi
   if (region->is_humongous()) {
     HeapWord* bottom = region->bottom();
     if (top > bottom) {
-      region = region->humongous_start_region();
+      region = get_region(region->humongous_start_region());
       ShenandoahObjectToOopBoundedClosure<T> objs(cl, bottom, top);
       marked_object_iterate(region, &objs);
     }

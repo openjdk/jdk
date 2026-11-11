@@ -161,20 +161,12 @@ class CallGenerator : public ArenaObj {
                                          CallGenerator* if_missed,
                                          CallGenerator* if_hit);
 
-  // How to make a call that optimistically assumes a MethodHandle target:
-  static CallGenerator* for_predicted_dynamic_call(ciMethodHandle* predicted_method_handle,
-                                                   CallGenerator* if_missed,
-                                                   CallGenerator* if_hit,
-                                                   float hit_prob);
-
   // How to make a call that gives up and goes back to the interpreter:
   static CallGenerator* for_uncommon_trap(ciMethod* m,
                                           Deoptimization::DeoptReason reason,
                                           Deoptimization::DeoptAction action);
 
   // Registry for intrinsics:
-  static CallGenerator* for_intrinsic(ciMethod* m);
-  static void register_intrinsic(ciMethod* m, CallGenerator* cg);
   static CallGenerator* for_predicated_intrinsic(CallGenerator* intrinsic,
                                                  CallGenerator* cg);
   virtual Node* generate_predicate(JVMState* jvms, int predicate) { return nullptr; };

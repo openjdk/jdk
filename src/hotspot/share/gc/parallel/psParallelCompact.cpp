@@ -131,6 +131,92 @@ void ParallelCompactData::RegionData::verify_clear() {
 }
 #endif
 
+void ParallelCompactData::RegionData::set_destination_count(uint count)
+{
+  assert(count <= max_destination_count, "count too large");
+  const state_t old_state = state();
+  assert(state_status(old_state) == status_init, "cannot reset processed region");
+  _state.store_relaxed(with_dest_count(old_state, static_cast<state_t>(count)));
+}
+
+void ParallelCompactData::RegionData::decrement_destination_count()
+{
+  state_t old_state = _state.fetch_then_sub(static_cast<state_t>(1));
+  assert(state_dest_count(old_state) > 0, "count would go negative");
+}
+
+void ParallelCompactData::RegionData::set_completed()
+{
+  const state_t old_state = state();
+  assert(state_status(old_state) == status_normal, "can only complete normal regions");
+  _state.store_relaxed(with_status(old_state, status_completed));
+}
+
+bool ParallelCompactData::RegionData::available_to_normal()
+{
+  const state_t old_state = state();
+  assert(state_status(old_state) == status_init, "initial regions must be unprocessed");
+  if (state_dest_count(old_state) == 0) {
+    _state.store_relaxed(make_state(0, status_normal));
+    return true;
+  }
+  return false;
+}
+
+bool ParallelCompactData::RegionData::try_mark_normal()
+{
+  assert(available(), "region must have no remaining destination dependencies");
+  return _state.compare_set(make_state(0, status_init), make_state(0, status_normal));
+}
+
+bool ParallelCompactData::RegionData::try_complete_filled_shadow()
+{
+  assert(available(), "region must have no remaining destination dependencies");
+  return _state.compare_set(make_state(0, status_filled_shadow), make_state(0, status_completed));
+}
+
+bool ParallelCompactData::RegionData::try_mark_shadow() {
+  state_t old_state = state();
+  while (true) {
+    if (state_dest_count(old_state) == 0 ||
+        state_status(old_state) != status_init) {
+      return false;
+    }
+    const state_t new_state = with_status(old_state, status_shadow);
+    if (_state.compare_set(old_state, new_state)) {
+      return true;
+    }
+    old_state = state();
+  }
+}
+
+bool ParallelCompactData::RegionData::finish_shadow_fill() {
+  state_t old_state = state();
+  while (true) {
+    state_t new_state;
+    bool copy_now = false;
+    assert(state_status(old_state) == status_shadow, "must be shadow");
+    if (state_dest_count(old_state) == 0) {
+      new_state = with_status(old_state, status_completed);
+      copy_now = true;
+    } else {
+      new_state = with_status(old_state, status_filled_shadow);
+    }
+    if (_state.compare_set(old_state, new_state)) {
+      return copy_now;
+    }
+    old_state = state();
+  }
+}
+
+void ParallelCompactData::RegionData::shadow_to_normal() {
+  assert(available(), "region must have no remaining destination dependencies");
+  const state_t old_state = make_state(0, status_shadow);
+  const state_t new_state = make_state(0, status_normal);
+  bool result = _state.compare_set(old_state, new_state);
+  assert(result, "Fail to mark the region as normal");
+}
+
 SpaceInfo PSParallelCompact::_space_info[PSParallelCompact::last_space_id];
 HeapWord* PSParallelCompact::_old_space_dense_prefix = nullptr;
 HeapWord* PSParallelCompact::_old_space_new_top = nullptr;

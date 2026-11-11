@@ -15,23 +15,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="ff">Fulah</language>
 		</languages>
-		<scripts>
-			<script type="Hrkt">Japanese Syllabaries</script>
-		</scripts>
-		<keys>
-			<key type="lw">Line Breaks Within Words</key>
-		</keys>
-		<types>
-			<type key="numbers" type="armnlow" scope="core">Armenian Lowercase</type>
-			<type key="numbers" type="fullwide" scope="core">Full-Width</type>
-			<type key="numbers" type="greklow" scope="core">Greek Lowercase</type>
-			<type key="numbers" type="hansfin" scope="core">Simplified Chinese Financial</type>
-			<type key="numbers" type="hantfin" scope="core">Traditional Chinese Financial</type>
-			<type key="numbers" type="jpanfin" scope="core">Japanese Financial</type>
-			<type key="numbers" type="native" scope="core">Native Digits</type>
-			<type key="numbers" type="roman" scope="core">Roman Uppercase</type>
-			<type key="numbers" type="romanlow" scope="core">Roman Lowercase</type>
-		</types>
 	</localeDisplayNames>
 	<dates>
 		<calendars>
@@ -39,36 +22,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<availableFormats>
 						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEEEEd">EEEE, d MMM y G</dateFormatItem>
 						<dateFormatItem id="MEd">E dd/MM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
-						<dateFormatItem id="MMMEEEEd">EEEE d MMM</dateFormatItem>
-						<dateFormatItem id="MMMMEEEEd">EEEE d MMMM</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEEEEd">EEEE, d MMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMMEEEEd">EEEE, d MMMM y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatItem id="GyMMMEEEEd">
-							<greatestDifference id="d">EEEE d MMM – EEEE d MMM y G</greatestDifference>
-							<greatestDifference id="G">EEEE d MMM y G – EEEE d MMM y G</greatestDifference>
-							<greatestDifference id="M">EEEE d MMM – EEEE d MMM y G</greatestDifference>
-							<greatestDifference id="y">EEEE d MMM y – EEEE d MMM y G</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMEEEEd">
-							<greatestDifference id="d">EEEE d MMM – EEEE d MMM y G</greatestDifference>
-							<greatestDifference id="M">EEEE d MMM – EEEE d MMM y G</greatestDifference>
-							<greatestDifference id="y">EEEE d MMM y – EEEE d MMM y G</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMMEEEEd">
-							<greatestDifference id="d">EEEE d MMMM – EEEE d MMMM y G</greatestDifference>
-							<greatestDifference id="M">EEEE d MMMM – EEEE d MMMM y G</greatestDifference>
-							<greatestDifference id="y">EEEE d MMMM y – EEEE d MMMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -145,51 +107,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEEEEd">EEEE, d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMddd">ddd MMM y G</dateFormatItem>
 						<dateFormatItem id="MEd">E dd/MM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
-						<dateFormatItem id="MMMEEEEd">EEEE d MMM</dateFormatItem>
-						<dateFormatItem id="MMMMEEEEd">EEEE d MMMM</dateFormatItem>
-						<dateFormatItem id="yMMMEEEEd">EEEE, d MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMMEEEEd">EEEE, d MMMM y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMEEEEd">
-							<greatestDifference id="d">EEEE d MMM – EEEE d MMM y G</greatestDifference>
-							<greatestDifference id="G">EEEE d MMM y G – EEEE d MMM y G</greatestDifference>
-							<greatestDifference id="M">EEEE d MMM – EEEE d MMM y G</greatestDifference>
-							<greatestDifference id="y">EEEE d MMM y – EEEE d MMM y G</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="M">
-							<greatestDifference id="M">M – M</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">d – d MMM</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y">y – y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMEEEEd">
-							<greatestDifference id="d">EEEE d MMM – EEEE d MMM y</greatestDifference>
-							<greatestDifference id="M">EEEE d MMM – EEEE d MMM y</greatestDifference>
-							<greatestDifference id="y">EEEE d MMM y – EEEE d MMM y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMMEEEEd">
-							<greatestDifference id="d">EEEE d MMMM – EEEE d MMMM y</greatestDifference>
-							<greatestDifference id="M">EEEE d MMMM – EEEE d MMMM y</greatestDifference>
-							<greatestDifference id="y">EEEE d MMMM y – EEEE d MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -248,28 +181,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<availableFormats>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMEd">E, d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="GyMMMEEEEd">EEEE, d MMM y G</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
-						<dateFormatItem id="MEEEEd">EEEE, d/M</dateFormatItem>
-						<dateFormatItem id="MMMEEEEd">EEEE, d MMM</dateFormatItem>
-						<dateFormatItem id="MMMMEEEEd">EEEE, d MMMM</dateFormatItem>
 						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E, d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEEEEd">EEEE, d MMMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEEEEd">EEEE, d MMMM y G</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<timeZoneNames>
-			<zone type="Europe/London">
+			<metazone type="British">
 				<short>
+					<standard>GMT</standard>
 					<daylight>BST</daylight>
 				</short>
-			</zone>
+			</metazone>
 			<metazone type="Europe_Central">
 				<short>
 					<generic>CET</generic>
@@ -384,7 +312,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currencyFormatLength>
 		</currencyFormats>
 	</numbers>
-	<personNames>
-		<initialPattern type="initial">{0}</initialPattern>
-	</personNames>
+	<units>
+		<unitLength type="long">
+			<unit type="volume-pint-imperial">
+				<displayName>pints</displayName>
+				<unitPattern count="one">{0} pint</unitPattern>
+				<unitPattern count="other">{0} pints</unitPattern>
+			</unit>
+			<unit type="volume-cup-imperial">
+				<displayName>cups</displayName>
+				<unitPattern count="one">{0} cup</unitPattern>
+				<unitPattern count="other">{0} cups</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="volume-pint-imperial">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
+			<unit type="volume-cup-imperial">
+				<displayName>cup</displayName>
+				<unitPattern count="one">{0} cup</unitPattern>
+				<unitPattern count="other">{0} cup</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="volume-pint-imperial">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
+			<unit type="volume-cup-imperial">
+				<displayName>cup</displayName>
+				<unitPattern count="one">{0} cup</unitPattern>
+				<unitPattern count="other">{0} cup</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
 </ldml>

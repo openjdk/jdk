@@ -5965,8 +5965,8 @@ address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_
   // Make sure the address of destination 8-byte aligned.
   align(wordSize, 0);
 
-  RelocationHolder rh = trampoline_stub_Relocation::spec(code()->insts()->start() +
-                                                         insts_call_instruction_offset);
+  RelocationHolder rh = address_stub_Relocation::spec(code()->insts()->start() +
+                                                      insts_call_instruction_offset);
   const int stub_start_offset = offset();
   relocate(rh, [&] {
     assert(offset() - stub_start_offset == 0,
@@ -6164,6 +6164,7 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
   j(L_tail_loop);
 
   bind(L_end);
+  sext(out, out, 32);
 }
 
 // Multiply and multiply-accumulate unsigned 64-bit registers.
@@ -6740,44 +6741,6 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
   bind(fini);
 }
 
-// Zero blocks of memory by using CBO.ZERO.
-//
-// Aligns the base address first sufficiently for CBO.ZERO, then uses
-// CBO.ZERO repeatedly for every full block.  cnt is the size to be
-// zeroed in HeapWords.  Returns the count of words left to be zeroed
-// in cnt.
-//
-// NOTE: This is intended to be used in the zero_blocks() stub.  If
-// you want to use it elsewhere, note that cnt must be >= zicboz_block_size.
-void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2) {
-  int zicboz_block_size = VM_Version::zicboz_block_size.value();
-  Label initial_table_end, loop;
-
-  // Align base with cache line size.
-  neg(tmp1, base);
-  andi(tmp1, tmp1, zicboz_block_size - 1);
-
-  // tmp1: the number of bytes to be filled to align the base with cache line size.
-  add(base, base, tmp1);
-  srai(tmp2, tmp1, 3);
-  sub(cnt, cnt, tmp2);
-  srli(tmp2, tmp1, 1);
-  la(tmp1, initial_table_end);
-  sub(tmp2, tmp1, tmp2);
-  jr(tmp2);
-  for (int i = -zicboz_block_size + wordSize; i < 0; i += wordSize) {
-    sd(zr, Address(base, i));
-  }
-  bind(initial_table_end);
-
-  mv(tmp1, zicboz_block_size / wordSize);
-  bind(loop);
-  cbo_zero(base);
-  sub(cnt, cnt, tmp1);
-  addi(base, base, zicboz_block_size);
-  bge(cnt, tmp1, loop);
-}
-
 // java.lang.Math.round(float a)
 // Returns the closest int to the argument, with ties rounding to positive infinity.
 void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegister ftmp) {
@@ -6883,6 +6846,66 @@ void MacroAssembler::float_to_float16_NaN(Register dst, FloatRegister src,
   // 4 bits
   andi(tmp1, dst, 0xf);
   orr(dst, tmp2, tmp1);
+}
+
+// j.l.Float.float16ToFloat
+void MacroAssembler::flt16_to_flt(FloatRegister dst, Register src) {
+  assert_different_registers(src, t0, t1);
+  Label L_NaN_Inf, L_done;
+
+  // On riscv, NaN needs a special process as fcvt does not work in that case.
+  // On riscv, Inf does not need a special process as fcvt can handle it correctly.
+  // but we consider to get the slow path to process NaN and Inf at the same time,
+  // as both of them are rare cases, and if we try to get the slow path to handle
+  // only NaN case it would sacrifise the performance for normal cases,
+  // i.e. non-NaN and non-Inf cases.
+
+  // check whether it's a NaN or +/- Inf.
+  mv(t0, 0x7c00);
+  andr(t1, src, t0);
+  beq(t0, t1, L_NaN_Inf);
+
+  // non-NaN or non-Inf cases, just use built-in instructions.
+  fmv_h_x(dst, src);
+  fcvt_s_h(dst, dst);
+  j(L_done);
+
+  bind(L_NaN_Inf);
+  // construct a NaN in 32 bits from the NaN in 16 bits,
+  // we need the payloads of non-canonical NaNs to be preserved.
+  mv(t1, 0x7f800000);
+  // The upper 16 bits of a short argument are unspecified. Sign-extend the
+  // low 16 bits before shifting so that the float sign bit comes from the
+  // float16 sign bit.
+  sext(t0, src, 16);
+  slli(t0, t0, 13);
+  orr(t1, t0, t1);
+  fmv_w_x(dst, t1);
+
+  bind(L_done);
+}
+
+// j.l.Float.floatToFloat16
+void MacroAssembler::flt_to_flt16(Register dst, FloatRegister src, FloatRegister ftmp) {
+  assert_different_registers(dst, t0, t1);
+  Label L_NaN, L_done;
+
+  // On riscv, NaN needs a special process as fcvt does not work in that case.
+
+  // check whether it's a NaN.
+  // replace fclass with feq as performance optimization.
+  feq_s(t0, src, src);
+  beqz(t0, L_NaN);
+
+  // non-NaN cases, just use built-in instructions.
+  fcvt_h_s(ftmp, src);
+  fmv_x_h(dst, ftmp);
+  j(L_done);
+
+  bind(L_NaN);
+  float_to_float16_NaN(dst, src, t0, t1);
+
+  bind(L_done);
 }
 
 #define FCVT_SAFE(FLOATCVT, FLOATSIG)                                                     \

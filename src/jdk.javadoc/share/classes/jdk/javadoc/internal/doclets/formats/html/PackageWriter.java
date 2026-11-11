@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,7 +419,7 @@ public class PackageWriter extends HtmlDocletWriter {
     protected void printDocument(Content content) throws DocFileIOException {
         String description = getDescription("declaration", packageElement);
         List<DocPath> localStylesheets = getLocalStylesheets(packageElement);
-        content.add(bodyContents);
+        content.add(bodyContents.toContent());
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(packageElement),
                 description, localStylesheets, content);
     }

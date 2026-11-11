@@ -49,7 +49,7 @@ import jdk.javadoc.internal.html.Script;
  *
  * Many methods return the current object, to facilitate fluent builder-style usage.
  */
-public class Head extends Content {
+public class Head {
     private final Runtime.Version docletVersion;
     private final ZonedDateTime generatedDate;
     private final DocPath pathToRoot;
@@ -261,28 +261,11 @@ public class Head extends Content {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @implSpec This implementation always returns {@code false}.
-     *
-     * @return {@code false}
-     */
-    @Override
-    public boolean isEmpty() {
-        return false;
-    }
-
-    @Override
-    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
-        return toContent().write(out, newline, atNewline);
-    }
-
-    /**
      * Returns the HTML for the HEAD element.
      *
      * @return the HTML
      */
-    private Content toContent() {
+    public Content toContent() {
         var head = HtmlTree.of(HtmlTag.HEAD)
             .add(getGeneratedBy(showTimestamp, generatedDate))
             .add(HtmlTree.TITLE(title));

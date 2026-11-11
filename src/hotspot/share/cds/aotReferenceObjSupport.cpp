@@ -22,8 +22,8 @@
  *
  */
 
+#include "cds/aotHeap.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -96,7 +96,7 @@ class KeepAliveObjectsTable : public HashTable<oop, bool,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared,
-    HeapShared::oop_address_hash> {};
+    AOTHeap::oop_address_hash> {};
 
 static KeepAliveObjectsTable* _keep_alive_objs_table;
 static OopHandle _keep_alive_objs_array;
@@ -194,8 +194,8 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
     // is not running.
     //
     // This code is called on every object found by AOTArtifactFinder. When dumping the
-    // preimage archive, AOTArtifactFinder should not find any Reference objects.
-    precond(!CDSConfig::is_dumping_preimage_static_archive());
+    // AOT configuration, AOTArtifactFinder should not find any Reference objects.
+    precond(!CDSConfig::is_dumping_aot_configuration());
     precond(CDSConfig::allow_only_single_java_thread());
 
     precond(AOTReferenceObjSupport::is_enabled());
@@ -226,7 +226,7 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
                            PTR_FORMAT ")", p2i(_null_queue.resolve()));
       log_error(aot, heap)("%s", (referent == nullptr) ?
                            "referent cannot be null" : "referent is not registered with CDS.keepAlive()");
-      HeapShared::debug_trace();
+      AOTHeap::debug_trace();
       AOTMetaspace::unrecoverable_writing_error();
     }
 

@@ -116,23 +116,9 @@ public:
   size_t get_total_population() const { return _total_pop; }
 };
 
-void ShenandoahGeneration::confirm_heuristics_mode() {
-  if (_heuristics->is_diagnostic() && !UnlockDiagnosticVMOptions) {
-    vm_exit_during_initialization(
-            err_msg("Heuristics \"%s\" is diagnostic, and must be enabled via -XX:+UnlockDiagnosticVMOptions.",
-                    _heuristics->name()));
-  }
-  if (_heuristics->is_experimental() && !UnlockExperimentalVMOptions) {
-    vm_exit_during_initialization(
-            err_msg("Heuristics \"%s\" is experimental, and must be enabled via -XX:+UnlockExperimentalVMOptions.",
-                    _heuristics->name()));
-  }
-}
-
 ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
   _heuristics = gc_mode->initialize_heuristics(this);
   _heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedGCInterval);
-  confirm_heuristics_mode();
   return _heuristics;
 }
 
@@ -367,7 +353,7 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
 
   ShenandoahReferenceProcessor* rp = ref_processor();
   ShenandoahRegionChunkIterator work_list(heap);
-  ShenandoahScanRememberedTask task(task_queues(), old_gen_task_queues(), rp, &work_list, is_concurrent);
+  ShenandoahScanRememberedTask task(task_queues(), rp, &work_list, is_concurrent);
   heap->assert_gc_workers(nworkers);
   heap->workers()->run_task(&task);
   if (ShenandoahEnableCardStats) {

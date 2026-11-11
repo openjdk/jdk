@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,18 @@ import java.lang.ref.WeakReference;
  *                   -XX:CompileThreshold=100 -XX:-BackgroundCompilation UncommonTrapLeak
  *
  * @author Hui Shi
+ */
+
+/*
+ * @test
+ * @bug 8260473
+ * @summary Handle leak might cause object not collected as expected
+ *
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-Inline -XX:-TieredCompilation -XX:CompileCommand=compileonly,UncommonTrapLeak.foo
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *                   -XX:CompileThreshold=100 -XX:-BackgroundCompilation UncommonTrapLeak
  */
 public class UncommonTrapLeak {
     static WeakReference<Object> ref = null;

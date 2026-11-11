@@ -254,10 +254,6 @@ void ValueTypeNode::set_field_value(uint index, Node* value) {
   set_req(Values + index, value);
 }
 
-void ValueTypeNode::set_field_value_by_offset(int offset, Node* value) {
-  set_field_value(field_index(offset), value);
-}
-
 uint ValueTypeNode::field_index(int offset) const {
   uint i = 0;
   for (; i < field_count() && field(i)->offset_in_bytes() != offset; i++) { }
@@ -290,7 +286,7 @@ static uint add_top_to_safepoint(ciValueKlass* vk, SafePointNode* sfpt) {
   return cnt;
 }
 
-uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePointNode* sfpt) const {
+uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List<ValueTypeNode>& worklist, SafePointNode* sfpt) const {
   uint cnt = 0;
   for (uint i = 0; i < field_count(); ++i) {
     Node* value = field_value(i);
@@ -319,7 +315,7 @@ uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePoin
     }
     if (value->is_ValueType()) {
       // Add value type to the worklist to process later
-      worklist.push(value);
+      worklist.push(value->as_ValueType());
     }
     sfpt->add_req(value);
     cnt++;
@@ -327,7 +323,7 @@ uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePoin
   return cnt;
 }
 
-void ValueTypeNode::make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_List& worklist, SafePointNode* sfpt) const {
+void ValueTypeNode::make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_List<ValueTypeNode>& worklist, SafePointNode* sfpt) const {
   JVMState* jvms = sfpt->jvms();
   assert(jvms != nullptr, "missing JVMS");
   uint first_ind = (sfpt->req() - jvms->scloff());
@@ -365,17 +361,17 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   Node* oop = get_oop();
   bool use_oop = false;
   if (allow_oop && is_allocated(igvn) && oop->is_Phi()) {
-    Unique_Node_List worklist;
+    Unique_Node_List<const PhiNode> worklist;
     VectorSet visited;
     visited.set(oop->_idx);
-    worklist.push(oop);
+    worklist.push(oop->as_Phi());
     use_oop = true;
     while (worklist.size() > 0 && use_oop) {
-      Node* n = worklist.pop();
+      const PhiNode* n = worklist.pop();
       for (uint i = 1; i < n->req(); i++) {
         Node* in = n->in(i);
         if (in->is_Phi() && !visited.test_set(in->_idx)) {
-          worklist.push(in);
+          worklist.push(in->as_Phi());
         } else if (!(in->is_Con() || in->is_Parm())) {
           use_oop = false;
           break;
@@ -388,17 +384,17 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   }
 
   ResourceMark rm;
-  Unique_Node_List safepoints;
+  Unique_Node_List<SafePointNode> safepoints;
   if (safepoint == nullptr) {
     // Gathering all SafePoint users of `this`...
-    Unique_Node_List worklist;
+    Unique_Node_List<const Node> worklist;
     worklist.push(this);
     while (worklist.size() > 0) {
-      Node* n = worklist.pop();
+      const Node* n = worklist.pop();
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (use->is_SafePoint() && !use->is_CallLeaf() && (!use->is_Call() || use->as_Call()->has_debug_use(n))) {
-          safepoints.push(use);
+          safepoints.push(use->as_SafePoint());
         } else if (use->is_ConstraintCast()) {
           worklist.push(use);
         }
@@ -415,9 +411,9 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   if ((C->live_nodes() + safepoints.size() + NodeLimitFudgeFactor) > C->max_node_limit()) {
     return false;
   }
-  Unique_Node_List vt_worklist;
+  Unique_Node_List<ValueTypeNode> vt_worklist;
   while (safepoints.size() > 0) {
-    SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
+    SafePointNode* sfpt = safepoints.pop();
     if (use_oop) {
       for (uint i = sfpt->jvms()->debug_start(); i < sfpt->jvms()->debug_end(); i++) {
         Node* debug = sfpt->in(i);
@@ -432,7 +428,7 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   }
   // Now scalarize non-flat fields
   for (uint i = 0; i < vt_worklist.size(); ++i) {
-    ValueTypeNode* vt = vt_worklist.at(i)->isa_ValueType();
+    ValueTypeNode* vt = vt_worklist.at(i);
     if (!vt->make_scalar_in_safepoints(igvn)) {
       return false;
     }
@@ -1808,6 +1804,14 @@ Node* ValueTypeNode::is_loaded(PhaseGVN* phase, ciValueKlass* vk, Node* base, in
 
 Node* ValueTypeNode::tagged_klass(ciValueKlass* vk, PhaseGVN& gvn) {
   const TypeKlassPtr* tk = TypeKlassPtr::make(vk);
+#if INCLUDE_CDS
+  if (gvn.C->is_aot_compile()) {
+    // Keep klass as metadata to make it relocatable for AOT code.
+    Node* k_con = gvn.makecon(tk);
+    Node* bits  = gvn.transform(new CastP2XNode(nullptr, k_con));
+    return gvn.transform(new OrLNode(bits, gvn.longcon(1)));
+  }
+#endif
   intptr_t bits = tk->get_con();
   set_nth_bit(bits, 0);
   return gvn.longcon((jlong)bits);
@@ -2382,8 +2386,14 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   Node* payload = convert_to_payload(igvn, kit.control(), value, _null_free, oop_off_1, oop_off_2);
 
   ciValueKlass* vk = igvn.type(value)->value_klass();
+  // convert_to_payload should give us the offsets of up to 2 oops of vk in oop_off_1 and oop_off_2. The following holds:
+  // - they must be valid offsets for oops (0 or 4) or -1 (no oop)
+  // - if there is at least one oop, oop_off_1 != oop_off_2, i.e. oop_off_1 == oop_off_2 only if they are both -1, i.e. offsets are distincts
+  // - in case there is only one oop, its offset is stored in oop_off_1, and oop_off_2 == -1
   assert(oop_off_1 == -1 || oop_off_1 == 0 || oop_off_1 == 4, "invalid layout for %s, first oop at offset %d", vk->name()->as_utf8(), oop_off_1);
-  assert(oop_off_2 == -1 || oop_off_2 == 4, "invalid layout for %s, second oop at offset %d", vk->name()->as_utf8(), oop_off_2);
+  assert(oop_off_2 == -1 || oop_off_2 == 0 || oop_off_2 == 4, "invalid layout for %s, second oop at offset %d", vk->name()->as_utf8(), oop_off_2);
+  assert(oop_off_1 != oop_off_2 || oop_off_1 == -1, "we should have: oop_off_1 == oop_off_2 => oop_off_1 == -1. But oop_off_1=oop_off_2=%d", oop_off_1);
+  assert(oop_off_1 != -1 || oop_off_2 == -1, "we should have: oop_off_1 == -1 => oop_off_2 == -1. But oop_off_1=%d, oop_off_2=%d", oop_off_1, oop_off_2);
   BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
   kit.insert_mem_bar(Op_MemBarCPUOrder);
   if (!UseG1GC || oop_off_1 == -1) {
@@ -2418,6 +2428,8 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
 
 // Convert the field values to a payload value of type 'bt'
 Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTypeNode* value, bool null_free, int& oop_off_1, int& oop_off_2) {
+  oop_off_1 = -1;
+  oop_off_2 = -1;
   ciValueKlass* vk = igvn.type(value)->value_klass();
   BasicType payload_bt = vk->atomic_size_to_basic_type(null_free);
   Node* payload = igvn.zerocon(payload_bt);
@@ -2436,11 +2448,13 @@ Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTyp
     if (!field_klass->is_primitive_type()) {
       // Narrow oop field
       assert(UseCompressedOops && payload_bt == T_LONG, "Naturally atomic");
+      assert(field_offset_in_payload == 0 || field_offset_in_payload == 4, "Unexpected oop offset. field_offset_in_payload=%d", field_offset_in_payload);
       if (oop_off_1 == -1) {
         oop_off_1 = field_offset_in_payload;
       } else {
         assert(oop_off_2 == -1, "already set");
         oop_off_2 = field_offset_in_payload;
+        assert(oop_off_1 != oop_off_2, "Found the same offset again?! oop_off_1=oop_off_2=%d", oop_off_1);
       }
 
       const Type* val_type = Type::get_const_type(field_klass)->make_narrowoop();
@@ -2455,6 +2469,8 @@ Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTyp
     }
     payload = set_payload_value(igvn, payload_bt, payload, field_bt, field_value, field_offset_in_payload);
   }
+
+  assert(oop_off_2 == -1 || oop_off_1 != -1, "oop_off_2 != -1 => oop_off_1 != -1 ie. oop_off_1 is filled first. But oop_off_1=%d, oop_off_2=%d.", oop_off_1, oop_off_2);
 
   return payload;
 }

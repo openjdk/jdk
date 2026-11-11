@@ -227,7 +227,7 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, JavaT
 void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, JavaThread* current) {
   assert(klass->is_initialized(), "");
   if (TrainingData::have_data() && klass->in_aot_cache() &&
-      !CDSConfig::is_dumping_final_static_archive()) { // No need during assembly phase
+      !CDSConfig::is_dumping_aot_cache()) { // No need during assembly phase
     _training_replay_queue.push(klass, TrainingReplayQueue_lock, current);
   }
 }
