@@ -42,9 +42,11 @@
 #include "nativeInst_riscv.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadIdentifier.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_riscv.inline.hpp"
 
@@ -450,6 +452,12 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
           __ la(dest->as_register_lo(), ExternalAddress(b));
           break;
         }
+#if INCLUDE_JVMTI
+         if (b == (address)&JvmtiExport::_should_notify_object_alloc) {
+           __ la(dest->as_register_lo(), ExternalAddress(b));
+           break;
+         }
+#endif
         if (AOTRuntimeConstants::contains(b)) {
           __ load_aotrc_address(dest->as_register_lo(), b);
           break;
@@ -634,6 +642,11 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   } else {
     ShouldNotReachHere();
   }
+}
+
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  assert(UseCompressedOops, "should only be used with compressed oops");
+  __ decode_heap_oop(dest->as_pointer_register(), src->as_pointer_register());
 }
 
 void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
@@ -1322,6 +1335,7 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
 }
 
 void LIR_Assembler::emit_profile_value_type(LIR_OpProfileValueType* op) {
+  assert(Arguments::is_valhalla_enabled(), "Should not be called without value types enabled");
   Register obj = op->obj()->as_register();
   Register tmp = op->tmp()->as_pointer_register();
   bool not_null = op->not_null();
@@ -1386,14 +1400,16 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
 
   if (op->result_opr()->is_valid()) {
     assert(op->result_opr()->is_register(), "need a register");
-    __ mv(as_reg(op->result_opr()), t0); // cas result in t0, and 0 for success
+    __ mv(as_reg(op->result_opr()), t0); // cas result in t0: 1 on success, 0 otherwise
   }
 }
 
-void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr unused, LIR_Opr dest, LIR_Op* op) {
+void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr tmp, LIR_Opr dest, LIR_Op* op) {
   switch (code) {
     case lir_abs:  __ fabs_d(dest->as_double_reg(), value->as_double_reg()); break;
     case lir_sqrt: __ fsqrt_d(dest->as_double_reg(), value->as_double_reg()); break;
+    case lir_f2hf: __ flt_to_flt16(dest->as_register(), value->as_float_reg(), tmp->as_float_reg()); break;
+    case lir_hf2f: __ flt16_to_flt(dest->as_float_reg(), value->as_register()); break;
     default:       ShouldNotReachHere();
   }
 }
@@ -1701,6 +1717,7 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   __ zext(crc, crc, 32);
   __ update_byte_crc32(crc, val, res);
   __ notr(res, crc); // ~crc
+  __ sext(res, res, 32);
 }
 
 void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
@@ -2316,24 +2333,15 @@ address LIR_Assembler::int_constant(jlong n) {
 }
 
 void LIR_Assembler::casw(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::int32, Assembler::aq /* acquire */,
-             Assembler::rl /* release */, t0, true /* result as bool */);
-  __ seqz(t0, t0); // cmpxchg not equal, set t0 to 1
-  __ membar(MacroAssembler::AnyAny);
+  __ cmpxchg(addr, cmpval, newval, Assembler::int32, memory_order_seq_cst, t0, /* result as bool */ true);
 }
 
 void LIR_Assembler::caswu(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::uint32, Assembler::aq /* acquire */,
-             Assembler::rl /* release */, t0, true /* result as bool */);
-  __ seqz(t0, t0); // cmpxchg not equal, set t0 to 1
-  __ membar(MacroAssembler::AnyAny);
+  __ cmpxchg(addr, cmpval, newval, Assembler::uint32, memory_order_seq_cst, t0, /* result as bool */ true);
 }
 
 void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
-  __ cmpxchg(addr, cmpval, newval, Assembler::int64, Assembler::aq /* acquire */,
-             Assembler::rl /* release */, t0, true /* result as bool */);
-  __ seqz(t0, t0); // cmpxchg not equal, set t0 to 1
-  __ membar(MacroAssembler::AnyAny);
+  __ cmpxchg(addr, cmpval, newval, Assembler::int64, memory_order_seq_cst, t0, /* result as bool */ true);
 }
 
 void LIR_Assembler::deoptimize_trap(CodeEmitInfo *info) {

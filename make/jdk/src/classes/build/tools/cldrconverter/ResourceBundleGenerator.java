@@ -25,6 +25,12 @@
 
 package build.tools.cldrconverter;
 
+import static build.tools.cldrconverter.CLDRConverter.EXEMPLAR_CITY_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.LIKELY_SCRIPT_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.METAZONE_DSTOFFSETS;
+import static build.tools.cldrconverter.CLDRConverter.METAZONE_ID_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.PARENT_LOCALE_PREFIX;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -113,8 +119,8 @@ class ResourceBundleGenerator implements BundleGenerator {
             fmt = new Formatter();
             Set<String> metaKeys = new HashSet<>();
             for (String key : map.keySet()) {
-                if (key.startsWith(CLDRConverter.METAZONE_ID_PREFIX)) {
-                    String meta = key.substring(CLDRConverter.METAZONE_ID_PREFIX.length());
+                if (key.startsWith(METAZONE_ID_PREFIX)) {
+                    String meta = key.substring(METAZONE_ID_PREFIX.length());
                     if (map.get(key) instanceof String[] value) {
                         fmt.format("        final String[] %s = new String[] {\n", CLDRConverter.escape(meta));
                         for (String s : value) {
@@ -135,7 +141,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                 if (map.containsKey(preferred)) {
                     newMap.put(preferred, map.remove(preferred));
                 } else if (("GMT".equals(preferred) || "UTC".equals(preferred)) &&
-                           metaKeys.contains(CLDRConverter.METAZONE_ID_PREFIX+preferred)) {
+                           metaKeys.contains(METAZONE_ID_PREFIX+preferred)) {
                     newMap.put(preferred, preferred);
                 }
             }
@@ -196,8 +202,8 @@ class ResourceBundleGenerator implements BundleGenerator {
                 } else if (value instanceof String valStr) {
                     var escapedVal = CLDRConverter.escape(valStr);
                     if (type == BundleType.TIMEZONE &&
-                        !(key.startsWith(CLDRConverter.EXEMPLAR_CITY_PREFIX) ||
-                          key.startsWith(CLDRConverter.METAZONE_DSTOFFSETS)) ||
+                        !(key.startsWith(EXEMPLAR_CITY_PREFIX) ||
+                          key.startsWith(METAZONE_DSTOFFSETS)) ||
                         valStr.startsWith(META_VALUE_PREFIX)) {
                         out.printf("            { \"%s\", %s },\n", keyStr, escapedVal);
                     } else {
@@ -314,13 +320,13 @@ class ResourceBundleGenerator implements BundleGenerator {
 
                         static {
                     """.formatted(
-                        metaInfo.keySet().stream().filter(k -> k.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)).count(),
+                        metaInfo.keySet().stream().filter(k -> k.startsWith(PARENT_LOCALE_PREFIX)).count(),
                         CLDRConverter.handlerSupplMeta.getLanguageAliasData().size(),
                         Boolean.valueOf(CLDRConverter.nonlikelyScript)));
 
                 for (String key : metaInfo.keySet()) {
-                    if (key.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)) {
-                        String parentTag = key.substring(CLDRConverter.PARENT_LOCALE_PREFIX.length());
+                    if (key.startsWith(PARENT_LOCALE_PREFIX)) {
+                        String parentTag = key.substring(PARENT_LOCALE_PREFIX.length());
                         if ("root".equals(parentTag)) {
                             out.printf("        parentLocalesMap.put(Locale.ROOT,\n");
                         } else {
@@ -364,7 +370,7 @@ class ResourceBundleGenerator implements BundleGenerator {
 
                                    static {
                            """, CLDRConverter.handlerTimeZone.getData().size(),
-                                metaInfo.keySet().stream().filter(k -> k.startsWith(CLDRConverter.LIKELY_SCRIPT_PREFIX)).count());
+                                metaInfo.keySet().stream().filter(k -> k.startsWith(LIKELY_SCRIPT_PREFIX)).count());
                 CLDRConverter.handlerTimeZone.getData().entrySet().stream()
                     .forEach(e -> {
                         String[] ids = ((String)e.getValue()).split("\\s");
@@ -379,10 +385,10 @@ class ResourceBundleGenerator implements BundleGenerator {
 
                 // for likelyScript map
                 for (String key : metaInfo.keySet()) {
-                    if (key.startsWith(CLDRConverter.LIKELY_SCRIPT_PREFIX)) {
+                    if (key.startsWith(LIKELY_SCRIPT_PREFIX)) {
                         // ensure spaces at the begin/end for delimiting purposes
                         out.printf("            likelyScriptMap.put(\"%s\", \"%s\");\n",
-                                CLDRConverter.escape(key.substring(CLDRConverter.LIKELY_SCRIPT_PREFIX.length())),
+                                CLDRConverter.escape(key.substring(LIKELY_SCRIPT_PREFIX.length())),
                                 " " + metaInfo.get(key).stream()
                                     .map(l -> CLDRConverter.escape(l)).collect(Collectors.joining(" ")) + " ");
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,7 +226,7 @@ bool ZPhysicalMemoryBacking::is_initialized() const {
   return true;
 }
 
-void ZPhysicalMemoryBacking::warn_commit_limits(size_t max_capacity) const {
+void ZPhysicalMemoryBacking::warn_commit_limits(size_t expected_capacity, size_t max_capacity) const {
   // Does nothing
 }
 
@@ -257,4 +257,8 @@ void ZPhysicalMemoryBacking::unmap(zaddress_unsafe addr, size_t size) const {
   assert(is_aligned(size, ZGranuleSize), "Misaligned");
 
   _impl->unmap(addr, size);
+}
+
+void ZPhysicalMemoryBacking::collapse(zaddress_unsafe addr, size_t size) const {
+  ShouldNotReachHere();
 }

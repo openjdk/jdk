@@ -334,6 +334,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pcm">নাইজেৰিয়ান পিজিন</language>
 			<language type="pis">পিজিন</language>
 			<language type="pl">প’লিচ</language>
+			<language type="pms">পিডমণ্টিজ</language>
 			<language type="pqm">মালিছীট-পাছামাকু’ডী</language>
 			<language type="prg">প্ৰুছিয়ান</language>
 			<language type="ps">পুস্ত</language>
@@ -348,7 +349,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="rhg">ৰোহিঙ্গিয়া</language>
 			<language type="rm">ৰোমানচ</language>
 			<language type="rn">ৰুন্দি</language>
-			<language type="ro">ৰোমানীয়</language>
+			<language type="ro">ৰোমানিয়ান</language>
 			<language type="ro_MD">মোল্ডাভিয়ান</language>
 			<language type="rof">ৰোম্বো</language>
 			<language type="ru">ৰাছিয়ান</language>
@@ -853,15 +854,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">কেলেণ্ডাৰ</key>
 			<key type="cf">মুদ্ৰা সজ্জা</key>
+			<key type="colAlternate">চিহ্ন সজোৱা উপেক্ষা কৰা</key>
+			<key type="colBackwards">বিপৰীত উচ্চাৰণক্ৰমে সজোৱা</key>
+			<key type="colCaseFirst">বৰফলা/সৰুফলা আখৰৰ ক্ৰমবিন্যাস</key>
+			<key type="colCaseLevel">সৰু আৰু বৰফলাৰ পাৰ্থক্য</key>
 			<key type="collation">সজোৱা ক্ৰম</key>
+			<key type="colNormalization">সাধাৰণভাৱে সজোৱা</key>
+			<key type="colNumeric">সংখ্যাগতভাৱে সজোৱা</key>
+			<key type="colReorder">লিপি/খণ্ডৰ পুনৰ্সজ্জাকৰণ</key>
+			<key type="colStrength">ক্ৰমবিন্যাসৰ প্ৰবলতা</key>
 			<key type="currency">মুদ্ৰা</key>
+			<key type="d0">ৰূপান্তৰৰ গন্তব্যস্থান</key>
+			<key type="dx">অভিধান অনুসৰি শব্দ-বিভাজনৰ ব্যতিক্ৰমসমূহ</key>
 			<key type="em">ইম’জীৰ উপস্থাপনা</key>
+			<key type="fw">সপ্তাহৰ প্ৰথম দিন</key>
+			<key type="h0">ঘণ্টা</key>
 			<key type="hc">ঘণ্টীয়া চক্ৰ (১২ বনাম ২৪)</key>
+			<key type="i0">ইনপুট পদ্ধতি</key>
+			<key type="k0">কীব’ৰ্ড</key>
+			<key type="kv">সৰ্বোচ্চ উপেক্ষিত</key>
 			<key type="lb">পংক্তি বিচ্ছেদ শৈলী</key>
 			<key type="lw">শব্দৰ মাজত শাৰীৰ বিভাজন</key>
+			<key type="m0">ৰূপান্তৰৰ নিয়মসমূহ</key>
 			<key type="ms">জোখ-মাখৰ প্ৰণালী</key>
+			<key type="mu">জোখ-মাখৰ একক</key>
 			<key type="numbers">সংখ্যা</key>
+			<key type="rg">পৰিপূৰক ডেটাৰ বাবে অঞ্চল</key>
+			<key type="s0">ৰূপান্তৰৰ উৎস</key>
+			<key type="sd">আঞ্চলিক উপ-বিভাগ</key>
 			<key type="ss">ঃ</key>
+			<key type="t">ৰূপান্তৰ কৰা</key>
+			<key type="t0">যন্ত্ৰ অনুদিত</key>
+			<key type="timezone">সময় মণ্ডল</key>
+			<key type="va">ভাষাৰ ভেৰিয়েণ্ট</key>
+			<key type="x">ব্যক্তিগত ব্যৱহাৰ</key>
+			<key type="x0">ব্যক্তিগত ব্যৱহাৰৰ ৰূপান্তৰ</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">বৌদ্ধ কেলেণ্ডাৰ</type>
@@ -886,9 +913,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="islamic" scope="core">হিজৰি</type>
 			<type key="calendar" type="islamic-civil">হিজৰি কেলেণ্ডাৰ (টেবুলাৰ, নাগৰিক যুগ)</type>
 			<type key="calendar" type="islamic-civil" scope="core">হিজৰি (টেবুলাৰ, নাগৰিক যুগ)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">হিজৰী, ছৌদি আৰৱত চন্দ্ৰ দৰ্শন</type>
+			<type key="calendar" type="islamic-tbla" scope="core">হিজৰী (তালিকাভিত্তিক, জ্যোতিৰ্বৈজ্ঞানিক যুগ)</type>
 			<type key="calendar" type="islamic-umalqura">হিজৰি কেলেণ্ডাৰ (উম অল-কুৰা)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">হিজৰি (উম অল-কুৰা)</type>
 			<type key="calendar" type="iso8601">আই. এছ. অ’.-৮৬০১ কেলেণ্ডাৰ</type>
+			<type key="calendar" type="iso8601" scope="core">গ্ৰেগ’ৰিয়ান</type>
 			<type key="calendar" type="japanese">জাপানী কেলেণ্ডাৰ</type>
 			<type key="calendar" type="japanese" scope="core">জাপানী</type>
 			<type key="calendar" type="persian">ফাৰ্চী কেলেণ্ডাৰ</type>
@@ -899,19 +929,50 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="cf" type="account" scope="core">গাণনিক</type>
 			<type key="cf" type="standard">মান্য মুদ্ৰা সজ্জা</type>
 			<type key="cf" type="standard" scope="core">মান্য</type>
+			<type key="colCaseFirst" type="lower" scope="core">সৰুফলা আখৰ</type>
+			<type key="colCaseFirst" type="no" scope="core">সৰুফলা আখৰ</type>
+			<type key="colCaseFirst" type="upper" scope="core">বৰফলা আখৰ</type>
+			<type key="collation" type="compat" scope="core">সুসংগততা</type>
+			<type key="collation" type="dictionary" scope="core">অভিধান</type>
 			<type key="collation" type="ducet">ডিফ’ল্ট ইউনিকোড সজোৱা ক্ৰম</type>
 			<type key="collation" type="ducet" scope="core">ডিফ’ল্ট ইউনিকোড</type>
+			<type key="collation" type="emoji" scope="core">ইম’জি</type>
+			<type key="collation" type="eor" scope="core">ইউৰোপীয় নিয়মসমূহ</type>
 			<type key="collation" type="phonebook" draft="contributed">টেলিফোন বহিৰ মতেশৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম</type>
+			<type key="collation" type="phonebook" scope="core">ফ’নবুক</type>
+			<type key="collation" type="phonetic" scope="core">ধ্বনিগত</type>
 			<type key="collation" type="pinyin" draft="contributed">পিন্‌য়িন শৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম</type>
+			<type key="collation" type="pinyin" scope="core">পিনয়িন</type>
 			<type key="collation" type="search">সাধাৰণ উদ্দেশ্যে সন্ধান</type>
 			<type key="collation" type="search" scope="core">সন্ধান</type>
+			<type key="collation" type="searchjl" scope="core">কোৰিয়ান প্ৰথম ব্যঞ্জনবৰ্ণ</type>
 			<type key="collation" type="standard">মান্য সজোৱা ক্ৰম</type>
 			<type key="collation" type="standard" scope="core">মান্য</type>
 			<type key="collation" type="stroke" draft="contributed">স্ট্ৰোক শৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম</type>
+			<type key="collation" type="stroke" scope="core">ষ্ট্ৰ’ক</type>
 			<type key="collation" type="traditional" draft="contributed">পৰম্পৰাগতভাবে শৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম</type>
+			<type key="collation" type="traditional" scope="core">পৰম্পৰাগত</type>
+			<type key="collation" type="unihan" scope="core">ৰেডিকেল-ষ্ট্ৰ’ক</type>
+			<type key="collation" type="zhuyin" scope="core">ঝুইন</type>
+			<type key="colReorder" type="currency" scope="core">মুদ্ৰা</type>
+			<type key="colReorder" type="digit" scope="core">অংকসমূহ</type>
+			<type key="colReorder" type="punct" scope="core">যতি-চিহ্ন</type>
+			<type key="colReorder" type="space" scope="core">খালী ঠাই</type>
+			<type key="colReorder" type="symbol" scope="core">চিহ্ন</type>
+			<type key="colStrength" type="identical" scope="core">আটাইবোৰ</type>
+			<type key="colStrength" type="primary" scope="core">কেৱল মূল আখৰসমূহ</type>
+			<type key="colStrength" type="quaternary" scope="core">মূল আখৰ, উচ্চাৰণ, আখৰৰ ফলা, প্ৰকাৰভেদ, কানা</type>
+			<type key="colStrength" type="secondary" scope="core">মূল আখৰ, উচ্চাৰণ</type>
+			<type key="colStrength" type="tertiary" scope="core">মূল আখৰ, উচ্চাৰণ, আখৰৰ ফলা, প্ৰকাৰভেদ</type>
+			<type key="d0" type="fwidth">পূৰ্ণ-প্ৰস্থ লৈ</type>
+			<type key="d0" type="hwidth">অৰ্ধ-প্ৰস্থ লৈ</type>
 			<type key="em" type="default" scope="core">ডিফ’ল্ট</type>
 			<type key="em" type="emoji" scope="core">ইম’জী</type>
 			<type key="em" type="text" scope="core">পাঠ্য</type>
+			<type key="hc" type="c12">১২ ঘণ্টীয়া প্ৰণালী</type>
+			<type key="hc" type="c12" scope="core">১২</type>
+			<type key="hc" type="c24">২৪ ঘণ্টীয়া প্ৰণালী</type>
+			<type key="hc" type="c24" scope="core">২৪</type>
 			<type key="hc" type="h11">১২ ঘণ্টীয়া প্ৰণালী (০–১১)</type>
 			<type key="hc" type="h11" scope="core">১২ (০–১১)</type>
 			<type key="hc" type="h12">১২ ঘণ্টীয়া প্ৰণালী (১–১২)</type>
@@ -920,6 +981,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">২৪ (০–২৩)</type>
 			<type key="hc" type="h24">২৪ ঘণ্টীয়া প্ৰণালী (১–২৪)</type>
 			<type key="hc" type="h24" scope="core">২৪ (১–২৪)</type>
+			<type key="kv" type="currency" scope="core">শ্বিফ্ট স্পে’চ, যতিচিহ্ন, আটাইবোৰ চিহ্ন</type>
+			<type key="kv" type="punct" scope="core">শ্বিফ্ট স্পে’চ, যতিচিহ্ন</type>
+			<type key="kv" type="space" scope="core">শ্বিফ্ট স্পে’চ, যতিচিহ্ন</type>
+			<type key="kv" type="symbol" scope="core">শ্বিফ্ট স্পে’চ, যতিচিহ্ন, মুদ্ৰা নোহোৱা চিহ্নসমূহ</type>
 			<type key="lb" type="loose">ঢিলা পংক্তি বিচ্ছেদ শৈলী</type>
 			<type key="lb" type="loose" scope="core">ঢিলা</type>
 			<type key="lb" type="normal">সাধাৰণ পংক্তি বিচ্ছেদ শৈলী</type>
@@ -930,6 +995,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="lw" type="keepall" scope="core">আটাইবোৰ ৰাখক</type>
 			<type key="lw" type="normal" scope="core">সাধাৰণ</type>
 			<type key="lw" type="phrase" scope="core">ব্যাক্যাংশত ৰাখক</type>
+			<type key="m0" type="bgn">আমেৰিকা যুক্তৰাষ্ট্ৰ বি.জি.এন. লিপ্যন্তৰকৰণ</type>
+			<type key="m0" type="ungegn">ৰাষ্ট্ৰসংঘৰ জি.ই.জি.এন. লিপ্যন্তৰকৰণ</type>
 			<type key="ms" type="metric">মেট্ৰিক প্ৰণালী</type>
 			<type key="ms" type="metric" scope="core">মেট্ৰিক</type>
 			<type key="ms" type="uksystem">ইম্পেৰিয়েল জোখ-মাখৰ প্ৰণালী</type>
@@ -938,47 +1005,82 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">মাৰ্কিন</type>
 			<type key="numbers" type="arab">আৰবী-ভাৰতীয় অংক</type>
 			<type key="numbers" type="arabext">বিস্তাৰিত আৰবী-ভাৰতীয় অংক</type>
+			<type key="numbers" type="arabext" scope="core">বিস্তাৰিত আৰবী-ভাৰতীয়</type>
 			<type key="numbers" type="armn">আৰ্মেনীয় সংখ্যা</type>
 			<type key="numbers" type="armnlow">আৰ্মেনীয় সৰুফলা সংখ্যা</type>
+			<type key="numbers" type="armnlow" scope="core">আৰ্মেনীয় সৰুফলা</type>
 			<type key="numbers" type="beng">বাংলা অংক</type>
 			<type key="numbers" type="cakm">চাকমা অংক</type>
 			<type key="numbers" type="deva">দেৱনাগৰী অংক</type>
 			<type key="numbers" type="ethi">ইথিঅ’পিক সংখ্যা</type>
+			<type key="numbers" type="finance" scope="core">বিত্তীয়</type>
 			<type key="numbers" type="fullwide">পূৰ্ণ-প্ৰস্থৰ অংক</type>
+			<type key="numbers" type="fullwide" scope="core">পূৰ্ণ-প্ৰস্থ</type>
 			<type key="numbers" type="geor">জৰ্জীয়ান সংখ্যা</type>
 			<type key="numbers" type="grek">গ্ৰীক সংখ্যা</type>
 			<type key="numbers" type="greklow">গ্ৰীক সৰুফলা সংখ্যা</type>
+			<type key="numbers" type="greklow" scope="core">গ্ৰীক সৰুফলা</type>
 			<type key="numbers" type="gujr">গুজৰাটী অংক</type>
 			<type key="numbers" type="guru">গুৰুমুখী অংক</type>
+			<type key="numbers" type="hanidays" scope="core">পৰম্পৰাগত কেলেণ্ডাৰৰ বাবে হান-আখৰৰ মাহৰ দিন গণনা</type>
 			<type key="numbers" type="hanidec">চীনা দশমিক সংখ্যা</type>
+			<type key="numbers" type="hanidec" scope="core">সংখ্যা হিচাপে চীনা সংখ্যা-চিহ্ন ব্যৱহাৰ কৰা স্থানভিত্তিক দশমিক পদ্ধতি</type>
 			<type key="numbers" type="hans">সৰলীকৃত চীনা সংখ্যা</type>
 			<type key="numbers" type="hansfin">সৰলীকৃত চীনা বিত্তীয় সংখ্যা</type>
+			<type key="numbers" type="hansfin" scope="core">সৰলীকৃত চীনা বিত্তীয়</type>
 			<type key="numbers" type="hant">পৰম্পৰাগত চীনা সংখ্যা</type>
 			<type key="numbers" type="hantfin">পৰম্পৰাগত চীনা বিত্তীয় সংখ্যা</type>
+			<type key="numbers" type="hantfin" scope="core">পৰম্পৰাগত চীনা বিত্তীয়</type>
 			<type key="numbers" type="hebr">হিব্ৰু সংখ্যা</type>
 			<type key="numbers" type="java">জাভানীজ অংক</type>
 			<type key="numbers" type="jpan">জাপানী সংখ্যা</type>
 			<type key="numbers" type="jpanfin">জাপানী বিত্তীয় সংখ্যা</type>
+			<type key="numbers" type="jpanfin" scope="core">জাপানী বিত্তীয়</type>
+			<type key="numbers" type="jpanyear" scope="core">জাপানী বৰ্ষপঞ্জীৰ প্ৰথম বছৰৰ বাবে গাননেন গণনা</type>
 			<type key="numbers" type="khmr">খমেৰ অংক</type>
 			<type key="numbers" type="knda">কানাড়া অংক</type>
+			<type key="numbers" type="lanatham" scope="core">টাই থাম থাম (ধৰ্মীয়)</type>
 			<type key="numbers" type="laoo">লাও অংক</type>
 			<type key="numbers" type="latn">পশ্চিমীয়া অংক</type>
+			<type key="numbers" type="mathbold" scope="core">মেথামেটিকেল ব’ল্ড</type>
+			<type key="numbers" type="mathdbl" scope="core">মেথামেটিকেল ডাবল-ষ্ট্ৰাক</type>
+			<type key="numbers" type="mathmono" scope="core">মেথামেটিকেল মন’স্পেচ</type>
+			<type key="numbers" type="mathsanb" scope="core">মেথামেটিকেল ছেনছ-ছেৰিফ ব’ল্ড</type>
+			<type key="numbers" type="mathsans" scope="core">মেথামেটিকেল ছেনছ-ছেৰিফ</type>
 			<type key="numbers" type="mlym">মালায়ালম অংক</type>
 			<type key="numbers" type="mtei">মেইতেই মায়েক সংখ্যা</type>
 			<type key="numbers" type="mymr">ম্যানমাৰ অংক</type>
+			<type key="numbers" type="mymrepka" scope="core">ম্যানমাৰ ইষ্টাৰ্ন প্ব’ কাৰেন</type>
+			<type key="numbers" type="mymrpao" scope="core">ম্যানমাৰ পা-অ’</type>
+			<type key="numbers" type="mymrshan" scope="core">ম্যানমাৰ শ্বান</type>
+			<type key="numbers" type="mymrtlng" scope="core">ম্যানমাৰ টাই লাইং</type>
+			<type key="numbers" type="native">স্থানীয় অংকসমূহ</type>
+			<type key="numbers" type="native" scope="core">স্থানীয় অংকসমূহ</type>
 			<type key="numbers" type="olck">অ’ল চিকি সংখ্যা</type>
 			<type key="numbers" type="orya">ওড়িয়া অংক</type>
+			<type key="numbers" type="outlined" scope="core">আউটলাইন কৰা</type>
 			<type key="numbers" type="roman">ৰোমান সংখ্যা</type>
+			<type key="numbers" type="roman" scope="core">ৰোমান বৰফলা</type>
 			<type key="numbers" type="romanlow">ৰোমান সৰুফলা সংখ্যা</type>
+			<type key="numbers" type="romanlow" scope="core">ৰোমান সৰুফলা</type>
+			<type key="numbers" type="segment" scope="core">খণ্ডিত</type>
 			<type key="numbers" type="taml">পৰম্পৰাগত তামিল সংখ্যা</type>
 			<type key="numbers" type="tamldec">তামিল অংক</type>
+			<type key="numbers" type="tamldec" scope="core">আধুনিক তামিল</type>
 			<type key="numbers" type="telu">তেলুগু অংক</type>
 			<type key="numbers" type="thai">থাই অংক</type>
 			<type key="numbers" type="tibt">তিব্বতী অংক</type>
+			<type key="numbers" type="traditional" scope="core">পৰম্পৰাগত সংখ্যা</type>
 			<type key="numbers" type="vaii">ভেই সংখ্যা</type>
 			<type key="ss" type="none" scope="core">ঃ</type>
 			<type key="ss" type="standard" scope="core">ঃ</type>
+			<type key="t0" type="und">অনিৰ্দিষ্ট যান্ত্ৰিক অনুবাদ</type>
+			<type key="va" type="posix" scope="core">POSIX ভেৰিয়েণ্ট</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">অফ</typeValue>
+			<typeValue type="yes">অন</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">মেট্ৰিক</measurementSystemName>
 			<measurementSystemName type="UK">ইউ. কে.</measurementSystemName>
@@ -1039,9 +1141,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0} বজাত</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} 'at' {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
@@ -1067,9 +1166,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhms">E, B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ehm">E, a h:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E, a h:mm:ss</dateFormatItem>
-						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="Md">M/d</dateFormatItem>
-						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">MM-y GGGGG</dateFormatItem>
@@ -1081,55 +1177,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="h">h – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">GGGGG M/y – GGGGG M/y</greatestDifference>
-							<greatestDifference id="M">GGGGG M/y – M/y</greatestDifference>
-							<greatestDifference id="y">GGGGG M/y – M/y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">GGGGG d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="G">GGGGG d/M/y – GGGGG d/M/y</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y">GGGGG d/M/y – d/M/y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">GGGGG E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="G">GGGGG E, d/M/y – GGGGG E, d/M/y</greatestDifference>
-							<greatestDifference id="M">GGGGG E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="y">GGGGG E, d/M/y – E, d/M/y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">G MMM y – G MMM y</greatestDifference>
-							<greatestDifference id="M">G MMM – MMM y</greatestDifference>
-							<greatestDifference id="y">G MMM y – MMM y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">G d – d MMM, y</greatestDifference>
-							<greatestDifference id="G">G d MMM, y – G d MMM, y</greatestDifference>
-							<greatestDifference id="M">G d MMM – d MMM, y</greatestDifference>
-							<greatestDifference id="y">G d MMM, y – d MMM, y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">G E, d MMM – E, d MMM, y</greatestDifference>
-							<greatestDifference id="G">G E, d MMM, y – G E, d MMM, y</greatestDifference>
-							<greatestDifference id="M">G E, d MMM – E, d MMM, y</greatestDifference>
-							<greatestDifference id="y">G E, d MMM, y – E, d MMM, y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM – MMM</greatestDifference>
-						</intervalFormatItem>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -1193,6 +1244,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="fri">শুক্ৰ</day>
 							<day type="sat">শনি</day>
 						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">দে</day>
+							<day type="mon">সো</day>
+							<day type="tue">ম</day>
+							<day type="wed">বু</day>
+							<day type="thu">বৃ</day>
+							<day type="fri">শু</day>
+							<day type="sat">শ</day>
+						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">দেওবাৰ</day>
 							<day type="mon">সোমবাৰ</day>
@@ -1205,24 +1265,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="narrow">
-							<day type="sun">দ</day>
-							<day type="mon">স</day>
+							<day type="sun">দে</day>
+							<day type="mon">সো</day>
 							<day type="tue">ম</day>
-							<day type="wed">ব</day>
-							<day type="thu">ব</day>
-							<day type="fri">শ</day>
+							<day type="wed">বু</day>
+							<day type="thu">বৃ</day>
+							<day type="fri">শু</day>
 							<day type="sat">শ</day>
 						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">১মঃ তিঃ</quarter>
-							<quarter type="2">২য়ঃ তিঃ</quarter>
-							<quarter type="3">৩য়ঃ তিঃ</quarter>
-							<quarter type="4">৪ৰ্থঃ তিঃ</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">প্ৰথম তিনিমাহ</quarter>
 							<quarter type="2">দ্বিতীয় তিনিমাহ</quarter>
@@ -1262,7 +1316,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, d MMMM, y</pattern>
+							<pattern>y MMMM d, EEEE</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -1272,7 +1326,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>dd-MM-y</pattern>
+							<pattern>y MMM d</pattern>
 							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -1314,16 +1368,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} 'at' {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} 'at' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -1351,17 +1399,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Ehm">E a h:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
-						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="h">a h</dateFormatItem>
 						<dateFormatItem id="hm">a h:mm</dateFormatItem>
 						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">a h:mm:ss v</dateFormatItem>
 						<dateFormatItem id="hmv">a h:mm v</dateFormatItem>
 						<dateFormatItem id="Md">dd-MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd-MM</dateFormatItem>
-						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">d MMMM, E</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMMৰ সপ্তাহ W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMMৰ সপ্তাহ W</dateFormatItem>
 						<dateFormatItem id="yM">MM-y</dateFormatItem>
@@ -1369,120 +1414,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMEd">E, dd-MM-y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">d MMMM, y, E</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">Yৰ সপ্তাহ w</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Yৰ সপ্তাহ w</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="Bh">
-							<greatestDifference id="h">h – h B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Bhm">
-							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Gy">
-							<greatestDifference id="y">G y – y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">GGGGG M/y – GGGGG M/y</greatestDifference>
-							<greatestDifference id="M">G M/y – M/y</greatestDifference>
-							<greatestDifference id="y">GGGGG M/y – M/y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">GGGGG d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="G">GGGGG d/M/y – GGGGG d/M/y</greatestDifference>
-							<greatestDifference id="M">GGGGG d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="y">GGGGG d/M/y – d/M/y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">GGGGG E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="G">GGGGG E, d/M/y – GGGGG E, d/M/y</greatestDifference>
-							<greatestDifference id="M">GGGGG E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="y">GGGGG E, d/M/y – E, d/M/y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">G MMM y – G MMM y</greatestDifference>
-							<greatestDifference id="M">G MMM – MMM y</greatestDifference>
-							<greatestDifference id="y">G MMM y – MMM y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">G d – d MMM, y</greatestDifference>
-							<greatestDifference id="G">G d MMM, y – G d MMM, y</greatestDifference>
-							<greatestDifference id="M">G d MMM – d MMM, y</greatestDifference>
-							<greatestDifference id="y">G d MMM, y – d MMM, y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">G E, d MMM – E, d MMM, y</greatestDifference>
-							<greatestDifference id="G">G E, d MMM, y – G E, d MMM, y</greatestDifference>
-							<greatestDifference id="M">G E, d MMM – E, d MMM, y</greatestDifference>
-							<greatestDifference id="y">G E, d MMM, y – E, d MMM, y</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">a h – a h</greatestDifference>
 							<greatestDifference id="h">a h–h</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="a">a h:mm – a h:mm</greatestDifference>
-							<greatestDifference id="h">a h:mm–h:mm</greatestDifference>
-							<greatestDifference id="m">a h:mm–h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">a h:mm – a h:mm v</greatestDifference>
-							<greatestDifference id="h">a h:mm–h:mm v</greatestDifference>
-							<greatestDifference id="m">a h:mm–h:mm v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="a">a h – a h v</greatestDifference>
-							<greatestDifference id="h">a h–h v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd-MM – dd-MM</greatestDifference>
-							<greatestDifference id="M">dd-MM – dd-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d">E, dd-MM – E, dd-MM</greatestDifference>
-							<greatestDifference id="M">E, dd-MM – E, dd-MM</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">d – d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM-y – MM-y</greatestDifference>
-							<greatestDifference id="y">MM-y – MM-y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd-MM-y – dd-MM-y</greatestDifference>
-							<greatestDifference id="M">dd-MM-y – dd-MM-y</greatestDifference>
-							<greatestDifference id="y">dd-MM-y – dd-MM-y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">dd-MM-y, E – dd-MM-y</greatestDifference>
-							<greatestDifference id="M">dd-MM-y, E – dd-MM-y</greatestDifference>
-							<greatestDifference id="y">dd-MM-y, E – dd-MM-y</greatestDifference>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d–d MMM y</greatestDifference>
-							<greatestDifference id="M">d MMM y – d MMM</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d MMM y – E, d MMM</greatestDifference>
-							<greatestDifference id="M">E, d MMM y – E, d MMM</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M">MMMM–MMMM y</greatestDifference>
@@ -1715,17 +1669,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} বৃহস্পতিবাৰৰ পূৰ্বে</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="thu-short">
-				<relative type="-1">যোৱা বৃহস্পতি</relative>
-				<relative type="0">এই বৃহস্পতি</relative>
-				<relative type="1">অহা বৃহস্পতি</relative>
+			<field type="thu-narrow">
+				<relative type="-1">যোৱা বৃহস্পতিবাৰ</relative>
+				<relative type="0">এই বৃহস্পতিবাৰ</relative>
+				<relative type="1">অহা বৃহস্পতিবাৰ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} বৃহস্পতিয়ে</relativeTimePattern>
-					<relativeTimePattern count="other">{0} বৃহস্পতিয়ে</relativeTimePattern>
+					<relativeTimePattern count="one">{0} বৃহস্পতিবাৰে</relativeTimePattern>
+					<relativeTimePattern count="other">{0} বৃহস্পতিবাৰে</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} বৃহস্পতিৰ পূৰ্বে</relativeTimePattern>
-					<relativeTimePattern count="other">{0} বৃহস্পতিৰ পূৰ্বে</relativeTimePattern>
+					<relativeTimePattern count="one">{0} বৃহস্পতিবাৰৰ পূৰ্বে</relativeTimePattern>
+					<relativeTimePattern count="other">{0} বৃহস্পতিবাৰৰ পূৰ্বে</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri">
@@ -1743,8 +1697,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="fri-short">
 				<relative type="-1">যোৱা শুক্ৰ</relative>
-				<relative type="0">এই শুক্ৰ</relative>
-				<relative type="1">অহা শুক্ৰ</relative>
+				<relative type="0">এই শুক্ৰবাৰ</relative>
+				<relative type="1">অহা শুক্ৰবাৰ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} শুকুৰে</relativeTimePattern>
 					<relativeTimePattern count="other">{0} শুকুৰে</relativeTimePattern>
@@ -1753,6 +1707,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="one">{0} শুক্ৰৰ পূৰ্বে</relativeTimePattern>
 					<relativeTimePattern count="other">{0} শুক্ৰৰ পূৰ্বে</relativeTimePattern>
 				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1">যোৱা শুক্ৰ</relative>
+				<relative type="0">এই শুক্ৰবাৰ</relative>
+				<relative type="1">অহা শুক্ৰবাৰ</relative>
 			</field>
 			<field type="sat">
 				<relative type="-1">যোৱা শনিবাৰ</relative>
@@ -2304,9 +2263,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>লিব্ৰিভিলে</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>ব্ৰিটিছ গ্ৰীষ্মকালীন সময়</daylight>
-				</long>
 				<exemplarCity>লণ্ডন</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2397,9 +2353,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>জায়াপুৰা</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>আইৰিচ মান সময়</daylight>
-				</long>
 				<exemplarCity>ডাবলিন</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3095,6 +3048,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>হাৰাৰে</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>এক্ৰেৰ সময়</generic>
+					<standard>এক্ৰেৰ মানক সময়</standard>
+					<daylight>এক্ৰেৰ গ্ৰীষ্মকালীন সময়</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>আফগানিস্তানৰ সময়</standard>
@@ -3164,9 +3124,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>আপিয়াৰ সময়</generic>
+					<generic>পশ্চিম চামোয়াৰ সময়</generic>
 					<standard>আপিয়াৰ মান সময়</standard>
-					<daylight>আপিয়াৰ ডেলাইট সময়</daylight>
+					<daylight>পশ্চিম চামোয়াৰ ডেলাইট সময়</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3268,6 +3228,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ব্ৰাজিলিয়াৰ সময়</generic>
 					<standard>ব্ৰাজিলিয়াৰ মান সময়</standard>
 					<daylight>ব্ৰাজিলিয়াৰ গ্ৰীষ্মকালীন সময়</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>ব্ৰিটিছ সময়</generic>
+					<daylight>ব্ৰিটিছ গ্ৰীষ্মকালীন সময়</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3443,6 +3409,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>গ্ৰীণউইচ মান সময়</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>গ্ৰীণলেণ্ডৰ সময়</generic>
+					<standard>গ্ৰীণলেণ্ডৰ মানক সময়</standard>
+					<daylight>গ্ৰীণলেণ্ডৰ গ্ৰীষ্মকালীন সময়</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>পূব গ্ৰীণলেণ্ডৰ সময়</generic>
@@ -3469,7 +3442,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>হাৱাই-এলিউশ্বনৰ মান সময়</standard>
+					<standard>হাৱাই-এলিউশ্বনৰ মানক সময়</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3533,6 +3506,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ইৰানৰ ডেলাইট সময়</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>আইৰিচ সময়</generic>
+					<daylight>আইৰিচ মান সময়</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>ইৰ্কুটস্কৰ সময়</generic>
@@ -3552,6 +3531,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>জাপানৰ সময়</generic>
 					<standard>জাপানৰ মান সময়</standard>
 					<daylight>জাপানৰ ডেলাইট সময়</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>কামচাটকাৰ সময়</generic>
+					<standard>কামচাটকাৰ মানক সময়</standard>
+					<daylight>কামচাটকাৰ গ্ৰীষ্মকালীন সময়</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3816,11 +3802,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ছাখালিনৰ গ্ৰীষ্মকালীন সময়</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>ছামাৰাৰ সময়</generic>
+					<standard>ছামাৰাৰ মানক সময়</standard>
+					<daylight>ছামাৰাৰ গ্ৰীষ্মকালীন সময়</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>ছামোৱাৰ সময়</generic>
 					<standard>ছামোৱাৰ মান সময়</standard>
-					<daylight>ছামোৱাৰ ডেলাইট সময়</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3887,6 +3878,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>চ্চুকৰ সময়</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>তুৰ্কীয়েৰ সময়</generic>
+					<standard>তুৰ্কীয়েৰ মানক সময়</standard>
+					<daylight>তুৰ্কীয়েৰ গ্ৰীষ্মকালীন সময়</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>তুৰ্কমেনিস্তানৰ সময়</generic>
@@ -3904,6 +3902,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>উৰুগুৱেৰ সময়</generic>
 					<standard>উৰুগুৱেৰ মান সময়</standard>
 					<daylight>উৰুগুৱেৰ গ্ৰীষ্মকালীন সময়</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>উৰুমচিৰ সময়</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4034,7 +4037,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="10000000" count="other">00 নিযুত</pattern>
 					<pattern type="100000000" count="one">0 নিঃ</pattern>
 					<pattern type="100000000" count="other">0 নিঃ</pattern>
-					<pattern type="1000000000" count="one">0 শঃ কোঃ</pattern>
+					<pattern type="1000000000" count="one">0 শঃকোঃ</pattern>
 					<pattern type="1000000000" count="other">0 শঃ কোঃ</pattern>
 					<pattern type="10000000000" count="one">00 শঃ কোঃ</pattern>
 					<pattern type="10000000000" count="other">00 শঃ কোঃ</pattern>
@@ -4044,14 +4047,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="1000000000000" count="other">0 শঃ পঃ</pattern>
 					<pattern type="10000000000000" count="one">00 শঃ পঃ</pattern>
 					<pattern type="10000000000000" count="other">00 শঃ পঃ</pattern>
-					<pattern type="100000000000000" count="one">000 শঃ পঃ</pattern>
+					<pattern type="100000000000000" count="one">000 শঃপঃ</pattern>
 					<pattern type="100000000000000" count="other">000 শঃ পঃ</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<rationalFormats numberSystem="beng">
-			<rationalUsage>never</rationalUsage>
-		</rationalFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
@@ -4600,8 +4600,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>কেৰিবীয়ান গিল্ডাৰ</displayName>
-				<displayName count="one">কেৰিবীয়ান গিল্ডাৰ</displayName>
-				<displayName count="other">কেৰিবীয়ান গিল্ডাৰ</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>পশ্চিম আফ্ৰিকান CFA ফ্ৰেংক</displayName>
@@ -4625,8 +4623,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>জিম্বাৱীয় সোণ</displayName>
-				<displayName count="one">জিম্বাৱীয় সোণ</displayName>
-				<displayName count="other">জিম্বাৱীয় সোণ</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -4635,7 +4631,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<minimalPairs>
 			<pluralMinimalPairs count="one">আপুনি তাত {0} দিন আছিল, আপোনাৰ দিনটো কেনে আছিল?</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">আপুনি তাত {0} দিন আছিল, আপোনাৰ দিনবোৰ কেনে আছিল?</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">সোঁফালে {0}ৰ্থ পাক লওক৷</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">{0}ম সোঁফালটো লওক।</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="two">{0}য় সোঁফালটো লওক।</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="few">{0}ৰ্থ সোঁফালটো লওক।</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="many">অধিক</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}ষ্ঠ সোঁফালটো লওক।</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -4758,6 +4758,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} মিটাৰ প্ৰতি বৰ্গ ছেকেণ্ড</unitPattern>
 				<unitPattern count="other">{0} মিটাৰ প্ৰতি বৰ্গ ছেকেণ্ড</unitPattern>
 			</unit>
+			<unit type="angle-radian">
+				<unitPattern count="one">{0} ৰে.</unitPattern>
+				<unitPattern count="other">{0} ৰে.</unitPattern>
+			</unit>
 			<unit type="area-square-kilometer">
 				<unitPattern count="one">{0} বৰ্গ কিলোমিটাৰ</unitPattern>
 				<unitPattern count="other">{0} বৰ্গ কিলোমিটাৰ</unitPattern>
@@ -4798,11 +4802,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-item">
 				<displayName>আইটেমসমূহ</displayName>
-			</unit>
-			<unit type="concentr-part">
-				<displayName>অংশ</displayName>
-				<unitPattern count="one">{0} অংশ</unitPattern>
-				<unitPattern count="other">{0} অংশ</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>প্ৰতি মিলিয়নত ভাগ</displayName>
@@ -5002,8 +5001,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
 				<displayName>প্ৰতি চেণ্টিমিটাৰত পিক্সেল</displayName>
-				<unitPattern count="one">{0} পিপিচিএম</unitPattern>
-				<unitPattern count="other">প্ৰতি চেণ্টিমিটাৰত {0} পিক্সেল</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>প্ৰতি ইঞ্চিত পিক্সেল</displayName>
@@ -5186,11 +5183,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} মিলিমিটাৰ মাৰ্কিউৰী</unitPattern>
 				<unitPattern count="other">{0} মিলিমিটাৰ মাৰ্কিউৰী</unitPattern>
 			</unit>
-			<unit type="pressure-ofhg">
-				<displayName>মাৰ্কিঃ</displayName>
-				<unitPattern count="one">{0} মাৰ্কিঃ</unitPattern>
-				<unitPattern count="other">{0} মাৰ্কিঃ</unitPattern>
-			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>প্ৰতি বৰ্গ ইঞ্চিত পাউণ্ড</displayName>
 				<unitPattern count="one">{0} প্ৰতি বৰ্গ ইঞ্চিত পাউণ্ড</unitPattern>
@@ -5208,8 +5200,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-atmosphere">
 				<displayName>বতৰ</displayName>
-				<unitPattern count="one">{0} বতৰ</unitPattern>
-				<unitPattern count="other">{0} atm</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
 				<displayName>পাস্কেল</displayName>
@@ -5223,8 +5213,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>কিল’পাস্কেল</displayName>
-				<unitPattern count="one">{0} কিল’পাস্কেল</unitPattern>
-				<unitPattern count="other">{0} কি. পা.</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
 				<unitPattern count="one">{0} মেগাপাস্কেল</unitPattern>
@@ -5344,7 +5332,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} মেট্ৰিক কাপ</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-metric">
-				<displayName>ফ্লুঃ আঃ মেঃ</displayName>
 				<unitPattern count="one">{0} ফ্লুঃ আঃ মেঃ</unitPattern>
 				<unitPattern count="other">{0}ফ্লুঃ আঃ মেঃ</unitPattern>
 			</unit>
@@ -5406,13 +5393,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-katal">
 				<displayName>কাটাল</displayName>
-				<unitPattern count="one">{0} কাটাঃ</unitPattern>
-				<unitPattern count="other">{0} কাটাঃ</unitPattern>
 			</unit>
 			<unit type="electric-coulomb">
 				<displayName>কুলম্ব</displayName>
-				<unitPattern count="one">{0} কুঃ</unitPattern>
-				<unitPattern count="other">{0} কুঃ</unitPattern>
 			</unit>
 			<unit type="electric-farad">
 				<displayName>ফাৰাড</displayName>
@@ -5426,11 +5409,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="electric-siemens">
 				<displayName>ছিয়েমেন</displayName>
-				<unitPattern count="one">{0} ছিয়েঃ</unitPattern>
-				<unitPattern count="other">{0} ছিয়েঃ</unitPattern>
 			</unit>
 			<unit type="energy-calorie-it">
-				<displayName>কেল’ৰি-আইটি</displayName>
 				<unitPattern count="one">{0}কেল-আইটি</unitPattern>
 				<unitPattern count="other">{0} কেল-আইটি</unitPattern>
 			</unit>
@@ -5441,28 +5421,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-sievert">
 				<displayName>চিয়েভাৰ্ট</displayName>
-				<unitPattern count="one">{0} এচভিঃ</unitPattern>
-				<unitPattern count="other">{0} এচভিঃ</unitPattern>
 			</unit>
 			<unit type="energy-gray">
-				<displayName>গ্ৰে</displayName>
 				<unitPattern count="one">{0} গ্ৰে</unitPattern>
 				<unitPattern count="other">{0} গ্ৰে</unitPattern>
 			</unit>
 			<unit type="force-kilogram-force">
 				<displayName>কিলোগ্ৰাম-বল</displayName>
-				<unitPattern count="one">{0} কিঃগ্ৰাঃবঃ</unitPattern>
-				<unitPattern count="other">{0} কিঃগ্ৰাঃবঃ</unitPattern>
 			</unit>
 			<unit type="magnetic-tesla">
 				<displayName>টেচলা</displayName>
-				<unitPattern count="one">{0} টেঃ</unitPattern>
-				<unitPattern count="other">{0} টেঃ</unitPattern>
 			</unit>
 			<unit type="magnetic-weber">
 				<displayName>ৱেবাৰ</displayName>
-				<unitPattern count="one">{0} ৱেঃ</unitPattern>
-				<unitPattern count="other">{0} ৱেঃ</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>প্ৰতি বিলিয়নত অংশ</displayName>
@@ -5586,8 +5557,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="angle-radian">
 				<displayName>ৰেডিয়েন</displayName>
-				<unitPattern count="one">{0} ৰেডিয়েন</unitPattern>
-				<unitPattern count="other">{0} ৰেডিয়েন</unitPattern>
+				<unitPattern count="one">{0} ৰে.</unitPattern>
+				<unitPattern count="other">{0} ৰে.</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<displayName>ডিগ্ৰী</displayName>
@@ -5813,8 +5784,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-second">
 				<displayName>ছেকেণ্ড</displayName>
-				<unitPattern count="one">{0} ছেকেণ্ড</unitPattern>
-				<unitPattern count="other">{0} ছেকেণ্ড</unitPattern>
+				<unitPattern count="one">{0} ছে.</unitPattern>
+				<unitPattern count="other">{0} ছে.</unitPattern>
 				<perUnitPattern>{0}/ছেকেণ্ড</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
@@ -6085,8 +6056,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>কিঃ গ্ৰাঃ</displayName>
-				<unitPattern count="one">{0} কিঃ গ্ৰাঃ</unitPattern>
-				<unitPattern count="other">{0} কিঃ গ্ৰাঃ</unitPattern>
+				<unitPattern count="one">{0} কিগ্ৰা</unitPattern>
+				<unitPattern count="other">{0} কিগ্ৰা</unitPattern>
 				<perUnitPattern>{0}/কিঃ গ্ৰাঃ</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
@@ -6139,8 +6110,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>ডলট’ন</displayName>
-				<unitPattern count="one">{0} ডলট’ন</unitPattern>
-				<unitPattern count="other">{0} ডলট’ন</unitPattern>
+				<unitPattern count="one">{0} ড.ট’.</unitPattern>
+				<unitPattern count="other">{0} ড.ট’.</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>আৰ্থ মাছ</displayName>
@@ -6244,9 +6215,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}°ফা.</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
-				<displayName>কেলভিন</displayName>
-				<unitPattern count="one">{0} কেলভিন</unitPattern>
-				<unitPattern count="other">{0} কেলভিন</unitPattern>
+				<displayName>কে.</displayName>
+				<unitPattern count="one">{0} কে.</unitPattern>
+				<unitPattern count="other">{0} কে.</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>নি. মি.</displayName>
@@ -6486,21 +6457,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="10p-1">
-				<unitPrefixPattern>ডেচি{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-2">
-				<unitPrefixPattern>চেণ্টি{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-3">
-				<unitPrefixPattern>মিলি{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-9">
-				<unitPrefixPattern>নেনো{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-12">
-				<unitPrefixPattern>পিকো{0}</unitPrefixPattern>
-			</compoundUnit>
 			<compoundUnit type="10p-15">
 				<unitPrefixPattern>ফেমটো{0}</unitPrefixPattern>
 			</compoundUnit>
@@ -6515,24 +6471,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern>ডেকা{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p2">
-				<unitPrefixPattern>হেক্টো{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p3">
-				<unitPrefixPattern>কিলো{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p6">
-				<unitPrefixPattern>মেগা{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p9">
-				<unitPrefixPattern>গিগা{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p12">
-				<unitPrefixPattern>টেৰা{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p15">
-				<unitPrefixPattern>পেটা{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p18">
 				<unitPrefixPattern>এক্সা{0}</unitPrefixPattern>
@@ -6558,23 +6496,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="1024p8">
 				<unitPrefixPattern>য়ো{0}</unitPrefixPattern>
 			</compoundUnit>
+			<unit type="angle-radian">
+				<displayName>ৰে.</displayName>
+				<unitPattern count="one">{0} ৰে.</unitPattern>
+				<unitPattern count="other">{0} ৰে.</unitPattern>
+			</unit>
 			<unit type="angle-degree">
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<displayName>আঃ মিঃ</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
-			</unit>
-			<unit type="concentr-part">
-				<displayName>অংশ</displayName>
-				<unitPattern count="one">{0} অংশ</unitPattern>
-				<unitPattern count="other">{0} অংশ</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
@@ -6589,14 +6526,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>গ্লুঃ</displayName>
-				<unitPattern count="one">{0} গ্লুঃ</unitPattern>
-				<unitPattern count="other">{0} গ্লুঃ</unitPattern>
-			</unit>
-			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>ল/১০০ ক.ম.</displayName>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<unitPattern count="one">{0}mpg</unitPattern>
@@ -6645,6 +6574,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}কো</unitPattern>
 				<unitPattern count="other">{0}কো</unitPattern>
 			</unit>
+			<unit type="duration-second">
+				<unitPattern count="one">{0} ছে.</unitPattern>
+				<unitPattern count="other">{0} ছে.</unitPattern>
+			</unit>
 			<unit type="energy-foodcalorie">
 				<unitPattern count="one">{0}কেলৰি</unitPattern>
 				<unitPattern count="other">{0}কেলৰি</unitPattern>
@@ -6688,14 +6621,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="light-solar-luminosity">
 				<displayName>L☉</displayName>
 			</unit>
-			<unit type="pressure-millimeter-ofhg">
-				<unitPattern count="one">{0} মিঃমিঃমাৰ্কিঃ</unitPattern>
-				<unitPattern count="other">{0}মিঃমিঃমাৰ্কিঃ</unitPattern>
+			<unit type="mass-kilogram">
+				<unitPattern count="one">{0} কিগ্ৰা</unitPattern>
+				<unitPattern count="other">{0} কিগ্ৰা</unitPattern>
 			</unit>
-			<unit type="pressure-ofhg">
-				<displayName>মাৰ্কিঃ</displayName>
-				<unitPattern count="one">{0} মাৰ্কিঃ</unitPattern>
-				<unitPattern count="other">{0} মাৰ্কিঃ</unitPattern>
+			<unit type="mass-dalton">
+				<unitPattern count="one">{0} ড.ট’.</unitPattern>
+				<unitPattern count="other">{0} ড.ট’.</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>″ Hg</displayName>
@@ -6722,10 +6654,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
-			<unit type="volume-fluid-ounce-metric">
-				<displayName>ফ্লুঃ আঃ মেঃ</displayName>
-				<unitPattern count="one">{0}ফ্লুঃ আঃ মেঃ</unitPattern>
-				<unitPattern count="other">{0} ফ্লুঃ আঃ মেঃ</unitPattern>
+			<unit type="temperature-kelvin">
+				<displayName>কে.</displayName>
+				<unitPattern count="one">{0} কে.</unitPattern>
+				<unitPattern count="other">{0} কে.</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
 				<unitPattern count="one">{0}টিস্পুন</unitPattern>
@@ -6740,70 +6672,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}dsp-Imp</unitPattern>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
 			</unit>
-			<unit type="angle-steradian">
-				<displayName>ষ্টেৰাঃ</displayName>
-				<unitPattern count="one">{0} ষ্টেৰাঃ</unitPattern>
-				<unitPattern count="other">{0}ষ্টেৰাঃ</unitPattern>
-			</unit>
-			<unit type="concentr-katal">
-				<displayName>কাটাঃ</displayName>
-				<unitPattern count="one">{0} কাটাঃ</unitPattern>
-				<unitPattern count="other">{0} কাটাঃ</unitPattern>
-			</unit>
-			<unit type="electric-coulomb">
-				<displayName>কুঃ</displayName>
-				<unitPattern count="one">{0} কুঃ</unitPattern>
-				<unitPattern count="other">{0} কুঃ</unitPattern>
-			</unit>
-			<unit type="electric-farad">
-				<displayName>ফাঃ</displayName>
-				<unitPattern count="one">{0} ফাঃ</unitPattern>
-				<unitPattern count="other">{0} ফাঃ</unitPattern>
-			</unit>
-			<unit type="electric-henry">
-				<displayName>হেনঃ</displayName>
-				<unitPattern count="one">{0} হেনঃ</unitPattern>
-				<unitPattern count="other">{0} হেনঃ</unitPattern>
-			</unit>
-			<unit type="electric-siemens">
-				<displayName>ছিয়েঃ</displayName>
-				<unitPattern count="one">{0} ছিয়েঃ</unitPattern>
-				<unitPattern count="other">{0} ছিয়েঃ</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>কেল’ৰি-আইটি</displayName>
-				<unitPattern count="one">{0} কেল-আইটি</unitPattern>
-				<unitPattern count="other">{0} কেল-আইটি</unitPattern>
-			</unit>
-			<unit type="energy-becquerel">
-				<displayName>বেঃ</displayName>
-				<unitPattern count="one">{0}বেঃ</unitPattern>
-				<unitPattern count="other">{0}বেঃ</unitPattern>
-			</unit>
-			<unit type="energy-sievert">
-				<displayName>এচভিঃ</displayName>
-				<unitPattern count="one">{0} এচভিঃ</unitPattern>
-				<unitPattern count="other">{0} এচভিঃ</unitPattern>
-			</unit>
 			<unit type="energy-gray">
-				<displayName>গ্ৰে</displayName>
 				<unitPattern count="one">{0} গ্ৰে</unitPattern>
 				<unitPattern count="other">{0}গ্ৰে</unitPattern>
-			</unit>
-			<unit type="force-kilogram-force">
-				<displayName>কিঃগ্ৰাঃবঃ</displayName>
-				<unitPattern count="one">{0} কিঃগ্ৰাঃবঃ</unitPattern>
-				<unitPattern count="other">{0} কিঃগ্ৰাঃবঃ</unitPattern>
-			</unit>
-			<unit type="magnetic-tesla">
-				<displayName>টেঃ</displayName>
-				<unitPattern count="one">{0} টেঃ</unitPattern>
-				<unitPattern count="other">{0} টেঃ</unitPattern>
-			</unit>
-			<unit type="magnetic-weber">
-				<displayName>ৱেঃ</displayName>
-				<unitPattern count="one">{0} ৱেঃ</unitPattern>
-				<unitPattern count="other">{0} ৱেঃ</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
 				<unitPattern count="one">{0}আলোক</unitPattern>
@@ -7020,7 +6891,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und as</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
-		<parameterDefault parameter="formality">informal</parameterDefault>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {credentials}</namePattern>
 		</personName>
@@ -7107,12 +6977,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
 			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {given-initial}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>

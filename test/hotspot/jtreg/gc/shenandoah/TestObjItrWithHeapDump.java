@@ -68,7 +68,6 @@ public class TestObjItrWithHeapDump {
                 testWith("-XX:+UnlockDiagnosticVMOptions",
                          "-XX:+UnlockExperimentalVMOptions",
                          "-XX:+UseShenandoahGC",
-                         "-XX:-ShenandoahDegeneratedGC",
                          "-XX:ShenandoahGCMode=" + mode,
                          "-XX:ShenandoahGCHeuristics=" + h,
                          "-Xlog:gc+classhisto=trace",

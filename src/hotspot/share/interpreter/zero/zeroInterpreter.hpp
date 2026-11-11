@@ -56,6 +56,7 @@ class ZeroInterpreter: public AbstractInterpreter {
 
   static address    return_entry  (TosState state, int length, Bytecodes::Code code);
   static address    deopt_entry   (TosState state, int length);
+  static address    cont_popframe_reexecute_entry();
 
   static address    remove_activation_entry() { return (address)-1; }
   static address    remove_activation_early_entry(TosState state);
