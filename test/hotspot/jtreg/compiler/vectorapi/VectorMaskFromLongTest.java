@@ -38,10 +38,7 @@ import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 
 public class VectorMaskFromLongTest {
-    // The expected-value checks use 64-bit shifts, so limit byte masks to 64 lanes.
-    static final VectorSpecies<Byte> B_SPECIES = ByteVector.SPECIES_MAX.length() <= 64
-        ? ByteVector.SPECIES_MAX
-        : ByteVector.SPECIES_512;
+    static final VectorSpecies<Byte> B_SPECIES = ByteVector.SPECIES_MAX;
     static final VectorSpecies<Short> S_SPECIES = ShortVector.SPECIES_MAX;
     static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_MAX;
     static final VectorSpecies<Float> F_SPECIES = FloatVector.SPECIES_MAX;
