@@ -231,8 +231,8 @@ enum ClonedVtableKind {
 // the following holds true:
 //     _orig_cpp_vtptrs[ConstantPool_Kind] == ((intptr_t**)cp)[0]
 //
-// _archived_cpp_vtptrs is a map of all the vptprs used by classes in a preimage. E.g., for
-//    InstanceKlass* k = a class loaded from the preimage;
+// _archived_cpp_vtptrs is a map of all the vptprs used by classes in an input archive. E.g., for
+//    InstanceKlass* k = a class loaded from the input archive;
 //    ConstantPool* cp = k->constants();
 // the following holds true:
 //     _archived_cpp_vtptrs[ConstantPool_Kind] == ((intptr_t**)cp)[0]

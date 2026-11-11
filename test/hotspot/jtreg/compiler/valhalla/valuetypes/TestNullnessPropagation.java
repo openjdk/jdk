@@ -31,7 +31,8 @@ import static compiler.lib.ir_framework.IRNode.LSHIFT_L;
 
 /*
  * @test
- * @bug 8395611
+ * @bug 8395611 8396195
+ * @requires vm.endian == "little"
  * @summary Test nullness propagation during parsing
  * @library /test/lib  /
  * @enablePreview

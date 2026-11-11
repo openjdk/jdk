@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,9 @@ public class TestAdler32 {
     private Random random;
     private byte[] bytes;
 
-    @Param({"64", "128", "256", "512", "1024", "2048", "5012", "8192", "16384", "32768", "65536"})
+    @Param({"1", "2", "4", "8", "15", "16", "24", "31", "32",
+            "64", "128", "256", "512", "1024", "2048", "4096", "5012", "8192",
+            "16384", "32768", "65536"})
     private int count;
 
     public TestAdler32() {

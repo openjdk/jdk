@@ -43,6 +43,7 @@
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodCounters.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -308,6 +309,22 @@ jlong LIRItem::get_jlong_constant() const {
   return type()->as_LongConstant()->value();
 }
 
+// This method should be executed when this allocation might be done internally by VM.
+void LIRGenerator::deoptimize_vmalloc_for_jvmti(bool is_allocated_by_vm, CodeEmitInfo* info) {
+#if INCLUDE_JVMTI
+  if (is_allocated_by_vm) {
+    LIR_Opr addr = new_pointer_register();
+    LIR_Opr should_post_vm_object_alloc = new_register(T_INT);
+
+    __ move(LIR_OprFact::intptrConst(&JvmtiExport::_should_notify_object_alloc), addr);
+    __ move(new LIR_Address(addr, T_INT), should_post_vm_object_alloc);
+    __ cmp(lir_cond_notEqual, should_post_vm_object_alloc, LIR_OprFact::intConst(0));
+    __ branch(lir_cond_notEqual,
+              new DeoptimizeStub(info, Deoptimization::Reason_intrinsic,
+                                 Deoptimization::Action_make_not_entrant));
+  }
+#endif
+}
 
 
 //--------------------------------------------------------------

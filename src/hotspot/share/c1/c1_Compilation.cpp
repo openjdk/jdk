@@ -425,6 +425,7 @@ void Compilation::install_code(int frame_size) {
     debug_info_recorder()->_oopmaps,
     exception_handler_table(),
     implicit_exception_table(),
+    nullptr, // java_callees
     compiler(),
     false, // has_clinit_barriers
     false, // for_preload
