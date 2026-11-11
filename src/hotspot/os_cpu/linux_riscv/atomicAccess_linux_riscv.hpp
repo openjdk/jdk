@@ -383,12 +383,55 @@ public:
   }
 };
 
-// Byte-sized AMOs require Zabha. Keep the existing cmpxchg-based fallback.
+// Use Zabha byte AMOs when both Zacas and Zabha are enabled. Before CPU
+// feature initialization, retain the cmpxchg-based fallback.
+template<int funct5, typename T>
+inline T riscv_amo_bitop_byte(T volatile* dest, T bits, atomic_memory_order order) {
+  static_assert(sizeof(T) == 1);
+  uint64_t old_value;
+  if (order == memory_order_relaxed) {
+    __asm__ __volatile__ (".insn r 0x2f, 0, %3, %0, %1, %2"
+                          : "=r" (old_value)
+                          : "r" (dest), "r" ((uint64_t)bits), "i" (funct5 << 2)
+                          : "memory");
+  } else {
+    __asm__ __volatile__ (".insn r 0x2f, 0, %3, %0, %1, %2"
+                          : "=r" (old_value)
+                          : "r" (dest), "r" ((uint64_t)bits), "i" ((funct5 << 2) | 0b11)
+                          : "memory");
+  }
+  return (T)old_value;
+}
+
 template<>
 class AtomicAccess::PlatformBitops<1, true>
   : public PrefetchBitopsUsingCmpxchg,
-    public PostfetchBitopsUsingCmpxchg
-{};
+    public PostfetchBitopsUsingPrefetch {
+public:
+  template<typename T>
+  T fetch_then_and(T volatile* dest, T bits, atomic_memory_order order) const {
+    if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
+      return riscv_amo_bitop_byte<0b01100>(dest, bits, order);
+    }
+    return PrefetchBitopsUsingCmpxchg::fetch_then_and(dest, bits, order);
+  }
+
+  template<typename T>
+  T fetch_then_or(T volatile* dest, T bits, atomic_memory_order order) const {
+    if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
+      return riscv_amo_bitop_byte<0b01000>(dest, bits, order);
+    }
+    return PrefetchBitopsUsingCmpxchg::fetch_then_or(dest, bits, order);
+  }
+
+  template<typename T>
+  T fetch_then_xor(T volatile* dest, T bits, atomic_memory_order order) const {
+    if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
+      return riscv_amo_bitop_byte<0b00100>(dest, bits, order);
+    }
+    return PrefetchBitopsUsingCmpxchg::fetch_then_xor(dest, bits, order);
+  }
+};
 
 // Zalasr load-acquire and store-release.
 //
