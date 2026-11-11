@@ -5305,7 +5305,7 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool 
               int other_alias_idx = phase->C->get_alias_index(other_t_adr);
               if (other_alias_idx == alias_idx) {
                 // A load from the same memory slice as the store right
-                // after the InitializeNode. We try to proof that pointers
+                // after the InitializeNode. We try to prove that pointers
                 // are independent. If not, we don't capture.
                 assert(!n->is_Store(), "2 stores to same slice on same control?");
                 intptr_t _other_offset;
