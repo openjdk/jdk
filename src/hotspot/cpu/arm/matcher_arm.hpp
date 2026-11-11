@@ -100,6 +100,10 @@
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = false;
 
+  // Use MachUncommonTrapNode for representing uncommon trap sequences.
+  // This is an alternative to representing uncommon traps as runtime calls.
+  static const bool use_mach_uncommon_trap_node = false;
+
   // Are floats converted to double when stored to stack during deoptimization?
   // ARM does not handle callee-save floats.
   static constexpr bool float_in_double() {
@@ -120,11 +124,6 @@
   // Does the CPU supports vector variable shift instructions?
   static bool supports_vector_variable_shifts(void) {
     return VM_Version::has_simd();
-  }
-
-  // Does target support predicated operation emulation.
-  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
-    return false;
   }
 
   // Does the CPU supports vector variable rotate instructions?

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary -XX:AOTMode=record should not interfere with app execution: (1) thread creation; (2) exit code
- * @bug 8351327
+ * @bug 8351327 8393591
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build TrainingRun
@@ -33,6 +33,9 @@
  * @run driver TrainingRun AOT
  */
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -42,13 +45,16 @@ public class TrainingRun {
     static final String mainClass = "MyTestApp";
 
     public static void main(String[] args) throws Exception {
-        (new Tester()).run(args);
+        (new Tester(false)).run(args);
+        (new Tester(true)).run(args);
     }
 
     static class Tester extends CDSAppTester {
-        public Tester() {
-            super(mainClass);
+        boolean stressRewriter;
 
+        public Tester(boolean stressRewriter) {
+            super(mainClass);
+            this.stressRewriter = stressRewriter;
             // CDSAppTester usually wants the app to return exit value 0, but this test
             // checks whether the training run can return 2.
             setCheckExitValue(false);
@@ -57,6 +63,18 @@ public class TrainingRun {
         @Override
         public String classpath(RunMode runMode) {
             return appJar;
+        }
+
+        @Override
+        public String[] vmArgs(RunMode runMode) {
+            if (stressRewriter) {
+                return new String[] {
+                    "-XX:+IgnoreUnrecognizedVMOptions",
+                    "-XX:+StressRewriter"
+                };
+            } else {
+                return new String[0];
+            }
         }
 
         @Override
@@ -79,7 +97,7 @@ public class TrainingRun {
 class MyTestApp {
     volatile static int x = 0;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String args[]) throws Throwable {
         Thread t = new Thread(() -> {
                 x = 1;
         });
@@ -90,7 +108,22 @@ class MyTestApp {
             throw new RuntimeException("x should be 1 but is " + x);
         }
         System.out.println("Hello: x is " + x);
+
+        testInvoke();
+
         System.out.println("I am calling System.exit(2)");
         System.exit(2);
+    }
+
+    static void testInvoke() throws Throwable {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodType mt = MethodType.methodType(void.class, float.class, double.class, int.class,
+                                              boolean.class, Object.class, long.class, double.class);
+        MethodHandle mh = lookup.findStatic(MyTestApp.class, "callme", mt);
+        mh.invokeExact(4.0f, 5.0, 6, true, (Object)null, 7L, 8.0);
+    }
+
+    private static void callme(float f, double d, int i, boolean b, Object o, long l, double d2) {
+        System.out.println("called");
     }
 }

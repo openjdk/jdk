@@ -524,11 +524,9 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_copy_in_h
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_store_null_in_heap(const ValuePayload& dst) {
-  ValueKlass* const klass = dst.klass();
-  const LayoutKind layout_kind = dst.layout_kind();
+  assert(dst.is_nullable_flat(), "Cannot store null in null free layout");
 
-  assert(!LayoutKindHelper::is_null_free_flat(layout_kind),
-         "Cannot store null in null free layout");
+  ValueKlass* const klass = dst.klass();
 
   if (!klass->contains_oops()) {
     // All fields are primitives

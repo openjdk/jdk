@@ -170,7 +170,7 @@ class DrainAmountPropertyTest {
             throws IOException {
         LOGGER.info("Sending request (target=%s, bodyLength=%s)".formatted(requestTarget, requestBodyLength));
         var socketOutput = clientSocket.getOutputStream();
-        var request = "%s %s HTTP/1.1%s\r\n\r\n".formatted(
+        var request = "%s %s HTTP/1.1%s\r\nHost: localhost\r\n\r\n".formatted(
                 requestMethod, requestTarget,
                 requestBodyLength == null ? "" : "\r\nContent-Length: " + requestBodyLength);
         socketOutput.write(request.getBytes(US_ASCII));

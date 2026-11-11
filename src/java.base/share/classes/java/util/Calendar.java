@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2656,7 +2656,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Returns the calendar type of this {@code Calendar}. Calendar types are
-     * defined by the <em>Unicode Locale Data Markup Language (LDML)</em>
+     * defined by the <em>Unicode Common Locale Data {@literal &} Rules (CLDR)</em>
      * specification.
      *
      * <p>The default implementation of this method returns the class name of

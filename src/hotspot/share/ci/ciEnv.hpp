@@ -413,6 +413,7 @@ public:
                        OopMapSet*                oop_map_set,
                        ExceptionHandlerTable*    handler_table,
                        ImplicitExceptionTable*   inc_table,
+                       GrowableArray<ciMethod*>* java_callees,
                        AbstractCompiler*         compiler,
                        bool                      has_clinit_barriers,
                        bool                      for_aot_preload,
