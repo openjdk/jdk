@@ -66,10 +66,6 @@ public class FramesDecoder {
     private final ArrayDeque<ByteBuffer> tailBuffers = new ArrayDeque<>();
     private int tailSize = 0;
 
-    private boolean slicedToDataFrame = false;
-
-    private final List<ByteBuffer> prepareToRelease = new ArrayList<>();
-
     // if true  - Frame Header was parsed (9 bytes consumed) and subsequent fields have meaning
     // otherwise - stopped at frames boundary
     private boolean frameHeaderParsed = false;
@@ -156,7 +152,6 @@ public class FramesDecoder {
         while ((frame = nextFrame()) != null) {
             if (debug.on()) debug.log("Got frame: %s", frame);
             frameProcessor.processFrame(frame);
-            frameProcessed();
         }
     }
 
@@ -203,10 +198,6 @@ public class FramesDecoder {
         }
     }
 
-    private void frameProcessed() {
-        prepareToRelease.clear();
-    }
-
     private void parseFrameHeader() throws IOException {
         int x = getInt();
         this.frameLength = (x >>> 8) & 0x00ffffff;
@@ -220,10 +211,6 @@ public class FramesDecoder {
     // move next buffer from tailBuffers to currentBuffer if required
     private void nextBuffer() {
         if (!currentBuffer.hasRemaining()) {
-            if (!slicedToDataFrame) {
-                prepareToRelease.add(currentBuffer);
-            }
-            slicedToDataFrame = false;
             currentBuffer = tailBuffers.poll();
             if (currentBuffer != null) {
                 tailSize -= currentBuffer.remaining();
@@ -285,7 +272,6 @@ public class FramesDecoder {
             if (isDataFrame) {
                 extractedBuf = Utils.sliceWithLimitedCapacity(currentBuffer, extract)
                                     .asReadOnlyBuffer();
-                slicedToDataFrame = true;
             } else {
                 // Header frames here
                 // HPACK decoding should performed under lock and immediately after frame decoding.
