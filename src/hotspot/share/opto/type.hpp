@@ -303,17 +303,19 @@ public:
   virtual float getf() const;
   double getd() const;
 
+private:
+  // Boilerplate to get nice error messages in as_XXX
+  template <typename T> const T* as(bool (Type::*is_xxx)() const, const char* expected) const;
+public:
   // Testing and casting:
   // - is_* checks whether `this` is of the given kind.
   // - isa_* checks whether `this` is of the given kind and casts. Returns nullptr in case of failure.
   // - as_* asserts `this` is of the given kind and casts. Never returns nullptr.
 
-  // Int
   [[nodiscard]] bool is_int() const;
   [[nodiscard]] const TypeInt* isa_int() const;
   [[nodiscard]] const TypeInt* as_int() const;
 
-  // Long
   [[nodiscard]] bool is_long() const;
   [[nodiscard]] const TypeLong* isa_long() const;
   [[nodiscard]] const TypeLong* as_long() const;
@@ -323,100 +325,79 @@ public:
   [[nodiscard]] const TypeInteger* isa_integer(BasicType bt) const;
   [[nodiscard]] const TypeInteger* as_integer(BasicType bt) const;
 
-  // Double{Top,Con,Bot}
   [[nodiscard]] bool is_double() const;
 
-  // DoubleCon
   [[nodiscard]] bool is_double_constant() const;
   [[nodiscard]] const TypeD* isa_double_constant() const;
   [[nodiscard]] const TypeD* as_double_constant() const;
 
-  // HalfFloat{Top,Con,Bot}
   [[nodiscard]] bool is_half_float() const;
 
-  // HalfFloatCon
   [[nodiscard]] bool is_half_float_constant() const;
   [[nodiscard]] const TypeH* isa_half_float_constant() const;
   [[nodiscard]] const TypeH* as_half_float_constant() const;
 
-  // Float{Top,Con,Bot}
   [[nodiscard]] bool is_float() const;
 
-  // FloatCon
   [[nodiscard]] bool is_float_constant() const;
   [[nodiscard]] const TypeF* isa_float_constant() const;
   [[nodiscard]] const TypeF* as_float_constant() const;
 
-  // Collection of fields, NOT a pointer
   [[nodiscard]] bool is_tuple() const;
   [[nodiscard]] const TypeTuple* as_tuple() const;
 
-  // Array, NOT array pointer
   [[nodiscard]] bool is_ary() const;
   [[nodiscard]] const TypeAry* isa_ary() const;
   [[nodiscard]] const TypeAry* as_ary() const;
 
-  // Vector
   [[nodiscard]] bool is_vect() const;
   [[nodiscard]] const TypeVect* isa_vect() const;
   [[nodiscard]] const TypeVect* as_vect() const;
 
-  // Predicate/Mask Vector
   [[nodiscard]] bool is_pvectmask() const;
   [[nodiscard]] const TypePVectMask* isa_pvectmask() const;
   [[nodiscard]] const TypePVectMask* as_pvectmask() const;
 
-  // Ptr
   [[nodiscard]] bool is_ptr() const;
   [[nodiscard]] const TypePtr* isa_ptr() const;
   [[nodiscard]] const TypePtr* as_ptr() const;
 
-  // NOT Java oop
   [[nodiscard]] bool is_rawptr() const;
   [[nodiscard]] const TypeRawPtr* isa_rawptr() const;
   [[nodiscard]] const TypeRawPtr* as_rawptr() const;
 
-  // Java-style GC'd pointer
   [[nodiscard]] bool is_narrowoop() const;
   [[nodiscard]] const TypeNarrowOop* isa_narrowoop() const;
   [[nodiscard]] const TypeNarrowOop* as_narrowoop() const;
 
-  // compressed klass pointer
   [[nodiscard]] bool is_narrowklass() const;
   [[nodiscard]] const TypeNarrowKlass* isa_narrowklass() const;
   [[nodiscard]] const TypeNarrowKlass* as_narrowklass() const;
 
-  // Oop (instance and arrays)
   [[nodiscard]] bool is_oopptr() const;
   [[nodiscard]] const TypeOopPtr* isa_oopptr() const;
   [[nodiscard]] const TypeOopPtr* as_oopptr() const;
 
-  // InstPtr
   [[nodiscard]] bool is_instptr() const;
   [[nodiscard]] const TypeInstPtr* isa_instptr() const;
   [[nodiscard]] const TypeInstPtr* as_instptr() const;
 
-  // AryPtr
   [[nodiscard]] bool is_aryptr() const;
   [[nodiscard]] const TypeAryPtr* isa_aryptr() const;
   [[nodiscard]] const TypeAryPtr* as_aryptr() const;
 
-  // MetadataPtr
   [[nodiscard]] bool is_metadataptr() const;
   [[nodiscard]] const TypeMetadataPtr* isa_metadataptr() const;
   [[nodiscard]] const TypeMetadataPtr* as_metadataptr() const;
 
-  // KlassPtr
   [[nodiscard]] bool is_klassptr() const;
   [[nodiscard]] const TypeKlassPtr* isa_klassptr() const;
   [[nodiscard]] const TypeKlassPtr* as_klassptr() const;
 
-  // InstKlassPtr
   [[nodiscard]] bool is_instklassptr() const;
   [[nodiscard]] const TypeInstKlassPtr* isa_instklassptr() const;
   [[nodiscard]] const TypeInstKlassPtr* as_instklassptr() const;
 
-  // AryKlassPtr
   [[nodiscard]] bool is_aryklassptr() const;
   [[nodiscard]] const TypeAryKlassPtr* isa_aryklassptr() const;
   [[nodiscard]] const TypeAryKlassPtr* as_aryklassptr() const;
@@ -2441,6 +2422,16 @@ inline double Type::getd() const {
   return ((TypeD*)this)->_d;
 }
 
+template <typename T>
+const T* Type::as(bool (Type::*is_xxx)() const, const char* expected) const {
+  if (!(this->*is_xxx)()) {
+    stringStream ss;
+    this->dump_on(&ss);
+    assert((this->*is_xxx)(), "Not %s, got %s", expected, ss.as_string());
+  }
+  return static_cast<const T*>(this);
+}
+
 inline bool Type::is_int() const {
   return _base == Int;
 }
@@ -2450,8 +2441,7 @@ inline const TypeInt* Type::isa_int() const {
 }
 
 inline const TypeInt* Type::as_int() const {
-  assert(is_int(), "Not an Int");
-  return (TypeInt*)this;
+  return as<TypeInt>(&Type::is_int, "an Int");
 }
 
 inline bool Type::is_long() const {
@@ -2463,8 +2453,7 @@ inline const TypeLong* Type::isa_long() const {
 }
 
 inline const TypeLong* Type::as_long() const {
-  assert(is_long(), "Not a Long");
-  return (TypeLong*)this;
+  return as<TypeLong>(&Type::is_long, "a Long");
 }
 
 inline bool Type::is_integer(BasicType bt) const {
@@ -2476,8 +2465,10 @@ inline const TypeInteger* Type::isa_integer(BasicType bt) const {
 }
 
 inline const TypeInteger* Type::as_integer(BasicType bt) const {
-  assert(is_integer(bt), bt == T_INT ? "Not an Int" : "Not a Long");
-  return (TypeInteger*)this;
+  if (bt == T_INT) {
+    return as<TypeInteger>(&Type::is_int, "an Int");
+  }
+  return as<TypeInteger>(&Type::is_long, "a Long");
 }
 
 inline bool Type::is_half_float() const {
@@ -2495,8 +2486,7 @@ inline const TypeH* Type::isa_half_float_constant() const {
 }
 
 inline const TypeH* Type::as_half_float_constant() const {
-  assert(is_half_float_constant(), "Not a HalfFloatCon");
-  return (TypeH*)this;
+  return as<TypeH>(&Type::is_half_float_constant, "a HalfFloatCon");
 }
 
 inline bool Type::is_float() const {
@@ -2514,8 +2504,7 @@ inline const TypeF* Type::isa_float_constant() const {
 }
 
 inline const TypeF* Type::as_float_constant() const {
-  assert(is_float_constant(), "Not a FloatCon");
-  return (TypeF*)this;
+  return as<TypeF>(&Type::is_float_constant, "a FloatCon");
 }
 
 inline bool Type::is_double() const {
@@ -2533,8 +2522,7 @@ inline const TypeD* Type::isa_double_constant() const {
 }
 
 inline const TypeD* Type::as_double_constant() const {
-  assert(is_double_constant(), "Not a DoubleCon");
-  return (TypeD*)this;
+  return as<TypeD>(&Type::is_double_constant, "a DoubleCon");
 }
 
 inline bool Type::is_tuple() const {
@@ -2542,8 +2530,7 @@ inline bool Type::is_tuple() const {
 }
 
 inline const TypeTuple* Type::as_tuple() const {
-  assert(is_tuple(), "Not a Tuple");
-  return (TypeTuple*)this;
+  return as<TypeTuple>(&Type::is_tuple, "a Tuple");
 }
 
 inline bool Type::is_ary() const {
@@ -2555,8 +2542,7 @@ inline const TypeAry* Type::isa_ary() const {
 }
 
 inline const TypeAry* Type::as_ary() const {
-  assert(is_ary(), "Not an Array");
-  return (TypeAry*)this;
+  return as<TypeAry>(&Type::is_ary, "an Array");
 }
 
 inline bool Type::is_vect() const {
@@ -2568,8 +2554,7 @@ inline const TypeVect* Type::isa_vect() const {
 }
 
 inline const TypeVect* Type::as_vect() const {
-  assert(is_vect(), "Not a Vector");
-  return (TypeVect*)this;
+  return as<TypeVect>(&Type::is_vect, "a Vector");
 }
 
 inline bool Type::is_pvectmask() const {
@@ -2581,8 +2566,7 @@ inline const TypePVectMask* Type::isa_pvectmask() const {
 }
 
 inline const TypePVectMask* Type::as_pvectmask() const {
-  assert(is_pvectmask(), "Not a Vector Mask");
-  return (TypePVectMask*)this;
+  return as<TypePVectMask>(&Type::is_pvectmask, "a Vector Mask");
 }
 
 inline bool Type::is_ptr() const {
@@ -2595,8 +2579,7 @@ inline const TypePtr* Type::isa_ptr() const {
 }
 
 inline const TypePtr* Type::as_ptr() const {
-  assert(is_ptr(), "Not a pointer");
-  return (TypePtr*)this;
+  return as<TypePtr>(&Type::is_ptr, "a pointer");
 }
 
 inline bool Type::is_rawptr() const {
@@ -2608,8 +2591,7 @@ inline const TypeRawPtr* Type::isa_rawptr() const {
 }
 
 inline const TypeRawPtr* Type::as_rawptr() const {
-  assert(is_rawptr(), "Not a raw pointer");
-  return (TypeRawPtr*)this;
+  return as<TypeRawPtr>(&Type::is_rawptr, "a raw pointer");
 }
 
 inline bool Type::is_narrowoop() const {
@@ -2621,8 +2603,7 @@ inline const TypeNarrowOop* Type::isa_narrowoop() const {
 }
 
 inline const TypeNarrowOop* Type::as_narrowoop() const {
-  assert(is_narrowoop(), "Not a narrow oop");
-  return (TypeNarrowOop*)this;
+  return as<TypeNarrowOop>(&Type::is_narrowoop, "a narrow oop");
 }
 
 inline bool Type::is_narrowklass() const {
@@ -2634,8 +2615,7 @@ inline const TypeNarrowKlass* Type::isa_narrowklass() const {
 }
 
 inline const TypeNarrowKlass* Type::as_narrowklass() const {
-  assert(is_narrowklass(), "Not a narrow klass");
-  return (TypeNarrowKlass*)this;
+  return as<TypeNarrowKlass>(&Type::is_narrowklass, "a narrow klass");
 }
 
 inline bool Type::is_oopptr() const {
@@ -2648,8 +2628,7 @@ inline const TypeOopPtr* Type::isa_oopptr() const {
 }
 
 inline const TypeOopPtr* Type::as_oopptr() const {
-  assert(is_oopptr(), "Not a Java pointer");
-  return (TypeOopPtr*)this;
+  return as<TypeOopPtr>(&Type::is_oopptr, "a Java pointer");
 }
 
 inline bool Type::is_instptr() const {
@@ -2661,8 +2640,7 @@ inline const TypeInstPtr* Type::isa_instptr() const {
 }
 
 inline const TypeInstPtr* Type::as_instptr() const {
-  assert(is_instptr(), "Not an object pointer");
-  return (TypeInstPtr*)this;
+  return as<TypeInstPtr>(&Type::is_instptr, "an object pointer");
 }
 
 inline bool Type::is_aryptr() const {
@@ -2674,8 +2652,7 @@ inline const TypeAryPtr* Type::isa_aryptr() const {
 }
 
 inline const TypeAryPtr* Type::as_aryptr() const {
-  assert(is_aryptr(), "Not an array pointer");
-  return (TypeAryPtr*)this;
+  return as<TypeAryPtr>(&Type::is_aryptr, "an array pointer");
 }
 
 inline bool Type::is_metadataptr() const {
@@ -2687,8 +2664,7 @@ inline const TypeMetadataPtr* Type::isa_metadataptr() const {
 }
 
 inline const TypeMetadataPtr* Type::as_metadataptr() const {
-  assert(is_metadataptr(), "Not a metadata pointer");
-  return (TypeMetadataPtr*)this;
+  return as<TypeMetadataPtr>(&Type::is_metadataptr, "a metadata pointer");
 }
 
 inline bool Type::is_klassptr() const {
@@ -2700,8 +2676,7 @@ inline const TypeKlassPtr* Type::isa_klassptr() const {
 }
 
 inline const TypeKlassPtr* Type::as_klassptr() const {
-  assert(is_klassptr(), "Not a klass pointer");
-  return (TypeKlassPtr*)this;
+  return as<TypeKlassPtr>(&Type::is_klassptr, "a klass pointer");
 }
 
 inline bool Type::is_instklassptr() const {
@@ -2713,8 +2688,7 @@ inline const TypeInstKlassPtr* Type::isa_instklassptr() const {
 }
 
 inline const TypeInstKlassPtr* Type::as_instklassptr() const {
-  assert(is_instklassptr(), "Not an instance klass pointer");
-  return (TypeInstKlassPtr*)this;
+  return as<TypeInstKlassPtr>(&Type::is_instklassptr, "an instance klass pointer");
 }
 
 inline bool Type::is_aryklassptr() const {
@@ -2726,8 +2700,7 @@ inline const TypeAryKlassPtr* Type::isa_aryklassptr() const {
 }
 
 inline const TypeAryKlassPtr* Type::as_aryklassptr() const {
-  assert(is_aryklassptr(), "Not an array klass pointer");
-  return (TypeAryKlassPtr*)this;
+  return as<TypeAryKlassPtr>(&Type::is_aryklassptr, "an array klass pointer");
 }
 
 inline const TypePtr* Type::make_ptr() const {
