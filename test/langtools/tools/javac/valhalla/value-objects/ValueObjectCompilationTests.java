@@ -26,7 +26,7 @@
  *
  * @test
  * @bug 8287136 8292630 8279368 8287136 8287770 8279840 8279672 8292753 8287763 8279901 8287767 8293183 8293120
- *      8329345 8341061 8340984 8334484 8387279
+ *      8329345 8341061 8340984 8334484 8387279 8388340
  * @summary Negative compilation tests, and positive compilation (smoke) tests for Value Objects
  * @enablePreview
  * @library /lib/combo /tools/lib
@@ -103,6 +103,15 @@ class ValueObjectCompilationTests extends CompilationTestCase {
                 """
                 value enum Enum {}
                 """);
+    }
+
+    @Test
+    void testValueModifier() {
+        //JDK-8388340:
+        assertOK("""
+                 abstract value sealed class A {}
+                 abstract value non-sealed class B extends A {}
+                 """);
     }
 
     record TestData(String message, String snippet, String[] compilerOptions, boolean testLocalToo) {

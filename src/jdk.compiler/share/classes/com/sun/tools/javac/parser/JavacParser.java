@@ -5042,9 +5042,11 @@ public class JavacParser implements Parser {
                 case CLASS: case INTERFACE: case ENUM:
                     isValueModifier = true;
                     break;
-                case IDENTIFIER: // value record R || value value
-                    if (next.name() == names.record || next.name() == names.value
-                            || (mode & EXPR) != 0)
+                case IDENTIFIER:
+                    if (next.name() == names.record           //value record R
+                            || next.name() == names.value     //value value
+                            || next.name() == names.sealed    //value sealed ...
+                            || isNonSealedIdentifier(next, 1)) //value non-sealed ...
                         isValueModifier = true;
                     break;
             }
