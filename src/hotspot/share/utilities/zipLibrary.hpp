@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ typedef struct {
 } jzentry;
 
 class ZipLibrary : AllStatic {
+  friend class Threads;
+  static void initialize_loader_lock();
  public:
   static void** open(const char* name, char** pmsg);
   static void close(jzfile* zip);

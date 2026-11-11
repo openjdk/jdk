@@ -79,11 +79,49 @@ void StackMapFrame::print_strict_fields(AssertUnsetFieldTable* table) {
   }
 }
 
-StackMapFrame* StackMapFrame::frame_in_exception_handler(u1 flags) {
+StackMapFrame* StackMapFrame::frame_in_exception_handler(VerificationType broken_type, u1 flags) {
   Thread* thr = _verifier->thread();
   VerificationType* stack = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, 1);
+  VerificationType* locals = _locals;
+  bool have_uninitialized = broken_type.is_uninitialized();
+  guarantee(have_uninitialized || broken_type.is_bogus(), "must be uninitialized or top");
+
+  // Return a StackMapFrame with a potentially modified local variable
+  // array and an empty operand stack with one unused slot.  The caller
+  // will push the exception type for each handler into this slot.
+  //
+  // JVMS 4.10.1.9 says, "The rule for invokespecial of an <init> method
+  // is the sole motivation for passing back a distinct exception stack
+  // frame."  In that case, the so-called "broken object" must be replaced
+  // by top (in the locals only, since the operand stack gets reset).
+  // In the JVMS Prolog code, the adjusted locals are called ExceptionLocals.
+  // If this routine is called for any other bytecode in a handler range,
+  // not invokespecial <init>, the passed "broken object" must be top.
+  // The frame flags are unchanged, including possibly flagThisUninit.
+  //
+  // If the local array is not changed, the original input array is
+  // shared as part of the returned frame.
+  if (have_uninitialized) {
+    bool found = false;
+    VerificationType* new_locals = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, _max_locals);
+    for (int32_t i = 0; i < _max_locals; i++) {
+      if (local_at(i) == broken_type) {
+        found = true;
+        new_locals[i] = VerificationType::top_type();
+      } else {
+        new_locals[i] = _locals[i];
+      }
+    }
+    // Throw away the array if no substitution was needed
+    if (!found) {
+      FREE_RESOURCE_ARRAY_IN_THREAD(thr, new_locals, _max_locals);
+    } else {
+      locals = new_locals;
+    }
+  }
+
   StackMapFrame* frame = new StackMapFrame(_offset, flags, _locals_size, 0,
-                                           _max_locals, _max_stack, _locals, stack,
+                                           _max_locals, _max_stack, locals, stack,
                                            _assert_unset_fields, _verifier);
   return frame;
 }

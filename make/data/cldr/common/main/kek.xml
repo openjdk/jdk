@@ -12,24 +12,298 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="af">Afrikaans ► af</language>
+			<language type="ak">Akan ► ak</language>
+			<language type="en">Qʼanischiʼ</language>
+			<language type="en_AU">Qʼanischiʼ (AU)</language>
+			<language type="en_CA">Qʼanischiʼ (CA)</language>
+			<language type="en_GB">Qʼanischiʼ (GB)</language>
+			<language type="en_US">Qʼanischiʼ (US)</language>
+			<language type="es">Kaxlanchiʼ</language>
+			<language type="es_419">Kaxlanchiʼ (Qachʼochʼil)</language>
 			<language type="kek">Qʼeqchiʼ</language>
+			<language type="sq">Albanian ► sq</language>
 		</languages>
+		<scripts>
+			<script type="Latn">Latiin</script>
+			<script type="Zzzz">Moko Nanawman Ta li Tzʼiibʼ</script>
+		</scripts>
 		<territories>
 			<territory type="001">Ruchichʼochʼ</territory>
+			<territory type="002">Afrika</territory>
+			<territory type="003">Xchʼochʼil li Xnim Uqʼ li Saqʼe</territory>
+			<territory type="005">Xchʼochʼil saʼ Xtzʼe Uqʼ li Saqʼe</territory>
+			<territory type="009">Palaw Chʼochʼ</territory>
+			<territory type="011">Rokebʼaal li Saqʼe re Afika</territory>
+			<territory type="013">Qachʼochil Laaʼo</territory>
+			<territory type="014">Relebʼaal li Saqʼe re Afrika</territory>
+			<territory type="015">Xmin Uqʼ li Saqʼe re Afrika</territory>
+			<territory type="017">Xyi Xchʼochʼil Afika</territory>
+			<territory type="018">Xtzʼe Uqʼ li Saqʼe re Afrika</territory>
+			<territory type="019">Qachʼochʼil</territory>
+			<territory type="029">Xchʼochil saʼ Xyi li Palaw Karibʼeʼ</territory>
+			<territory type="030">Relebʼaal li Saqʼe re Asia</territory>
+			<territory type="034">Xtzʼe Uqʼ li Saqʼe re Asia</territory>
+			<territory type="035">Xtzʼe Relebʼaal li Saqʼe re Asia</territory>
+			<territory type="039">Xtzʼe Uqʼ li Saqʼe re Europa</territory>
+			<territory type="053">Ninki Chʼochʼ Sa Xyi li Tuulanil Palaw</territory>
+			<territory type="054">Kokʼ Xchʼochʼil li Tuulanil Palaw Saʼ Xtzʼe Uqʼ l Saqʼe</territory>
+			<territory type="057">Kokʼ Xchʼochʼil li Tuulanil Palaw</territory>
+			<territory type="061">Xchʼochʼil Laj Polynesia</territory>
+			<territory type="142">Asia</territory>
+			<territory type="143">Xyi Xchʼochʼil Asia</territory>
+			<territory type="145">Rokebʼaal li Saqʼe re Asia</territory>
+			<territory type="150">Europa</territory>
+			<territory type="151">Relebʼaal li Saqʼe re Europa</territory>
+			<territory type="154">Xmin Uqʼ li Saqʼe re Europa</territory>
+			<territory type="155">Rokebʼaal li Saqʼe re Europa</territory>
+			<territory type="202">Raxi Chʼochʼil re Afrika</territory>
+			<territory type="419">Xyi Xchʼochʼil laj Kaxlanchiʼ</territory>
+			<territory type="BM">Bʼermuta</territory>
+			<territory type="BZ">Bʼelise</territory>
+			<territory type="CA">Kanataʼ</territory>
+			<territory type="CR">Kosta Rika</territory>
+			<territory type="EU">Molam Europeo</territory>
+			<territory type="EZ">Xnaʼaj Europa</territory>
+			<territory type="GL">Raxchʼochʼ</territory>
+			<territory type="GT">Iximchʼochʼ</territory>
+			<territory type="HN">Honduras</territory>
+			<territory type="MX">Mexiko</territory>
+			<territory type="NI">Nikarawa</territory>
+			<territory type="PA">Panamaʼ</territory>
+			<territory type="PM">St. Pierre rikʼin Miquelon</territory>
+			<territory type="QO">Najtil Palaw Chʼochʼ</territory>
+			<territory type="SV">El Salvador</territory>
 			<territory type="UN">Molam Rehebʼ Ninqi Tenamit</territory>
+			<territory type="US">Junajunbʼilebʼ Estaad</territory>
+			<territory type="US" alt="short">JJEE</territory>
+			<territory type="XA">Akʼi Aksents</territory>
+			<territory type="XB">Akʼi Bʼidi</territory>
 			<territory type="ZZ">Ebʼ li Naʼajej Moko Nawbʼilebʼ Ta</territory>
 		</territories>
+		<types>
+			<type key="calendar" type="gregorian">Ajlebʼaal Kutan Krekorio</type>
+			<type key="calendar" type="gregorian" scope="core">Krekorio</type>
+			<type key="calendar" type="iso8601">Ajlebʼaal Kutan Krekorio (ISO 8601 Xamaan)</type>
+			<type key="calendar" type="iso8601" scope="core">Krekorio</type>
+			<type key="collation" type="standard">Kʼulubʼanbʼil Xtusulal</type>
+			<type key="collation" type="standard" scope="core">Li Kʼulubʼanbʼil</type>
+			<type key="numbers" type="latn">Kaxlan Ajl</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">Meetriko</measurementSystemName>
+			<measurementSystemName type="UK">RU</measurementSystemName>
+			<measurementSystemName type="US">JJEE</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">Language: {0}</codePattern>
+			<codePattern type="script">Script: {0}</codePattern>
+			<codePattern type="territory">Region: {0}</codePattern>
+		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a {aa} {bʼ} c {ch} {ch’} e {ee} h i {ii} j k {k’} l m n o {oo} p q {q’} r s t {t’} {tz} {tz’} u {uu} w x y]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[d f g v z]</exemplarCharacters>
+		<exemplarCharacters>[a {aa} {bʼ} {ch} {ch’} e {ee} h i {ii} j k {k’} l m n o {oo} p q {q’} r s t {t’} {tz} {tz’} u {uu} w x y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áä c d éë f g íï ñ óö úü v z]</exemplarCharacters>
+		<exemplarCharacters type="numbers-auxiliary" draft="contributed">[— .]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . … ’ “” ( ) \[ \] \{ \} /]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>d, EEEE, MMMM, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d, MMMM, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d, MMM, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/Y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{0} {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{0}, {1}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{0} {1}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{0}, {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">MM-y G</dateFormatItem>
+						<dateFormatItem id="GyMd">dd-MM-y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E dd-MM-y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d, MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="Md">dd-MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd-MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM-y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd/MM/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd-MM-y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">MM-y G – MM-y G</greatestDifference>
+							<greatestDifference id="M">MM-y – MM-y G</greatestDifference>
+							<greatestDifference id="y">MM-y – MM-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">dd-MM-y – dd-MM-y G</greatestDifference>
+							<greatestDifference id="G">dd-MM-y G – dd-MM-y G</greatestDifference>
+							<greatestDifference id="M">dd-MM-y – dd-MM-y G</greatestDifference>
+							<greatestDifference id="y">dd-MM-y – dd-MM-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">e, dd-MM-y - E, dd-MM-y G</greatestDifference>
+							<greatestDifference id="G">e, dd-MM-y G - E, dd-MM-y G</greatestDifference>
+							<greatestDifference id="M">E, dd-MM-y – E, dd-MM-y G</greatestDifference>
+							<greatestDifference id="y">E, dd-MM-y – E, dd-MM-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d–d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="G">E,d MMM y G – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, dMMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">dd-MM – dd-MM</greatestDifference>
+							<greatestDifference id="M">dd-MM – dd MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E, dd MM – E, d MM</greatestDifference>
+							<greatestDifference id="M">E, dd MM – E, d MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">e, d MMM - E,d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">MM-y – MM-y G</greatestDifference>
+							<greatestDifference id="y">MM-y – MM-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">dd-MM-y – dd-MM-y G</greatestDifference>
+							<greatestDifference id="M">dd-MM-y – dd-MM-y G</greatestDifference>
+							<greatestDifference id="y">dd-MM-y – dd-MM-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, dd-MM-y – E, dd-MM-y G</greatestDifference>
+							<greatestDifference id="M">E, dd-MM-y – E,dd-MM-y G</greatestDifference>
+							<greatestDifference id="y">E, dd-MM-y – E, dd-MM-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y _ MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d–d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E, d MMM y – E,d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="narrow">
+							<month type="1">Bʼ</month>
+							<month type="2">K</month>
+							<month type="3">O</month>
+							<month type="4">KAA</month>
+							<month type="5">Oʼ</month>
+							<month type="6">WQ</month>
+							<month type="7">WU</month>
+							<month type="8">WQ</month>
+							<month type="9">BʼE</month>
+							<month type="10">LA</month>
+							<month type="11">JU</month>
+							<month type="12">KBʼ</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Xbʼeen Po</month>
 							<month type="2">Xkabʼ Po</month>
@@ -45,34 +319,1292 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">Xkabʼlaj Po</month>
 						</monthWidth>
 					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">Bʼ</month>
+							<month type="2">K</month>
+							<month type="3">O</month>
+							<month type="4">KAA</month>
+							<month type="5">Oʼ</month>
+							<month type="6">WA</month>
+							<month type="7">WU</month>
+							<month type="8">WQ</month>
+							<month type="9">BʼE</month>
+							<month type="10">LA</month>
+							<month type="11">JU</month>
+							<month type="12">KBʼ</month>
+						</monthWidth>
+					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">XBʼ</day>
+							<day type="mon">LU</day>
+							<day type="tue">MA</day>
+							<day type="wed">MR</day>
+							<day type="thu">ROʼ</day>
+							<day type="fri">XWA</day>
+							<day type="sat">XWU</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">D</day>
+							<day type="mon">L</day>
+							<day type="tue">MA</day>
+							<day type="wed">MR</day>
+							<day type="thu">J</day>
+							<day type="fri">V</day>
+							<day type="sat">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">XBʼ</day>
+							<day type="mon">XK</day>
+							<day type="tue">RO</day>
+							<day type="wed">KA</day>
+							<day type="thu">ROʼ</day>
+							<day type="fri">XWA</day>
+							<day type="sat">XWU</day>
+						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Doʼkutan</day>
-							<day type="mon">LuʼKutan</day>
-							<day type="tue">MarʼKutan</day>
-							<day type="wed">MerʼKutan</day>
+							<day type="mon">Luʼkutan</day>
+							<day type="tue">Markutan</day>
+							<day type="wed">Merkutan</day>
 							<day type="thu">JueʼKutan</day>
-							<day type="fri">VierʼKutan</day>
-							<day type="sat">SabʼKutan</day>
+							<day type="fri">Vierkutan</day>
+							<day type="sat">Sabʼkutan</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">XBʼ</day>
+							<day type="mon">XK</day>
+							<day type="tue">RO</day>
+							<day type="wed">XKA</day>
+							<day type="thu">ROʼ</day>
+							<day type="fri">XWA</day>
+							<day type="sat">XWU</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">D</day>
+							<day type="mon">L</day>
+							<day type="tue">MA</day>
+							<day type="wed">MR</day>
+							<day type="thu">J</day>
+							<day type="fri">V</day>
+							<day type="sat">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">XBʼ</day>
+							<day type="mon">KK</day>
+							<day type="tue">RO</day>
+							<day type="wed">KA</day>
+							<day type="thu">ROʼ</day>
+							<day type="fri">XWA</day>
+							<day type="sat">XWU</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Doʼkutan</day>
+							<day type="mon">Luʼkutan</day>
+							<day type="tue">Markutan</day>
+							<day type="wed">Merkutan</day>
+							<day type="thu">JueʼKutan</day>
+							<day type="fri">Vierkutan</day>
+							<day type="sat">Sabʼkutan</day>
 						</dayWidth>
 					</dayContext>
 				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">R1</quarter>
+							<quarter type="2">R2</quarter>
+							<quarter type="3">R3</quarter>
+							<quarter type="4">R4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">Xbʼeen Raqalil li Chihabʼ</quarter>
+							<quarter type="2">Xkabʼ Raqalil li Chihabʼ</quarter>
+							<quarter type="3">Rox Raqalil li Chihabʼ</quarter>
+							<quarter type="4">Xkaa Raqalil li Chihabʼ</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">R1</quarter>
+							<quarter type="2">R2</quarter>
+							<quarter type="3">R3</quarter>
+							<quarter type="4">R4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">Xbʼeen Raqalil li Chihabʼ</quarter>
+							<quarter type="2">Xkabʼ Raqalil li Chihabʼ</quarter>
+							<quarter type="3">Rox Raqalil li Chihabʼ</quarter>
+							<quarter type="4">Xkaa Raqalil li Chihabʼ</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">EQʼ</dayPeriod>
+							<dayPeriod type="pm">EW</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">Eʼ</dayPeriod>
+							<dayPeriod type="pm">E</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">Eqʼela</dayPeriod>
-							<dayPeriod type="pm">Ewu</dayPeriod>
+							<dayPeriod type="am">EQʼ</dayPeriod>
+							<dayPeriod type="pm">EW</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">EQʼ</dayPeriod>
+							<dayPeriod type="pm">EW</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">EQʼ</dayPeriod>
+							<dayPeriod type="pm">EW</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">EQʼ</dayPeriod>
+							<dayPeriod type="pm">EW</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">Majiʼ Kiyoʼla li Qaawaʼ Jesus</era>
+						<era type="0" alt="variant">Najter Qʼe Kutan</era>
+						<era type="1">Chirix li xYoʼlajik li Qaawaʼ Jesus</era>
+						<era type="1" alt="variant">Qakutanil</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">MYQ</era>
+						<era type="0" alt="variant">NQK</era>
+						<era type="1">YQJ</era>
+						<era type="1" alt="variant">QK</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0">MYQ</era>
+						<era type="0" alt="variant">NQK</era>
+						<era type="1">YQJ</era>
+						<era type="1" alt="variant">QK</era>
+					</eraNarrow>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d, MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d, MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d, MMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
+						<dateFormatItem id="EBh">h B E</dateFormatItem>
+						<dateFormatItem id="EBhm">h:mm B E</dateFormatItem>
+						<dateFormatItem id="EBhms">h:mm:ss B E</dateFormatItem>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Eh">h a E</dateFormatItem>
+						<dateFormatItem id="Ehm">h:mm a E</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d, MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d, MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d MMMM y G</dateFormatItem>
+						<dateFormatItem id="Md">dd-MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">d MMM, E</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">W 'xamaan' 're' MMMM</dateFormatItem>
+						<dateFormatItem id="yM">MM-y</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM-y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d, MMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d, MMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">w 'xamaan' 're' Y</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{1} – {0}</intervalFormatFallback>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">MM-y G – MM-y G</greatestDifference>
+							<greatestDifference id="M">MM-y G – MM-y G</greatestDifference>
+							<greatestDifference id="y">MM-y G – MM-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d-MM-y – d-MM-y G</greatestDifference>
+							<greatestDifference id="G">d/M/y G – d/M/y G</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="G">E, d/M/y G – E, d/M/y G</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d MMM – d, y G</greatestDifference>
+							<greatestDifference id="G">d MMM, y G – d MMM, y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM, y G</greatestDifference>
+							<greatestDifference id="y">d MMM, y – d MMM, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM, y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM, y G – E, d MMM, y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM, y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM, y – E, d MMM, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">MM-y – MM-y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d – d MMM, y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM, y</greatestDifference>
+							<greatestDifference id="y">d MMM, y – d MMM, y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM, y</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM, y</greatestDifference>
+							<greatestDifference id="y">E, d MMM, y – E, d MMM, y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="era">
+				<displayName>xqʼehil</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>xqʼehil</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>xqʼehil</displayName>
+			</field>
+			<field type="year">
+				<displayName>chihabʼ</displayName>
+				<relative type="-1">Junhabʼer</relative>
+				<relative type="0">li chihabʼ aʼin</relative>
+				<relative type="1">li chihabʼ chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} chihabʼ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} chihabʼ chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-short">
+				<displayName>ch.</displayName>
+				<relative type="-1">jun ch chaq</relative>
+				<relative type="0">li ch aʼin</relative>
+				<relative type="1">li ch chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} ch</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ch chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<displayName>ch</displayName>
+				<relative type="-1">jun hbʼ</relative>
+				<relative type="0">li habʼ aʼin</relative>
+				<relative type="1">li habʼ chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} habʼ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} habʼ chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<displayName>raqal</displayName>
+				<relative type="-1">jun xraqalil li chihabʼ chaq</relative>
+				<relative type="0">xraqalil li chihabʼ aʼin</relative>
+				<relative type="1">xraqalil li chihabʼ chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} xraqalil li chihabʼ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} xraqalil li chihabʼ chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<displayName>rq.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} RCH</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} RCH</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>rq</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} rch</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} rch</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month">
+				<displayName>po</displayName>
+				<relative type="-1">jun po chaq</relative>
+				<relative type="0">li po aʼin</relative>
+				<relative type="1">li po chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} po</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">li {0} po chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<displayName>po.</displayName>
+				<relative type="-1">po xnumeʼ</relative>
+				<relative type="0">po aʼin</relative>
+				<relative type="1">po chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ li {0} po</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} po chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<displayName>p</displayName>
+				<relative type="-1">li p. xnumeʼ</relative>
+				<relative type="0">li p. aʼin</relative>
+				<relative type="1">li p. chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} p.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} p. chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week">
+				<displayName>xamaan</displayName>
+				<relative type="-1">Jun xamaan chaq</relative>
+				<relative type="0">li xamaan aʼin</relative>
+				<relative type="1">li xamaan chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} xamaan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} xamaan chaq</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>Li xamaan re {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName>xm.</displayName>
+				<relative type="-1">Jun XN chaq</relative>
+				<relative type="0">li XN aʼin</relative>
+				<relative type="1">li XN chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} XN</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} XN chaq</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>li {0} XN re</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName>xm</displayName>
+				<relative type="-1">Jun X chaq</relative>
+				<relative type="0">li X aʼin</relative>
+				<relative type="1">li X chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} X</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} X chaq</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>li {0} X re</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>xamaan re po</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>xm. re po.</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>xm re po</displayName>
+			</field>
+			<field type="day">
+				<displayName>kutan</displayName>
+				<relative type="-1">ewer</relative>
+				<relative type="0">anaqwan</relative>
+				<relative type="1">hulaj</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} kutan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} kutan chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
+				<displayName>kutan</displayName>
+				<relative type="-1">ewer</relative>
+				<relative type="0">li kutan aʼin</relative>
+				<relative type="1">hulaj</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} k</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} k chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<displayName>kutan</displayName>
+				<relative type="-1">ewer</relative>
+				<relative type="0">anaqwan</relative>
+				<relative type="1">hulaj</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} k</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} k chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName>kutan re chihabʼ</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>kutan re ch.</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>kutan re ch.</displayName>
+			</field>
+			<field type="weekday">
+				<displayName>kutan re xamaan</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>kutan re xm.</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>kutan re xm.</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>xkutanil kʼanjel re li po</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>kkʼ. re po.</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>kkʼ re po.</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">Doʼkutan xnumeʼ</relative>
+				<relative type="0">Doʼkutan chal re</relative>
+				<relative type="1">Doʼkutan chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} Doʼkutan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Doʼkutan chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">DK xnumeʼ</relative>
+				<relative type="0">DK aʼin</relative>
+				<relative type="1">DK chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} DK</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} DK chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1">D xnumeʼ</relative>
+				<relative type="0">D aʼin</relative>
+				<relative type="1">D chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} D</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} D chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1">Luʼkutan xnumeʼ</relative>
+				<relative type="0">Luʼkutan aʼin</relative>
+				<relative type="1">Luʼkutan chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} Luʼkutan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Luʼkutan chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1">LK xnumeʼ</relative>
+				<relative type="0">LK aʼin</relative>
+				<relative type="1">LK chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} LK</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} LK</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">L xnumeʼ</relative>
+				<relative type="0">L aʼin</relative>
+				<relative type="1">L chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} L</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} L chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1">Markutan xnumeʼ</relative>
+				<relative type="0">Markutan aʼin</relative>
+				<relative type="1">Markutan chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} Markutan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Markutan</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">MK xnumeʼ</relative>
+				<relative type="0">MK aʼin</relative>
+				<relative type="1">MK chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} MK</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} MK chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1">M xnumeʼ</relative>
+				<relative type="0">M aʼin</relative>
+				<relative type="1">M chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} M</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} M chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">Merkutan xnumeʼ</relative>
+				<relative type="0">Merkutan aʼin</relative>
+				<relative type="1">Merkutan chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} Merkutan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Merkutan chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1">MRK xnumeʼ</relative>
+				<relative type="0">MRK aʼin</relative>
+				<relative type="1">MRK chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} MRK</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} MRK chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">MR xnumeʼ</relative>
+				<relative type="0">MR aʼin</relative>
+				<relative type="1">MR chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} MR</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} MR chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">Jueʼkutan xnumeʼ</relative>
+				<relative type="0">Jueʼkutan aʼin</relative>
+				<relative type="1">Jueʼkutan chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} Jueʼkutan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Jueʼkutan chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">JK xnumeʼ</relative>
+				<relative type="0">JK aʼin</relative>
+				<relative type="1">JK chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} JK</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} JK chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1">J xnumeʼ</relative>
+				<relative type="0">J aʼin</relative>
+				<relative type="1">J chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} J</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} J chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1">Vierkutan xnumeʼ</relative>
+				<relative type="0">Vierkutan aʼin</relative>
+				<relative type="1">Vierkutan chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} Vierkutan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Vierkutan chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">VK xnumeʼ</relative>
+				<relative type="0">VK aʼin</relative>
+				<relative type="1">VK chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} VK</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} VK chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1">V xnumeʼ</relative>
+				<relative type="0">V aʼin</relative>
+				<relative type="1">V chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} V</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} V chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1">Sabʼkutan xnumeʼ</relative>
+				<relative type="0">Sabʼkutan aʼin</relative>
+				<relative type="1">Sabʼkutan chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} Sabʼkutan</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Sabʼkutan chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">SK xnumeʼ</relative>
+				<relative type="0">SK aʼin</relative>
+				<relative type="1">SK chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} SK</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} SK chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1">S xnumeʼ</relative>
+				<relative type="0">S aʼin</relative>
+				<relative type="1">S chal re</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} S</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} S chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>E/EW</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>E/EW</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>E/EW</displayName>
+			</field>
+			<field type="hour">
+				<displayName>hoor</displayName>
+				<relative type="0">li honal aʼin</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} hoor</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} hoor chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-short">
+				<displayName>hr.</displayName>
+				<relative type="0">li honal aʼin</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} h</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} h chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<displayName>hr</displayName>
+				<relative type="0">saʼ li honal aʼin</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} h</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} h chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute">
+				<displayName>kʼasal</displayName>
+				<relative type="0">saʼ li kʼasal aʼin</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} kʼasal</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} kʼasal chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<displayName>kʼas.</displayName>
+				<relative type="0">saʼ li kʼasal aʼin</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} kʼ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} kʼ chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<displayName>kʼas</displayName>
+				<relative type="0">saʼ li kʼasal aʼin</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} kʼ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} kʼ chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second">
+				<displayName>kokʼ kʼas</displayName>
+				<relative type="0">anaqwan anaqwan</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} kokʼ kʼasal</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} kokʼ kʼasal chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<displayName>kkʼ.</displayName>
+				<relative type="0">anaqw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} kkʼ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} kkʼ chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<displayName>kkʼ</displayName>
+				<relative type="0">anaqw</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">saʼ {0} kkʼ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} kkʼ chaq</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="zone">
+				<displayName>xnaʼaj hoonal</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>naʼajej</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>naʼajej</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat>{0} Xhoonal</regionFormat>
+			<regionFormat type="daylight">{0} Xhoonal Saqʼe</regionFormat>
+			<regionFormat type="standard">{0} Li Hoonal</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Xhoonal li Komonil Ruchichʼochʼ</standard>
+				</long>
+			</zone>
+			<metazone type="GMT">
+				<long>
+					<standard>Xhoonal Greenwich</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
 	</dates>
+	<numbers>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="other">0 mil</pattern>
+					<pattern type="10000" count="other">00 mil</pattern>
+					<pattern type="100000" count="other">000 mil</pattern>
+					<pattern type="1000000" count="other">0 millones</pattern>
+					<pattern type="10000000" count="other">00 millones</pattern>
+					<pattern type="100000000" count="other">000 millones</pattern>
+					<pattern type="1000000000" count="other">0 mil de millones</pattern>
+					<pattern type="10000000000" count="other">00 mil de millones</pattern>
+					<pattern type="100000000000" count="other">000 mil de millones</pattern>
+					<pattern type="1000000000000" count="other">0 trillones</pattern>
+					<pattern type="10000000000000" count="other">00 trillones</pattern>
+					<pattern type="100000000000000" count="other">000 trillones</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" count="other">0M</pattern>
+					<pattern type="10000" count="other">00M</pattern>
+					<pattern type="100000" count="other">000M</pattern>
+					<pattern type="1000000" count="other">0MM</pattern>
+					<pattern type="10000000" count="other">00MM</pattern>
+					<pattern type="100000000" count="other">000MM</pattern>
+					<pattern type="1000000000" count="other">0M'.'M'.'</pattern>
+					<pattern type="10000000000" count="other">00M'.'M'.'</pattern>
+					<pattern type="100000000000" count="other">000M'.'M'.'</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="other">¤ 0M</pattern>
+					<pattern type="10000" count="other">¤ 00M</pattern>
+					<pattern type="100000" count="other">¤ 000M</pattern>
+					<pattern type="1000000" count="other">¤ 0MM</pattern>
+					<pattern type="10000000" count="other">¤ 00MM</pattern>
+					<pattern type="100000000" count="other">¤ 000MM</pattern>
+					<pattern type="1000000000" count="other">¤0 M'.'M'.'</pattern>
+					<pattern type="10000000000" count="other">¤00 M'.'M'.'</pattern>
+					<pattern type="100000000000" count="other">¤000 M'.'M'.'</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="ANG">
+				<displayName>GAN</displayName>
+				<displayName count="other">GAN</displayName>
+				<symbol draft="contributed">GAN</symbol>
+			</currency>
+			<currency type="AWG">
+				<displayName>GAW</displayName>
+				<displayName count="other">GAW</displayName>
+				<symbol draft="contributed">GAW</symbol>
+			</currency>
+			<currency type="BBD">
+				<displayName>DBB</displayName>
+				<displayName count="other">DBB</displayName>
+				<symbol draft="contributed">DBB</symbol>
+			</currency>
+			<currency type="BMD">
+				<displayName>DBM</displayName>
+				<displayName count="other">DBM</displayName>
+				<symbol draft="contributed">DBM</symbol>
+			</currency>
+			<currency type="BSD">
+				<displayName>DBS</displayName>
+				<displayName count="other">DBS</displayName>
+				<symbol draft="contributed">DBS</symbol>
+			</currency>
+			<currency type="BZD">
+				<displayName>DBZ</displayName>
+				<displayName count="other">DBZ</displayName>
+				<symbol draft="contributed">DBZ</symbol>
+			</currency>
+			<currency type="CAD">
+				<displayName>DCA</displayName>
+				<displayName count="other">DCA</displayName>
+				<symbol draft="contributed">$CA</symbol>
+			</currency>
+			<currency type="CRC">
+				<displayName>Xtuminal Kosta Rika</displayName>
+				<displayName count="other">Xtuminal Kosta Rica</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName>Xtuminal Kubʼa</displayName>
+				<displayName count="other">Xtuminal Kubʼa</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName>PCU</displayName>
+				<displayName count="other">PCU</displayName>
+				<symbol draft="contributed">PCU</symbol>
+			</currency>
+			<currency type="DOP">
+				<displayName>PDO</displayName>
+				<displayName count="other">PDO</displayName>
+				<symbol draft="contributed">PDO</symbol>
+			</currency>
+			<currency type="GTQ">
+				<displayName>GTQQ</displayName>
+				<displayName count="other">QGT</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName>LHN</displayName>
+				<displayName count="other">LHN</displayName>
+				<symbol draft="contributed">LHN</symbol>
+			</currency>
+			<currency type="HTG">
+				<displayName>GHT</displayName>
+				<displayName count="other">GHT</displayName>
+				<symbol draft="contributed">GHT</symbol>
+			</currency>
+			<currency type="JMD">
+				<displayName>DJM</displayName>
+				<displayName count="other">DJM</displayName>
+				<symbol draft="contributed">DJM</symbol>
+			</currency>
+			<currency type="KYD">
+				<displayName>DKY</displayName>
+				<displayName count="other">DKY</displayName>
+				<symbol draft="contributed">DKY</symbol>
+			</currency>
+			<currency type="MXN">
+				<displayName>PMX</displayName>
+				<displayName count="other">PMX</displayName>
+				<symbol draft="contributed">$MX</symbol>
+			</currency>
+			<currency type="NIO">
+				<displayName>CNI</displayName>
+				<displayName count="other">CNI</displayName>
+				<symbol draft="contributed">CNI</symbol>
+				<symbol alt="narrow" draft="contributed">$C</symbol>
+			</currency>
+			<currency type="PAB">
+				<displayName>BPA</displayName>
+				<displayName count="other">BPA</displayName>
+				<symbol draft="contributed">BPA</symbol>
+			</currency>
+			<currency type="TTD">
+				<displayName>DTT</displayName>
+				<displayName count="other">DTT</displayName>
+				<symbol draft="contributed">DTT</symbol>
+			</currency>
+			<currency type="USD">
+				<displayName>DEEUU</displayName>
+				<displayName count="other">DEEUU</displayName>
+				<symbol draft="contributed">$</symbol>
+			</currency>
+			<currency type="XCD">
+				<displayName>DXC</displayName>
+				<displayName count="other">DXC</displayName>
+				<symbol draft="contributed">$EC</symbol>
+			</currency>
+			<currency type="XCG">
+				<displayName>GXC</displayName>
+				<displayName count="other">GXC</displayName>
+				<symbol draft="contributed">gC.</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="duration-decade">
+				<displayName>lajeeʼhabʼ</displayName>
+				<unitPattern count="other">{0} lajee'hab'</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>chihabʼebʼ</displayName>
+				<unitPattern count="other">{0} chihab'eb'</unitPattern>
+				<perUnitPattern>{0} sut chi chihabʼ</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>rch</displayName>
+				<unitPattern count="other">{0}/chb'</unitPattern>
+				<perUnitPattern>{0}/rch</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>pohebʼ</displayName>
+				<perUnitPattern>{0} sut chi po</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>kutanebʼ</displayName>
+				<unitPattern count="other">{0} kutaneb'</unitPattern>
+				<perUnitPattern>{0} sut chi kutan</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>hoorebʼ</displayName>
+				<unitPattern count="other">{0} /hb'</unitPattern>
+				<perUnitPattern>{0} sut chi hoor</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>kʼasalebʼ</displayName>
+				<unitPattern count="other">{0} k'asaleb'</unitPattern>
+				<perUnitPattern>{0}/ sut chi kʼasal</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>kokʼ kʼasalebʼ</displayName>
+				<unitPattern count="other">{0} kok' k'asaleb'</unitPattern>
+				<perUnitPattern>{0} sut chi kokʼ kʼasal</perUnitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>qʼoqyin</displayName>
+				<unitPattern count="other">{0} q'oqyineb'</unitPattern>
+				<perUnitPattern>{0} sut chi qʼoqyin</perUnitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName>Xchʼool li ruchichʼochʼ</displayName>
+				<coordinateUnitPattern type="east">{0} relebʼaal li saqʼe</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} xnim uqʼ li saqʼe</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} Xtzʼe uqʼ li saqʼe</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} rokebʼaal li saqʼe</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="duration-decade">
+				<displayName>lajeeʼ</displayName>
+				<unitPattern count="other">{0} lajee'</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>chihabʼebʼ</displayName>
+				<unitPattern count="other">{0} chb'</unitPattern>
+				<perUnitPattern>{0}/ch</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>rch</displayName>
+				<unitPattern count="other">{0} chb'eb'</unitPattern>
+				<perUnitPattern>{0}/chbʼ</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>pohebʼ</displayName>
+			</unit>
+			<unit type="duration-day">
+				<displayName>kutanebʼ</displayName>
+				<unitPattern count="other">{0} kutaneb'</unitPattern>
+				<perUnitPattern>{0}/kutan</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>hoorebʼ</displayName>
+				<unitPattern count="other">{0} hr</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>kʼasalbʼ</displayName>
+				<unitPattern count="other">{0} k'aslb'</unitPattern>
+				<perUnitPattern>{0}/kʼas</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>kkʼsbʼ</displayName>
+				<unitPattern count="other">{0} kk'sb'</unitPattern>
+				<perUnitPattern>{0}/kkʼs</perUnitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>qʼoqyinebʼ</displayName>
+				<unitPattern count="other">{0} q'oqyineb'</unitPattern>
+				<perUnitPattern>{0}/qʼoqyin</perUnitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName>chʼool naʼajej</displayName>
+				<coordinateUnitPattern type="east">{0} ES</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} NU</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} Tzʼ</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} OS</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="duration-decade">
+				<displayName>lajeeʼ</displayName>
+				<unitPattern count="other">{0} lajee'</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ch</displayName>
+				<unitPattern count="other">{0} ch</unitPattern>
+				<perUnitPattern>{0}/ch</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>rch</displayName>
+				<unitPattern count="other">{0} chb'</unitPattern>
+				<perUnitPattern>{0}/ch</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>po</displayName>
+			</unit>
+			<unit type="duration-day">
+				<displayName>kutan</displayName>
+				<unitPattern count="other">{0}k</unitPattern>
+				<perUnitPattern>{0}/kutan</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>hoor</displayName>
+				<unitPattern count="other">{0}h</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>kʼasal</displayName>
+				<unitPattern count="other">{0} k'</unitPattern>
+				<perUnitPattern>{0}/kʼas</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>kkʼs</displayName>
+				<unitPattern count="other">{0} kk'sb'</unitPattern>
+				<perUnitPattern>{0}/kkʼs</perUnitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>qʼoqyinebʼ</displayName>
+				<unitPattern count="other">{0}q'oqyineb'</unitPattern>
+				<perUnitPattern>{0}/qʼoqyin</perUnitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName>chʼool naʼajej</displayName>
+				<coordinateUnitPattern type="east">{0} ES</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} NU</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} Tzʼ</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} OS</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end">{0}, ut {1}</listPatternPart>
+			<listPatternPart type="2">{0} ut {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end">{0}, maraj {1}</listPatternPart>
+			<listPatternPart type="2">{0} maraj {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr>jokan:j</yesstr>
+			<nostr>inkʼaʼ:i</nostr>
+		</messages>
+	</posix>
 </ldml>

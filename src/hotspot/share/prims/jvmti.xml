@@ -3549,6 +3549,13 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         describe the kind of reference
         being reported.
 
+        <p/>
+        <b>Implementation Note:</b>
+        In the HotSpot VM implementation, a reference from a class loader to each
+        non-hidden class defined by the class loader is reported with reference kind
+        <datalink id="JVMTI_HEAP_REFERENCE_OTHER"/>.
+        <p/>
+
         <constants id="jvmtiHeapReferenceKind"
                    label="Heap Reference Enumeration"
                    kind="enum"
@@ -3609,7 +3616,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
             Heap root reference: Thread.
           </constant>
           <constant id="JVMTI_HEAP_REFERENCE_OTHER" num="27">
-            Heap root reference: other heap root reference.
+            Other reference from an object to another object, or other heap root reference.
           </constant>
         </constants>
 
@@ -4374,12 +4381,15 @@ class C2 extends C1 implements I2 {
             Points to the tag of the referrer object, or
             points to the zero if the referrer
             object is not tagged.
-            Null if the referrer in not an object (that is,
+            Null if the referrer is not an object (that is,
             this callback is reporting a heap root).
             To set the tag value to be associated with the referrer object
             the agent sets the <code>jlong</code> pointed to by the parameter.
             If this callback is reporting a reference from an object to itself,
             <code>referrer_tag_ptr == tag_ptr</code>.
+            For <datalink id="JVMTI_HEAP_REFERENCE_OTHER"/>, this parameter can be
+            null or non-null, depending on whether the callback is reporting a heap
+            root reference or a reference from an object.
           </description>
         </param>
         <param id="length">
@@ -10316,10 +10326,10 @@ myInit() {
         <synopsis>Set Extension Event Callback</synopsis>
 
         <description>
-          Sets the callback function for an extension event and
-          enables the event. Or, if the callback is null, disables
-          the event.  Note that unlike standard events, setting
-          the callback and enabling the event are a single operation.
+          Sets the callback function for an extension event.
+          If <paramlink id="callback"/> is null the callback is removed.
+          Use <functionlink id="SetEventNotificationMode"/> with <paramlink id="extension_event_index"/>
+          to enable or disable notification.
         </description>
         <origin>new</origin>
         <capabilities>
@@ -10338,12 +10348,12 @@ myInit() {
           <param id="callback">
             <ptrtype>
               <struct>jvmtiExtensionEvent</struct>
-              <nullok>disable the event</nullok>
+              <nullok>remove the callback</nullok>
             </ptrtype>
             <description>
+              If <paramlink id="callback"/> is null the callback is removed.
               If <code>callback</code> is non-null,
-              set <code>callback</code> to be the event callback function
-              and enable the event.
+              set <code>callback</code> to be the event callback function.
             </description>
           </param>
         </parameters>
@@ -14177,7 +14187,7 @@ myInit() {
       every 512KB).
       <p/>
       If another sampling interval is required, the user can call
-      <functionlink id="SetHeapSamplingInterval"></functionlink> with a strictly positive integer value,
+      <functionlink id="SetHeapSamplingInterval"></functionlink> with a non-negative integer value,
       representing the new sampling interval.
       <p/>
       This event is sent once the sampled allocation has been performed.  It provides the object, stack trace

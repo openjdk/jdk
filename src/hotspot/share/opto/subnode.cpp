@@ -1144,9 +1144,19 @@ Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* uncast_in1 = in(1)->uncast();
   Node* uncast_in2 = in(2)->uncast();
   if (uncast_in1->is_ValueType() && phase->type(uncast_in2)->is_zero_type()) {
-    // Null checking a scalarized but nullable value type. Check the null marker
-    // input instead of the oop input to avoid keeping buffer allocations alive.
-    return new CmpINode(uncast_in1->as_ValueType()->get_null_marker(), phase->intcon(0));
+    Node* null_marker = uncast_in1->as_ValueType()->get_null_marker();
+    const TypeInt* null_marker_type = phase->type(null_marker)->isa_int();
+    bool null_marker_is_known = null_marker_type != nullptr && null_marker_type->is_con();
+    if (can_reshape || null_marker_is_known) {
+      // Null checking a scalarized but nullable value type. Check the null marker
+      // input instead of the oop input to avoid keeping buffer allocations alive.
+      return new CmpINode(uncast_in1->as_ValueType()->get_null_marker(), phase->intcon(0));
+    } else {
+      // Keep the CmpP during parsing so that the parser can recognize the compare-against-null
+      // pattern
+      phase->record_for_igvn(this);
+      return nullptr;
+    }
   }
   if (uncast_in1->is_ValueType() || uncast_in2->is_ValueType()) {
     // In C2 IR, CmpP on value objects is a pointer comparison, not a value comparison.
@@ -2222,16 +2232,32 @@ const Type* ReverseLNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-Node* ReverseINode::Identity(PhaseGVN* phase) {
-  if (in(1)->Opcode() == Op_ReverseI) {
-    return in(1)->in(1);
+static Node* simplify_involution(PhaseGVN* phase, Node* involution) {
+  if (involution->in(1)->Opcode() == involution->Opcode()) {
+    Node* original = involution->in(1)->in(1);
+    const TypeInt* type = phase->type(original)->isa_int();
+    // Operations on sub-int types might not be "real" involutions for values outside their type range,
+    // for example, a ReverseBytesS node with an input larger than short.
+    // Make sure not to drop potential truncations.
+    if (type == nullptr || involution->bottom_type()->is_int()->contains(type)) {
+      return original;
+    }
   }
-  return this;
+  return involution;
+}
+
+Node* NegNode::Identity(PhaseGVN* phase) {
+  return simplify_involution(phase, this);
+}
+
+Node* ReverseBytesNode::Identity(PhaseGVN* phase) {
+  return simplify_involution(phase, this);
+}
+
+Node* ReverseINode::Identity(PhaseGVN* phase) {
+  return simplify_involution(phase, this);
 }
 
 Node* ReverseLNode::Identity(PhaseGVN* phase) {
-  if (in(1)->Opcode() == Op_ReverseL) {
-    return in(1)->in(1);
-  }
-  return this;
+  return simplify_involution(phase, this);
 }

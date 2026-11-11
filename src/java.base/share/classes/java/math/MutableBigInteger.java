@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,24 +384,6 @@ class MutableBigInteger {
     }
 
     /**
-     * Return the int in use in this MutableBigInteger at the specified
-     * index. This method is not used because it is not inlined on all
-     * platforms.
-     */
-    private final int getInt(int index) {
-        return value[offset+index];
-    }
-
-    /**
-     * Return a long which is equal to the unsigned value of the int in
-     * use in this MutableBigInteger at the specified index. This method is
-     * not used because it is not inlined on all platforms.
-     */
-    private final long getLong(int index) {
-        return value[offset+index] & LONG_MASK;
-    }
-
-    /**
      * Ensure that the MutableBigInteger is in normal form, specifically
      * making sure that there are no leading zeros, and that if the
      * magnitude is zero, then intLen is zero.
@@ -424,18 +406,6 @@ class MutableBigInteger {
         int numZeros = index - offset;
         intLen -= numZeros;
         offset = (intLen == 0 ?  0 : offset+numZeros);
-    }
-
-    /**
-     * If this MutableBigInteger cannot hold len words, increase the size
-     * of the value array to len words.
-     */
-    private final void ensureCapacity(int len) {
-        if (value.length < len) {
-            value = new int[len];
-            offset = 0;
-            intLen = len;
-        }
     }
 
     /**

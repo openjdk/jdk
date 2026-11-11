@@ -35,6 +35,20 @@
  * @run main PingPong LTQ 500000
  */
 
+/*
+ * @test id=sq-no-lse
+ * @summary Stress test virtual threads with a SynchronousQueue without LSE
+ * @requires os.arch == "aarch64" & vm.debug != true
+ * @run main/othervm -XX:-UseLSE PingPong SQ 500000
+ */
+
+/*
+ * @test id=ltq-no-lse
+ * @summary Stress test virtual threads with a LinkedTransferQueue without LSE
+ * @requires os.arch == "aarch64" & vm.debug != true
+ * @run main/othervm -XX:-UseLSE PingPong LTQ 500000
+ */
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.SynchronousQueue;

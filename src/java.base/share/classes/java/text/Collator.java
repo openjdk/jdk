@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ public abstract class Collator
      * set, both Unicode canonical variants and Unicode compatibility variants
      * will be decomposed for collation.  This causes not only accented
      * characters to be collated, but also characters that have special formats
-     * to be collated with their norminal form. For example, the half-width and
+     * to be collated with their nominal form. For example, the half-width and
      * full-width ASCII and Katakana characters are then collated together.
      * FULL_DECOMPOSITION is the most complete and therefore the slowest
      * decomposition mode.
@@ -280,8 +280,8 @@ public abstract class Collator
      * may return a {@code Collator} instance with the Swedish traditional sorting, which
      * gives 'v' and 'w' the same sorting order, while the {@code Collator} instance
      * for the Swedish locale without "co" identifier distinguishes 'v' and 'w'.
-     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language
-     *     (LDML)
+     * @spec https://www.unicode.org/reports/tr35 Unicode Common Locale Data {@literal &}
+     *     Rules (CLDR)
      * @param desiredLocale the desired locale.
      * @return the Collator for the desired locale.
      * @see java.util.Locale

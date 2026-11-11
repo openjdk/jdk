@@ -848,34 +848,16 @@ void ShenandoahOldHeuristics::adjust_old_garbage_threshold() {
   }
 }
 
-void ShenandoahOldHeuristics::record_success_concurrent() {
+void ShenandoahOldHeuristics::record_concurrent_completion() {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_success_concurrent();
+  this->ShenandoahHeuristics::record_concurrent_completion();
 }
 
-void ShenandoahOldHeuristics::record_degenerated(bool is_generational_global) {
+void ShenandoahOldHeuristics::record_full_gc(GCCause::Cause cause) {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_degenerated(is_generational_global);
-}
-
-void ShenandoahOldHeuristics::record_success_full() {
-  // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
-  clear_triggers();
-  this->ShenandoahHeuristics::record_success_full();
-}
-
-const char* ShenandoahOldHeuristics::name() {
-  return "Old";
-}
-
-bool ShenandoahOldHeuristics::is_diagnostic() {
-  return false;
-}
-
-bool ShenandoahOldHeuristics::is_experimental() {
-  return true;
+  this->ShenandoahHeuristics::record_full_gc(cause);
 }
 
 void ShenandoahOldHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
