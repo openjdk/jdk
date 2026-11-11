@@ -58,7 +58,11 @@ public:
   inline bool is_value() const { return _value_klass != nullptr; }
   inline bool is_flat() const { return _offset != 0; }
 
-  inline oop obj() const { return _obj; }
+  inline oop holder() const { return _obj; }
+  inline oop obj() const {
+    assert(!is_flat(), "flattened value does not have oop");
+    return _obj;
+  }
   inline int offset() const { return _offset; }
   inline ValueKlass* value_klass() const { return _value_klass; }
   inline OptionalFlatLayout optional_flat_layout() const { return _optional_flat_layout; }
