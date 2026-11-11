@@ -478,9 +478,9 @@ void AOTClassLocationConfig::dumptime_init(JavaThread* current) {
     vm_exit_during_initialization("AOTClassLocationConfig::dumptime_init_helper() failed unexpectedly");
   }
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_aot_cache()) {
     // The _max_used_index is usually updated by ClassLoader::record_result(). However,
-    // when dumping the final archive, the classes are loaded from their images in
+    // when dumping the AOT cache, the classes are loaded from their images in
     // the AOT config file, so we don't go through ClassLoader::record_result().
     dumptime_update_max_used_index(runtime()->_max_used_index); // Same value as recorded in the training run.
   }
@@ -1110,7 +1110,7 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
     const char* hint_msg = log_is_enabled(Info, class, path) ?
         "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
     if (RequireSharedSpaces && !PrintSharedArchiveAndExit) {
-      if (CDSConfig::is_dumping_final_static_archive()) {
+      if (CDSConfig::is_dumping_aot_cache()) {
         aot_log_error(aot)("class path and/or module path are not compatible with the "
                        "ones specified when the AOTConfiguration file was recorded%s", hint_msg);
         AOTMetaspace::unrecoverable_writing_error("Unable to use create AOT cache.");

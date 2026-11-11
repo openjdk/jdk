@@ -2700,6 +2700,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
+  // If changed SubI inputs, check AndI users for AndI(SubI(0, x), 1) -> AndI(x, 1) opportunity.
+  if (use_op == Op_SubI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_AndI;
+    });
+  }
   // If changed AndI/AndL inputs, check RShift/URShift users for "(x & mask) >> shift" optimization opportunity
   // LShiftNode::IdealIL optimizes patterns like: LShift(And(RShift(x, c), Y), c)
   // Additionally, check for nested And reassociation:
@@ -2946,7 +2952,8 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
 
   // f(f(x)) => x for f = Reverse / ReverseBytes
-  if (use_op == Op_ReverseV || use_op == Op_ReverseBytesV) {
+  if (use_op == Op_ReverseV || use_op == Op_ReverseBytesV ||
+      use_op == Op_ReverseBytesS || use_op == Op_ReverseBytesUS) {
     add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
       return u->Opcode() == use_op;
     });
