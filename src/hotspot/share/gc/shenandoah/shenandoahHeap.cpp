@@ -861,8 +861,8 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
 
   size_t new_size;
   if (thread->is_Worker_thread()) {
-    // GC workers perform the bulk of the evacuation work, so give them the largest GCLABs available.
-    new_size = PLAB::max_size();
+    new_size = clamp((_free_set->get_young_evac_reserve() / workers()->active_workers()) >> LogHeapWordSize,
+                     PLAB::min_size(), PLAB::max_size());
   } else {
     assert(thread->is_Java_thread(), "Must be java thread");
     // Figure out size of new GCLAB, looking back at heuristics. Expand aggressively.

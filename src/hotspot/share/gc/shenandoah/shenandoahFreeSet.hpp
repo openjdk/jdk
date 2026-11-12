@@ -516,6 +516,8 @@ private:
   size_t _total_young_regions;
   size_t _total_global_regions;
 
+  size_t _young_evac_reserve;
+
   // If only affiliation changes are promote-in-place and generation sizes have not changed,
   //    we have AffiliatedChangesAreGlobalNeutral
   // If only affiliation changes are non-empty regions moved from Mutator to Collector and young size has not changed,
@@ -809,6 +811,14 @@ public:
 
   inline size_t old_collector_available_locked() const {
     return _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector);
+  }
+
+  inline void set_young_evac_reserve() {
+    _young_evac_reserve = collector_available_locked();
+  }
+
+  inline size_t get_young_evac_reserve() const {
+    return _young_evac_reserve;
   }
 
   inline size_t total_humongous_waste() const      { return _total_humongous_waste; }
