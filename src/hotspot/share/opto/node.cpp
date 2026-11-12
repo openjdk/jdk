@@ -1313,6 +1313,11 @@ bool Node::has_special_unique_user() const {
   } else if ((this->is_Load() || this->is_DecodeN() || this->is_Phi() || this->is_Con()) && n->Opcode() == Op_MemBarAcquire) {
     // Condition for removing an unused LoadNode or DecodeNNode from the MemBarAcquire precedence input
     return true;
+  } else if (n->Opcode() == Op_MemBarAcquire && !n->as_MemBar()->trailing_load_store() &&
+             n->req() > MemBarNode::Precedent && n->in(MemBarNode::Precedent) == this) {
+    // Condition for removing unused nodes from the MemBarAcquire precedence input as long as n
+    // is not a load-store barrier.
+    return true;
   } else if (this->is_Load() && n->is_Move()) {
     // Condition for MoveX2Y (LoadX mem) => LoadY mem
     return true;

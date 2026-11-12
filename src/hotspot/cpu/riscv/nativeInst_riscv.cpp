@@ -172,7 +172,7 @@ address NativeCall::stub_address() const {
     return nullptr;
   }
 
-  return trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
+  return address_stub_Relocation::get_stub_for(call_addr, code->as_nmethod());
 }
 
 bool NativeCall::is_at(address addr) {

@@ -11,4 +11,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="pt"/>
 		<territory type="GQ"/>
 	</identity>
+	<dates>
+		<timeZoneNames>
+			<metazone type="Azores">
+				<short>
+					<generic>∅∅∅</generic>
+					<standard>∅∅∅</standard>
+					<daylight>∅∅∅</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Central">
+				<short>
+					<generic>∅∅∅</generic>
+					<standard>∅∅∅</standard>
+					<daylight>∅∅∅</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<short>
+					<generic>∅∅∅</generic>
+					<standard>∅∅∅</standard>
+					<daylight>∅∅∅</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Western">
+				<short>
+					<generic>∅∅∅</generic>
+					<standard>∅∅∅</standard>
+					<daylight>∅∅∅</daylight>
+				</short>
+			</metazone>
+		</timeZoneNames>
+	</dates>
 </ldml>
