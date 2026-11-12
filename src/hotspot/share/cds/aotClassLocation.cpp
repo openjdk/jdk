@@ -50,6 +50,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+static char* _boot_classpath = nullptr;
+
 Array<ClassPathZipEntry*>* AOTClassLocationConfig::_dumptime_jar_files = nullptr;
 AOTClassLocationConfig* AOTClassLocationConfig::_dumptime_instance = nullptr;
 const AOTClassLocationConfig* AOTClassLocationConfig::_runtime_instance = nullptr;
@@ -108,7 +110,7 @@ class BootCpClassLocationStream : public ClassLocationStream {
 public:
   BootCpClassLocationStream() : ClassLocationStream() {
     // Arguments::get_boot_class_path() contains $JAVA_HOME/lib/modules, but we treat that separately
-    for (const char* bootcp = Arguments::get_boot_class_path(); *bootcp != '\0'; ++bootcp) {
+    for (const char* bootcp = _boot_classpath; *bootcp != '\0'; ++bootcp) {
       if (*bootcp == *os::path_separator()) {
         ++bootcp;
         add_paths_in_classpath(bootcp);
@@ -465,6 +467,13 @@ bool AOTClassLocation::check(const char* runtime_path, bool has_aot_linked_class
 
   log_info(class, path)("ok (file size and timestamp have not changed)");
   return true;
+}
+
+// Save a copy of the bootclasspath before it's (potentially) appended to by JVMTI.
+// As a result, we will exclude all classes loaded from the bootclasspath(s) of the
+// agent(s). Note that we also exclude all app classes loaded from the agent JARs.
+void AOTClassLocationConfig::init_boot_classpath() {
+  _boot_classpath = os::strdup_check_oom(Arguments::get_boot_class_path(), mtClassShared);
 }
 
 void AOTClassLocationConfig::dumptime_init(JavaThread* current) {
