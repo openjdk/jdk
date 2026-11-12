@@ -55,6 +55,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          (i.e., 200) results in all new connections to be closed after use
  *          when there are already 200 idle connections in the server's pool.
  *
+ * @comment This is a timing-sensitive test, avoid exotic configurations.
+ * @requires !vm.debug & vm.compMode == "Xmixed"
+ *
  * @library /test/lib
  * @modules jdk.httpserver/sun.net.httpserver:+open
  *
@@ -69,6 +72,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          negative value (-1 in this case) results in all connections to be
  *          closed after use.
  *
+ * @comment This is a timing-sensitive test, avoid exotic configurations.
+ * @requires !vm.debug & vm.compMode == "Xmixed"
+ *
  * @library /test/lib
  * @modules jdk.httpserver/sun.net.httpserver:+open
  *
@@ -82,6 +88,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @bug 8295785
  * @summary Tests that configuring `sun.net.httpserver.maxIdleConnections` to 0
  *          results in all connections to be closed after use.
+ *
+ * @comment This is a timing-sensitive test, avoid exotic configurations.
+ * @requires !vm.debug & vm.compMode == "Xmixed"
  *
  * @library /test/lib
  * @modules jdk.httpserver/sun.net.httpserver:+open
@@ -98,6 +107,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *          value greater than zero (3 in this case) results in all new
  *          connections to be closed after use when the provided capacity is
  *          reached.
+ *
+ * @comment This is a timing-sensitive test, avoid exotic configurations.
+ * @requires !vm.debug & vm.compMode == "Xmixed"
  *
  * @library /test/lib
  * @modules jdk.httpserver/sun.net.httpserver:+open

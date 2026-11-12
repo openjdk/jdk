@@ -54,6 +54,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @summary Verifies `HttpServer` behavior when
  *          `sun.net.httpserver.maxRspTime` is configured to 3 seconds.
  *
+ * @comment This is a timing-sensitive test, avoid exotic configurations.
+ * @requires !vm.debug & vm.compMode == "Xmixed"
+ *
  * @library /test/lib
  *
  * @comment `sun.net.httpserver.timerMillis` determines the frequency the

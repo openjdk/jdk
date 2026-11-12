@@ -35,6 +35,9 @@
  *          background task evicting idle connections, and it defaults to 10000
  *          milliseconds.
  *
+ * @comment This is a timing-sensitive test, avoid exotic configurations.
+ * @requires !vm.debug & vm.compMode == "Xmixed"
+ *
  * @library /test/lib
  * @build IdleIntervalPropertyTest
  *

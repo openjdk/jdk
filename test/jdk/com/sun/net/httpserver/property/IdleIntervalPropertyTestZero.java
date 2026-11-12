@@ -36,6 +36,9 @@
  *          defaults to 10000. We need to wait for at least `30+clockTick`
  *          seconds, that is, 40.
  *
+ * @comment This is a timing-sensitive test, avoid exotic configurations.
+ * @requires !vm.debug & vm.compMode == "Xmixed"
+ *
  * @library /test/lib
  * @build IdleIntervalPropertyTest
  *
