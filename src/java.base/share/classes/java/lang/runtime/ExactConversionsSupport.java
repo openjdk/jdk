@@ -64,9 +64,6 @@ package java.lang.runtime;
  *   floating-point type is considered exact.</li>
  * </ul>
  *
- * @jls primitive-types-in-patterns-instanceof-switch-5.7.1 Exact Testing Conversions
- * @jls primitive-types-in-patterns-instanceof-switch-5.7.2 Unconditionally Exact Testing Conversions
- * @jls primitive-types-in-patterns-instanceof-switch-15.20.2 The {@code instanceof} Operator
  *
  * @implNote Some exactness checks describe a test which can be redirected
  * safely through one of the existing methods. Those are omitted too (i.e.,

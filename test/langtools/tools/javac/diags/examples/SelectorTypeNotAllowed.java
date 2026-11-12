@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,12 @@
  * questions.
  */
 
-// key: compiler.misc.feature.primitive.patterns
-// key: compiler.warn.preview.feature.use.plural
-// as of Valhalla, j.l.Record is a preview class:
-// key: compiler.warn.preview.feature.use.classfile
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
+// key: compiler.err.selector.type.not.allowed
 
-class PrimitivePatternMatching {
-    boolean m(Object o) {
-        return o instanceof int s;
+public class SelectorTypeNotAllowed {
+    private void noLong(long sel) {
+        switch (sel) {
+            default -> {}
+        }
     }
 }

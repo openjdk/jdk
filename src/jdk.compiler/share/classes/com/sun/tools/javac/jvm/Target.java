@@ -254,11 +254,4 @@ public enum Target {
     public boolean nullCheckOuterThisByDefault() {
         return compareTo(JDK1_25) >= 0;
     }
-
-    /** Releases prior to JDK 23 don't allow primitive types as case labels in
-     *  SwitchBootstrap.typeSwitch
-     */
-    public boolean switchBootstrapOnlyAllowsReferenceTypesAsCaseLabels() {
-        return compareTo(Target.JDK1_23) < 0;
-    }
 }

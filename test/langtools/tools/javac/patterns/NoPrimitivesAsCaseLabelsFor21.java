@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 /**
  * @test
  * @bug 8352621
- * @summary Verify javac does not use primitive types in SwitchBootstraps.typeSwitch
- *          when compiling with target older than JDK 23
+ * @summary Verify javac uses only reference selectors and class labels in SwitchBootstraps.typeSwitch
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -40,6 +39,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.nio.file.Files;
@@ -95,7 +95,7 @@ public class NoPrimitivesAsCaseLabelsFor21 extends TestRunner {
 
         Files.createDirectories(classes);
 
-        for (String version : new String[] {"23", System.getProperty("java.specification.version")}) {
+        for (String version : new String[] {"21", "22", "23", System.getProperty("java.specification.version")}) {
             new JavacTask(tb)
                 .options("--release", version)
                 .outdir(classes)
@@ -104,29 +104,11 @@ public class NoPrimitivesAsCaseLabelsFor21 extends TestRunner {
                 .writeAll();
 
             Path testClassFile = classes.resolve("test").resolve("Test.class");
-            String primitivesInBoostrapArgsForNewer =
+            String primitiveBootstrapArguments =
                     findPrimitiveBootstrapArguments(testClassFile);
 
-            if (!primitivesInBoostrapArgsForNewer.contains("I-Ljava/lang/Class")) {
-                throw new AssertionError("Expected primitive types in switch bootstrap arguments: " + primitivesInBoostrapArgsForNewer);
-            }
-        }
-
-        for (String version : new String[] {"21", "22"}) {
-            new JavacTask(tb)
-                .options("--release", version)
-                .outdir(classes)
-                .files(tb.findJavaFiles(src))
-                .run()
-                .writeAll();
-
-            Path testClassFile = classes.resolve("test").resolve("Test.class");
-            String primitivesInBoostrapArgsForOlder =
-                    findPrimitiveBootstrapArguments(testClassFile);
-
-
-            if (!primitivesInBoostrapArgsForOlder.isEmpty()) {
-                throw new AssertionError("Unexpected primitive types in switch bootstrap arguments: " + primitivesInBoostrapArgsForOlder);
+            if (!primitiveBootstrapArguments.isEmpty()) {
+                throw new AssertionError("Unexpected primitive types in switch bootstrap arguments: " + primitiveBootstrapArguments);
             }
         }
     }
@@ -135,6 +117,14 @@ public class NoPrimitivesAsCaseLabelsFor21 extends TestRunner {
         AtomicBoolean hasTypeSwitchBootStrap = new AtomicBoolean();
         StringBuilder nonClassInTypeSwitchBootStrap = new StringBuilder();
         ClassModel testClassFileModel = ClassFile.of().parse(forFile);
+
+        for (var entry : testClassFileModel.constantPool()) {
+            if (entry instanceof InvokeDynamicEntry indy &&
+                isTypeSwitchBoostrap(indy.bootstrap().bootstrapMethod()) &&
+                indy.typeSymbol().parameterType(0).isPrimitive()) {
+                throw new AssertionError("Primitive typeSwitch selector: " + indy.typeSymbol());
+            }
+        }
 
         testClassFileModel.findAttribute(Attributes.bootstrapMethods())
                           .orElseThrow()
