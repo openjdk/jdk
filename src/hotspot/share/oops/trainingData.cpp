@@ -374,9 +374,9 @@ void KlassTrainingData::prepare(Visitor& visitor) {
     return;
   }
   visitor.visit(this);
-  for (int i = 0; i < comp_dep_count(); i++) {
-    CompileTrainingData* ctd = comp_dep(i);
-    visitor.visit_later(ctd);;
+  for (int i = 0; i < _comp_deps.length(); i++) {
+    CompileTrainingData* ctd = _comp_deps.at(i);
+    visitor.visit_later(ctd);
   }
   _comp_deps.prepare();
 }
@@ -412,8 +412,8 @@ void KlassTrainingData::merge(Visitor& visitor) {
     return;
   }
   visitor.visit(this);
-  for (int i = 0; i < comp_dep_count(); i++) {
-    CompileTrainingData* ctd = comp_dep(i);
+  for (int i = 0; i < _comp_deps.length(); i++) {
+    CompileTrainingData* ctd = _comp_deps.at(i);
     visitor.visit_later(ctd);
   }
 }
@@ -435,7 +435,8 @@ void MethodTrainingData::prepare(Visitor& visitor) {
   }
   visitor.visit(this);
   visitor.visit_later(klass());
-  if (has_holder()) {
+  // Assembly must retain the profile captured during recording.
+  if (need_data() && has_holder()) {
     _final_counters = holder()->method_counters();
     _final_profile  = holder()->method_data();
     assert(_final_profile == nullptr || _final_profile->method() == holder(), "");
@@ -583,15 +584,10 @@ void TrainingData::init_dumptime_table(TRAPS) {
       td->merge(merge_visitor);
     });
     _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
-    Visitor prepare_visitor(training_data_set()->size());
     training_data_set()->iterate([&](TrainingData* td) {
-      td->prepare(prepare_visitor);
       if (!td->is_CompileTrainingData()) {
         _dumptime_training_data_dictionary->append(td);
       }
-    });
-    prepare_visitor.finish([&](TrainingData* td) {
-      td->prepare(prepare_visitor);
     });
     TrainingDataLocker::snapshot();
   }
@@ -650,6 +646,10 @@ void TrainingData::cleanup_training_data() {
     visitor.finish([&](TrainingData* td) {
       td->cleanup(visitor);
     });
+    // Prune references only after all holders have been cleaned.
+    visitor.iterate_visited([](TrainingData* td) {
+      td->remove_invalid_references();
+    });
     // Throw away all elements with empty keys
     int j = 0;
     for (int i = 0; i < _dumptime_training_data_dictionary->length(); i++) {
@@ -663,6 +663,15 @@ void TrainingData::cleanup_training_data() {
       j++;
     }
     _dumptime_training_data_dictionary->trunc_to(j);
+
+    Visitor prepare_visitor(_dumptime_training_data_dictionary->length());
+    for (int i = 0; i < _dumptime_training_data_dictionary->length(); i++) {
+      TrainingData* td = _dumptime_training_data_dictionary->at(i).training_data();
+      td->prepare(prepare_visitor);
+    }
+    prepare_visitor.finish([&](TrainingData* td) {
+      td->prepare(prepare_visitor);
+    });
   }
 }
 
@@ -676,6 +685,10 @@ void TrainingData::cleanup_after_redefinition() {
     });
     visitor.finish([&](TrainingData* td) {
       td->cleanup(visitor);
+    });
+    // Prune references only after all holders have been cleaned.
+    visitor.iterate_visited([](TrainingData* td) {
+      td->remove_invalid_references();
     });
   }
 }
@@ -703,9 +716,16 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
     return;
   }
   visitor.visit(this);
+  visitor.visit_later(klass());
   if (has_holder()) {
     if (is_excluded(holder()->method_holder())) {
       log_debug(aot, training)("Cleanup MTD %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
+      // MethodCounters can be archived even when training data for their
+      // holder is excluded (for example, for a custom-loader class).
+      MethodCounters* counters = holder()->method_counters();
+      if (counters != nullptr) {
+        counters->clear_method_training_data();
+      }
       _final_profile = nullptr;
       _final_counters = nullptr;
       _holder = nullptr;
@@ -727,8 +747,8 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
 
 void KlassTrainingData::verify() {
   guarantee(!has_holder() || !is_excluded(holder()), "Bad holder");
-  for (int i = 0; i < comp_dep_count(); i++) {
-    CompileTrainingData* ctd = comp_dep(i);
+  for (int i = 0; i < _comp_deps.length(); i++) {
+    CompileTrainingData* ctd = _comp_deps.at(i);
     if (!ctd->_init_deps.contains(this)) {
       print_on(tty); tty->cr();
       ctd->print_on(tty); tty->cr();
@@ -745,8 +765,8 @@ void MethodTrainingData::verify(bool verify_dep_counter) {
 }
 
 void CompileTrainingData::verify(bool verify_dep_counter) {
-  for (int i = 0; i < init_dep_count(); i++) {
-    KlassTrainingData* ktd = init_dep(i);
+  for (int i = 0; i < _init_deps.length(); i++) {
+    KlassTrainingData* ktd = _init_deps.at(i);
     if (ktd->has_holder() && ktd->holder()->defined_by_other_loaders()) {
       LogStreamHandle(Info, training) log;
       if (log.is_enabled()) {
@@ -757,7 +777,7 @@ void CompileTrainingData::verify(bool verify_dep_counter) {
     }
     if (!ktd->_comp_deps.contains(this)) {
       print_on(tty); tty->cr();
-      ktd->print_on(tty); tty->print(" deps: %d", ktd->comp_dep_count()); tty->cr();
+      ktd->print_on(tty); tty->print(" deps: %d", ktd->_comp_deps.length()); tty->cr();
     }
     guarantee(ktd->_comp_deps.contains(this), "");
   }
@@ -781,6 +801,59 @@ void CompileTrainingData::cleanup(Visitor& visitor) {
   }
   visitor.visit(this);
   visitor.visit_later(method());
+  for (int i = 0; i < _init_deps.length(); i++) {
+    visitor.visit_later(_init_deps.at(i));
+  }
+  // CI record arguments are MethodTrainingData entries, which are cleanup roots.
+}
+
+void KlassTrainingData::remove_invalid_references() {
+  if (!is_valid()) {
+    _comp_deps.clear();
+    return;
+  }
+  int j = 0;
+  for (int i = 0; i < _comp_deps.length(); i++) {
+    CompileTrainingData* ctd = _comp_deps.at(i);
+    if (ctd->is_valid()) {
+      if (i != j) {
+        _comp_deps.at_put(j, ctd);
+      }
+      j++;
+    }
+  }
+  _comp_deps.trunc_to(j);
+}
+
+void MethodTrainingData::remove_invalid_references() {
+  for (int i = 0; i < CompLevel_count - 1; i++) {
+    for (int iteration = CURRENT; iteration <= NEXT; iteration++) {
+      CompileTrainingData*& ctd = _iterations[iteration]._last_toplevel_compiles[i];
+      if (ctd != nullptr && !ctd->is_valid()) {
+        ctd = nullptr;
+      }
+    }
+  }
+}
+
+void CompileTrainingData::remove_invalid_references() {
+  if (!is_valid()) {
+    _init_deps.clear();
+    _ci_records.clear();
+    return;
+  }
+  int j = 0;
+  for (int i = 0; i < _init_deps.length(); i++) {
+    KlassTrainingData* ktd = _init_deps.at(i);
+    if (ktd->is_valid()) {
+      if (i != j) {
+        _init_deps.at_put(j, ktd);
+      }
+      j++;
+    }
+  }
+  _init_deps.trunc_to(j);
+  _ci_records.remove_invalid_references();
 }
 
 void TrainingData::serialize(SerializeClosure* soc) {
