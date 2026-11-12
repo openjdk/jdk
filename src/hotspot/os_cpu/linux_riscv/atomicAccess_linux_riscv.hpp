@@ -413,6 +413,21 @@ inline T riscv_amo_bitop_byte(T volatile* dest, T bits, atomic_memory_order orde
   return (T)old_value;
 }
 
+template<typename T>
+inline T riscv_amoand_byte(T volatile* dest, T bits, atomic_memory_order order) {
+  return riscv_amo_bitop_byte<0b01100>(dest, bits, order);
+}
+
+template<typename T>
+inline T riscv_amoor_byte(T volatile* dest, T bits, atomic_memory_order order) {
+  return riscv_amo_bitop_byte<0b01000>(dest, bits, order);
+}
+
+template<typename T>
+inline T riscv_amoxor_byte(T volatile* dest, T bits, atomic_memory_order order) {
+  return riscv_amo_bitop_byte<0b00100>(dest, bits, order);
+}
+
 template<>
 class AtomicAccess::PlatformBitops<1, true> {
   template<bool return_new, typename T, typename Op>
@@ -436,7 +451,7 @@ public:
   template<typename T>
   T fetch_then_and(T volatile* dest, T bits, atomic_memory_order order) const {
     if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
-      return riscv_amo_bitop_byte<0b01100>(dest, bits, order);
+      return riscv_amoand_byte(dest, bits, order);
     }
     return bitop_fallback<false>(dest, order, [&](T value) -> T { return value & bits; });
   }
@@ -444,7 +459,7 @@ public:
   template<typename T>
   T fetch_then_or(T volatile* dest, T bits, atomic_memory_order order) const {
     if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
-      return riscv_amo_bitop_byte<0b01000>(dest, bits, order);
+      return riscv_amoor_byte(dest, bits, order);
     }
     return bitop_fallback<false>(dest, order, [&](T value) -> T { return value | bits; });
   }
@@ -452,7 +467,7 @@ public:
   template<typename T>
   T fetch_then_xor(T volatile* dest, T bits, atomic_memory_order order) const {
     if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
-      return riscv_amo_bitop_byte<0b00100>(dest, bits, order);
+      return riscv_amoxor_byte(dest, bits, order);
     }
     return bitop_fallback<false>(dest, order, [&](T value) -> T { return value ^ bits; });
   }
@@ -460,7 +475,7 @@ public:
   template<typename T>
   T and_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
     if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
-      return riscv_amo_bitop_byte<0b01100>(dest, bits, order) & bits;
+      return riscv_amoand_byte(dest, bits, order) & bits;
     }
     return bitop_fallback<true>(dest, order, [&](T value) -> T { return value & bits; });
   }
@@ -468,7 +483,7 @@ public:
   template<typename T>
   T or_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
     if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
-      return riscv_amo_bitop_byte<0b01000>(dest, bits, order) | bits;
+      return riscv_amoor_byte(dest, bits, order) | bits;
     }
     return bitop_fallback<true>(dest, order, [&](T value) -> T { return value | bits; });
   }
@@ -476,7 +491,7 @@ public:
   template<typename T>
   T xor_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
     if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
-      return riscv_amo_bitop_byte<0b00100>(dest, bits, order) ^ bits;
+      return riscv_amoxor_byte(dest, bits, order) ^ bits;
     }
     return bitop_fallback<true>(dest, order, [&](T value) -> T { return value ^ bits; });
   }
