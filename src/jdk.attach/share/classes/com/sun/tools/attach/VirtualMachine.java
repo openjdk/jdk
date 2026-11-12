@@ -189,8 +189,8 @@ public abstract class VirtualMachine {
     public static VirtualMachine attach(String id)
         throws AttachNotSupportedException, IOException
     {
-        // Do not call attach(id, env) as a common back end, for compatibility with a
-        // provider only implementing attach(id).
+        // To maintain compatibility with a provider only implementing attach(id),
+        // do not call attach(id, env) as a common back end.
         if (id == null) {
             throw new NullPointerException("id cannot be null");
         }
@@ -198,20 +198,19 @@ public abstract class VirtualMachine {
         if (providers.size() == 0) {
             throw new AttachNotSupportedException("no providers installed");
         }
-        StringBuilder message = new StringBuilder();
-
-        for (AttachProvider provider : providers) {
+        AttachNotSupportedException lastExc = null;
+        for (AttachProvider provider: providers) {
             try {
                 return provider.attachVirtualMachine(id);
             } catch (AttachNotSupportedException x) {
-                // Retain possibly multiple error messages:
-                if (!message.isEmpty()) {
-                    message.append(" | ");
+                if (lastExc == null) {
+                    lastExc = x;
+                } else {
+                    lastExc.addSuppressed(x);
                 }
-                message.append(x.getMessage());
             }
         }
-        throw new AttachNotSupportedException(message.toString());
+        throw lastExc;
     }
 
     /**

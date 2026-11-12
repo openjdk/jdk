@@ -213,6 +213,9 @@ bool clash_addr(uint64_t v1, uint64_t v2, uint64_t xaddr);
  */
 const char* conflict_check_pd(void* vaddr, size_t length);
 
+/**
+ * Install signal/exception handler.
+ */
 void install_handler_pd();
 
 char* readstring(int fd);
@@ -328,7 +331,9 @@ int symbols_file_create(const char* filename);
 void clock_fixup_pd(struct revival_data* rdata);
 
 /**
- * Load a shared library.  Return an opaque handle (not the load address), or -1 for error.
+ * Load a shared library with an expected load address.
+ * Call exitForRetry if address is not as expected.
+ * Return an opaque handle (not the load address), or -1 for error.
  */
 void* load_sharedobject_pd(const char* name, void* vaddr);
 

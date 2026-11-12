@@ -384,7 +384,7 @@ int revival_mapping_copy(void* vaddr, size_t length, size_t offset, bool allocat
  */
 void* load_sharedlibrary_fromdir(const char* dirname, const char* libname, void* vaddr, char* sum) {
     char buf[PATH_MAX];
-    if (snprintf(buf, PATH_MAX - 1, "%s/%s", dirname, libname) < PATH_MAX) {
+    if (snprintf(buf, PATH_MAX - 1, "%s" FILE_SEPARATOR "%s", dirname, libname) < PATH_MAX) {
         void* a = load_sharedobject_pd(buf, vaddr);
         logd("load_sharedobject_pd: %s: returns %p", buf, a);
         return a;

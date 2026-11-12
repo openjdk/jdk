@@ -386,9 +386,6 @@ void handler(int sig, siginfo_t* info, void* ucontext) {
     }
 }
 
-/**
- * Install the signal hander.
- */
 void install_handler_pd() {
     struct sigaction sa, old_sa;
     sigfillset(&sa.sa_mask);
@@ -404,13 +401,6 @@ void install_handler_pd() {
     }
 }
 
-/**
- * Use dlopen to load a sharedobject.
- * Verify the base address of the loaded library is as requested, if possible.
- *
- * Return the opaque handle from dlopen, which is not the load address.
- * Return -1 for error.
- */
 void* load_sharedobject_pd(const char* name, void* vaddr) {
     void* actual = nullptr;
     void* h = dlopen(name,  RTLD_NOW | RTLD_GLOBAL);
@@ -419,8 +409,8 @@ void* load_sharedobject_pd(const char* name, void* vaddr) {
         return (void*) -1;
     }
     actual = base_address_for_sharedobject_live(h);
-    logv("load_sharedobject_pd: actual = %p", actual);
     if (actual != (void*) 0 && actual != vaddr) {
+        warn("load_sharedobject_pd: %s: load at address 0x%p != requested 0x%p.", name, actual, vaddr);
         // Wrong address:
         // Most likely, Address Space Layout Randomisation has given us an inhospitable layout,
         // e.g. libc where we want to have libjvm.

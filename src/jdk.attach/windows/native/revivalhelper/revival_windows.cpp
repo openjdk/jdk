@@ -315,7 +315,7 @@ void* load_sharedobject_pd(const char* name, void* vaddr) {
     if ((void*) h == vaddr) {
         return (void*) h; // success
     }
-    warn("load_sharedobject_pd: %s: load failed address 0x%p != requested 0x%p. error=0x%lx", name, h, vaddr, GetLastError());
+    warn("load_sharedobject_pd: %s: load at address 0x%p != requested 0x%p. error=0x%lx", name, h, vaddr, GetLastError());
     if (h != nullptr) {
         // Loaded, wrong address.
         exitForRetry();

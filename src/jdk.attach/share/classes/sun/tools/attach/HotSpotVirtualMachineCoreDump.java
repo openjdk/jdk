@@ -205,7 +205,7 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
                         // Other errors: we expect occasional requests to retry the helper.
                         // Always show other errors, or show if we are repeating ourself, or verbose is set:
                         if (e != HELPER_RETRY || i > 1 || verbose) {
-                            System.out.println(out);
+                            System.out.print(out);
                             System.err.println("jcmd: revivalhelper pid " + pid + " failed, exit with: " + e + ". try=" + i);
                             System.err.println("(Retrying process revival.)");
                         }
@@ -234,7 +234,7 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
             System.err.println("jcmd: revivalhelper tries=" + i);
         }
         if (!ok) {
-            System.out.println(out);
+            System.out.print(out);
             if (i >= maxTries) {
                 System.err.println("Error: Retry limit (" + maxTries + ") reached for process revival. Set with 'jcmd -J-Djdk.attach.core.tries= ...'");
             }
