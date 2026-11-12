@@ -402,9 +402,6 @@ public:
   [[nodiscard]] const TypeAryKlassPtr* isa_aryklassptr() const;
   [[nodiscard]] const TypeAryKlassPtr* as_aryklassptr() const;
 
-  // This has the same semantics as std::dynamic_cast<TypeClass*>(this)
-  template <typename TypeClass>
-  const TypeClass* try_cast() const;
   template <typename TypeClass>
   const TypeClass* cast() const;
 
@@ -2750,16 +2747,6 @@ const T* Type::cast() const {
     return as_int();
   } else {
     return as_long();
-  }
-}
-
-template <typename T>
-const T* Type::try_cast() const {
-  static_assert(std::is_same_v<T, TypeInt> || std::is_same_v<T, TypeLong>);
-  if constexpr (std::is_same_v<T, TypeInt>) {
-    return isa_int();
-  } else {
-    return isa_long();
   }
 }
 
