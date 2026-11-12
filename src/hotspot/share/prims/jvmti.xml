@@ -5916,8 +5916,9 @@ class C2 extends C1 implements I2 {
         This function can be used to retrieve the value of a local
         variable whose type is <code>Object</code> or a subclass of <code>Object</code>.
         <p/>
-        When preview features are enabled, if the local is the "<code>this</code>"
-        object in a constructor frame whose declaring class or any of its superclasses has
+        When preview features are enabled, the requested slot is zero,
+        and the specified frame is a constructor frame whose declaring class
+        or any of its superclasses has
         <externallink id="../api/java.base/java/lang/reflect/Field.html#isStrictInit()">
         strictly-initialized<sup>PREVIEW</sup></externallink> instance fields,
         the function returns <code>JVMTI_ERROR_OPAQUE_FRAME</code>.
@@ -5971,9 +5972,11 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           The implementation is unable to get the frame locals
           (e.g. the frame at <code>depth</code> is executing a native method).
-          Also, when preview features are enabled, if the local is the
-          "<code>this</code>" object in a constructor frame whose declaring class
-          or any of its superclasses has strictly initialized instance fields.
+          Also, when preview features are enabled, the requested slot is zero,
+          and the specified frame is a constructor frame whose declaring class
+          or any of its superclasses has
+          <externallink id="../api/java.base/java/lang/reflect/Field.html#isStrictInit()">
+          strictly-initialized<sup>PREVIEW</sup></externallink> instance fields.
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -5990,8 +5993,8 @@ class C2 extends C1 implements I2 {
         native method frames, whereas <code>GetLocalObject()</code> would
         return <code>JVMTI_ERROR_OPAQUE_FRAME</code> in those cases.
         <p/>
-        When preview features are enabled and the "<code>this</code>" object
-        is in a constructor frame whose declaring class or any of its superclasses has
+        When preview features are enabled and the specified frame is a
+        constructor frame whose declaring class or any of its superclasses has
         <externallink id="../api/java.base/java/lang/reflect/Field.html#isStrictInit()">
         strictly-initialized<sup>PREVIEW</sup></externallink> instance fields,
         the function returns <code>JVMTI_ERROR_OPAQUE_FRAME</code>.
@@ -6033,9 +6036,10 @@ class C2 extends C1 implements I2 {
           If the specified frame is a static method frame.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          When preview features are enabled, if the "<code>this</code>" object
-          is in a constructor frame whose declaring class or any of its superclasses
-          has strictly initialized instance fields.
+          When preview features are enabled and the specified frame is a
+          constructor frame whose declaring class or any of its superclasses has
+          <externallink id="../api/java.base/java/lang/reflect/Field.html#isStrictInit()">
+          strictly-initialized<sup>PREVIEW</sup></externallink> instance fields.
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
