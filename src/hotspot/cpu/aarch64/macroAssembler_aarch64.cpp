@@ -7125,7 +7125,14 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
 
   if (vk != nullptr) {
     // Called from C1, where the return type is statically known.
-    movptr(klass, (intptr_t)vk->get_ValueKlass());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump()) {
+      mov_metadata(klass, vk->constant_encoding());
+    } else
+#endif
+    {
+      movptr(klass, (intptr_t)vk->get_ValueKlass());
+    }
     jint lh = vk->layout_helper();
     assert(lh != Klass::_lh_neutral_value, "value class in return type must have been resolved");
     if (UseTLAB && !Klass::layout_helper_needs_slow_path(lh)) {
@@ -7164,7 +7171,22 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
     }
     // 3. Initialize its fields with a value class specific handler
     if (vk != nullptr) {
-      far_call(RuntimeAddress(vk->pack_handler())); // no need for call info as this will not safepoint.
+#if INCLUDE_CDS
+      if (AOTCodeCache::is_on_for_dump()) {
+        // in AOT compiled code call the pack handler indirectly via
+        // the klass. The handler's blob does not currently get saved
+        // to the archive. So, a direct call to the handler address
+        // cannot be injected into a caller that is saved and
+        // restored.
+        mov_metadata(tmp1, vk->constant_encoding());
+        ldr(tmp1, Address(tmp1, ValueKlass::adr_members_offset()));
+        ldr(tmp1, Address(tmp1, ValueKlass::pack_handler_offset()));
+        blr(tmp1);
+      } else
+#endif
+      {
+        far_call(RuntimeAddress(vk->pack_handler())); // no need for call info as this will not safepoint.
+      }
     } else {
       ldr(tmp1, Address(klass, ValueKlass::adr_members_offset()));
       ldr(tmp1, Address(tmp1, ValueKlass::pack_handler_offset()));

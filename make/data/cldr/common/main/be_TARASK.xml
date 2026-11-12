@@ -714,6 +714,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern draft="provisional">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
+					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -1179,11 +1185,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Budapest">
 				<exemplarCity draft="provisional">Будапэшт</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight draft="provisional">Ірляндзкі змоўчны час</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity draft="provisional">Ерусалім</exemplarCity>
@@ -1716,6 +1717,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="provisional">Іранскі летні час</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight draft="provisional">Ірляндзкі змоўчны час</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic draft="provisional">Іркуцкі час</generic>
@@ -1941,9 +1947,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic draft="provisional">Час Самоа</generic>
 					<standard draft="provisional">Змоўчны час Самоа</standard>
-					<daylight draft="provisional">Летні час Самоа</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -2082,6 +2086,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencies>
 			<currency type="AFN">
 				<displayName draft="provisional">аўганскі афгані</displayName>
@@ -2666,10 +2677,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 		</currencies>
 		<minimalPairs>
-			<pluralMinimalPairs count="one" draft="provisional">з {0} кнігі за {0} дзень</pluralMinimalPairs>
-			<pluralMinimalPairs count="few" draft="provisional">з {0} кніг за {0} дні</pluralMinimalPairs>
-			<pluralMinimalPairs count="many" draft="provisional">з {0} кніг за {0} дзён</pluralMinimalPairs>
-			<pluralMinimalPairs count="other" draft="provisional">з {0} кнігі за {0} дня</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="few" draft="provisional">{0}-і дом зьлева</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="other" draft="provisional">{0}-ы дом зьлева</ordinalMinimalPairs>
 		</minimalPairs>

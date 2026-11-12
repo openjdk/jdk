@@ -29,6 +29,11 @@
 #include "runtime/globals_extension.hpp"
 
 void ShenandoahPassiveMode::initialize_flags() const {
+  if (!UnlockDiagnosticVMOptions) {
+    vm_exit_during_initialization(err_msg(
+      "GC mode \"Passive\" is diagnostic, and must be enabled via -XX:+UnlockDiagnosticVMOptions."));
+  }
+
   // Do not allow concurrent cycles.
   FLAG_SET_DEFAULT(ExplicitGCInvokesConcurrent, false);
 

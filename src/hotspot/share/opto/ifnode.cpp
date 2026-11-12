@@ -1925,7 +1925,7 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  Node* prev_dom = search_identical(dist, igvn);
+  Node* prev_dom = search_identical(dist);
 
   if (prev_dom != nullptr) {
     Node* true_proj = this->true_proj();
@@ -2021,14 +2021,13 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool prev_dom_not
   return new ConINode(TypeInt::ZERO);
 }
 
-Node* IfNode::search_identical(int dist, PhaseIterGVN* igvn) {
+Node* IfNode::search_identical(int dist) {
   // Setup to scan up the CFG looking for a dominating test
   Node* dom = in(0);
   Node* prev_dom = this;
   int op = Opcode();
   // Search up the dominator tree for an If with an identical test
-  while (dom->Opcode() != op ||  // Not same opcode?
-         !same_condition(dom, igvn) ||  // Not same input 1?
+  while (dom->Opcode() != op || !has_same_non_constant_condition(dom->as_If()) ||
          prev_dom->in(0) != dom) {  // One path of test does not dominate?
     if (dist < 0) return nullptr;
 
@@ -2052,11 +2051,14 @@ Node* IfNode::search_identical(int dist, PhaseIterGVN* igvn) {
   return prev_dom;
 }
 
-bool IfNode::same_condition(const Node* dom, PhaseIterGVN* igvn) const {
-  Node* dom_bool = dom->in(1);
+// Check if 'other_if' has the same non constant condition as 'this'. If both have a constant, then we return false
+// because we either don't optimize the node (i.e. a ParsePredicate) or fold it away by IGVN. Returning true would
+// then unnecessarily enable optimizations.
+bool IfNode::has_same_non_constant_condition(const IfNode* other_if) const {
+  Node* dom_bool = other_if->in(1);
   Node* this_bool = in(1);
   if (dom_bool == this_bool) {
-    return true;
+    return this_bool != nullptr && !this_bool->is_Con();
   }
 
   if (dom_bool == nullptr || !dom_bool->is_Bool() ||
@@ -2621,7 +2623,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return dominated_by(prev_dom, igvn, true);
     }
   } else {
-    prev_dom = search_identical(4, igvn);
+    prev_dom = search_identical(4);
 
     if (prev_dom == nullptr) {
       return nullptr;

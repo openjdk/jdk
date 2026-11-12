@@ -34,20 +34,6 @@
 class ShenandoahSpaceInfo;
 class ShenandoahHeuristics;
 
-class ShenandoahHeuristicsFlag : public AllStatic {
-public:
-  enum class Heuristic {
-    ADAPTIVE, PASSIVE, AGGRESSIVE, COMPACT, STATIC
-  };
-
-  static void initialize();
-  static Heuristic value() {
-    return _value;
-  }
-private:
-  static Heuristic _value;
-};
-
 class ShenandoahModeFlag : public AllStatic {
 public:
   enum class Mode {
@@ -82,9 +68,6 @@ class ShenandoahMode : public CHeapObj<mtGC> {
 public:
   virtual void initialize_flags() const = 0;
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahSpaceInfo* space_info) const;
-  virtual const char* name() = 0;
-  virtual bool is_diagnostic() = 0;
-  virtual bool is_experimental() = 0;
   virtual bool is_generational() { return false; }
   virtual bool is_concurrent() { return true; }
 };

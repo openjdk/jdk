@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,7 @@ EntryPoint TemplateInterpreter::_return_entry[TemplateInterpreter::number_of_ret
 EntryPoint TemplateInterpreter::_earlyret_entry;
 EntryPoint TemplateInterpreter::_deopt_entry [TemplateInterpreter::number_of_deopt_entries ];
 address    TemplateInterpreter::_deopt_reexecute_return_entry;
+address    TemplateInterpreter::_cont_popframe_reexecute_entry;
 EntryPoint TemplateInterpreter::_safept_entry;
 
 address TemplateInterpreter::_invoke_return_entry[TemplateInterpreter::number_of_return_addrs];

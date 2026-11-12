@@ -397,6 +397,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">პალი</language>
 			<language type="pis">პიჯინი</language>
 			<language type="pl">პოლონური</language>
+			<language type="pms">პიემონტური</language>
 			<language type="pqm">მალისეტ-პასამაკვოდი</language>
 			<language type="prg">პრუსიული</language>
 			<language type="pro">ძველი პროვანსული</language>
@@ -714,7 +715,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Yiii">ი</script>
 			<script type="Zinh">გადაღებული</script>
 			<script type="Zmth">მათემატიკური ნოტაცია</script>
-			<script type="Zsye">Emoji</script>
+			<script type="Zsye">ემოჯი</script>
 			<script type="Zsym">სიმბოლოები</script>
 			<script type="Zxxx">უმწერლობო</script>
 			<script type="Zyyy">ზოგადი</script>
@@ -1101,15 +1102,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">კალენდარი</key>
 			<key type="cf">ვალუტის ფორმატი</key>
+			<key type="colAlternate">სიმბოლოების გარეშე სორტირება</key>
+			<key type="colBackwards">მახვილების უკუდახარისხება</key>
+			<key type="colCaseFirst">დიდი/პატარა ასოების დახარისხება</key>
+			<key type="colCaseLevel">დახარისხება დიდი/პატარა ასოების გათვალისწინებით</key>
 			<key type="collation">დახარისხების თანმიმდევრობა</key>
+			<key type="colNormalization">ნორმალიზებული დახარისხება</key>
+			<key type="colNumeric">რიცხვითი დახარისხება</key>
+			<key type="colReorder">ასოების/ბლოკების გადახარისხება</key>
+			<key type="colStrength">დახარისხების სიმძლავრე</key>
 			<key type="currency">ვალუტა</key>
-			<key type="em">სიცილაკების პრეზენტაცია</key>
+			<key type="d0">ტრანსფორმაციის მიმართულება</key>
+			<key type="dx">ლექსიკონური დაყოფიდან გამორიცხვა</key>
+			<key type="em">ემოჯის პრეზენტაცია</key>
+			<key type="fw">კვირის პირველი დღე</key>
+			<key type="h0">შერეული</key>
 			<key type="hc">დროის სისტემა (12 ან 24)</key>
-			<key type="lb">სტრიქონის წყვეტის სტილი</key>
+			<key type="i0">შეყვანის მეთოდი</key>
+			<key type="k0">კლავიატურა</key>
+			<key type="kv">უმაღლესი იგნორირებული</key>
+			<key type="lb">CJK სტრიქონის წყვეტა</key>
 			<key type="lw">სტრიქონზე გადასვლა სიტყვებს შორის</key>
+			<key type="m0">ტრანსფორმაციის წესები</key>
 			<key type="ms">საზომი სისტემა</key>
+			<key type="mu">ზომის ერთეული</key>
 			<key type="numbers">რიცხვები</key>
+			<key type="rg">რეგიონი დამატებითი მონაცემებისთვის</key>
+			<key type="s0">ტრანსფორმაციის წყარო</key>
+			<key type="sd">რეგიონის ქვედანაყოფი</key>
 			<key type="ss">წინადადების წყვეტა შემოკლ. შემდეგ</key>
+			<key type="t">ტრანსფორმაცია</key>
+			<key type="t0">მანქანური თარგმანი</key>
+			<key type="timezone">დროის სარტყელი</key>
+			<key type="va">ლოკალის ვარიანტი</key>
+			<key type="x">კერძო გამოყენება</key>
+			<key type="x0">ტრანსფორმაცია კერძო გამოყენებისთვის</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">ბუდისტური კალენდარი</type>
@@ -1129,13 +1156,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">ებრაული კალენდარი</type>
 			<type key="calendar" type="hebrew" scope="core">ებრაული</type>
 			<type key="calendar" type="indian">ინდოეთის ეროვნული კალენდარი</type>
+			<type key="calendar" type="indian" scope="core">ინდური ეროვნული</type>
 			<type key="calendar" type="islamic">ჰიჯრის კალენდარი</type>
 			<type key="calendar" type="islamic" scope="core">ჰიჯრი</type>
 			<type key="calendar" type="islamic-civil">ჰიჯრის სამოქალაქო კალენდარი (ტაბულარული)</type>
 			<type key="calendar" type="islamic-civil" scope="core">ჰიჯრი (ტაბულარული, სამოქალაქო)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">ჰიჯრი, საუდის არაბეთის მთვარის ხილვაზე დაფუძნებული</type>
+			<type key="calendar" type="islamic-tbla" scope="core">ჰიჯრი (ტაბულარული, ასტრონომიული ეპოქა)</type>
 			<type key="calendar" type="islamic-umalqura">ჰიჯრის კალენდარი (უმ-ალ-ქურა)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">ჰიჯრი (უმ-ალ-ქურა)</type>
 			<type key="calendar" type="iso8601">ISO-8601 კალენდარი</type>
+			<type key="calendar" type="iso8601" scope="core">გრიგორიანული</type>
 			<type key="calendar" type="japanese">იაპონური კალენდარი</type>
 			<type key="calendar" type="japanese" scope="core">იაპონური</type>
 			<type key="calendar" type="persian">სპარსული კალენდარი</type>
@@ -1146,32 +1177,67 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="cf" type="account" scope="core">საბუღალტრო</type>
 			<type key="cf" type="standard">ვალუტის სტანდარტული ფორმატი</type>
 			<type key="cf" type="standard" scope="core">სტანდარტული</type>
+			<type key="colCaseFirst" type="lower" scope="core">პატარა ასოები</type>
+			<type key="colCaseFirst" type="no" scope="core">პატარა ასოები</type>
+			<type key="colCaseFirst" type="upper" scope="core">დიდი ასოები</type>
+			<type key="collation" type="compat" scope="core">თავსებადობა</type>
 			<type key="collation" type="dictionary" draft="unconfirmed">ლექსიკონით</type>
+			<type key="collation" type="dictionary" scope="core">ლექსიკონი</type>
 			<type key="collation" type="ducet">უნიკოდის ნაგულისხმევი დახარისხების თანმიმდევრობა</type>
 			<type key="collation" type="ducet" scope="core">უნიკოდის ნაგულისხმევი</type>
+			<type key="collation" type="emoji" scope="core">ემოჯი</type>
+			<type key="collation" type="eor" scope="core">ევროპული წესები</type>
 			<type key="collation" type="phonebook" draft="unconfirmed">ტელეფონის წიგნით</type>
+			<type key="collation" type="phonebook" scope="core">ტელეფონების წიგნი</type>
+			<type key="collation" type="phonetic" scope="core">ფონეტიკური</type>
 			<type key="collation" type="pinyin" draft="unconfirmed">პინ-ინი</type>
+			<type key="collation" type="pinyin" scope="core">პინინი</type>
 			<type key="collation" type="reformed" draft="unconfirmed">რეფორმირებული</type>
 			<type key="collation" type="search">ზოგადი დანიშნულების ძიება</type>
 			<type key="collation" type="search" scope="core">ძიება</type>
 			<type key="collation" type="searchjl" draft="unconfirmed">ჰანგულის პირველი თანხმოვნით</type>
+			<type key="collation" type="searchjl" scope="core">კორეული საწყისი თანხმოვანი</type>
 			<type key="collation" type="standard">სტანდარტული დახარისხების თანმიმდევრობა</type>
 			<type key="collation" type="standard" scope="core">სტანდარტული</type>
 			<type key="collation" type="stroke" draft="unconfirmed">შტრიხით</type>
+			<type key="collation" type="stroke" scope="core">შტრიხი</type>
 			<type key="collation" type="traditional">ტრადიციული</type>
+			<type key="collation" type="traditional" scope="core">ტრადიციული</type>
 			<type key="collation" type="unihan" draft="unconfirmed">ძირითადი შტრიხით</type>
+			<type key="collation" type="unihan" scope="core">გასაღებით და შტრიხით</type>
 			<type key="collation" type="zhuyin" draft="unconfirmed">ჟუინი</type>
+			<type key="collation" type="zhuyin" scope="core">ჟუინი</type>
+			<type key="colReorder" type="currency" scope="core">ვალუტა</type>
+			<type key="colReorder" type="digit" scope="core">ციფრები</type>
+			<type key="colReorder" type="punct" scope="core">პუნქტუაცია</type>
+			<type key="colReorder" type="space" scope="core">შორისი</type>
+			<type key="colReorder" type="symbol" scope="core">სიმბოლო</type>
+			<type key="colStrength" type="identical" scope="core">ყველა</type>
+			<type key="colStrength" type="primary" scope="core">მხოლოდ ძირითადი ასოები</type>
+			<type key="colStrength" type="quaternary" scope="core">ძირითადი, მახვილები, რეგისტრი, ვარიანტები, კანა</type>
+			<type key="colStrength" type="secondary" scope="core">ძირითადი, მახვილები</type>
+			<type key="colStrength" type="tertiary" scope="core">ძირითადი, მახვილები, რეგისტრი, ვარიანტები</type>
+			<type key="d0" type="fwidth">სრული სიგანის</type>
+			<type key="d0" type="hwidth">ნახევარი სიგანის</type>
 			<type key="em" type="default" scope="core">ნაგულისხმევი</type>
-			<type key="em" type="emoji" scope="core">სიცილაკი</type>
+			<type key="em" type="emoji" scope="core">ემოჯი</type>
 			<type key="em" type="text" scope="core">ტექსტი</type>
+			<type key="hc" type="c12">12-საათიანი სისტემა</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24-საათიანი სისტემა</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12-საათიანი სისტემა (0-11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12-საათიანი სისტემა (1-12)</type>
 			<type key="hc" type="h12" scope="core">12 (0–11)</type>
 			<type key="hc" type="h23">24-საათიანი სისტემა (0-23)</type>
-			<type key="hc" type="h23" scope="core">12 (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24-საათიანი სისტემა (1-24)</type>
-			<type key="hc" type="h24" scope="core">12 (0–23)</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">შუალედების, პუნქტუაციისა და ყველა სიმბოლოს გამოტოვება</type>
+			<type key="kv" type="punct" scope="core">შუალედებისა და პუნქტუაციის გამოტოვება</type>
+			<type key="kv" type="space" scope="core">შუალედებისა და პუნქტუაციის გამოტოვება</type>
+			<type key="kv" type="symbol" scope="core">შუალედების, პუნქტუაციისა და არავალუტური სიმბოლოების გამოტოვება</type>
 			<type key="lb" type="loose">სტრიქონის რბილი წყვეტის სტილი</type>
 			<type key="lb" type="loose" scope="core">თავისუფალი</type>
 			<type key="lb" type="normal">სტრიქონის ჩვეულებრივი წყვეტის სტილი</type>
@@ -1182,6 +1248,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="lw" type="keepall" scope="core">ყველგან შენარჩუნება</type>
 			<type key="lw" type="normal" scope="core">ნორმალური</type>
 			<type key="lw" type="phrase" scope="core">ფრაზებში შენარჩუნება</type>
+			<type key="m0" type="bgn">BGN ტრანსლიტერაცია</type>
+			<type key="m0" type="ungegn">UNGEGN ტრანსლიტერაცია</type>
 			<type key="ms" type="metric">მეტრული სისტემა</type>
 			<type key="ms" type="metric" scope="core">მეტრული</type>
 			<type key="ms" type="uksystem">ბრიტანული საზომი სისტემა</type>
@@ -1190,60 +1258,95 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">ამერიკული</type>
 			<type key="numbers" type="arab">არაბულ-ინდური ციფრები</type>
 			<type key="numbers" type="arabext">გაფართოებული არაბულ-ინდური ციფრები</type>
+			<type key="numbers" type="arabext" scope="core">გაფართოებული არაბულ-ინდური</type>
 			<type key="numbers" type="armn">სომხური რიცხვები</type>
 			<type key="numbers" type="armnlow">სომხური ქვედა რეგისტრის რიცხვები</type>
+			<type key="numbers" type="armnlow" scope="core">სომხური ქვედა რეგისტრის</type>
 			<type key="numbers" type="bali" draft="unconfirmed">ბალიური ციფრები</type>
 			<type key="numbers" type="beng">ბენგალური ციფრები</type>
 			<type key="numbers" type="cakm">ჩაკმა ციფრები</type>
 			<type key="numbers" type="cham" draft="unconfirmed">ჩამური ციფრები</type>
 			<type key="numbers" type="deva">დევანაგარის ციფრები</type>
 			<type key="numbers" type="ethi">ეთიოპიური რიცხვები</type>
+			<type key="numbers" type="finance" scope="core">ფინანსური</type>
 			<type key="numbers" type="fullwide">სრულსიგანიანი ციფრები</type>
+			<type key="numbers" type="fullwide" scope="core">სრული სიგანის</type>
 			<type key="numbers" type="geor">ქართული რიცხვები</type>
 			<type key="numbers" type="grek">ბერძნული რიცხვები</type>
 			<type key="numbers" type="greklow">ბერძნული ქვედა რეგისტრის რიცხვები</type>
+			<type key="numbers" type="greklow" scope="core">ბერძნული ქვედა რეგისტრის</type>
 			<type key="numbers" type="gujr">გუჯარათული ციფრები</type>
 			<type key="numbers" type="guru">გურმუხული ციფრები</type>
+			<type key="numbers" type="hanidays" scope="core">ტრადიციულ კალენდრებში თვის დღეების გამოსახვა ჰან ჩინური იეროგლიფებით</type>
 			<type key="numbers" type="hanidec">ჩინური ათობითი რიცხვები</type>
+			<type key="numbers" type="hanidec" scope="core">ჩინური ციფრული იდეოგრამების გამოყენებით პოზიციური ათობითი სისტემა</type>
 			<type key="numbers" type="hans">გამარტივებული ჩინური რიცხვები</type>
 			<type key="numbers" type="hansfin">გამარტივებული ჩინური ფინანსური რიცხვები</type>
+			<type key="numbers" type="hansfin" scope="core">გამარტივებული ჩინურის ფინანსური</type>
 			<type key="numbers" type="hant">ტრადიციული ჩინური რიცხვები</type>
 			<type key="numbers" type="hantfin">ტრადიციული ჩინური ფინანსური რიცხვები</type>
+			<type key="numbers" type="hantfin" scope="core">ტრადიციული ჩინური ფინანსური</type>
 			<type key="numbers" type="hebr">ებრაული რიცხვები</type>
 			<type key="numbers" type="java">იავური ციფრები</type>
 			<type key="numbers" type="jpan">იაპონური რიცხვები</type>
 			<type key="numbers" type="jpanfin">იაპონური ფინანსური რიცხვები</type>
+			<type key="numbers" type="jpanfin" scope="core">იაპონური ფინანსური</type>
+			<type key="numbers" type="jpanyear" scope="core">იაპონური ეპოქის პირველი წელი განენის ნუმერაციით</type>
 			<type key="numbers" type="kali" draft="unconfirmed">კაიაჰ-ლისი ციფრები</type>
 			<type key="numbers" type="khmr">ქხმერული ციფრები</type>
 			<type key="numbers" type="knda">კანადური რიცხვები</type>
 			<type key="numbers" type="lana" draft="unconfirmed">ტაი თამის ჰორასი ციფრები</type>
 			<type key="numbers" type="lanatham" draft="unconfirmed">ტაი თამის თამისი ციფრები</type>
+			<type key="numbers" type="lanatham" scope="core">ტაილანდური ტამტამი (საეკლესიო)</type>
 			<type key="numbers" type="laoo">ლაოსური ციფრები</type>
 			<type key="numbers" type="latn">დასავლური ციფრები</type>
 			<type key="numbers" type="lepc" draft="unconfirmed">რონგ-რინგის ციფრები</type>
 			<type key="numbers" type="limb">ლიმბური ციფრები</type>
+			<type key="numbers" type="mathbold" scope="core">მათემატიკური მუქი</type>
+			<type key="numbers" type="mathdbl" scope="core">მათემატიკური ორმაგი კონტური</type>
+			<type key="numbers" type="mathmono" scope="core">მათემატიკური მონოდაშორების</type>
+			<type key="numbers" type="mathsanb" scope="core">მათემატიკური უსერიფო მუქი</type>
+			<type key="numbers" type="mathsans" scope="core">მათემატიკური უსერიფო</type>
 			<type key="numbers" type="mlym">მალაიალამური ციფრები</type>
 			<type key="numbers" type="mong">მონღოლური ციფრები</type>
-			<type key="numbers" type="mtei">მანიპური ციფრები</type>
+			<type key="numbers" type="mtei">მანიპურის მაიეკის ციფრული</type>
 			<type key="numbers" type="mymr">მიანმური ციფრები</type>
+			<type key="numbers" type="mymrepka" scope="core">მიანმური აღმოსავლური პვო კარენი</type>
+			<type key="numbers" type="mymrpao" scope="core">მიანმური პაო</type>
 			<type key="numbers" type="mymrshan" draft="unconfirmed">მიანმური შანი ციფრები</type>
+			<type key="numbers" type="mymrshan" scope="core">მიანმური შანი</type>
+			<type key="numbers" type="mymrtlng" scope="core">მიანმური ტაი-ლაინი</type>
+			<type key="numbers" type="native">ადგილობრივი ციფრები</type>
+			<type key="numbers" type="native" scope="core">ადგილობრივი ციფრები</type>
 			<type key="numbers" type="nkoo" draft="unconfirmed">ნკოური ციფრები</type>
 			<type key="numbers" type="olck">ოლ-ჩიკის ციფრები</type>
 			<type key="numbers" type="orya">ორიული ციფრები</type>
+			<type key="numbers" type="outlined" scope="core">კონტურიანი</type>
 			<type key="numbers" type="roman">რომაული ციფრები</type>
+			<type key="numbers" type="roman" scope="core">რომაული ზედა რეგისტრის</type>
 			<type key="numbers" type="romanlow">რომაული ქვედა რეგისტრის რიცხვები</type>
+			<type key="numbers" type="romanlow" scope="core">რომაული ქვედა რეგისტრის</type>
 			<type key="numbers" type="saur">საურაშტრული ციფრები</type>
+			<type key="numbers" type="segment" scope="core">სეგმენტირებული</type>
 			<type key="numbers" type="sund">სუნდანური ციფრები</type>
 			<type key="numbers" type="talu">ახალი ტაი ლიუსი ციფრები</type>
 			<type key="numbers" type="taml">ტრადიციული ტამილური რიცხვები</type>
 			<type key="numbers" type="tamldec">ტამილური ციფრები</type>
+			<type key="numbers" type="tamldec" scope="core">თანამედროვე ტამილური</type>
 			<type key="numbers" type="telu">ტელუგუს ციფრები</type>
 			<type key="numbers" type="thai">ტაილანდური ციფრები</type>
 			<type key="numbers" type="tibt">ტიბეტური ციფრები</type>
+			<type key="numbers" type="traditional" scope="core">ტრადიციული ციფრული სისტემები</type>
 			<type key="numbers" type="vaii">ვაიური ციფრები</type>
 			<type key="ss" type="none" scope="core">გამორთული</type>
 			<type key="ss" type="standard" scope="core">ჩართული</type>
+			<type key="t0" type="und">დაუზუსტებელი მანქანური თარგმანი</type>
+			<type key="va" type="posix" scope="core">POSIX ვარიანტი</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">გამორთული</typeValue>
+			<typeValue type="yes">ჩართული</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">მეტრული</measurementSystemName>
 			<measurementSystemName type="UK">ბრიტანული</measurementSystemName>
@@ -1271,6 +1374,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<dates>
 		<calendars>
 			<calendar type="generic">
+				<dayOfMonths>
+					<dayOfMonthContext type="format">
+						<dayOfMonthWidth type="abbreviated">
+							<dayOfMonth ordinal="one">{0}-ლი</dayOfMonth>
+							<dayOfMonth ordinal="many">{0}</dayOfMonth>
+							<dayOfMonth ordinal="other">{0}</dayOfMonth>
+						</dayOfMonthWidth>
+					</dayOfMonthContext>
+				</dayOfMonths>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -1317,29 +1429,38 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMd">d.M.y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMd">GGGGG d.M.y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMddd">G ddd MMM, y</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G E, d MMM, y</dateFormatItem>
+						<dateFormatItem id="GyMMMEddd">G E, ddd MMM, y</dateFormatItem>
 						<dateFormatItem id="Md">d.M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMddd">ddd MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEddd">E, MMM ddd</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
-						<dateFormatItem id="y">y G</dateFormatItem>
-						<dateFormatItem id="yyyy">y G</dateFormatItem>
-						<dateFormatItem id="yyyyM">M.y G</dateFormatItem>
-						<dateFormatItem id="yyyyMd">d.M.y G</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, d.M.y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMM">MMM, y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd">d MMM, y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">E, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="MMMMddd">ddd MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyM">G M.y</dateFormatItem>
+						<dateFormatItem id="yyyyMd">G d.M.y</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">G E, d.M.y</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">G MMM, y</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">G d MMM, y</dateFormatItem>
+						<dateFormatItem id="yyyyMMMddd">G ddd MMM, y</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">G E, d MMM, y</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEddd">G E, ddd MMM, y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">QQQ, y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">QQQQ, y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} ‑ {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric">{0}‑{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0}‑{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="h">h – h B</greatestDifference>
@@ -1367,7 +1488,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d – E, d MMM</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM ‑ E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d‑d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM ‑ d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
@@ -1456,6 +1581,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
+				<dayOfMonths>
+					<dayOfMonthContext type="format">
+						<dayOfMonthWidth type="abbreviated">
+							<dayOfMonth ordinal="one">{0}-ლი</dayOfMonth>
+							<dayOfMonth ordinal="many">{0}</dayOfMonth>
+							<dayOfMonth ordinal="other">{0}</dayOfMonth>
+						</dayOfMonthWidth>
+					</dayOfMonthContext>
+				</dayOfMonths>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
@@ -1557,7 +1691,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</eraNames>
 					<eraAbbr>
 						<era type="0">ძვ. წ.</era>
-						<era type="0" alt="variant">ჩვ. ერამდე</era>
 						<era type="1">ახ. წ.</era>
 						<era type="1" alt="variant">ჩვ. ერა</era>
 					</eraAbbr>
@@ -1609,6 +1742,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1637,14 +1773,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d.M.y GGGGG</dateFormatItem>
-						<dateFormatItem id="GyMMM">MMM. y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd">d MMM. y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d MMM. y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">G MMM. y</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G d MMM. y</dateFormatItem>
+						<dateFormatItem id="GyMMMddd">G ddd MMM y</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G E, d MMM. y</dateFormatItem>
+						<dateFormatItem id="GyMMMEddd">G E, ddd MMM. y</dateFormatItem>
+						<dateFormatItem id="GyMMMM">G MMMM, y</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">G d MMMM, y</dateFormatItem>
+						<dateFormatItem id="GyMMMMddd">G ddd MMMM, y</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">G E, d MMMM, y</dateFormatItem>
+						<dateFormatItem id="GyMMMMEddd">G E, ddd MMMM, y</dateFormatItem>
 						<dateFormatItem id="Md">d.M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMddd">ddd MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEddd">E, ddd MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMddd">ddd MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEddd">E, ddd MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMMს კვირა W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMMს კვირა W</dateFormatItem>
 						<dateFormatItem id="yM">M.y</dateFormatItem>
@@ -1652,15 +1800,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMEd">E, d.M.y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM. y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM. y</dateFormatItem>
+						<dateFormatItem id="yMMMddd">ddd MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM. y</dateFormatItem>
+						<dateFormatItem id="yMMMEddd">E, ddd MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMMddd">ddd MMMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, MMMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEddd">E, MMMM ddd, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ, y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ, y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">კვირა w, Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">კვირა w, Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Time-Day-Of-Week">{1}, {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} ‑ {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric">{0}‑{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0}‑{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="B">h B ‑ h B</greatestDifference>
+							<greatestDifference id="h">h‑h B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
@@ -1682,6 +1848,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d‑d</greatestDifference>
+							<greatestDifference id="M">MMMM d ‑ MMMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">MM.y – MM.y</greatestDifference>
@@ -2637,9 +2807,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ლიბრევილი</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>ბრიტანეთის ზაფხულის დრო</daylight>
-				</long>
 				<exemplarCity>ლონდონი</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2730,9 +2897,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ჯაიაპურა</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>ირლანდიის სტანდარტული დრო</daylight>
-				</long>
 				<exemplarCity>დუბლინი</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3428,6 +3592,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>ჰარარე</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>აკოს დრო</generic>
+					<standard>აკოს სტანდარტული დრო</standard>
+					<daylight>აკოს ზაფხულის დრო</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>ავღანეთის დრო</standard>
@@ -3497,9 +3668,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>აპიას დრო</generic>
-					<standard>აპიას სტანდარტული დრო</standard>
-					<daylight>აპიას ზაფხულის დრო</daylight>
+					<generic>დასავლეთ სამოას დრო</generic>
+					<standard>დასავლეთ სამოას სტანდარტული დრო</standard>
+					<daylight>დასავლეთ სამოას ზაფხულის დრო</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3601,6 +3772,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ბრაზილიის დრო</generic>
 					<standard>ბრაზილიის სტანდარტული დრო</standard>
 					<daylight>ბრაზილიის ზაფხულის დრო</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>ბრიტანეთის დრო</generic>
+					<daylight>ბრიტანეთის ზაფხულის დრო</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3776,6 +3953,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>გრინვიჩის საშუალო დრო</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>გრენლანდიის დრო</generic>
+					<standard>გრენლანდიის სტანდარტული დრო</standard>
+					<daylight>გრენლანდიის ზაფხულის დრო</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>აღმოსავლეთ გრენლანდიის დრო</generic>
@@ -3802,7 +3986,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>ჰავაისა და ალეუტის სტანდარტული დრო</standard>
+					<standard>ჰავაის დრო</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3863,6 +4047,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ირანის დროის სარტყელი</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>ირლანდიის დრო</generic>
+					<daylight>ირლანდიის სტანდარტული დრო</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>ირკუტსკის დრო</generic>
@@ -3882,6 +4072,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>იაპონიის დრო</generic>
 					<standard>იაპონიის სტანდარტული დრო</standard>
 					<daylight>იაპონიის ზაფხულის დრო</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>კამჩატკის დრო</generic>
+					<standard>კამჩატკის სტანდარტული დრო</standard>
+					<daylight>კამჩატკის ზაფხულის დრო</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -4126,7 +4323,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Pyongyang">
 				<long>
-					<standard>ფხენიანის დრო</standard>
+					<standard>ჩრდილოეთ კორეის დრო</standard>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -4146,11 +4343,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>სახალინის ზაფხულის დრო</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>სამარას დრო</generic>
+					<standard>სამარას სტანდარტული დრო</standard>
+					<daylight>სამარას ზაფხულის დრო</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>სამოას დრო</generic>
 					<standard>სამოას სტანდარტული დრო</standard>
-					<daylight>სამოას ზაფხულის დრო</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4217,6 +4419,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ჩუუკის დრო</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>თურქეთის დრო</generic>
+					<standard>თურქეთის სტანდარტული დრო</standard>
+					<daylight>თურქეთის ზაფხულის დრო</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>თურქმენეთის დრო</generic>
@@ -4234,6 +4443,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>ურუგვაის დრო</generic>
 					<standard>ურუგვაის სტანდარტული დრო</standard>
 					<daylight>ურუგვაის ზაფხულის დრო</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>ურუმჩის დრო</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4999,7 +5213,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>სიერა-ლეონეს ლეონე</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName>სიერა-ლეონეს ლეონე (1964—2022)</displayName>
+				<displayName>სიერა-ლეონეს ლეონე (1964‑2022)</displayName>
+				<displayName count="one">სიერა-ლეონეს ლეონე (1964‑2022)</displayName>
+				<displayName count="other">იერა-ლეონეს ლეონე (1964‑2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>სომალური შილინგი</displayName>
@@ -5137,8 +5353,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>კარიბის გულდენი</displayName>
-				<displayName count="one">კარიბის გულდენი</displayName>
-				<displayName count="other">კარიბის გულდენი</displayName>
 			</currency>
 			<currency type="XEU">
 				<displayName draft="contributed">ევროპული სავალუტო ერთეული</displayName>
@@ -5192,8 +5406,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>ზიმბაბვეს გოლდი</displayName>
-				<displayName count="one">ზიმბაბვეს გოლდი</displayName>
-				<displayName count="other">ზიმბაბვეს გოლდი</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -5204,9 +5416,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<minimalPairs>
 			<pluralMinimalPairs count="one">კალათში {0} X-ია. შეიძენთ მას?</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">კალათში {0} X-ია. შეიძენთ მათ?</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="many">მე-{0}</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="one">{0}-ლი</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">{0}-ე</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">შეუხვიეთ მარჯვნივ {0}-ელ შესახვევში.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="many">შეუხვიეთ მარჯვნივ {0}-ე შესახვევში.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">შეუხვიეთ {0}-ე შესახვევში მარჯვნივ.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -5450,20 +5662,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ტერაბიტი</unitPattern>
 				<unitPattern count="other">{0} ტერაბიტი</unitPattern>
 			</unit>
-			<unit type="digital-gigabyte">
-				<displayName>გიგაბაიტი</displayName>
-				<unitPattern count="one">{0} გიგაბაიტი</unitPattern>
-				<unitPattern count="other">{0} გიგაბაიტი</unitPattern>
-			</unit>
 			<unit type="digital-gigabit">
 				<displayName>გიგაბიტი</displayName>
 				<unitPattern count="one">{0} გიგაბიტი</unitPattern>
 				<unitPattern count="other">{0} გიგაბიტი</unitPattern>
-			</unit>
-			<unit type="digital-megabyte">
-				<displayName>მეგაბაიტი</displayName>
-				<unitPattern count="one">{0} მეგაბაიტი</unitPattern>
-				<unitPattern count="other">{0} მეგაბაიტი</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>მეგაბიტი</displayName>
@@ -7267,21 +7469,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} წმ</unitPattern>
 				<unitPattern count="other">{0} წმ</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>წ.</displayName>
-				<unitPattern count="one">{0} წ.</unitPattern>
-				<unitPattern count="other">{0} წ.</unitPattern>
-			</unit>
-			<unit type="concentr-mole">
-				<displayName>მოლ</displayName>
-				<unitPattern count="one">{0} მოლ</unitPattern>
-				<unitPattern count="other">{0} მოლ</unitPattern>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
-				<unitPattern count="one">{0} Glc</unitPattern>
-				<unitPattern count="other">{0} Glc</unitPattern>
-			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<unitPattern count="one">{0}ლ/100კმ</unitPattern>
 				<unitPattern count="other">{0}ლ/100კმ</unitPattern>
@@ -7325,11 +7512,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>კვტ.სთ</displayName>
 				<unitPattern count="one">{0} კვტ.სთ</unitPattern>
 				<unitPattern count="other">{0} კვტ.სთ</unitPattern>
-			</unit>
-			<unit type="force-newton">
-				<displayName>ნ</displayName>
-				<unitPattern count="one">{0} ნ</unitPattern>
-				<unitPattern count="other">{0} ნ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<unitPattern count="one">{0} პიქს/დუიმი</unitPattern>
@@ -7438,75 +7620,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ბრიტანული თხევადი დრაქმა</unitPattern>
 				<unitPattern count="other">{0} ბრიტანული თხევადი დრაქმა</unitPattern>
 			</unit>
-			<unit type="angle-steradian">
-				<displayName>სრ</displayName>
-				<unitPattern count="one">{0} სრ</unitPattern>
-				<unitPattern count="other">{0} სრ</unitPattern>
-			</unit>
-			<unit type="concentr-katal">
-				<displayName>კატ</displayName>
-				<unitPattern count="one">{0} კატ</unitPattern>
-				<unitPattern count="other">{0} კატ</unitPattern>
-			</unit>
-			<unit type="electric-coulomb">
-				<displayName>კულ</displayName>
-				<unitPattern count="one">{0} კულ</unitPattern>
-				<unitPattern count="other">{0} კულ</unitPattern>
-			</unit>
-			<unit type="electric-farad">
-				<displayName>ფ</displayName>
-				<unitPattern count="one">{0} ფ</unitPattern>
-				<unitPattern count="other">{0} ფ</unitPattern>
-			</unit>
-			<unit type="electric-henry">
-				<displayName>ჰ</displayName>
-				<unitPattern count="one">{0} ჰ</unitPattern>
-				<unitPattern count="other">{0} ჰ</unitPattern>
-			</unit>
-			<unit type="electric-siemens">
-				<displayName>სიმ</displayName>
-				<unitPattern count="one">{0} სიმ</unitPattern>
-				<unitPattern count="other">{0} სიმ</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>კალ-IT</displayName>
-				<unitPattern count="one">{0} კალ-IT</unitPattern>
-				<unitPattern count="other">{0} კალ-IT</unitPattern>
-			</unit>
-			<unit type="energy-becquerel">
-				<displayName>ბკ</displayName>
-				<unitPattern count="one">{0} ბკ</unitPattern>
-				<unitPattern count="other">{0} ბკ</unitPattern>
-			</unit>
-			<unit type="energy-sievert">
-				<displayName>ზვ</displayName>
-				<unitPattern count="one">{0} ზვ</unitPattern>
-				<unitPattern count="other">{0} ზვ</unitPattern>
-			</unit>
-			<unit type="energy-gray">
-				<displayName>გრ</displayName>
-				<unitPattern count="one">{0} გრ</unitPattern>
-				<unitPattern count="other">{0} გრ</unitPattern>
-			</unit>
-			<unit type="force-kilogram-force">
-				<displayName>კგძ</displayName>
-				<unitPattern count="one">{0} კგძ</unitPattern>
-				<unitPattern count="other">{0} კგძ</unitPattern>
-			</unit>
-			<unit type="magnetic-tesla">
-				<displayName>ტლ</displayName>
-				<unitPattern count="one">{0} ტლ</unitPattern>
-				<unitPattern count="other">{0} ტლ</unitPattern>
-			</unit>
-			<unit type="magnetic-weber">
-				<displayName>ვბ</displayName>
-				<unitPattern count="one">{0} ვბ</unitPattern>
-				<unitPattern count="other">{0} ვბ</unitPattern>
-			</unit>
 			<unit type="speed-light-speed">
 				<displayName>c</displayName>
-				<unitPattern count="one">{0} სინათლის სიჩქ.</unitPattern>
-				<unitPattern count="other">{0}-მაგი სინათლის სიჩქ.</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>ნ/მ</displayName>
@@ -7568,7 +7683,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="downwards_arrows">ქვემოთ მიმართული ისრები</characterLabel>
 		<characterLabel type="downwards_upwards_arrows">ქვემოთ და ზემოთ მიმართული ისრები</characterLabel>
 		<characterLabel type="east_asian_scripts">აღმოსავლეთ აზიური დამწერლობები</characterLabel>
-		<characterLabel type="emoji">Emoji</characterLabel>
+		<characterLabel type="emoji">ემოჯი</characterLabel>
 		<characterLabel type="european_scripts">ევროპული დამწერლობები</characterLabel>
 		<characterLabel type="female">ქალი</characterLabel>
 		<characterLabel type="flag">დროშა</characterLabel>
