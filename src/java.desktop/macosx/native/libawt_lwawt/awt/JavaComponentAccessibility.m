@@ -1063,7 +1063,7 @@ static NSObject *sAttributeNamesLOCK = nil;
                                      "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljava/lang/String;", nil);
 
 
-        jobject axRole = (*env)->CallStaticObjectMethod(env, jm_getAccessibleRoleDisplayString, fAccessible, fComponent);
+        jobject axRole = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleRoleDisplayString, fAccessible, fComponent);
         CHECK_EXCEPTION();
         if (axRole != NULL) {
             value = JavaStringToNSString(env, axRole);
@@ -1253,6 +1253,7 @@ static NSObject *sAttributeNamesLOCK = nil;
                 GET_ACCESSIBLENAME_METHOD_RETURN(nil);
                 jobject itemValue =
                         (*env)->CallStaticObjectMethod( env,
+                                                   sjc_CAccessibility,
                                                    sjm_getAccessibleName,
                                                    selectedMenuItem->fAccessible,
                                                    selectedMenuItem->fComponent );

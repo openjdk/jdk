@@ -46,7 +46,7 @@ DECLARE_CLASS_ONLY(sjc_PageFormat)
 DECLARE_CLASS_ONLY(sjc_CPrinterJob)
 DECLARE_CLASS_ONLY(sjc_CPrinterDialog)
 DECLARE_METHOD_ONLY(sjm_getNSPrintInfo)
-DECLARE_METHOD_ONLY(sjm_printerJob)
+DECLARE_FIELD_ONLY(sjm_printerJob)
 
 #define GET_PAPER_CLASS() GET_CLASS(sjc_Paper, "java/awt/print/Paper");
 #define GET_PAGEFORMAT_CLASS() GET_CLASS(sjc_PageFormat, "java/awt/print/PageFormat");

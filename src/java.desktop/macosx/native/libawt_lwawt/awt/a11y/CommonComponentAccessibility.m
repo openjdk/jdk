@@ -878,7 +878,7 @@ static jobject sAccessibilityClass = NULL;
         DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleRoleDisplayString, sjc_CAccessibility, "getAccessibleRoleDisplayString",
                                      "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljava/lang/String;", nil);
 
-        jobject axRole = (*env)->CallStaticObjectMethod(env, jm_getAccessibleRoleDisplayString, fAccessible, fComponent);
+        jobject axRole = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleRoleDisplayString, fAccessible, fComponent);
         CHECK_EXCEPTION();
         if (axRole != NULL) {
             value = JavaStringToNSString(env, axRole);
@@ -1072,6 +1072,7 @@ static jobject sAccessibilityClass = NULL;
                 GET_ACCESSIBLENAME_METHOD_RETURN(nil);
                 jobject itemValue =
                         (*env)->CallStaticObjectMethod( env,
+                                                   sjc_CAccessibility,
                                                    sjm_getAccessibleName,
                                                    selectedMenuItem->fAccessible,
                                                    selectedMenuItem->fComponent );
