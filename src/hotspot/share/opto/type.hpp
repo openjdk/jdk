@@ -2424,11 +2424,13 @@ inline double Type::getd() const {
 
 template <typename T>
 const T* Type::as(bool (Type::*is_xxx)() const, const char* expected) const {
+#ifdef ASSERT
   if (!(this->*is_xxx)()) {
     stringStream ss;
-    this->dump_on(&ss);
+    dump_on(&ss);
     assert((this->*is_xxx)(), "Not %s, got %s", expected, ss.as_string());
   }
+#endif
   return static_cast<const T*>(this);
 }
 
