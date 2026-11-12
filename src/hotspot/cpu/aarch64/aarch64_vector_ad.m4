@@ -3367,6 +3367,10 @@ $4  match(Set dst (Replicate src));
       __ dup($dst$$FloatRegister, get_arrangement(this), $src$$FloatRegister);
     } else {
       assert(UseSVE > 0, "must be sve");
+      // Use DUP (indexed, unpredicated) instead of CPY (predicated, merging) to replicate
+      // the scalar FP element. Unlike CPY (predicated, merging), DUP (indexed, unpredicated)
+      // overwrites all destination lanes without requiring any predicate or preserving the
+      // inactive destination lanes, so it has less dependencies.
       __ sve_dup($dst$$FloatRegister, __ $3, $src$$FloatRegister, 0);
     }
   %}
