@@ -2388,6 +2388,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     DerValue[] valSet;
                     try {
                         valSet = vs.getSet(1);
+                        if (valSet.length == 0) {
+                            throw new IOException("Empty attribute value set");
+                        }
                     } catch (IOException e) {
                         throw new IOException("Attribute " + attrId +
                                 " should have a value " + e.getMessage());
