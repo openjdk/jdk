@@ -6229,14 +6229,21 @@ void C2_MacroAssembler::vpsub(BasicType bt, XMMRegister dst, XMMRegister src1, X
   }
 }
 
-// ctz(x) = popcnt((x - 1) & ~x).
+// Trailing zero count computation is based on popcount operation as per
+// following equation. Targets supporting VPOPCNTDQ or AVX512BITALG offer
+// a direct vector instruction to compute population count.
+//      CTZ = POPC((x - 1) & ~x)
 // Ref: "Hacker's Delight" by Henry Warren
 void C2_MacroAssembler::vector_count_trailing_zeros_evex_popc(BasicType bt, XMMRegister dst, XMMRegister src,
                                                               XMMRegister xtmp, int vec_enc) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported type %s", type2name(bt));
+  // xtmp = 0
   vpxor(xtmp, xtmp, xtmp, vec_enc);
+  // xtmp = -1
   vpternlogd(xtmp, 0xff, xtmp, xtmp, vec_enc);
+  // xtmp = xtmp + src
   vpadd(bt, xtmp, xtmp, src, vec_enc);
+  // xtmp = xtmp & ~src
   vpternlogd(xtmp, 0x40, xtmp, src, vec_enc);
   vector_popcount_integral_evex(bt, dst, xtmp, k0, true, vec_enc);
 }
