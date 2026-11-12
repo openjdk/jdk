@@ -15,7 +15,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<timeZoneNames>
 			<metazone type="Azores">
 				<short>
-					<generic>AZOT</generic>
+					<generic>∅∅∅</generic>
 					<standard>∅∅∅</standard>
 					<daylight>∅∅∅</daylight>
 				</short>

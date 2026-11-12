@@ -420,7 +420,7 @@ void ModuleEntry::remove_unshareable_info() {
   }
 
   // Clear handles and restore at run time. Handles cannot be archived.
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_aot_cache()) {
     OopHandle null_handle;
     _shared_pd = null_handle;
   } else {

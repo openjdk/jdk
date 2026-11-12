@@ -194,7 +194,7 @@
   nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
   nonstatic_field(FlatLayout,                  _layout_kind,                                  LayoutKind)                            \
   nonstatic_field(FlatLayoutSlot,              _flat_layout,                                  FlatLayout)                            \
-  nonstatic_field(OptionalFlatLayout,          _is_flat,                                      bool)                                  \
+  nonstatic_field(OptionalFlatLayout,          _is_flat,                                      uint32_t)                              \
   nonstatic_field(OptionalFlatLayout,          _flat_layout,                                  FlatLayoutSlot)                        \
   nonstatic_field(ValueFieldInfo,              _klass,                                        ValueKlass*)                           \
   nonstatic_field(ValueFieldInfo,              _optional_flat_layout,                         OptionalFlatLayout)                    \

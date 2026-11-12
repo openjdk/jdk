@@ -88,7 +88,7 @@
 // contiguous ranges of dirty cards to be scanned. These blocks are converted to actual
 // memory ranges and then passed on to actual scanning.
 class G1RemSetScanState : public CHeapObj<mtGC> {
-  class G1DirtyRegions;
+  class G1IndexedRegionSet;
 
   G1CardTableClaimTable _card_claim_table;
   // The complete set of regions which card table needs to be cleared at the end
@@ -101,13 +101,13 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   // as g1_scanned_card_val. If G1 only did an initial evacuation pass, the
   // scanning already cleared these cards. In that case they are not in this set
   // at the end of the collection.
-  G1DirtyRegions* _all_dirty_regions;
+  G1IndexedRegionSet* _all_dirty_regions;
   // The set of regions which card table needs to be scanned for new dirty cards
   // in the current evacuation pass.
-  G1DirtyRegions* _next_dirty_regions;
+  G1IndexedRegionSet* _next_dirty_regions;
 
-// Set of (unique) regions that can be added to concurrently.
-  class G1DirtyRegions : public CHeapObj<mtGC> {
+  // Set of (unique) regions that can be added to concurrently.
+  class G1IndexedRegionSet : public CHeapObj<mtGC> {
     uint* _buffer;
     Atomic<uint> _cur_idx;
     size_t _max_num_regions;
@@ -115,7 +115,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
     Atomic<bool>* _contains;
 
   public:
-    G1DirtyRegions(size_t max_num_regions) :
+    G1IndexedRegionSet(size_t max_num_regions) :
       _buffer(NEW_C_HEAP_ARRAY(uint, max_num_regions, mtGC)),
       _cur_idx(0),
       _max_num_regions(max_num_regions),
@@ -124,7 +124,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
       reset();
     }
 
-    ~G1DirtyRegions() {
+    ~G1IndexedRegionSet() {
       FREE_C_HEAP_ARRAY(_buffer);
       FREE_C_HEAP_ARRAY(_contains);
     }
@@ -143,20 +143,20 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
       return _buffer[idx];
     }
 
-    void add_dirty_region(uint region) {
+    void add_region(uint region) {
       if (_contains[region].load_relaxed()) {
         return;
       }
 
-      bool marked_as_dirty = _contains[region].compare_set(false, true);
-      if (marked_as_dirty) {
+      bool added = _contains[region].compare_set(false, true);
+      if (added) {
         uint allocated = _cur_idx.fetch_then_add(1u);
         _buffer[allocated] = region;
       }
     }
 
-    // Creates the union of this and the other G1DirtyRegions.
-    void merge(const G1DirtyRegions* other) {
+    // Creates the union of this and the other G1IndexedRegionSet.
+    void merge(const G1IndexedRegionSet* other) {
       for (uint i = 0; i < other->num_regions(); i++) {
         uint region = other->at(i);
         if (!_contains[region].load_relaxed()) {
@@ -178,7 +178,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
 
 class G1ClearCardTableTask : public G1AbstractSubTask {
     G1CollectedHeap* _g1h;
-    G1DirtyRegions* _regions;
+    G1IndexedRegionSet* _regions;
     Atomic<uint> _cur_dirty_regions;
 
     G1RemSetScanState* _scan_state;
@@ -186,7 +186,7 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
     static constexpr uint num_cards_per_worker = M;
   public:
     G1ClearCardTableTask(G1CollectedHeap* g1h,
-                         G1DirtyRegions* regions,
+                         G1IndexedRegionSet* regions,
                          G1RemSetScanState* scan_state) :
       G1AbstractSubTask(G1GCPhaseTimes::ClearCardTable),
       _g1h(g1h),
@@ -265,8 +265,8 @@ public:
       clear_scan_top((uint)i);
     }
 
-    _all_dirty_regions = new G1DirtyRegions(max_num_regions);
-    _next_dirty_regions = new G1DirtyRegions(max_num_regions);
+    _all_dirty_regions = new G1IndexedRegionSet(max_num_regions);
+    _next_dirty_regions = new G1IndexedRegionSet(max_num_regions);
   }
 
   void prepare_for_merge_heap_roots() {
@@ -347,7 +347,7 @@ public:
           "Region %u is not suitable for scanning, is %sin collection set or %s",
           hr->hrm_index(), hr->in_collection_set() ? "" : "not ", hr->get_short_type_str());
   #endif
-    _next_dirty_regions->add_dirty_region(region);
+    _next_dirty_regions->add_region(region);
   }
 
   void add_all_dirty_region(uint region) {
@@ -357,7 +357,7 @@ public:
            "Only add collection set regions to all dirty regions directly but %u is %s",
            hr->hrm_index(), hr->get_short_type_str());
 #endif
-    _all_dirty_regions->add_dirty_region(region);
+    _all_dirty_regions->add_region(region);
   }
 
   void set_scan_top(uint region_idx, HeapWord* value) {

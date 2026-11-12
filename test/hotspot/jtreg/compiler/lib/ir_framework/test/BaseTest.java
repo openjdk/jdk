@@ -40,8 +40,8 @@ class BaseTest extends AbstractTest {
     private final boolean waitForCompilation;
     private int invocationCounter;
 
-    public BaseTest(DeclaredTest test, boolean skip) {
-        super(test.getWarmupIterations(), skip);
+    public BaseTest(DeclaredTest test) {
+        super(test.getWarmupIterations());
         this.test = test;
         this.testMethod = test.getTestMethod();
         this.testInfo = new TestInfo(testMethod, test.getCompLevel());

@@ -583,7 +583,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 
     if test "x$OPENJDK_TARGET_OS" = xaix; then
       TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno"
-      TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char"
+      TOOLCHAIN_CFLAGS_JDK="-ffunction-sections"
     fi
 
     TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -fvisibility=hidden -fstack-protector"
