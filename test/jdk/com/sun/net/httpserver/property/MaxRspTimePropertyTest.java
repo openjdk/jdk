@@ -45,6 +45,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -98,6 +99,23 @@ class MaxRspTimePropertyTest {
      */
     private static final Duration EXCESSIVE_PAUSE_DURATION =
             Duration.ofMillis(Integer.getInteger("test.excessivePauseDurationMillis"));
+
+    // Verify the provided time configuration
+    static {
+        long maxRspDurationSecs = Long.getLong("sun.net.httpserver.maxRspTime", -1);
+        assertNotEquals(
+                -1, maxRspDurationSecs,
+                "`sun.net.httpserver.maxRspTime` is not configured");
+        Duration maxRspDuration = Duration.ofSeconds(maxRspDurationSecs);
+        assertTrue(
+                TOLERATED_PAUSE_DURATION.compareTo(maxRspDuration) < 0,
+                "Tolerated pause duration (%s) must be shorter than the maximum response time (%s)"
+                        .formatted(TOLERATED_PAUSE_DURATION, maxRspDuration));
+        assertTrue(
+                EXCESSIVE_PAUSE_DURATION.compareTo(maxRspDuration) > 0,
+                "Excessive pause duration (%s) must be longer than the maximum response time (%s)"
+                        .formatted(EXCESSIVE_PAUSE_DURATION, maxRspDuration));
+    }
 
     private static final Charset CHARSET = StandardCharsets.US_ASCII;
 

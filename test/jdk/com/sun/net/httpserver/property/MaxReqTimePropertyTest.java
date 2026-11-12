@@ -43,7 +43,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -95,6 +97,23 @@ class MaxReqTimePropertyTest {
      */
     private static final Duration EXCESSIVE_PAUSE_DURATION =
             Duration.ofMillis(Integer.getInteger("test.excessivePauseDurationMillis"));
+
+    // Verify the provided time configuration
+    static {
+        long maxReqDurationSecs = Long.getLong("sun.net.httpserver.maxReqTime", -1);
+        assertNotEquals(
+                -1, maxReqDurationSecs,
+                "`sun.net.httpserver.maxReqTime` is not configured");
+        Duration maxReqDuration = Duration.ofSeconds(maxReqDurationSecs);
+        assertTrue(
+                TOLERATED_PAUSE_DURATION.compareTo(maxReqDuration) < 0,
+                "Tolerated pause duration (%s) must be shorter than the maximum request time (%s)"
+                        .formatted(TOLERATED_PAUSE_DURATION, maxReqDuration));
+        assertTrue(
+                EXCESSIVE_PAUSE_DURATION.compareTo(maxReqDuration) > 0,
+                "Excessive pause duration (%s) must be longer than the maximum request time (%s)"
+                        .formatted(EXCESSIVE_PAUSE_DURATION, maxReqDuration));
+    }
 
     private static final HttpServer SERVER = createServer();
 
