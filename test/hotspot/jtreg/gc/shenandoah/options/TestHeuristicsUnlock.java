@@ -48,69 +48,73 @@ public class TestHeuristicsUnlock {
         testWith("-XX:ShenandoahGCHeuristics=static",     Mode.PRODUCT);
         testWith("-XX:ShenandoahGCHeuristics=compact",    Mode.PRODUCT);
         testWith("-XX:ShenandoahGCHeuristics=aggressive", Mode.DIAGNOSTIC);
+        testWith("-XX:ShenandoahGCHeuristics=passive",    Mode.DIAGNOSTIC);
     }
 
     private static void testWith(String h, Mode mode) throws Exception {
-        {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
-                    "-Xmx128m",
-                    "-XX:-UnlockDiagnosticVMOptions",
-                    "-XX:-UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-XX:ShenandoahGCMode=satb",
-                    h,
-                    "-version"
-            );
-            switch (mode) {
-                case PRODUCT:
-                    output.shouldHaveExitValue(0);
-                    break;
-                case DIAGNOSTIC:
-                case EXPERIMENTAL:
-                    output.shouldNotHaveExitValue(0);
-                    break;
+        String[] shenandoahModes = {"satb", "generational"};
+        for (var shenandoahMode : shenandoahModes) {
+            {
+                OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
+                        "-Xmx128m",
+                        "-XX:-UnlockDiagnosticVMOptions",
+                        "-XX:-UnlockExperimentalVMOptions",
+                        "-XX:+UseShenandoahGC",
+                        "-XX:ShenandoahGCMode=" + shenandoahMode,
+                        h,
+                        "-version"
+                );
+                switch (mode) {
+                    case PRODUCT:
+                        output.shouldHaveExitValue(0);
+                        break;
+                    case DIAGNOSTIC:
+                    case EXPERIMENTAL:
+                        output.shouldNotHaveExitValue(0);
+                        break;
+                }
             }
-        }
 
-        {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
-                    "-Xmx128m",
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:-UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-XX:ShenandoahGCMode=satb",
-                    h,
-                    "-version"
-            );
-            switch (mode) {
-                case PRODUCT:
-                case DIAGNOSTIC:
-                    output.shouldHaveExitValue(0);
-                    break;
-                case EXPERIMENTAL:
-                    output.shouldNotHaveExitValue(0);
-                    break;
+            {
+                OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
+                        "-Xmx128m",
+                        "-XX:+UnlockDiagnosticVMOptions",
+                        "-XX:-UnlockExperimentalVMOptions",
+                        "-XX:+UseShenandoahGC",
+                        "-XX:ShenandoahGCMode=" + shenandoahMode,
+                        h,
+                        "-version"
+                );
+                switch (mode) {
+                    case PRODUCT:
+                    case DIAGNOSTIC:
+                        output.shouldHaveExitValue(0);
+                        break;
+                    case EXPERIMENTAL:
+                        output.shouldNotHaveExitValue(0);
+                        break;
+                }
             }
-        }
 
-        {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
-                    "-Xmx128m",
-                    "-XX:-UnlockDiagnosticVMOptions",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-XX:ShenandoahGCMode=satb",
-                    h,
-                    "-version"
-            );
-            switch (mode) {
-                case PRODUCT:
-                case EXPERIMENTAL:
-                    output.shouldHaveExitValue(0);
-                    break;
-                case DIAGNOSTIC:
-                    output.shouldNotHaveExitValue(0);
-                    break;
+            {
+                OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
+                        "-Xmx128m",
+                        "-XX:-UnlockDiagnosticVMOptions",
+                        "-XX:+UnlockExperimentalVMOptions",
+                        "-XX:+UseShenandoahGC",
+                        "-XX:ShenandoahGCMode=" + shenandoahMode,
+                        h,
+                        "-version"
+                );
+                switch (mode) {
+                    case PRODUCT:
+                    case EXPERIMENTAL:
+                        output.shouldHaveExitValue(0);
+                        break;
+                    case DIAGNOSTIC:
+                        output.shouldNotHaveExitValue(0);
+                        break;
+                }
             }
         }
     }

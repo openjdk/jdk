@@ -64,6 +64,10 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   _last_trigger(OTHER),
   _available(Moving_Average_Samples),
   _headroom_adjustment(0) {
+  if (ShenandoahHeuristicsFlag::value() == ShenandoahHeuristicsFlag::Heuristic::PASSIVE && !UnlockDiagnosticVMOptions) {
+    vm_exit_during_initialization(err_msg(
+      "Heuristics \"Passive\" is diagnostic, and must be enabled via -XX:+UnlockDiagnosticVMOptions."));
+  }
 }
 
 void ShenandoahAdaptiveHeuristics::initialize() {
