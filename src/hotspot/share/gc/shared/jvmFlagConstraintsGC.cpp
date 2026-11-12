@@ -407,42 +407,6 @@ JVMFlag::Error MetaspaceSizeConstraintFunc(size_t value, bool verbose) {
   }
 }
 
-JVMFlag::Error MaxMetaspaceSizeConstraintFunc(size_t value, bool verbose) {
-  if (value < MetaspaceSize) {
-    if (FLAG_IS_DEFAULT(MetaspaceSize) || FLAG_IS_ERGO(MetaspaceSize)) {
-      // The new MaxMetaspaceSize value is < the default or ergo adjusted
-      // MetaspaceSize so we silently trim MetaspaceSize down to fit. This
-      // is what Metaspace::ergo_initialize() does as a sanity check when
-      // MetaspaceSize is > MaxMetaspaceSize. The FLAG_IS_ERGO check is
-      // so we can honor HotSpot's last flag value wins policy.
-      FLAG_SET_ERGO(MetaspaceSize, value);
-    } else {
-      JVMFlag::printError(verbose,
-                          "MaxMetaspaceSize (%zu) must be "
-                          "greater than or equal to MetaspaceSize (%zu)\n",
-                          value, MetaspaceSize);
-      return JVMFlag::VIOLATES_CONSTRAINT;
-    }
-  } else if (value > MetaspaceSize && FLAG_IS_ERGO(MetaspaceSize)) {
-    // The new MaxMetaspaceSize value is > the previous ergo adjusted
-    // MetaspaceSize so we silently adjust MetaspaceSize back up.
-    if (value < defaultMetaspaceSize) {
-      // The new MaxMetaspaceSize is still less than defaultMetaspaceSize
-      // so we silently adjust MetaspaceSize to fit. However, we can't
-      // use FLAG_SET_ERGO(MetaspaceSize, value) directly because the
-      // new larger MaxMetaspaceSize is not in effect until we return.
-      MetaspaceSize = value;
-    } else {
-      // The new MaxMetaspaceSize is >= defaultMetaspaceSize so we
-      // silently adjust MetaspaceSize back to defaultMetaspaceSize.
-      FLAG_SET_DEFAULT(MetaspaceSize, defaultMetaspaceSize);
-      // However, using FLAG_SET_DEFAULT here does not change the flag
-      // origin back to "{default}". It remains as "{ergonomic}".
-    }
-  }
-  return JVMFlag::SUCCESS;
-}
-
 JVMFlag::Error GCCardSizeInBytesConstraintFunc(uint value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,

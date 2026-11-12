@@ -49,9 +49,8 @@ public class TestMetaspaceSizeFlags {
   public static final long DEFAULT_METASPACE_SIZE = (Platform.is64bit() ? 21 : 16) * M;
   // If we set a MaxMetaspaceSize value less than the default MetaspaceSize
   // value and then set a MaxMetaspaceSize value higher than the default
-  // MetaspaceSize, then MetaspaceSize should be silently adjusted to match
-  // the first lower value and then silently adjusted back to the default
-  // MetaspaceSize for the second higher value.
+  // MetaspaceSize, then MetaspaceSize should be unaffected and remain at
+  // the default MetaspaceSize.
   public static final long HIGHER_THAN_DEFAULT = 32 * M;
   // If we set a MaxMetaspaceSize value less than the default MetaspaceSize
   // value, then MetaspaceSize should be silently adjusted to match.
@@ -77,15 +76,14 @@ public class TestMetaspaceSizeFlags {
     // 8395825: HotSpot has a last value wins policy for repeated flags.
     //          We need to make sure that MaxMetaspaceSize can be lowered
     //          once, raised once (still below default MetaspaceSize), and
-    //          that MetaspaceSize follows.
+    //          that the resulting MetaspaceSize matches the second
+    //          MaxMetaspaceSize value.
     testMaxMetaspaceSizeLTDefaultMetaspaceSizeTwice(LOWER_THAN_DEFAULT2,
                                                     LOWER_THAN_DEFAULT1);
     // 8395825: HotSpot has a last value wins policy for repeated flags.
     //          We need to make sure that MaxMetaspaceSize can be lowered
-    //          once, raised once above default MetaspaceSize and that
-    //          MetaspaceSize follows to the first lower value and then
-    //          is adjusted back to the default MetaspaceSize for the higher
-    //          value.
+    //          once, raised once above default MetaspaceSize and that the
+    //          resulting MetaspaceSize matches the default MetaspaceSize.
     testMaxMetaspaceSizeLTDefaultMetaspaceSizeTwice(LOWER_THAN_DEFAULT1,
                                                     HIGHER_THAN_DEFAULT);
     testMaxMetaspaceSizeGTMetaspaceSize(MAX_ALIGNMENT * 2, MAX_ALIGNMENT);
