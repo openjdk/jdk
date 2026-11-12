@@ -27,7 +27,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ann">Obolo</language>
 			<language type="anp">Angika</language>
 			<language type="ar">Arab</language>
-			<language type="ar_001">Arab Standar Anyar</language>
+			<language type="ar_001">Arab Standar Modern</language>
 			<language type="arn">Mapushe</language>
 			<language type="arp">Arapaho</language>
 			<language type="ars">Arab Najdi</language>
@@ -58,10 +58,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bo">Tibet</language>
 			<language type="br">Breton</language>
 			<language type="brx">Bodo</language>
-			<language type="bs">Bosnia lan Hercegovina</language>
+			<language type="bs">Bosnia</language>
 			<language type="bug">Bugis</language>
 			<language type="byn">Blin</language>
-			<language type="ca">Katala</language>
+			<language type="ca">Katalan</language>
 			<language type="cay">Kayuga</language>
 			<language type="ccp">Chakma</language>
 			<language type="ce">Chechen</language>
@@ -83,22 +83,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="crl">Kree Lor Segara</language>
 			<language type="crm">Moose Cree</language>
 			<language type="crr">Karolina Algonquian</language>
-			<language type="cs">Ceska</language>
+			<language type="cs">Ceko</language>
 			<language type="csw">Kree Rawa</language>
 			<language type="cu">Slavia Gerejani</language>
-			<language type="cv">Khuvash</language>
+			<language type="cv">Chuvash</language>
 			<language type="cy">Welsh</language>
-			<language type="da">Dansk</language>
+			<language type="da">Denmark</language>
 			<language type="dak">Dakota</language>
 			<language type="dar">Dargwa</language>
 			<language type="dav">Taita</language>
-			<language type="de">Jérman</language>
-			<language type="de_AT">Jérman Ostenrik</language>
-			<language type="de_CH">Jérman Switserlan</language>
+			<language type="de">Jerman</language>
+			<language type="de_AT">Jerman Austria</language>
+			<language type="de_CH">Swiss Standar Jerman</language>
 			<language type="dgr">Dogrib</language>
 			<language type="dje">Zarma</language>
 			<language type="doi">Dogri</language>
-			<language type="dsb">Sorbia Non Standar</language>
+			<language type="dsb">Sorbia Hilir</language>
 			<language type="dua">Duala</language>
 			<language type="dv">Divehi</language>
 			<language type="dyo">Jola-Fonyi</language>
@@ -110,37 +110,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eka">Ekajuk</language>
 			<language type="el">Yunani</language>
 			<language type="en">Inggris</language>
-			<language type="en_AU">Inggris Ostrali</language>
+			<language type="en_AU">Inggris Australia</language>
 			<language type="en_CA">Inggris Kanada</language>
-			<language type="en_GB">Inggris Karajan Manunggal</language>
+			<language type="en_GB">Inggris Britania Raya</language>
 			<language type="en_GB" alt="short">Inggris (Britania)</language>
-			<language type="en_US">Inggris Amérika Sarékat</language>
+			<language type="en_US">Inggris Amerika Serikat</language>
 			<language type="en_US" alt="short">Inggris (AS)</language>
 			<language type="eo">Esperanto</language>
 			<language type="es">Spanyol</language>
-			<language type="es_419">Spanyol (Amerika Latin)</language>
-			<language type="es_ES">Spanyol (Eropah)</language>
-			<language type="es_MX">Spanyol (Meksiko)</language>
+			<language type="es_419">Spanyol Amerika Latin</language>
+			<language type="es_ES">Spanyol Eropa</language>
+			<language type="es_MX">Spanyol Meksiko</language>
 			<language type="et">Estonia</language>
 			<language type="eu">Basque</language>
 			<language type="ewo">Ewondo</language>
 			<language type="fa">Persia</language>
 			<language type="ff">Fula</language>
 			<language type="fi">Suomi</language>
-			<language type="fil">Tagalog</language>
+			<language type="fil">Filipino</language>
 			<language type="fj">Fijian</language>
 			<language type="fo">Faroe</language>
 			<language type="fon">Fon</language>
 			<language type="fr">Prancis</language>
 			<language type="fr_CA">Prancis Kanada</language>
-			<language type="fr_CH">Prancis Switserlan</language>
+			<language type="fr_CH">Prancis Swiss</language>
 			<language type="frc">Prancis Cajun</language>
 			<language type="frr">Frisian Lor Segara</language>
 			<language type="fur">Friulian</language>
-			<language type="fy">Frisia Sisih Kulon</language>
+			<language type="fy">Frisia Kulon</language>
 			<language type="ga">Irlandia</language>
 			<language type="gaa">Ga</language>
-			<language type="gd">Gaulia</language>
+			<language type="gd">Gaelik Skotlandia</language>
 			<language type="gez">Gees</language>
 			<language type="gil">Gilbertese</language>
 			<language type="gl">Galisia</language>
@@ -157,10 +157,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hax">Haida Sisih Kidul</language>
 			<language type="he">Ibrani</language>
 			<language type="hi">India</language>
+			<language type="hi_Latn" alt="variant">Inggris India</language>
 			<language type="hil">Hiligainon</language>
 			<language type="hmn">Hmong</language>
 			<language type="hr">Kroasia</language>
-			<language type="hsb">Sorbia Standar</language>
+			<language type="hsb">Sorbia Hulu</language>
 			<language type="ht">Kreol Haiti</language>
 			<language type="hu">Hungaria</language>
 			<language type="hup">Hupa</language>
@@ -280,7 +281,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ms">Melayu</language>
 			<language type="mt">Malta</language>
 			<language type="mua">Mundang</language>
-			<language type="mul">Basa Multilingua</language>
+			<language type="mul">Multibasa</language>
 			<language type="mus">Muskogee</language>
 			<language type="mwl">Mirandese</language>
 			<language type="my">Myanmar</language>
@@ -291,14 +292,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="naq">Nama</language>
 			<language type="nb">Bokmål Norwegia</language>
 			<language type="nd">Ndebele Lor</language>
-			<language type="nds">Jerman Non Standar</language>
+			<language type="nds">Jerman Dataran Cendhek</language>
 			<language type="ne">Nepal</language>
 			<language type="new">Newari</language>
 			<language type="ng">Ndonga</language>
 			<language type="nia">Nias</language>
 			<language type="niu">Niuean</language>
 			<language type="nl">Walanda</language>
-			<language type="nl_BE">Flemis</language>
+			<language type="nl_BE">Flemish</language>
 			<language type="nmg">Kwasio</language>
 			<language type="nn">Nynorsk Norwegia</language>
 			<language type="nnh">Ngiemboon</language>
@@ -311,7 +312,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nv">Navajo</language>
 			<language type="ny">Nyanja</language>
 			<language type="nyn">Nyankole</language>
-			<language type="oc">Ossitan</language>
+			<language type="oc">Oksitan</language>
 			<language type="ojb">Ojibwa Kulon Segara</language>
 			<language type="ojc">Ojibwa Tengah</language>
 			<language type="ojs">Oji-Kree</language>
@@ -328,12 +329,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pcm">Nigeria Pidgin</language>
 			<language type="pis">Pijin</language>
 			<language type="pl">Polandia</language>
+			<language type="pms">Piemonte</language>
 			<language type="pqm">Maliseet-Passamakuoddi</language>
 			<language type="prg">Prusia</language>
 			<language type="ps">Pashto</language>
 			<language type="pt">Portugis</language>
 			<language type="pt_BR">Portugis Brasil</language>
-			<language type="pt_PT">Portugis Portugal</language>
+			<language type="pt_PT">Portugis Eropa</language>
 			<language type="qu">Quechua</language>
 			<language type="raj">Rajasthani</language>
 			<language type="rap">Rapanui</language>
@@ -385,7 +387,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sv">Swedia</language>
 			<language type="sw">Swahili</language>
 			<language type="swb">Komorian</language>
-			<language type="syr">Siriak</language>
+			<language type="syr">Suryani</language>
 			<language type="szl">Silesia</language>
 			<language type="ta">Tamil</language>
 			<language type="tce">Tutkhone Sisih Kidul</language>
@@ -415,7 +417,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tvl">Tupalu</language>
 			<language type="twq">Tasawaq</language>
 			<language type="ty">Tahiti</language>
-			<language type="tyv">Tupinian</language>
+			<language type="tyv">Tuva</language>
 			<language type="tzm">Tamazight Atlas Tengah</language>
 			<language type="udm">Udmurt</language>
 			<language type="ug">Uighur</language>
@@ -454,8 +456,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh" alt="menu">Tyonghwa, Mandarin</language>
 			<language type="zh_Hans">Tyonghwa (Ringkes)</language>
 			<language type="zh_Hans" alt="long">Tyonghwa Mandarin (Ringkes)</language>
-			<language type="zh_Hant">Tyonghwa (Tradisional)</language>
-			<language type="zh_Hant" alt="long">Tyonghwa Mandarin (Tradisional)</language>
+			<language type="zh_Hant" alt="long">Tyonghwa Mandarin Tradhisional</language>
 			<language type="zu">Zulu</language>
 			<language type="zun">Zuni</language>
 			<language type="zxx">Konten tanpa linguistik</language>
@@ -463,18 +464,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</languages>
 		<scripts>
 			<script type="Adlm">Adlam</script>
-			<script type="Arab">hija’iyah</script>
-			<script type="Aran">Nastalik</script>
+			<script type="Arab">Hijaiyah</script>
+			<script type="Aran">Nastaliq</script>
 			<script type="Armn">Armenia</script>
 			<script type="Beng">Bangla</script>
 			<script type="Bopo">Bopomofo</script>
 			<script type="Brai">Braille</script>
 			<script type="Cakm">Chakma</script>
-			<script type="Cans">Wanda Manunggal Aborigin Kanada</script>
-			<script type="Cher">Sherokee</script>
-			<script type="Cyrl">Sirilik</script>
+			<script type="Cans">Aksara Suku Aborigin Kanada Terpadu</script>
+			<script type="Cher">Cherokee</script>
+			<script type="Cyrl">Kiril</script>
 			<script type="Deva">Devanagari</script>
-			<script type="Ethi">Ethiopik</script>
+			<script type="Ethi">Ge’ez</script>
 			<script type="Geor">Georgia</script>
 			<script type="Grek">Yunani</script>
 			<script type="Gujr">Gujarati</script>
@@ -488,7 +489,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hant" alt="stand-alone">Han Tradhisional</script>
 			<script type="Hebr">Ibrani</script>
 			<script type="Hira">Hiragana</script>
-			<script type="Hrkt">Silabaris Jepang</script>
+			<script type="Hrkt">Aksara Silabis Jepang</script>
 			<script type="Jpan">Jepang</script>
 			<script type="Kana">Katakana</script>
 			<script type="Khmr">Khmer</script>
@@ -506,10 +507,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Rohg">Hanifi</script>
 			<script type="Sinh">Sinhala</script>
 			<script type="Sund">Sunda</script>
-			<script type="Syrc">Siriak</script>
+			<script type="Syrc">Suryani</script>
 			<script type="Taml">Tamil</script>
 			<script type="Telu">Telugu</script>
-			<script type="Tfng">Tifinak</script>
+			<script type="Tfng">Tifinagh</script>
 			<script type="Thaa">Thaana</script>
 			<script type="Thai">Thailand</script>
 			<script type="Tibt">Tibet</script>
@@ -525,22 +526,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<territories>
 			<territory type="001">Donya</territory>
 			<territory type="002">Afrika</territory>
-			<territory type="003">Amérika Lor</territory>
-			<territory type="005">Amérika Kidul</territory>
-			<territory type="009">Oséania</territory>
+			<territory type="003">Amerika Lor</territory>
+			<territory type="005">Amerika Kidul</territory>
+			<territory type="009">Oseania</territory>
 			<territory type="011">Afrika Kulon</territory>
-			<territory type="013">Amérika Tengah</territory>
-			<territory type="014">Afrika Wétan</territory>
+			<territory type="013">Amerika Tengah</territory>
+			<territory type="014">Afrika Wetan</territory>
 			<territory type="015">Afrika Lor</territory>
-			<territory type="017">Afrika Sisih Tengah</territory>
+			<territory type="017">Afrika Tengah</territory>
 			<territory type="018">Afrika Sisih Kidul</territory>
-			<territory type="019">Amérika</territory>
-			<territory type="021">Amérika Sisih Lor</territory>
+			<territory type="019">Amerika</territory>
+			<territory type="021">Amerika Sisih Lor</territory>
 			<territory type="029">Karibia</territory>
-			<territory type="030">Asia Wétan</territory>
+			<territory type="030">Asia Wetan</territory>
 			<territory type="034">Asia Kidul</territory>
-			<territory type="035">Asia Kidul-wétan</territory>
-			<territory type="039">Éropah Kidul</territory>
+			<territory type="035">Asia Kidul-wetan</territory>
+			<territory type="039">Eropa Sisih Kidul</territory>
 			<territory type="053">Australasia</territory>
 			<territory type="054">Melanesia</territory>
 			<territory type="057">Daerah Mikronesia</territory>
@@ -548,61 +549,61 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="142">Asia</territory>
 			<territory type="143">Asia Tengah</territory>
 			<territory type="145">Asia Kulon</territory>
-			<territory type="150">Éropah</territory>
-			<territory type="151">Éropah Wétan</territory>
-			<territory type="154">Éropah Lor</territory>
-			<territory type="155">Éropah Kulon</territory>
-			<territory type="202">Afrika Kidule Sahara</territory>
-			<territory type="419">Amérika Latin</territory>
+			<territory type="150">Eropah</territory>
+			<territory type="151">Eropa Sisih Wetan</territory>
+			<territory type="154">Eropa Sisih Lor</territory>
+			<territory type="155">Eropa Sisih Kulon</territory>
+			<territory type="202">Afrika Sub-Sahara</territory>
+			<territory type="419">Amerika Latin</territory>
 			<territory type="AC">Pulo Ascension</territory>
-			<territory type="AD">Andora</territory>
-			<territory type="AE">Uni Émirat Arab</territory>
+			<territory type="AD">Andorra</territory>
+			<territory type="AE">Uni Emirat Arab</territory>
 			<territory type="AF">Afganistan</territory>
 			<territory type="AG">Antigua lan Barbuda</territory>
 			<territory type="AI">Anguilla</territory>
-			<territory type="AL">Albani</territory>
-			<territory type="AM">Arménia</territory>
+			<territory type="AL">Albania</territory>
+			<territory type="AM">Armenia</territory>
 			<territory type="AO">Angola</territory>
 			<territory type="AQ">Antartika</territory>
-			<territory type="AR">Argèntina</territory>
+			<territory type="AR">Argentina</territory>
 			<territory type="AS">Samoa Amerika</territory>
-			<territory type="AT">Ostenrik</territory>
-			<territory type="AU">Ostrali</territory>
+			<territory type="AT">Austria</territory>
+			<territory type="AU">Australia</territory>
 			<territory type="AW">Aruba</territory>
-			<territory type="AX">Kapuloan Alan</territory>
+			<territory type="AX">Kapuloan Aland</territory>
 			<territory type="AZ">Azerbaijan</territory>
-			<territory type="BA">Bosnia lan Hèrségovina</territory>
-			<territory type="BB">Barbadhos</territory>
-			<territory type="BD">Banggaladésa</territory>
-			<territory type="BE">Bèlgi</territory>
+			<territory type="BA">Bosnia &amp; Herzegovina</territory>
+			<territory type="BB">Barbados</territory>
+			<territory type="BD">Bangladesh</territory>
+			<territory type="BE">Belgia</territory>
 			<territory type="BF">Burkina Faso</territory>
-			<territory type="BG">Bulgari</territory>
+			<territory type="BG">Bulgaria</territory>
 			<territory type="BH">Bahrain</territory>
 			<territory type="BI">Burundi</territory>
-			<territory type="BJ">Bénin</territory>
-			<territory type="BL">Saint Barthélémi</territory>
+			<territory type="BJ">Benin</territory>
+			<territory type="BL">Santo Bartlemi</territory>
 			<territory type="BM">Bermuda</territory>
-			<territory type="BN">Brunéi</territory>
+			<territory type="BN">Brunei</territory>
 			<territory type="BO">Bolivia</territory>
 			<territory type="BQ">Karibia Walanda</territory>
 			<territory type="BR">Brasil</territory>
 			<territory type="BS">Bahama</territory>
 			<territory type="BT">Bhutan</territory>
-			<territory type="BV">Pulo Bovèt</territory>
+			<territory type="BV">Pulo Bouvet</territory>
 			<territory type="BW">Botswana</territory>
-			<territory type="BY">Bélarus</territory>
-			<territory type="BZ">Bélisé</territory>
+			<territory type="BY">Belarusia</territory>
+			<territory type="BZ">Belize</territory>
 			<territory type="CA">Kanada</territory>
 			<territory type="CC">Kapuloan Cocos (Keeling)</territory>
 			<territory type="CD">Kongo - Kinshasa</territory>
-			<territory type="CD" alt="variant">Républik Dhémokratik Kongo</territory>
-			<territory type="CF">Républik Afrika Tengah</territory>
-			<territory type="CG">Kongo - Brassaville</territory>
-			<territory type="CG" alt="variant">Républik Kongo</territory>
-			<territory type="CH">Switserlan</territory>
-			<territory type="CI">Pasisir Gadhing</territory>
+			<territory type="CD" alt="variant">Republik Demokratik Kongo</territory>
+			<territory type="CF">Republik Afrika Tengah</territory>
+			<territory type="CG">Kongo - Brazzaville</territory>
+			<territory type="CG" alt="variant">Republik Kongo</territory>
+			<territory type="CH">Swiss</territory>
+			<territory type="CI">Pante Gadhing</territory>
 			<territory type="CK">Kapuloan Cook</territory>
-			<territory type="CL">Cilé</territory>
+			<territory type="CL">Chili</territory>
 			<territory type="CM">Kamerun</territory>
 			<territory type="CN">Tyongkok</territory>
 			<territory type="CO">Kolombia</territory>
@@ -610,225 +611,226 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CQ">Sark</territory>
 			<territory type="CR">Kosta Rika</territory>
 			<territory type="CU">Kuba</territory>
-			<territory type="CV">Pongol Verdé</territory>
-			<territory type="CW">Kurasao</territory>
+			<territory type="CV">Tanjung Verde</territory>
+			<territory type="CW">Curaçao</territory>
 			<territory type="CX">Pulo Natal</territory>
 			<territory type="CY">Siprus</territory>
-			<territory type="CZ">Céko</territory>
-			<territory type="CZ" alt="variant">Républik Céko</territory>
-			<territory type="DE">Jérman</territory>
+			<territory type="CZ">Ceko</territory>
+			<territory type="CZ" alt="variant">Republik Ceko</territory>
+			<territory type="DE">Jerman</territory>
 			<territory type="DG">Diego Garcia</territory>
-			<territory type="DJ">Jibuti</territory>
-			<territory type="DK">Dhènemarken</territory>
+			<territory type="DJ">Djibouti</territory>
+			<territory type="DK">Denmark</territory>
 			<territory type="DM">Dominika</territory>
-			<territory type="DO">Républik Dominika</territory>
-			<territory type="DZ">Aljasair</territory>
-			<territory type="EA">Séuta lan Melila</territory>
-			<territory type="EC">Ékuadhor</territory>
-			<territory type="EE">Éstonia</territory>
+			<territory type="DO">Republik Dominika</territory>
+			<territory type="DZ">Aljazair</territory>
+			<territory type="EA">Ceuta &amp; Melilla</territory>
+			<territory type="EC">Ekuador</territory>
+			<territory type="EE">Estonia</territory>
 			<territory type="EG">Mesir</territory>
 			<territory type="EH">Sahara Kulon</territory>
-			<territory type="ER">Éritréa</territory>
-			<territory type="ES">Sepanyol</territory>
-			<territory type="ET">Étiopia</territory>
-			<territory type="EU">Uni Éropah</territory>
-			<territory type="EZ">Zona Éuro</territory>
-			<territory type="FI">Finlan</territory>
+			<territory type="ER">Eritrea</territory>
+			<territory type="ES">Spanyol</territory>
+			<territory type="ET">Ethiopia</territory>
+			<territory type="EU">Uni Eropah</territory>
+			<territory type="EZ">Zona Euro</territory>
+			<territory type="FI">Finlandia</territory>
 			<territory type="FJ">Fiji</territory>
 			<territory type="FK">Kapuloan Falkland</territory>
 			<territory type="FK" alt="variant">Kapuloan Falkland (Islas Malvinas)</territory>
-			<territory type="FM">Féderasi Mikronésia</territory>
+			<territory type="FM">Mikronesia</territory>
 			<territory type="FO">Kapuloan Faro</territory>
 			<territory type="FR">Prancis</territory>
 			<territory type="GA">Gabon</territory>
-			<territory type="GB">Karajan Manunggal</territory>
-			<territory type="GB" alt="short">KM</territory>
-			<territory type="GD">Grénada</territory>
-			<territory type="GE">Géorgia</territory>
+			<territory type="GB">Britania Raya</territory>
+			<territory type="GB" alt="short">Inggris Raya</territory>
+			<territory type="GD">Grenada</territory>
+			<territory type="GE">Georgia</territory>
 			<territory type="GF">Guyana Prancis</territory>
-			<territory type="GG">Guernsei</territory>
+			<territory type="GG">Guernsey</territory>
 			<territory type="GH">Ghana</territory>
 			<territory type="GI">Gibraltar</territory>
 			<territory type="GL">Greenland</territory>
 			<territory type="GM">Gambia</territory>
 			<territory type="GN">Guinea</territory>
-			<territory type="GP">Guadélup</territory>
-			<territory type="GQ">Guinéa Katulistiwa</territory>
-			<territory type="GR">Grikenlan</territory>
+			<territory type="GP">Guadeloupe</territory>
+			<territory type="GQ">Guinea Khatulistiwa</territory>
+			<territory type="GR">Yunani</territory>
 			<territory type="GS">Georgia Kidul lan Kapuloan Sandwich Kidul</territory>
-			<territory type="GT">Guatémala</territory>
+			<territory type="GT">Guatemala</territory>
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Guinea-Bissau</territory>
 			<territory type="GY">Guyana</territory>
-			<territory type="HK">Laladan Administratif Astamiwa Hong Kong</territory>
+			<territory type="HK">Hong Kong Daerah Administratif Khusus Tyongkok</territory>
 			<territory type="HK" alt="short">Hong Kong</territory>
 			<territory type="HM">Kapuloan Heard lan McDonald</territory>
 			<territory type="HN">Honduras</territory>
 			<territory type="HR">Kroasia</territory>
 			<territory type="HT">Haiti</territory>
-			<territory type="HU">Honggari</territory>
-			<territory type="IC">Kapuloan Kanari</territory>
-			<territory type="ID">Indonésia</territory>
-			<territory type="IE">Républik Irlan</territory>
-			<territory type="IL">Israèl</territory>
-			<territory type="IM">Pulo Man</territory>
-			<territory type="IN">Indhia</territory>
+			<territory type="HU">Hungaria</territory>
+			<territory type="IC">Kapuloan Kanaria</territory>
+			<territory type="ID">Indonesia</territory>
+			<territory type="IE">Republik Irlandia</territory>
+			<territory type="IL">Israel</territory>
+			<territory type="IM">Isle of Man</territory>
+			<territory type="IN">India</territory>
 			<territory type="IO">Wilayah Inggris ing Segara Hindia</territory>
 			<territory type="IO" alt="chagos">Kapuloan Chagos</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
-			<territory type="IS">Èslan</territory>
-			<territory type="IT">Itali</territory>
+			<territory type="IS">Islandia</territory>
+			<territory type="IT">Italia</territory>
 			<territory type="JE">Jersey</territory>
 			<territory type="JM">Jamaika</territory>
 			<territory type="JO">Yordania</territory>
 			<territory type="JP">Jepang</territory>
-			<territory type="KE">Kénya</territory>
+			<territory type="KE">Kenya</territory>
 			<territory type="KG">Kirgistan</territory>
 			<territory type="KH">Kamboja</territory>
 			<territory type="KI">Kiribati</territory>
 			<territory type="KM">Komoro</territory>
-			<territory type="KN">Saint Kits lan Nèvis</territory>
+			<territory type="KN">St. Kitts &amp; Nevis</territory>
 			<territory type="KP">Korea Lor</territory>
-			<territory type="KR">Koréa Kidul</territory>
+			<territory type="KR">Korea Kidul</territory>
 			<territory type="KW">Kuwait</territory>
-			<territory type="KY">Kapuloan Kéman</territory>
-			<territory type="KZ">Kasakstan</territory>
+			<territory type="KY">Kapuloan Cayman</territory>
+			<territory type="KZ">Kazakhstan</territory>
 			<territory type="LA">Laos</territory>
-			<territory type="LB">Libanon</territory>
+			<territory type="LB">Lebanon</territory>
 			<territory type="LC">Santa Lusia</territory>
-			<territory type="LI">Liktenstén</territory>
+			<territory type="LI">Liechtenstein</territory>
 			<territory type="LK">Sri Lanka</territory>
-			<territory type="LR">Libèria</territory>
-			<territory type="LS">Lésotho</territory>
-			<territory type="LT">Litowen</territory>
+			<territory type="LR">Liberia</territory>
+			<territory type="LS">Lesotho</territory>
+			<territory type="LT">Lithuania</territory>
 			<territory type="LU">Luksemburg</territory>
 			<territory type="LV">Latvia</territory>
 			<territory type="LY">Libya</territory>
 			<territory type="MA">Maroko</territory>
 			<territory type="MC">Monako</territory>
 			<territory type="MD">Moldova</territory>
-			<territory type="ME">Montenégro</territory>
+			<territory type="ME">Montenegro</territory>
 			<territory type="MF">Santa Martin</territory>
 			<territory type="MG">Madagaskar</territory>
 			<territory type="MH">Kapuloan Marshall</territory>
-			<territory type="MK">Républik Makédonia Lor</territory>
+			<territory type="MK">Makedonia Lor</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Myanmar (Burma)</territory>
 			<territory type="MN">Mongolia</territory>
-			<territory type="MO">Laladan Administratif Astamiwa Makau</territory>
-			<territory type="MO" alt="short">Macau</territory>
+			<territory type="MO">Makau Daerah Administratif Khusus Tyongkok</territory>
+			<territory type="MO" alt="short">Makau</territory>
 			<territory type="MP">Kapuloan Mariana Lor</territory>
 			<territory type="MQ">Martinik</territory>
 			<territory type="MR">Mauritania</territory>
-			<territory type="MS">Monsérat</territory>
+			<territory type="MS">Montserrat</territory>
 			<territory type="MT">Malta</territory>
 			<territory type="MU">Mauritius</territory>
-			<territory type="MV">Maladéwa</territory>
+			<territory type="MV">Maladewa</territory>
 			<territory type="MW">Malawi</territory>
-			<territory type="MX">Mèksiko</territory>
+			<territory type="MX">Meksiko</territory>
 			<territory type="MY">Malaysia</territory>
-			<territory type="MZ">Mosambik</territory>
+			<territory type="MZ">Mozambik</territory>
 			<territory type="NA">Namibia</territory>
-			<territory type="NC">Kalédonia Anyar</territory>
-			<territory type="NE">Nigér</territory>
+			<territory type="NC">Kaledonia Anyar</territory>
+			<territory type="NE">Niger</territory>
 			<territory type="NF">Pulo Norfolk</territory>
-			<territory type="NG">Nigéria</territory>
+			<territory type="NG">Nigeria</territory>
 			<territory type="NI">Nikaragua</territory>
 			<territory type="NL">Walanda</territory>
-			<territory type="NO">Nurwègen</territory>
-			<territory type="NP">Népal</territory>
+			<territory type="NO">Norwegia</territory>
+			<territory type="NP">Nepal</territory>
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">Selandia Anyar</territory>
+			<territory type="NZ" alt="variant">Aotearoa Selandia Anyar</territory>
 			<territory type="OM">Oman</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
 			<territory type="PF">Polinesia Prancis</territory>
 			<territory type="PG">Papua Nugini</territory>
-			<territory type="PH">Pilipina</territory>
+			<territory type="PH">Filipina</territory>
 			<territory type="PK">Pakistan</territory>
-			<territory type="PL">Polen</territory>
-			<territory type="PM">Saint Pièr lan Mikuélon</territory>
+			<territory type="PL">Polandia</territory>
+			<territory type="PM">Saint Pierre lan Miquelon</territory>
 			<territory type="PN">Kapuloan Pitcairn</territory>
-			<territory type="PR">Puèrto Riko</territory>
-			<territory type="PS">Tlatah Palèstina</territory>
-			<territory type="PS" alt="short">Palèstina</territory>
+			<territory type="PR">Puerto Riko</territory>
+			<territory type="PS">Tlatah Palestina</territory>
+			<territory type="PS" alt="short">Palestina</territory>
 			<territory type="PT">Portugal</territory>
 			<territory type="PW">Palau</territory>
 			<territory type="PY">Paraguay</territory>
-			<territory type="QA">Katar</territory>
+			<territory type="QA">Qatar</territory>
 			<territory type="QO">Oseania Paling Njaba</territory>
 			<territory type="RE">Réunion</territory>
-			<territory type="RO">Ruméni</territory>
-			<territory type="RS">Sèrbi</territory>
+			<territory type="RO">Rumania</territory>
+			<territory type="RS">Serbia</territory>
 			<territory type="RU">Rusia</territory>
 			<territory type="RW">Rwanda</territory>
 			<territory type="SA">Arab Saudi</territory>
-			<territory type="SB">Kapuloan Suleman</territory>
-			<territory type="SC">Sésèl</territory>
+			<territory type="SB">Kapuloan Solomon</territory>
+			<territory type="SC">Seychelles</territory>
 			<territory type="SD">Sudan</territory>
-			<territory type="SE">Swèdhen</territory>
+			<territory type="SE">Swedia</territory>
 			<territory type="SG">Singapura</territory>
-			<territory type="SH">Saint Héléna</territory>
-			<territory type="SI">Slovénia</territory>
+			<territory type="SH">Saint Helena, Ascension, lan Tristan da Cunha</territory>
+			<territory type="SI">Slovenia</territory>
 			<territory type="SJ">Svalbard lan Jan Mayen</territory>
-			<territory type="SK">Slowak</territory>
-			<territory type="SL">Siéra Léoné</territory>
+			<territory type="SK">Slowakia</territory>
+			<territory type="SL">Siera Leone</territory>
 			<territory type="SM">San Marino</territory>
-			<territory type="SN">Sénégal</territory>
+			<territory type="SN">Senegal</territory>
 			<territory type="SO">Somalia</territory>
 			<territory type="SR">Suriname</territory>
 			<territory type="SS">Sudan Kidul</territory>
 			<territory type="ST">Sao Tomé lan Principé</territory>
-			<territory type="SV">Èl Salvador</territory>
-			<territory type="SX">Sint Martén</territory>
+			<territory type="SV">El Salvador</territory>
+			<territory type="SX">Sint Maarten</territory>
 			<territory type="SY">Suriah</territory>
-			<territory type="SZ">Swasiland</territory>
-			<territory type="SZ" alt="variant">(Swasiland)</territory>
+			<territory type="SZ">Eswatini</territory>
+			<territory type="SZ" alt="variant">Swaziland</territory>
 			<territory type="TA">Tristan da Cunha</territory>
-			<territory type="TC">Turks lan Kapuloan Kaikos</territory>
+			<territory type="TC">Kapuloan Turks lan Caicos</territory>
 			<territory type="TD">Chad</territory>
 			<territory type="TF">Wilayah Prancis nang Kutub Kidul</territory>
 			<territory type="TG">Togo</territory>
-			<territory type="TH">Tanah Thai</territory>
+			<territory type="TH">Thailand</territory>
 			<territory type="TJ">Tajikistan</territory>
 			<territory type="TK">Tokelau</territory>
 			<territory type="TL">Timor Leste</territory>
-			<territory type="TL" alt="variant">Timor Wétan</territory>
-			<territory type="TM">Turkménistan</territory>
+			<territory type="TL" alt="variant">Timor Timur</territory>
+			<territory type="TM">Turkmenistan</territory>
 			<territory type="TN">Tunisia</territory>
 			<territory type="TO">Tonga</territory>
 			<territory type="TR">Turki</territory>
 			<territory type="TT">Trinidad lan Tobago</territory>
 			<territory type="TV">Tuvalu</territory>
 			<territory type="TW">Taiwan</territory>
-			<territory type="TZ">Tansania</territory>
-			<territory type="UA">Ukrania</territory>
+			<territory type="TZ">Tanzania</territory>
+			<territory type="UA">Ukraina</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Kapuloan AS Paling Njaba</territory>
-			<territory type="UN">Pasarékatan Bangsa-Bangsa</territory>
-			<territory type="US">Amérika Sarékat</territory>
+			<territory type="UN">Sarekat Bangsa-Bangsa</territory>
+			<territory type="US">Amerika Serikat</territory>
 			<territory type="US" alt="short">AS</territory>
 			<territory type="UY">Uruguay</territory>
-			<territory type="UZ">Usbèkistan</territory>
+			<territory type="UZ">Uzbekistan</territory>
 			<territory type="VA">Kutha Vatikan</territory>
-			<territory type="VC">Saint Vinsen lan Grénadin</territory>
-			<territory type="VE">Vénésuéla</territory>
-			<territory type="VG">Kapuloan Virgin Britania</territory>
-			<territory type="VI">Kapuloan Virgin Amérika</territory>
-			<territory type="VN">Viètnam</territory>
+			<territory type="VC">Saint Vincent &amp; Grenadines</territory>
+			<territory type="VE">Venezuela</territory>
+			<territory type="VG">Kapuloan Virgin Britania Raya</territory>
+			<territory type="VI">Kapuloan Virgin Amerika Serikat</territory>
+			<territory type="VN">Vietnam</territory>
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">Wallis lan Futuna</territory>
 			<territory type="WS">Samoa</territory>
 			<territory type="XA">Logat Semu</territory>
-			<territory type="XB">Rong Arah Semu</territory>
+			<territory type="XB">Bidi Semu</territory>
 			<territory type="XK">Kosovo</territory>
 			<territory type="YE">Yaman</territory>
 			<territory type="YT">Mayotte</territory>
 			<territory type="ZA">Afrika Kidul</territory>
-			<territory type="ZM">Sambia</territory>
-			<territory type="ZW">Simbabwe</territory>
+			<territory type="ZM">Zambia</territory>
+			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">Daerah Ora Dikenali</territory>
 		</territories>
 		<subdivisions>
@@ -839,15 +841,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<keys>
 			<key type="calendar">Tanggalan</key>
 			<key type="cf">Format Mata Uang</key>
+			<key type="colAlternate">Lirwakake Pangurutan Simbol</key>
+			<key type="colBackwards">Pangurutan Aksen Walikan</key>
+			<key type="colCaseFirst">Urutan Aksara Gedhe/Cilik</key>
+			<key type="colCaseLevel">Pangurutan Sensitif Aksara Gedhe/Cilik</key>
 			<key type="collation">Urutan Pamilahan</key>
+			<key type="colNormalization">Pangurutan sing Dinormalisasi</key>
+			<key type="colNumeric">Pangurutan Numerik</key>
+			<key type="colReorder">Ngurutake Maneh Skrip/Blok</key>
+			<key type="colStrength">Kekuwatan Sortiran</key>
 			<key type="currency">Mata Uang</key>
+			<key type="d0">Transformasi Tujuan</key>
+			<key type="dx">Pamisahan Jeda Bausastra</key>
 			<key type="em">Presentasi Emoji</key>
+			<key type="fw">Dina pisanan ing minggu</key>
+			<key type="h0">Dicampur</key>
 			<key type="hc">Siklus Jam (12 vs 24)</key>
+			<key type="i0">Metode Input</key>
+			<key type="k0">Papan Ketik</key>
+			<key type="kv">Paling Dhuwur sing Dilirwakake</key>
 			<key type="lb">Gaya Ganti Baris</key>
 			<key type="lw">Ganti baris sajrone Tembung</key>
+			<key type="m0">Aturan Transformasi</key>
 			<key type="ms">Sistem Pangukuran</key>
+			<key type="mu">Unit Pangukuran</key>
 			<key type="numbers">Angka</key>
+			<key type="rg">Wilayah kanggo Data Tambahan</key>
+			<key type="s0">Transformasi Sumber</key>
+			<key type="sd">Subdivisi Wilayah</key>
 			<key type="ss">Pedhotan ukara sawise singkatan</key>
+			<key type="t">Transformasi</key>
+			<key type="t0">Dijarwakake Mesin</key>
+			<key type="timezone">Zona Wektu</key>
+			<key type="va">Varian Lokal</key>
+			<key type="x">Panggunaan Pribadi</key>
+			<key type="x0">Transformasi Panggunaan Pribadi</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Tanggalan Buddha</type>
@@ -866,15 +894,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian" scope="core">Gregorian</type>
 			<type key="calendar" type="hebrew">Tanggalan Ibrani</type>
 			<type key="calendar" type="hebrew" scope="core">Ibrani</type>
+			<type key="calendar" type="indian" scope="core">Nasional India</type>
 			<type key="calendar" type="islamic">Tanggalan Hijriah</type>
 			<type key="calendar" type="islamic" scope="core">Hijriah</type>
 			<type key="calendar" type="islamic-civil">Tanggalan Hijriah (tabel, jaman sipil)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Hijriah (tabel, jaman sipil)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijriah, rukyat Arab Saudi</type>
 			<type key="calendar" type="islamic-tbla">Tanggalan Hijriah (tabel, jaman astronomis)</type>
 			<type key="calendar" type="islamic-tbla" scope="core">Hijriah (tabel, jaman astronomis)</type>
 			<type key="calendar" type="islamic-umalqura">Tanggalan Hijriah (Ummul Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hijriah (Ummul Qura)</type>
 			<type key="calendar" type="iso8601">Tanggalan ISO-8601</type>
+			<type key="calendar" type="iso8601" scope="core">Masehi</type>
 			<type key="calendar" type="japanese">Tanggalan Jepang</type>
 			<type key="calendar" type="japanese" scope="core">Jepang</type>
 			<type key="calendar" type="persian">Tanggalan Persia</type>
@@ -885,15 +916,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="cf" type="account" scope="core">Akuntansi</type>
 			<type key="cf" type="standard">Format Mata Uang Standar</type>
 			<type key="cf" type="standard" scope="core">Standar</type>
+			<type key="colCaseFirst" type="lower" scope="core">Aksara Cilik</type>
+			<type key="colCaseFirst" type="no" scope="core">Aksara Cilik</type>
+			<type key="colCaseFirst" type="upper" scope="core">Aksara Gedhe</type>
+			<type key="collation" type="compat" scope="core">Kompatibilitas</type>
+			<type key="collation" type="dictionary" scope="core">Bausastra</type>
 			<type key="collation" type="ducet">Urutan Pamilahan Unicode Default</type>
 			<type key="collation" type="ducet" scope="core">Unicode Default</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
+			<type key="collation" type="eor" scope="core">Aturan Eropa</type>
+			<type key="collation" type="phonebook" scope="core">Buku tilpun</type>
+			<type key="collation" type="phonetic" scope="core">Fonetik</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">Panlusuran Tujuan Umum</type>
 			<type key="collation" type="search" scope="core">Panlusuran</type>
-			<type key="collation" type="standard">Standar Ngurutke Urutan</type>
+			<type key="collation" type="searchjl" scope="core">Konsonan wiwitan Korea</type>
+			<type key="collation" type="standard">Urutan Ngurutake Standar</type>
 			<type key="collation" type="standard" scope="core">Standar</type>
+			<type key="collation" type="stroke" scope="core">Corekan</type>
+			<type key="collation" type="traditional" scope="core">Tradisional</type>
+			<type key="collation" type="unihan" scope="core">Corekan-Radikal</type>
+			<type key="collation" type="zhuyin" scope="core">Zhuyin</type>
+			<type key="colReorder" type="currency" scope="core">Mata Uang</type>
+			<type key="colReorder" type="digit" scope="core">Digit</type>
+			<type key="colReorder" type="punct" scope="core">Tandha Wacan</type>
+			<type key="colReorder" type="space" scope="core">Spasi Kosong</type>
+			<type key="colReorder" type="symbol" scope="core">Simbol</type>
+			<type key="colStrength" type="identical" scope="core">Kabeh</type>
+			<type key="colStrength" type="primary" scope="core">Mung Aksara Dhasar</type>
+			<type key="colStrength" type="quaternary" scope="core">Dhasar, Aksen, Aksara Kapital, Varian, Kana</type>
+			<type key="colStrength" type="secondary" scope="core">Dhasar, Aksen</type>
+			<type key="colStrength" type="tertiary" scope="core">Dhasar, Aksen, Aksara Kapital, Varian</type>
+			<type key="d0" type="fwidth">Dadi Jembar Kebak</type>
+			<type key="d0" type="hwidth">Dadi Jembar Separo</type>
 			<type key="em" type="default" scope="core">Gawan</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
 			<type key="em" type="text" scope="core">Teks</type>
+			<type key="hc" type="c12">Sistem 12 Jam</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">Sistem 24 Jam</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">Sistem 12 Jam (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">Sistem 12 Jam (1–12)</type>
@@ -902,65 +964,106 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">Sistem 24 Jam (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Geseran spasi, tandha waca, kabeh simbol</type>
+			<type key="kv" type="punct" scope="core">Geseran spasi, tandha waca</type>
+			<type key="kv" type="space" scope="core">Geseran spasi, tandha waca</type>
+			<type key="kv" type="symbol" scope="core">Geseran spasi, tandha waca, simbol non-mata uang</type>
 			<type key="lb" type="loose">Gaya Ganti Baris Longgar</type>
 			<type key="lb" type="loose" scope="core">Longgar</type>
 			<type key="lb" type="normal">Gaya Ganti Baris Normal</type>
 			<type key="lb" type="normal" scope="core">Normal</type>
-			<type key="lb" type="strict">Gaya Ganti Baris Strik</type>
+			<type key="lb" type="strict">Gaya Ganti Baris Ketat</type>
 			<type key="lb" type="strict" scope="core">Ketat</type>
 			<type key="lw" type="breakall" scope="core">Ganti baris kabeh</type>
 			<type key="lw" type="keepall" scope="core">Tetep kabeh</type>
 			<type key="lw" type="normal" scope="core">Normal</type>
 			<type key="lw" type="phrase" scope="core">Pertahanake frasa</type>
+			<type key="m0" type="bgn">Transliterasi BGN AS</type>
+			<type key="m0" type="ungegn">Transliterasi GEGN AS</type>
 			<type key="ms" type="metric">Sistem Metrik</type>
 			<type key="ms" type="metric" scope="core">Metrik</type>
 			<type key="ms" type="uksystem">Sistem Pangukuran Imperial</type>
 			<type key="ms" type="uksystem" scope="core">Inggris</type>
 			<type key="ms" type="ussystem">Sistem Pangukuran AS</type>
 			<type key="ms" type="ussystem" scope="core">AS</type>
-			<type key="numbers" type="arab">Digit Hindu-Arab</type>
-			<type key="numbers" type="arabext">Digit Hindu-Arab Diambakake</type>
+			<type key="numbers" type="arab">Angka Arab-India</type>
+			<type key="numbers" type="arabext">Angka Arab-India sing Luwih Dawa</type>
+			<type key="numbers" type="arabext" scope="core">Basa Arab-India sing Dijembarake</type>
 			<type key="numbers" type="armn">Angka Armenia</type>
 			<type key="numbers" type="armnlow">Angka Huruf Cilik Armenia</type>
-			<type key="numbers" type="beng">Digit Bengali</type>
-			<type key="numbers" type="cakm">Digit Chakma</type>
-			<type key="numbers" type="deva">Digit Devanagari</type>
+			<type key="numbers" type="armnlow" scope="core">Aksara cilik Armenia</type>
+			<type key="numbers" type="beng">Angka Bengali</type>
+			<type key="numbers" type="cakm">Angka Chakma</type>
+			<type key="numbers" type="deva">Angka Devanagari</type>
 			<type key="numbers" type="ethi">Angka Etiopia</type>
-			<type key="numbers" type="fullwide">Digit Amba Kebak</type>
+			<type key="numbers" type="finance" scope="core">Finansial</type>
+			<type key="numbers" type="fullwide">Angka Amba Kebak</type>
+			<type key="numbers" type="fullwide" scope="core">Amba kebak</type>
 			<type key="numbers" type="geor">Angka Georgian</type>
 			<type key="numbers" type="grek">Angka Yunani</type>
 			<type key="numbers" type="greklow">Angka Huruf Cilik Yunani</type>
-			<type key="numbers" type="gujr">Digit Gujarat</type>
-			<type key="numbers" type="guru">Digit Gurmukhi</type>
-			<type key="numbers" type="hanidec">Angka Desimal Mandarin</type>
-			<type key="numbers" type="hans">Angka Mandarin Ringkes</type>
-			<type key="numbers" type="hansfin">Angka Finansial Mandarin Ringkes</type>
-			<type key="numbers" type="hant">Angka Mandarin Tradisional</type>
-			<type key="numbers" type="hantfin">Angka Finansial Mandarin Tradisional</type>
+			<type key="numbers" type="greklow" scope="core">Aksara cilik Yunani</type>
+			<type key="numbers" type="gujr">Angka Gujarat</type>
+			<type key="numbers" type="guru">Angka Gurmukhi</type>
+			<type key="numbers" type="hanidays" scope="core">Penomeran dina-ing-sasi karakter Han kanggo tanggalan tradisional</type>
+			<type key="numbers" type="hanidec">Angka Desimal Tyonghwa</type>
+			<type key="numbers" type="hanidec" scope="core">Sistem desimal posisional sing nggunakake ideograf angka Tyonghwa minangka digit</type>
+			<type key="numbers" type="hans">Angka Tyonghwa Prasaja</type>
+			<type key="numbers" type="hansfin">Angka Finansial Tyonghwa Prasaja</type>
+			<type key="numbers" type="hansfin" scope="core">Finansial Tyonghwa Prasaja</type>
+			<type key="numbers" type="hant">Angka Tyonghwa Tradhisional</type>
+			<type key="numbers" type="hantfin">Angka Finansial Tyonghwa Tradhisional</type>
+			<type key="numbers" type="hantfin" scope="core">Finansial Tyonghwa Prasaja</type>
 			<type key="numbers" type="hebr">Angka Ibrani</type>
-			<type key="numbers" type="java">Digit Jawa</type>
+			<type key="numbers" type="java">Angka Jawa</type>
 			<type key="numbers" type="jpan">Angka Jepang</type>
 			<type key="numbers" type="jpanfin">Angka Finansial Jepang</type>
-			<type key="numbers" type="khmr">Digit Khmer</type>
-			<type key="numbers" type="knda">Digit Kannada</type>
-			<type key="numbers" type="laoo">Digit Lao</type>
-			<type key="numbers" type="latn">Digit Latin</type>
+			<type key="numbers" type="jpanfin" scope="core">Finansial Jepang</type>
+			<type key="numbers" type="jpanyear" scope="core">Penomeran Gannen taun pisanan Jepang</type>
+			<type key="numbers" type="khmr">Angka Khmer</type>
+			<type key="numbers" type="knda">Angka Kannada</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (gerejawi)</type>
+			<type key="numbers" type="laoo">Angka Lao</type>
+			<type key="numbers" type="latn">Angka Arab Kulon</type>
+			<type key="numbers" type="mathbold" scope="core">Kandel matematika</type>
+			<type key="numbers" type="mathdbl" scope="core">Matematika papan tulis kandel</type>
+			<type key="numbers" type="mathmono" scope="core">Matematika monospace</type>
+			<type key="numbers" type="mathsanb" scope="core">Matematika sans-serif kandel</type>
+			<type key="numbers" type="mathsans" scope="core">Matematika sans-serif</type>
 			<type key="numbers" type="mlym">Digit Malayalam</type>
 			<type key="numbers" type="mtei">Digit Meetei Mayek</type>
 			<type key="numbers" type="mymr">Digit Myanmar</type>
+			<type key="numbers" type="mymrepka" scope="core">Pwo Karen Timur Myanmar</type>
+			<type key="numbers" type="mymrpao" scope="core">Pao Myanmar</type>
+			<type key="numbers" type="mymrshan" scope="core">Shan Myanmar</type>
+			<type key="numbers" type="mymrtlng" scope="core">Tai Laing Myanmar</type>
+			<type key="numbers" type="native">Digit Asli</type>
+			<type key="numbers" type="native" scope="core">Digit asli</type>
 			<type key="numbers" type="olck">Digit Ol Chiki</type>
 			<type key="numbers" type="orya">Digit Odia</type>
+			<type key="numbers" type="outlined" scope="core">Digaris pinggir</type>
 			<type key="numbers" type="roman">Angka Romawi</type>
+			<type key="numbers" type="roman" scope="core">Romawi huruf gedhe</type>
 			<type key="numbers" type="romanlow">Angka Huruf Cilik Romawi</type>
+			<type key="numbers" type="romanlow" scope="core">Romawi huruf cilik</type>
+			<type key="numbers" type="segment" scope="core">Disegmentasi</type>
 			<type key="numbers" type="taml">Angka Tamil Tradisional</type>
 			<type key="numbers" type="tamldec">Digit Tamil</type>
+			<type key="numbers" type="tamldec" scope="core">Tamil Modern</type>
 			<type key="numbers" type="telu">Digit Telugu</type>
 			<type key="numbers" type="thai">Digit Thailand</type>
 			<type key="numbers" type="tibt">Digit Tibet</type>
+			<type key="numbers" type="traditional" scope="core">Angka Tradisional</type>
 			<type key="numbers" type="vaii">Digit Vai</type>
 			<type key="ss" type="none" scope="core">Mati</type>
 			<type key="ss" type="standard" scope="core">Urip</type>
+			<type key="t0" type="und">Jarwan Mesin sing Ora Spesifik</type>
+			<type key="va" type="posix" scope="core">Varian POSIX</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Mati</typeValue>
+			<typeValue type="yes">Urip</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metrik</measurementSystemName>
 			<measurementSystemName type="UK">BR</measurementSystemName>
@@ -1072,6 +1175,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -1134,6 +1241,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM–d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y G</greatestDifference>
@@ -1273,9 +1384,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">a</dayPeriod>
+							<dayPeriod type="pm">p</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">Isuk</dayPeriod>
-							<dayPeriod type="pm">Wengi</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -1374,17 +1503,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">MM-y G</dateFormatItem>
+						<dateFormatItem id="GyMd">dd-MM-y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, dd-MM-y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d MMMM y G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Md">dd/MM</dateFormatItem>
-						<dateFormatItem id="MEd">E dd/MM</dateFormatItem>
+						<dateFormatItem id="Md">d-M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d-M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">'pekan' W 'ing' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'minggu' W 'ing' MMMM</dateFormatItem>
 						<dateFormatItem id="yM">MM-y</dateFormatItem>
 						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, dd-MM-y</dateFormatItem>
@@ -1392,98 +1531,133 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
-						<dateFormatItem id="yw" count="other">'pekan' w 'ing' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'minggu' w 'ing' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{1}, {0}</appendItem>
+						<appendItem request="Era">{0} {1}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{1}, {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d – d</greatestDifference>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
+						<intervalFormatFallback>{0}–{1}</intervalFormatFallback>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G–y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">M-y G–M-y G</greatestDifference>
+							<greatestDifference id="M">M-y–M-y G</greatestDifference>
+							<greatestDifference id="y">M-y–M-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d-M-y–d-M-y G</greatestDifference>
+							<greatestDifference id="G">d-M-y G–d-M-y G</greatestDifference>
+							<greatestDifference id="M">d-M-y–d-M-y G</greatestDifference>
+							<greatestDifference id="y">d-M-y–d-M-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, d-M-y–E, d-M-y G</greatestDifference>
+							<greatestDifference id="G">E, d-M-y G–E, d-M-y G</greatestDifference>
+							<greatestDifference id="M">E, d-M-y–E, d-M-y G</greatestDifference>
+							<greatestDifference id="y">E, d-M-y–E, d-M-y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G–MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y–MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d–d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G–d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM–d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y–d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, d MMM–E, d MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM y G–E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM–E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y–E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h – h a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH – HH</greatestDifference>
+							<greatestDifference id="a">h a–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="a">h:mm a–h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="a">h:mm a–h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h – h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH – HH v</greatestDifference>
+							<greatestDifference id="a">h a–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">MM – MM</greatestDifference>
+							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
-							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="d">d-M–d-M</greatestDifference>
+							<greatestDifference id="M">d-M–d-M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, dd/MM – E, dd/MM</greatestDifference>
-							<greatestDifference id="M">E, dd/MM – E, dd/MM</greatestDifference>
+							<greatestDifference id="d">E, d-M–E, d-M</greatestDifference>
+							<greatestDifference id="M">E, d-M–E, d-M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM–d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="d">E, d MMM–E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM–E, d MMM</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y">y – y</greatestDifference>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM–d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM-y – MM-y</greatestDifference>
-							<greatestDifference id="y">MM-y – MM-y</greatestDifference>
+							<greatestDifference id="M">M-y–M-y</greatestDifference>
+							<greatestDifference id="y">M-y–M-y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd-MM-y – dd-MM-y</greatestDifference>
-							<greatestDifference id="M">dd-MM-y – dd-MM-y</greatestDifference>
-							<greatestDifference id="y">dd-MM-y – dd-MM-y</greatestDifference>
+							<greatestDifference id="d">d-M-y–d-M-y</greatestDifference>
+							<greatestDifference id="M">d-M-y–d-M-y</greatestDifference>
+							<greatestDifference id="y">d-M-y–d-M-y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, dd-MM-y – E, dd-MM-y</greatestDifference>
-							<greatestDifference id="M">E, dd-MM-y – E, dd-MM-y</greatestDifference>
-							<greatestDifference id="y">E, dd-MM-y – E, dd-MM-y</greatestDifference>
+							<greatestDifference id="d">E, d-M-y–E, d-M-y</greatestDifference>
+							<greatestDifference id="M">E, d-M-y–E, d-M-y</greatestDifference>
+							<greatestDifference id="y">E, d-M-y–E, d-M-y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM – MMM y</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y–MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">d – d MMM y</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
+							<greatestDifference id="d">d–d MMM y</greatestDifference>
+							<greatestDifference id="M">d MMM–d MMM y</greatestDifference>
+							<greatestDifference id="y">d MMM y–d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM y</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM y</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – E, d MMM y</greatestDifference>
+							<greatestDifference id="d">E, d MMM–E, d MMM y</greatestDifference>
+							<greatestDifference id="M">E, d MMM–E, d MMM y</greatestDifference>
+							<greatestDifference id="y">E, d MMM y–E, d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM–MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y–MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1501,7 +1675,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="7">Rej.</month>
 							<month type="8">Ruw.</month>
 							<month type="9">Pso.</month>
-							<month type="10">Shaw.</month>
+							<month type="10">Syaw.</month>
 							<month type="11">Slo.</month>
 							<month type="12">Bsar.</month>
 						</monthWidth>
@@ -1520,13 +1694,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">Besar</month>
 						</monthWidth>
 					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">Sur.</month>
+							<month type="2">Sap.</month>
+							<month type="3">Mul.</month>
+							<month type="4">B. Mul.</month>
+							<month type="5">Jum. Aw.</month>
+							<month type="6">Jum. Ak.</month>
+							<month type="7">Rej.</month>
+							<month type="8">Ruw.</month>
+							<month type="9">Pso.</month>
+							<month type="10">Syaw.</month>
+							<month type="11">Dul.</month>
+							<month type="12">Bsar.</month>
+						</monthWidth>
+					</monthContext>
 				</months>
 				<dateTimeFormats>
 					<availableFormats>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="GyM">MM-y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="GyMEd">E, dd-MM-y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
@@ -1573,33 +1761,57 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="week">
-				<displayName>pekan</displayName>
-				<relative type="-1">pekan wingi</relative>
-				<relative type="0">pekan iki</relative>
-				<relative type="1">pekan ngarep</relative>
+				<displayName>minggu</displayName>
+				<relative type="-1">minggu kepungkur</relative>
+				<relative type="0">minggu iki</relative>
+				<relative type="1">minggu ngarep</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ing {0} pekan</relativeTimePattern>
+					<relativeTimePattern count="other">ing {0} minggu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} pekan kepungkur</relativeTimePattern>
+					<relativeTimePattern count="other">{0} minggu kepungkur</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>pekan kaping {0}</relativePeriod>
+				<relativePeriod>minggu kaping {0}</relativePeriod>
 			</field>
 			<field type="week-short">
-				<relative type="-1">pkn wingi</relative>
-				<relative type="0">pkn iki</relative>
-				<relative type="1">pkn ngarep</relative>
+				<displayName>mgg.</displayName>
+				<relative type="-1">mgg. kepungkur</relative>
+				<relative type="0">mgg. iki</relative>
+				<relative type="1">mgg. ngarep</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ing {0} mgg.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} mgg. kepungkur</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>mgg. kaping {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName>mgg</displayName>
+				<relative type="-1">mgg. kepungkur</relative>
+				<relative type="0">mgg. iki</relative>
+				<relative type="1">mgg. ngarep</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ing {0} minggu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} mgg. kepungkur</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>mgg. kaping {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
-				<displayName>pekan jroning sesasi</displayName>
+				<displayName>minggu sajrone sesasi</displayName>
 			</field>
 			<field type="weekOfMonth-short">
-				<displayName>pekan jroning sasi</displayName>
+				<displayName>mgg. sajrone sesasi</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>mgg. sajrone sesasi</displayName>
 			</field>
 			<field type="day">
-				<displayName>dino</displayName>
+				<displayName>dina</displayName>
 				<relative type="-1">wingi</relative>
-				<relative type="0">dino iki</relative>
+				<relative type="0">dina iki</relative>
 				<relative type="1">sesuk</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ing {0} dina</relativeTimePattern>
@@ -1608,22 +1820,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} dina kepungkur</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="day-short">
+				<displayName>dina</displayName>
+				<relative type="-1">wingi</relative>
+				<relative type="0">dina iki</relative>
+				<relative type="1">sesuk</relative>
+			</field>
 			<field type="day-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} dino kepungkur</relativeTimePattern>
-				</relativeTime>
+				<displayName>dina</displayName>
+				<relative type="-1">wingi</relative>
+				<relative type="0">dina iki</relative>
+				<relative type="1">sesuk</relative>
 			</field>
 			<field type="dayOfYear">
-				<displayName>dina jroning taun</displayName>
+				<displayName>dina sajrone setaun</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>dina sajrone setaun</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>dina sajrone setaun</displayName>
 			</field>
 			<field type="weekday">
-				<displayName>dino sepekan</displayName>
+				<displayName>dina sajrone seminggu</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>dina sajrone semgg.</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>dina sajrone semgg.</displayName>
 			</field>
 			<field type="weekdayOfMonth">
-				<displayName>dina jroning sasi</displayName>
+				<displayName>dina kerja sajrone sesasi</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>dn. kerja sajrone sesasi</displayName>
 			</field>
 			<field type="weekdayOfMonth-narrow">
-				<displayName>dino jroning sasi</displayName>
+				<displayName>dn. kerja sajrone sesasi</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">Ahad wingi</relative>
@@ -1637,14 +1871,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="mon">
-				<relative type="-1">Senèn wingi</relative>
-				<relative type="0">Senèn iki</relative>
-				<relative type="1">Senèn ngarep</relative>
+				<relative type="-1">Senen kepungkur</relative>
+				<relative type="0">Senen iki</relative>
+				<relative type="1">Senen ngarep</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ing {0} Senèn</relativeTimePattern>
+					<relativeTimePattern count="other">ing {0} Senen</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} Senèn kepungkur</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Senen kepungkur</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon-short">
@@ -1659,7 +1893,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="mon-narrow">
-				<relative type="-1">Sn wingi</relative>
+				<relative type="-1">Sn kepungkur</relative>
 				<relative type="0">Sn iki</relative>
 				<relative type="1">Sn ngarep</relative>
 				<relativeTime type="future">
@@ -1670,7 +1904,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="tue">
-				<relative type="-1">Selasa wingi</relative>
+				<relative type="-1">Selasa kepungkur</relative>
 				<relative type="0">Selasa iki</relative>
 				<relative type="1">Selasa ngarep</relative>
 				<relativeTime type="future">
@@ -1681,7 +1915,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="tue-short">
-				<relative type="-1">Sel. wingi</relative>
+				<relative type="-1">Sel. kepungkur</relative>
 				<relative type="0">Sel. iki</relative>
 				<relative type="1">Sel. ngarep</relative>
 				<relativeTime type="future">
@@ -1691,8 +1925,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} Sel. kepungkur</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="tue-narrow">
+				<relative type="-1">Sel kepungkur</relative>
+				<relative type="0">Sel. iki</relative>
+				<relative type="1">Sel. ngarep</relative>
+			</field>
 			<field type="wed">
-				<relative type="-1">Rebo wingi</relative>
+				<relative type="-1">Rebo kepungkur</relative>
 				<relative type="0">Rebo iki</relative>
 				<relative type="1">Rebo ngarep</relative>
 				<relativeTime type="future">
@@ -1703,7 +1942,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="wed-short">
-				<relative type="-1">Reb. wingi</relative>
+				<relative type="-1">Reb. kepungkur</relative>
 				<relative type="0">Reb. iki</relative>
 				<relative type="1">Reb. ngarep</relative>
 				<relativeTime type="future">
@@ -1713,8 +1952,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} Reb. kepungkur</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="wed-narrow">
+				<relative type="-1">Reb kepungkur</relative>
+				<relative type="0">Reb. iki</relative>
+				<relative type="1">Reb. ngarep</relative>
+			</field>
 			<field type="thu">
-				<relative type="-1">Kemis wingi</relative>
+				<relative type="-1">Kemis kepungkur</relative>
 				<relative type="0">Kemis iki</relative>
 				<relative type="1">Kemis ngarep</relative>
 				<relativeTime type="future">
@@ -1725,7 +1969,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="thu-short">
-				<relative type="-1">Kms. wingi</relative>
+				<relative type="-1">Kms. kepungkur</relative>
 				<relative type="0">Kms. iki</relative>
 				<relative type="1">Kms. ngarep</relative>
 				<relativeTime type="future">
@@ -1735,8 +1979,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} Kms. kepungkur</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="thu-narrow">
+				<relative type="-1">Kms kepungkur</relative>
+				<relative type="0">Kms. iki</relative>
+				<relative type="1">Kms. ngarep</relative>
+			</field>
 			<field type="fri">
-				<relative type="-1">Jemuwah wingi</relative>
+				<relative type="-1">Jemuwah kepungkur</relative>
 				<relative type="0">Jemuwah iki</relative>
 				<relative type="1">Jemuwah ngarep</relative>
 				<relativeTime type="future">
@@ -1747,7 +1996,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="fri-short">
-				<relative type="-1">Jem. wingi</relative>
+				<relative type="-1">Jem. kepungkur</relative>
 				<relative type="0">Jem. iki</relative>
 				<relative type="1">Jem. ngarep</relative>
 				<relativeTime type="future">
@@ -1757,8 +2006,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} Jem. kepungkur</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="fri-narrow">
+				<relative type="-1">Jem kepungkur</relative>
+				<relative type="0">Jem. iki</relative>
+				<relative type="1">Jem. ngarep</relative>
+			</field>
 			<field type="sat">
-				<relative type="-1">Setu wingi</relative>
+				<relative type="-1">Setu kepungkur</relative>
 				<relative type="0">Setu iki</relative>
 				<relative type="1">Setu ngarep</relative>
 				<relativeTime type="future">
@@ -1769,7 +2023,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="sat-short">
-				<relative type="-1">Set. wingi</relative>
+				<relative type="-1">Set. kepungkur</relative>
 				<relative type="0">Set. iki</relative>
 				<relative type="1">Set. ngarep</relative>
 				<relativeTime type="future">
@@ -1780,15 +2034,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="sat-narrow">
-				<relative type="-1">St wingi</relative>
+				<relative type="-1">Set kepungkur</relative>
 				<relative type="0">St iki</relative>
 				<relative type="1">St ngarep</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ing {0} St</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayperiod-short">
+				<displayName>AM/PM</displayName>
+			</field>
 			<field type="dayperiod">
-				<displayName>isuk/wengi</displayName>
+				<displayName>AM/PM</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
 				<displayName>jam</displayName>
@@ -1836,32 +2096,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Lokasi Ora Dikenali</exemplarCity>
 			</zone>
-			<zone type="America/Mendoza">
-				<exemplarCity>Mendosa</exemplarCity>
-			</zone>
-			<zone type="America/Catamarca">
-				<exemplarCity>Katamarka</exemplarCity>
-			</zone>
-			<zone type="America/Cordoba">
-				<exemplarCity>Kordoba</exemplarCity>
-			</zone>
-			<zone type="America/St_Barthelemy">
-				<exemplarCity>Santa Barthelemy</exemplarCity>
-			</zone>
-			<zone type="America/Cuiaba">
-				<exemplarCity>Kuiaba</exemplarCity>
-			</zone>
-			<zone type="America/Campo_Grande">
-				<exemplarCity>Kampo Grande</exemplarCity>
-			</zone>
-			<zone type="America/Belize">
-				<exemplarCity>Belise</exemplarCity>
-			</zone>
-			<zone type="America/Fort_Nelson">
-				<exemplarCity>Benteng Nelson</exemplarCity>
-			</zone>
-			<zone type="America/Swift_Current">
-				<exemplarCity>Arus Banter</exemplarCity>
+			<zone type="Europe/Vienna">
+				<exemplarCity>Wina</exemplarCity>
 			</zone>
 			<zone type="America/Cambridge_Bay">
 				<exemplarCity>Teluk Cambridge</exemplarCity>
@@ -1869,26 +2105,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Halifax">
 				<exemplarCity>Halifak</exemplarCity>
 			</zone>
-			<zone type="America/Goose_Bay">
-				<exemplarCity>Teluk Goose</exemplarCity>
-			</zone>
 			<zone type="America/Glace_Bay">
 				<exemplarCity>Teluk Glace</exemplarCity>
 			</zone>
-			<zone type="America/St_Johns">
-				<exemplarCity>Santa John</exemplarCity>
-			</zone>
 			<zone type="Pacific/Easter">
-				<exemplarCity>Paskah</exemplarCity>
+				<exemplarCity>Pulo Paskah</exemplarCity>
 			</zone>
 			<zone type="America/Costa_Rica">
 				<exemplarCity>Kosta Rika</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
-				<exemplarCity>Kape Verde</exemplarCity>
+				<exemplarCity>Tanjung Verde</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Natal</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity>Praha</exemplarCity>
 			</zone>
 			<zone type="Europe/Copenhagen">
 				<exemplarCity>Kopenhagen</exemplarCity>
@@ -1900,15 +2133,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Kairo</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Canary">
-				<exemplarCity>Kanari</exemplarCity>
-			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Wektu Ketigo Inggris</daylight>
-				</long>
-			</zone>
-			<zone type="America/Cayenne">
-				<exemplarCity>Kayenne</exemplarCity>
+				<exemplarCity>Kanaria</exemplarCity>
 			</zone>
 			<zone type="Africa/Conakry">
 				<exemplarCity>Konakri</exemplarCity>
@@ -1918,14 +2143,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Atlantic/South_Georgia">
 				<exemplarCity>Georgia Kidul</exemplarCity>
-			</zone>
-			<zone type="Asia/Makassar">
-				<exemplarCity>Makasar</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Wektu Standar Irlandia</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>Yerusalem</exemplarCity>
@@ -1945,26 +2162,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Rome">
 				<exemplarCity>Roma</exemplarCity>
 			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>Jamaika</exemplarCity>
+			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komoro</exemplarCity>
 			</zone>
-			<zone type="America/St_Kitts">
-				<exemplarCity>Santa Kitts</exemplarCity>
-			</zone>
-			<zone type="America/Cayman">
-				<exemplarCity>Caiman</exemplarCity>
-			</zone>
 			<zone type="Asia/Qostanay">
 				<exemplarCity>Kostanai</exemplarCity>
-			</zone>
-			<zone type="America/St_Lucia">
-				<exemplarCity>Santa Lucia</exemplarCity>
 			</zone>
 			<zone type="Asia/Colombo">
 				<exemplarCity>Kolombo</exemplarCity>
 			</zone>
 			<zone type="Europe/Luxembourg">
-				<exemplarCity>Luksemburk</exemplarCity>
+				<exemplarCity>Luksemburg</exemplarCity>
 			</zone>
 			<zone type="Africa/Casablanca">
 				<exemplarCity>Kasablanka</exemplarCity>
@@ -1975,29 +2186,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Macau">
 				<exemplarCity>Macau</exemplarCity>
 			</zone>
-			<zone type="America/Martinique">
-				<exemplarCity>Martinik</exemplarCity>
-			</zone>
 			<zone type="Indian/Maldives">
 				<exemplarCity>Maladewa</exemplarCity>
 			</zone>
-			<zone type="America/Ciudad_Juarez">
-				<exemplarCity>Ciudad Juáres</exemplarCity>
-			</zone>
-			<zone type="America/Bahia_Banderas">
-				<exemplarCity>Bahia Banderas</exemplarCity>
-			</zone>
 			<zone type="America/Mexico_City">
-				<exemplarCity>Kutho Meksiko</exemplarCity>
-			</zone>
-			<zone type="America/Merida">
-				<exemplarCity>Merida</exemplarCity>
+				<exemplarCity>Kutha Meksiko</exemplarCity>
 			</zone>
 			<zone type="America/Cancun">
 				<exemplarCity>Cancun</exemplarCity>
 			</zone>
 			<zone type="Pacific/Port_Moresby">
 				<exemplarCity>Pelabuhan Moresby</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity>Warsawa</exemplarCity>
 			</zone>
 			<zone type="America/Puerto_Rico">
 				<exemplarCity>Puerto Riko</exemplarCity>
@@ -2011,57 +2213,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Damascus">
 				<exemplarCity>Damaskus</exemplarCity>
 			</zone>
-			<zone type="America/Port_of_Spain">
-				<exemplarCity>Palabuhan Spanyol</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
-				<exemplarCity>Beulah [Dakota Lor]</exemplarCity>
+				<exemplarCity>Beulah, Dakota Lor</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/New_Salem">
-				<exemplarCity>Salem Anyar [Dakota Lor]</exemplarCity>
+				<exemplarCity>New Salem, Dakota Lor</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Center">
-				<exemplarCity>Tengah [Dakota Lor]</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Vincennes">
-				<exemplarCity>Vincennes [Indiana]</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Petersburg">
-				<exemplarCity>Petersburg [Indiana]</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Tell_City">
-				<exemplarCity>Tell City [Indiana]</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Knox">
-				<exemplarCity>Knox [Indiana]</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Winamac">
-				<exemplarCity>Winamac [Indiana]</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Marengo">
-				<exemplarCity>Marengo [Indiana]</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Vevay">
-				<exemplarCity>Vevay [Indiana]</exemplarCity>
-			</zone>
-			<zone type="America/Kentucky/Monticello">
-				<exemplarCity>Monticello [Kentucky]</exemplarCity>
+				<exemplarCity>Center, Dakota Lor</exemplarCity>
 			</zone>
 			<zone type="Europe/Vatican">
 				<exemplarCity>Vatikan</exemplarCity>
 			</zone>
-			<zone type="America/St_Vincent">
-				<exemplarCity>Santa Vincent</exemplarCity>
-			</zone>
-			<zone type="America/Caracas">
-				<exemplarCity>Karakas</exemplarCity>
-			</zone>
-			<zone type="America/St_Thomas">
-				<exemplarCity>Santa Thomas</exemplarCity>
-			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Wektu Acre</generic>
+					<standard>Wektu Standar Acre</standard>
+					<daylight>Wektu Ketiga Acre</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Wektu Afghanistan</standard>
@@ -2091,42 +2264,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Alaska</generic>
 					<standard>Wektu Standar Alaska</standard>
-					<daylight>Wektu Ketigo Alaska</daylight>
+					<daylight>Wektu Ketiga Alaska</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>Wektu Amazon</generic>
 					<standard>Wektu Standar Amazon</standard>
-					<daylight>Wektu Ketigo Amazon</daylight>
+					<daylight>Wektu Ketiga Amazon</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
 				<long>
 					<generic>Wektu Tengah</generic>
 					<standard>Wektu Standar Tengah</standard>
-					<daylight>Wektu Ketigo Tengah</daylight>
+					<daylight>Wektu Ketiga Tengah</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
 					<generic>Wektu sisih Wetan</generic>
 					<standard>Wektu Standar sisih Wetan</standard>
-					<daylight>Wektu Ketigo sisih Wetah</daylight>
+					<daylight>Wektu Ketiga sisih Wetan</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>Wektu Giri</generic>
-					<standard>Wektu Standar Giri</standard>
-					<daylight>Wektu Ketigo Giri</daylight>
+					<generic>Wektu Pagunungan</generic>
+					<standard>Wektu Standar Pagunungan</standard>
+					<daylight>Wektu Ketiga Pagunungan</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
 					<generic>Wektu Pasifik</generic>
 					<standard>Wektu Standar Pasifik</standard>
-					<daylight>Wektu Ketigo Pasifik</daylight>
+					<daylight>Wektu Ketiga Pasifik</daylight>
 				</long>
 			</metazone>
 			<metazone type="Apia">
@@ -2147,14 +2320,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Argentina</generic>
 					<standard>Wektu Standar Argentina</standard>
-					<daylight>Wektu Ketigo Argentina</daylight>
+					<daylight>Wektu Ketiga Argentina</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina_Western">
 				<long>
 					<generic>Wektu Argentina sisih Kulon</generic>
 					<standard>Wektu Standar Argentina sisih Kulon</standard>
-					<daylight>Wektu Ketigo Argentina sisih Kulon</daylight>
+					<daylight>Wektu Ketiga Argentina sisih Kulon</daylight>
 				</long>
 			</metazone>
 			<metazone type="Armenia">
@@ -2168,7 +2341,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Atlantik</generic>
 					<standard>Wektu Standar Atlantik</standard>
-					<daylight>Wektu Ketigo Atlantik</daylight>
+					<daylight>Wektu Ketiga Atlantik</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
@@ -2210,7 +2383,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Azores</generic>
 					<standard>Wektu Standar Azores</standard>
-					<daylight>Wektu Ketigo Azores</daylight>
+					<daylight>Wektu Ketiga Azores</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
@@ -2234,7 +2407,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Brasilia</generic>
 					<standard>Wektu Standar Brasilia</standard>
-					<daylight>Wektu Ketigo Brasilia</daylight>
+					<daylight>Wektu Ketiga Brasilia</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Wektu Inggris</generic>
+					<daylight>Wektu Ketiga Inggris</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -2265,7 +2444,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Chili</generic>
 					<standard>Wektu Standar Chili</standard>
-					<daylight>Wektu Ketigo Chili</daylight>
+					<daylight>Wektu Ketiga Chili</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
@@ -2289,7 +2468,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Kolombia</generic>
 					<standard>Wektu Standar Kolombia</standard>
-					<daylight>Wektu Ketigo Kolombia</daylight>
+					<daylight>Wektu Ketiga Kolombia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cook">
@@ -2303,7 +2482,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Kuba</generic>
 					<standard>Wektu Standar Kuba</standard>
-					<daylight>Wektu Ketigo Kuba</daylight>
+					<daylight>Wektu Ketiga Kuba</daylight>
 				</long>
 			</metazone>
 			<metazone type="Davis">
@@ -2325,7 +2504,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Pulo Paskah</generic>
 					<standard>Wektu Standar Pulo Paskah</standard>
-					<daylight>Wektu Ketigo Pulo Paskah</daylight>
+					<daylight>Wektu Ketiga Pulo Paskah</daylight>
 				</long>
 			</metazone>
 			<metazone type="Ecuador">
@@ -2337,33 +2516,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Eropa Tengah</generic>
 					<standard>Wektu Standar Eropa Tengah</standard>
-					<daylight>Wektu Ketigo Eropa Tengah</daylight>
+					<daylight>Wektu Ketiga Eropa Tengah</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
-					<generic>Wektu Eropa sisih Wetan</generic>
-					<standard>Wektu Standar Eropa sisih Wetan</standard>
-					<daylight>Wektu Ketigo Eropa sisih Wetan</daylight>
+					<generic>Wektu Eropa Wetan</generic>
+					<standard>Wektu Standar Eropa Wetan</standard>
+					<daylight>Wektu Ketiga Eropa Wetan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
 				<long>
-					<standard>Wektu Eropa sisih Wetan seng Luwih Adoh</standard>
+					<standard>Wektu Eropa sisih Wetan Adoh</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
 					<generic>Wektu Eropa sisih Kulon</generic>
 					<standard>Wektu Standar Eropa sisih Kulon</standard>
-					<daylight>Wektu Ketigo Eropa sisih Kulon</daylight>
+					<daylight>Wektu Ketiga Eropa sisih Kulon</daylight>
 				</long>
 			</metazone>
 			<metazone type="Falkland">
 				<long>
-					<generic>Wektu Kepuloan Falkland</generic>
-					<standard>Wektu Standar Kepuloan Falkland</standard>
-					<daylight>Wektu Ketigo Kepuloan Falkland</daylight>
+					<generic>Wektu Kapuloan Falkland</generic>
+					<standard>Wektu Standar Kapuloan Falkland</standard>
+					<daylight>Wektu Ketiga Kapuloan Falkland</daylight>
 				</long>
 			</metazone>
 			<metazone type="Fiji">
@@ -2375,7 +2554,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="French_Guiana">
 				<long>
-					<standard>Wektu Guiana Prancis</standard>
+					<standard>Wektu Guyana Prancis</standard>
 				</long>
 			</metazone>
 			<metazone type="French_Southern">
@@ -2410,18 +2589,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Wektu Rerata Greenwich</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Wektu Greenland</generic>
+					<standard>Wektu Standar Greenland</standard>
+					<daylight>Wektu Ketiga Greenland</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic>Wektu Grinland Wetan</generic>
-					<standard>Wektu Standar Grinland Wetan</standard>
-					<daylight>Wektu Ketigo Grinland Wetan</daylight>
+					<generic>Wektu Greenland Wetan</generic>
+					<standard>Wektu Standar Greenland Wetan</standard>
+					<daylight>Wektu Ketiga Greenland Wetan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>Wektu Grinland Kulon</generic>
-					<standard>Wektu Standar Grinland Kulon</standard>
-					<daylight>Wektu Ketigo Grinland Kulon</daylight>
+					<generic>Wektu Greenland Kulon</generic>
+					<standard>Wektu Standar Greenland Kulon</standard>
+					<daylight>Wektu Ketiga Greenland Kulon</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
@@ -2436,14 +2622,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Wektu Standar Hawaii-Aleutian</standard>
+					<standard>Wektu Standar Hawaii</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Wektu Hawaii-Aleutian</generic>
-					<standard>Wektu Standar Hawaii-Aleutian</standard>
-					<daylight>Wektu Ketigo Hawaii-Aleutian</daylight>
+					<standard>Wektu Standar Hawaii-Aleut</standard>
+					<daylight>Wektu Ketiga Hawaii-Aleutian</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -2497,11 +2683,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Wektu Ketigo Iran</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Wektu Irlandia</generic>
+					<daylight>Wektu Standar Irlandia</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Wektu Irkutsk</generic>
 					<standard>Wektu Standar Irkutsk</standard>
-					<daylight>Wektu Ketigo Irkutsk</daylight>
+					<daylight>Wektu Ketiga Irkutsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
@@ -2516,6 +2708,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Wektu Jepang</generic>
 					<standard>Wektu Standar Jepang</standard>
 					<daylight>Wektu Ketiga Jepang</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Wektu Kamchatka</generic>
+					<standard>Wektu Standar Kamchatka</standard>
+					<daylight>Wektu Mangsa Panas Kamchatka</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -2549,7 +2748,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Krasnoyarsk</generic>
 					<standard>Wektu Standar Krasnoyarsk</standard>
-					<daylight>Wektu Ketigo Krasnoyarsk</daylight>
+					<daylight>Wektu Ketiga Krasnoyarsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kyrgystan">
@@ -2573,7 +2772,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Magadan</generic>
 					<standard>Wektu Standar Magadan</standard>
-					<daylight>Wektu Ketigo Magadan</daylight>
+					<daylight>Wektu Ketiga Magadan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Malaysia">
@@ -2600,7 +2799,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Mauritius</generic>
 					<standard>Wektu Standar Mauritius</standard>
-					<daylight>Wektu Ketigo Mauritius</daylight>
+					<daylight>Wektu Ketiga Mauritius</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mawson">
@@ -2612,7 +2811,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Pasifik Meksiko</generic>
 					<standard>Wektu Standar Pasifik Meksiko</standard>
-					<daylight>Wektu Ketigo Pasifik Meksiko</daylight>
+					<daylight>Wektu Ketiga Pasifik Meksiko</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
@@ -2624,9 +2823,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Moscow">
 				<long>
-					<generic>Wektu Moscow</generic>
-					<standard>Wektu Standar Moscow</standard>
-					<daylight>Wektu Ketigo Moscow</daylight>
+					<generic>Wektu Moskow</generic>
+					<standard>Wektu Standar Moskow</standard>
+					<daylight>Wektu Ketiga Moskow</daylight>
 				</long>
 			</metazone>
 			<metazone type="Myanmar">
@@ -2662,7 +2861,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Newfoundland</generic>
 					<standard>Wektu Standar Newfoundland</standard>
-					<daylight>Wektu Ketigo Newfoundland</daylight>
+					<daylight>Wektu Ketiga Newfoundland</daylight>
 				</long>
 			</metazone>
 			<metazone type="Niue">
@@ -2681,21 +2880,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Fernando de Noronha</generic>
 					<standard>Wektu Standar Fernando de Noronha</standard>
-					<daylight>Wektu Ketigo Fernando de Noronha</daylight>
+					<daylight>Wektu Ketiga Fernando de Noronha</daylight>
 				</long>
 			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Wektu Novosibirsk</generic>
 					<standard>Wektu Standar Novosibirsk</standard>
-					<daylight>Wektu Ketigo Novosibirsk</daylight>
+					<daylight>Wektu Ketiga Novosibirsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Omsk">
 				<long>
 					<generic>Wektu Omsk</generic>
 					<standard>Wektu Standar Omsk</standard>
-					<daylight>Wektu Ketigo Omsk</daylight>
+					<daylight>Wektu Ketiga Omsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pakistan">
@@ -2719,14 +2918,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Paraguay</generic>
 					<standard>Wektu Standar Paraguay</standard>
-					<daylight>Wektu Ketigo Paraguay</daylight>
+					<daylight>Wektu Ketiga Paraguay</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
 				<long>
 					<generic>Wektu Peru</generic>
 					<standard>Wektu Standar Peru</standard>
-					<daylight>Wektu Ketigo Peru</daylight>
+					<daylight>Wektu Ketiga Peru</daylight>
 				</long>
 			</metazone>
 			<metazone type="Philippines">
@@ -2745,7 +2944,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Santa Pierre lan Miquelon</generic>
 					<standard>Wektu Standar Santa Pierre lan Miquelon</standard>
-					<daylight>Wektu Ketigo Santa Pierre lan Miquelon</daylight>
+					<daylight>Wektu Ketiga Santa Pierre lan Miquelon</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -2777,14 +2976,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Sakhalin</generic>
 					<standard>Wektu Standar Sakhalin</standard>
-					<daylight>Wektu Ketigo Sakhalin</daylight>
+					<daylight>Wektu Ketiga Sakhalin</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>Wektu Samara</generic>
+					<standard>Wektu Standar Samara</standard>
+					<daylight>Wektu Mangsa Panas Samara</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Wektu Samoa Amerika</generic>
 					<standard>Wektu Standar Samoa Amerika</standard>
-					<daylight>Wektu Ketiga Samoa Amerika</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -2851,6 +3055,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Wektu Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Wektu Turki</generic>
+					<standard>Wektu Standar Turki</standard>
+					<daylight>Wektu Mangsa Panas Turki</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Wektu Turkmenistan</generic>
@@ -2867,7 +3078,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Uruguay</generic>
 					<standard>Wektu Standar Uruguay</standard>
-					<daylight>Wektu Ketigo Uruguay</daylight>
+					<daylight>Wektu Ketiga Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Wektu Urumqi</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -2893,14 +3109,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Vladivostok</generic>
 					<standard>Wektu Standar Vladivostok</standard>
-					<daylight>Wektu Ketigo Vladivostok</daylight>
+					<daylight>Vote Wektu Ketiga Vladivostok</daylight>
 				</long>
 			</metazone>
 			<metazone type="Volgograd">
 				<long>
 					<generic>Wektu Volgograd</generic>
 					<standard>Wektu Standar Volgograd</standard>
-					<daylight>Wektu Ketigo Volgograd</daylight>
+					<daylight>Wektu Ketiga Volgograd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vostok">
@@ -2922,14 +3138,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>Wektu Yakutsk</generic>
 					<standard>Wektu Standar Yakutsk</standard>
-					<daylight>Wektu Ketigo Yakutsk</daylight>
+					<daylight>Wektu Ketiga Yakutsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
 					<generic>Wektu Yekaterinburg</generic>
 					<standard>Wektu Standar Yekaterinburg</standard>
-					<daylight>Wektu Ketigo Yekaterinburg</daylight>
+					<daylight>Wektu Ketiga Yekaterinburg</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yukon">
@@ -2940,9 +3156,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<otherNumberingSystems>
-			<native>java</native>
-		</otherNumberingSystems>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
@@ -3482,7 +3695,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XCG">
 				<displayName>Guilder Karibia</displayName>
-				<displayName count="other">Guilder Karibia</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>CFA Franc Afrika Kulon</displayName>
@@ -3504,7 +3716,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZWG">
 				<displayName>Emas Zimbabwe</displayName>
-				<displayName count="other">Emas Zimbabwe</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -4697,9 +4908,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
-			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>mpg inggris</displayName>
 				<unitPattern count="other">{0}m/gUK</unitPattern>
@@ -4775,9 +4983,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-quart-imperial">
 				<unitPattern count="other">{0}spt-lmp.</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>cal-IT</displayName>
 			</unit>
 		</unitLength>
 	</units>
@@ -4975,7 +5180,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und jv</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<parameterDefault parameter="formality">informal</parameterDefault>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {credentials}</namePattern>

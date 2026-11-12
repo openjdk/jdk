@@ -1762,6 +1762,19 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  // Change x u< 1 or x u<= 0 to x == 0
+  // and    x u> 0 or u>= 1   to x != 0
+  if ((cop == Op_CmpU || cop == Op_CmpUL) && cmp1_op != Op_LoadRange) {
+    const BasicType bt = cop == Op_CmpU ? T_INT : T_LONG;
+    const jlong limit = bt == T_INT ? cmp2->find_int_con(-1) : cmp2->find_long_con(-1);
+    if (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) && limit == 1) ||
+        ((_test._test == BoolTest::le || _test._test == BoolTest::gt) && limit == 0)) {
+      Node* zero = phase->integercon(0, bt);
+      Node* ncmp = phase->transform(CmpNode::make(cmp1, zero, bt));
+      return new BoolNode(ncmp, _test.is_less() ? BoolTest::eq : BoolTest::ne);
+    }
+  }
+
   // Change "bool eq/ne (cmp (xor X 1) 0)" into "bool ne/eq (cmp X 0)".
   // The XOR-1 is an idiom used to flip the sense of a bool.  We flip the
   // test instead.
@@ -1792,18 +1805,6 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         return new BoolNode(m_cmpu_0, BoolTest::gt);
       }
     }
-  }
-
-  // Change x u< 1 or x u<= 0 to x == 0
-  // and    x u> 0 or u>= 1   to x != 0
-  if (cop == Op_CmpU &&
-      cmp1_op != Op_LoadRange &&
-      (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) &&
-        cmp2->find_int_con(-1) == 1) ||
-       ((_test._test == BoolTest::le || _test._test == BoolTest::gt) &&
-        cmp2->find_int_con(-1) == 0))) {
-    Node* ncmp = phase->transform(new CmpINode(cmp1, phase->intcon(0)));
-    return new BoolNode(ncmp, _test.is_less() ? BoolTest::eq : BoolTest::ne);
   }
 
   // Change (arraylength <= 0) or (arraylength == 0)

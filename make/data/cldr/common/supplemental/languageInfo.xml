@@ -121,8 +121,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageMatch desired="ps"	supported="en"	distance="30"	oneway="true"/>	<!-- Pashto: ps ⇒ en -->
 			<languageMatch desired="qu"	supported="es"	distance="30"	oneway="true"/>	<!-- Quechua: qu ⇒ es -->
 			<languageMatch desired="rm"	supported="de"	distance="20"	oneway="true"/>	<!-- Romansh: rm ⇒ de -->
-			<languageMatch desired="rn"	supported="en"	distance="30"	oneway="true"/>	<!-- Rundi: rn ⇒ en -->
-			<languageMatch desired="rw"	supported="fr"	distance="30"	oneway="true"/>	<!-- Kinyarwanda: rw ⇒ fr -->
+			<languageMatch desired="rn"	supported="rw"	distance="10"/>	<!-- Rundi: rn ⟺ rw -->
+			<languageMatch desired="rn"	supported="fr"	distance="30"	oneway="true"/>	<!-- Rundi: rn ⇒ fr -->
+			<languageMatch desired="rn"	supported="en"	distance="35"	oneway="true"/>	<!-- Rundi: rn ⇒ en -->
+			<languageMatch desired="rw"	supported="en"	distance="30"	oneway="true"/>	<!-- Kinyarwanda: rw ⇒ en -->
+			<languageMatch desired="rw"	supported="fr"	distance="35"	oneway="true"/>	<!-- Kinyarwanda: rw ⇒ fr -->
 			<languageMatch desired="sa"	supported="hi"	distance="30"	oneway="true"/>	<!-- Sanskrit: sa ⇒ hi -->
 			<languageMatch desired="scn"	supported="it"	distance="20"	oneway="true"/> <!-- Sicilian: scn ⇒ it -->
 			<languageMatch desired="sd"	supported="en"	distance="30"	oneway="true"/>	<!-- Sindhi: sd ⇒ en -->

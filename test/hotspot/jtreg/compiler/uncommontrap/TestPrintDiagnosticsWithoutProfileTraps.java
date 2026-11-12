@@ -41,7 +41,7 @@
  *          -XX:-TieredCompilation -Xcomp crash
  * @modules java.base/jdk.internal.misc
  * @requires vm.debug
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:-DisplayVMOutput -Xlog:deoptimization=debug -XX:-ProfileTraps
  *                   -XX:-TieredCompilation -Xcomp -Xbatch
