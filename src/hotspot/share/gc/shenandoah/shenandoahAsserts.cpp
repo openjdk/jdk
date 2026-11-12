@@ -223,7 +223,23 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
 
   // Step 1. Check that obj is correct.
   // After this step, it is safe to call heap_region_containing().
-  assert_address_correct(interior_loc, obj, file, line);
+  if (!heap->is_in_reserved(obj)) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "oop must be in heap bounds",
+                  file, line);
+  }
+
+  if (!os::is_readable_pointer(obj)) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "oop within heap bounds but at unreadable location",
+                  file, line);
+  }
+
+  if (!heap->is_in(obj)) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Object should be in active region area",
+                  file, line);
+  }
 
   oop fwd = obj;
   if (ShenandoahForwarding::is_real_forwarded(obj)) {
@@ -359,28 +375,6 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
   }
 }
 
-void ShenandoahAsserts::assert_address_correct(void* interior_loc, oop obj, const char* file, int line) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  if (!heap->is_in_reserved(obj)) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                  "oop must be in heap bounds",
-                  file, line);
-  }
-
-  if (!os::is_readable_pointer(obj)) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                  "oop within heap bounds but at unreadable location",
-                  file, line);
-  }
-
-  if (!heap->is_in(obj)) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                  "Object should be in active region area",
-                  file, line);
-  }
-}
-
 void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
 
@@ -412,46 +406,25 @@ void ShenandoahAsserts::assert_marked(void *interior_loc, oop obj, const char *f
   }
 }
 
-static bool is_mark_word_safe_to_read(oop obj) {
-  // Initializing writes for newly allocated young objects may not yet be visible to mark worker
-  const ShenandoahHeap* heap = ShenandoahHeap::heap();
-  return ShenandoahSafepoint::is_at_shenandoah_safepoint()          // safe during safepoint
-      || !heap->has_affiliation(obj, YOUNG_GENERATION)      // safe for old objects
-      || !heap->marking_context()->allocated_after_mark_start(obj); // safe for young objects beneath TAMS
-}
+void ShenandoahAsserts::assert_marked_weak(void *interior_loc, oop obj, const char *file, int line) {
+  assert_correct(interior_loc, obj, file, line);
 
-void ShenandoahAsserts::assert_marking_not_forwarded(void *interior_loc, oop obj, const char *file, int line) {
-  assert_address_correct(interior_loc, obj, file, line);
-  if (is_mark_word_safe_to_read(obj)) {
-    assert_not_forwarded(interior_loc, obj, file, line);
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->marking_context()->is_marked_weak(obj)) {
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_marked_weak failed",
+                  "Object should be marked weakly",
+                  file, line);
   }
 }
 
-void ShenandoahAsserts::assert_marking_not_in_cset(void *interior_loc, oop obj, const char *file, int line) {
-  assert_address_correct(interior_loc, obj, file, line);
-  if (is_mark_word_safe_to_read(obj)) {
-    assert_not_in_cset(interior_loc, obj, file, line);
-  } else {
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-    if (heap->in_collection_set(obj)) {
-      print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_not_in_cset failed",
-                    "Object should not be in collection set",
-                    file, line);
-    }
-  }
-}
+void ShenandoahAsserts::assert_marked_strong(void *interior_loc, oop obj, const char *file, int line) {
+  assert_correct(interior_loc, obj, file, line);
 
-void ShenandoahAsserts::assert_marking_marked(void* interior_loc, oop obj, const char* file, int line) {
-  assert_address_correct(interior_loc, obj, file, line);
-  if (is_mark_word_safe_to_read(obj)) {
-    assert_marked(interior_loc, obj, file, line);
-  } else {
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-    if (!heap->marking_context()->is_marked(obj)) {
-      print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_marked failed",
-                    "Object should be marked",
-                    file, line);
-    }
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->marking_context()->is_marked_strong(obj)) {
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_marked_strong failed",
+                  "Object should be marked strongly",
+                  file, line);
   }
 }
 
