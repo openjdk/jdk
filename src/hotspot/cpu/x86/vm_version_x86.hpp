@@ -440,7 +440,6 @@ protected:
     decl(AVX10_1,           avx10_1           ) /* AVX10 512 bit vector ISA Version 1 support*/ \
     decl(AVX10_2,           avx10_2           ) /* AVX10 512 bit vector ISA Version 2 support*/ \
     decl(HYBRID,            hybrid            ) /* Hybrid architecture */ \
-    decl(FAST_BMI2,         fast_bmi2         ) /* Native Hardware support for PEXT/PDEP BMI2 instructions */
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name) CPU_##id,
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -454,7 +453,7 @@ protected:
    private:
     uint64_t _features_bitmap[(MAX_CPU_FEATURES / BitsPerLong) + 1];
 
-    STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURES);
+    static_assert(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURES);
 
     // Number of 8-byte elements in _bitmap.
     constexpr static int features_bitmap_element_count() {
@@ -514,7 +513,33 @@ protected:
       VM_Features copy = *this;
       // HT does not result in incompatibility of aot code cache
       copy.clear_feature(CPU_HT);
+      copy.clear_feature(CPU_HV);
       return copy;
+    }
+
+    // Is this VM_Feature a super set of features_to_test?
+    bool super_set_of(VM_Features* features_to_test) {
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        if ((_features_bitmap[i] | features_to_test->_features_bitmap[i]) != _features_bitmap[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Returns features present in this VM_Features but not in features_to_test
+    VM_Features features_not_in(VM_Features* features_to_test) {
+      VM_Features result;
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        result._features_bitmap[i] = _features_bitmap[i] & (~(features_to_test->_features_bitmap[i]));
+      }
+      return result;
+    }
+
+    void clear_features(VM_Features* features_to_clear) {
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        _features_bitmap[i] &= (~(features_to_clear->_features_bitmap[i]));
+      }
     }
   };
 
@@ -523,6 +548,8 @@ protected:
 
   // Original CPU feature flags vector, not affected by VM settings.
   static VM_Features _cpu_features;
+
+  static VM_Features _cpu_features_disabled_by_aot_cache;
 
   static const char* _features_names[];
 
@@ -678,7 +705,8 @@ protected:
     int          zmm_save[16*4]; // Save zmm0, zmm7, zmm8, zmm31
 
     // Space to save apx registers after signal handle
-    jlong        apx_save[2]; // Save r16 and r31
+    jlong        apx_save[2]; // Save r16 and the last volatile EGPR
+                              // (r29 on Windows, r31 on non-Windows)
 
     // cpuid function 0xD, subleaf 19 (APX extended state)
     uint32_t          apx_xstate_size;          // EAX: size of APX state (128)
@@ -726,11 +754,11 @@ private:
   }
 
   static bool compute_has_intel_jcc_erratum();
-  static bool compute_fast_bmi2();
 
   static bool os_supports_avx_vectors();
   static bool os_supports_apx_egprs();
   static void get_processor_features();
+  static void apply_aot_cache_cpu_features();
 
 public:
   // Offsets for cpuid asm stub
@@ -914,7 +942,6 @@ public:
   static bool supports_hv()           { return _features.supports_feature(CPU_HV); }
   static bool supports_serialize()    { return _features.supports_feature(CPU_SERIALIZE); }
   static bool supports_hybrid()       { return _features.supports_feature(CPU_HYBRID); }
-  static bool supports_fast_bmi2()    { return _features.supports_feature(CPU_FAST_BMI2); }
   static bool supports_f16c()         { return _features.supports_feature(CPU_F16C); }
   static bool supports_pku()          { return _features.supports_feature(CPU_PKU); }
   static bool supports_ospke()        { return _features.supports_feature(CPU_OSPKE); }
@@ -1130,6 +1157,10 @@ public:
   static void store_cpu_features(void* buf);
 
   static bool verify_aot_code_cache_features(void* features_buffer);
+
+  static void get_cpu_features_disabled_by_aot_cache(void* buf);
+
+  static int cpu_features_alignment() { return alignof(VM_Features); }
 };
 
 #endif // CPU_X86_VM_VERSION_X86_HPP

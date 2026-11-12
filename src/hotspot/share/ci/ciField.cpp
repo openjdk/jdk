@@ -76,7 +76,7 @@
 // ------------------------------------------------------------------
 // ciField::ciField
 ciField::ciField(ciInstanceKlass* klass, int index, Bytecodes::Code bc) :
-  _original_holder(nullptr), _is_flat(false), _known_to_link_with_put(nullptr), _known_to_link_with_get(nullptr) {
+  _original_holder(nullptr), _optional_flat_layout(OptionalFlatLayout::non_flat()), _known_to_link_with_put(nullptr), _known_to_link_with_get(nullptr) {
   ASSERT_IN_VM;
   CompilerThread *THREAD = CompilerThread::current();
 
@@ -240,16 +240,15 @@ ciField::ciField(ciField* declared_field, ciField* subfield) {
 
   _signature = subfield->_signature;
   _type = subfield->_type;
-  _is_constant = (declared_field->is_strict() && declared_field->is_final()) || declared_field->is_constant();
+  _is_constant = declared_field->is_constant();
   _known_to_link_with_put = subfield->_known_to_link_with_put;
   _known_to_link_with_get = subfield->_known_to_link_with_get;
   _constant_value = ciConstant();
 
-  _is_flat = false;
+  _optional_flat_layout = OptionalFlatLayout::non_flat();
   _is_null_free = false;
   _null_marker_offset = -1;
   _original_holder = (subfield->_original_holder != nullptr) ? subfield->_original_holder : subfield->_holder;
-  _layout_kind = LayoutKind::UNKNOWN;
 }
 
 // Constructor for the ciField of a null marker
@@ -269,16 +268,15 @@ ciField::ciField(ciField* declared_field) {
   _signature = ciSymbols::bool_signature();
   _type = ciType::make(T_BOOLEAN);
 
-  _is_constant = (declared_field->is_strict() && declared_field->is_final()) || declared_field->is_constant();
+  _is_constant = declared_field->is_constant();
   _known_to_link_with_put = nullptr;
   _known_to_link_with_get = nullptr;
   _constant_value = ciConstant();
 
-  _is_flat = false;
+  _optional_flat_layout = OptionalFlatLayout::non_flat();
   _is_null_free = false;
   _null_marker_offset = -1;
   _original_holder = nullptr;
-  _layout_kind = LayoutKind::UNKNOWN;
 }
 
 static bool trust_final_nonstatic_fields(ciInstanceKlass* holder) {
@@ -299,9 +297,6 @@ static bool trust_final_nonstatic_fields(ciInstanceKlass* holder) {
   // can't be serialized, so there is no hacking of finals going on with them.
   if (holder->is_hidden())
     return true;
-  // Trust final fields in value type buffers
-  if (holder->is_value_klass())
-    return true;
   // Trust final fields in records
   if (holder->is_record())
     return true;
@@ -315,16 +310,15 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   InstanceKlass* field_holder = fd->field_holder();
   assert(field_holder != nullptr, "null field_holder");
   _holder = CURRENT_ENV->get_instance_klass(field_holder);
-  _is_flat = fd->is_flat();
+  _optional_flat_layout = fd->is_flat() ? OptionalFlatLayout(fd->flat_layout()) : OptionalFlatLayout::non_flat();
   _is_null_free = fd->is_null_free_value_type();
   if (fd->has_null_marker()) {
-    ValueFieldLayoutInfo* li = field_holder->value_field_layout_info_adr(fd->index());
-    _null_marker_offset = li->null_marker_offset();
+    ValueKlass* vk = fd->flat_field_klass();
+    _null_marker_offset = _offset + vk->null_marker_offset_in_payload();
   } else {
     _null_marker_offset = -1;
   }
   _original_holder = nullptr;
-  _layout_kind = fd->is_flat() ? fd->layout_kind() : LayoutKind::UNKNOWN;
 
   // Check to see if the field is constant.
   Klass* k = _holder->get_Klass();
@@ -337,10 +331,10 @@ void ciField::initialize_from(fieldDescriptor* fd) {
       // java.lang.System.out, and java.lang.System.err.
       _is_constant = !fd->is_mutable_static_final();
     } else {
-      // An instance field can be constant if it's a final static field or if
-      // it's a final non-static field of a trusted class (classes in
-      // java.lang.invoke and sun.invoke packages and subpackages).
-      _is_constant = is_stable_field || trust_final_nonstatic_fields(_holder);
+      // A final field should generally be constant, but reflection is allowed to subvert this
+      // expection, so we only consider a final field constant if either it is strict, or it is one
+      // of some special cases where we want constant folding
+      _is_constant = is_strict() || is_stable_field || trust_final_nonstatic_fields(_holder);
     }
   } else {
     // For CallSite objects treat the target field as a compile time constant.
@@ -372,6 +366,9 @@ ciConstant ciField::constant_value() {
   if (FoldStableValues && is_stable() && _constant_value.is_null_or_zero()) {
     return ciConstant();
   }
+  if (CURRENT_ENV->is_aot_compile()) { // Restrict only when we generate AOT code
+    return ciConstant();
+  }
   return _constant_value;
 }
 
@@ -383,6 +380,9 @@ ciConstant ciField::constant_value_of(ciObject* object) {
   assert(object->is_instance(), "must be instance");
   ciConstant field_value = object->as_instance()->field_value(this);
   if (FoldStableValues && is_stable() && field_value.is_null_or_zero()) {
+    return ciConstant();
+  }
+  if (CURRENT_ENV->is_aot_compile()) { // Restrict only when we generate AOT code
     return ciConstant();
   }
   return field_value;
@@ -420,7 +420,7 @@ ciType* ciField::compute_type_impl() {
 
 bool ciField::is_atomic() {
   assert(is_flat(), "should not ask this property for non-flat field %s.%s", holder()->name()->as_utf8(), name()->as_utf8());
-  return LayoutKindHelper::is_atomic_flat(_layout_kind) && !type()->as_value_klass()->is_naturally_atomic(is_null_free());
+  return flat_layout().is_atomic() && !type()->as_value_klass()->is_naturally_atomic(is_null_free());
 }
 
 // ------------------------------------------------------------------
@@ -534,7 +534,7 @@ void ciField::print() const {
     tty->print(" constant_value=");
     _constant_value.print();
   }
-  tty->print(" is_flat=%s", bool_to_str(_is_flat));
+  tty->print(" is_flat=%s", bool_to_str(is_flat()));
   tty->print(" is_null_free=%s", bool_to_str(_is_null_free));
   tty->print(" null_marker_offset=%d", _null_marker_offset);
   tty->print(">");

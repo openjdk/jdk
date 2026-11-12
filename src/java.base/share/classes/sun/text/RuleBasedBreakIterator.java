@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,6 +386,26 @@ public class RuleBasedBreakIterator extends BreakIterator {
         int nonBMPdataLength = bb.getInt();
         int additionalDataLength = bb.getInt();
         checksum = bb.getLong();
+
+        // Check the data length
+        if (stateTableLength < 0 ||
+            backwardsStateTableLength < 0 ||
+            endStatesLength < 0 ||
+            lookaheadStatesLength < 0 ||
+            BMPdataLength < 0 ||
+            nonBMPdataLength < 0 ||
+            additionalDataLength < 0 ||
+            bb.remaining() !=
+                2L * stateTableLength +
+                2L * backwardsStateTableLength +
+                endStatesLength +
+                lookaheadStatesLength +
+                2L * BMP_INDICES_LENGTH +
+                BMPdataLength +
+                4L * nonBMPdataLength +
+                additionalDataLength) {
+            throw new MissingResourceException("Corrupt rule data file", ruleFile, "");
+        }
 
         /* Read stateTable[numCategories * numRows] */
         stateTable = new short[stateTableLength];

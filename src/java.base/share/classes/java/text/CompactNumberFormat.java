@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,18 +97,17 @@ import java.util.stream.Collectors;
  * }
  *
  * <h2 id="formatting">Formatting</h2>
- * The default formatting behavior returns a formatted string with no fractional
- * digits, however users can use the {@link #setMinimumFractionDigits(int)}
- * method to include the fractional part.
- * The number {@code 1000.0} or {@code 1000} is formatted as {@code "1K"}
- * not {@code "1.00K"} (in the {@link java.util.Locale#US US locale}). For this
- * reason, the patterns provided for formatting contain only the minimum
- * integer digits, prefix and/or suffix, but no fractional part.
- * For example, patterns used are {@code {"", "", "", 0K, 00K, ...}}. If the pattern
- * selected for formatting a number is {@code "0"} (special pattern),
- * either explicit or defaulted, then the general number formatting provided by
- * {@link java.text.DecimalFormat DecimalFormat}
- * for the specified locale is used.
+ * Formatting that uses the special pattern "0", either explicitly or when the empty string compact pattern
+ * falls back to it, is referred to as general number formatting. This uses the formatting provided by {@link
+ * DecimalFormat}. Such formatting never produces fractional digits, even if the underlying decimal pattern
+ * has been composed to use fractional digits. Only formatting that does not use the special pattern can produce
+ * output with fractional digits. However, the default compact pattern behavior supports no fractional
+ * digits. This is why the patterns provided for formatting contain only the minimum
+ * integer digits, prefix and/or suffix, but no fractional part. If needed, users can use
+ * {@link #setMinimumFractionDigits(int)} to support fractional digits for compact number formatting.
+ * For example, using the following patterns {@code {"", "", "", "0K", ...}} with the {@link
+ * Locale#US US locale} and a minimum of 1 fractional digit, {@code 55.5} is formatted as
+ * "56", and {@code 5500} is formatted as "5.5K".
  *
  * <h3>Rounding</h3>
  * {@code CompactNumberFormat} provides rounding modes defined in
@@ -220,7 +219,7 @@ import java.util.stream.Collectors;
  * </pre></blockquote>
  *
  * @spec https://www.unicode.org/reports/tr35
- *      Unicode Locale Data Markup Language (LDML)
+ *      Unicode Common Locale Data {@literal &} Rules (CLDR)
  * @see NumberFormat.Style
  * @see NumberFormat
  * @see DecimalFormat
@@ -466,7 +465,7 @@ public final class CompactNumberFormat extends NumberFormat {
      *        or if the given {@code pluralRules} contains an invalid syntax
      *
      * @spec https://www.unicode.org/reports/tr35
-     *      Unicode Locale Data Markup Language (LDML)
+     *      Unicode Common Locale Data {@literal &} Rules (CLDR)
      * @see DecimalFormat#DecimalFormat(java.lang.String, DecimalFormatSymbols)
      * @see DecimalFormatSymbols
      * @since 14
@@ -657,8 +656,8 @@ public final class CompactNumberFormat extends NumberFormat {
         int compactDataIndex = selectCompactPattern((long) roundedNumber);
         if (compactDataIndex != -1) {
             long divisor = (Long) divisors.get(compactDataIndex);
-            double val = getNumberValue(number, divisor);
-            if (checkIncrement(val, compactDataIndex, divisor)) {
+            double val = getRoundedQuotient(number, divisor, isNegative);
+            if (shouldPromotePattern(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
             }
             roundedNumber = roundedNumber / divisor;
@@ -739,8 +738,8 @@ public final class CompactNumberFormat extends NumberFormat {
         int compactDataIndex = selectCompactPattern(number);
         if (compactDataIndex != -1) {
             long divisor = (Long) divisors.get(compactDataIndex);
-            double val = getNumberValue(number, divisor);
-            if (checkIncrement(val, compactDataIndex, divisor)) {
+            double val = getRoundedQuotient(number, divisor, isNegative);
+            if (shouldPromotePattern(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
             }
             var noFraction = number % divisor == 0;
@@ -835,11 +834,15 @@ public final class CompactNumberFormat extends NumberFormat {
 
         if (compactDataIndex != -1) {
             Number divisor = divisors.get(compactDataIndex);
-            double val = getNumberValue(number.doubleValue(), divisor.doubleValue());
-            if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
+            double val = getRoundedQuotient(number.doubleValue(), divisor.doubleValue(), isNegative);
+            if (shouldPromotePattern(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
             }
-            number = number.divide(new BigDecimal(divisor.toString()), getRoundingMode());
+
+            // Perform this division exactly, so that the quotient is not inaccurately rounded.
+            // For example, 7,800 / 1,000 should become 7.8 and not 8. It is safe to perform exact
+            // division because the divisor is a power of ten, thus the result is always terminating.
+            number = number.divide(new BigDecimal(divisor.toString()));
             decimalFormat.setDigitList(number, isNegative, getMaximumFractionDigits());
             val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
@@ -906,8 +909,8 @@ public final class CompactNumberFormat extends NumberFormat {
         int compactDataIndex = selectCompactPattern(number);
         if (compactDataIndex != -1) {
             Number divisor = divisors.get(compactDataIndex);
-            double val = getNumberValue(number.doubleValue(), divisor.doubleValue());
-            if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
+            double val = getRoundedQuotient(number.doubleValue(), divisor.doubleValue(), isNegative);
+            if (shouldPromotePattern(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
             }
             var noFraction = number.mod(new BigInteger(divisor.toString()))
@@ -917,10 +920,10 @@ public final class CompactNumberFormat extends NumberFormat {
                 decimalFormat.setDigitList(number, isNegative, 0);
             } else {
                 // To avoid truncation of fractional part store the value in
-                // BigDecimal and follow BigDecimal path instead of
-                // BigInteger path
+                // BigDecimal and follow BigDecimal path instead of BigInteger path.
+                // This division can be performed exactly, because the divisor is a power of ten.
                 BigDecimal nDecimal = new BigDecimal(number)
-                        .divide(new BigDecimal(divisor.toString()), getRoundingMode());
+                        .divide(new BigDecimal(divisor.toString()));
                 decimalFormat.setDigitList(nDecimal, isNegative, getMaximumFractionDigits());
             }
             val = decimalFormat.getDigitList().getDouble();
@@ -1296,17 +1299,17 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     // Patterns for plurals syntax validation
-    private static final String EXPR = "([niftvwe])\\s*(([/%])\\s*(\\d+))*";
+    private static final String EXPR = "([niftvwec])\\s*(([/%])\\s*(\\d+))*+";
     private static final String RELATION = "(!?=)";
     private static final String VALUE_RANGE = "((\\d+)\\.\\.(\\d+)|\\d+)";
     private static final String CONDITION = EXPR + "\\s*" +
                                              RELATION + "\\s*" +
                                              VALUE_RANGE + "\\s*" +
-                                             "(,\\s*" + VALUE_RANGE + ")*";
+                                             "(,\\s*" + VALUE_RANGE + ")*+";
     private static final Pattern PLURALRULES_PATTERN =
             Pattern.compile("(zero|one|two|few|many):\\s*" +
                             CONDITION +
-                            "(\\s*(and|or)\\s*" + CONDITION + ")*");
+                            "(\\s*(and|or)\\s*" + CONDITION + ")*+");
 
     /**
      * Validates a plural rule.
@@ -2544,15 +2547,27 @@ public final class CompactNumberFormat extends NumberFormat {
         }
     }
 
-    private double getNumberValue(double number, double divisor) {
-        var num = BigDecimal.valueOf(number)
-                .divide(BigDecimal.valueOf(divisor), roundingMode);
-        return getMaximumFractionDigits() > 0 ? num.doubleValue() : num.intValue();
+    /**
+     * Returns a double which indicates if promotion of the compact pattern should occur.
+     * The returned value is the result of dividing the number by the divisor associated with
+     * the initial compact pattern. The quotient is rounded to maximum fraction digits,
+     * and is fed to shouldPromotePattern to determine if the pattern needs to be promoted.
+     */
+    private double getRoundedQuotient(double number, double divisor, boolean isNegative) {
+        // Division should be aware of the maximum fraction digits permitted.
+        // For example, with HALF_UP and 2 maximum fraction digits:
+        //      - 999_951 / 1000 -> 999.95 -> stay at K
+        //      - 999_999 / 1000 -> 1000.0 -> promote K to M
+        // Ensure that sign is taken into account, otherwise rounding under CEILING/FLOOR
+        // would be incorrect when the dividend is negative.
+        BigDecimal signedDividend = isNegative ? BigDecimal.valueOf(-number) : BigDecimal.valueOf(number);
+        var signedQuotient = signedDividend.divide(BigDecimal.valueOf(divisor), getMaximumFractionDigits(), roundingMode);
+        return signedQuotient.abs().doubleValue();
     }
 
     // Checks whether the val is incremented by the BigDecimal division in
-    // getNumberValue(), and affects the compact number index.
-    private boolean checkIncrement(double val, int index, double divisor) {
+    // getRoundedQuotient, and affects the compact number index.
+    private boolean shouldPromotePattern(double val, int index, double divisor) {
         if (index < compactPatterns.length - 1 &&
             !"".equals(compactPatterns[index])) { // ignore empty pattern
             var nextDiv = divisors.get(index + 1).doubleValue();
@@ -2588,7 +2603,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 .allMatch(r -> relationCheck(r, input)));
     }
 
-    private static final String NAMED_EXPR = "(?<op>[niftvwe])\\s*((?<div>[/%])\\s*(?<val>\\d+))*";
+    private static final String NAMED_EXPR = "(?<op>[niftvwec])\\s*((?<div>[/%])\\s*(?<val>\\d+))*";
     private static final String NAMED_RELATION = "(?<rel>!?=)";
     private static final String NAMED_VALUE_RANGE = "(?<start>\\d+)\\.\\.(?<end>\\d+)|(?<value>\\d+)";
     private static final Pattern EXPR_PATTERN = Pattern.compile(NAMED_EXPR);

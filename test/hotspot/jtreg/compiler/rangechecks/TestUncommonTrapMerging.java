@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,22 @@
  *                   -XX:CompileCommand=compileonly,compiler.rangechecks.TestUncommonTrapMerging::test*
  *                   compiler.rangechecks.TestUncommonTrapMerging Test1
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.rangechecks.TestUncommonTrapMerging::test*
+ *                   compiler.rangechecks.TestUncommonTrapMerging Test2
+ */
+
+/*
+ * @test
+ * @bug 8140574
+ * @summary Verify proper re-execution of checks after merging of uncommon traps
+ *
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,compiler.rangechecks.TestUncommonTrapMerging::test*
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *                   compiler.rangechecks.TestUncommonTrapMerging Test1
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.rangechecks.TestUncommonTrapMerging::test*
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
  *                   compiler.rangechecks.TestUncommonTrapMerging Test2
  */
 

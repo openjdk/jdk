@@ -268,6 +268,8 @@ class relocInfo {
     data_prefix_tag         = 15, // tag for a prefix (carries data arguments)
     post_call_nop_type      = 16, // A tag for post call nop relocations
     barrier_type            = 17, // GC barrier data
+    patchable_barrier_type  = 18, // Patchable GC barrier
+    address_stub_type       = 19, // Call destination stored in an address-only stub
     type_mask               = 31  // A mask which selects only the above values
   };
 
@@ -307,8 +309,10 @@ class relocInfo {
     visitor(poll_return) \
     visitor(section_word) \
     visitor(trampoline_stub) \
+    visitor(address_stub) \
     visitor(post_call_nop) \
     visitor(barrier) \
+    visitor(patchable_barrier) \
 
 
  public:
@@ -1056,6 +1060,43 @@ class barrier_Relocation : public Relocation {
   barrier_Relocation() : Relocation(relocInfo::barrier_type) { }
 };
 
+class patchable_barrier_Relocation : public Relocation {
+ private:
+  static const int32_t unresolved = INT32_MAX;
+
+  int32_t _target_offset;
+  uint16_t _metadata;
+
+ public:
+  static RelocationHolder spec(uint16_t metadata) {
+    return RelocationHolder::construct<patchable_barrier_Relocation>(metadata);
+  }
+
+  patchable_barrier_Relocation(uint16_t metadata) : Relocation(relocInfo::patchable_barrier_type),
+    _target_offset(unresolved), _metadata(metadata) { }
+
+  void pack_data_to(CodeSection* dest) override;
+  void unpack_data() override;
+
+  void copy_into(RelocationHolder& holder) const override;
+
+  uint16_t metadata() const {
+    return _metadata;
+  }
+  bool is_target_offset_resolved() const {
+    return _target_offset != unresolved;
+  }
+  int32_t target_offset() const {
+    assert(is_target_offset_resolved(), "Should be");
+    return _target_offset;
+  }
+  void set_target_offset(int32_t target_offset);
+
+ private:
+  friend class RelocIterator;
+  friend class RelocationHolder;
+  patchable_barrier_Relocation() : Relocation(relocInfo::patchable_barrier_type) { }
+};
 
 class virtual_call_Relocation : public CallRelocation {
 
@@ -1271,9 +1312,62 @@ class trampoline_stub_Relocation : public Relocation {
 
   void pack_data_to(CodeSection * dest) override;
   void unpack_data() override;
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+  address pd_destination     ();
+  void    pd_set_destination (address x);
+#else
+  address pd_destination     () {
+    fatal("trampoline_stub_Relocation::destination() unimplemented");
+    return (address)-1;
+  }
+  void    pd_set_destination (address x) {
+    fatal("trampoline_stub_Relocation::set_destination() unimplemented");
+  }
+#endif
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+  void    fix_owner_after_move() {
+    pd_fix_owner_after_move();
+  }
+#endif
+  address destination() {
+    return pd_destination();
+  }
+  void    set_destination(address x) {
+    pd_set_destination(x);
+  }
 
   // Find the trampoline stub for a call.
   static address get_trampoline_for(address call, nmethod* code);
+};
+
+// Associates a data-only, patchable call-target slot with its owning call.
+class address_stub_Relocation : public Relocation {
+ public:
+  static RelocationHolder spec(address owner) {
+    return RelocationHolder::construct<address_stub_Relocation>(owner);
+  }
+
+  void copy_into(RelocationHolder& holder) const override;
+
+ private:
+  address _owner;
+
+  address_stub_Relocation(address owner)
+    : Relocation(relocInfo::address_stub_type), _owner(owner) { }
+
+  friend class RelocationHolder;
+  address_stub_Relocation() : Relocation(relocInfo::address_stub_type) { }
+
+ public:
+  address owner() { return _owner; }
+
+  void pack_data_to(CodeSection* dest) override;
+  void unpack_data() override;
+
+  address destination();
+  void set_destination(address x);
+
+  static address get_stub_for(address call, nmethod* code);
 };
 
 class external_word_Relocation : public DataRelocation {
@@ -1361,7 +1455,7 @@ class internal_word_Relocation : public DataRelocation {
   void unpack_data() override;
 
   void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
-  void fix_relocation_after_aot_load(address orig_base_addr, address current_base_addr);
+  void fix_relocation_after_aot_load(address current_base_addr, int delta);
 
   address  target();        // if _target==nullptr, fetch addr from code stream
   int      section()        { return _section;   }

@@ -26,6 +26,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/nmethod.hpp"
@@ -1829,8 +1830,11 @@ static void log_uncommon_trap(nmethod* nm, Method* tm, intptr_t pc, frame& fr, i
     if (class_name != nullptr) {
       ls.print("%s class_name=%s ", unresolved ? "unresolved" : "", class_name);
     }
-    ls.print("cid=%4d %s level=%d ",
-             nm->compile_id(), (is_osr ? "osr" : ""), nm->comp_level());
+    ls.print("cid=%4d %s%s%s level=%d ",
+             nm->compile_id(), (is_osr ? "osr" : "   "),
+             (nm->is_aot() ? "aot " : ""),
+             (nm->aot_preloaded() ? "preload " : ""),
+             nm->comp_level());
     ls.print_cr("pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT,
              pc, fr.pc() - nm->code_begin());
 
@@ -1881,7 +1885,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     gather_statistics(reason, action, trap_bc);
 
     // Ensure that we can record deopt. history:
-    bool create_if_missing = ProfileTraps;
+    bool create_if_missing = ProfileTraps || AOTCodeCache::is_using_code();
 
     methodHandle profiled_method;
     profiled_method = trap_method;
@@ -2488,7 +2492,7 @@ const char* Deoptimization::_trap_action_name[] = {
 
 const char* Deoptimization::trap_reason_name(int reason) {
   // Check that every reason has a name
-  STATIC_ASSERT(sizeof(_trap_reason_name)/sizeof(const char*) == Reason_LIMIT);
+  static_assert(sizeof(_trap_reason_name)/sizeof(const char*) == Reason_LIMIT);
 
   if (reason == Reason_many)  return "many";
   if ((uint)reason < Reason_LIMIT)
@@ -2499,7 +2503,7 @@ const char* Deoptimization::trap_reason_name(int reason) {
 }
 const char* Deoptimization::trap_action_name(int action) {
   // Check that every action has a name
-  STATIC_ASSERT(sizeof(_trap_action_name)/sizeof(const char*) == Action_LIMIT);
+  static_assert(sizeof(_trap_action_name)/sizeof(const char*) == Action_LIMIT);
 
   if ((uint)action < Action_LIMIT)
     return _trap_action_name[action];

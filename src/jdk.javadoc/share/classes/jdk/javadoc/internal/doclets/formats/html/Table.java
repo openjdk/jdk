@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,7 +433,7 @@ public class Table<T> extends Content {
 
     private Content getTableBody() {
         ContentBuilder tableContent = new ContentBuilder();
-        tableContent.add(header);
+        tableContent.add(header.toContent());
         bodyRows.forEach(tableContent::add);
         return tableContent;
     }

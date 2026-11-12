@@ -292,7 +292,7 @@ inline int randomParkAndMiller(int *seed0) {
   const int m = 2147483647;
   const int q =     127773;  /* m div a */
   const int r =       2836;  /* m mod a */
-  STATIC_ASSERT(sizeof(int) == 4);
+  static_assert(sizeof(int) == 4);
   int seed = *seed0;
   int hi   = seed / q;
   int lo   = seed % q;

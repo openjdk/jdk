@@ -41,8 +41,6 @@
 #include "runtime/deoptimization.hpp"
 
 class BarrierSetC2;
-class FastLockNode;
-class FastUnlockNode;
 class IdealKit;
 class LibraryCallKit;
 class Parse;
@@ -67,9 +65,6 @@ class GraphKit : public Phase {
   int               _bci;       // JVM Bytecode Pointer
   ciMethod*         _method;    // JVM Current Method
   BarrierSetC2*     _barrier_set;
-#ifdef ASSERT
-  uint              _worklist_size;
-#endif
 
  private:
   int               _sp;        // JVM Expression Stack Pointer; don't modify directly!
@@ -84,15 +79,19 @@ class GraphKit : public Phase {
   GraphKit();                   // empty constructor
   GraphKit(JVMState* jvms, PhaseGVN* gvn = nullptr);     // the JVM state on which to operate
 
-  // Create a GraphKit from a debug state, useful for various kinds of macro expansion
+  // Create a GraphKit with a temporary map for parsing from a debug state.
+  // This is useful for various kinds of macro expansion.
   GraphKit(const SafePointNode* sft, PhaseIterGVN& igvn);
 
-#ifdef ASSERT
   ~GraphKit() {
     assert(failing_internal() || !has_exceptions(),
            "unless compilation failed, user must call transfer_exceptions_into_jvms");
+    if (_gvn.is_IterGVN()) {
+      // Kill the temporary map again
+      assert(map() == nullptr || map()->outcnt() == 0, "map should not escape");
+      stop_and_kill_map();
+    }
   }
-#endif
 
   virtual Parse*          is_Parse()          const { return nullptr; }
   virtual LibraryCallKit* is_LibraryCallKit() const { return nullptr; }
@@ -435,6 +434,7 @@ class GraphKit : public Phase {
   // Check the null_seen bit.
   bool seems_never_null(Node* obj, ciProfileData* data, bool& speculating);
 
+  void guard_klass_is_initialized(Node* klass);
   void guard_klass_being_initialized(Node* klass);
   void guard_init_thread(Node* klass);
 
@@ -525,7 +525,7 @@ class GraphKit : public Phase {
   Node* local(uint idx)         const { map_not_null(); return _map->local(      _map->_jvms, idx); }
   Node* stack(uint idx)         const { map_not_null(); return _map->stack(      _map->_jvms, idx); }
   Node* argument(uint idx)      const { map_not_null(); return _map->argument(   _map->_jvms, idx); }
-  Node* monitor_box(uint idx)   const { map_not_null(); return _map->monitor_box(_map->_jvms, idx); }
+  BoxLockNode* monitor_box(uint idx) const { map_not_null(); return _map->monitor_box(_map->_jvms, idx); }
   Node* monitor_obj(uint idx)   const { map_not_null(); return _map->monitor_obj(_map->_jvms, idx); }
 
   void set_control  (Node* c)         { map_not_null()->set_control(c); }
@@ -664,8 +664,10 @@ class GraphKit : public Phase {
                               const TypeInt* sizetype = nullptr,
                               // Optional control dependency (for example, on range check)
                               Node* ctrl = nullptr);
-  Node* cast_to_flat_array(Node* array, ciValueKlass* elem_vk);
-  Node* cast_to_flat_array_exact(Node* array, ciValueKlass* elem_vk, bool is_null_free, bool is_atomic);
+
+  ciObjArrayKlass* get_flat_array_klass(ciValueKlass* elem_vk);
+  ciObjArrayKlass* get_flat_array_klass_exact(ciValueKlass* elem_vk, bool is_null_free, bool is_atomic);
+  Node* cast_to_flat_array(Node* array, ciObjArrayKlass* array_klass, bool exact);
 
   // Return a load of array element at idx.
   Node* load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl);
@@ -827,11 +829,8 @@ class GraphKit : public Phase {
   Node* insert_mem_bar_volatile(int opcode, int alias_idx, Node* precedent = nullptr);
   Node* insert_reachability_fence(Node* referent);
   // Optional 'precedent' is appended as an extra edge, to force ordering.
-  FastLockNode* shared_lock(Node* obj);
-  void shared_unlock(Node* box, Node* obj);
-
-  // helper functions for the fast path/slow path idioms
-  Node* fast_and_slow(Node* in, const Type *result_type, Node* null_result, IfNode* fast_test, Node* fast_result, address slow_call, const TypeFunc *slow_call_type, Node* slow_arg, Klass* ex_klass, Node* slow_result);
+  BoxLockNode* shared_lock(Node* obj);
+  void         shared_unlock(BoxLockNode* box, Node* obj);
 
   // Generate an instance-of idiom.  Used by both the instance-of bytecode
   // and the reflective instance-of call.
@@ -913,7 +912,6 @@ class GraphKit : public Phase {
   void add_parse_predicate(Deoptimization::DeoptReason reason, int nargs);
 
   Node* make_constant_from_field(ciField* field, Node* obj);
-  Node* load_mirror_from_klass(Node* klass);
 
   // Vector API support (implemented in vectorIntrinsics.cpp)
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
@@ -934,7 +932,7 @@ class GraphKit : public Phase {
     int _sp;
     JVMState* _jvms;
     SafePointNode* _map;
-    Unique_Node_List _ctrl_succ;
+    Unique_Node_List<const Node> _ctrl_succ;
     bool _discarded;
 
   public:

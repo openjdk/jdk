@@ -423,7 +423,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * returns a numerically greater value.
  *
  * @spec         https://www.unicode.org/reports/tr35
- *               Unicode Locale Data Markup Language (LDML)
+ *               Unicode Common Locale Data {@literal &} Rules (CLDR)
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
  * @see          NumberFormat
  * @see          DecimalFormatSymbols

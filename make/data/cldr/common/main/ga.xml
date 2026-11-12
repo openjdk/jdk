@@ -374,6 +374,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">Páilis</language>
 			<language type="pis">Pijin</language>
 			<language type="pl">Polainnis</language>
+			<language type="pms">de chuid Phíodmant</language>
 			<language type="pqm">Maliseet-Passamaquoddy</language>
 			<language type="prg">Prúisis</language>
 			<language type="ps">Paistis</language>
@@ -1085,15 +1086,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">Féilire</key>
 			<key type="cf">Formáid Airgeadra</key>
+			<key type="colAlternate">Sórtáil Siombailí &quot;Tabhair Neamhaird ar&quot;</key>
+			<key type="colBackwards">Sórtáil de réir Fada Tiontaithe Thart</key>
+			<key type="colCaseFirst">Cuir in Ord de réir Cás Uachtair/Cás Íochtair</key>
+			<key type="colCaseLevel">Sórtáil chásíogair</key>
 			<key type="collation">Ord Sórtála</key>
+			<key type="colNormalization">Sórtáil Normalaithe</key>
+			<key type="colNumeric">Sórtáil Uimhriúil</key>
+			<key type="colReorder">Athord a chur ar Chlónna/ar Bhloclitreacha</key>
+			<key type="colStrength">Neart Sórtála</key>
 			<key type="currency">Airgeadra</key>
+			<key type="d0">Ceann Scríbe Claochlaithe</key>
+			<key type="dx">Eisiamh Briste Foclóra</key>
 			<key type="em">Léiriú mar Emoji</key>
+			<key type="fw">An chéad lá den tseachtain</key>
+			<key type="h0">Measctha</key>
 			<key type="hc">Timthriall Uaire (12 vs 24)</key>
+			<key type="i0">Modh Ionchuir</key>
+			<key type="k0">Méarchlár</key>
+			<key type="kv">An líon ar a dtugtar neamhaird is mó</key>
 			<key type="lb">Déine Briste Líne</key>
 			<key type="lw">Bristeacha Líne laistigh d’Fhocail</key>
+			<key type="m0">Rialacha Claochlaithe</key>
 			<key type="ms">Córas Tomhais</key>
+			<key type="mu">Aonad Tomhais</key>
 			<key type="numbers">Uimhreacha</key>
+			<key type="rg">Réigiún le haghaidh Sonraí Forlíontacha</key>
+			<key type="s0">Foinse Claochlaithe</key>
+			<key type="sd">Foroinn Réigiúin</key>
 			<key type="ss">Briseadh Frása tar éis Giorrúcháin</key>
+			<key type="t">Claochlaigh</key>
+			<key type="t0">Aistrithe ag Meaisín</key>
+			<key type="timezone">Crios Ama</key>
+			<key type="va">Leagan Logchaighdeáin</key>
+			<key type="x">Úsáid Phríobháideach</key>
+			<key type="x0">Claochlú Úsáide Príobháidí</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Féilire Búdaíoch</type>
@@ -1113,15 +1140,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">Féilire na nEabhrach</type>
 			<type key="calendar" type="hebrew" scope="core">Eabhrach</type>
 			<type key="calendar" type="indian">Féilire Náisiúnta na hIndia</type>
+			<type key="calendar" type="indian" scope="core">Náisiúnach de chuid na hIndia</type>
 			<type key="calendar" type="islamic">Féilire na Moslamach</type>
 			<type key="calendar" type="islamic" scope="core">Moslamach</type>
 			<type key="calendar" type="islamic-civil">Féilire na Moslamach (táblach, seanré shibhialta)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Moslamach (táblach, seanré shibhialta)</type>
 			<type key="calendar" type="islamic-rgsa" draft="provisional">Féilire Ioslamach (an Araib Shádach, dearcadh)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijri, Saudi Arabia, radharc gealaí</type>
 			<type key="calendar" type="islamic-tbla" draft="provisional">Féilire Ioslamach (táblach, seanré réalteolaíoch)</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hijri (i bhfoirm tábla, aga réalteolaíoch)</type>
 			<type key="calendar" type="islamic-umalqura">Féilire na Moslamach (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Moslamach (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Féilire Ghréagóra (an bhliain ag an tús)</type>
+			<type key="calendar" type="iso8601" scope="core">Greagórach</type>
 			<type key="calendar" type="japanese">Féilire Seapánach</type>
 			<type key="calendar" type="japanese" scope="core">Seapánach</type>
 			<type key="calendar" type="persian">Féilire Peirseach</type>
@@ -1132,26 +1163,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="cf" type="account" scope="core">Cuntasaíocht</type>
 			<type key="cf" type="standard">Formáid Airgeadra Caighdeánach</type>
 			<type key="cf" type="standard" scope="core">Caighdeánach</type>
+			<type key="colCaseFirst" type="lower" scope="core">Cás íochtair</type>
+			<type key="colCaseFirst" type="no" scope="core">Cás íochtair</type>
+			<type key="colCaseFirst" type="upper" scope="core">Cás uachtair</type>
 			<type key="collation" type="compat">Ord Sórtála Roimhe Seo, ar son na comhoiriúnachta</type>
+			<type key="collation" type="compat" scope="core">Comhoiriúnacht</type>
 			<type key="collation" type="dictionary">Ord Sórtála Foclóirí</type>
+			<type key="collation" type="dictionary" scope="core">Foclóir</type>
 			<type key="collation" type="ducet">Ord Sórtála Réamhshocraithe Unicode</type>
 			<type key="collation" type="ducet" scope="core">Réamhshocraithe Unicode</type>
 			<type key="collation" type="emoji">Ord Sórtála Emoji</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
 			<type key="collation" type="eor">Rialacha Ordaithe Eorpacha</type>
+			<type key="collation" type="eor" scope="core">Rialacha Eorpacha</type>
 			<type key="collation" type="phonebook">Ord sórtála an eolaire teileafóin</type>
+			<type key="collation" type="phonebook" scope="core">Eolaí teileafóin</type>
+			<type key="collation" type="phonetic" scope="core">Foghraíochta</type>
 			<type key="collation" type="pinyin">Ord sórtála pinyin</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">Cuardach Ilfhóinteach</type>
 			<type key="collation" type="search" scope="core">Cuardach</type>
 			<type key="collation" type="searchjl">Cuardach de réir Consan Tosaigh Hangul</type>
+			<type key="collation" type="searchjl" scope="core">Consan tosaigh Cóiréise</type>
 			<type key="collation" type="standard">Ord Sórtála Caighdeánach</type>
 			<type key="collation" type="standard" scope="core">Caighdeánach</type>
 			<type key="collation" type="stroke">Ord sórtála stríce</type>
+			<type key="collation" type="stroke" scope="core">Stríoc</type>
 			<type key="collation" type="traditional">Ord sórtála traidisiúnta</type>
+			<type key="collation" type="traditional" scope="core">Traidisiúnta</type>
 			<type key="collation" type="unihan">Ord Sórtála Stríce Radacaí</type>
+			<type key="collation" type="unihan" scope="core">Fréamh-Stríoc</type>
 			<type key="collation" type="zhuyin">Ord Sórtála Zhuyin</type>
+			<type key="collation" type="zhuyin" scope="core">Zhuyin</type>
+			<type key="colReorder" type="currency" scope="core">Airgeadra</type>
+			<type key="colReorder" type="digit" scope="core">Digití</type>
+			<type key="colReorder" type="punct" scope="core">Poncaíocht</type>
+			<type key="colReorder" type="space" scope="core">Spás bán</type>
+			<type key="colReorder" type="symbol" scope="core">Siombail</type>
+			<type key="colStrength" type="identical" scope="core">Gach</type>
+			<type key="colStrength" type="primary" scope="core">Bonnlitreacha Amháin</type>
+			<type key="colStrength" type="quaternary" scope="core">Bonnlitir, Fada, Cás, Leaganacha, Kana</type>
+			<type key="colStrength" type="secondary" scope="core">Bonnlitir, Fada</type>
+			<type key="colStrength" type="tertiary" scope="core">Bonnlitir, Fada, Cás, Leaganacha</type>
+			<type key="d0" type="fwidth">Go Lánleithid</type>
+			<type key="d0" type="hwidth">Go Leathleithid</type>
 			<type key="em" type="default" scope="core">Réamhshocraithe</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
 			<type key="em" type="text" scope="core">Téacs</type>
+			<type key="hc" type="c12">Córas 12 Uair</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">Córas 24 Uair</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">Córas 12 Uair (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">Córas 12 Uair (1–12)</type>
@@ -1160,6 +1222,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">Córas 24 Uair (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Spásanna Iomlaoide, poncaíocht, gach siombail</type>
+			<type key="kv" type="punct" scope="core">Spásanna iomlaoide, poncaíocht</type>
+			<type key="kv" type="space" scope="core">Spásanna iomlaoide, poncaíocht</type>
+			<type key="kv" type="symbol" scope="core">Spásanna Iomlaoide, poncaíocht, siombailí neamhairgeadra</type>
 			<type key="lb" type="loose">Stíl Scaoilte Briste Líne</type>
 			<type key="lb" type="loose" scope="core">Scaoilte</type>
 			<type key="lb" type="normal">Gnáthstíl Briste Líne</type>
@@ -1170,6 +1236,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="lw" type="keepall" scope="core">Coinnigh gach rud</type>
 			<type key="lw" type="normal" scope="core">Gnách</type>
 			<type key="lw" type="phrase" scope="core">Coinnigh i bhfrásaí</type>
+			<type key="m0" type="bgn">Traslitriú BGN SAM</type>
+			<type key="m0" type="ungegn">Traslitriú GEGN NA</type>
 			<type key="ms" type="metric">Córas Méadrach</type>
 			<type key="ms" type="metric" scope="core">Méadrach</type>
 			<type key="ms" type="uksystem">Córas Tomhais Reachtúil</type>
@@ -1179,8 +1247,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="ahom">Digití Ahom</type>
 			<type key="numbers" type="arab">Digití Ind-Arabacha</type>
 			<type key="numbers" type="arabext">Digití Ind-Arabacha Breisithe</type>
+			<type key="numbers" type="arabext" scope="core">Indic-Araibis Sínte</type>
 			<type key="numbers" type="armn">Uimhreacha Airméanacha</type>
 			<type key="numbers" type="armnlow">Uimhreacha Cáis Íochtair Airméanacha</type>
+			<type key="numbers" type="armnlow" scope="core">Cás Íochtair Airméinise</type>
 			<type key="numbers" type="bali">Digití Bailíocha</type>
 			<type key="numbers" type="beng">Digití Beangálacha</type>
 			<type key="numbers" type="brah">Digití Brahmi</type>
@@ -1189,52 +1259,77 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="cyrl">Uimhreacha Coireallacha</type>
 			<type key="numbers" type="deva">Digití Déiveanágracha</type>
 			<type key="numbers" type="ethi">Uimhreacha Aetóipice</type>
+			<type key="numbers" type="finance" scope="core">Airgeadais</type>
 			<type key="numbers" type="fullwide">Digití Lánleithid</type>
+			<type key="numbers" type="fullwide" scope="core">Lánleithid</type>
 			<type key="numbers" type="geor">Uimhreacha Seoirseacha</type>
 			<type key="numbers" type="gonm">Digití Masaram Gondi</type>
 			<type key="numbers" type="grek">Uimhreacha Gréagacha</type>
 			<type key="numbers" type="greklow">Uimhreacha Cáis Íochtair Gréagacha</type>
+			<type key="numbers" type="greklow" scope="core">Cás Íochtair Gréagach</type>
 			<type key="numbers" type="gujr">Digití Gúisearátacha</type>
 			<type key="numbers" type="guru">Digití Gurmúcacha</type>
+			<type key="numbers" type="hanidays" scope="core">Uimhriú lá na míosa le carachtar Han le haghaidh féilirí traidisiúnta</type>
 			<type key="numbers" type="hanidec">Uimhreacha Deachúlacha Síneacha</type>
+			<type key="numbers" type="hanidec" scope="core">Córas deachúil suímh ina n-úsáidtear ideagraif uimhreacha Síneacha mar dhigití</type>
 			<type key="numbers" type="hans">Uimhreacha na Sínise Simplithe</type>
 			<type key="numbers" type="hansfin">Uimhreacha Airgeadais na Sínise Simplithe</type>
+			<type key="numbers" type="hansfin" scope="core">Airgeadais na Sínise Simplithe</type>
 			<type key="numbers" type="hant">Uimhreacha na Sínise Traidisiúnta</type>
 			<type key="numbers" type="hantfin">Uimhreacha Airgeadais na Sínise Traidisiúnta</type>
+			<type key="numbers" type="hantfin" scope="core">Airgeadais na Sínise Traidisiúnta</type>
 			<type key="numbers" type="hebr">Uimhreacha Eabhracha</type>
 			<type key="numbers" type="hmng">Digití Pahawh Hmong</type>
 			<type key="numbers" type="java">Digití Iávacha</type>
 			<type key="numbers" type="jpan">Uimhreacha Seapánacha</type>
 			<type key="numbers" type="jpanfin">Uimhreacha Airgeadais Seapánacha</type>
+			<type key="numbers" type="jpanfin" scope="core">Airgeadais Seapánach</type>
+			<type key="numbers" type="jpanyear" scope="core">Uimhriú Seapánach Gannen (An bhliain bunúis)</type>
 			<type key="numbers" type="kali">Digití Kayah Li</type>
 			<type key="numbers" type="khmr">Digití Ciméaracha</type>
 			<type key="numbers" type="knda">Digití Cannadacha</type>
 			<type key="numbers" type="lana">Digití Tai Tham Hora</type>
 			<type key="numbers" type="lanatham">Digití Tai Tham Tham</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (eaglasta)</type>
 			<type key="numbers" type="laoo">Digití Laosacha</type>
 			<type key="numbers" type="latn">Digití Iartharacha</type>
 			<type key="numbers" type="lepc">Digití Lepcha</type>
 			<type key="numbers" type="limb">Digití Limbu</type>
 			<type key="numbers" type="mathbold">Digití Troma Matamaiticiúla</type>
+			<type key="numbers" type="mathbold" scope="core">Cló trom matamaiticiúil</type>
 			<type key="numbers" type="mathdbl">Digití Stríce Dúbailte Matamaiticiúla</type>
+			<type key="numbers" type="mathdbl" scope="core">Double-struck matamaiticiúil</type>
 			<type key="numbers" type="mathmono">Digití Aonspáis Matamaiticiúla</type>
+			<type key="numbers" type="mathmono" scope="core">Monaspás matamaiticiúil</type>
 			<type key="numbers" type="mathsanb">Digití Troma Sans-Serif Matamaiticiúla</type>
+			<type key="numbers" type="mathsanb" scope="core">Sans-serif matamaiticiúil i gcló trom</type>
 			<type key="numbers" type="mathsans">Digití Sans-Serif Matamaiticiúla</type>
+			<type key="numbers" type="mathsans" scope="core">Sans-serif matamaiticiúil</type>
 			<type key="numbers" type="mlym">Digití Mailéalamacha</type>
 			<type key="numbers" type="modi">Digití Modi</type>
 			<type key="numbers" type="mong">Digití Mongólacha</type>
 			<type key="numbers" type="mroo">Digití Mro</type>
 			<type key="numbers" type="mtei">Digití Meetei Mayek</type>
 			<type key="numbers" type="mymr">Digití Maenmaracha</type>
+			<type key="numbers" type="mymrepka" scope="core">Cairéinis Pao Oirthearach Mhaenmar</type>
+			<type key="numbers" type="mymrpao" scope="core">Pao Maenmar</type>
 			<type key="numbers" type="mymrshan">Digití Myanmar Shan</type>
+			<type key="numbers" type="mymrshan" scope="core">Shan Maenmar</type>
 			<type key="numbers" type="mymrtlng">Digití Myanmar Tai Laing</type>
+			<type key="numbers" type="mymrtlng" scope="core">Tai Laing Maenmar</type>
+			<type key="numbers" type="native">Digití Dúchasacha</type>
+			<type key="numbers" type="native" scope="core">Digití dúchasacha</type>
 			<type key="numbers" type="nkoo">Digití N’ko</type>
 			<type key="numbers" type="olck">Digití Ol Chiki</type>
 			<type key="numbers" type="orya">Digití Oiríseacha</type>
 			<type key="numbers" type="osma">Digití Osmanya</type>
+			<type key="numbers" type="outlined" scope="core">Imlínithe</type>
 			<type key="numbers" type="roman">Uimhreacha Rómhánacha</type>
+			<type key="numbers" type="roman" scope="core">Cás uachtair Romhánach</type>
 			<type key="numbers" type="romanlow">Uimhreacha Cáis Íochtair Rómhánacha</type>
+			<type key="numbers" type="romanlow" scope="core">Cás íochtair Romhánach</type>
 			<type key="numbers" type="saur">Digití Saurashtra</type>
+			<type key="numbers" type="segment" scope="core">Deighilte</type>
 			<type key="numbers" type="shrd">Digití Sharada</type>
 			<type key="numbers" type="sind">Digití Khudawadi</type>
 			<type key="numbers" type="sinh">Digití Sinhala Lith</type>
@@ -1244,15 +1339,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="talu">Digití Tai Lue Nua</type>
 			<type key="numbers" type="taml">Uimhreacha Tamalacha Traidisiúnta</type>
 			<type key="numbers" type="tamldec">Digití Tamalacha</type>
+			<type key="numbers" type="tamldec" scope="core">Tamailis Nua</type>
 			<type key="numbers" type="telu">Digití Teileagúcha</type>
 			<type key="numbers" type="thai">Digití Téalannacha</type>
 			<type key="numbers" type="tibt">Digití Tibéadacha</type>
 			<type key="numbers" type="tirh">Digití Tirhuta</type>
+			<type key="numbers" type="traditional" scope="core">Uimhreacha traidisiúnta</type>
 			<type key="numbers" type="vaii">Digití Vadhacha</type>
 			<type key="numbers" type="wara">Digití Warang Citi</type>
 			<type key="ss" type="none" scope="core">Múchta</type>
 			<type key="ss" type="standard" scope="core">Ar siúl</type>
+			<type key="t0" type="und">Meaisínaistriúchán Neamhshonraithe</type>
+			<type key="va" type="posix" scope="core">Leagan POSIX</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Múchta</typeValue>
+			<typeValue type="yes">Ar siúl</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Méadrach</measurementSystemName>
 			<measurementSystemName type="UK">RA</measurementSystemName>
@@ -1479,6 +1582,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
 							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d – d</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
@@ -1691,6 +1797,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1734,6 +1843,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">MMMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, MMMM d, y G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
@@ -1744,6 +1856,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, MMMM d</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM: 'seachtain' W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="two">MMMM: 'seachtain' W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="few">MMMM: 'seachtain' W</dateFormatItem>
@@ -1756,6 +1869,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">MMMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, MMMM d, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'seachtain' w 'in' Y</dateFormatItem>
@@ -1764,7 +1879,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yw" count="many">'seachtain' w 'in' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'seachtain' w 'in' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Era">{0} {1}</appendItem>
+					</appendItems>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
@@ -1864,6 +1986,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
 							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">MMMM d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y</greatestDifference>
@@ -2631,7 +2756,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>MAG{0}</gmtFormat>
-			<gmtZeroFormat>MAG</gmtZeroFormat>
+			<gmtFormat alt="utc">AUL{0}</gmtFormat>
+			<gmtUnknownFormat alt="utc">AUL+?</gmtUnknownFormat>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
@@ -2639,6 +2765,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<standard>Am Uilíoch Lárnach</standard>
 				</long>
+				<short>
+					<standard>AUL</standard>
+				</short>
 			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Láthair Anaithnid</exemplarCity>
@@ -2803,9 +2932,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Páras</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Am Samhraidh na Breataine</daylight>
-				</long>
 				<short>
 					<daylight>ASB</daylight>
 				</short>
@@ -2857,9 +2983,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Macasar</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Am Caighdéanach na hÉireann</daylight>
-				</long>
 				<short>
 					<daylight>ACÉ</daylight>
 				</short>
@@ -3156,13 +3279,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Am Samhraidh Alasca</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>Am Almaty</generic>
-					<standard>Am Caighdeánach Almaty</standard>
-					<daylight>Am Samhraidh Almaty</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>Am na hAmasóine</generic>
@@ -3197,11 +3313,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Am Caighdeánach an Aigéin Chiúin</standard>
 					<daylight>Am Samhraidh an Aigéin Chiúin</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AAC</generic>
-					<standard draft="contributed">ACAC</standard>
-					<daylight draft="contributed">ASAC</daylight>
-				</short>
 			</metazone>
 			<metazone type="Anadyr">
 				<long>
@@ -3215,20 +3326,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Am Shamó</generic>
 					<standard>Am Caighdeánach Shamó</standard>
 					<daylight>Am Samhraidh Shamó</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>Am Aqtau</generic>
-					<standard>Am Caighdeánach Aqtau</standard>
-					<daylight>Am Samhraidh Aqtau</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>Am Aqtobe</generic>
-					<standard>Am Caighdeánach Aqtobe</standard>
-					<daylight>Am Samhraidh Aqtobe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3330,6 +3427,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Am Bhrasília</generic>
 					<standard>Am Caighdeánach Bhrasília</standard>
 					<daylight>Am Samhraidh Bhrasília</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Am na Breataine</generic>
+					<daylight>Am Samhraidh na Breataine</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3528,6 +3631,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>MAG</standard>
 				</short>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Am na Graonlainne</generic>
+					<standard>Am Caighdeánach na Graonlainne</standard>
+					<daylight>Am Samhraidh na Graonlainne</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Am Oirthear na Graonlainne</generic>
@@ -3542,11 +3652,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Am Samhraidh Iarthar na Graonlainne</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>Am Caighdeánach Ghuam</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Am Caighdeánach na Murascaille</standard>
@@ -3559,7 +3664,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Am Caighdeánach Haváí-Ailiúit</standard>
+					<standard>Am Caighdeánach Haváí</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3620,6 +3725,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Am Samhraidh na hIaráine</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Am na hÉireann</generic>
+					<daylight>Am Caighdéanach na hÉireann</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Am Irkutsk</generic>
@@ -3644,8 +3755,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Kamchatka">
 				<long>
 					<generic>Am Phetropavlovsk-Kamchatski</generic>
-					<standard>Am Caighdeánach Phetropavlovsk-Kamchatski</standard>
-					<daylight>Am Samhraidh Phetropavlovsk-Kamchatski</daylight>
+					<standard>Am Caighdeánach Kamchatka</standard>
+					<daylight>Am Samhraidh Kamchatka</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3687,11 +3798,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Am na Cirgeastáine</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>Am Shrí Lanca</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>Am Oileáin na Líne</standard>
@@ -3702,13 +3808,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Am Lord Howe</generic>
 					<standard>Am Caighdeánach Lord Howe</standard>
 					<daylight>Am Samhraidh Lord Howe</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>Am Mhacao</generic>
-					<standard>Am Caighdeánach Mhacao</standard>
-					<daylight>Am Samhraidh Mhacao</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -3826,11 +3925,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Am Samhraidh Fernando de Noronha</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>Am na nOileán Máirianach Thuaidh</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Am Novosibirsk</generic>
@@ -3910,13 +4004,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Am Pyongyang</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>Am Qyzylorda</generic>
-					<standard>Am Caighdeánach Qyzylorda</standard>
-					<daylight>Am Samhraidh Qyzylorda</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Am Réunion</standard>
@@ -3943,9 +4030,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Am Shamó Mheiriceá</generic>
 					<standard>Am Caighdeánach Shamó Mheiriceá</standard>
-					<daylight>Am Samhraidh Shamó Mheiriceá</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4012,6 +4097,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Am Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Am na Tuirce</generic>
+					<standard>Am Caighdeánach na Tuirce</standard>
+					<daylight>Am Samhraidh na Tuirce</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Am na Tuircméanastáine</generic>
@@ -4029,6 +4121,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Am Uragua</generic>
 					<standard>Am Caighdeánach Uragua</standard>
 					<daylight>Am Samhraidh Uragua</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Am Ürümqi</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4172,16 +4269,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<decimalFormatLength type="short">
 				<decimalFormat>
 					<pattern type="1000" count="one">0k</pattern>
+					<pattern type="1000" count="two">0k</pattern>
+					<pattern type="1000" count="few">0k</pattern>
+					<pattern type="1000" count="many">0k</pattern>
 					<pattern type="1000" count="other">0k</pattern>
 					<pattern type="10000" count="one">00k</pattern>
+					<pattern type="10000" count="two">00k</pattern>
+					<pattern type="10000" count="few">00k</pattern>
+					<pattern type="10000" count="many">00k</pattern>
 					<pattern type="10000" count="other">00k</pattern>
 					<pattern type="100000" count="one">000k</pattern>
+					<pattern type="100000" count="two">000k</pattern>
+					<pattern type="100000" count="few">000k</pattern>
+					<pattern type="100000" count="many">000k</pattern>
 					<pattern type="100000" count="other">000k</pattern>
 					<pattern type="1000000000" count="one">0B</pattern>
+					<pattern type="1000000000" count="two">0B</pattern>
+					<pattern type="1000000000" count="few">0B</pattern>
+					<pattern type="1000000000" count="many">0B</pattern>
 					<pattern type="1000000000" count="other">0B</pattern>
 					<pattern type="10000000000" count="one">00B</pattern>
+					<pattern type="10000000000" count="two">00B</pattern>
+					<pattern type="10000000000" count="few">00B</pattern>
+					<pattern type="10000000000" count="many">00B</pattern>
 					<pattern type="10000000000" count="other">00B</pattern>
 					<pattern type="100000000000" count="one">000B</pattern>
+					<pattern type="100000000000" count="two">000B</pattern>
+					<pattern type="100000000000" count="few">000B</pattern>
+					<pattern type="100000000000" count="many">000B</pattern>
 					<pattern type="100000000000" count="other">000B</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
@@ -6458,13 +6573,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} raidian</unitPattern>
 				<unitPattern count="other">{0} raidian</unitPattern>
 			</unit>
-			<unit type="angle-degree">
-				<unitPattern count="one">{0} chéim</unitPattern>
-				<unitPattern count="two">{0} chéim</unitPattern>
-				<unitPattern count="few">{0} chéim</unitPattern>
-				<unitPattern count="many">{0} gcéim</unitPattern>
-				<unitPattern count="other">{0} céim</unitPattern>
-			</unit>
 			<unit type="angle-arc-minute">
 				<unitPattern count="one">{0} nóiméad stua</unitPattern>
 				<unitPattern count="two">{0} nóiméad stua</unitPattern>
@@ -6559,7 +6667,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dúnaim</displayName>
 			</unit>
 			<unit type="concentr-karat">
-				<displayName>carait</displayName>
 				<unitPattern count="one">{0} charat</unitPattern>
 				<unitPattern count="two">{0} charat</unitPattern>
 				<unitPattern count="few">{0} charat</unitPattern>
@@ -6584,19 +6691,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-item">
 				<displayName>míreanna</displayName>
-				<unitPattern count="one">{0} mhír</unitPattern>
-				<unitPattern count="two">{0} mhír</unitPattern>
-				<unitPattern count="few">{0} mhír</unitPattern>
-				<unitPattern count="many">{0} mír</unitPattern>
-				<unitPattern count="other">{0} mír</unitPattern>
 			</unit>
 			<unit type="concentr-part">
 				<displayName>codanna</displayName>
-				<unitPattern count="one">{0} chuid</unitPattern>
-				<unitPattern count="two">{0} chuid</unitPattern>
-				<unitPattern count="few">{0} chuid</unitPattern>
-				<unitPattern count="many">{0} gcuid</unitPattern>
-				<unitPattern count="other">{0} cuid</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
 				<displayName>codanna sa mhilliún</displayName>
@@ -7128,7 +7225,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} lucsa</unitPattern>
 			</unit>
 			<unit type="light-candela">
-				<displayName>caindéilí</displayName>
 				<unitPattern count="one">{0} chaindéile</unitPattern>
 				<unitPattern count="two">{0} chaindéile</unitPattern>
 				<unitPattern count="few">{0} chaindéile</unitPattern>
@@ -7136,7 +7232,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} caindéile</unitPattern>
 			</unit>
 			<unit type="light-lumen">
-				<displayName>lúmain</displayName>
 				<unitPattern count="one">{0} lúman</unitPattern>
 				<unitPattern count="two">{0} lúman</unitPattern>
 				<unitPattern count="few">{0} lúman</unitPattern>
@@ -7767,14 +7862,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} véibear</unitPattern>
 				<unitPattern count="many">{0} véibear</unitPattern>
 				<unitPattern count="other">{0} véibear</unitPattern>
-			</unit>
-			<unit type="speed-light-speed">
-				<displayName>solas</displayName>
-				<unitPattern count="one">{0} solas</unitPattern>
-				<unitPattern count="two">{0} sholas</unitPattern>
-				<unitPattern count="few">{0} sholas</unitPattern>
-				<unitPattern count="many">{0} solas</unitPattern>
-				<unitPattern count="other">{0} solas</unitPattern>
 			</unit>
 			<unit type="duration-night">
 				<unitPattern count="one">{0} oíche amháin</unitPattern>
@@ -8490,7 +8577,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>spbh</displayName>
-				<unitPattern count="one">{0} spbh</unitPattern>
+				<unitPattern count="one">{0} Spbh</unitPattern>
 				<unitPattern count="two">{0} spbh</unitPattern>
 				<unitPattern count="few">{0} spbh</unitPattern>
 				<unitPattern count="many">{0} spbh</unitPattern>
@@ -8663,9 +8750,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="angle-degree">
 				<displayName>céim</displayName>
 			</unit>
-			<unit type="angle-arc-minute">
-				<displayName>nóim. stua</displayName>
-			</unit>
 			<unit type="concentr-karat">
 				<displayName>carat</displayName>
 				<unitPattern count="one">{0}ct</unitPattern>
@@ -8683,7 +8767,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}mír</unitPattern>
 			</unit>
 			<unit type="concentr-part">
-				<displayName>cod.</displayName>
 				<unitPattern count="one">{0} chuid</unitPattern>
 				<unitPattern count="two">{0} chuid</unitPattern>
 				<unitPattern count="few">{0} chuid</unitPattern>
@@ -8699,9 +8782,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0}mhól</unitPattern>
 				<unitPattern count="many">{0}mól</unitPattern>
 				<unitPattern count="other">{0}mól</unitPattern>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
@@ -8804,9 +8884,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-decade">
 				<displayName>deich. blianta</displayName>
-			</unit>
-			<unit type="duration-year">
-				<perUnitPattern>{0}/bl</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<unitPattern count="one">{0} ctú</unitPattern>
@@ -9065,7 +9142,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}míle Lochl.</unitPattern>
 			</unit>
 			<unit type="light-lux">
-				<displayName>lucs.</displayName>
 				<unitPattern count="one">{0}lx</unitPattern>
 				<unitPattern count="two">{0}lx</unitPattern>
 				<unitPattern count="few">{0}lx</unitPattern>
@@ -9080,7 +9156,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}cd</unitPattern>
 			</unit>
 			<unit type="light-lumen">
-				<displayName>lúmain</displayName>
 				<unitPattern count="one">{0}lm</unitPattern>
 				<unitPattern count="two">{0}lm</unitPattern>
 				<unitPattern count="few">{0}lm</unitPattern>
@@ -9345,23 +9420,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0}dr l.</unitPattern>
 				<unitPattern count="other">{0}dr l.</unitPattern>
 			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>cal-IT</displayName>
-				<unitPattern count="one">{0} cal-IT</unitPattern>
-				<unitPattern count="two">{0} cal-IT</unitPattern>
-				<unitPattern count="few">{0} cal-IT</unitPattern>
-				<unitPattern count="many">{0} cal-IT</unitPattern>
-				<unitPattern count="other">{0} cal-IT</unitPattern>
-			</unit>
-			<unit type="magnetic-weber">
-				<unitPattern count="one">{0} Wb</unitPattern>
-				<unitPattern count="two">{0} Wb</unitPattern>
-				<unitPattern count="few">{0} Wb</unitPattern>
-				<unitPattern count="many">{0} Wb</unitPattern>
-				<unitPattern count="other">{0} Wb</unitPattern>
-			</unit>
 			<unit type="speed-light-speed">
-				<displayName>solas</displayName>
 				<unitPattern count="one">{0}solas</unitPattern>
 				<unitPattern count="two">{0}sholas</unitPattern>
 				<unitPattern count="few">{0}sholas</unitPattern>

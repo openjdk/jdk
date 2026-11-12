@@ -40,7 +40,7 @@ ShenandoahHeapRegionSet::ShenandoahHeapRegionSet() :
   _region_count(0)
 {
   // Use 1-byte data type
-  STATIC_ASSERT(sizeof(jbyte) == 1);
+  static_assert(sizeof(jbyte) == 1);
 
   // Initialize cset map
   Copy::zero_to_bytes(_set_map, _map_size);

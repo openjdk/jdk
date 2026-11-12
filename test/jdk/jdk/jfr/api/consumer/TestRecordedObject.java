@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,12 @@ public class TestRecordedObject {
         float unsignedFloat = Float.MIN_VALUE; // unsigned should be ignored
         @Unsigned
         double unsignedDouble = Double.MIN_VALUE; // unsigned should be ignored
-
+        @Unsigned
+        @Timespan(Timespan.NANOSECONDS)
+        byte unsignedByteDuration = Byte.MIN_VALUE;
+        @Unsigned
+        @Timestamp(Timestamp.MILLISECONDS_SINCE_EPOCH)
+        byte unsignedByteTimestamp = Byte.MIN_VALUE;
     }
 
     private final static Set<String> ALL = createAll();
@@ -188,8 +193,12 @@ public class TestRecordedObject {
         Asserts.assertEquals(event.getDuration("durationSeconds"), DURATION_VALUE);
         Asserts.assertEquals(event.getDuration("foreverMillis"), ChronoUnit.FOREVER.getDuration());
         Asserts.assertEquals(event.getDuration("foreverNanoseconds"), ChronoUnit.FOREVER.getDuration());
+        Duration unsignedByteDuration = Duration.ofNanos(Byte.toUnsignedLong(Byte.MIN_VALUE));
+        Asserts.assertEquals(event.getDuration("unsignedByteDuration"), unsignedByteDuration);
 
         Asserts.assertEquals(event.getInstant("instantMillis").toEpochMilli(), 1000L);
+        long unsignedByteTimestamp = Byte.toUnsignedLong(Byte.MIN_VALUE);
+        Asserts.assertEquals(event.getInstant("unsignedByteTimestamp").toEpochMilli(), unsignedByteTimestamp);
         if (!event.getInstant("instantTicks").isBefore(INSTANT_VALUE)) {
             throw new AssertionError("Expected start time of JVM to before call to Instant.now()");
         }

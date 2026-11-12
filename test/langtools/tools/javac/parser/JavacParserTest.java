@@ -29,6 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.tree
+ * @run main JavacParserTest
  */
 
 import com.sun.source.tree.BinaryTree;
@@ -3258,6 +3259,21 @@ public class JavacParserTest extends TestCase {
                           Supplier<MethodReference> p8 = Test<String>.@Ann2("") MethodReference<Integer>::new;
                           IntFunction<MethodReference[]> p9 = Test<String>.@Ann2(value = "") MethodReference<Integer> @Ann2(value = "")[]::new;
 
+                          Function<Test, String> e1 = tests.@Ann1 Test::getString;
+                          Function<Test, String> e2 = tests.@Ann1 Test::<String>parInstance;
+                          Supplier<String> e3 = tests.@Ann1 Test::<String>parStatic;
+                          IntFunction<Test[]> e4 = tests.@Ann1 Test @Ann1 []::new;
+
+                          Function<Test, String> e5 = tests.@Ann1 Test<String>::get;
+                          Supplier<Test<String>> e6 = tests.@Ann1 Test<String>::new;
+                          Supplier<MethodReference<String>> e7 = Test.@Ann1 MethodReference<String>::new;
+                          IntFunction<MethodReference<String>[]> e8 = Test.@Ann1 MethodReference<String> @Ann1 @Ann2(value = "") []::new;
+
+                          String getString() { return ""; }
+                          <T extends String> T parInstance() { return null; }
+                          static <T extends String> T parStatic() { return null; }
+                          T1 get() { return null; }
+
                           static class MethodReference<T2> {
                               static String getString() { return ""; }
                           }
@@ -3296,7 +3312,8 @@ public class JavacParserTest extends TestCase {
                              "21:59:compiler.err.cant.select.static.class.from.param.type",
                              "22:64:compiler.err.cant.select.static.class.from.param.type",
                              "23:65:compiler.err.invalid.mref",
-                             "25:114:compiler.err.generic.array.creation"),
+                             "25:114:compiler.err.generic.array.creation",
+                             "35:108:compiler.err.generic.array.creation"),
                      codes);
 
         System.out.println("RESULT\n" + astAsText);
@@ -3327,6 +3344,30 @@ public class JavacParserTest extends TestCase {
                          Supplier<String> p7 = Test<String>.@Ann2("") MethodReference<Integer>::getString;
                          Supplier<MethodReference> p8 = Test<String>.@Ann2("") MethodReference<Integer>::new;
                          IntFunction<MethodReference[]> p9 = Test<String>.@Ann2(value = "") MethodReference<Integer> @Ann2(value = "") []::new;
+                         Function<Test, String> e1 = tests.@Ann1 Test::getString;
+                         Function<Test, String> e2 = tests.@Ann1 Test::<String>parInstance;
+                         Supplier<String> e3 = tests.@Ann1 Test::<String>parStatic;
+                         IntFunction<Test[]> e4 = tests.@Ann1 Test @Ann1 []::new;
+                         Function<Test, String> e5 = tests.@Ann1 Test<String>::get;
+                         Supplier<Test<String>> e6 = tests.@Ann1 Test<String>::new;
+                         Supplier<MethodReference<String>> e7 = Test.@Ann1 MethodReference<String>::new;
+                         IntFunction<MethodReference<String>[]> e8 = Test.@Ann1 MethodReference<String> @Ann1 @Ann2(value = "") []::new;
+                         \n\
+                         String getString() {
+                             return "";
+                         }
+                         \n\
+                         <T extends String>T parInstance() {
+                             return null;
+                         }
+                         \n\
+                         static <T extends String>T parStatic() {
+                             return null;
+                         }
+                         \n\
+                         T1 get() {
+                             return null;
+                         }
                          \n\
                          static class MethodReference<T2> {
                              \n\

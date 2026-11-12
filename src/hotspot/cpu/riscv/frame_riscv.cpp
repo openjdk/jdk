@@ -105,6 +105,12 @@ bool frame::safe_for_sender(JavaThread *thread) {
       if (_cb->is_nmethod() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
         return false;
       }
+
+      if (_cb->is_uncommon_trap_stub() &&
+          !(thread->has_last_Java_frame() && thread->frame_anchor()->walkable())) {
+        // RegisterSaver adjusts the stack pointer while spilling registers.
+        return false;
+      }
     }
 
     // Could just be some random pointer within the codeBlob
@@ -249,6 +255,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
   // Must be native-compiled frame. Since sender will try and use fp to find
   // linkages it must be safe
   if (!fp_safe) {
+    return false;
+  }
+
+  // sender_fp must be within the stack and above (but not equal) to
+  // current frame's fp.
+  address sender_fp = (address)this->link();
+  if (!thread->is_in_stack_range_excl(sender_fp, addr_fp)) {
     return false;
   }
 

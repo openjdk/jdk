@@ -50,8 +50,21 @@ import static compiler.lib.ir_framework.IRNode.STORE_OF_ANY_KLASS;
 import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
 
 /*
- * @test
+ * @test id=vanilla
  * @key randomness
+ * @summary Test correct handling of nullable value classes.
+ * @library /test/lib /test/jdk/java/lang/invoke/common /
+ * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
+ * @enablePreview
+ * @modules java.base/jdk.internal.value
+ *          java.base/jdk.internal.vm.annotation
+ * @build test.java.lang.invoke.lib.InstructionHelper
+ * @run main ${test.main.class} vanilla
+ */
+
+/*
+ * @test
+ * @key stress randomness
  * @summary Test correct handling of nullable value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
@@ -65,10 +78,9 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
 
 /*
  * @test
- * @key randomness
+ * @key stress randomness
  * @summary Test correct handling of nullable value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -79,10 +91,9 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
 
 /*
  * @test
- * @key randomness
+ * @key stress randomness
  * @summary Test correct handling of nullable value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -93,10 +104,9 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
 
 /*
  * @test
- * @key randomness
+ * @key stress randomness
  * @summary Test correct handling of nullable value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -107,10 +117,9 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
 
 /*
  * @test
- * @key randomness
+ * @key stress randomness
  * @summary Test correct handling of nullable value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -121,10 +130,9 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
 
 /*
  * @test
- * @key randomness
+ * @key stress randomness
  * @summary Test correct handling of nullable value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -135,10 +143,9 @@ import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
 
 /*
  * @test
- * @key randomness
+ * @key stress randomness
  * @summary Test correct handling of nullable value classes.
  * @library /test/lib /test/jdk/java/lang/invoke/common /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -162,19 +169,25 @@ public class TestNullableValueTypes {
     }
 
     public static void main(String[] args) {
+        TestFramework framework = ValueTypes.getFramework()
+                                            .addHelperClasses(MyValue1.class,
+                                                              MyValue2.class,
+                                                              MyValue2Inline.class,
+                                                              MyValue3.class,
+                                                              MyValue3Inline.class);
+
+        if (args.length > 0 && args[0].equals("vanilla")) {
+            framework.addFlags("--enable-preview",
+                               "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED",
+                               "--add-exports", "java.base/jdk.internal.vm.annotation=ALL-UNNAMED").start();
+            return;
+        }
 
         Scenario[] scenarios = ValueTypes.DEFAULT_SCENARIOS;
         scenarios[3].addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:+UseArrayFlattening", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
         scenarios[4].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
 
-        ValueTypes.getFramework()
-                  .addScenarios(scenarios[Integer.parseInt(args[0])])
-                  .addHelperClasses(MyValue1.class,
-                                    MyValue2.class,
-                                    MyValue2Inline.class,
-                                    MyValue3.class,
-                                    MyValue3Inline.class)
-                  .start();
+        framework.addScenarios(scenarios[Integer.parseInt(args[0])]).start();
     }
 
     static {

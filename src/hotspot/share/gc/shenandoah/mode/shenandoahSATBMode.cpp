@@ -35,11 +35,19 @@ void ShenandoahSATBMode::initialize_flags() const {
   }
 
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
-  SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
 
   // Final configuration checks
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahSATBBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
   SHENANDOAH_CHECK_FLAG_UNSET(ShenandoahCardBarrier);
+
+  // TLAB sizing policy makes resizing decisions before each GC cycle. It averages
+  // historical data, assigning more recent data the weight according to TLABAllocationWeight.
+  // Current default is good for generational collectors that run frequent young GCs.
+  // With Shenandoah, GC cycles are much less frequent, so we need sizing policy
+  // to converge faster over smaller number of resizing decisions.
+  if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
+    FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
+  }
 }

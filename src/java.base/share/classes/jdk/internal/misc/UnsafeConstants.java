@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -112,11 +112,34 @@ final class UnsafeConstants {
 
     static final int DATA_CACHE_LINE_FLUSH_SIZE;
 
+    /**
+     * Mask used to remove the highest bits of a computed raw hash code
+     * that would not fit in the space dedicated to hash code storage in
+     * objects headers.
+     *
+     * @implNote
+     * The actual value for this field is injected by the JVM.
+     */
+
+    static final int HASH_CODE_MASK;
+
+    /**
+     * The value stored in the hash field of the mark word when no hash
+     * was cached yet.
+     *
+     * @implNote
+     * The actual value for this field is injected by the JVM.
+     */
+
+    static final int HASH_CODE_NO_HASH;
+
     static {
         ADDRESS_SIZE0 = 0;
         PAGE_SIZE = 0;
         BIG_ENDIAN = false;
         UNALIGNED_ACCESS = false;
         DATA_CACHE_LINE_FLUSH_SIZE = 0;
+        HASH_CODE_MASK = 0;
+        HASH_CODE_NO_HASH = 0;
     }
 }

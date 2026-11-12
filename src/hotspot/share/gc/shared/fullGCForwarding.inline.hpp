@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,8 +23,8 @@
  *
  */
 
-#ifndef GC_SHARED_FULLGCFORWARDING_INLINE_HPP
-#define GC_SHARED_FULLGCFORWARDING_INLINE_HPP
+#ifndef SHARE_GC_SHARED_FULLGCFORWARDING_INLINE_HPP
+#define SHARE_GC_SHARED_FULLGCFORWARDING_INLINE_HPP
 
 #include "gc/shared/fullGCForwarding.hpp"
 
@@ -57,4 +58,4 @@ bool FullGCForwarding::is_forwarded(oop obj) {
   return obj->mark().is_forwarded();
 }
 
-#endif // GC_SHARED_FULLGCFORWARDING_INLINE_HPP
+#endif // SHARE_GC_SHARED_FULLGCFORWARDING_INLINE_HPP

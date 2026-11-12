@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,6 +325,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
                     RegisterMap::UpdateMap::skip,
                     RegisterMap::ProcessFrames::skip,
                     RegisterMap::WalkContinuation::skip);
+    map.set_async(true);
 
     while (true) {
       // Cannot walk this frame? Cannot do anything anymore.
@@ -372,6 +373,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
                     RegisterMap::UpdateMap::skip,
                     RegisterMap::ProcessFrames::skip,
                     RegisterMap::WalkContinuation::skip);
+    map.set_async(true);
 
     for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
       if (!candidate.safe_for_sender(thread)) return false;
@@ -389,6 +391,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
                   RegisterMap::UpdateMap::skip,
                   RegisterMap::ProcessFrames::skip,
                   RegisterMap::WalkContinuation::skip);
+  map.set_async(true);
 
   for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
 

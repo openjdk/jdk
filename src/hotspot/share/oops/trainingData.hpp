@@ -233,15 +233,24 @@ public:
   // other TD object that are sometimes circular).
   class Visitor {
     ResizeableHashTable<TrainingData*, bool> _visited;
+    GrowableArray<TrainingData*> _pending_visit_list;
   public:
-    Visitor(unsigned size) : _visited(size, 0x3fffffff) { }
+    Visitor(unsigned size) : _visited(size, 0x3fffffff),  _pending_visit_list() { }
+    ~Visitor() {
+      assert(_pending_visit_list.length() == 0, "need to call one of the xxx_finish() functions");
+    }
     bool is_visited(TrainingData* td) {
       return _visited.contains(td);
     }
     void visit(TrainingData* td) {
       bool created;
       _visited.put_if_absent(td, &created);
+      assert(created, "must be");
     }
+    void visit_later(TrainingData* td) {
+      _pending_visit_list.append(td);
+    }
+    template <typename FUNC> void finish(FUNC f);
   };
 
   typedef OffsetCompactHashtable<const TrainingData::Key*, TrainingData*, TrainingData::Key::equals> TrainingDataDictionary;
@@ -285,7 +294,7 @@ private:
 
   static bool have_data() { return AOTReplayTraining;  } // Going to read
   static bool need_data() { return AOTRecordTraining;  } // Going to write
-  static bool assembling_data() { return have_data() && CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes(); }
+  static bool assembling_data() { return have_data() && CDSConfig::is_dumping_aot_cache() && CDSConfig::is_dumping_aot_linked_classes(); }
 
   static bool is_klass_loaded(Klass* k) {
     if (have_data()) {
@@ -303,7 +312,7 @@ private:
   template<typename Function>
   static void iterate(Function fn) { // lambda enabled API
     TrainingDataLocker l;
-    if (have_data()) {
+    if (have_data() && !need_data()) {
       archived_training_data_dictionary()->iterate_all(fn);
     }
     if (need_data()) {
@@ -319,6 +328,7 @@ private:
   bool is_CompileTrainingData() const { return as_CompileTrainingData() != nullptr; }
 
   virtual void prepare(Visitor& visitor) = 0;
+  virtual void merge(Visitor& visitor) = 0;
   virtual void cleanup(Visitor& visitor) = 0;
 
   static void initialize() NOT_CDS_RETURN;
@@ -329,8 +339,30 @@ private:
   // possibly cyclic.
   template<typename E>
   class DepList : public StackObj {
+    static const int INITIAL_CAPACITY = 10;
+
     GrowableArrayCHeap<E, mtCompiler>* _deps_dyn;
     Array<E>*                          _deps;
+
+    void copy_on_write_if_necessary() {
+      TrainingDataLocker::assert_locked_or_snapshotted();
+      if (_deps != nullptr && _deps_dyn == nullptr) {
+        _deps_dyn = new GrowableArrayCHeap<E, mtCompiler>(length() + INITIAL_CAPACITY);
+        for (int i = 0; i < _deps->length(); i++) {
+          _deps_dyn->append(_deps->at(i));
+        }
+        _deps = nullptr;
+      }
+    }
+    void at_put(int i, E dep) const {
+      TrainingDataLocker::assert_locked_or_snapshotted();
+      assert(i >= 0 && i < length(), "oob");
+      if (_deps_dyn != nullptr) {
+        return _deps_dyn->at_put(i, dep);
+      } else if (_deps != nullptr) {
+        return _deps->at_put(i, dep);
+      } else ShouldNotReachHere();
+    }
   public:
     DepList() {
       _deps_dyn = nullptr;
@@ -343,21 +375,20 @@ private:
               : _deps   != nullptr ? _deps->length()
               : 0);
     }
-    E* adr_at(int i) const {
-      TrainingDataLocker::assert_locked_or_snapshotted();
-      return (_deps_dyn != nullptr ? _deps_dyn->adr_at(i)
-              : _deps   != nullptr ? _deps->adr_at(i)
-              : nullptr);
-    }
     E at(int i) const {
       TrainingDataLocker::assert_locked_or_snapshotted();
       assert(i >= 0 && i < length(), "oob");
-      return *adr_at(i);
+      if (_deps_dyn != nullptr) {
+        return _deps_dyn->at(i);
+      } else if (_deps != nullptr) {
+        return _deps->at(i);
+      } else ShouldNotReachHere();
     }
     bool append_if_missing(E dep) {
       TrainingDataLocker::assert_can_add();
+      copy_on_write_if_necessary();
       if (_deps_dyn == nullptr) {
-        _deps_dyn = new GrowableArrayCHeap<E, mtCompiler>(10);
+        _deps_dyn = new GrowableArrayCHeap<E, mtCompiler>(INITIAL_CAPACITY);
         _deps_dyn->append(dep);
         return true;
       } else {
@@ -366,6 +397,7 @@ private:
     }
     bool remove_if_existing(E dep) {
       TrainingDataLocker::assert_can_add();
+      copy_on_write_if_necessary();
       if (_deps_dyn != nullptr) {
         return _deps_dyn->remove_if_existing(dep);
       }
@@ -376,11 +408,13 @@ private:
       if (_deps_dyn != nullptr)  {
         _deps_dyn->clear();
       }
+      _deps = nullptr;
     }
     void append(E dep) {
       TrainingDataLocker::assert_can_add();
+      copy_on_write_if_necessary();
       if (_deps_dyn == nullptr) {
-        _deps_dyn = new GrowableArrayCHeap<E, mtCompiler>(10);
+        _deps_dyn = new GrowableArrayCHeap<E, mtCompiler>(INITIAL_CAPACITY);
       }
       _deps_dyn->append(dep);
     }
@@ -392,6 +426,20 @@ private:
         }
       }
       return false; // not found
+    }
+    void replace_or_append(E old_dep, E new_dep) {
+      TrainingDataLocker::assert_can_add();
+      copy_on_write_if_necessary();
+      int i = 0;
+      for (; i < length(); i++) {
+        if (at(i) == old_dep) {
+          at_put(i, new_dep);
+          break;
+        }
+      }
+      if (i == length()) {
+        append(new_dep);
+      }
     }
 
 #if INCLUDE_CDS
@@ -409,7 +457,8 @@ private:
 
 #if INCLUDE_CDS
   virtual void remove_unshareable_info() {}
-  static void iterate_roots(MetaspaceClosure* it);
+  static void dumptime_iterate_roots(MetaspaceClosure* it);
+  static void runtime_iterate_roots(MetaspaceClosure* it);
   static void dump_training_data();
   static void cleanup_training_data();
   static void serialize(SerializeClosure* soc);
@@ -485,6 +534,7 @@ class KlassTrainingData : public TrainingData {
   virtual void print_value_on(outputStream* st) const { print_on(st, true); }
 
   virtual void prepare(Visitor& visitor);
+  virtual void merge(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
 
   MetaspaceObj::Type type() const {
@@ -535,10 +585,76 @@ class CompileTrainingData : public TrainingData {
   const bool _is_osr;
   const int _compile_id;
 
+  // Size of nmethod's inlineable instructions during training
+  int _inline_instructions_size;
+
   // classes that should be initialized before this JIT task runs
-  DepList<KlassTrainingData*> _init_deps;
+  DepList<KlassTrainingData*> _init_deps;  // set by JIT in TR, read by APH and PR
   // Number of uninitialized classes left, when it's 0, all deps are satisfied
-  volatile int _init_deps_left;
+  volatile int _init_deps_left;  // set to deps length at AOT dump, counted down in PR
+
+  // The deps list and counter are crucial to gating the readiness of any nmethod
+  // in which clinit (class initialization) barriers have been optimized away.
+  // That is the difference between AP4 "preload" code (which has clinit barriers)
+  // and A4 code (which runs much faster, because it doesn't have them).
+  // The CTD::_init_deps list is built by a JIT task in the training run (TR),
+  // is consulted by the AOT compiler in the assembly phase (APH), and eventually
+  // is used again in the production run (PR) to ensure that the nmethod (for
+  // this CTD) gets loaded only after all its dependency classes have been
+  // initialized.  The _init_deps_left down-counter counts the number of remaining
+  // not-yet-initialized classes on the deps-list; when it reaches zero, the
+  // nmethod can be loaded (from its AOTCodeEntry) by the ac1 or ac2 loader task.
+  //
+  // Like other metadata, the CTD is built in the TR and used in both APH and PR.
+  // Events from the TR JIT task are posted via ciObjectFactory::notice_new_object
+  // which calls notice_jit_observation, to add classes to the deps-list for the
+  // CTD associated with the TR JIT task.  An AOT compiler task later recapitulates
+  // the TR JIT task, calling ciEnv::compute_init_state_for_aot_compile to read the
+  // deps-list of the same CTD.  As the AOT cache is dumped, the classes on each CTD
+  // deps-list are polled by compute_init_deps_left, so each _init_deps_left
+  // down-counter is initialized to the number of classes on the deps-list.
+  //
+  // After each clinit, CompilationPolicy::replay_training_at_init and then
+  // KlassTrainingData::notice_fully_initialized poll each CTD that depends on the
+  // newly-initialized class.  This is fast because the KTDs have an inverse
+  // list (comp_deps) that indexes back to CTDs that refer to them as init deps.
+  // The two functions cooperate to serialize the CTD polling activity.
+  // The first enqueues the class on the TrainingReplayQueue, while the second
+  // runs inside the unique TrainingReplayThread.
+  //
+  // The poll decrements the down-counter, and when it reaches zero, invokes
+  // the CompilationPolicy method maybe_compile_early on that CTD's method.
+  // The compilation policy rechecks each candidate method for suitability, and
+  // enqueues a CompileTask to handle the load from the AOTCodeEntry for the CTD
+  // which is ready.  CompilationPolicy handles AOT loading as well, as part of its
+  // responsibility for the full lifecycle of compiled code.
+  //
+  // The effect is as if the PR quickly fast-forwards the JIT activity from the TR,
+  // replaying each "virtual JIT" task (i.e., AOT load) as soon as the clinit events
+  // occur, which each loaded method depends on.  (Thus the term "replay training".)
+  // In addition, AP4 "preload" code, is queued for loading at startup, since it
+  // does not need to wait for any down counter or clinit event.  This helps the
+  // class initializations get done sooner, compared with interpreter-based
+  // initialization.
+  //
+  // Note that AOTCodeEntries and their CTDs do not poll clinit deps-lists for
+  // loading.  Rather, the class clinit events push notifications to CTDs, leading
+  // to queueing of load requests.  By the time the load request is vetted and
+  // queued, the nmethod code is known to be ready to use.  There are some late
+  // load-time checks (such as verify_c2_state and read_klass), which are of
+  // relatively minor importance, although they can prevent loading.  At worst, the
+  // JVM will call in the JIT to cover for an unloadable method.
+  //
+  // A few special classes, like MethodType, are initialized within the AOT cache.
+  // These are present on the clinit deps-lists of many CTDs, but they will never be
+  // initialized in the PR.  They contribute to the down-counter state via a special
+  // pass at startup called replay_training_at_init_for_preloaded_classes.  This
+  // pass finds such pre-initialized classes and calls replay_training_at_init for
+  // them, since they will never have a normal clinit.  In effect, their class
+  // initialization actions, including CTD down-counts, are fast-forwarded at
+  // startup.  See has_aot_initialized_mirror, which recognizes such classes.
+  // Whether a class is AOT-initialized or not, if it has CTDs depending on it, it
+  // polls them exactly once, gated by the latch has_init_deps_processed.
 
 public:
   // ciRecords is a generic meachanism to memoize CI responses to arbitary queries. For each function we're interested in we record
@@ -548,6 +664,7 @@ public:
     public:
       bool operator==(const Arguments<>&) const { return true; }
       void metaspace_pointers_do(MetaspaceClosure *iter) { }
+      void prepare(Visitor& visitor) { }
     };
     template <typename T, typename... Ts> class Arguments<T, Ts...> {
     private:
@@ -569,6 +686,17 @@ public:
       template<typename U = T, ENABLE_IF(!(std::is_pointer<U>::value && std::is_base_of<MetaspaceObj, typename std::remove_pointer<U>::type>::value))>
       void metaspace_pointers_do(MetaspaceClosure *iter) {
         _remaining.metaspace_pointers_do(iter);
+      }
+      template<typename U = T, ENABLE_IF(std::is_pointer<U>::value && std::is_base_of<TrainingData, typename std::remove_pointer<U>::type>::value)>
+      void prepare(Visitor& visitor) {
+        if (_first != nullptr) {
+          visitor.visit_later(_first);
+        }
+        _remaining.prepare(visitor);
+      }
+      template<typename U = T, ENABLE_IF(!(std::is_pointer<U>::value && std::is_base_of<TrainingData, typename std::remove_pointer<U>::type>::value))>
+      void prepare(Visitor& visitor) {
+        _remaining.prepare(visitor);
       }
     };
 
@@ -594,6 +722,7 @@ public:
         ArgumentsType arguments() const { return _arguments; }
         bool operator==(const Record& that) { return _arguments == that._arguments; }
         void metaspace_pointers_do(MetaspaceClosure *iter) { _arguments.metaspace_pointers_do(iter); }
+        void prepare(Visitor& visitor) { _arguments.prepare(visitor); }
       };
       DepList<Record> _data;
     public:
@@ -610,13 +739,17 @@ public:
       void append_if_missing(const ReturnType& result, const Args&... args) {
         TrainingDataLocker l;
         if (l.can_add()) {
-          _data.append_if_missing(Record(result, ArgumentsType(args...)));
+          Record r(result, ArgumentsType(args...));
+          _data.replace_or_append(r, r); // == operator will match on arguments only.
         }
       }
 #if INCLUDE_CDS
       void remove_unshareable_info() { _data.remove_unshareable_info(); }
 #endif
-      void prepare() {
+      void prepare(Visitor& visitor) {
+        for (int i = 0; i < _data.length(); i++) {
+          _data.at(i).prepare(visitor);
+        }
         _data.prepare();
       }
       void metaspace_pointers_do(MetaspaceClosure *iter) {
@@ -635,8 +768,8 @@ public:
       ciMethod__inline_instructions_size.remove_unshareable_info();
     }
 #endif
-    void prepare() {
-      ciMethod__inline_instructions_size.prepare();
+    void prepare(Visitor& visitor) {
+      ciMethod__inline_instructions_size.prepare(visitor);
     }
     void metaspace_pointers_do(MetaspaceClosure *iter) {
       ciMethod__inline_instructions_size.metaspace_pointers_do(iter);
@@ -652,7 +785,7 @@ private:
                       bool is_osr,
                       int compile_id)
       : TrainingData(),  // empty key
-        _method(mtd), _level(level), _is_osr(is_osr), _compile_id(compile_id), _init_deps_left(0) { }
+        _method(mtd), _level(level), _is_osr(is_osr), _compile_id(compile_id), _inline_instructions_size(0), _init_deps_left(-1) { }
 public:
   ciRecords& ci_records() { return _ci_records; }
   static CompileTrainingData* make(CompileTask* task) NOT_CDS_RETURN_(nullptr);
@@ -664,6 +797,9 @@ public:
   int level() const { return _level; }
   bool is_osr() const { return _is_osr; }
   int compile_id() const { return _compile_id; }
+
+  int inline_instructions_size() const { return _inline_instructions_size; }
+  void set_inline_instructions_size(int size) { _inline_instructions_size = size; }
 
   int init_dep_count() const {
     TrainingDataLocker::assert_locked();
@@ -698,6 +834,7 @@ public:
   void notice_jit_observation(ciEnv* env, ciBaseObject* what) NOT_CDS_RETURN;
 
   virtual void prepare(Visitor& visitor);
+  virtual void merge(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
 
   void print_on(outputStream* st, bool name_only) const;
@@ -738,10 +875,19 @@ class MethodTrainingData : public TrainingData {
 
   KlassTrainingData* _klass;
   Method* _holder;
-  CompileTrainingData* _last_toplevel_compiles[CompLevel_count - 1];
-  int _highest_top_level;
-  int _level_mask;  // bit-set of all possible levels
-  bool _was_toplevel;
+  enum { CURRENT = 0, NEXT = 1  };
+  struct TrainingIteration {
+    CompileTrainingData* _last_toplevel_compiles[CompLevel_count - 1];
+    int _highest_top_level;
+    int _level_mask; // bit-set of all possible levels
+    bool _was_toplevel;
+    TrainingIteration() : _highest_top_level(CompLevel_none), _level_mask(0), _was_toplevel(false) {
+      for (int i = 0; i < CompLevel_count - 1; i++) {
+        _last_toplevel_compiles[i] = nullptr;
+      }
+    }
+  };
+  TrainingIteration _iterations[2]; // CURRENT and NEXT
   // metadata snapshots of final state:
   MethodCounters* _final_counters;
   MethodData*     _final_profile;
@@ -753,12 +899,6 @@ class MethodTrainingData : public TrainingData {
   MethodTrainingData(Method* method, KlassTrainingData* ktd) : TrainingData(method) {
     _klass = ktd;
     _holder = method;
-    for (int i = 0; i < CompLevel_count - 1; i++) {
-      _last_toplevel_compiles[i] = nullptr;
-    }
-    _highest_top_level = CompLevel_none;
-    _level_mask = 0;
-    _was_toplevel = false;
     _invocation_count = 0;
     _backedge_count = 0;
   }
@@ -771,9 +911,9 @@ class MethodTrainingData : public TrainingData {
   KlassTrainingData* klass()  const { return _klass; }
   bool has_holder()           const { return _holder != nullptr; }
   Method* holder()            const { return _holder; }
-  bool only_inlined()         const { return !_was_toplevel; }
-  bool saw_level(CompLevel l) const { return (_level_mask & level_mask(l)) != 0; }
-  int highest_top_level()     const { return _highest_top_level; }
+  bool only_inlined()         const { return !_iterations[CURRENT]._was_toplevel; }
+  bool saw_level(CompLevel l) const { return (_iterations[CURRENT]._level_mask & level_mask(l)) != 0; }
+  int highest_top_level()     const { return _iterations[CURRENT]._highest_top_level; }
   MethodData* final_profile() const { return _final_profile; }
   int invocation_count() const { return _invocation_count; }
   int backedge_count() const { return _backedge_count; }
@@ -789,20 +929,29 @@ class MethodTrainingData : public TrainingData {
 
   CompileTrainingData* last_toplevel_compile(int level) const {
     if (level > CompLevel_none) {
-      return _last_toplevel_compiles[level - 1];
+      return _iterations[CURRENT]._last_toplevel_compiles[level - 1];
     }
     return nullptr;
   }
 
+  CompileTrainingData* compile_data_for_aot_code(int level) const {
+    CompileTrainingData* ctd = last_toplevel_compile(level);
+    if (ctd == nullptr && level == CompLevel_limited_profile) {
+      // We compile CompLevel_limited_profile AOT code for CompLevel_full_profile
+      ctd = _iterations[CURRENT]._last_toplevel_compiles[CompLevel_full_profile - 1];
+    }
+    return ctd;
+  }
+
   void notice_compilation(int level, bool inlined = false) {
     if (!inlined) {
-      _was_toplevel = true;
+      _iterations[NEXT]._was_toplevel = true;
     }
-    _level_mask |= level_mask(level);
+    _iterations[NEXT]._level_mask |= level_mask(level);
   }
 
   void notice_toplevel_compilation(int level) {
-    _highest_top_level = MAX2(_highest_top_level, level);
+    _iterations[NEXT]._highest_top_level = MAX2(_iterations[NEXT]._highest_top_level, level);
   }
 
   static MethodTrainingData* make(const methodHandle& method,
@@ -820,12 +969,18 @@ class MethodTrainingData : public TrainingData {
   virtual void print_value_on(outputStream* st) const { print_on(st, true); }
 
   virtual void prepare(Visitor& visitor);
+  virtual void merge(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
 
   template<typename Function>
   void iterate_compiles(Function fn) const { // lambda enabled API
     for (int i = 0; i < CompLevel_count - 1; i++) {
-      CompileTrainingData* ctd = _last_toplevel_compiles[i];
+      CompileTrainingData* ctd;
+      ctd = _iterations[CURRENT]._last_toplevel_compiles[i];
+      if (ctd != nullptr) {
+        fn(ctd);
+      }
+      ctd = _iterations[NEXT]._last_toplevel_compiles[i];
       if (ctd != nullptr) {
         fn(ctd);
       }

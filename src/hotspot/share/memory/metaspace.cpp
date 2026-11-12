@@ -563,7 +563,7 @@ void Metaspace::print_compressed_class_space(outputStream* st) {
 
 // Given a prereserved space, use that to set up the compressed class space list.
 void Metaspace::initialize_class_space(ReservedSpace rs) {
-  STATIC_ASSERT(INCLUDE_CLASS_SPACE == 1);
+  static_assert(INCLUDE_CLASS_SPACE == 1);
   assert(rs.size() >= CompressedClassSpaceSize,
          "%zu != %zu", rs.size(), CompressedClassSpaceSize);
 
@@ -791,7 +791,9 @@ void Metaspace::global_initialize() {
     // ...failing that, reserve anywhere, but let platform do optimized placement:
     if (!rs.is_reserved()) {
       log_info(metaspace)("Reserving compressed class space anywhere");
-      rs = Metaspace::reserve_address_space_for_compressed_classes(size, true);
+      // No need to optimize for zero based encoding if Compressed Object Headers are enabled
+      const bool optimize_for_zero_base = !UseCompactObjectHeaders;
+      rs = Metaspace::reserve_address_space_for_compressed_classes(size, optimize_for_zero_base);
     }
 
     // ...failing that, give up.

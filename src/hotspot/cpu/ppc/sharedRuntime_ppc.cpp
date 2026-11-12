@@ -660,8 +660,8 @@ const VMReg java_farg_reg[13] = {
 const int num_java_iarg_registers = sizeof(java_iarg_reg) / sizeof(java_iarg_reg[0]);
 const int num_java_farg_registers = sizeof(java_farg_reg) / sizeof(java_farg_reg[0]);
 
-STATIC_ASSERT(num_java_iarg_registers == Argument::n_int_register_parameters_j);
-STATIC_ASSERT(num_java_farg_registers == Argument::n_float_register_parameters_j);
+static_assert(num_java_iarg_registers == Argument::n_int_register_parameters_j);
+static_assert(num_java_farg_registers == Argument::n_float_register_parameters_j);
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,

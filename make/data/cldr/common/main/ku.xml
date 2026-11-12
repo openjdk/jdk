@@ -1892,6 +1892,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">'hefteya' w'an' 'ya' Y'an'</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="GyM">
 							<greatestDifference id="G">M/y G – M/y G</greatestDifference>
 							<greatestDifference id="M">G M/y – M/y</greatestDifference>
@@ -2234,12 +2239,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>çax</displayName>
-			</field>
-			<field type="era-short">
-				<displayName>çax</displayName>
-			</field>
-			<field type="era-narrow">
 				<displayName>çax</displayName>
 			</field>
 			<field type="year">
@@ -2971,9 +2970,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Lîbrevîl</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Saeta Havînê ya Brîtanyayê</daylight>
-				</long>
 				<exemplarCity>Londra</exemplarCity>
 			</zone>
 			<zone type="Asia/Tbilisi">
@@ -3004,9 +3000,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Cayapûra</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Saeta Îrlandayê ya Standard</daylight>
-				</long>
 				<exemplarCity>Dûblîn</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3294,13 +3287,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saeta Havînê ya Alaskayê</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>Saeta Almatîyê</generic>
-					<standard>Saeta Almatîyê ya Standard</standard>
-					<daylight>Saeta Havînê ya Almatîyê</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>Saeta Amazonê</generic>
@@ -3348,20 +3334,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Saeta Apiayê</generic>
 					<standard>Saeta Apiayê ya Standard</standard>
 					<daylight>Saeta Havînê ya Apiayê</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>Saeta Aqtauyê</generic>
-					<standard>Saeta Aqtauyê ya Standard</standard>
-					<daylight>Saeta Havînê ya Aqtauyê</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>Saeta Aqtobeyê</generic>
-					<standard>Saeta Aqtobeyê ya Standard</standard>
-					<daylight>Saeta Havînê ya Aqtobeyê</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3463,6 +3435,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Saeta Brasîlyayê</generic>
 					<standard>Saeta Brasîlyayê ya Standard</standard>
 					<daylight>Saeta Havînê ya Brasîlyayê</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>Saeta Havînê ya Brîtanyayê</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3664,11 +3641,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saeta Havînê ya Grînlanda Rojava</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>Saeta Guamê ya Standard</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Saeta Kendavê ya Standard</standard>
@@ -3742,6 +3714,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saeta Havînê ya Îranê</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>Saeta Îrlandayê ya Standard</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Saeta Irkutskê</generic>
@@ -3809,11 +3786,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Qirxizistanê</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>Saeta Lankayê</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>Saeta Giravên Lîneyê</standard>
@@ -3824,13 +3796,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Saeta Lord Howeyê</generic>
 					<standard>Saeta Standard a Lord Howeyê</standard>
 					<daylight>Saeta Havînê ya Lord Howeyê</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>Saeta Macaoyê</generic>
-					<standard>Saeta Macaoyê ya Standard</standard>
-					<daylight>Saeta Havînê ya Macaoyê</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -3948,11 +3913,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saeta Havînê ya Fernando de Noronhayê</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>Saeta Giravên Marianaya Bakur</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Saeta Novosibirskê</generic>
@@ -4032,13 +3992,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Pyongyangê</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>Saeta Qizilordayê</generic>
-					<standard>Saeta Qizilordayê ya Standard</standard>
-					<daylight>Saeta Havînê ya Qizilordayê</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Saeta Réunionê</standard>
@@ -4065,9 +4018,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Saeta Samoayê</generic>
 					<standard>Saeta Samoayê ya Standard</standard>
-					<daylight>Saeta Havînê ya Samoayê</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -5421,11 +5372,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>yûanê çînî (offshore)</displayName>
 				<displayName count="one">yûanê çînî (offshore)</displayName>
 				<displayName count="other">yûanên çînî (offshore)</displayName>
-			</currency>
-			<currency type="CNX">
-				<displayName>dolarê Banka Xelkî ya çînî</displayName>
-				<displayName count="one">dolarê Banka Xelkî ya çînî</displayName>
-				<displayName count="other">dolarên Banka Xelkî ya çînî</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>yûanê çînî</displayName>

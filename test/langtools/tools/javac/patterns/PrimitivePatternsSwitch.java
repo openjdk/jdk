@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8304487
+ * @bug 8304487 8394375
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
  * @compile PrimitivePatternsSwitch.java
@@ -82,6 +82,18 @@ public class PrimitivePatternsSwitch {
         assertEquals(2, switchOverPrimitiveBooleanWithDefault(false));
         assertEquals(1, switchOverPrimitiveBoolean(true));
         assertEquals(2, switchOverPrimitiveBoolean(false));
+        assertEquals(1, switchOverPrimitiveBooleanConstants(true));
+        assertEquals(2, switchOverPrimitiveBooleanConstants(false));
+        assertEquals(1, switchOverBoxedBooleanConstants(true));
+        assertEquals(2, switchOverBoxedBooleanConstants(false));
+        assertEquals(-1, switchOverBoxedBooleanConstants(null));
+        assertEquals(1, switchOverPrimitiveBooleanLocalConstants(true));
+        assertEquals(2, switchOverPrimitiveBooleanLocalConstants(false));
+        assertEquals(1, switchOverBoxedBooleanLocalConstants(true));
+        assertEquals(2, switchOverBoxedBooleanLocalConstants(false));
+        assertEquals(-1, switchOverBoxedBooleanLocalConstants(null));
+        testBooleanConstantExpressions(true);
+        testBooleanConstantExpressions(false);
         assertEquals(1, switchOverPrimitiveFloat(0.0f/0.0f));
         assertEquals(2, switchOverPrimitiveFloat((float) Math.pow(0.0f/0.0f, 0)));
         assertEquals(3, switchOverPrimitiveFloat(0.0f));
@@ -412,6 +424,71 @@ public class PrimitivePatternsSwitch {
             case true -> 1;
             case false -> 2;
         };
+    }
+
+    private static final boolean TRUE_CONSTANT = 1 < 2;
+    private static final boolean FALSE_CONSTANT = 1 > 2;
+
+    public static int switchOverPrimitiveBooleanConstants(boolean b) {
+        return switch (b) {
+            case TRUE_CONSTANT -> 1;
+            case FALSE_CONSTANT -> 2;
+        };
+    }
+
+    public static int switchOverBoxedBooleanConstants(Boolean b) {
+        return switch (b) {
+            case PrimitivePatternsSwitch.TRUE_CONSTANT -> 1;
+            case PrimitivePatternsSwitch.FALSE_CONSTANT -> 2;
+            case null -> -1;
+        };
+    }
+
+    public static int switchOverPrimitiveBooleanLocalConstants(boolean b) {
+        final boolean yes = !false;
+        final boolean no = !true;
+        switch (b) {
+            case yes: return 1;
+            case no: return 2;
+        }
+    }
+
+    public static int switchOverBoxedBooleanLocalConstants(Boolean b) {
+        final boolean yes = !false;
+        final boolean no = !true;
+        switch (b) {
+            case yes: return 1;
+            case no: return 2;
+            case null: return -1;
+        }
+    }
+
+    public static void testBooleanConstantExpressions(boolean b) {
+        int expected = b ? 1 : 2;
+        assertEquals(expected, switch (b) {
+            case (true) -> 1;
+            case (false) -> 2;
+        });
+        assertEquals(expected, switch (b) {
+            case (boolean) true -> 1;
+            case (boolean) false -> 2;
+        });
+        assertEquals(expected, switch (b) {
+            case !false -> 1;
+            case !true -> 2;
+        });
+        assertEquals(expected, switch (b) {
+            case 1 < 2 -> 1;
+            case 1 > 2 -> 2;
+        });
+        assertEquals(expected, switch (b) {
+            case true && true -> 1;
+            case true && false -> 2;
+        });
+        assertEquals(expected, switch (b) {
+            case true ? true : false -> 1;
+            case true ? false : true -> 2;
+        });
     }
 
     public static int switchOverPrimitiveChar(char c) {
