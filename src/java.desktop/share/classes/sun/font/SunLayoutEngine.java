@@ -60,7 +60,7 @@ public final class SunLayoutEngine {
         return ref.getNativePtr();
     }
 
-    static boolean useFFM;
+    static boolean useFFM = true;
     static {
         String prop = System.getProperty("sun.font.layout.ffm", "true");
         useFFM = "true".equals(prop);
