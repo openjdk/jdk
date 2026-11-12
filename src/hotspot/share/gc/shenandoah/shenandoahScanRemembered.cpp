@@ -135,15 +135,6 @@ void ShenandoahDirectCardMarkRememberedSet::mark_range_as_clean(HeapWord* p, siz
 
 void ShenandoahDirectCardMarkRememberedSet::mark_read_table_as_clean() {
   if (_is_read_table_clean) {
-#ifdef ASSERT
-    CardValue* start_bp = &(_card_table->read_byte_map())[0];
-    CardValue* end_bp = &(start_bp[_card_table->last_valid_index()]);
-
-    while (start_bp <= end_bp) {
-      assert(*start_bp == CardTable::clean_card_val(), "Should be clean: " PTR_FORMAT, p2i(start_bp));
-      start_bp++;
-    }
-#endif
     return;
   }
   CardValue* read_table = _card_table->read_byte_map();
@@ -772,6 +763,16 @@ void ShenandoahDirectCardMarkRememberedSet::merge_write_table(HeapWord* start, s
 void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
   CardTable::CardValue* new_ptr = _card_table->swap_read_and_write_tables();
   _is_read_table_clean = false;
+
+#ifdef ASSERT
+  CardValue* start_bp = &(_card_table->write_byte_map())[0];
+  CardValue* end_bp = &(start_bp[_card_table->last_valid_index()]);
+
+  while (start_bp <= end_bp) {
+    assert(*start_bp == CardTable::clean_card_val(), "Should be clean: " PTR_FORMAT, p2i(start_bp));
+    start_bp++;
+  }
+#endif
 
   struct SwapTLSCardTable : public ThreadClosure {
     CardTable::CardValue* _new_ptr;
