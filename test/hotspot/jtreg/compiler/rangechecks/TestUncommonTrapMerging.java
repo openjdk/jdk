@@ -33,6 +33,22 @@
  *                   compiler.rangechecks.TestUncommonTrapMerging Test2
  */
 
+/*
+ * @test
+ * @bug 8140574
+ * @summary Verify proper re-execution of checks after merging of uncommon traps
+ *
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,compiler.rangechecks.TestUncommonTrapMerging::test*
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *                   compiler.rangechecks.TestUncommonTrapMerging Test1
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.rangechecks.TestUncommonTrapMerging::test*
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *                   compiler.rangechecks.TestUncommonTrapMerging Test2
+ */
+
 package compiler.rangechecks;
 
 public class TestUncommonTrapMerging {

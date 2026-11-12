@@ -6164,6 +6164,7 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
   j(L_tail_loop);
 
   bind(L_end);
+  sext(out, out, 32);
 }
 
 // Multiply and multiply-accumulate unsigned 64-bit registers.
@@ -6738,44 +6739,6 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
   bgez(cnt, loop);
 
   bind(fini);
-}
-
-// Zero blocks of memory by using CBO.ZERO.
-//
-// Aligns the base address first sufficiently for CBO.ZERO, then uses
-// CBO.ZERO repeatedly for every full block.  cnt is the size to be
-// zeroed in HeapWords.  Returns the count of words left to be zeroed
-// in cnt.
-//
-// NOTE: This is intended to be used in the zero_blocks() stub.  If
-// you want to use it elsewhere, note that cnt must be >= zicboz_block_size.
-void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2) {
-  int zicboz_block_size = VM_Version::zicboz_block_size.value();
-  Label initial_table_end, loop;
-
-  // Align base with cache line size.
-  neg(tmp1, base);
-  andi(tmp1, tmp1, zicboz_block_size - 1);
-
-  // tmp1: the number of bytes to be filled to align the base with cache line size.
-  add(base, base, tmp1);
-  srai(tmp2, tmp1, 3);
-  sub(cnt, cnt, tmp2);
-  srli(tmp2, tmp1, 1);
-  la(tmp1, initial_table_end);
-  sub(tmp2, tmp1, tmp2);
-  jr(tmp2);
-  for (int i = -zicboz_block_size + wordSize; i < 0; i += wordSize) {
-    sd(zr, Address(base, i));
-  }
-  bind(initial_table_end);
-
-  mv(tmp1, zicboz_block_size / wordSize);
-  bind(loop);
-  cbo_zero(base);
-  sub(cnt, cnt, tmp1);
-  addi(base, base, zicboz_block_size);
-  bge(cnt, tmp1, loop);
 }
 
 // java.lang.Math.round(float a)

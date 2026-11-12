@@ -128,6 +128,7 @@ class MachReturnNode;
 class MachSafePointNode;
 class MachSpillCopyNode;
 class MachTempNode;
+class MachUncommonTrapNode;
 class MachMergeNode;
 class MachMemBarNode;
 class MachVEPNode;
@@ -733,6 +734,7 @@ public:
               DEFINE_CLASS_ID(MachCallDynamicJava,  MachCallJava, 1)
             DEFINE_CLASS_ID(MachCallRuntime,      MachCall, 1)
               DEFINE_CLASS_ID(MachCallLeaf,         MachCallRuntime, 0)
+          DEFINE_CLASS_ID(MachUncommonTrap, MachSafePoint, 1)
       DEFINE_CLASS_ID(MachBranch, Mach, 1)
         DEFINE_CLASS_ID(MachIf,         MachBranch, 0)
         DEFINE_CLASS_ID(MachGoto,       MachBranch, 1)
@@ -1011,6 +1013,7 @@ public:
   DEFINE_CLASS_QUERY(MachProlog)
   DEFINE_CLASS_QUERY(MachReturn)
   DEFINE_CLASS_QUERY(MachSafePoint)
+  DEFINE_CLASS_QUERY(MachUncommonTrap)
   DEFINE_CLASS_QUERY(MachSpillCopy)
   DEFINE_CLASS_QUERY(MachTemp)
   DEFINE_CLASS_QUERY(MachMemBar)
@@ -1317,6 +1320,11 @@ public:
   // Some nodes have specific Ideal subgraph transformations only if they are
   // unique users of specific nodes. Such nodes should be put on IGVN worklist
   // for the transformations to happen.
+  //
+  // Returning true also makes that notification reachable from
+  // remove_globally_dead_node(), which clears inputs through replace_edge()
+  // and set_req_X() while the dead node is only partly disconnected. Code
+  // reached from here must accept null required inputs.
   bool has_special_unique_user() const;
 
   // Some nodes can be processed when one of its outputs is disconnected

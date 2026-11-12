@@ -1305,7 +1305,7 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   i = 0;
   for (SwitchRange* r = lo; r <= hi; r++) {
     for (int64_t j = r->lo(); j <= r->hi(); j++, i++) {
-      Node* input = _gvn.transform(new JumpProjNode(jtn, i, r->dest(), (int)(j - lowval)));
+      Node* input = _gvn.transform(new JumpProjNode(jtn, i, r->dest()));
       {
         PreserveJVMState pjvms(this);
         set_control(input);
@@ -3038,7 +3038,11 @@ void Parse::do_one_bytecode() {
     assert(constant.is_loaded(), "constant is not loaded");
     const Type* con_type = Type::make_from_constant(constant);
     if (con_type != nullptr) {
-      push_node(con_type->basic_type(), makecon(con_type));
+      Node* con = makecon(con_type);
+      if (con_type->is_valueklassptr()) {
+        con = ValueTypeNode::make_from_oop(this, con, con_type->value_klass());
+      }
+      push_node(con_type->basic_type(), con);
     }
     break;
   }
@@ -3738,26 +3742,20 @@ void Parse::do_one_bytecode() {
     maybe_add_safepoint(iter().get_dest());
     a = null();
     b = pop();
-    if (b->is_ValueType()) {
-      // Null checking a scalarized but nullable value type. Check the null marker
-      // input instead of the oop input to avoid keeping buffer allocations alive
-      c = _gvn.transform(new CmpINode(b->as_ValueType()->get_null_marker(), zerocon(T_INT)));
-    } else {
-      if (!_gvn.type(b)->speculative_maybe_null() &&
-          !too_many_traps(Deoptimization::Reason_speculate_null_check)) {
-        inc_sp(1);
-        Node* null_ctl = top();
-        b = null_check_oop(b, &null_ctl, true, true, true);
-        assert(null_ctl->is_top(), "no null control here");
-        dec_sp(1);
-      } else if (_gvn.type(b)->speculative_always_null() &&
-                 !too_many_traps(Deoptimization::Reason_speculate_null_assert)) {
-        inc_sp(1);
-        b = null_assert(b);
-        dec_sp(1);
-      }
-      c = _gvn.transform( new CmpPNode(b, a) );
+    if (!_gvn.type(b)->speculative_maybe_null() &&
+        !too_many_traps(Deoptimization::Reason_speculate_null_check)) {
+      inc_sp(1);
+      Node* null_ctl = top();
+      b = null_check_oop(b, &null_ctl, true, true, true);
+      assert(null_ctl->is_top(), "no null control here");
+      dec_sp(1);
+    } else if (_gvn.type(b)->speculative_always_null() &&
+               !too_many_traps(Deoptimization::Reason_speculate_null_assert)) {
+      inc_sp(1);
+      b = null_assert(b);
+      dec_sp(1);
     }
+    c = _gvn.transform(new CmpPNode(b, a));
     do_ifnull(btest, c);
     break;
 

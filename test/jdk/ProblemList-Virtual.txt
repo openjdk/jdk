@@ -34,6 +34,9 @@ java/lang/ScopedValue/StressStackOverflow.java#default 8309646 generic-all
 java/lang/ScopedValue/StressStackOverflow.java#no-TieredCompilation 8309646 generic-all
 java/lang/ScopedValue/StressStackOverflow.java#TieredStopAtLevel1 8309646 generic-all
 
+java/net/URLPermission/OpenURL.java 8387805 windows-x64
+tools/launcher/MiscTests.java 8394341 generic-all
+
 #############################################################################
 
 # Preview project specific failures go here at the end of the file.

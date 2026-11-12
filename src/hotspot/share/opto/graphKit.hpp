@@ -79,15 +79,19 @@ class GraphKit : public Phase {
   GraphKit();                   // empty constructor
   GraphKit(JVMState* jvms, PhaseGVN* gvn = nullptr);     // the JVM state on which to operate
 
-  // Create a GraphKit from a debug state, useful for various kinds of macro expansion
+  // Create a GraphKit with a temporary map for parsing from a debug state.
+  // This is useful for various kinds of macro expansion.
   GraphKit(const SafePointNode* sft, PhaseIterGVN& igvn);
 
-#ifdef ASSERT
   ~GraphKit() {
     assert(failing_internal() || !has_exceptions(),
            "unless compilation failed, user must call transfer_exceptions_into_jvms");
+    if (_gvn.is_IterGVN()) {
+      // Kill the temporary map again
+      assert(map() == nullptr || map()->outcnt() == 0, "map should not escape");
+      stop_and_kill_map();
+    }
   }
-#endif
 
   virtual Parse*          is_Parse()          const { return nullptr; }
   virtual LibraryCallKit* is_LibraryCallKit() const { return nullptr; }
