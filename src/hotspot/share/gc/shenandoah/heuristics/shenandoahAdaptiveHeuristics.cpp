@@ -251,14 +251,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   return ShenandoahHeuristics::should_start_gc();
 }
 
-const char* ShenandoahAdaptiveHeuristics::name() {
-  return ShenandoahHeuristicsFlag::value() == ShenandoahHeuristicsFlag::Heuristic::PASSIVE ? "Passive" : "Adaptive";
-}
-
-bool ShenandoahAdaptiveHeuristics::is_diagnostic() {
-  return ShenandoahHeuristicsFlag::value() == ShenandoahHeuristicsFlag::Heuristic::PASSIVE;
-}
-
 bool ShenandoahAdaptiveHeuristics::trigger_learning(size_t available, size_t capacity) {
   // Check if we need to learn a bit about the application
   if (_gc_times_learned < ShenandoahLearningSteps) {

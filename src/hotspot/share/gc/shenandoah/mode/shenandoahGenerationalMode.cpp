@@ -63,6 +63,9 @@ void ShenandoahGenerationalMode::initialize_flags() const {
     case ShenandoahHeuristicsFlag::Heuristic::ADAPTIVE:
       // Nothing to do, this is the default
       break;
+    case ShenandoahHeuristicsFlag::Heuristic::STATIC:
+      // Nothing to do, static mode just checks min free threshold which adaptive also does
+      break;
     case ShenandoahHeuristicsFlag::Heuristic::PASSIVE:
       // This is also acceptable, but will be handled in the regulator thread
       break;

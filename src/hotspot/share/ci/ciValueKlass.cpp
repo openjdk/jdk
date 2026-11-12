@@ -165,6 +165,12 @@ ciConstant ciValueKlass::get_null_reset_value() {
   return ciConstant(T_OBJECT, CURRENT_ENV->get_object(null_reset_value));
 }
 
+int ciValueKlass::get_null_reset_value_offset() {
+  VM_ENTRY_MARK
+  ValueKlass* vk = get_ValueKlass();
+  return vk->null_reset_value_offset();
+}
+
 ArrayDescription ciValueKlass::array_description_of_array_properties(const ArrayProperties& requested_properties) {
   GUARDED_VM_ENTRY(return ObjArrayKlass::array_layout_selection(get_ValueKlass(), requested_properties);)
 }

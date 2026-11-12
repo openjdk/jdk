@@ -60,6 +60,20 @@ class ShenandoahCollectionSet;
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
 
+class ShenandoahHeuristicsFlag : public AllStatic {
+public:
+  enum class Heuristic {
+    ADAPTIVE, PASSIVE, AGGRESSIVE, COMPACT, STATIC
+  };
+
+  static void initialize();
+  static Heuristic value() {
+    return _value;
+  }
+private:
+  static Heuristic _value;
+};
+
 /*
  * Shenandoah heuristics are primarily responsible for deciding when to start
  * a collection cycle and choosing which regions will be evacuated during the
@@ -274,9 +288,6 @@ public:
 
   virtual bool can_unload_classes();
 
-  virtual const char* name() = 0;
-  virtual bool is_diagnostic() = 0;
-  virtual bool is_experimental() = 0;
   virtual void initialize();
   virtual void post_initialize();
 

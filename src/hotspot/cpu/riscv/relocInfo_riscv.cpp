@@ -87,10 +87,7 @@ address Relocation::pd_call_destination(address orig_addr) {
 
   if (orig_addr != nullptr) {
     address new_addr = MacroAssembler::pd_call_destination(orig_addr);
-    // If call is branch to self, don't try to relocate it, just leave it
-    // as branch to self. This happens during code generation if the code
-    // buffer expands. It will be relocated to the trampoline above once
-    // code generation is complete.
+    // Preserve self-targeting calls when the code buffer moves or expands.
     new_addr = (new_addr == orig_addr) ? addr() : new_addr;
     return new_addr;
   }
@@ -130,12 +127,4 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffe
 }
 
 void metadata_Relocation::pd_fix_value(address x) {
-}
-
-address trampoline_stub_Relocation::pd_destination() {
-  return reinterpret_cast<address>(Bytes::get_native_u8(addr()));
-}
-
-void trampoline_stub_Relocation::pd_set_destination(address x) {
-  Bytes::put_native_u8(addr(), reinterpret_cast<uint64_t>(x));
 }
