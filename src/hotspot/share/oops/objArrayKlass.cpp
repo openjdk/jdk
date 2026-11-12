@@ -447,7 +447,7 @@ ObjArrayKlass* ObjArrayKlass::klass_from_description(Klass* elem_klass, ArrayDes
         current_refined_klass->is_flatArray_klass() == ad.is_flat()) {
       return current_refined_klass;
     }
-    ObjArrayKlass* next = current_refined_klass->next_refined_array_klass();
+    ObjArrayKlass* next = current_refined_klass->next_refined_array_klass_acquire();
     if (next == nullptr) {
       // Ensure atomic creation of refined array klasses
       RecursiveLocker rl(MultiArray_lock, THREAD);
