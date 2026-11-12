@@ -38,7 +38,6 @@ import jdk.test.lib.jfr.Events;
 
 /*
  * @test
- * @bug 8397069
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
@@ -50,7 +49,7 @@ public class TestExceptionEvents {
     private static final String ERROR_EVENT_NAME = EventNames.JavaErrorThrow;
     private static final String EXCEPTION_STATISTICS_NAME = EventNames.ExceptionStatistics;
     private static final String THREAD_NAME = Thread.currentThread().getName();
-    private static final int THROWN_EXCEPTION = 5000;
+    private static final int THROWN_EXCEPTIONS = 5000;
     private static final int NOISE_EXCEPTIONS = 2400;
 
     public static void main(String[] args) throws Throwable {
@@ -80,9 +79,10 @@ public class TestExceptionEvents {
         String message = "testError";
         try (Recording r = new Recording()) {
             r.enable(ERROR_EVENT_NAME).withStackTrace();
-            r.enable(EXCEPTION_STATISTICS_NAME).with("period", "everyChunk");
+            r.enable(EXCEPTION_STATISTICS_NAME)
+            .with("period", "everyChunk"); // Emits events at the beginning and end of the recording
             r.start();
-            for (int i = 0; i < THROWN_EXCEPTION; i++) {
+            for (int i = 0; i < THROWN_EXCEPTIONS; i++) {
                 try {
                     throw new MyError(message);
                 } catch (MyError e) {
@@ -94,9 +94,9 @@ public class TestExceptionEvents {
             }
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
-            checkEvents(events, ERROR_EVENT_NAME, message, THROWN_EXCEPTION, MyError.class);
+            checkEvents(events, ERROR_EVENT_NAME, message, THROWN_EXCEPTIONS, MyError.class);
             checkEvents(events, EXCEPTION_EVENT_NAME, message, 0, MyError.class);
-            checkCount(events, 2 * THROWN_EXCEPTION);
+            checkCount(events, 2 * THROWN_EXCEPTIONS);
         }
     }
 
@@ -106,9 +106,10 @@ public class TestExceptionEvents {
         try (Recording r = new Recording()) {
             r.enable(EXCEPTION_EVENT_NAME).withStackTrace();
             r.enable(ERROR_EVENT_NAME).withStackTrace();
-            r.enable(EXCEPTION_STATISTICS_NAME).with("period", "everyChunk");
+            r.enable(EXCEPTION_STATISTICS_NAME)
+             .with("period", "everyChunk"); // Emits events at the beginning and end of the recording
             r.start();
-            for (int i = 0; i < THROWN_EXCEPTION; i++) {
+            for (int i = 0; i < THROWN_EXCEPTIONS; i++) {
                 try {
                     throw new MyCheckedException(message1);
                 } catch (MyCheckedException e) {
@@ -120,11 +121,11 @@ public class TestExceptionEvents {
             }
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
-            checkEvents(events, EXCEPTION_EVENT_NAME, message1, THROWN_EXCEPTION, MyCheckedException.class);
-            checkEvents(events, EXCEPTION_EVENT_NAME, message2, THROWN_EXCEPTION, MyError.class);
+            checkEvents(events, EXCEPTION_EVENT_NAME, message1, THROWN_EXCEPTIONS, MyCheckedException.class);
+            checkEvents(events, EXCEPTION_EVENT_NAME, message2, THROWN_EXCEPTIONS, MyError.class);
             checkEvents(events, ERROR_EVENT_NAME, message1, 0, MyError.class);
-            checkEvents(events, ERROR_EVENT_NAME, message2, THROWN_EXCEPTION, MyError.class);
-            checkCount(events, 2 * THROWN_EXCEPTION);
+            checkEvents(events, ERROR_EVENT_NAME, message2, THROWN_EXCEPTIONS, MyError.class);
+            checkCount(events, 2 * THROWN_EXCEPTIONS);
         }
     }
 
@@ -220,7 +221,8 @@ public class TestExceptionEvents {
         String message = "testThrottling";
         try (Recording r = new Recording()) {
             r.enable(EXCEPTION_EVENT_NAME).withStackTrace().with("throttle", (thrown / 10) + "/s");
-            r.enable(EXCEPTION_STATISTICS_NAME).with("period", "everyChunk");
+            r.enable(EXCEPTION_STATISTICS_NAME)
+             .with("period", "everyChunk"); // Emits events at the beginning and end of the recording
             r.start();
             for (int i = 0; i < thrown; i++) {
                 try {
@@ -240,7 +242,7 @@ public class TestExceptionEvents {
                 throw new Exception("No exception events were throttled");
             }
             if (sampled < 2) {
-                throw new Exception("Expected at least two event to be sampled event");
+                throw new Exception("Expected at least two events to be sampled");
             }
         }
     }
@@ -298,8 +300,8 @@ public class TestExceptionEvents {
         RecordedEvent begin = statisticsEvents.get(0);
         RecordedEvent end = statisticsEvents.get(1);
         long count = end.getLong("throwables") - begin.getLong("throwables");
-        Asserts.assertGreaterThanOrEqual(count, expectedCount, "Too few exception count in statistics event");
-        Asserts.assertLessThan(count, expectedCount + NOISE_EXCEPTIONS, "Too many exception count in statistics event");
+        Asserts.assertGreaterThanOrEqual(count, expectedCount, "Too few exceptions counted in statistics event");
+        Asserts.assertLessThan(count, expectedCount + NOISE_EXCEPTIONS, "Too many exceptions counted in statistics event");
     }
 
     private static void checkEvents(List<RecordedEvent> events, String eventType, String expectedMessage, int expectedCount, Class<?> expectedClass) throws Exception {
