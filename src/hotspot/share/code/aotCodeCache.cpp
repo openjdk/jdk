@@ -840,17 +840,6 @@ bool AOTCodeCache::Header::verify_cpu_features(AOTCodeCache* cache) const {
     stringStream ss;
     VM_Version::get_cpu_features_name(cached_cpu_features_buffer, ss);
     log.print_cr("CPU features recorded in AOTCodeCache: %s", ss.as_string());
-
-    // Output aot cache config and actual jvm config to make an easy diff between them
-    if (log_is_enabled(Info, aot, verify, codecache)) {
-      LogStreamHandle(Info, aot, verify, codecache) cache_config_out;
-      cache_config_out.print_cr("- cpu_features:                %s", ss.as_string());
-    }
-
-    if (log_is_enabled(Info, aot, verify, os)) {
-      LogStreamHandle(Info, aot, verify, os) os_config_out;
-      os_config_out.print_cr("- cpu_features:                %s", VM_Version::features_string());
-    }
   }
 
   if (!VM_Version::verify_aot_code_cache_features(cached_cpu_features_buffer)) {
