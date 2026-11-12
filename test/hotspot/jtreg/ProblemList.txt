@@ -71,6 +71,8 @@ compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch6
 
 compiler/igvn/TestIncorrectDeadPathTypeNode.java 8392354 generic-all
 
+compiler/c1/TestMemoryEffects.java 8397213 generic-aarch64
+
 #############################################################################
 
 # :hotspot_gc
