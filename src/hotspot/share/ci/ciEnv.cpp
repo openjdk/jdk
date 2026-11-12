@@ -1204,6 +1204,7 @@ void ciEnv::register_method(ciMethod* target,
                             OopMapSet* oop_map_set,
                             ExceptionHandlerTable* handler_table,
                             ImplicitExceptionTable* inc_table,
+                            GrowableArray<ciMethod*>* java_callees,
                             AbstractCompiler* compiler,
                             bool has_clinit_barriers,
                             bool for_aot_preload,
@@ -1289,7 +1290,7 @@ void ciEnv::register_method(ciMethod* target,
           log.print_cr("%s", ss.freeze());
         }
 #endif
-        AOTCodeEntry* aot_code_entry = AOTCodeCache::store_nmethod(nm, compiler, for_aot_preload);
+        AOTCodeEntry* aot_code_entry = AOTCodeCache::store_nmethod(nm, java_callees, compiler, for_aot_preload);
         if (aot_code_entry != nullptr) {
           aot_code_entry->set_has_vectors(debug_info()->has_vectors());
           nm->set_aot_code_entry(aot_code_entry);

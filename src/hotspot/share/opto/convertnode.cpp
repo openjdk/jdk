@@ -724,12 +724,7 @@ static bool compute_updates_ranges(const TypeInteger* tx, const TypeInteger* ty,
 static Node* find_or_make_convI2L(PhaseIterGVN* igvn, Node* parent,
                                   const TypeLong* type) {
   Node* n = new ConvI2LNode(parent, type);
-  Node* existing = igvn->hash_find_insert(n);
-  if (existing != nullptr) {
-    n->destruct(igvn);
-    return existing;
-  }
-  return igvn->register_new_node_with_optimizer(n);
+  return igvn->find_node_or_register_new_node_with_optimizer(n);
 }
 #endif
 

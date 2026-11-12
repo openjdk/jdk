@@ -712,7 +712,7 @@ protected:
   private:
     // Here should be version and other verification fields
     enum {
-      AOT_CODE_VERSION = 2   // Bump this number in releases where Header layout changes
+      AOT_CODE_VERSION = 3   // Bump this number in releases where Header layout changes
     };
     uint   _version;         // AOT code version (should match when reading code cache)
     uint   _cache_size;      // cache size in bytes
@@ -972,6 +972,7 @@ public:
 
   bool write_klass(Klass* klass);
   bool write_method(Method* method);
+  bool write_fingerprint(Method* method);
 
   bool write_relocations(CodeBlob& code_blob, RelocIterator& iter,
                          bool assert_for_unknown_external_address,
@@ -1008,7 +1009,7 @@ private:
                                   const char* name,
                                   AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
 
-  AOTCodeEntry* write_nmethod(nmethod* nm, bool for_preload);
+  AOTCodeEntry* write_nmethod(nmethod* nm, GrowableArray<ciMethod*>* java_callees, bool for_preload);
 
 public:
   // save and restore API for adapters
@@ -1029,7 +1030,8 @@ public:
   static CodeBlob* load_multi_stub_blob(BlobId id, AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
 
   // save and restore API nmethods
-  static AOTCodeEntry* store_nmethod(nmethod* nm, AbstractCompiler* compiler, bool for_preload) NOT_CDS_RETURN_(nullptr);
+  static AOTCodeEntry* store_nmethod(nmethod* nm, GrowableArray<ciMethod*>* java_callees,
+                                     AbstractCompiler* compiler, bool for_preload) NOT_CDS_RETURN_(nullptr);
 
   static bool load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, AbstractCompiler* compiler) NOT_CDS_RETURN_(false);
 
@@ -1188,6 +1190,7 @@ private:
 
   Klass* read_klass(JavaThread* thread);
   Method* read_method();
+  bool verify_fingerprint(Method* method);
 
   oop read_oop(JavaThread* thread);
   Metadata* read_metadata(JavaThread* thread);

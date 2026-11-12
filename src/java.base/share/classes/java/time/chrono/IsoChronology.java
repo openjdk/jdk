@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ import java.util.Objects;
  *  Month 2 has 28 days, or 29 in a leap year.
  * <li>day-of-year - There are 365 days in a standard ISO year and 366 in a leap year.
  *  The days are numbered from 1 to 365 or 1 to 366.
- * <li>leap-year - Leap years occur every 4 years, except where the year is divisble by 100 and not divisble by 400.
+ * <li>leap-year - Leap years occur every 4 years, except where the year is divisible by 100 and not divisible by 400.
  * </ul>
  *
  * @implSpec

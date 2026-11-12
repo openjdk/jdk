@@ -2732,7 +2732,7 @@ public final class Locale implements Cloneable, Serializable {
          * keys and attributes within a U extension. Note that subsequent subtags after
          * the occurrence of a duplicate are not ignored.
          *
-         * <p>See {@link Locale##langtag_conversions converions} for a full list
+         * <p>See {@link Locale##langtag_conversions conversions} for a full list
          * of conversions that are performed on {@code languageTag}.
          *
          * @param languageTag the language tag

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +22,34 @@
  *
  */
 
-#ifndef SHARE_CDS_FINALIMAGERECIPES_HPP
-#define SHARE_CDS_FINALIMAGERECIPES_HPP
+#ifndef SHARE_CDS_AOTMETASPACERECIPES_HPP
+#define SHARE_CDS_AOTMETASPACERECIPES_HPP
 
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/exceptions.hpp"
 
 class InstanceKlass;
 class Klass;
+class SerializeClosure;
 
 template <typename T> class GrowableArray;
 template <typename T> class Array;
 
-// This class is used for transferring information from the AOTConfiguration file (aka the "preimage")
-// to the JVM that creates the AOTCache (aka the "final image").
-//   - The recipes are recorded when CDSConfig::is_dumping_preimage_static_archive() is true.
-//   - The recipes are applied when CDSConfig::is_dumping_final_static_archive() is true.
+// This class is used for recoding AOT metaspace optimizations to be applied
+// to the AOT cache:
+//   - The recipes are recorded when CDSConfig::is_dumping_aot_configuration() is true.
+//   - The recipes are applied when CDSConfig::is_dumping_aot_cache() is true.
 // The following information are recorded:
 //   - The list of all classes that are stored in the AOTConfiguration file.
 //   - The list of all classes that require AOT resolution of invokedynamic call sites.
-class FinalImageRecipes {
+class AOTMetaspaceRecipes {
   static constexpr int CP_RESOLVE_CLASS            = 0x1 << 0; // CP has preresolved class entries
   static constexpr int CP_RESOLVE_FIELD_AND_METHOD = 0x1 << 1; // CP has preresolved field/method entries
   static constexpr int CP_RESOLVE_INDY             = 0x1 << 2; // CP has preresolved indy entries
   static constexpr int WAS_INITED                  = 0x1 << 3; // Class was initialized during training run
 
-  // A list of all the archived classes from the preimage. We want to transfer all of these
-  // into the final image.
+  // A list of all the archived classes from the AOT configuration. We want to transfer all of these
+  // into the AOT cache.
   Array<Klass*>* _all_klasses;
 
   // For each klass k _all_klasses->at(i): _cp_recipes->at(i) lists all the {klass,field,method,indy}
@@ -56,27 +57,29 @@ class FinalImageRecipes {
   Array<Array<int>*>* _cp_recipes;
   Array<int>* _flags;
 
-  FinalImageRecipes() : _all_klasses(nullptr), _cp_recipes(nullptr), _flags(nullptr) {}
+  AOTMetaspaceRecipes() : _all_klasses(nullptr), _cp_recipes(nullptr), _flags(nullptr) {}
 
   void* operator new(size_t size) throw();
 
-  // Called when dumping preimage
+  // Called when dumping AOT configuration.
   void record_all_classes();
   void record_recipes_for_constantpool();
 
-  // Called when dumping final image
+  // Called when dumping AOT cache
   void apply_recipes_impl(TRAPS);
   void load_all_classes(TRAPS);
+  void link_all_classes(TRAPS);
+  void initialize_all_safe_classes(TRAPS);
   void apply_recipes_for_constantpool(JavaThread* current);
 
 public:
   static void serialize(SerializeClosure* soc);
 
-  // Called when dumping preimage
+  // Called when dumping AOT configuration
   static void record_recipes();
 
-  // Called when dumping final image
+  // Called when dumping AOT cache
   static void apply_recipes(TRAPS);
 };
 
-#endif // SHARE_CDS_FINALIMAGERECIPES_HPP
+#endif // SHARE_CDS_AOTMETASPACERECIPES_HPP

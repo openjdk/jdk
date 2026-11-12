@@ -1314,7 +1314,7 @@ void Method::remove_unshareable_flags() {
   // the current VM. Recompute it when the method is linked and
   // its adapter is selected.
   set_has_scalarized_args(false);
-  if (CDSConfig::is_dumping_preimage_static_archive()) {
+  if (CDSConfig::is_dumping_aot_configuration()) {
     // These flags may reflect class linking state during training run.
     // Recompute them during assembly phase and preserve the results
     // in the final AOT cache so production run uses the same
