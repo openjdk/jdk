@@ -79,7 +79,7 @@
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  *
- * @run main/othervm JCmdRevival abortvmonexception VM.version VM.command_line VM.events VM.class_hierarchy 
+ * @run main/othervm JCmdRevival abortvmonexception VM.version VM.command_line VM.events VM.class_hierarchy
  */
 
 /*
@@ -90,7 +90,7 @@
  * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  *
- * @run main/othervm JCmdRevival abortvmonexception VM.classloaders VM.classloader_stats 
+ * @run main/othervm JCmdRevival abortvmonexception VM.classloaders VM.classloader_stats
  */
 
 /*
