@@ -42,7 +42,7 @@ import java.util.Comparator;
 import java.util.Objects;
 import java.util.Random;
 import java.util.SortingHelper;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jdk.test.lib.valueclass.AsValueClass;
 
@@ -183,8 +183,8 @@ public class Sorting {
 
         final String msg = "Buggy comparator";
         final Pair[] pairs = buildRandom(length, Integer.MAX_VALUE, random);
-        // Using 1.2 to ensure that the exception happens late in the number of comparisons
-        final AtomicInteger failAfter = new AtomicInteger((int)(length * 1.2d));
+        // Using 1.125x to ensure that the exception happens late in the number of comparisons
+        final AtomicLong failAfter = new AtomicLong((long)length + (length >> 3));
         final Comparator<Pair> compair = new Comparator<Pair>() {
             @Override
             public int compare(Pair o1, Pair o2) {
