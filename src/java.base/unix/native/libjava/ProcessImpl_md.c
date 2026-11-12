@@ -542,6 +542,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     /* Slot in dup2 file actions. */
     rval = posix_spawn_file_actions_init(&file_actions);
     if (rval != 0) {
+        errno = rval;
         return -1;
     }
 
@@ -550,32 +551,33 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
      * kernel closes CLOEXEC file descriptors too early for dup2 file actions to
      * copy them after the fork. We have to explicitly prevent that by calling a
      * propietary API. */
-    posix_spawn_file_actions_addinherit_np(&file_actions, child_stdin);
-    posix_spawn_file_actions_addinherit_np(&file_actions, child_stdout);
-    posix_spawn_file_actions_addinherit_np(&file_actions, child_stderr);
-    posix_spawn_file_actions_addinherit_np(&file_actions, child_fail);
-    posix_spawn_file_actions_addinherit_np(&file_actions, child_childenv);
+    if ((rval = posix_spawn_file_actions_addinherit_np(&file_actions, child_stdin)) != 0 ||
+        (rval = posix_spawn_file_actions_addinherit_np(&file_actions, child_stdout)) != 0 ||
+        (rval = posix_spawn_file_actions_addinherit_np(&file_actions, child_stderr)) != 0 ||
+        (rval = posix_spawn_file_actions_addinherit_np(&file_actions, child_fail)) != 0 ||
+        (rval = posix_spawn_file_actions_addinherit_np(&file_actions, child_childenv)) != 0)
+    {
+        goto DestroyFileActions;
+    }
 #endif
 
     /* First dup2 stdin/out/err to 0,1,2. After this, we can safely dup2 over the
      * original stdin/out/err. */
-    if (call_posix_spawn_file_actions_adddup2(&file_actions, child_stdin, STDIN_FILENO) != 0 ||
-        call_posix_spawn_file_actions_adddup2(&file_actions, child_stdout, STDOUT_FILENO) != 0 ||
+    if ((rval = call_posix_spawn_file_actions_adddup2(&file_actions, child_stdin, STDIN_FILENO)) != 0 ||
+        (rval = call_posix_spawn_file_actions_adddup2(&file_actions, child_stdout, STDOUT_FILENO)) != 0 ||
         /* Order matters: stderr may be redirected to stdout, so this dup2 must happen after the stdout one. */
-        call_posix_spawn_file_actions_adddup2(&file_actions, child_stderr, STDERR_FILENO) != 0)
+        (rval = call_posix_spawn_file_actions_adddup2(&file_actions, child_stderr, STDERR_FILENO)) != 0)
     {
-        posix_spawn_file_actions_destroy(&file_actions);
-        return -1;
+        goto DestroyFileActions;
     }
 
     /* We dup2 with one intermediary step to prevent accidentally dup2'ing over child_childenv. */
     const int tmp_child_childenv = child_fail < 10 ? 10 : child_fail - 1;
-    if (call_posix_spawn_file_actions_adddup2(&file_actions, child_childenv, tmp_child_childenv) != 0 ||
-        call_posix_spawn_file_actions_adddup2(&file_actions, child_fail, FAIL_FILENO) != 0 ||
-        call_posix_spawn_file_actions_adddup2(&file_actions, tmp_child_childenv, CHILDENV_FILENO) != 0)
+    if ((rval = call_posix_spawn_file_actions_adddup2(&file_actions, child_childenv, tmp_child_childenv)) != 0 ||
+        (rval = call_posix_spawn_file_actions_adddup2(&file_actions, child_fail, FAIL_FILENO)) != 0 ||
+        (rval = call_posix_spawn_file_actions_adddup2(&file_actions, tmp_child_childenv, CHILDENV_FILENO)) != 0)
     {
-        posix_spawn_file_actions_destroy(&file_actions);
-        return -1;
+        goto DestroyFileActions;
     }
 
     /* Since we won't use these in jspawnhelper, reset them all */
@@ -586,9 +588,11 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
 
     rval = posix_spawn(&resultPid, helperpath, &file_actions, 0, (char * const *) hlpargs, environ);
 
+ DestroyFileActions:
     posix_spawn_file_actions_destroy(&file_actions);
 
     if (rval != 0) {
+        errno = rval;
         return -1;
     }
 
