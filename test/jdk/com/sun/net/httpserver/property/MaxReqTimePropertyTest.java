@@ -58,10 +58,34 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @library /test/lib
  *
- * @comment `sun.net.httpserver.timerMillis` determines the frequency the
- *          timeout check mechanism is triggered. Up its pace to increase
- *          the timeout check responsiveness.
+ * @comment Why do we configure `sun.net.httpserver.clockTick`?
+ *
+ *          Right after the server detects the socket is readable (e.g.,
+ *          write/close by the client) the server's connection state switches
+ *          from `NEWLY_ACCEPTED` to `REQUEST`, and the request timeout
+ *          mechanism gets armed. This implies a "pause at the beginning of the
+ *          request line" can go unnoticed in the `NEWLY_ACCEPTED` state. This
+ *          test verifies that behavior. But there is a corner case, which can
+ *          still evict the connection.
+ *
+ *          The connection idle timeout in the `NEWLY_ACCEPTED` state is
+ *          configured as `min(IDLE_INTERVAL, MAX_REQ_TIME)`. That is,
+ *          effectively, the idle timeout during `NEWLY_ACCEPTED` will always be
+ *          3 seconds for this particular test, since `IDLE_INTERVAL` defaults
+ *          to 30 seconds. As a result, an idle connection scan can hit our
+ *          connection at `NEWLY_ACCEPTED` and evict it unexpectedly. To avoid
+ *          this corner case, we effectively disable idle connection scan by
+ *          setting is run frequency, determined by
+ *          `sun.net.httpserver.clockTick`, to an excessive value, 1234567.
+ *
+ * @comment Why do we configure `sun.net.httpserver.timerMillis`?
+ *
+ *          It determines the frequency the timeout check mechanism is
+ *          triggered. We up its pace to increase the timeout check
+ *          responsiveness.
+ *
  * @run junit/othervm
+ *      -Dsun.net.httpserver.clockTick=1234567
  *      -Dsun.net.httpserver.timerMillis=200
  *      -Dsun.net.httpserver.maxReqTime=3
  *      -Dtest.tolaratedPauseDurationMillis=1000
