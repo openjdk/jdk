@@ -168,20 +168,6 @@ inline void ShenandoahHeapRegion::set_update_watermark_at_safepoint(HeapWord* w)
   _update_watermark.store_relaxed(w);
 }
 
-inline void ShenandoahHeapRegion::set_update_watermark_for_tlab(HeapWord* w) {
-  assert(bottom() <= w && w <= top(), "within bounds");
-  while (true) {
-    HeapWord* ov = _update_watermark.load_acquire();
-    if (w <= ov) {
-      return;
-    }
-
-    if (_update_watermark.compare_exchange(ov, w) == ov) {
-      return;
-    }
-  }
-}
-
 inline ShenandoahAffiliation ShenandoahHeapRegion::affiliation() const {
   return ShenandoahHeap::heap()->region_affiliation(this);
 }

@@ -1185,15 +1185,6 @@ public:
   }
 };
 
-class ShenandoahRetireTLABClosure : public ThreadClosure {
-public:
-  void do_thread(Thread* thread) override {
-    assert(UseTLAB, "TLABs should be enabled");
-    assert(thread->is_Java_thread(), "Only Java threads have TLABs");
-    thread->retire_tlab();
-  }
-};
-
 class ShenandoahGCStatePropagatorHandshakeClosure : public HandshakeClosure {
 public:
   explicit ShenandoahGCStatePropagatorHandshakeClosure(char gc_state) :
@@ -1211,19 +1202,16 @@ class ShenandoahPrepareForUpdateRefsHandshakeClosure : public HandshakeClosure {
 public:
   explicit ShenandoahPrepareForUpdateRefsHandshakeClosure(char gc_state) :
     HandshakeClosure("Shenandoah Prepare for Update Refs"),
-    _retire_gclab(ResizeTLAB), _propagator(gc_state) {}
+    _retire(ResizeTLAB), _propagator(gc_state) {}
 
   void do_thread(Thread* thread) override {
     _propagator.do_thread(thread);
     if (ShenandoahThreadLocalData::gclab(thread) != nullptr) {
-      _retire_gclab.do_thread(thread);
-    } else if (thread->is_Java_thread() && UseTLAB) {
-      _retire_tlab.do_thread(thread);
+      _retire.do_thread(thread);
     }
   }
 private:
-  ShenandoahRetireGCLABClosure _retire_gclab;
-  ShenandoahRetireTLABClosure _retire_tlab;
+  ShenandoahRetireGCLABClosure _retire;
   ShenandoahGCStatePropagatorHandshakeClosure _propagator;
 };
 
