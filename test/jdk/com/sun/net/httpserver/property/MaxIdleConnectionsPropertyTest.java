@@ -58,8 +58,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @comment This is a timing-sensitive test, avoid exotic configurations.
  * @requires !vm.debug & vm.compMode == "Xmixed"
  *
- * @library /test/lib
  * @modules jdk.httpserver/sun.net.httpserver:+open
+ * @library /test/lib
+ * @build WallClock
  *
  * @run junit/othervm
  *      ${test.main.class}
@@ -75,8 +76,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @comment This is a timing-sensitive test, avoid exotic configurations.
  * @requires !vm.debug & vm.compMode == "Xmixed"
  *
- * @library /test/lib
  * @modules jdk.httpserver/sun.net.httpserver:+open
+ * @library /test/lib
+ * @build WallClock
  *
  * @run junit/othervm
  *      -Dsun.net.httpserver.maxIdleConnections=-1
@@ -92,8 +94,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @comment This is a timing-sensitive test, avoid exotic configurations.
  * @requires !vm.debug & vm.compMode == "Xmixed"
  *
- * @library /test/lib
  * @modules jdk.httpserver/sun.net.httpserver:+open
+ * @library /test/lib
+ * @build WallClock
  *
  * @run junit/othervm
  *      -Dsun.net.httpserver.maxIdleConnections=0
@@ -111,8 +114,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @comment This is a timing-sensitive test, avoid exotic configurations.
  * @requires !vm.debug & vm.compMode == "Xmixed"
  *
- * @library /test/lib
  * @modules jdk.httpserver/sun.net.httpserver:+open
+ * @library /test/lib
+ * @build WallClock
  *
  * @run junit/othervm
  *      -Dsun.net.httpserver.maxIdleConnections=3
@@ -187,7 +191,7 @@ class MaxIdleConnectionsPropertyTest {
             // asynchronous task that starts with the exchange sending an
             // `ExchangeFinished` event. Hence, pause a bit to give this
             // asynchronous task some time to take effect.
-            Thread.sleep(Utils.adjustTimeout(500));
+            WallClock.sleep(Utils.adjustTimeout(500));
             assertThrows(SocketException.class, lastRequestor::exchange);
 
             // Verify that all requestors admitted to the pool can still

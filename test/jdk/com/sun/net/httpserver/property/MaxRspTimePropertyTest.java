@@ -59,6 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @requires !vm.debug & vm.compMode == "Xmixed"
  *
  * @library /test/lib
+ * @build WallClock
  *
  * @comment `sun.net.httpserver.timerMillis` determines the frequency the
  *          timeout check mechanism is triggered. Up its pace to increase
@@ -281,13 +282,7 @@ class MaxRspTimePropertyTest {
                 if (responseBody != null) {
                     responseBody.flush();
                 }
-                try {
-                    Thread.sleep(pauseDuration);
-                } catch (InterruptedException ie) {
-                    // Restore the interrupt
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(ie);
-                }
+                WallClock.sleep(pauseDuration);
             }
         }
 

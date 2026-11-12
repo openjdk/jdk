@@ -57,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @requires !vm.debug & vm.compMode == "Xmixed"
  *
  * @library /test/lib
+ * @build WallClock
  *
  * @comment Why do we configure `sun.net.httpserver.clockTick`?
  *
@@ -274,14 +275,14 @@ class MaxReqTimePropertyTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("args")
     void testToleratedPause(String description, boolean excessivePauseFails, String request)
-            throws IOException, InterruptedException {
+            throws IOException {
         sendRequest(clientSocket, request, TOLERATED_PAUSE_DURATION);
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("args")
     void testExcessivePause(String description, boolean excessivePauseFails, String request)
-            throws IOException, InterruptedException {
+            throws IOException {
         if (excessivePauseFails) {
             assertThrows(
                     SocketException.class,
@@ -293,13 +294,13 @@ class MaxReqTimePropertyTest {
 
     private static void sendRequest(
             Socket clientSocket, String request, Duration pauseDuration)
-            throws IOException, InterruptedException {
+            throws IOException {
         LOGGER.info("Sending request");
         var socketOutput = clientSocket.getOutputStream();
         for (int i = 0; i < request.length(); i++) {
             var c = request.charAt(i);
             if (c == PAUSE_DIRECTIVE) {
-                Thread.sleep(pauseDuration);
+                WallClock.sleep(pauseDuration);
             } else {
                 socketOutput.write(c);
             }

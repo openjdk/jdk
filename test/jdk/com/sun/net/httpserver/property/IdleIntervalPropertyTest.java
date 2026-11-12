@@ -55,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @requires !vm.debug & vm.compMode == "Xmixed"
  *
  * @library /test/lib
+ * @build WallClock
  *
  * @run junit/othervm
  *      -Dtest.evictionWaitDuration=40
@@ -102,7 +103,7 @@ class IdleIntervalPropertyTest {
                     // Add an extra slack for the asynchronous mechanism to kick
                     .plus(Duration.ofSeconds(Utils.adjustTimeout(1)))
                     .toMillis();
-            Thread.sleep(pauseMillis);
+            WallClock.sleep(pauseMillis);
 
             // Verify that a 3rd request over the same socket will observe the server disconnect
             assertThrows(SocketException.class, () -> sendRequest(clientSocket, "/?request=3"));
