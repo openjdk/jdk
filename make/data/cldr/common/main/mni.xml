@@ -112,6 +112,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</characters>
 	<dates>
 		<calendars>
+			<calendar type="chinese">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="dangi">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -372,6 +386,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">/</numericDateSeparator>
+						<numericTimeSeparator draft="provisional">:</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -409,6 +427,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">MMM d, y, E</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">MMMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">MMMM d, y, EEE</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -459,7 +479,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>জি এম টি {0}</gmtFormat>
-			<gmtZeroFormat>জি এম টি</gmtZeroFormat>
 			<regionFormat>{0} টাইম</regionFormat>
 			<regionFormat type="daylight">{0} (+1) দেলাইট টাইম</regionFormat>
 			<regionFormat type="standard">{0} (+0) ষ্টেন্দর্দ টাইম</regionFormat>

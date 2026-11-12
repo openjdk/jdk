@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552 8217254 8251499 8281317
+ * @bug 8177552 8217254 8251499 8281317 8384532
  * @summary Checks the validity of compact number patterns specified through
  *          CompactNumberFormat constructor
  * @run junit/othervm TestCompactPatternsValidity
@@ -78,6 +78,9 @@ public class TestCompactPatternsValidity {
     // A non empty pattern containing no 0s (min integer digits), with plural rules
     private static final String[] COMPACT_PATTERN14 =
         new String[]{"", "", "", "{one:Kun other:0' 'Kun}"}; // from Somali in CLDR 38
+    // Plural operands e/c acceptance (borrowed from French)
+    private static final String[] COMPACT_PATTERN15 =
+        new String[]{"", "", "", "", "", "", "{one:0' 'million other:0' 'millions}"};
 
     Object[][] invalidCompactPatterns() {
         return new Object[][] {
@@ -142,6 +145,10 @@ public class TestCompactPatternsValidity {
         return new Object[][] {
             // compact patterns, plural rules, numbers, expected output
             {COMPACT_PATTERN14, "one:n = 1", List.of(1000, 2345), List.of("Kun", "2 Kun")},
+            {COMPACT_PATTERN15, "one:i = 0,1; many:e = 0 and i != 0 and i % 1000000 = 0 and v = 0 or e != 0..5",
+                List.of(1_000_000, 2_000_000), List.of("1 million", "2 millions")},
+            {COMPACT_PATTERN15, "one:i = 0,1; many:c = 0 and i != 0 and i % 1000000 = 0 and v = 0 or c != 0..5",
+                List.of(1_000_000, 2_000_000), List.of("1 million", "2 millions")},
         };
     }
 
@@ -149,6 +156,10 @@ public class TestCompactPatternsValidity {
         return new Object[][] {
             // compact patterns, plural rules, parse string, expected output
             {COMPACT_PATTERN14, "one:n = 1", List.of("Kun", "2 Kun"), List.of(1000L, 2000L)},
+            {COMPACT_PATTERN15, "one:i = 0,1; many:e = 0 and i != 0 and i % 1000000 = 0 and v = 0 or e != 0..5",
+                List.of("1 million", "2 millions"), List.of(1_000_000L, 2_000_000L)},
+            {COMPACT_PATTERN15, "one:i = 0,1; many:c = 0 and i != 0 and i % 1000000 = 0 and v = 0 or c != 0..5",
+                List.of("1 million", "2 millions"), List.of(1_000_000L, 2_000_000L)},
         };
     }
 
@@ -199,7 +210,7 @@ public class TestCompactPatternsValidity {
 
     @ParameterizedTest
     @MethodSource("validPatternsParseWithPluralRules")
-    void testValidPatternsParsewithPluralRules(String[] compactPatterns, String pluralRules,
+    void testValidPatternsParseWithPluralRules(String[] compactPatterns, String pluralRules,
             List<String> parseString, List<Number> numbers) throws ParseException {
         CompactNumberFormat fmt = new CompactNumberFormat("#,##0.0#",
                         DecimalFormatSymbols.getInstance(Locale.US), compactPatterns, pluralRules);

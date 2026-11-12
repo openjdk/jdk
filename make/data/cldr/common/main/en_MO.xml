@@ -20,13 +20,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>HKST</daylight>
 				</short>
 			</metazone>
-			<metazone type="Macau">
-				<short>
-					<generic>MST</generic>
-					<standard>MST</standard>
-					<daylight>MDT</daylight>
-				</short>
-			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
