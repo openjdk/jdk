@@ -1243,14 +1243,6 @@ void PhaseIterGVN::optimize(bool deep) {
   C->print_method(PHASE_AFTER_ITER_GVN, 3);
 }
 
-static bool klass_bottom_type_invalidated(const Node* n, const Type* new_type) {
-  // Concurrent class loading can invalidate a klass bottom type.
-  const Type* bt = n->bottom_type();
-  return (bt->isa_klassptr() != nullptr ||
-          bt->isa_narrowklass() != nullptr) &&
-         !new_type->higher_equal_speculative(bt);
-}
-
 #ifdef ASSERT
 void PhaseIterGVN::verify_optimize(bool deep_revisit_converged) {
   assert(_worklist.size() == 0, "igvn worklist must be empty before verify");
@@ -1270,12 +1262,7 @@ void PhaseIterGVN::verify_optimize(bool deep_revisit_converged) {
       // in PhaseIterGVN::add_users_to_worklist to update it again or add an exception
       // in the verification methods below if that is not possible for some reason (like Load nodes).
       if (is_verify_Value()) {
-        const Type* tnew = n->Value(this);
-        if (klass_bottom_type_invalidated(n, tnew)) {
-          C->record_failure("concurrent class loading");
-          return;
-        }
-        verify_Value_for(n, tnew, deep_revisit_converged /* strict */);
+        verify_Value_for(n, deep_revisit_converged /* strict */);
       }
       if (is_verify_Ideal()) {
         verify_Ideal_for(n, false /* can_reshape */, deep_revisit_converged);
@@ -1327,10 +1314,11 @@ void PhaseIterGVN::verify_empty_worklist(Node* node) {
 // (1) Integer "widen" changes, but the range is the same.
 // (2) LoadNode performs deep traversals. Load is not notified for changes far away.
 // (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-void PhaseIterGVN::verify_Value_for(const Node* n, const Type* tnew, bool strict) {
+void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
   // If we assert inside type(n), because the type is still a null, then maybe
   // the node never went through gvn.transform, which would be a bug.
   const Type* told = type(n);
+  const Type* tnew = n->Value(this);
   if (told == tnew) {
     return;
   }
@@ -3215,9 +3203,7 @@ void PhaseCCP::analyze() {
       // not reachable from the bottom. Otherwise, infinite loops would be removed.
       _root_and_safepoints.push(n);
     }
-    if (!analyze_step(worklist, n)) {
-      return;
-    }
+    analyze_step(worklist, n);
   }
 
   // More rounds to catch updates far in the graph.
@@ -3226,27 +3212,19 @@ void PhaseCCP::analyze() {
   do {
     while (worklist.size() != 0) {
       Node* n = fetch_next_node(worklist);
-      if (!analyze_step(worklist, n)) {
-        return;
-      }
+      analyze_step(worklist, n);
     }
     for (uint t = 0; t < worklist_revisit.size(); t++) {
       Node* n = worklist_revisit.at(t);
-      if (!analyze_step(worklist, n)) {
-        return;
-      }
+      analyze_step(worklist, n);
     }
   } while (worklist.size() != 0);
 
   DEBUG_ONLY(verify_analyze(worklist_verify);)
 }
 
-bool PhaseCCP::analyze_step(Unique_Node_List<Node>& worklist, Node* n) {
+void PhaseCCP::analyze_step(Unique_Node_List<Node>& worklist, Node* n) {
   const Type* new_type = n->Value(this);
-  if (klass_bottom_type_invalidated(n, new_type)) {
-    C->record_failure("concurrent class loading");
-    return false;
-  }
   if (new_type != type(n)) {
     DEBUG_ONLY(verify_type(n, new_type, type(n));)
     dump_type_and_node(n, new_type);
@@ -3262,7 +3240,6 @@ bool PhaseCCP::analyze_step(Unique_Node_List<Node>& worklist, Node* n) {
       type(n->in(2)) == n->as_DivModInteger()->zero()) {
     _maybe_top_type_or_div_mod_nodes.push(n);
   }
-  return true;
 }
 
 // Some nodes can refine their types due to type change somewhere deep
@@ -3296,12 +3273,7 @@ void PhaseCCP::verify_analyze(Unique_Node_List<Node>& worklist_verify) {
     // in PhaseCCP::push_child_nodes_to_worklist() to update their type in the same round,
     // or that they are added in PhaseCCP::needs_revisit() so that analysis revisits
     // them at the end of the round.
-    const Type* tnew = n->Value(this);
-    if (klass_bottom_type_invalidated(n, tnew)) {
-      C->record_failure("concurrent class loading");
-      return;
-    }
-    verify_Value_for(n, tnew, true);
+    verify_Value_for(n, true);
   }
 }
 #endif

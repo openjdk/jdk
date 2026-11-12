@@ -22,8 +22,10 @@
  *
  */
 
+#include "ci/ciInstanceKlass.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciSymbol.hpp"
+#include "ci/ciUtilities.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -77,11 +79,13 @@ bool ciKlass::is_subtype_of(ciKlass* that) {
   bool is_subtype;
   GUARDED_VM_ENTRY(is_subtype = get_Klass()->is_subtype_of(that->get_Klass());)
 
-  // Ensure consistency with ciInstanceKlass::has_subklass().
-  assert(!that->is_instance_klass() || // array klasses are irrelevant
-          that->is_interface()      || // has_subklass is always false for interfaces
-         !is_subtype || that->as_instance_klass()->has_subklass(), "inconsistent");
-
+  // Ensure consistency with ciInstanceKlass::_has_subklass. Since _has_subklass only cares about
+  // non-interface ciInstanceKlass subtypes, it may be false when this is a subinterface of that,
+  // or when this is an array.
+  assert(!is_subtype ||
+         !that->is_instance_klass() || that->as_instance_klass()->_has_subklass != ciInstanceKlass::subklass_false ||
+         !this->is_instance_klass() || this->is_interface() ||
+         CURRENT_ENV->paradoxical_hierarchy(), "inconsistent");
   return is_subtype;
 }
 
@@ -99,10 +103,11 @@ bool ciKlass::is_subclass_of(ciKlass* that) {
   bool is_subclass;
   GUARDED_VM_ENTRY(is_subclass = get_Klass()->is_subclass_of(that->get_Klass());)
 
-  // Ensure consistency with ciInstanceKlass::has_subklass().
-  assert(!that->is_instance_klass() || // array klasses are irrelevant
-          that->is_interface()      || // has_subklass is always false for interfaces
-         !is_subclass || that->as_instance_klass()->has_subklass(), "inconsistent");
+  // Ensure consistency with ciInstanceKlass::_has_subklass, similar to is_subtype_of
+  assert(!is_subclass ||
+         !that->is_instance_klass() || that->as_instance_klass()->_has_subklass != ciInstanceKlass::subklass_false ||
+         !this->is_instance_klass() || this->is_interface() ||
+         CURRENT_ENV->paradoxical_hierarchy(), "inconsistent");
 
   return is_subclass;
 }

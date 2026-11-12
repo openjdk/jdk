@@ -36,7 +36,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm/timeout=1200 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                                Fuzz
+ *                                -Xbatch Fuzz
  */
 
 /*
@@ -55,7 +55,7 @@
  *
  * @run main/othervm/timeout=1200 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                                -XX:+PreserveFramePointer
- *                                Fuzz
+ *                                -Xbatch Fuzz
  */
 
 /*
@@ -74,7 +74,7 @@
  *
  * @run main/othervm/timeout=1200 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                                -XX:+VerifyContinuations
- *                                Fuzz
+ *                                -Xbatch Fuzz
  */
 
 import jdk.internal.vm.Continuation;
@@ -329,24 +329,7 @@ public class Fuzz implements Runnable {
     }
 
     static void enqueueForCompilation(Method m) {
-        if (WB.isMethodCompiled(m)) return;
-        // WB compilation tasks do not expire while others do,
-        // so we wait for an existing task to finish before enqueuing.
-        // Alternatively run with -XX:TieredCompileTaskTimeout=5000
-        Utils.waitForCondition(() -> WB.isMethodQueuedForCompilation(m), 1000);
-        if (WB.isMethodCompiled(m)) return;
         WB.enqueueMethodForCompilation(m, COMPILE_LEVEL);
-    }
-
-    static void waitForCompilation(Method m) {
-        if (!Utils.waitForCondition(() -> WB.isMethodCompiled(m), COMPILATION_TIMEOUT)) {
-            System.out.println(">>> Compilation status for: " + m);
-            System.out.println("isMethodCompiled: " + WB.isMethodCompiled(m) + " " +
-                                "isMethodCompilable: " + WB.isMethodCompilable(m) + " " +
-                                "isMethodQueuedForCompilation: " + WB.isMethodQueuedForCompilation(m) + " " +
-                                "getMethodCompilationLevel: " + WB.getMethodCompilationLevel(m));
-            throw new AssertionError("Failed to compile " + m + " in " + COMPILATION_TIMEOUT + "ms");
-        }
     }
 
     static void compileContinuation() {
@@ -361,8 +344,6 @@ public class Fuzz implements Runnable {
                 }
             }
         }
-
-        for (Method m : compile) waitForCompilation(m);
     }
 
     static void compile() {
@@ -379,8 +360,6 @@ public class Fuzz implements Runnable {
         for (Method m : interpret) WB.makeMethodNotCompilable(m);
 
         for (Method m : compile)   enqueueForCompilation(m);
-        for (Method m : compile)   waitForCompilation(m);
-        for (Method m : compile)   assert  WB.isMethodCompiled(m) : "method: " + m;
         for (Method m : interpret) assert !WB.isMethodCompiled(m) : "method: " + m;
 
         time(start, "Compile");

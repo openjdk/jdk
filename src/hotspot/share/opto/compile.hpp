@@ -892,13 +892,19 @@ public:
   CompileLog* log() const            { return _log; }
 
   bool        failing_internal() const {
-    return _env->failing() ||
-           _failure_reason.get() != nullptr;
+    return _env->failing() || _failure_reason.get() != nullptr || _env->paradoxical_hierarchy();
   }
 
   const char* failure_reason() const {
-    return _env->failing() ? _env->failure_reason()
-                           : _failure_reason.get();
+    if (_env->failing()) {
+      return _env->failure_reason();
+    } else if (const char* reason = _failure_reason.get(); reason != nullptr) {
+      return reason;
+    } else if (_env->paradoxical_hierarchy()) {
+      return "paradoxical hierarchy";
+    } else {
+      return nullptr;
+    }
   }
 
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
@@ -917,6 +923,10 @@ public:
     }
 #endif
     return false;
+  }
+
+  bool failure_is_transient() const {
+    return !_env->failing() && _failure_reason.get() == nullptr && _env->paradoxical_hierarchy();
   }
 
 #ifdef ASSERT

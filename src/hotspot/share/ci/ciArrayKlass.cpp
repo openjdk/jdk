@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,18 +80,6 @@ ciType* ciArrayKlass::base_element_type() {
     return ek;
   }
 }
-
-
-// ------------------------------------------------------------------
-// ciArrayKlass::is_leaf_type
-bool ciArrayKlass::is_leaf_type() {
-  if (is_type_array_klass()) {
-    return true;
-  } else {
-    return as_obj_array_klass()->base_element_klass()->is_leaf_type();
-  }
-}
-
 
 // ------------------------------------------------------------------
 // ciArrayKlass::make

@@ -111,7 +111,6 @@ void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm,
 
 void Dependencies::assert_unique_implementor(ciInstanceKlass* ctxk, ciInstanceKlass* uniqk) {
   check_ctxk(ctxk);
-  check_unique_implementor(ctxk, uniqk);
   assert_common_2(unique_implementor, ctxk, uniqk);
 }
 

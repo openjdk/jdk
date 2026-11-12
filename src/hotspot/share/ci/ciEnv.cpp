@@ -126,6 +126,7 @@ ciEnv::ciEnv(CompileTask* task)
   _compilable = MethodCompilable;
   _break_at_compile = false;
   _compiler_data = nullptr;
+  _paradoxical_hierarchy = false;
 #ifndef PRODUCT
   assert(!firstEnv, "not initialized properly");
 #endif /* !PRODUCT */
@@ -266,6 +267,7 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   _compilable = MethodCompilable_never;
   _break_at_compile = false;
   _compiler_data = nullptr;
+  _paradoxical_hierarchy = false;
 #ifndef PRODUCT
   assert(firstEnv, "must be first");
   firstEnv = false;
