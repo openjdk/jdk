@@ -287,8 +287,9 @@ cmsUInt32Number decodeUTF8(wchar_t* out, const char* in)
                     {
                         *out++ = (wchar_t)(0xd800 + (codepoint >> 10));
                         *out++ = (wchar_t)(0xdc00 + (codepoint & 0x03ff));
-                        size += 2;
                     }
+
+                    size += 2;
                 }
                 else
                     if (codepoint < 0xd800 || codepoint >= 0xe000)

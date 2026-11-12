@@ -2306,7 +2306,7 @@ cmsBool HeaderSection(cmsIT8* it8)
                     // for each pair, split the subkey and the value
                     Value = (char*)strrchr(Subkey, ',');
                     if (Value == NULL)
-                        return SynError(it8, "Invalid value for property '%s'.", VarName);
+                        break;
 
                     // gobble the spaces before the coma, and the coma itself
                     temp = Value++;
@@ -2321,7 +2321,7 @@ cmsBool HeaderSection(cmsIT8* it8)
                     Value += strspn(Value, " ");
 
                     if (Subkey[0] == 0 || Value[0] == 0)
-                        return SynError(it8, "Invalid value for property '%s'.", VarName);
+                        break;
                     AddToList(it8, &GetTable(it8)->HeaderList, VarName, Subkey, Value, WRITE_PAIR);
                 }
             }
@@ -2620,7 +2620,12 @@ cmsHANDLE  CMSEXPORT cmsIT8LoadFromMem(cmsContext ContextID, const void *Ptr, cm
     strncpy(it8->FileStack[0]->FileName, "", cmsMAX_PATH-1);
     it8-> Source = it8 -> MemoryBlock;
 
-    if (!ParseIT8(it8, type-1)) {
+    if (!ParseIT8(it8, type - 1)) {
+
+        while (it8->IncludeSP > 0) {
+            fclose(it8->FileStack[it8->IncludeSP]->Stream);
+            it8->IncludeSP--;
+        }
 
         cmsIT8Free(hIT8);
         return NULL;
@@ -2666,11 +2671,15 @@ cmsHANDLE  CMSEXPORT cmsIT8LoadFromFile(cmsContext ContextID, const char* cFileN
     strncpy(it8->FileStack[0]->FileName, cFileName, cmsMAX_PATH-1);
     it8->FileStack[0]->FileName[cmsMAX_PATH-1] = 0;
 
-    if (!ParseIT8(it8, type-1)) {
+    if (!ParseIT8(it8, type - 1)) {
 
-            fclose(it8 ->FileStack[0]->Stream);
-            cmsIT8Free(hIT8);
-            return NULL;
+        while (it8->IncludeSP > 0) {
+            fclose(it8->FileStack[it8->IncludeSP]->Stream);
+            it8->IncludeSP--;
+        }
+        fclose(it8->FileStack[0]->Stream);
+        cmsIT8Free(hIT8);
+        return NULL;
     }
 
     CookPointers(it8);
@@ -3199,7 +3208,10 @@ cmsBool ParseCube(cmsIT8* cube, cmsStage** Shaper, cmsStage** CLUT, char title[]
 
                     cmsFloat64Number nums[3];
 
-                    if (!ReadNumbers(cube, 3, nums)) return FALSE;
+                    if (!ReadNumbers(cube, 3, nums)) {
+                        _cmsFree(cube->ContextID, shapers);
+                        return FALSE;
+                    }
 
                     shapers[i + 0]               = (cmsFloat32Number) ((nums[0] - domain_min[0]) / (domain_max[0] - domain_min[0]));
                     shapers[i + 1 * shaper_size] = (cmsFloat32Number) ((nums[1] - domain_min[1]) / (domain_max[1] - domain_min[1]));
@@ -3216,11 +3228,13 @@ cmsBool ParseCube(cmsIT8* cube, cmsStage** Shaper, cmsStage** CLUT, char title[]
                 *Shaper = cmsStageAllocToneCurves(cube->ContextID, 3, curves);
 
                 cmsFreeToneCurveTriple(curves);
+                _cmsFree(cube->ContextID, shapers);
             }
 
             if (lut_size > 0) {
 
                 int nodes;
+                cmsFloat32Number* lut_table;
 
                 /**
                 * Professional LUT generation tools (e.g., Nobe LutBake) list 65×65×65 as their highest supported size.
@@ -3231,14 +3245,17 @@ cmsBool ParseCube(cmsIT8* cube, cmsStage** Shaper, cmsStage** CLUT, char title[]
                 nodes = lut_size * lut_size * lut_size;
 
 
-                cmsFloat32Number* lut_table = (cmsFloat32Number*) _cmsMalloc(cube->ContextID, nodes * 3 * sizeof(cmsFloat32Number));
+                lut_table = (cmsFloat32Number*) _cmsMalloc(cube->ContextID, nodes * 3 * sizeof(cmsFloat32Number));
                 if (lut_table == NULL) return FALSE;
 
                 for (i = 0; i < nodes; i++) {
 
                     cmsFloat64Number nums[3];
 
-                    if (!ReadNumbers(cube, 3, nums)) return FALSE;
+                    if (!ReadNumbers(cube, 3, nums)) {
+                        _cmsFree(cube->ContextID, lut_table);
+                        return FALSE;
+                    }
 
                     lut_table[i * 3 + 2] = (cmsFloat32Number) ((nums[0] - domain_min[0]) / (domain_max[0] - domain_min[0]));
                     lut_table[i * 3 + 1] = (cmsFloat32Number) ((nums[1] - domain_min[1]) / (domain_max[1] - domain_min[1]));
@@ -3265,7 +3282,7 @@ cmsHPROFILE CMSEXPORT cmsCreateDeviceLinkFromCubeFileTHR(cmsContext ContextID, c
     cmsStage* CLUT = NULL;
     cmsStage* Shaper = NULL;
     cmsMLU* DescriptionMLU = NULL;
-    char title[MAXSTR];
+    char title[MAXSTR] = { 0 };
 
     _cmsAssert(cFileName != NULL);
 
@@ -3280,6 +3297,7 @@ cmsHPROFILE CMSEXPORT cmsCreateDeviceLinkFromCubeFileTHR(cmsContext ContextID, c
     strncpy(cube->FileStack[0]->FileName, cFileName, cmsMAX_PATH - 1);
     cube->FileStack[0]->FileName[cmsMAX_PATH - 1] = 0;
 
+    // Note that it can allocate Shaper and CLUT even when failing
     if (!ParseCube(cube, &Shaper, &CLUT, title)) goto Done;
 
     // Success on parsing, let's create the profile
@@ -3301,16 +3319,16 @@ cmsHPROFILE CMSEXPORT cmsCreateDeviceLinkFromCubeFileTHR(cmsContext ContextID, c
     // Populates the pipeline
     if (Shaper != NULL) {
         if (!cmsPipelineInsertStage(Pipeline, cmsAT_BEGIN, Shaper)) {
-            cmsStageFree(Shaper);
             goto Done;
         }
+        Shaper = NULL; // ownership has been transferred
     }
 
     if (CLUT != NULL) {
         if (!cmsPipelineInsertStage(Pipeline, cmsAT_END, CLUT)) {
-            cmsStageFree(CLUT);
             goto Done;
         }
+        CLUT = NULL;
     }
 
     // Propagate the description. We put no copyright because we know
@@ -3323,6 +3341,15 @@ cmsHPROFILE CMSEXPORT cmsCreateDeviceLinkFromCubeFileTHR(cmsContext ContextID, c
     if (!cmsWriteTag(hProfile, cmsSigAToB0Tag, (void*)Pipeline)) goto Done;
 
 Done:
+
+    if (CLUT != NULL)
+        cmsStageFree(CLUT);
+
+    if (Shaper != NULL)
+        cmsStageFree(Shaper);
+
+    if (cube->FileStack[0]->Stream != NULL)
+        fclose(cube->FileStack[0]->Stream);
 
     if (DescriptionMLU != NULL)
         cmsMLUfree(DescriptionMLU);

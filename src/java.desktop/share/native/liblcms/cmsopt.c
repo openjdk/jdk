@@ -663,6 +663,16 @@ cmsBool FixWhiteMisalignment(cmsPipeline* Lut, cmsColorSpaceSignature EntryColor
     return TRUE;
 }
 
+// Adapt the interpolation callback to the pipeline evaluator signature.
+static
+void CLUTEval16(const cmsUInt16Number In[], cmsUInt16Number Out[], const void* D)
+{
+    const cmsInterpParams* p = (const cmsInterpParams*) D;
+
+    p ->Interpolation.Lerp16(In, Out, p);
+}
+
+
 // -----------------------------------------------------------------------------------------------------------------------------------------------
 // This function creates simple LUT from complex ones. The generated LUT has an optional set of
 // prelinearization curves, a CLUT of nGridPoints and optional postlinearization tables.
@@ -807,7 +817,7 @@ Error:
 
     if (DataSetIn == NULL && DataSetOut == NULL) {
 
-        _cmsPipelineSetOptimizationParameters(Dest, (_cmsPipelineEval16Fn) DataCLUT->Params->Interpolation.Lerp16, DataCLUT->Params, NULL, NULL);
+        _cmsPipelineSetOptimizationParameters(Dest, CLUTEval16, DataCLUT->Params, NULL, NULL);
     }
     else {
 
@@ -1658,11 +1668,15 @@ void FillSecondShaper(cmsUInt16Number* Table, cmsToneCurve* Curve, cmsBool Is8Bi
 
 // Compute the matrix-shaper structure
 static
-cmsBool SetMatShaper(cmsPipeline* Dest, cmsToneCurve* Curve1[3], cmsMAT3* Mat, cmsVEC3* Off, cmsToneCurve* Curve2[3], cmsUInt32Number* OutputFormat)
+cmsBool SetMatShaper(cmsPipeline* Dest, cmsToneCurve* Curve1[3], cmsMAT3* Mat, cmsVEC3* Off, cmsToneCurve* Curve2[3],
+                     cmsUInt32Number* InputFormat, cmsUInt32Number* OutputFormat)
 {
     MatShaper8Data* p;
     int i, j;
     cmsBool Is8Bits = _cmsFormatterIs8bit(*OutputFormat);
+
+    // Cannot use the 8 bit reduction trick here
+    if (T_PREMUL(*InputFormat) || T_PREMUL(*OutputFormat)) return FALSE;
 
     // Allocate a big chuck of memory to store precomputed tables
     p = (MatShaper8Data*) _cmsMalloc(Dest ->ContextID, sizeof(MatShaper8Data));
@@ -1821,7 +1835,7 @@ cmsBool OptimizeMatrixShaper(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
         *dwFlags |= cmsFLAGS_NOCACHE;
 
         // Setup the optimizarion routines
-        SetMatShaper(Dest, mpeC1 ->TheCurves, &res, (cmsVEC3*) Offset, mpeC2->TheCurves, OutputFormat);
+        SetMatShaper(Dest, mpeC1 ->TheCurves, &res, (cmsVEC3*) Offset, mpeC2->TheCurves, InputFormat, OutputFormat);
     }
 
     cmsPipelineFree(Src);
