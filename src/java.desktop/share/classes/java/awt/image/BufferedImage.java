@@ -333,7 +333,7 @@ public class BufferedImage extends java.awt.Image
      * limitations when creating images.
      * @implNote
      * This implementation uses a single data bank to store all image data for
-     * the pre-defined image types {@code TYPE_3BYTE_BGR}, {@code TYPE_4BYTE_BGR},
+     * the pre-defined image types {@code TYPE_3BYTE_BGR},
      * {@code TYPE_4BYTE_ABGR} and {@code TYPE_4BYTE_ABGR_PRE}.
      *
      * @param width     width of the created image
