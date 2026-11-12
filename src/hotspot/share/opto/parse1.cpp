@@ -1883,13 +1883,14 @@ void Parse::canonicalize_early_larval_aliases() {
     }
     assert(!value->is_ValueType() && _gvn.type(value)->isa_oopptr() != nullptr, "unexpected early larval");
 
-    bool created;
     if (aliases == nullptr) {
       aliases = new AliasHashTable(4, MAX2(4u, limit - i));
     }
-    Node** alias = aliases->put_if_absent(type->ident(), value, &created);
-    if (!created && value != *alias) {
-      map()->set_req(i, *alias);
+    // Same ciWrapper identity -> aliases of the same early larval object
+    bool created;
+    Node** canonical_alias = aliases->put_if_absent(type->ident(), value, &created);
+    if (!created && value != *canonical_alias) {
+      map()->set_req(i, *canonical_alias);
     }
   }
 }
