@@ -1286,6 +1286,9 @@ MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
     else if( mcall->is_MachCallRuntime() ) {
       MachCallRuntimeNode* mach_call_rt = mcall->as_MachCallRuntime();
       mach_call_rt->_name = call->as_CallRuntime()->_name;
+      if (mcall->is_MachCallLeaf()) {
+        mcall->as_MachCallLeaf()->_no_egprs = call->as_CallLeaf()->no_egprs();
+      }
     }
     msfpt = mcall;
     sfpt_jvms = sfpt->jvms();
