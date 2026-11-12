@@ -408,10 +408,7 @@ void FileMapHeader::print(outputStream* st, bool output_for_diff, bool actual_jv
     st->print_cr("- has_platform_or_app_classes:              %d", _has_platform_or_app_classes);
     st->print_cr("- requested_base_address:                   " INTPTR_FORMAT, p2i(_requested_base_address));
     st->print_cr("- mapped_base_address:                      " INTPTR_FORMAT, p2i(_mapped_base_address));
-  }
-
-  st->print_cr("- object_streaming_mode:                    %d", actual_jvm_config ? (CDSConfig::is_using_archive() ? AOTHeap::is_loading_streaming_mode() : AOTHeap::is_writing_streaming_mode()) : _object_streaming_mode);
-  if (!output_for_diff) {
+    st->print_cr("- object_streaming_mode:                    %d", _object_streaming_mode);
     st->print_cr("- mapped_heap_header");
     st->print_cr("  - root_segments");
     st->print_cr("    - roots_count:                          %d", _mapped_heap_header.root_segments().roots_count());
