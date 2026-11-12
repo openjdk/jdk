@@ -433,9 +433,6 @@ void AOTMapLogger::log_metaspace_objects_impl(address region_base, address regio
     case MetaspaceClosureType::MethodType:
       log_method((Method*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceClosureType::MethodCountersType:
-      log_method_counters((MethodCounters*)src, requested_addr, type_name, bytes, current);
-      break;
     case MetaspaceClosureType::MethodDataType:
       log_method_data((MethodData*)src, requested_addr, type_name, bytes, current);
       break;
