@@ -58,6 +58,7 @@ public enum CompilePhase {
     ELIMINATE_VBOX_ALLOC(           "Eliminate VectorBoxAllocate"),
     ITER_GVN_BEFORE_EA(             "Iter GVN before EA"),
     ITER_GVN_AFTER_VECTOR(          "Iter GVN after Vector Box Elimination"),
+    SPLIT_INLINES_ARRAY(            "Split inlines array"),
     BEFORE_LOOP_OPTS(               "Before Loop Optimizations"),
     PHASEIDEAL_BEFORE_EA(           "PhaseIdealLoop before EA"),
     EA_AFTER_INITIAL_CONGRAPH(         "EA: 1. Intial Connection Graph"),
