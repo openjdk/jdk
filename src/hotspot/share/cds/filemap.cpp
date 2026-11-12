@@ -392,7 +392,7 @@ void FileMapHeader::print(outputStream* st, bool output_for_diff, bool actual_jv
   st->print_cr("- narrow_oop_mode:                          %d", actual_jvm_config ? CompressedOops::mode() : _narrow_oop_mode);
   st->print_cr("- compressed_oops:                          %d", actual_jvm_config ? UseCompressedOops : _compressed_oops);
   st->print_cr("- narrow_klass_pointer_bits:                %d", actual_jvm_config ? CompressedKlassPointers::narrow_klass_pointer_bits() : _narrow_klass_pointer_bits);
-  st->print_cr("- narrow_klass_shift:                       %d", actual_jvm_config ? CompressedKlassPointers::shift() : _narrow_klass_shift);
+  st->print_cr("- narrow_klass_shift:                       %d", actual_jvm_config ? ArchiveBuilder::precomputed_narrow_klass_shift() : _narrow_klass_shift);
   if (!output_for_diff) {
     st->print_cr("- cloned_vtables:                           %u", cast_to_u4(_cloned_vtables));
     st->print_cr("- early_serialized_data:                    %u", cast_to_u4(_early_serialized_data));
