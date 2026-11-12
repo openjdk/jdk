@@ -787,7 +787,7 @@ private:
     _element_basic_type(element_basic_type) {}
 
 public:
-  static VTransformVectorNodeProperties make_from_pack(const Node_List* pack, const VLoopAnalyzer& vloop_analyzer) {
+  static VTransformVectorNodeProperties make_from_pack(const Node_List<Node>* pack, const VLoopAnalyzer& vloop_analyzer) {
     Node* first = pack->at(0);
     int opc = first->Opcode();
     int vlen = pack->size();

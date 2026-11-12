@@ -29,7 +29,7 @@ import compiler.lib.generators.*;
 
 /*
  * @test
- * @bug 8350177 8362171 8369881 8342095 8380988 8394230
+ * @bug 8350177 8362171 8369881 8342095 8380988 8394230 8394456
  * @summary Ensure that truncation of subword vectors produces correct results
  * @library /test/lib /
  * @run driver compiler.vectorization.TestSubwordTruncation
@@ -65,6 +65,16 @@ public class TestSubwordTruncation {
         char[] arr = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
             arr[i] = (char) G.next().shortValue();
+        }
+
+        return new Object[] { arr };
+    }
+
+    @Setup
+    static Object[] setupIntArray() {
+        int[] arr = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            arr[i] = G.next().intValue();
         }
 
         return new Object[] { arr };
@@ -601,6 +611,62 @@ public class TestSubwordTruncation {
 
         for (int i = 0; i < SIZE; i++) {
             res[i] = (byte) Long.numberOfTrailingZeros(in[i]);
+        }
+
+        return new Object[] { res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.COMPRESS_BITS, ">0" }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
+    @IR(counts = { IRNode.COMPRESS_BITS, ">0" }, applyIfCPUFeature = { "svebitperm", "true" })
+    @Arguments(setup = "setupIntArray")
+    public Object[] testCompressBitsI(int[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Integer.compress(in[i], in[i]);
+        }
+
+        return new Object[] { res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.EXPAND_BITS, ">0" }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
+    @IR(counts = { IRNode.EXPAND_BITS, ">0" }, applyIfCPUFeature = { "svebitperm", "true" })
+    @Arguments(setup = "setupIntArray")
+    public Object[] testExpandBitsI(int[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Integer.expand(in[i], in[i]);
+        }
+
+        return new Object[] { res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.COMPRESS_BITS, ">0" }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
+    @IR(counts = { IRNode.COMPRESS_BITS, ">0" }, applyIfCPUFeature = { "svebitperm", "true" })
+    @Arguments(setup = "setupLongArray")
+    public Object[] testCompressBitsL(long[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Long.compress(in[i], in[i]);
+        }
+
+        return new Object[] { res };
+    }
+
+    @Test
+    @IR(counts = { IRNode.EXPAND_BITS, ">0" }, applyIfPlatform = {"x64", "true"}, applyIf = { "UseParallelBitInstructions", "true" })
+    @IR(counts = { IRNode.EXPAND_BITS, ">0" }, applyIfCPUFeature = { "svebitperm", "true" })
+    @Arguments(setup = "setupLongArray")
+    public Object[] testExpandBitsL(long[] in) {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) Long.expand(in[i], in[i]);
         }
 
         return new Object[] { res };

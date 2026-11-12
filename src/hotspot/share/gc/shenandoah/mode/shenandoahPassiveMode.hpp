@@ -31,9 +31,6 @@ class ShenandoahPassiveMode : public ShenandoahMode {
 public:
   void initialize_flags() const override;
   ShenandoahHeuristics* initialize_heuristics(ShenandoahSpaceInfo* space_info) const override;
-  const char* name() override     { return "Passive"; }
-  bool is_diagnostic() override   { return true; }
-  bool is_experimental() override { return false; }
   bool is_concurrent() override   { return false; }
 };
 

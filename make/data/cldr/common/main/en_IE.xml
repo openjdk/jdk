@@ -117,11 +117,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 		</calendars>
 		<timeZoneNames>
-			<zone type="Europe/Dublin">
+			<metazone type="Irish">
 				<short>
+					<standard>GMT</standard>
 					<daylight>IST</daylight>
 				</short>
-			</zone>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 </ldml>

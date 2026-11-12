@@ -206,7 +206,11 @@ void GraphKit::verify_exception_state(SafePointNode* ex_map) {
 void GraphKit::stop_and_kill_map() {
   SafePointNode* dead_map = stop();
   if (dead_map != nullptr) {
-    dead_map->disconnect_inputs(C); // Mark the map as killed.
+    if (PhaseIterGVN* igvn = _gvn.is_IterGVN()) {
+      igvn->remove_dead_node(dead_map, PhaseIterGVN::NodeOrigin::Speculative);
+    } else {
+      dead_map->disconnect_inputs(C);
+    }
     assert(dead_map->is_killed(), "must be so marked");
   }
 }
@@ -2275,14 +2279,14 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
 }
 
 // Keep track of MergeMems feeding into other MergeMems
-static void add_mergemem_users_to_worklist(Unique_Node_List& wl, Node* mem) {
+static void add_mergemem_users_to_worklist(Unique_Node_List<MergeMemNode>& wl, Node* mem) {
   if (!mem->is_MergeMem()) {
     return;
   }
   for (SimpleDUIterator i(mem); i.has_next(); i.next()) {
     Node* use = i.get();
     if (use->is_MergeMem()) {
-      wl.push(use);
+      wl.push(use->as_MergeMem());
     }
   }
 }
@@ -2303,7 +2307,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   // Find all the needed outputs of this call
   CallProjections* callprojs = call->extract_projections(true, do_asserts);
 
-  Unique_Node_List wl;
+  Unique_Node_List<MergeMemNode> wl;
   Node* final_mem = final_state->in(TypeFunc::Memory);
   Node* final_ctl = final_state->in(TypeFunc::Control);
   Node* final_io = final_state->in(TypeFunc::I_O);
@@ -2400,7 +2404,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   // Clean up any MergeMems that feed other MergeMems since the
   // optimizer doesn't like that.
   while (wl.size() > 0) {
-    Node* old_mem = wl.pop();
+    MergeMemNode* old_mem = wl.pop();
     Node* new_mem = _gvn.transform(old_mem);
     if (old_mem != new_mem) {
       C->gvn_replace_by(old_mem, new_mem);
@@ -3782,6 +3786,13 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
           assert(safe_for_replace, "must be");
           obj = null_check(obj);
         }
+        if (!stopped() && toop->is_valueklassptr() && !maybe_larval) {
+          Node* vt = ValueTypeNode::make_from_oop(this, obj, toop->value_klass());
+          if (safe_for_replace) {
+            replace_in_map(obj, vt);
+          }
+          obj = vt;
+        }
         return obj;
       case Compile::SSC_always_false:
         if (null_free) {
@@ -3917,7 +3928,8 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
   if (Arguments::is_valhalla_enabled() && (not_value || not_flat_in_array)) {
     // Check if obj has been loaded from an array. Keep obj unchanged for final
     // map replacement below.
-    Node* array_obj = obj->isa_DecodeN() ? obj->in(1) : obj;
+    Node* array_obj = obj->uncast();
+    array_obj = array_obj->isa_DecodeN() ? array_obj->in(1) : array_obj;
     Node* array = nullptr;
     if (array_obj->isa_Load()) {
       Node* address = array_obj->in(MemNode::Address);
@@ -3948,8 +3960,8 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
           replace_in_map(array, cast);
           array = cast;
         }
-        if (!ary_t->is_not_flat() && !ary_t->is_flat() && not_flat_in_array) {
-          // Casting array element to a non-flat-in-array type, mark array as not flat.
+        if (null_ctl == top() && !ary_t->is_not_flat() && !ary_t->is_flat() && not_flat_in_array) {
+          // Casting a non-null array element to a non-flat-in-array type, mark array as not flat.
           Node* cast = _gvn.transform(new CheckCastPPNode(control(), array, ary_t->cast_to_not_flat()));
           if (new_cast_failure_map != nullptr && *new_cast_failure_map == nullptr) {
             // Same as above.

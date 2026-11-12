@@ -25,6 +25,7 @@
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotHeap.hpp"
 #include "cds/aotModules.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -33,7 +34,6 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "jni.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -409,7 +409,7 @@ void ModuleEntry::metaspace_pointers_do(MetaspaceClosure* it) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 bool ModuleEntry::should_be_archived() const {
-  return SystemDictionaryShared::is_builtin_loader(loader_data());
+  return AOTSystemDictionary::is_builtin_loader(loader_data());
 }
 
 void ModuleEntry::remove_unshareable_info() {
@@ -420,7 +420,7 @@ void ModuleEntry::remove_unshareable_info() {
   }
 
   // Clear handles and restore at run time. Handles cannot be archived.
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_aot_cache()) {
     OopHandle null_handle;
     _shared_pd = null_handle;
   } else {

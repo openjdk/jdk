@@ -25,6 +25,8 @@
 
 package build.tools.cldrconverter;
 
+import static build.tools.cldrconverter.CLDRConverter.BCP47_LDML_DTD_SYSTEM_ID;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -50,7 +52,7 @@ class TimeZoneParseHandler extends AbstractLDMLHandler<Object> {
     @Override
     public InputSource resolveEntity(String publicID, String systemID) throws IOException, SAXException {
         // avoid HTTP traffic to unicode.org
-        if (systemID.startsWith(CLDRConverter.BCP47_LDML_DTD_SYSTEM_ID)) {
+        if (systemID.startsWith(BCP47_LDML_DTD_SYSTEM_ID)) {
             return new InputSource((new File(CLDRConverter.LOCAL_BCP47_LDML_DTD)).toURI().toString());
         }
         return null;
