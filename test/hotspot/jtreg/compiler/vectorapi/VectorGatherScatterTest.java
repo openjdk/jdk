@@ -44,7 +44,7 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @library /test/lib /
  * @requires (vm.cpu.features ~= ".*sve.*" & (vm.opt.MaxVectorSize == "null" | vm.opt.MaxVectorSize >= 16)) |
- *           (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
+ *           vm.cpu.features ~= ".*rvv.*"
  * @summary Test vector gather/scatter on SVE and RVV
  * @modules jdk.incubator.vector
  *
