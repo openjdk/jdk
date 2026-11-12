@@ -3013,7 +3013,7 @@ public class JavacParser implements Parser {
                 }
             }
         }
-        if ((isValueModifier()) && allowValueClasses) {
+        if ((isValueModifier())) {
             checkSourceLevel(Feature.VALUE_CLASSES);
             dc = token.docComment();
             return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
@@ -5031,7 +5031,7 @@ public class JavacParser implements Parser {
     }
 
     protected boolean isValueModifier() {
-        if (token.kind == IDENTIFIER && token.name() == names.value) {
+        if (token.kind == IDENTIFIER && token.name() == names.value && allowValueClasses) {
             boolean isValueModifier = false;
             Token next = S.token(1);
             switch (next.kind) {
