@@ -346,7 +346,7 @@ public:
     }
   }
 
-  void vpxor(XMMRegister dst, XMMRegister nds, Address src, int vector_len, XMMRegister scratch = xnoreg) {
+  void vpxor(XMMRegister dst, XMMRegister nds, Address src, int vector_len, XMMRegister scratch) {
     assert(UseAVX > 0 || vector_len == Assembler::AVX_128bit, "Invalid");
     if (UseAVX > 0) {
       MacroAssembler::vpxor(dst, nds, src, vector_len);
@@ -808,13 +808,12 @@ static address generate_counterModeAES(StubGenerator *stubgen,
     __ movq(Address(ctr, 8), nextCtrLow);
     __ movq(Address(ctr), nextCtrHigh);
 
-    // partial cleanup
-    __ vpxor(KeyReg, KeyReg, KeyReg, Assembler::AVX_128bit); // zero-out key
+    // KeyReg zeroed-out at ExitLabel
 
     __ cmpl(len, 16);
     __ jcc(Assembler::below, LastBlock);
-    __ vpxor(Tmp, LastCtr, Address(src, pos, Address::times_1, 0), Assembler::AVX_128bit);
-    __ vmovdqu(Address(dst, pos, Address::times_1, 0), Tmp, Assembler::AVX_128bit);
+    __ vpxor(LastCtr, LastCtr, Address(src, pos, Address::times_1, 0), Assembler::AVX_128bit, Tmp);
+    __ vmovdqu(Address(dst, pos, Address::times_1, 0), LastCtr, Assembler::AVX_128bit);
     __ incrementl(pos, 16); // output
     // not decrementing len on purpose
     __ jmp(ExitLabel);
@@ -845,7 +844,7 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   if (blocksPerReg == 4) { // Assembler::AVX_512bit
     __ cmpl(len, 32);
     __ jcc(Assembler::below, Last2Block);
-    __ vpxor(Tmp, LastCtr, Address(src, pos, Address::times_1, 0), Assembler::AVX_256bit);
+    __ vpxor(Tmp, LastCtr, Address(src, pos, Address::times_1, 0), Assembler::AVX_256bit, xnoreg);
     __ vmovdqu(Address(dst, pos, Address::times_1, 0), Tmp, Assembler::AVX_256bit);
     __ evshufi64x2(LastCtr, LastCtr, LastCtr, 0b00001110, Assembler::AVX_512bit);
     __ incrementl(pos, 32);
@@ -855,7 +854,7 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   if (blocksPerReg >= 2) { // Assembler::AVX_256bit
     __ cmpl(len, 16);
     __ jcc(Assembler::below, Scrub);
-    __ vpxor(Tmp, LastCtr, Address(src, pos, Address::times_1, 0), Assembler::AVX_128bit);
+    __ vpxor(Tmp, LastCtr, Address(src, pos, Address::times_1, 0), Assembler::AVX_128bit, xnoreg);
     __ vmovdqu(Address(dst, pos, Address::times_1, 0), Tmp, Assembler::AVX_128bit);
     __ vextractf128(LastCtr, LastCtr, 1);
     __ incrementl(pos, 16);
@@ -864,13 +863,12 @@ static address generate_counterModeAES(StubGenerator *stubgen,
 
   // Cleanup (here, so SingleBlock can goto LastBlock without this Scrub)
   __ BIND(Scrub);
-  __ vpxor(Tmp, Tmp, Tmp, Assembler::AVX_128bit);
-  _next = xmm4; // Skip LastCtr until ExitLabel
+  _next = xmm4; // Skip LastCtr and Tmp until ExitLabel
   for (int i = 0; i < keyRegs + maxParallel + 1; i++, _next = _next->successor()) {
     __ vpxor(_next, _next, _next, Assembler::AVX_128bit); // EVEX clears upper for free
   }
   for (int slot = 0; slot < totalStackBytes/16; slot++) {
-    __ movdqu(Address(rsp, 16*slot), Tmp); // Tmp zeroed already
+    __ movdqu(Address(rsp, 16*slot), xmm4); // xmm4 zeroed already
   }
 
   __ BIND(LastBlock);
@@ -916,6 +914,7 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   __ incrementl(pos, 1);
 
   __ BIND(ExitLabel);
+  __ vpxor(Tmp, Tmp, Tmp, Assembler::AVX_128bit);
   __ vpxor(LastCtr, LastCtr, LastCtr, Assembler::AVX_128bit);
   __ xorl(lastCtr, lastCtr);
   if (vector_len != Assembler::AVX_128bit) {
@@ -967,7 +966,7 @@ void StubGenerator::generate_aes_stubs() {
     int vector_len = Assembler::AVX_128bit;
     if (VM_Version::supports_vaes() && VM_Version::supports_avx512bw() && VM_Version::supports_avx512vl()) {
       vector_len = Assembler::AVX_512bit;
-    } else if (VM_Version::supports_vaes()) {
+    } else if (VM_Version::supports_vaes() && EnableX86ECoreOpts) {
       vector_len = Assembler::AVX_256bit;
     } else {
       assert(VM_Version::supports_aes() && VM_Version::supports_sse4_2(), "AESNI intrinsic unsupported");
