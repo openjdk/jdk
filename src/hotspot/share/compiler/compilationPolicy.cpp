@@ -117,9 +117,16 @@ void CompilationPolicy::maybe_compile_early(const methodHandle& m, MethodTrainin
   // Consider replacing conservatively compiled AOT Preload code with faster AOT code or normal JITed code
   nmethod* nm = m->code();
   bool recompile = (nm != nullptr) && nm->aot_preloaded();
+  // Method::set_code() publishes Method::_code before updating highest_comp_level.
+  // As a result, highest_comp_level() can temporarily be lower than nm->comp_level().
   CompLevel cur_level = static_cast<CompLevel>(m->highest_comp_level());
+  if (nm != nullptr) {
+    cur_level = MAX2(cur_level, static_cast<CompLevel>(nm->comp_level()));
+  }
   CompLevel next_level = trained_transition(m, cur_level, mtd, THREAD);
-  if ((next_level != cur_level || recompile) && can_be_compiled(m, next_level) && !CompileBroker::compilation_is_in_queue(m)) {
+  if ((next_level != cur_level || recompile) &&
+      is_compile(next_level) && can_be_compiled(m, next_level) &&
+      !CompileBroker::compilation_is_in_queue(m)) {
     // We are here because some of CTD have all init dependencies satisfied.
     CompileTrainingData* ctd = mtd->compile_data_for_aot_code(next_level);
     if (ctd == nullptr || (ctd->init_deps_left_acquire() > 0)) {
