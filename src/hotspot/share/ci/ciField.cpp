@@ -510,8 +510,8 @@ bool ciField::is_autobox_cache() {
 
 bool ciField::empty_null_free_initialized_value_field(bool method_is_safe) {
   ciType* field_type = type();
-  return is_null_free() && field_type->is_value_klass() && field_type->as_value_klass()->is_empty() &&
-         (method_is_safe || is_flat());
+  return is_null_free() && !is_volatile() && field_type->is_value_klass() &&
+         field_type->as_value_klass()->is_empty() && (method_is_safe || is_flat());
 }
 
 // ------------------------------------------------------------------
