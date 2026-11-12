@@ -334,7 +334,7 @@ public class BufferedImage extends java.awt.Image
      * @implNote
      * This implementation uses a single data bank to store all image data for
      * the pre-defined image types {@code TYPE_3BYTE_BGR}, {@code TYPE_4BYTE_BGR},
-     * and {@code TYPE_4BYTE_ABGR}.
+     * {@code TYPE_4BYTE_ABGR} and {@code TYPE_4BYTE_ABGR_PRE}.
      *
      * @param width     width of the created image
      * @param height    height of the created image
@@ -688,7 +688,7 @@ public class BufferedImage extends java.awt.Image
      * @throws IllegalArgumentException if
      *          {@code raster} is incompatible with {@code cm}
      * @throws IllegalArgumentException if
-     *          {@code raster.minX} or {@code m.minXinY} is not zero
+     *          {@code raster.minX} or {@code raster.minY} is not zero
      * @see ColorModel
      * @see Raster
      * @see WritableRaster
