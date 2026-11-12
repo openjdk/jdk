@@ -24,6 +24,7 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
@@ -35,8 +36,12 @@
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/os.hpp"
 #include "utilities/quickSort.hpp"
 
 // sort by decreasing garbage (so most garbage comes first)

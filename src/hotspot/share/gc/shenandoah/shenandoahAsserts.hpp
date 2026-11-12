@@ -28,8 +28,10 @@
 
 #include "memory/iterator.hpp"
 #include "oops/compressedKlass.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahHeapRegion;
 

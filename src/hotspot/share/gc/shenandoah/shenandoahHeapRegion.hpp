@@ -33,11 +33,17 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "oops/markWord.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
 
-class VMStructs;
+class outputStream;
 class ShenandoahHeapRegionStateConstant;
+class VMStructs;
 
 class ShenandoahHeapRegion {
   friend class VMStructs;

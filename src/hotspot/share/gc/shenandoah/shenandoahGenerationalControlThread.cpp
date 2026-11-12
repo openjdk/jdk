@@ -24,6 +24,11 @@
  *
  */
 
+#include "gc/shared/ageTable.hpp"
+#include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcId.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -34,17 +39,24 @@
 #include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahMmuTracker.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGC.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/os.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
+#include "utilities/formatBuffer.hpp"
 
 ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _requested_generation(nullptr),

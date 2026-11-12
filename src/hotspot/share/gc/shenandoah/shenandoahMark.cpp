@@ -23,8 +23,8 @@
  *
  */
 
-
-
+#include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -32,7 +32,7 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "runtime/globals.hpp"
 
 void ShenandoahMark::start_mark() {
   if (!CodeCache::is_gc_marking_cycle_active()) {

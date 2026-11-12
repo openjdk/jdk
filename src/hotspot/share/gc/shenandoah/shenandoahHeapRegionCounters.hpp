@@ -28,7 +28,12 @@
 
 #include "logging/logFileStreamOutput.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class PerfLongVariable;
+class ShenandoahHeap;
 
 /**
  * This provides the following in JVMStat:

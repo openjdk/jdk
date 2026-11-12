@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahStackChunkGCData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 Atomic<int64_t> ShenandoahStackChunkGCData::_epoch_id_counter;
 

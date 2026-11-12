@@ -27,6 +27,8 @@
 
 #include "cppstdlib/cstddef.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/integerCast.hpp"
 
 // TODO: Merge the enhanced capabilities of ShenandoahSimpleBitMap into src/hotspot/share/utilities/bitMap.hpp

@@ -24,16 +24,21 @@
  *
  */
 
-
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahPLAB.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "logging/log.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
 ShenandoahCollectorPolicy::ShenandoahCollectorPolicy(ShenandoahMode* mode) :

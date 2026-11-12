@@ -30,6 +30,9 @@
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutex.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahGeneration;
 

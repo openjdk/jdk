@@ -22,11 +22,14 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "logging/log.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/java.hpp"
 
 void ShenandoahPassiveMode::initialize_flags() const {
   // Do not allow concurrent cycles.

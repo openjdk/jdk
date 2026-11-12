@@ -24,17 +24,29 @@
  *
  */
 
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
+#include "memory/universe.hpp"
+#include "oops/access.hpp"
+#include "oops/accessDecorators.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
 
 static ReferenceType reference_type(oop reference) {
   return InstanceKlass::cast(reference->klass())->reference_type();

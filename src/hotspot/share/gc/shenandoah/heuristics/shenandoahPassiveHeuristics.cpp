@@ -23,10 +23,13 @@
  *
  */
 
-
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "utilities/debug.hpp"
+
+class ShenandoahCollectionSet;
+class ShenandoahSpaceInfo;
 
 ShenandoahPassiveHeuristics::ShenandoahPassiveHeuristics(ShenandoahSpaceInfo* space_info) :
   ShenandoahHeuristics(space_info) {}

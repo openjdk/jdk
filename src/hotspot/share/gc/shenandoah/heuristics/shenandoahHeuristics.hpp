@@ -28,9 +28,17 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 #define SHENANDOAH_ERGO_DISABLE_FLAG(name)                                  \
   do {                                                                      \
@@ -58,6 +66,7 @@
 
 class ShenandoahCollectionSet;
 class ShenandoahHeap;
+
 class ShenandoahHeapRegion;
 
 /*

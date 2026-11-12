@@ -26,6 +26,7 @@
 
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahStackChunkGCData {
 private:

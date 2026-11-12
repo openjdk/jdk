@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahHeapRegionSet;

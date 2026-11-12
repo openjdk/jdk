@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHPASSIVEHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 /*
  * The passive heuristic is for use only with the passive mode. In

@@ -25,7 +25,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGLOBALGENERATION_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGLOBALGENERATION_HPP
 
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // A "generation" that represents the whole heap.
 class ShenandoahGlobalGeneration : public ShenandoahGeneration {

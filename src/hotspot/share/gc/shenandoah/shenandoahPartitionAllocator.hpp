@@ -29,6 +29,8 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // ShenandoahPartitionAllocator is the serial (lock-based) partition allocator.
 // It uses ShenandoahFreeSet APIs to find regions and performs allocation within them

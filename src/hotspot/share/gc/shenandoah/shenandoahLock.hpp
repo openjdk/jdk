@@ -29,7 +29,10 @@
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
 class ShenandoahLock {
 private:

@@ -27,6 +27,7 @@
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class JavaThread;
 class oopDesc;

@@ -25,10 +25,11 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHYOUNGHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class ShenandoahYoungGeneration;
 class ShenandoahOldGeneration;
 class ShenandoahOldHeuristics;
+class ShenandoahYoungGeneration;
 
 /*
  * This is a specialization of the generational heuristic which chooses

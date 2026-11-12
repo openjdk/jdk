@@ -24,7 +24,9 @@
  *
  */
 
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -34,9 +36,16 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
+#include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 void ShenandoahArguments::initialize() {

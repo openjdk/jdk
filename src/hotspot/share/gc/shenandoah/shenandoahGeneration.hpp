@@ -31,8 +31,12 @@
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahCollectionSet;
 class ShenandoahHeap;

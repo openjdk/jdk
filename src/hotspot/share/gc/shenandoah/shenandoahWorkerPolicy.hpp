@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHWORKERPOLICY_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahWorkerPolicy : AllStatic {
 public:

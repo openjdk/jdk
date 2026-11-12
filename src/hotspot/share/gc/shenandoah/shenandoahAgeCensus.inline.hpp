@@ -27,6 +27,10 @@
 
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 
+#include "oops/markWord.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 void ShenandoahAgeCensus::add(uint obj_age, uint region_age, size_t size, uint worker_id) {
   if (obj_age <= markWord::max_age) {
     assert(obj_age < MAX_COHORTS && region_age < MAX_COHORTS, "Should have been tenured");

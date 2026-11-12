@@ -26,6 +26,8 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHGLOBALHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 class ShenandoahGlobalGeneration;
 

@@ -22,19 +22,29 @@
  *
  */
 
-
 #include "classfile/classLoaderData.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/threadLocalAllocBuffer.hpp"
+#include "gc/shared/tlab_globals.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/stackWatermarkKind.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadSMR.hpp"
+
+class ShenandoahNMethod;
+enum class StackWatermarkKind;
 
 ShenandoahJavaThreadsIterator::ShenandoahJavaThreadsIterator(ShenandoahPhaseTimings::Phase phase, uint n_workers) :
   _threads(),

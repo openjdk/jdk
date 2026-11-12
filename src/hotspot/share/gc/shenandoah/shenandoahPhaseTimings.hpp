@@ -30,6 +30,9 @@
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahCollectorPolicy;
 class outputStream;

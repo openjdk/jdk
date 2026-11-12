@@ -28,6 +28,7 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "gc/shenandoah/shenandoahClosures.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"

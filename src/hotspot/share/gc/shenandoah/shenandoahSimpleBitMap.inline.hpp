@@ -27,6 +27,11 @@
 
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
+#include "utilities/count_leading_zeros.hpp"
+#include "utilities/count_trailing_zeros.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 using idx_t = ShenandoahSimpleBitMap::idx_t;
 
 inline uintx ShenandoahSimpleBitMap::tail_mask(uintx bit_number) {

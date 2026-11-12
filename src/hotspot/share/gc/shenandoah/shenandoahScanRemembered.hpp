@@ -143,25 +143,31 @@
 // current implementation of remembered set scanning never clears a
 // card once it has been marked.
 
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
+#include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "nmt/memTag.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-class ShenandoahReferenceProcessor;
+class CardTable;
 class ShenandoahConcurrentMark;
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
-class ShenandoahRegionIterator;
 class ShenandoahMarkingContext;
-
-class CardTable;
+class ShenandoahReferenceProcessor;
+class ShenandoahRegionIterator;
 typedef CardTable::CardValue CardValue;
 
 class ShenandoahDirectCardMarkRememberedSet: public CHeapObj<mtGC> {

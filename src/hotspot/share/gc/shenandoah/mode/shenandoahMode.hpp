@@ -28,6 +28,7 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/java.hpp"
 #include "utilities/formatBuffer.hpp"
 

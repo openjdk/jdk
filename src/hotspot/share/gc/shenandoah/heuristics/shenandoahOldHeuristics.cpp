@@ -24,7 +24,7 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
-#include "gc/shenandoah/shenandoahCollectionSet.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -33,6 +33,7 @@
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/quickSort.hpp"
 
 uint ShenandoahOldHeuristics::NOT_FOUND = -1U;

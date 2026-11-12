@@ -26,11 +26,15 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTORPOLICY_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTORPOLICY_HPP
 
+#include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahHeapRegion;
 class ShenandoahMode;

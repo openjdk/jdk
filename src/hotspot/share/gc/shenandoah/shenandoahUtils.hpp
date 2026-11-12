@@ -27,6 +27,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP
 
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
@@ -35,15 +36,23 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vmOperation.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include <cmath>
 #include <limits>
+
+class GCTracer;
 
 class GCTimer;
 class ShenandoahGeneration;

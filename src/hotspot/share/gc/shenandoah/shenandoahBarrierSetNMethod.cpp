@@ -22,7 +22,7 @@
  *
  */
 
-
+#include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
@@ -39,7 +39,11 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   assert(!ShenandoahGCStateResetter::is_active(), "Resetter must not be active");

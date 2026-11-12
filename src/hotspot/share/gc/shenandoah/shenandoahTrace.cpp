@@ -22,6 +22,7 @@
  *
  */
 
+#include "gc/shared/gcId.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"

@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFULLGC_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFULLGC_HPP
 
+#include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 

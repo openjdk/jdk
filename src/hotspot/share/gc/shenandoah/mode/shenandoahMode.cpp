@@ -28,6 +28,8 @@
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 ShenandoahHeuristics* ShenandoahMode::initialize_heuristics(ShenandoahSpaceInfo* space_info) const {
   if (ShenandoahGCHeuristics == nullptr) {

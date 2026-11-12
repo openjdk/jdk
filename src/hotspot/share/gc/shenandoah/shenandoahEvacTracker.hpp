@@ -27,7 +27,12 @@
 
 #include "gc/shared/ageTable.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+
+class Thread;
 
 class ShenandoahEvacuationStats : public CHeapObj<mtGC> {
 private:

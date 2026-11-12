@@ -25,9 +25,10 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHOLDHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHOLDHEURISTICS_HPP
 
-
+#include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahCollectionSet;
 class ShenandoahHeapRegion;

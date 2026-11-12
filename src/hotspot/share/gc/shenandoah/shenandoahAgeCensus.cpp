@@ -23,9 +23,15 @@
  *
  */
 
-#include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahAgeCensus.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "runtime/java.hpp"
+#include "utilities/formatBuffer.hpp"
 
 ShenandoahAgeCensus::ShenandoahAgeCensus()
   : ShenandoahAgeCensus(ShenandoahHeap::heap()->max_workers())

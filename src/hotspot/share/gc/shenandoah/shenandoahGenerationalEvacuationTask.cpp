@@ -23,14 +23,23 @@
  *
  */
 
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
+#include "memory/iterator.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
 
 class ShenandoahConcurrentEvacuator : public ObjectClosure {
 private:
@@ -132,4 +141,3 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
 
   promote_regions();
 }
-

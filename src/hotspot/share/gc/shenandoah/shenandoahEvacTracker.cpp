@@ -23,12 +23,15 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "runtime/thread.hpp"
+#include "memory/iterator.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 ShenandoahEvacuationStats::ShenandoahEvacuations* ShenandoahEvacuationStats::get_category(
   ShenandoahAffiliation from,

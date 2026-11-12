@@ -24,10 +24,11 @@
  *
  */
 
-
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #include <cfloat>
 #include <cmath>

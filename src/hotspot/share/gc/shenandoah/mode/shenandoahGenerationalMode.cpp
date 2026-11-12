@@ -22,11 +22,10 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
-#include "logging/log.hpp"
-#include "logging/logTag.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 
 void ShenandoahGenerationalMode::initialize_flags() const {

@@ -26,8 +26,14 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "logging/log.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 ShenandoahController::ShenandoahController():
   _gc_id(0),

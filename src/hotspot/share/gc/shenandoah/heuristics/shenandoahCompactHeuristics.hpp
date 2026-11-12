@@ -27,6 +27,7 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 /*
  * This heuristic has simpler triggers than the adaptive heuristic. The

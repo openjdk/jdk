@@ -26,12 +26,13 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALEVACUATIONTASK_HPP
 
 #include "gc/shared/workerThread.hpp"
+#include "utilities/globalDefinitions.hpp"
 
+class ShenandoahCollectionSet;
 class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;
 class ShenandoahHeapRegion;
 class ShenandoahRegionIterator;
-class ShenandoahCollectionSet;
 
 // Unlike ShenandoahEvacuationTask, this iterates over all regions rather than just the collection set.
 // This is needed in order to promote humongous start regions if age() >= tenure threshold.

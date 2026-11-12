@@ -22,6 +22,7 @@
  *
  */
 
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -29,6 +30,7 @@
 #include "gc/shenandoah/shenandoahPLAB.hpp"
 #include "logging/log.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
 
 ShenandoahPLAB::ShenandoahPLAB() :
   _plab(nullptr),

@@ -23,16 +23,22 @@
  *
  */
 
-
 #include "code/relocInfo.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "logging/log.hpp"
+#include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTag.hpp"
+#include "oops/symbol.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "utilities/checkedCast.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm) :
   _nm(nm), _oops(nullptr), _oops_count(0), _patchable_jumps(nullptr), _patchable_jumps_count(0), _unregistered(false), _lock(), _ic_lock() {

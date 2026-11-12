@@ -29,6 +29,7 @@
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "memory/padded.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -37,6 +38,7 @@
 #include "utilities/debug.hpp"
 
 class ShenandoahHeap;
+class ShenandoahMarkTask;
 
 template<class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
 class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, MT, N>

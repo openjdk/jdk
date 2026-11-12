@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHAGGRESSIVEHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 /*
  * This is a diagnostic heuristic that continuously runs collections
