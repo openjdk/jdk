@@ -142,7 +142,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
   _metaspace(nullptr),
   _metaspace_lock(new Mutex(Mutex::nosafepoint-2, "MetaspaceAllocation_lock")),
   _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
-  _modified_oops(true),
+  _has_modified_or_humongous_oops(true),
   // A non-strong hidden class loader data doesn't have anything to keep
   // it from being unloaded during parsing of the non-strong hidden class.
   // The null-class-loader should always be kept alive.
@@ -330,7 +330,7 @@ void ClassLoaderData::demote_strong_roots() {
       ShouldNotReachHere();
     }
   } cl;
-  oops_do(&cl, ClassLoaderData::_claim_none, false /* clear_mod_oops */);
+  oops_do(&cl, ClassLoaderData::_claim_none, false /* should_clear_modified_or_humongous_oops */);
 }
 
 // Non-strong hidden classes have their own ClassLoaderData that is marked to keep alive
@@ -360,10 +360,10 @@ void ClassLoaderData::dec_keep_alive_ref_count() {
   }
 }
 
-void ClassLoaderData::oops_do_slow(OopClosure* f, bool clear_mod_oops) {
-  // Only clear modified_oops after the ClassLoaderData is claimed.
-  if (clear_mod_oops) {
-    clear_modified_oops();
+void ClassLoaderData::oops_do_slow(OopClosure* f, bool should_clear_modified_or_humongous_oops) {
+  // Only clear _has_modified_or_humongous_oops after the ClassLoaderData is claimed.
+  if (should_clear_modified_or_humongous_oops) {
+    clear_modified_or_humongous_oops();
   }
 
   _handles.oops_do(f);
@@ -510,7 +510,7 @@ void ClassLoaderData::record_dependency(const Klass* k) {
     Handle dependency(Thread::current(), to);
     add_handle(dependency);
     // Added a potentially young gen oop to the ClassLoaderData
-    record_modified_oops();
+    record_modified_or_humongous_oops();
   }
 }
 
@@ -841,7 +841,7 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
 
 OopHandle ClassLoaderData::add_handle(Handle h) {
   MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  record_modified_oops();
+  record_modified_or_humongous_oops();
   return _handles.add(h());
 }
 
@@ -859,7 +859,7 @@ void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
   if (dest.resolve() != nullptr) {
     return;
   } else {
-    record_modified_oops();
+    record_modified_or_humongous_oops();
     dest = _handles.add(h());
   }
 }
@@ -1012,23 +1012,23 @@ public:
 void ClassLoaderData::print_on(outputStream* out) const {
   ResourceMark rm;
   out->print_cr("ClassLoaderData(" INTPTR_FORMAT ")", p2i(this));
-  out->print_cr(" - name                %s", loader_name_and_id());
+  out->print_cr(" - name                       %s", loader_name_and_id());
   if (!_holder.is_null()) {
-    out->print   (" - holder              ");
+    out->print   (" - holder                     ");
     _holder.print_on(out);
     out->print_cr("");
   }
   if (!_unloading) {
-    out->print_cr(" - class loader        " INTPTR_FORMAT, p2i(_class_loader.peek()));
+    out->print_cr(" - class loader               " INTPTR_FORMAT, p2i(_class_loader.peek()));
   } else {
-    out->print_cr(" - class loader        <unloading, oop is bad>");
+    out->print_cr(" - class loader               <unloading, oop is bad>");
   }
-  out->print_cr(" - metaspace           " INTPTR_FORMAT, p2i(_metaspace));
-  out->print_cr(" - unloading           %s", _unloading ? "true" : "false");
-  out->print_cr(" - class mirror holder %s", _has_class_mirror_holder ? "true" : "false");
-  out->print_cr(" - modified oops       %s", _modified_oops ? "true" : "false");
-  out->print_cr(" - _keep_alive_ref_count %d", _keep_alive_ref_count);
-  out->print   (" - claim               ");
+  out->print_cr(" - metaspace                  " INTPTR_FORMAT, p2i(_metaspace));
+  out->print_cr(" - unloading                  %s", _unloading ? "true" : "false");
+  out->print_cr(" - class mirror holder        %s", _has_class_mirror_holder ? "true" : "false");
+  out->print_cr(" - modified or humongous oops %s", _has_modified_or_humongous_oops ? "true" : "false");
+  out->print_cr(" - _keep_alive_ref_count      %d", _keep_alive_ref_count);
+  out->print   (" - claim                      ");
   switch(_claim) {
     case _claim_none:                       out->print_cr("none"); break;
     case _claim_finalizable:                out->print_cr("finalizable"); break;
@@ -1040,8 +1040,8 @@ void ClassLoaderData::print_on(outputStream* out) const {
     case _claim_other | _claim_strong:      out->print_cr("other and strong"); break;
     default:                                ShouldNotReachHere();
   }
-  out->print_cr(" - handles             %d", _handles.count());
-  out->print_cr(" - dependency count    %d", _dependency_count);
+  out->print_cr(" - handles                    %d", _handles.count());
+  out->print_cr(" - dependency count           %d", _dependency_count);
   out->print   (" - klasses             { ");
   if (Verbose) {
     PrintKlassClosure closure(out);
@@ -1121,7 +1121,7 @@ void ClassLoaderData::verify() {
 
   // Check the oops in the handles area
   VerifyHandleOops vho;
-  oops_do(&vho, _claim_none, false);
+  oops_do(&vho, _claim_none, false /* should_clear_modified_or_humongous_oops */);
 }
 
 bool ClassLoaderData::contains_klass(Klass* klass) {

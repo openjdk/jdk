@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,9 @@ public:
   //
   // The other values are used for objects in regions requiring various special handling,
   // eager reclamation of humongous objects or optional regions.
-  static const region_type_t Optional     =  -4;    // The region is optional not in the current collection set.
-  static const region_type_t HumongousCandidate    =  -3;    // The region is a humongous candidate not in the current collection set.
+  static const region_type_t HumongousCandidate    =  -5;    // The region is a humongous candidate.
+  static const region_type_t HumongousNonCandidate =  -4;    // The region is a humongous region that is not a candidate.
+  static const region_type_t Optional     =  -3;    // The region is optional not in the current collection set.
   static const region_type_t NewSurvivor  =  -2;    // The region is a new (ly allocated) survivor region.
   static const region_type_t NotInCSet    =  -1;    // The region is not in the collection set.
   static const region_type_t Young        =   0;    // The region is in the collection set and a young region.
@@ -72,8 +73,9 @@ public:
 
   const char* get_type_str() const {
     switch (type()) {
-      case Optional: return "Optional";
       case HumongousCandidate: return "HumongousCandidate";
+      case HumongousNonCandidate: return "Humongous";
+      case Optional: return "Optional";
       case NewSurvivor: return "NewSurvivor";
       case NotInCSet: return "NotInCSet";
       case Young: return "Young";
@@ -82,14 +84,14 @@ public:
     }
   }
 
-  bool is_remset_tracked() const     { return _is_remset_tracked != 0; }
+  bool is_remset_tracked() const       { return _is_remset_tracked != 0; }
 
   bool is_pinned() const               { return _is_pinned != 0; }
 
   void set_old()                       { _type = Old; }
   void clear_humongous_candidate()               {
     assert(is_humongous_candidate() || !is_in_cset(), "must be");
-    _type = NotInCSet;
+    _type = HumongousNonCandidate;
   }
 
   void set_is_remset_tracked(bool value)      { _is_remset_tracked = value ? 1 : 0; }
@@ -98,7 +100,8 @@ public:
   bool is_in_cset_or_humongous_candidate() const { return is_in_cset() || is_humongous_candidate(); }
   bool is_in_cset() const              { return type() >= Young; }
 
-  bool is_humongous_candidate() const            { return type() == HumongousCandidate; }
+  bool is_humongous_candidate() const  { return type() == HumongousCandidate; }
+  bool is_humongous() const            { return type() <= HumongousNonCandidate; }
   bool is_new_survivor() const         { return type() == NewSurvivor; }
   bool is_young() const                { return type() == Young; }
   bool is_old() const                  { return type() == Old; }
@@ -106,7 +109,7 @@ public:
 
 #ifdef ASSERT
   bool is_default() const              { return type() == NotInCSet; }
-  bool is_valid() const                { return (type() >= Optional && type() < Num); }
+  bool is_valid() const                { return (type() >= HumongousCandidate && type() < Num); }
 #endif
 };
 
@@ -114,10 +117,10 @@ public:
 //
 // We use this to speed up reference processing during young collection and
 // quickly reclaim humongous objects. For the latter, at the start of GC, by adding
-// it as a humongous region we enable special handling for that region. During the
-// reference iteration closures, when we see a humongous region, we then simply mark
-// it as referenced, i.e. live, and remove it from this table to prevent further
-// processing on it.
+// it as a humongous candidate we enable special handling for that region.
+// During the reference iteration closures, when we see a humongous region candidate,
+// we then simply mark it as referenced, i.e. live, and change it to a non-humongous
+// candidate to prevent further processing on it.
 //
 // This means that this does NOT completely correspond to the information stored
 // in a G1HeapRegion, but only to what is interesting for the current young collection.
@@ -145,6 +148,12 @@ class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegio
     // Humongous candidates can not be pinned.
     const bool region_is_pinned = false;
     set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::HumongousCandidate, is_remset_tracked, region_is_pinned));
+  }
+
+  void set_humongous_non_candidate(uintptr_t index, bool is_remset_tracked, bool region_is_pinned) {
+    assert(get_by_index(index).is_default(),
+           "Region attributes at index " INTPTR_FORMAT " should be default but is %s", index, get_by_index(index).get_type_str());
+    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::HumongousNonCandidate, is_remset_tracked, region_is_pinned));
   }
 
   void clear_humongous_candidate(uintptr_t index) {

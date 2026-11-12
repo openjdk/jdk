@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,10 @@ class ClassLoaderData : public CHeapObj<mtClass> {
                                  // to these class loader data.
 
   // Remembered sets support for the oops in the class loader data.
-  bool _modified_oops;     // Card Table Equivalent
+  // The CLDs are not placed in the Java heap, so the Card Table can't be used to mark when
+  // CLDs were modified. In addition to that, G1's eager reclaim mechanism also requires
+  // checking if the CLD contains oops to humongous objects.
+  bool _has_modified_or_humongous_oops;     // Card Table Equivalent
 
   int _keep_alive_ref_count; // if this CLD should not be considered eligible for unloading.
                              // Used for non-strong hidden classes and the
@@ -190,13 +193,10 @@ public:
   void unload();
 
 private:
-  // The CLD are not placed in the Heap, so the Card Table or
-  // the Mod Union Table can't be used to mark when CLD have modified oops.
-  // The CT and MUT bits saves this information for the whole class loader data.
-  void clear_modified_oops()             { _modified_oops = false; }
+  void clear_modified_or_humongous_oops()      { _has_modified_or_humongous_oops = false; }
  public:
-  void record_modified_oops()            { _modified_oops = true; }
-  bool has_modified_oops()               { return _modified_oops; }
+  void record_modified_or_humongous_oops() { _has_modified_or_humongous_oops = true; }
+  bool has_modified_or_humongous_oops()        { return _has_modified_or_humongous_oops; }
 
   oop holder_no_keepalive() const;
   // Resolving the holder keeps this CLD alive for the current GC cycle.
@@ -306,8 +306,8 @@ private:
 
   void initialize_holder(Handle holder);
 
-  inline void oops_do(OopClosure* f, int claim_value, bool clear_modified_oops = false);
-  void oops_do_slow(OopClosure* f, bool clear_modified_oops);
+  inline void oops_do(OopClosure* f, int claim_value, bool should_clear_modified_or_humongous_oops = false);
+  void oops_do_slow(OopClosure* f, bool should_clear_modified_or_humongous_oops);
 
   void classes_do(KlassClosure* klass_closure);
   Klass* klasses() { return _klasses; }

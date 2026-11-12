@@ -211,7 +211,13 @@ inline void G1ScanRSForOptionalClosure::do_oop_work(T* p) {
 
 void G1ParCopyHelper::do_cld_barrier(oop new_obj) {
   if (_g1h->heap_region_containing(new_obj)->is_young()) {
-    _scanned_cld->record_modified_oops();
+    _scanned_cld->record_modified_or_humongous_oops();
+  }
+}
+
+void G1ParCopyHelper::do_cld_barrier_non_cset(G1HeapRegionAttr attr) {
+  if (attr.is_humongous()) {
+    _scanned_cld->record_modified_or_humongous_oops();
   }
 }
 
@@ -255,6 +261,9 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
       do_cld_barrier(forwardee);
     }
   } else {
+    if (barrier == G1BarrierCLD) {
+      do_cld_barrier_non_cset(state);
+    }
     if (state.is_humongous_candidate()) {
       _g1h->set_humongous_is_live(obj);
     } else if ((barrier != G1BarrierNoOptRoots) && state.is_optional()) {
