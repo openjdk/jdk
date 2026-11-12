@@ -28,9 +28,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @requires vm.compiler1.enabled & vm.flagless
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ${test.main.class}
+ * @run driver ${test.main.class}
  */
 
 package compiler.c1;
@@ -40,11 +38,9 @@ import jdk.internal.misc.Unsafe;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
-import jdk.test.whitebox.WhiteBox;
 
 public class TestMemoryEffects {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
         TestFramework tf = new TestFramework();
@@ -93,6 +89,7 @@ public class TestMemoryEffects {
         int value;
         volatile int sync;
         volatile boolean start;
+        volatile int next;
         volatile boolean stop;
     }
 
@@ -107,11 +104,17 @@ public class TestMemoryEffects {
             Thread writer = new Thread(() -> {
                 int counter = 1;
                 box.start = true;
+                int last = box.next;
                 while (!box.stop) {
+                    last = box.next;
+                    box.sync = counter++;
                     box.value = 42;
                     // Make the non-volatile write above visible with a release-acquire handshake by
                     // writing and reading the same volatile field.
                     box.sync = counter++;
+                    while (!box.stop && last == box.next) {
+                        Thread.onSpinWait();
+                    }
                 }
             });
 
@@ -120,30 +123,51 @@ public class TestMemoryEffects {
                 Thread.onSpinWait();
             }
 
+            // Count number of successful handshakes where the value is wrong.
+            // A conservative estimate for the test failing due to reordering
+            // is 9/20. With 200 handshakes the probability of the test randomly
+            // is about 10E-200.
+            final int maxHandshakes = 200;
+            int successfulHandshakes = 0;
+            // Limit the number of attempts to check if the test is still working.
+            final int maxAttempts = 50_000;
+            int attempts = 1;
             try {
-                for (int attempts = 1; attempts <= 500; attempts++) {
+                for (; attempts <= maxAttempts && successfulHandshakes < maxHandshakes; attempts++) {
                     VolatileTestResults results = null;
                     try {
                         results = (VolatileTestResults)info.getTest(testName).invoke(null, box, 0xcafe);
                     } catch (Exception e) { /* make javac happy */ }
-                    // The release-acquire handshake worked if before and after are not the same.
-                    if (results.before != results.after) {
+                    // The release-acquire handshake worked if before and after
+                    // are different by 2 and both even.
+                    final int steps = results.after - results.before;
+                    if (Integer.compareUnsigned(steps, 2) == 0 &&
+                        (results.before & 1) == 0 && (results.after & 1) == 0) {
+                        if (results.value != 42) {
+                            successfulHandshakes++;
+                            continue;
+                        }
+                        // If we reach here, the test has passed.
                         box.stop = true;
                         writer.join();
-                        Asserts.assertEQ(42, results.value, "wrong execution for testVolatileLoad:");
-                        // If we reach here, the test has passed.
                         return;
                     }
                 }
                 box.stop = true;
                 writer.join();
             } catch (InterruptedException e) { /* make javac happy */ }
-            throw new RuntimeException("The handshake for testVolatileLoad did not work.");
+            if (attempts >= 50_000 && successfulHandshakes < 200) {
+                throw new RuntimeException("The handshake for testVolatileLoad did not work.");
+            } else {
+                throw new RuntimeException("Wrong execution for " + testName);
+            }
         });
     }
 
     @Test(compLevel = CompLevel.C1_SIMPLE)
     static VolatileTestResults testVolatileLoad(BoxWithVolatiles box, int delay) {
+        // Start another round in the writer.
+        box.next++;
         box.value = 0; // Establish fact in C1 MemoryBuffer.
         // The test depends on the write above not getting reordered below the read below. C1 emits instructions
         // inside a block in source order, so this works. C2, however, moves anything not nailed down, which is
@@ -368,6 +392,8 @@ public class TestMemoryEffects {
     static VolatileTestResults testUnsafeVolatileLoad(BoxWithVolatiles box, int delay) throws NoSuchFieldException {
         long syncOffset = UNSAFE.objectFieldOffset(BoxWithVolatiles.class.getDeclaredField("sync"));
 
+        // Start another round in the writer.
+        box.next++;
         box.value = 0; // Establish fact in C1 MemoryBuffer.
         // The test depends on the write above not getting reordered below the read below. C1 emits instructions
         // inside a block in source order, so this works. C2, however, moves anything not nailed down, which is
