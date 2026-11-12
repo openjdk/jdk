@@ -1640,7 +1640,7 @@ bool LibraryCallKit::inline_string_toBytesU() {
     // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
     const char* copyfunc_name = "arraycopy";
     address     copyfunc_addr = StubRoutines::select_arraycopy_function(T_CHAR, aligned, true, copyfunc_name, true);
-    Node* call = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
+    Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
                       OptoRuntime::fast_arraycopy_Type(),
                       copyfunc_addr, copyfunc_name, TypeRawPtr::BOTTOM,
                       src_start, dst_start, ConvI2X(length) XTOP);
@@ -1719,7 +1719,7 @@ bool LibraryCallKit::inline_string_getCharsU() {
   // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
   const char* copyfunc_name = "arraycopy";
   address     copyfunc_addr = StubRoutines::select_arraycopy_function(T_CHAR, aligned, true, copyfunc_name, true);
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
                     OptoRuntime::fast_arraycopy_Type(),
                     copyfunc_addr, copyfunc_name, TypeRawPtr::BOTTOM,
                     src_start, dst_start, ConvI2X(length) XTOP);
@@ -6127,7 +6127,7 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   // update volatile field
   store_to_memory(control(), doing_unsafe_access_addr, intcon(1), doing_unsafe_access_bt, MemNode::unordered);
 
-  int flags = RC_LEAF | RC_NO_FP | RC_NO_EGPRS;
+  int flags = RC_LEAF | RC_NO_FP;
 
   const TypePtr* dst_type = TypePtr::BOTTOM;
 
