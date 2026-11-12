@@ -17,7 +17,7 @@ Update src/java.desktop/share/legal/lcms.md per the current license/copyrights/a
 
 Build on all platforms.
 If there are compiler warnings causing build failures, update the disabled warnings in
-make/modules/java.desktop/lib/Awt2dLibraries.gmk
+make/modules/java.desktop/lib/ClientLibraries.gmk
 Run all automated client tests on all platforms.
 Also run J2Ddemo and pay particular attention to the "color" tab.
 Visually verify the color transforms against the same with the current/previous JDK
