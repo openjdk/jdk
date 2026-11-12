@@ -223,6 +223,7 @@ PhaseOutput::PhaseOutput()
     _node_bundling_limit(0),
     _node_bundling_base(nullptr),
     _orig_pc_slot_offset_in_bytes(0),
+    _java_callees(nullptr),
     _buf_sizes(),
     _block(nullptr),
     _index(0) {
@@ -507,21 +508,24 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
         MachNode* mach = nj->as_Mach();
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
         reloc_size += mach->reloc();
+        // CallStubImpl reserves space and relocations in the stub section for
+        // per-call trampolines (AArch64/PPC) or address stubs (RISC-V).
+        // To-interpreter stubs are accounted for separately below.
         if (mach->is_MachUncommonTrap()) {
-          // add size information for trampoline stub
+          // Add size information for call stub.
           // class CallStubImpl is platform-specific and defined in the *.ad files.
-          stub_size  += CallStubImpl::size_call_trampoline();
-          reloc_size += CallStubImpl::reloc_call_trampoline();
+          stub_size  += CallStubImpl::size_call_stub();
+          reloc_size += CallStubImpl::reloc_call_stub();
 
           // No nop is needed to disambiguate from another safepoint.
           assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0 &&
                  (uint)mach->as_MachUncommonTrap()->ret_addr_offset() < mach->size(C->regalloc()),
                  "Safepoint address should be offset from the first instruction and should not point after the node");
         } else if (mach->is_MachCall()) {
-          // add size information for trampoline stub
+          // Add size information for call stub.
           // class CallStubImpl is platform-specific and defined in the *.ad files.
-          stub_size  += CallStubImpl::size_call_trampoline();
-          reloc_size += CallStubImpl::reloc_call_trampoline();
+          stub_size  += CallStubImpl::size_call_stub();
+          reloc_size += CallStubImpl::reloc_call_stub();
 
           MachCallNode *mcall = mach->as_MachCall();
           // This destination address is NOT PC-relative
@@ -762,13 +766,11 @@ static jint array_description_value(const TypeAryPtr* ary_type) {
       .with_null_restricted(is_element_value && array_klass->is_elem_null_free())
       .with_non_atomic(is_element_value && !array_klass->is_elem_atomic());
 
-  LayoutKind layout_kind = LayoutKind::REFERENCE;
-  Klass::KlassKind kind = Klass::RefArrayKlassKind;
   if (ary_type->is_flat()) {
-    layout_kind = array_klass->as_flat_array_klass()->layout_kind();
-    kind = Klass::FlatArrayKlassKind;
+    return (jint)ArrayDescription::flat(properties, array_klass->as_flat_array_klass()->flat_layout()).value();
+  } else {
+    return (jint)ArrayDescription::reference(properties).value();
   }
-  return (jint)ArrayDescription(kind, properties, layout_kind).value();
 }
 
 
@@ -1511,6 +1513,13 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
   uint* jmp_rule   = NEW_RESOURCE_ARRAY(uint,nblocks);
 #endif
 
+#if INCLUDE_CDS
+  VectorSet callee_visited;
+  if (C->is_aot_compile() && ValueTypePassFieldsAsArgs) {
+    _java_callees = new(C->comp_arena()) GrowableArray<ciMethod*>(C->comp_arena(), 8, 0, nullptr);
+  }
+#endif
+
   // Create an array of unused labels, one for each basic block, if printing is enabled
 #if defined(SUPPORT_OPTO_ASSEMBLY)
   int* node_offsets      = nullptr;
@@ -1598,6 +1607,18 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
           current_offset = masm->offset();
         }
 
+#if INCLUDE_CDS
+        // Record callees for AOT code when Valhalla is enabled
+        // to cache their fingerprint which are verified when
+        // AOT code is loaded in production run.
+        if (C->is_aot_compile() && ValueTypePassFieldsAsArgs &&
+            mach->is_MachCallJava() && mach->as_MachCallJava()->_method != nullptr) {
+          ciMethod* m = mach->as_MachCallJava()->_method;
+          if (!callee_visited.test_set(m->ident())) {
+            _java_callees->append(m);
+          }
+        }
+#endif
         // align the instruction if necessary
         int padding = mach->compute_padding(current_offset);
         // Make sure safepoint node for polling is distinct from a call's
@@ -3374,6 +3395,7 @@ void PhaseOutput::install_code(ciMethod*         target,
                               _oop_map_set,
                               &_handler_table,
                               inc_table(),
+                              _java_callees,
                               compiler,
                               C->has_clinit_barriers(),
                               C->for_aot_preload(),

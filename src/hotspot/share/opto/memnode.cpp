@@ -497,6 +497,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
     Node* frame = igvn->transform(new ParmNode(phase->C->start(), TypeFunc::FramePtr));
     Node* halt = igvn->transform(new HaltNode(ctl, frame, "unsafe off-heap access with zero address"));
     phase->C->root()->add_req(halt);
+    igvn->_worklist.push(phase->C->root());
     return this;
   }
 
@@ -2419,8 +2420,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     const TypeInstPtr* tinst = tp->is_instptr();
     BasicType bt = value_basic_type();
 
-    // Fold loads of the field map
-    if (tinst != nullptr) {
+    // Fold the field map loads only when stable folding is enabled
+    if (FoldStableValues && tinst != nullptr) {
       ciInstanceKlass* ik = tinst->instance_klass();
       int offset = tinst->offset();
       if (ik == phase->C->env()->Class_klass()) {
@@ -2496,7 +2497,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
       }
       if (klass->is_flat_array_klass() && tkls->offset() == in_bytes(FlatArrayKlass::layout_kind_offset())) {
         assert(Opcode() == Op_LoadI, "must load an int from _layout_kind");
-        return TypeInt::make(static_cast<jint>(klass->as_flat_array_klass()->layout_kind()));
+        return TypeInt::make(static_cast<jint>(klass->as_flat_array_klass()->flat_layout().layout_kind()));
       }
       // Class encoding and some class's values may change between runs.
       // Force loading them when AOT code is generated.
@@ -5238,7 +5239,8 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool 
   }
   Node* adr = st->in(MemNode::Address);
   intptr_t offset;
-  AllocateNode* alloc = AllocateNode::Ideal_allocation(adr, phase, offset);
+  Node* base = AddPNode::Ideal_base_and_offset(adr, phase, offset);
+  AllocateNode* alloc = AllocateNode::Ideal_allocation(base);
   if (alloc == nullptr)
     return FAIL;                // inscrutable address
   if (alloc != allocation())
@@ -5303,25 +5305,19 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool 
               int other_alias_idx = phase->C->get_alias_index(other_t_adr);
               if (other_alias_idx == alias_idx) {
                 // A load from the same memory slice as the store right
-                // after the InitializeNode. We check the control of the
-                // object/array that is loaded from. If it's the same as
-                // the store control then we cannot capture the store.
+                // after the InitializeNode. We try to prove that pointers
+                // are independent. If not, we don't capture.
                 assert(!n->is_Store(), "2 stores to same slice on same control?");
-                Node* base = other_adr;
-                if (base->is_Phi()) {
-                  // In rare case, base may be a PhiNode and it may read
-                  // the same memory slice between InitializeNode and store.
+                intptr_t _other_offset;
+                Node* other_base = AddPNode::Ideal_base_and_offset(other_adr, phase, _other_offset);
+                if (other_base == nullptr) {
                   failed = true;
                   break;
                 }
-                assert(base->is_AddP(), "should be addp but is %s", base->Name());
-                base = base->in(AddPNode::Base);
-                if (base != nullptr) {
-                  base = base->uncast();
-                  if (base->is_Proj() && base->in(0) == alloc) {
-                    failed = true;
-                    break;
-                  }
+                AllocateNode* other_alloc = AllocateNode::Ideal_allocation(other_base);
+                if (!MemNode::detect_ptr_independence(base, alloc, other_base, other_alloc, phase)) {
+                  failed = true;
+                  break;
                 }
               }
             }
