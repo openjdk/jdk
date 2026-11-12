@@ -145,24 +145,16 @@ inline T riscv_amocas(T volatile* dest, T compare_value, T exchange_value,
   }
 }
 
-#ifndef FULL_COMPILER_ATOMIC_SUPPORT
-template<>
 template<typename T>
-inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribute__((unused)),
-                                                      T compare_value,
-                                                      T exchange_value,
-                                                      atomic_memory_order order) const {
+inline T riscv_cmpxchg_byte_fallback(T volatile* dest __attribute__((unused)),
+                                    T compare_value, T exchange_value,
+                                    atomic_memory_order order) {
   static_assert(1 == sizeof(T));
-
-  const VM_Version::AtomicCasMode cas_mode = VM_Version::atomic_cas_mode();
-  if (cas_mode == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
-    return riscv_amocas<1>(dest, compare_value, exchange_value, order);
-  }
-
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
   }
 
+#ifndef FULL_COMPILER_ATOMIC_SUPPORT
   uint32_t volatile* aligned_dst = (uint32_t volatile*)(((uintptr_t)dest) & (~((uintptr_t)0x3)));
   int shift = 8 * (((uintptr_t)dest) - ((uintptr_t)aligned_dst)); // 0, 8, 16, 24
 
@@ -188,11 +180,30 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribu
     : /*%3*/"r" (w_cv), /*%4*/"r" (w_ev), /*%5*/"r" (mask), /*%6*/"r" (remask)
     : "memory" );
 
+  T result = (T)((old_value & mask) >> shift);
+#else
+  __atomic_compare_exchange(dest, &compare_value, &exchange_value, /* weak */ false,
+                            __ATOMIC_RELAXED, __ATOMIC_RELAXED);
+  T result = compare_value;
+#endif
+
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
   }
+  return result;
+}
 
-  return (T)((old_value & mask) >> shift);
+#ifndef FULL_COMPILER_ATOMIC_SUPPORT
+template<>
+template<typename T>
+inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
+  if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
+    return riscv_amocas<1>(dest, compare_value, exchange_value, order);
+  }
+  return riscv_cmpxchg_byte_fallback(dest, compare_value, exchange_value, order);
 }
 #endif
 
@@ -239,45 +250,6 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribu
 }
 #endif
 
-
-// __attribute__((unused)) on dest is to get rid of spurious GCC warnings.
-template<size_t byte_size>
-template<typename T>
-inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attribute__((unused)),
-                                                              T compare_value,
-                                                              T exchange_value,
-                                                              atomic_memory_order order) const {
-
-#ifndef FULL_COMPILER_ATOMIC_SUPPORT
-  static_assert(byte_size > 4);
-#endif
-
-  static_assert(byte_size == sizeof(T));
-  if constexpr (byte_size == 1) {
-    const VM_Version::AtomicCasMode cas_mode = VM_Version::atomic_cas_mode();
-    if (cas_mode == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
-      return riscv_amocas<1>(dest, compare_value, exchange_value, order);
-    }
-  } else if constexpr (byte_size == 4 || byte_size == 8) {
-    const VM_Version::AtomicCasMode cas_mode = VM_Version::atomic_cas_mode();
-    if (cas_mode != VM_Version::AtomicCasMode::BASELINE) {
-      return riscv_amocas<byte_size>(dest, compare_value, exchange_value, order);
-    }
-  }
-
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
-  }
-
-  __atomic_compare_exchange(dest, &compare_value, &exchange_value, /* weak */ false,
-                            __ATOMIC_RELAXED, __ATOMIC_RELAXED);
-
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
-  }
-  return compare_value;
-}
-
 template<>
 struct AtomicAccess::PlatformXchg<1> : AtomicAccess::XchgUsingCmpxchg<1> {};
 
@@ -306,6 +278,45 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
                           : "memory");
   }
   return old_value;
+}
+
+// __attribute__((unused)) on dest is to get rid of spurious GCC warnings.
+template<size_t byte_size>
+template<typename T>
+inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attribute__((unused)),
+                                                              T compare_value,
+                                                              T exchange_value,
+                                                              atomic_memory_order order) const {
+
+#ifndef FULL_COMPILER_ATOMIC_SUPPORT
+  static_assert(byte_size > 4);
+#endif
+
+  static_assert(byte_size == sizeof(T));
+  if constexpr (byte_size == 1) {
+    const VM_Version::AtomicCasMode cas_mode = VM_Version::atomic_cas_mode();
+    if (cas_mode == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
+      return riscv_amocas<1>(dest, compare_value, exchange_value, order);
+    }
+    return riscv_cmpxchg_byte_fallback(dest, compare_value, exchange_value, order);
+  } else if constexpr (byte_size == 4 || byte_size == 8) {
+    const VM_Version::AtomicCasMode cas_mode = VM_Version::atomic_cas_mode();
+    if (cas_mode != VM_Version::AtomicCasMode::BASELINE) {
+      return riscv_amocas<byte_size>(dest, compare_value, exchange_value, order);
+    }
+  }
+
+  if (order != memory_order_relaxed) {
+    FULL_MEM_BARRIER;
+  }
+
+  __atomic_compare_exchange(dest, &compare_value, &exchange_value, /* weak */ false,
+                            __ATOMIC_RELAXED, __ATOMIC_RELAXED);
+
+  if (order != memory_order_relaxed) {
+    FULL_MEM_BARRIER;
+  }
+  return compare_value;
 }
 
 // Use AMOs rather than a cmpxchg loop for word-sized bitwise operations.
@@ -384,8 +395,6 @@ public:
   }
 };
 
-// Use Zabha byte AMOs when both Zacas and Zabha are enabled. Before CPU
-// feature initialization, retain the cmpxchg-based fallback.
 template<int funct5, typename T>
 inline T riscv_amo_bitop_byte(T volatile* dest, T bits, atomic_memory_order order) {
   static_assert(sizeof(T) == 1);
@@ -405,16 +414,31 @@ inline T riscv_amo_bitop_byte(T volatile* dest, T bits, atomic_memory_order orde
 }
 
 template<>
-class AtomicAccess::PlatformBitops<1, true>
-  : public PrefetchBitopsUsingCmpxchg,
-    public PostfetchBitopsUsingPrefetch {
+class AtomicAccess::PlatformBitops<1, true> {
+  template<bool return_new, typename T, typename Op>
+  T bitop_fallback(T volatile* dest, atomic_memory_order order, Op operation) const {
+    T fetched_value = AtomicAccess::load(dest);
+    T old_value;
+    T new_value;
+    do {
+      old_value = fetched_value;
+      new_value = operation(old_value);
+      fetched_value = riscv_cmpxchg_byte_fallback(dest, old_value, new_value, order);
+    } while (old_value != fetched_value);
+    if constexpr (return_new) {
+      return new_value;
+    } else {
+      return fetched_value;
+    }
+  }
+
 public:
   template<typename T>
   T fetch_then_and(T volatile* dest, T bits, atomic_memory_order order) const {
     if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
       return riscv_amo_bitop_byte<0b01100>(dest, bits, order);
     }
-    return PrefetchBitopsUsingCmpxchg::fetch_then_and(dest, bits, order);
+    return bitop_fallback<false>(dest, order, [&](T value) -> T { return value & bits; });
   }
 
   template<typename T>
@@ -422,7 +446,7 @@ public:
     if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
       return riscv_amo_bitop_byte<0b01000>(dest, bits, order);
     }
-    return PrefetchBitopsUsingCmpxchg::fetch_then_or(dest, bits, order);
+    return bitop_fallback<false>(dest, order, [&](T value) -> T { return value | bits; });
   }
 
   template<typename T>
@@ -430,7 +454,31 @@ public:
     if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
       return riscv_amo_bitop_byte<0b00100>(dest, bits, order);
     }
-    return PrefetchBitopsUsingCmpxchg::fetch_then_xor(dest, bits, order);
+    return bitop_fallback<false>(dest, order, [&](T value) -> T { return value ^ bits; });
+  }
+
+  template<typename T>
+  T and_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
+    if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
+      return riscv_amo_bitop_byte<0b01100>(dest, bits, order) & bits;
+    }
+    return bitop_fallback<true>(dest, order, [&](T value) -> T { return value & bits; });
+  }
+
+  template<typename T>
+  T or_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
+    if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
+      return riscv_amo_bitop_byte<0b01000>(dest, bits, order) | bits;
+    }
+    return bitop_fallback<true>(dest, order, [&](T value) -> T { return value | bits; });
+  }
+
+  template<typename T>
+  T xor_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
+    if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
+      return riscv_amo_bitop_byte<0b00100>(dest, bits, order) ^ bits;
+    }
+    return bitop_fallback<true>(dest, order, [&](T value) -> T { return value ^ bits; });
   }
 };
 
