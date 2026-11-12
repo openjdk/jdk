@@ -28,10 +28,10 @@ package jdk.internal.net.http.frame;
 
 public class MalformedFrame extends Http2Frame {
 
+    // if streamid() == 0 means Connection Error; RFC 7540 5.4.1
+    // if streamid() != 0 means Stream Error; RFC 7540 5.4.2
+
     private int errorCode;
-    // if errorStream == 0 means Connection Error; RFC 7540 5.4.1
-    // if errorStream != 0 means Stream Error; RFC 7540 5.4.2
-    private int errorStream;
     private String msg;
 
     /**
@@ -50,16 +50,15 @@ public class MalformedFrame extends Http2Frame {
      * @param msg - internal debug message
      */
     public MalformedFrame(int errorCode, int errorStream, String msg) {
-        super(0, 0);
+        super(errorStream, 0);
         this.errorCode = errorCode;
-        this.errorStream = errorStream;
         this.msg = msg;
     }
 
     @Override
     public String toString() {
         return super.toString() + " MalformedFrame, Error: " + ErrorFrame.stringForCode(errorCode)
-                + " errorStream: " + errorStream + " reason: " + msg;
+                + " reason: " + msg;
     }
 
     public int getErrorCode() {
@@ -70,11 +69,7 @@ public class MalformedFrame extends Http2Frame {
         return msg;
     }
 
-    public int getErrorStream() {
-        return errorStream;
-    }
-
     public boolean isConnectionError() {
-        return errorStream == 0;
+        return streamid() == 0;
     }
 }

@@ -268,16 +268,11 @@ public class FramesDecoder {
         while (bytecount > 0) {
             int remaining = currentBuffer.remaining();
             int extract = Math.min(remaining, bytecount);
-            ByteBuffer extractedBuf;
+            ByteBuffer extractedBuf = Utils.sliceWithLimitedCapacity(currentBuffer, extract);
             if (isDataFrame) {
-                extractedBuf = Utils.sliceWithLimitedCapacity(currentBuffer, extract)
-                                    .asReadOnlyBuffer();
-            } else {
-                // Header frames here
-                // HPACK decoding should performed under lock and immediately after frame decoding.
-                // in that case it is safe to release original buffer,
-                // because of sliced buffer has a very short life
-                extractedBuf = Utils.sliceWithLimitedCapacity(currentBuffer, extract);
+                // HttpResponse.BodySubscriber implementation note indicates that
+                // "data containing the response body is immutable".
+                extractedBuf = extractedBuf.asReadOnlyBuffer();
             }
             res.add(extractedBuf);
             bytecount -= extract;
@@ -550,13 +545,11 @@ public class FramesDecoder {
 
     private Http2Frame parseAltSvcFrame(int frameLength, int frameStreamid, int frameFlags) {
         if (frameLength < 2) {
-            skipBytes(frameLength);
             return new MalformedFrame(ErrorFrame.FRAME_SIZE_ERROR,
                     "AltSvcFrame length is " + frameLength + ", should be >= 2");
         }
         var len = getShort();
         if (len > frameLength - 2) {
-            skipBytes(frameLength - 2);
             return new MalformedFrame(ErrorFrame.FRAME_SIZE_ERROR,
                     "AltSvcFrame origin length " + len + " > payload");
         }

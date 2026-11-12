@@ -943,12 +943,11 @@ class Http2Connection implements Closeable {
         Log.logFrames(frame, "IN");
         if (frame instanceof MalformedFrame malformedFrame) {
             Log.logError(malformedFrame.getMessage());
-            int errorStream = malformedFrame.getErrorStream();
-            if (errorStream == 0) {
-                framesDecoder.close("Malformed frame on stream 0");
+            if (malformedFrame.isConnectionError()) {
                 protocolError(malformedFrame.getErrorCode(),
                         malformedFrame.getMessage());
             } else {
+                int errorStream = malformedFrame.streamid();
                 Stream<?> stream = getStream(errorStream);
                 if (stream != null && !stream.isTerminalState()) {
                     if (debug.on())

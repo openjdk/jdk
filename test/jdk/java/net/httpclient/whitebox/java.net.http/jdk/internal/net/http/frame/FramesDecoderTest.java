@@ -179,7 +179,7 @@ public class FramesDecoderTest {
         assertEquals(2, frames.size(), frames.toString());
         MalformedFrame malformedFrame = assertInstanceOf(MalformedFrame.class, frames.get(0));
         assertEquals(ErrorFrame.FRAME_SIZE_ERROR, malformedFrame.getErrorCode());
-        assertEquals(3, malformedFrame.getErrorStream());
+        assertEquals(3, malformedFrame.streamid());
         assertFalse(malformedFrame.isConnectionError());
         assertInstanceOf(PingFrame.class, frames.get(1));
     }
