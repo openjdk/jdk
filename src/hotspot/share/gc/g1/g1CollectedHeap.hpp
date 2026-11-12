@@ -91,7 +91,6 @@ class WorkerThreads;
 typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
 
-typedef int RegionIdx_t;   // needs to hold [ 0..max_num_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
 
 // The G1 STW is alive closure.
@@ -156,6 +155,8 @@ class G1CollectedHeap : public CollectedHeap {
   friend class VMStructs;
 
 private:
+  // Maximum number of regions in the heap.
+  static const size_t MaxNumRegions = INT_MAX;
   // GC Overhead Limit functionality related members.
   //
   // The goal is to return null for allocations prematurely (before really going

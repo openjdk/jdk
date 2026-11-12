@@ -95,14 +95,14 @@ class G1HeapRegionManager: public CHeapObj<mtGC> {
   void initialize_regions(uint start, uint num_regions);
 
   // Find a contiguous set of free active, pending uncommit or uncommitted regions of length num_regions and return
-  // the index of the first region or G1_NO_HRM_INDEX if the search was unsuccessful.
+  // the index of the first region or G1HeapRegion::NoRegionIdx if the search was unsuccessful.
   // Start and end defines the range to seek in, policy is first-fit.
   uint find_contiguous_in_range(uint start, uint end, uint num_regions);
   // Find a contiguous set of empty regions of length num_regions. Returns the start index
-  // of that set, or G1_NO_HRM_INDEX.
+  // of that set, or G1HeapRegion::NoRegionIdx.
   uint find_contiguous_in_free_list(uint num_regions);
   // Find a contiguous set of empty or unavailable regions of length num_regions. Returns the
-  // start index of that set, or G1_NO_HRM_INDEX.
+  // start index of that set, or G1HeapRegion::NoRegionIdx.
   uint find_contiguous_allow_expand(uint num_regions);
 
   void assert_contiguous_range(uint start, uint num_regions) NOT_DEBUG_RETURN;
