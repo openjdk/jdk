@@ -1511,7 +1511,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   // regardless of usage and escape/replaceable status.
   bool value_type_alloc = tklass->isa_instklassptr() &&
                           tklass->is_instklassptr()->instance_klass()->is_value_klass();
-  if (!alloc->_is_non_escaping && !value_type_alloc) {
+  if (!alloc->is_non_escaping() && !value_type_alloc) {
     return false;
   }
   // Eliminate boxing allocations which are not used
@@ -1520,7 +1520,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   bool boxing_alloc = (res == nullptr) && C->eliminate_boxing() &&
                       tklass->isa_instklassptr() &&
                       tklass->is_instklassptr()->instance_klass()->is_box_klass();
-  if (!alloc->_is_scalar_replaceable && !boxing_alloc && !value_type_alloc) {
+  if (!alloc->is_scalar_replaceable() && !boxing_alloc && !value_type_alloc) {
     return false;
   }
 
@@ -1531,7 +1531,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     return false;
   }
 
-  if (!alloc->_is_scalar_replaceable) {
+  if (!alloc->is_scalar_replaceable()) {
     assert(res == nullptr || value_type_alloc, "sanity");
     // We can only eliminate allocation if all debug info references
     // are already replaced with SafePointScalarObject because

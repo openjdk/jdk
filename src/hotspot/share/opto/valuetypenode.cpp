@@ -33,6 +33,7 @@
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/escape.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/memnode.hpp"
 #include "opto/movenode.hpp"
@@ -1376,7 +1377,20 @@ ValueTypeNode* ValueTypeNode::allocate_fields(GraphKit* kit) {
 }
 
 // Replace a buffer allocation by a dominating allocation
-static void replace_allocation(PhaseIterGVN* igvn, Node* res, Node* dom) {
+static bool replace_allocation(PhaseIterGVN* igvn, Node* res, Node* dom) {
+  // Replace the buffer allocation only if the dominating allocation's escape
+  // state is equal to or worse than the replaced allocation's. Otherwise,
+  // the replacement worsens the escape state of the dominating allocation (due
+  // to its now extended lifetime), breaks escape state monotonicity (see
+  // AllocateNode::set_escape_state), and could subsequently invalidate earlier
+  // optimizations that depend on the dominating allocation's more permissive
+  // previous escape state.
+  AllocateNode* alloc_res = AllocateNode::Ideal_allocation(res);
+  AllocateNode* alloc_dom = AllocateNode::Ideal_allocation(dom);
+  if (alloc_res == nullptr || alloc_dom == nullptr ||
+      alloc_res->escape_state() > alloc_dom->escape_state()) {
+    return false;
+  }
   // Remove initializing stores and GC barriers
   for (DUIterator_Fast imax, i = res->fast_outs(imax); i < imax; i++) {
     Node* use = res->fast_out(i);
@@ -1401,6 +1415,7 @@ static void replace_allocation(PhaseIterGVN* igvn, Node* res, Node* dom) {
     }
   }
   igvn->replace_node(res, dom);
+  return true;
 }
 
 Node* ValueTypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1446,12 +1461,11 @@ Node* ValueTypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       // but later decide to inline the call after the callee code also triggered allocation.
       for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
         AllocateNode* alloc = fast_out(i)->isa_Allocate();
-        if (alloc != nullptr && alloc->in(AllocateNode::ValueType) == this && !alloc->_is_scalar_replaceable) {
+        if (alloc != nullptr && alloc->in(AllocateNode::ValueType) == this && !alloc->is_scalar_replaceable()) {
           // Found a re-allocation
           Node* res = alloc->result_cast();
-          if (res != nullptr && res->is_CheckCastPP()) {
+          if (res != nullptr && res->is_CheckCastPP() && replace_allocation(igvn, res, oop)) {
             // Replace allocation by oop and unlink AllocateNode
-            replace_allocation(igvn, res, oop);
             igvn->replace_input_of(alloc, AllocateNode::ValueType, igvn->C->top());
             --i; --imax;
           }
@@ -1949,7 +1963,7 @@ void ValueTypeNode::remove_redundant_allocations(PhaseIdealLoop* phase) const {
   // will be removed anyway and changing the memory chain will confuse other optimizations.
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     AllocateNode* alloc = fast_out(i)->isa_Allocate();
-    if (alloc != nullptr && alloc->in(AllocateNode::ValueType) == this && !alloc->_is_scalar_replaceable) {
+    if (alloc != nullptr && alloc->in(AllocateNode::ValueType) == this && !alloc->is_scalar_replaceable()) {
       Node* res = alloc->result_cast();
       if (res == nullptr || !res->is_CheckCastPP()) {
         break; // No unique CheckCastPP
@@ -1958,7 +1972,7 @@ void ValueTypeNode::remove_redundant_allocations(PhaseIdealLoop* phase) const {
       Node* res_dom = res;
       for (DUIterator_Fast jmax, j = fast_outs(jmax); j < jmax; j++) {
         AllocateNode* alloc_other = fast_out(j)->isa_Allocate();
-        if (alloc_other != nullptr && alloc_other->in(AllocateNode::ValueType) == this && !alloc_other->_is_scalar_replaceable) {
+        if (alloc_other != nullptr && alloc_other->in(AllocateNode::ValueType) == this && !alloc_other->is_scalar_replaceable()) {
           Node* res_other = alloc_other->result_cast();
           if (res_other != nullptr && res_other->is_CheckCastPP() && res_other != res_dom &&
               phase->is_dominator(res_other->in(0), res_dom->in(0))) {
@@ -1966,9 +1980,8 @@ void ValueTypeNode::remove_redundant_allocations(PhaseIdealLoop* phase) const {
           }
         }
       }
-      if (res_dom != res) {
+      if (res_dom != res && replace_allocation(igvn, res, res_dom)) {
         // Replace allocation by dominating one.
-        replace_allocation(igvn, res, res_dom);
         // The result of the dominated allocation is now unused and will be removed
         // later in PhaseMacroExpand::eliminate_allocate_node to not confuse loop opts.
         igvn->_worklist.push(alloc);

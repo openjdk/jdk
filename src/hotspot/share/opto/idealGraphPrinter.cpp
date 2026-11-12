@@ -79,8 +79,8 @@ void PrintProperties::print_escape_properties(Node* node) {
   // Dump escape analysis state for relevant nodes.
   if (node->is_Allocate()) {
     AllocateNode* alloc = node->as_Allocate();
-    print_property(alloc->_is_scalar_replaceable, "is_scalar_replaceable");
-    print_property(alloc->_is_non_escaping, "is_non_escaping");
+    print_property(alloc->is_scalar_replaceable(), "is_scalar_replaceable");
+    print_property(alloc->is_non_escaping(), "is_non_escaping");
     print_property(alloc->does_not_escape_thread(), "does_not_escape_thread");
   }
   if (node->is_SafePoint() && node->as_SafePoint()->has_ea_local_in_scope()) {

@@ -278,6 +278,7 @@ bool ConnectionGraph::compute_escape() {
 #endif
 
   if (non_escaped_allocs_worklist.length() == 0) {
+    DEBUG_ONLY(verify_global_escape_states(java_objects_worklist);)
     _collecting = false;
     NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
     return false; // Nothing to do.
@@ -321,11 +322,14 @@ bool ConnectionGraph::compute_escape() {
   if (!complete_connection_graph(ptnodes_worklist, non_escaped_allocs_worklist,
                                  java_objects_worklist, oop_fields_worklist)) {
     // All objects escaped or hit time or iterations limits.
+    // GlobalEscape states remain valid even if complete_connection_graph bails out. Check monotonicity.
+    DEBUG_ONLY(verify_global_escape_states(java_objects_worklist);)
     _collecting = false;
     NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
     return false;
   }
 
+  record_escape_states(java_objects_worklist);
   _compile->print_method(PHASE_EA_AFTER_COMPLETE_CONGRAPH, 4);
 
   // 3. Adjust scalar_replaceable state of nonescaping objects and push
@@ -336,12 +340,8 @@ bool ConnectionGraph::compute_escape() {
   bool found_nsr_alloc = false;
   for (int next = 0; next < non_escaped_length; next++) {
     JavaObjectNode* ptn = non_escaped_allocs_worklist.at(next);
-    bool noescape = (ptn->escape_state() == PointsToNode::NoEscape);
     Node* n = ptn->ideal_node();
-    if (n->is_Allocate()) {
-      n->as_Allocate()->_is_non_escaping = noescape;
-    }
-    if (noescape && ptn->scalar_replaceable()) {
+    if (ptn->escape_state() == PointsToNode::NoEscape && ptn->scalar_replaceable()) {
       adjust_scalar_replaceable_state(ptn, reducible_merges);
       if (ptn->scalar_replaceable()) {
         jobj_worklist.push(ptn);
@@ -2114,6 +2114,30 @@ void ConnectionGraph::add_final_edges(Node *n) {
   }
   return;
 }
+
+void ConnectionGraph::record_escape_states(const GrowableArray<JavaObjectNode*>& java_objects_worklist) {
+  for (int i = 0; i < java_objects_worklist.length(); i++) {
+    JavaObjectNode* ptn = java_objects_worklist.at(i);
+    Node* n = ptn->ideal_node();
+    if (n->is_Allocate()) {
+      n->as_Allocate()->set_escape_state(ptn->escape_state());
+    }
+  }
+}
+
+#ifdef ASSERT
+void ConnectionGraph::verify_global_escape_states(const GrowableArray<JavaObjectNode*>& java_objects_worklist) {
+  for (int i = 0; i < java_objects_worklist.length(); i++) {
+    JavaObjectNode* ptn = java_objects_worklist.at(i);
+    Node* n = ptn->ideal_node();
+    if (ptn->escape_state() == PointsToNode::GlobalEscape && n->is_Allocate()) {
+      // Should never actually change the escape state. The only purpose is to
+      // trigger the monotonicity assert.
+      n->as_Allocate()->set_escape_state(ptn->escape_state());
+    }
+  }
+}
+#endif
 
 void ConnectionGraph::add_to_congraph_unsafe_access(Node* n, uint opcode, Unique_Node_List<Node>* delayed_worklist) {
   Node* adr = n->in(MemNode::Address);
@@ -5095,14 +5119,14 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node*>& alloc_worklist,
         if (alloc->is_Allocate()) {
           // Set the scalar_replaceable flag for allocation
           // so it could be eliminated if it has no uses.
-          alloc->as_Allocate()->_is_scalar_replaceable = true;
+          alloc->as_Allocate()->set_scalar_replaceable(true);
         }
         continue;
       }
       if (!n->is_CheckCastPP()) { // not unique CheckCastPP.
         // we could reach here for allocate case if one init is associated with many allocs.
         if (alloc->is_Allocate()) {
-          alloc->as_Allocate()->_is_scalar_replaceable = false;
+          alloc->as_Allocate()->set_scalar_replaceable(false);
         }
         continue;
       }
@@ -5144,7 +5168,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node*>& alloc_worklist,
       if (alloc->is_Allocate()) {
         // Set the scalar_replaceable flag for allocation
         // so it could be eliminated.
-        alloc->as_Allocate()->_is_scalar_replaceable = true;
+        alloc->as_Allocate()->set_scalar_replaceable(true);
       }
       set_escape_state(ptnode_adr(n->_idx), es NOT_PRODUCT(COMMA trace_propagate_message(ptn))); // CheckCastPP escape state
       // in order for an object to be scalar-replaceable, it must be:
