@@ -127,6 +127,47 @@ public:
 
 };
 
+
+class AbstractLambdaWrapper : public CompilationResourceObj {
+public:
+  virtual void operator() (LIR_Assembler* ce) = 0;
+};
+
+template<typename T>
+struct LambdaWrapper : public AbstractLambdaWrapper {
+  T _lambda;
+  LIR_Op* _op;
+
+  LambdaWrapper(T lambda, LIR_Op* op) : _lambda(lambda), _op(op) { }
+  virtual void operator() (LIR_Assembler* ce) {
+    _lambda(ce, _op);
+  }
+};
+
+class ProfileStub: public CodeStub {
+private:
+  AbstractLambdaWrapper *_action = nullptr;
+  const char* _name;
+  Label _alt_entry;
+
+public:
+  ProfileStub() {
+    _name = "ProfileStub";
+  }
+  template<typename U>
+  void set_action(U action, LIR_Op *op) { _action = new LambdaWrapper(action, op); }
+  void set_name(const char* name) { _name = name; }
+  virtual void emit_code(LIR_Assembler* ce) {
+    (*_action)(ce);
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("%s", _name); }
+#endif // PRODUCT
+  virtual void visit(LIR_OpVisitState* visitor) { }
+  Label *alt_entry() { return &_alt_entry; }
+};
+
+
 // Throws ArrayIndexOutOfBoundsException by default but can be
 // configured to throw IndexOutOfBoundsException in constructor
 class RangeCheckStub: public CodeStub {
