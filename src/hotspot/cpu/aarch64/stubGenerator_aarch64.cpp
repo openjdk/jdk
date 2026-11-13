@@ -8965,9 +8965,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void carry_reduce_P384(Register c[], Register tmp, Register carry_add,
-        Register v, Register vt) {
-
+  void carry_reduce_P384(Register c[], Register carry_add, Register v, Register vt) {
     // Reduce upper limbs
     for (int i = 13; i > 6; i--) {
       __ mov(v, c[i]);
@@ -8997,21 +8995,19 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(carry_add, CARRY_ADD_P384);
 
     // Limb 5
-    __ add(tmp, c[5], carry_add);
-    __ asr(tmp, tmp, BPL_P384);
-    __ add(c[6], c[6], tmp);
-    __ lsl(tmp, tmp, BPL_P384);
-    __ sub(c[5], c[5], tmp);
+    __ add(v, c[5], carry_add);
+    __ asr(v, vt, BPL_P384);
+    __ add(c[6], c[6], v);
+    __ lsl(v, v, BPL_P384);
+    __ sub(c[5], c[5], v);
 
     // Limb 6
-    __ add(tmp, c[6], carry_add);
-    __ asr(tmp, tmp, BPL_P384);
-    __ lsl(vt, tmp, BPL_P384);
+    __ add(v, c[6], carry_add);
+    __ asr(v, v, BPL_P384);
+    __ lsl(vt, v, BPL_P384);
     __ sub(c[6], c[6], vt);
 
     // Reduce high order limb and fold back into low order limb
-    __ mov(v, tmp);
-
     __ ubfiz(vt, v, 19, 36);
     __ add(c[2], c[2], vt);
     __ asr(vt, v, 36);
@@ -9035,11 +9031,11 @@ class StubGenerator: public StubCodeGenerator {
 
     // Limbs 0 - 5
     for (int i = 0; i < 6; i++) {
-      __ add(tmp, c[i], carry_add);
-      __ asr(tmp, tmp, BPL_P384);
-      __ add(c[i + 1], c[i + 1], tmp);
-      __ lsl(tmp, tmp, BPL_P384);
-      __ sub(c[i], c[i], tmp);
+      __ add(v, c[i], carry_add);
+      __ asr(v, v, BPL_P384);
+      __ add(c[i + 1], c[i + 1], v);
+      __ lsl(v, v, BPL_P384);
+      __ sub(c[i], c[i], v);
     }
   }
 
@@ -9106,7 +9102,7 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    carry_reduce_P384(c, low, high, a, b);
+    carry_reduce_P384(c, low, high, a);
 
     for (int i = 0; i < LIMBS_P384 - 1; i += 2) {
       __ stp(c[i], c[i + 1], Address(rLimbs, i * 8));
@@ -9194,7 +9190,7 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    carry_reduce_P384(c, low, high, a, aArg);
+    carry_reduce_P384(c, low, high, a);
 
     for (int i = 0; i < (LIMBS_P384 - 1); i += 2) {
       __ stp(c[i], c[i + 1], Address(rLimbs, i * 8));
