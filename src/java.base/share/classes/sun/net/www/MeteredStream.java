@@ -32,6 +32,10 @@ import jdk.internal.util.Preconditions;
 
 public class MeteredStream extends FilterInputStream {
 
+    // Instance variables.
+    /* if expected != -1, after we've read >= expected, we're "closed" and return -1
+     * from subsequent read() 's
+     */
     protected boolean closed = false;
     protected final long expected;
     protected long count = 0;
@@ -41,43 +45,49 @@ public class MeteredStream extends FilterInputStream {
 
     public MeteredStream(InputStream is, long expected)
     {
-        assert expected > 0 : "Invalid content length: " + expected;
         super(is);
 
         this.expected = expected;
     }
 
-    private void justRead(long n) throws IOException {
+    private final void justRead(long n) throws IOException {
         assert isLockHeldByCurrentThread();
 
         if (n == -1) {
             if (expected > count) {
                 throw new IOException("Premature EOF");
             }
-        } else {
 
-            // Increment the position
-            assert count <= (expected - n) : "Excessive read: " + n;
-            count += n;
-
-            // If read beyond the markLimit, invalidate the mark
-            if (count - markedCount > markLimit) {
-                markLimit = -1;
+            /*
+             * don't close automatically when mark is set and is valid;
+             * cannot reset() after close()
+             */
+            if (!isMarked()) {
+                close();
             }
-
+            return;
         }
 
-        // Auto-close if there are no marks and the expected length is consumed.
-        //
-        // We avoid auto-close while marked, since the user might invoke
-        // `reset()` after reading the last byte.
-        //
-        // We auto-close to speed up the release of resources. For instance,
-        // see `KeepAliveStream::close`.
-        if (!isMarked() && (n == -1 || count >= expected)) {
-            close();
+        count += n;
+
+        /**
+         * If read beyond the markLimit, invalidate the mark
+         */
+        if (count - markedCount > markLimit) {
+            markLimit = -1;
         }
 
+        if (isMarked()) {
+            return;
+        }
+
+        // if expected length is known, we could determine if
+        // read overrun.
+        if (expected > 0)   {
+            if (count >= expected) {
+                close();
+            }
+        }
     }
 
     /**
@@ -103,7 +113,9 @@ public class MeteredStream extends FilterInputStream {
         lock();
         try {
             long remaining = expected - count;
-            if (closed || remaining < 1) return -1;
+            if (closed || (expected >= 0 && remaining < 1)) {
+                return -1;
+            }
             int c = in.read();
             if (c != -1) {
                 justRead(1);
@@ -127,8 +139,10 @@ public class MeteredStream extends FilterInputStream {
         lock();
         try {
             long remaining = expected - count;
-            if (closed || remaining < 1) return -1;
-            int trimmedLength = (int) Math.min(len, remaining);
+            if (closed || (expected >= 0 && remaining < 1)) {
+                return -1;
+            }
+            int trimmedLength = expected >= 0 ? (int) Math.min(len, remaining) : len;
             int n = in.read(b, off, trimmedLength);
             justRead(n);
             return n;
@@ -144,8 +158,10 @@ public class MeteredStream extends FilterInputStream {
         lock();
         try {
             long remaining = expected - count;
-            if (closed || remaining < 1) return 0;
-            long maxSkip = Math.min(n, remaining);
+            if (closed || (expected >= 0 && remaining < 1)) {
+                return 0;
+            }
+            long maxSkip = expected >= 0 ? Math.min(n, remaining) : n;
             long skipped = in.skip(maxSkip);
             justRead(skipped);
             return skipped;
@@ -171,7 +187,8 @@ public class MeteredStream extends FilterInputStream {
         try {
             if (closed) return 0;
             long remaining = expected - count;
-            return (int) Math.min(remaining, in.available());
+            int available = in.available();
+            return expected < 0 ? available : (int) Math.min(remaining, available);
         } finally {
             unlock();
         }
