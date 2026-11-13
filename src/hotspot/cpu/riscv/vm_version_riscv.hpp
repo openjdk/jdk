@@ -262,12 +262,12 @@ private:
       #define DECLARE_RV_FEATURE_ENUM(PRETTY, LINUX_BIT, FSTRING, FLAG, ...) CPU_##ext_##PRETTY,
 
       RV_EXT_FEATURE_FLAGS(DECLARE_RV_FEATURE_ENUM)
-      MAX_CPU_FEATURE_INDEX
+      CPU_FEATURE_COUNT
       #undef DECLARE_RV_FEATURE_ENUM
     };
    private:
-    uint64_t _features_bitmap[(MAX_CPU_FEATURE_INDEX / BitsPerLong) + 1];
-    static_assert(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
+    uint64_t _features_bitmap[(CPU_FEATURE_COUNT / BitsPerLong) + 1];
+    static_assert(sizeof(_features_bitmap) * BitsPerByte >= CPU_FEATURE_COUNT);
 
     // Number of 8-byte elements in _features_bitmap.
     constexpr static int element_count() {
@@ -285,7 +285,7 @@ private:
     }
 
     static RVFeatureIndex convert(uint32_t index) {
-      assert(index < MAX_CPU_FEATURE_INDEX, "must");
+      assert(index < CPU_FEATURE_COUNT, "must");
       return (RVFeatureIndex)index;
     }
 

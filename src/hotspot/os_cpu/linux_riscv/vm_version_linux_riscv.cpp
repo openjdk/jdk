@@ -136,7 +136,7 @@ void VM_Version::apply_aot_cache_cpu_features() {
     }
     _rv_ext_features_disabled_by_aot_cache = runtime_cpu_features->features_not_in(archived_cpu_features);
     // Undetected extensions can still have flags enabled by command-line options or RVA profiles.
-    for (int i = 0; i < RVExtFeatureSet::MAX_CPU_FEATURE_INDEX; i++) {
+    for (int i = 0; i < RVExtFeatureSet::CPU_FEATURE_COUNT; i++) {
       if (!archived_cpu_features->support_feature(i)) {
         _ext_feature_list[i]->disable_feature();
         // Normal flag initialization skips disabled extensions.
@@ -196,7 +196,7 @@ void VM_Version::setup_cpu_available_features() {
   int i = 0;
   while (_feature_list[i] != nullptr) {
     if (_feature_list[i]->feature_enabled()) {
-      if (i < RVExtFeatureSet::MAX_CPU_FEATURE_INDEX) {
+      if (i < RVExtFeatureSet::CPU_FEATURE_COUNT) {
         assert(_ext_feature_list[i] == _feature_list[i], "feature lists must have the same extension order");
         _ext_feature_list[i]->update_flag();
       }

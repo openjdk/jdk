@@ -166,7 +166,7 @@ void VM_Version::useRVA23U64Profile() {
 }
 
 void VM_Version::initialize() {
-  static_assert(ARRAY_SIZE(_ext_feature_list) == RVExtFeatureSet::MAX_CPU_FEATURE_INDEX);
+  static_assert(ARRAY_SIZE(_ext_feature_list) == RVExtFeatureSet::CPU_FEATURE_COUNT);
   common_initialize();
 #ifdef COMPILER2
   c2_initialize();
@@ -663,7 +663,7 @@ void VM_Version::print_feature_name(stringStream& ss, RVFeatureValue* feature) {
 void VM_Version::insert_features_names(RVExtFeatureSet* features, stringStream& ss) {
   const char* sep = "";
   int i = 0;
-  while (i < RVExtFeatureSet::MAX_CPU_FEATURE_INDEX) {
+  while (i < RVExtFeatureSet::CPU_FEATURE_COUNT) {
     if (features->support_feature(i)) {
       ss.print("%s", sep);
       print_feature_name(ss, _feature_list[i]);
@@ -686,7 +686,7 @@ void VM_Version::get_missing_features_name(void* features_set1, void* features_s
   RVExtFeatureSet* rv_ext_features_set2 = (RVExtFeatureSet*)features_set2;
   const char* sep = "";
   int i = 0;
-  while (i < RVExtFeatureSet::MAX_CPU_FEATURE_INDEX) {
+  while (i < RVExtFeatureSet::CPU_FEATURE_COUNT) {
     if (rv_ext_features_set1->support_feature(i) && !rv_ext_features_set2->support_feature(i)) {
       ss.print("%s", sep);
       print_feature_name(ss, _feature_list[i]);
