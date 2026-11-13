@@ -25,18 +25,22 @@
 
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zMountPoint_linux.hpp"
-#include "gc/z/zPhysicalMemoryBacking_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/autoRestore.hpp"
 #include "unittest.hpp"
 
+extern const char* ZPreferredTmpfsMountpoints[];
+extern const char* ZPreferredHugetlbfsMountpoints[];
+
 class ZMountPointTest {
-  static void check(const ZMountPoint& mountpoint, const char* filesystem,
-                    const char** preferred, const char* const* available,
+  static void check(const ZMountPoint& mountpoint,
+                    const char* filesystem,
+                    const char** preferred,
+                    const char** available,
                     const char* expected) {
     ZArray<char*> mountpoints;
-    for (const char* const* p = available; *p != nullptr; ++p) {
+    for (const char** p = available; *p != nullptr; p++) {
       mountpoints.append(const_cast<char*>(*p));
     }
 
@@ -69,11 +73,11 @@ public:
   }
 };
 
-TEST_OTHER_VM(ZMountPoint, preferred_tmpfs_order) {
+TEST_VM(ZMountPoint, preferred_tmpfs_order) {
   ZMountPointTest::test("tmpfs", ZPreferredTmpfsMountpoints[0], ZPreferredTmpfsMountpoints[1]);
 }
 
-TEST_OTHER_VM(ZMountPoint, preferred_hugetlbfs_order) {
+TEST_VM(ZMountPoint, preferred_hugetlbfs_order) {
   ZMountPointTest::test("hugetlbfs", ZPreferredHugetlbfsMountpoints[0], ZPreferredHugetlbfsMountpoints[1]);
 }
 
