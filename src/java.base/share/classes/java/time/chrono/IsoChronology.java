@@ -164,7 +164,7 @@ public final class IsoChronology extends AbstractChronology implements Serializa
      * Gets the calendar type of the underlying calendar system - 'iso8601'.
      * <p>
      * The calendar type is an identifier defined by the
-     * <em>Unicode Locale Data Markup Language (LDML)</em> specification.
+     * <em>Unicode Common Locale Data {@literal &} Rules (CLDR)</em> specification.
      * It can be used to lookup the {@code Chronology} using {@link Chronology#of(String)}.
      * It can also be used as part of a locale, accessible via
      * {@link Locale#getUnicodeLocaleType(String)} with the key 'ca'.

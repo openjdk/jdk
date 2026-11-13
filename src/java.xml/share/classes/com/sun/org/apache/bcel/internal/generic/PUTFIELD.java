@@ -27,15 +27,15 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
 /**
  * PUTFIELD - Put field in object
  *
- * <PRE>
+ * <pre>
  * Stack: ..., objectref, value -&gt; ...
- * </PRE>
+ * </pre>
  *
  * OR
  *
- * <PRE>
+ * <pre>
  * Stack: ..., objectref, value.word1, value.word2 -&gt; ...
- * </PRE>
+ * </pre>
  */
 public class PUTFIELD extends FieldInstruction implements PopInstruction, ExceptionThrower {
 
@@ -45,15 +45,20 @@ public class PUTFIELD extends FieldInstruction implements PopInstruction, Except
     PUTFIELD() {
     }
 
+    /**
+     * Constructs a PUTFIELD instruction.
+     *
+     * @param index index into constant pool.
+     */
     public PUTFIELD(final int index) {
         super(Const.PUTFIELD, index);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {

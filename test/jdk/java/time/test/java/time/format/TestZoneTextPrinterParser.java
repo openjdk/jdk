@@ -58,7 +58,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 /*
  * @test
  * @bug 8081022 8151876 8166875 8177819 8189784 8206980 8277049 8278434 8346948
- *      8174269 8371842 8388214 8392994
+ *      8174269 8371842 8388214 8392994 8384532
  * @key randomness
  */
 
@@ -68,13 +68,21 @@ import org.junit.jupiter.params.provider.ValueSource;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
 
-    // Explicit dstOffset attributes from CLDR v48.2 metazone data.
-    private static final Map<String, ZoneOffset> CLDR_EXPLICIT_DST_OFFSETS = Map.of(
-            "Africa/Windhoek", ZoneOffset.of("+02:00"),
-            "America/Vancouver", ZoneOffset.of("-07:00"),
-            "Canada/Pacific", ZoneOffset.of("-07:00"),
-            "Europe/Dublin", ZoneOffset.of("+01:00"),
-            "Eire", ZoneOffset.of("+01:00"));
+    // Explicit dstOffset attributes from CLDR v49 metazone data.
+    private static final Map<String, ZoneOffset> CLDR_EXPLICIT_DST_OFFSETS = Map.ofEntries(
+            Map.entry("America/Coyhaique", ZoneOffset.of("-03:00")),
+            Map.entry("America/Edmonton", ZoneOffset.of("-06:00")),
+            Map.entry("America/Inuvik", ZoneOffset.of("-06:00")),
+            Map.entry("America/Punta_Arenas", ZoneOffset.of("-03:00")),
+            Map.entry("America/Rainy_River", ZoneOffset.of("-05:00")),
+            Map.entry("America/Vancouver", ZoneOffset.of("-07:00")),
+            Map.entry("America/Winnipeg", ZoneOffset.of("-05:00")),
+            Map.entry("America/Yellowknife", ZoneOffset.of("-06:00")),
+            Map.entry("Canada/Central", ZoneOffset.of("-05:00")),
+            Map.entry("Canada/Mountain", ZoneOffset.of("-06:00")),
+            Map.entry("Canada/Pacific", ZoneOffset.of("-07:00")),
+            Map.entry("Europe/Dublin", ZoneOffset.of("+01:00")),
+            Map.entry("Eire", ZoneOffset.of("+01:00")));
 
     private static final Locale[] SAMPLE_LOCALES = {
         Locale.US, Locale.UK, Locale.FRANCE, Locale.GERMANY, Locale.ITALY, Locale.forLanguageTag("es"),
@@ -216,6 +224,14 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
 
         assertEquals(expected, ret);
 
+    }
+
+    // Explicitly tests localized GMT formats where the localized GMT text is a suffix
+    @Test
+    public void test_ParseText_GmtSuffix() {
+        DateTimeFormatter formatter = getFormatter(Locale.forLanguageTag("pt-BR"), TextStyle.FULL);
+        assertEquals(ZoneId.of("Etc/GMT+1"), formatter.parse("-01:00 GMT", TemporalQueries.zone()));
+        assertEquals(ZoneOffset.ofHours(-1), formatter.parse("-01:00", TemporalQueries.zone()));
     }
 
 

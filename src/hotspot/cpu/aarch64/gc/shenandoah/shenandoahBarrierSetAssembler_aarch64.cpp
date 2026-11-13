@@ -702,7 +702,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
 
 void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register preval,
     Register newval, Register addr, Register tmp1, Register tmp2, Register tmp3, bool is_acquire) {
-  bool is_narrow = node->bottom_type()->isa_narrowoop();
+  bool is_narrow = node->bottom_type()->is_narrowoop();
 
   ShenandoahBarrierStubC2::load_store_pre(masm, node, addr, tmp1, tmp2, tmp3, is_narrow);
 

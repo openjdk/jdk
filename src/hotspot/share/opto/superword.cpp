@@ -2207,9 +2207,8 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
         // in use pack have inputs of iv plus node index.
         Node* use_in = u_pk->at(i)->in(u_idx);
         if (!use_in->is_Add() || use_in->in(1) != n) return false;
-        const TypeInt* offset_t = use_in->in(2)->bottom_type()->is_int();
-        if (offset_t == nullptr || !offset_t->is_con() ||
-            offset_t->get_con() != (jint) i) return false;
+        const TypeInt* offset_t = use_in->in(2)->bottom_type()->as_int();
+        if (!offset_t->is_con() || offset_t->get_con() != (jint) i) return false;
       }
     } else {
       // check for scalar promotion
@@ -2493,7 +2492,7 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   }
 
   // Vector nodes should not truncate.
-  if (type->isa_vect() != nullptr || type->isa_pvectmask() != nullptr || in->is_Reduction()) {
+  if (type->is_vect() || type->is_pvectmask() || in->is_Reduction()) {
     return false;
   }
 
@@ -2788,6 +2787,57 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const VPointer& p = *_vpointer_for_main_loop_alignment;
   const int aw      = _aw_for_main_loop_alignment;
 
+  // Alignment has a trade-off:
+  // - For small trip count, the cost of alignment dominates, and is two fold:
+  //   - In expectation, we spend more iterations in pre/post loops.
+  //   - We have to compute an adjusted limit, which requires more operations.
+  // - For large trip count, the cost of misaligned vectorized accesses dominate, as the CPU splits the accesses
+  //   into multiple accesses when memory boundaries are crossed.
+  //
+  // We make a compile-time decision based on trip count profiling and a threshold based on the number
+  // of bytes accessed by the access that is to be aligned. For small iteration count loops, this means
+  // we do not have to compute the alignment and spend fewer iterations in the pre loop, which avoids
+  // some significant overhead.
+  //
+  // Alternative: emit a runtime check that determines if we should align, based on the runtime trip count.
+  // In an experiment, we emitted a CMove that decides between the two pre-loop limits, based on a runtime
+  // check. But this had a big overhead for small iteration count loops, and there was no speedup.
+  if (!VLoop::vectors_should_be_aligned()) {
+    const float profiled_trip_count = cl()->profile_trip_cnt();
+
+    if (cl()->is_profile_trip_failed() || profiled_trip_count == COUNT_UNKNOWN) {
+#ifdef ASSERT
+      if (_trace._align_vector) {
+        tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: trip count not known, will align.");
+      }
+#endif
+    } else {
+      // SuperWordAutomaticAlignmentThreshold is measured in bytes accessed
+      // during the loop, for the memory access we align for.
+      //
+      // We make a simplifying assumption to keep the computation simple:
+      // The scalar memory access was unrolled by unroll_count, and then all of those
+      // unrolled scalar operations were packed into a single pack p.
+      const float bytes_accessed = profiled_trip_count * p.size() / cl()->unrolled_count();
+
+#ifdef ASSERT
+      if (_trace._align_vector) {
+        tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
+        tty->print_cr("  profiled trip count: %f", profiled_trip_count);
+        tty->print_cr("  estimated bytes accessed: %f", bytes_accessed);
+      }
+#endif
+      if (bytes_accessed < SuperWordAutomaticAlignmentThreshold) {
+#ifdef ASSERT
+        if (_trace._align_vector) {
+          tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: too few iterations, no alignment.");
+        }
+#endif
+        return;
+      }
+    }
+  }
+
   // The opaque node for the limit, where we adjust the input
   Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
 
@@ -3001,7 +3051,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     Node* invar_variable = s.variable();
     jint  invar_scale    = s.scale().value();
     TRACE_ALIGN_VECTOR_NODE(invar_variable);
-    if (igvn().type(invar_variable)->isa_long()) {
+    if (igvn().type(invar_variable)->is_long()) {
       // Computations are done % (vector width/element size) so it's
       // safe to simply convert invar to an int and loose the upper 32
       // bit half.
@@ -3037,13 +3087,13 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     // bit half. The base could be ptr, long or int. We cast all
     // to int.
     Node* xbase = base;
-    if (igvn().type(xbase)->isa_ptr()) {
+    if (igvn().type(xbase)->is_ptr()) {
       // ptr -> int/long
       xbase = new CastP2XNode(nullptr, xbase);
       phase()->register_new_node(xbase, pre_ctrl);
       TRACE_ALIGN_VECTOR_NODE(xbase);
     }
-    if (igvn().type(xbase)->isa_long()) {
+    if (igvn().type(xbase)->is_long()) {
       // long -> int
       xbase  = new ConvL2INode(xbase);
       phase()->register_new_node(xbase, pre_ctrl);

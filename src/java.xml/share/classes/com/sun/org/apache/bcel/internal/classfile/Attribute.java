@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,6 +41,12 @@ import com.sun.org.apache.bcel.internal.util.Args;
  *   u1 info[attribute_length];
  * }
  * </pre>
+ * <p>
+ * The default maximum number of attribute nesting levels in {@link #readAttribute(DataInput, ConstantPool)} is {@code 64} before throwing a
+ * {@link ClassFormatException}. Attributes may
+ * legitimately nest (for example, a <em>Code</em> attribute carries its own attribute table, and <em>Record</em> components carry theirs), but a malicious
+ * class file can nest such attributes deeply enough to overflow the parser's stack.
+ * </p>
  *
  * @see ConstantValue
  * @see SourceFile
@@ -53,10 +59,23 @@ import com.sun.org.apache.bcel.internal.util.Args;
  * @see Synthetic
  * @see Deprecated
  * @see Signature
- * @LastModified: Sept 2025
+ * @LastModified: Nov 2026
  */
 public abstract class Attribute implements Cloneable, Node {
-    private static final boolean debug = false;
+
+    private static final boolean debug = false; // Debugging on/off
+
+    /**
+     * Limits recursive attribute parsing in readAttribute() to prevent
+     * stack overflow when reading deeply nested class-file attributes.
+     * XSLTC's generation of attributes does not use this parsing path.
+     */
+    private static final int MAX_NESTING_DEPTH = 64;
+
+    /**
+     * The per-thread attribute nesting depth of {@link #readAttribute(DataInput, ConstantPool)}.
+     */
+    private static final ThreadLocal<Integer> NESTING_DEPTH = ThreadLocal.withInitial(() -> Integer.valueOf(0));
 
     private static final Map<String, Object> READERS = new HashMap<>();
 
@@ -78,6 +97,11 @@ public abstract class Attribute implements Cloneable, Node {
         READERS.put(name, unknownAttributeReader);
     }
 
+    /**
+     * Prints a message to stderr if debug mode is enabled.
+     *
+     * @param msg The message to print.
+     */
     protected static void println(final String msg) {
         if (debug) {
             System.err.println(msg);
@@ -90,14 +114,51 @@ public abstract class Attribute implements Cloneable, Node {
      *
      * @see Field
      * @see Method
-     *
-     * @param dataInput Input stream
-     * @param constantPool Array of constants
-     * @return Attribute
-     * @throws IOException if an I/O error occurs.
+     * @param dataInput Input stream.
+     * @param constantPool Array of constants.
+     * @return Attribute.
+     * @throws IOException Thrown if an I/O error occurs.
      * @since 6.0
      */
     public static Attribute readAttribute(final DataInput dataInput, final ConstantPool constantPool) throws IOException {
+        // Track the nesting depth to guard against malicious class files that nest attributes (for example, a Code attribute inside a Code attribute, or
+        // mutually recursive Record component attributes) deeply enough to overflow the parser's stack (CWE-674).
+        final int depth = NESTING_DEPTH.get().intValue() + 1;
+        if (depth > MAX_NESTING_DEPTH) {
+            throw new ClassFormatException("Attributes are nested more than " + MAX_NESTING_DEPTH + " levels deep; if this is a valid class file, raise the"
+                    + " limit with the system property " + Attribute.class.getCanonicalName() + ".maxNestingDepth.");
+        }
+        NESTING_DEPTH.set(Integer.valueOf(depth));
+        try {
+            return readAttribute0(dataInput, constantPool);
+        } finally {
+            if (depth == 1) {
+                NESTING_DEPTH.remove();
+            } else {
+                NESTING_DEPTH.set(Integer.valueOf(depth - 1));
+            }
+        }
+    }
+
+    /**
+     * Class method reads one attribute from the input data stream. This method must not be accessible from the outside. It
+     * is called by the Field and Method constructor methods.
+     *
+     * @see Field
+     * @see Method
+     * @param dataInputStream Input stream.
+     * @param constantPool Array of constants.
+     * @return Attribute.
+     * @throws IOException Thrown if an I/O error occurs.
+     */
+    public static Attribute readAttribute(final DataInputStream dataInputStream, final ConstantPool constantPool) throws IOException {
+        return readAttribute((DataInput) dataInputStream, constantPool);
+    }
+
+    /**
+     * Reads one attribute without tracking the nesting depth; only to be called by {@link #readAttribute(DataInput, ConstantPool)}.
+     */
+    private static Attribute readAttribute0(final DataInput dataInput, final ConstantPool constantPool) throws IOException {
         byte tag = Const.ATTR_UNKNOWN; // Unknown attribute
         // Get class name from constant pool via 'name_index' indirection
         final int nameIndex = dataInput.readUnsignedShort();
@@ -183,6 +244,8 @@ public abstract class Attribute implements Cloneable, Node {
             return new NestMembers(nameIndex, length, dataInput, constantPool);
         case Const.ATTR_RECORD:
             return new Record(nameIndex, length, dataInput, constantPool);
+        case Const.ATTR_PERMITTED_SUBCLASSES:
+            return new PermittedSubclasses(nameIndex, length, dataInput, constantPool);
         default:
             // Never reached
             throw new IllegalStateException("Unrecognized attribute type tag parsed: " + tag);
@@ -190,53 +253,37 @@ public abstract class Attribute implements Cloneable, Node {
     }
 
     /**
-     * Class method reads one attribute from the input data stream. This method must not be accessible from the outside. It
-     * is called by the Field and Method constructor methods.
-     *
-     * @see Field
-     * @see Method
-     *
-     * @param dataInputStream Input stream
-     * @param constantPool Array of constants
-     * @return Attribute
-     * @throws IOException if an I/O error occurs.
-     */
-    public static Attribute readAttribute(final DataInputStream dataInputStream, final ConstantPool constantPool) throws IOException {
-        return readAttribute((DataInput) dataInputStream, constantPool);
-    }
-
-    /**
      * Remove attribute reader
      *
-     * @param name the name of the attribute as stored in the class file
+     * @param name The name of the attribute as stored in the class file.
      */
     public static void removeAttributeReader(final String name) {
         READERS.remove(name);
     }
 
     /**
-     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
+     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter.
      */
     @java.lang.Deprecated
     protected int name_index; // Points to attribute name in constant pool TODO make private (has getter & setter)
 
     /**
-     * @deprecated (since 6.0) (since 6.0) will be made private; do not access directly, use getter/setter
+     * @deprecated (since 6.0) (since 6.0) will be made private; do not access directly, use getter/setter.
      */
     @java.lang.Deprecated
-    protected int length; // Content length of attribute field TODO make private (has getter & setter)
+    protected int length; // Content length of attribute field TODO make private (has getter & setter).
 
     /**
-     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
+     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter.
      */
     @java.lang.Deprecated
-    protected byte tag; // Tag to distinguish subclasses TODO make private & final; supposed to be immutable
+    protected byte tag; // Tag to distinguish subclasses TODO make private & final; supposed to be immutable.
 
     /**
-     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
+     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter.
      */
     @java.lang.Deprecated
-    protected ConstantPool constant_pool; // TODO make private (has getter & setter)
+    protected ConstantPool constant_pool; // TODO make private (has getter & setter).
 
     /**
      * Constructs an instance.
@@ -265,15 +312,15 @@ public abstract class Attribute implements Cloneable, Node {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public abstract void accept(Visitor v);
 
     /**
-     * Use copy() if you want to have a deep copy(), i.e., with all references copied correctly.
+     * Use copy() if you want to have a deep copy(), that is, with all references copied correctly.
      *
-     * @return shallow copy of this attribute
+     * @return shallow copy of this attribute.
      */
     @Override
     public Object clone() {
@@ -287,6 +334,8 @@ public abstract class Attribute implements Cloneable, Node {
     }
 
     /**
+     * Creates a deep copy of this attribute.
+     *
      * @param constantPool constant pool to save.
      * @return deep copy of this attribute.
      */
@@ -295,8 +344,8 @@ public abstract class Attribute implements Cloneable, Node {
     /**
      * Dumps attribute to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     public void dump(final DataOutputStream file) throws IOException {
         file.writeShort(name_index);
@@ -304,6 +353,8 @@ public abstract class Attribute implements Cloneable, Node {
     }
 
     /**
+     * Gets the constant pool used by this object.
+     *
      * @return Constant pool used by this object.
      * @see ConstantPool
      */
@@ -312,6 +363,8 @@ public abstract class Attribute implements Cloneable, Node {
     }
 
     /**
+     * Gets the length of attribute field in bytes.
+     *
      * @return Length of attribute field in bytes.
      */
     public final int getLength() {
@@ -319,7 +372,9 @@ public abstract class Attribute implements Cloneable, Node {
     }
 
     /**
-     * @return Name of attribute
+     * Gets the name of attribute.
+     *
+     * @return Name of attribute.
      * @since 6.0
      */
     public String getName() {
@@ -327,6 +382,8 @@ public abstract class Attribute implements Cloneable, Node {
     }
 
     /**
+     * Gets the name index in constant pool of attribute name.
+     *
      * @return Name index in constant pool of attribute name.
      */
     public final int getNameIndex() {
@@ -334,13 +391,17 @@ public abstract class Attribute implements Cloneable, Node {
     }
 
     /**
-     * @return Tag of attribute, i.e., its type. Value may not be altered, thus there is no setTag() method.
+     * Gets the tag of attribute, that is, its type.
+     *
+     * @return Tag of attribute, that is, its type. Value may not be altered, thus there is no setTag() method.
      */
     public final byte getTag() {
         return tag;
     }
 
     /**
+     * Sets the constant pool to be used for this object.
+     *
      * @param constantPool Constant pool to be used for this object.
      * @see ConstantPool
      */
@@ -349,6 +410,8 @@ public abstract class Attribute implements Cloneable, Node {
     }
 
     /**
+     * Sets the length in bytes.
+     *
      * @param length length in bytes.
      */
     public final void setLength(final int length) {
@@ -356,6 +419,8 @@ public abstract class Attribute implements Cloneable, Node {
     }
 
     /**
+     * Sets the name index of attribute.
+     *
      * @param nameIndex of attribute.
      */
     public final void setNameIndex(final int nameIndex) {

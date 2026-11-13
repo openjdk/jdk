@@ -146,9 +146,6 @@ public class HttpClient extends NetworkClient {
     /* if set, the client will be reused and must not be put in cache */
     public boolean reuse = false;
 
-    // Traffic capture tool, if configured. See HttpCapture class for info
-    private HttpCapture capture = null;
-
     /* "jdk.https.negotiate.cbt" property can be set to "always" (always sent), "never" (never sent) or
      * "domain:a,c.d,*.e.f" (sent to host a, or c.d or to the domain e.f and any of its subdomains). This is
      * a comma separated list of arbitrary length with no white-space allowed.
@@ -271,8 +268,6 @@ public class HttpClient extends NetworkClient {
             port = getDefaultPort();
         }
         setConnectTimeout(to);
-
-        capture = HttpCapture.getCapture(url);
         openServer();
     }
 
@@ -525,9 +520,6 @@ public class HttpClient extends NetworkClient {
         serverSocket = doConnect(server, port);
         try {
             OutputStream out = serverSocket.getOutputStream();
-            if (capture != null) {
-                out = new HttpCaptureOutputStream(out, capture);
-            }
             serverOutput = new PrintStream(
                 new BufferedOutputStream(out),
                                          false, encoding);
@@ -729,9 +721,6 @@ public class HttpClient extends NetworkClient {
 
         try {
             serverInput = serverSocket.getInputStream();
-            if (capture != null) {
-                serverInput = new HttpCaptureInputStream(serverInput, capture);
-            }
             serverInput = new BufferedInputStream(serverInput);
             return (parseHTTPHeader(responses, httpuc));
         } catch (SocketTimeoutException stex) {

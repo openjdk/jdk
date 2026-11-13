@@ -40,7 +40,6 @@ import com.sun.org.apache.bcel.internal.util.BCELComparator;
  * to a field (which must of course be compatible with to the declared type).
  *
  * @see Field
- * @LastModified: Sept 2025
  */
 public class FieldGen extends FieldGenOrMethodGen {
 
@@ -58,6 +57,8 @@ public class FieldGen extends FieldGenOrMethodGen {
     };
 
     /**
+     * Gets the comparison strategy object.
+     *
      * @return Comparison strategy object.
      */
     public static BCELComparator<FieldGen> getComparator() {
@@ -65,6 +66,8 @@ public class FieldGen extends FieldGenOrMethodGen {
     }
 
     /**
+     * Sets the comparison strategy object.
+     *
      * @param comparator Comparison strategy object.
      */
     public static void setComparator(final BCELComparator<FieldGen> comparator) {
@@ -100,10 +103,10 @@ public class FieldGen extends FieldGenOrMethodGen {
      * Declare a field. If it is static (isStatic() == true) and has a basic type like int or String it may have an initial
      * value associated with it as defined by setInitValue().
      *
-     * @param accessFlags access qualifiers
-     * @param type field type
-     * @param name field name
-     * @param cp constant pool
+     * @param accessFlags access qualifiers.
+     * @param type field type.
+     * @param name field name.
+     * @param cp constant pool.
      */
     public FieldGen(final int accessFlags, final Type type, final String name, final ConstantPoolGen cp) {
         super(accessFlags);
@@ -139,6 +142,8 @@ public class FieldGen extends FieldGenOrMethodGen {
 
     /**
      * Add observer for this object.
+     *
+     * @param o The observer to add.
      */
     public void addObserver(final FieldObserver o) {
         if (observers == null) {
@@ -160,7 +165,7 @@ public class FieldGen extends FieldGenOrMethodGen {
             throw new ClassGenException("You haven't defined the type of the field yet");
         }
         if (!isFinal()) {
-            throw new ClassGenException("Only final fields may have an initial value!");
+            throw new ClassGenException("Only final fields may have an initial value.");
         }
         if (!superType.equals(atype)) {
             throw new ClassGenException("Types are not compatible: " + superType + " vs. " + atype);
@@ -168,7 +173,10 @@ public class FieldGen extends FieldGenOrMethodGen {
     }
 
     /**
-     * @return deep copy of this field
+     * Creates a deep copy of this field.
+     *
+     * @param cp The constant pool.
+     * @return deep copy of this field.
      */
     public FieldGen copy(final ConstantPoolGen cp) {
         final FieldGen fg = (FieldGen) clone();
@@ -189,6 +197,8 @@ public class FieldGen extends FieldGenOrMethodGen {
 
     /**
      * Gets field object after having set up all necessary values.
+     *
+     * @return The field object.
      */
     public Field getField() {
         final String signature = getSignature();
@@ -203,6 +213,11 @@ public class FieldGen extends FieldGenOrMethodGen {
         return new Field(super.getAccessFlags(), nameIndex, signatureIndex, getAttributes(), super.getConstantPool().getConstantPool()); // sic
     }
 
+    /**
+     * Gets the initial value.
+     *
+     * @return The initial value.
+     */
     public String getInitValue() {
         return Objects.toString(value, null);
     }
@@ -225,6 +240,8 @@ public class FieldGen extends FieldGenOrMethodGen {
 
     /**
      * Remove observer for this object.
+     *
+     * @param o The observer to remove.
      */
     public void removeObserver(final FieldObserver o) {
         if (observers != null) {
@@ -232,6 +249,11 @@ public class FieldGen extends FieldGenOrMethodGen {
         }
     }
 
+    /**
+     * Sets the initial value.
+     *
+     * @param b The boolean value.
+     */
     public void setInitValue(final boolean b) {
         checkType(Type.BOOLEAN);
         if (b) {
@@ -239,6 +261,11 @@ public class FieldGen extends FieldGenOrMethodGen {
         }
     }
 
+    /**
+     * Sets the initial value.
+     *
+     * @param b The byte value.
+     */
     public void setInitValue(final byte b) {
         checkType(Type.BYTE);
         if (b != 0) {
@@ -246,6 +273,11 @@ public class FieldGen extends FieldGenOrMethodGen {
         }
     }
 
+    /**
+     * Sets the initial value.
+     *
+     * @param c The char value.
+     */
     public void setInitValue(final char c) {
         checkType(Type.CHAR);
         if (c != 0) {
@@ -253,6 +285,11 @@ public class FieldGen extends FieldGenOrMethodGen {
         }
     }
 
+    /**
+     * Sets the initial value.
+     *
+     * @param d The double value.
+     */
     public void setInitValue(final double d) {
         checkType(Type.DOUBLE);
         if (d != 0.0) {
@@ -260,6 +297,11 @@ public class FieldGen extends FieldGenOrMethodGen {
         }
     }
 
+    /**
+     * Sets the initial value.
+     *
+     * @param f The float value.
+     */
     public void setInitValue(final float f) {
         checkType(Type.FLOAT);
         if (f != 0.0) {
@@ -267,6 +309,11 @@ public class FieldGen extends FieldGenOrMethodGen {
         }
     }
 
+    /**
+     * Sets the initial value.
+     *
+     * @param i The int value.
+     */
     public void setInitValue(final int i) {
         checkType(Type.INT);
         if (i != 0) {
@@ -274,6 +321,11 @@ public class FieldGen extends FieldGenOrMethodGen {
         }
     }
 
+    /**
+     * Sets the initial value.
+     *
+     * @param l The long value.
+     */
     public void setInitValue(final long l) {
         checkType(Type.LONG);
         if (l != 0L) {
@@ -281,6 +333,11 @@ public class FieldGen extends FieldGenOrMethodGen {
         }
     }
 
+    /**
+     * Sets the initial value.
+     *
+     * @param s The short value.
+     */
     public void setInitValue(final short s) {
         checkType(Type.SHORT);
         if (s != 0) {
@@ -290,6 +347,8 @@ public class FieldGen extends FieldGenOrMethodGen {
 
     /**
      * Sets (optional) initial value of field, otherwise it will be set to null/0/false by the JVM automatically.
+     *
+     * @param str The string value.
      */
     public void setInitValue(final String str) {
         checkType(ObjectType.getInstance("java.lang.String"));
@@ -305,19 +364,17 @@ public class FieldGen extends FieldGenOrMethodGen {
     }
 
     /**
-     * Return string representation close to declaration format, 'public static final short MAX = 100', e.g..
+     * Return string representation close to declaration format, for example: 'public static final short MAX = 100'.
      *
-     * @return String representation of field
+     * @return String representation of field.
      */
     @Override
     public final String toString() {
-        String name;
-        String signature;
-        String access; // Short cuts to constant pool
-        access = Utility.accessToString(super.getAccessFlags());
+        // Short cuts to constant pool
+        String access = Utility.accessToString(super.getAccessFlags());
         access = access.isEmpty() ? "" : access + " ";
-        signature = super.getType().toString();
-        name = getName();
+        final String signature = super.getType().toString();
+        final String name = getName();
         final StringBuilder buf = new StringBuilder(32); // CHECKSTYLE IGNORE MagicNumber
         buf.append(access).append(signature).append(" ").append(name);
         final String value = getInitValue();
