@@ -178,7 +178,9 @@ public class ZipOutputStreamMaxCenHdrTest {
             assertDoesNotThrow(() -> zos.putNextEntry(zipEntry));
         } catch (Exception e) {
             assertInstanceOf(ZipException.class, e);
-            assertTrue(e.getMessage().matches(".*bad header size.*"), "Unexpected ZipException message: " + e.getMessage());
+            String emsg = e.getMessage();
+            assertNotNull(emsg, "Excpected ZipException message!");
+            assertTrue(emsg.contains("bad header size"), "Unexpected ZipException message: " + emsg);
             receivedException = true;
             System.out.printf("writeZipEntry: exception: %s%n", e.getMessage());
         }
