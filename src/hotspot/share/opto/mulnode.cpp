@@ -1649,7 +1649,7 @@ Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node *in12 = shr->in(2);
     bool in11_is_int = phase->type(in11)->is_int();
     const TypeInt* t12 = phase->type(in12)->isa_int();
-    if (in11_is_int && t2 && t2->is_con(31) && t12 != nullptr && t12->is_con()) {
+    if (in11_is_int && t2 != nullptr && t2->is_con(31) && t12 != nullptr && t12->is_con()) {
       return new URShiftINode(in11, phase->intcon(31));
     }
   }
@@ -2090,7 +2090,6 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
     }
     return TypeInt::INT;
   } else {
-    assert(t1->is_long(), "Type must be a long");
     const TypeLong* r1 = t1->as_long();
     const TypeInt*  r2 = t2->as_int();
     // Left input is ZERO ==> the result is ZERO.

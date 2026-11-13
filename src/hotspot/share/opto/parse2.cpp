@@ -380,7 +380,7 @@ Node* Parse::prepare_array_addressing(BasicType type, int vals, const Type*& ele
 
   if (UseUniqueSubclasses) {
     const Type* el = elemtype->make_ptr();
-    if (el && el->is_instptr()) {
+    if (el != nullptr && el->is_instptr()) {
       const TypeInstPtr* toop = el->as_instptr();
       if (toop->instance_klass()->unique_concrete_subklass()) {
         // If we load from "AbstractClass[]" we must see "ConcreteSubClass".
@@ -2529,7 +2529,6 @@ IfNode* Parse::acmp_fast_path_if_from_substitutable_call(PhaseGVN* phase, CallSt
   LoadNode* load_offset = cmp_i->in(1)->as_Load();
   if (!cmp_i->in(2)->is_ConI()) return nullptr;
   ConINode* zero_i = cmp_i->in(2)->as_ConI();
-  assert(zero_i->type()->is_int(), "");
   if (!zero_i->type()->as_int()->is_con(0)) return nullptr;
 
   assert(load_offset->in(2) != nullptr, "");
@@ -2709,8 +2708,8 @@ static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
   Node* obj = AddPNode::Ideal_base_and_offset(adr, gvn, off);
   if (obj == nullptr || off != oopDesc::klass_offset_in_bytes()) // loading oopDesc::_klass?
     return nullptr;
-  const TypePtr* tp = gvn->type(obj)->isa_ptr();
-  if (tp == nullptr || !(tp->is_instptr() || tp->is_aryptr())) // is obj a Java object ptr?
+  const TypePtr* tp = gvn->type(obj)->as_ptr();
+  if (!(tp->is_instptr() || tp->is_aryptr())) // is obj a Java object ptr?
     return nullptr;
 
   return obj;

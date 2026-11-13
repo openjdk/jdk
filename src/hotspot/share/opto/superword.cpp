@@ -2207,9 +2207,8 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
         // in use pack have inputs of iv plus node index.
         Node* use_in = u_pk->at(i)->in(u_idx);
         if (!use_in->is_Add() || use_in->in(1) != n) return false;
-        const TypeInt* offset_t = use_in->in(2)->bottom_type()->isa_int();
-        if (offset_t == nullptr || !offset_t->is_con() ||
-            offset_t->get_con() != (jint) i) return false;
+        const TypeInt* offset_t = use_in->in(2)->bottom_type()->as_int();
+        if (!offset_t->is_con() || offset_t->get_con() != (jint) i) return false;
       }
     } else {
       // check for scalar promotion

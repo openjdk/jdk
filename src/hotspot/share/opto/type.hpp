@@ -2436,7 +2436,7 @@ inline bool Type::is_int() const {
 }
 
 inline const TypeInt* Type::isa_int() const {
-  return is_int() ? (TypeInt*)this : nullptr;
+  return is_int() ? static_cast<const TypeInt*>(this) : nullptr;
 }
 
 inline const TypeInt* Type::as_int() const {
@@ -2448,7 +2448,7 @@ inline bool Type::is_long() const {
 }
 
 inline const TypeLong* Type::isa_long() const {
-  return is_long() ? (TypeLong*)this : nullptr;
+  return is_long() ? static_cast<const TypeLong*>(this) : nullptr;
 }
 
 inline const TypeLong* Type::as_long() const {
@@ -2460,7 +2460,7 @@ inline bool Type::is_integer(BasicType bt) const {
 }
 
 inline const TypeInteger* Type::isa_integer(BasicType bt) const {
-  return is_integer(bt) ? (TypeInteger*)this : nullptr;
+  return is_integer(bt) ? static_cast<const TypeInteger*>(this) : nullptr;
 }
 
 inline const TypeInteger* Type::as_integer(BasicType bt) const {
@@ -2481,7 +2481,7 @@ inline bool Type::is_half_float_constant() const {
 }
 
 inline const TypeH* Type::isa_half_float_constant() const {
-  return is_half_float_constant() ? (TypeH*)this : nullptr;
+  return is_half_float_constant() ? static_cast<const TypeH*>(this) : nullptr;
 }
 
 inline const TypeH* Type::as_half_float_constant() const {
@@ -2499,7 +2499,7 @@ inline bool Type::is_float_constant() const {
 }
 
 inline const TypeF* Type::isa_float_constant() const {
-  return is_float_constant() ? (TypeF*)this : nullptr;
+  return is_float_constant() ? static_cast<const TypeF*>(this) : nullptr;
 }
 
 inline const TypeF* Type::as_float_constant() const {
@@ -2517,7 +2517,7 @@ inline bool Type::is_double_constant() const {
 }
 
 inline const TypeD* Type::isa_double_constant() const {
-  return is_double_constant() ? (TypeD*)this : nullptr;
+  return is_double_constant() ? static_cast<const TypeD*>(this) : nullptr;
 }
 
 inline const TypeD* Type::as_double_constant() const {
@@ -2537,7 +2537,7 @@ inline bool Type::is_ary() const {
 }
 
 inline const TypeAry* Type::isa_ary() const {
-  return is_ary() ? (TypeAry*)this : nullptr;
+  return is_ary() ? static_cast<const TypeAry*>(this) : nullptr;
 }
 
 inline const TypeAry* Type::as_ary() const {
@@ -2549,7 +2549,7 @@ inline bool Type::is_vect() const {
 }
 
 inline const TypeVect* Type::isa_vect() const {
-  return is_vect() ? (TypeVect*)this : nullptr;
+  return is_vect() ? static_cast<const TypeVect*>(this) : nullptr;
 }
 
 inline const TypeVect* Type::as_vect() const {
@@ -2561,7 +2561,7 @@ inline bool Type::is_pvectmask() const {
 }
 
 inline const TypePVectMask* Type::isa_pvectmask() const {
-  return is_pvectmask() ? (TypePVectMask*)this : nullptr;
+  return is_pvectmask() ? static_cast<const TypePVectMask*>(this) : nullptr;
 }
 
 inline const TypePVectMask* Type::as_pvectmask() const {
@@ -2574,7 +2574,7 @@ inline bool Type::is_ptr() const {
 }
 
 inline const TypePtr* Type::isa_ptr() const {
-  return is_ptr() ? (TypePtr*)this : nullptr;
+  return is_ptr() ? static_cast<const TypePtr*>(this) : nullptr;
 }
 
 inline const TypePtr* Type::as_ptr() const {
@@ -2586,7 +2586,7 @@ inline bool Type::is_rawptr() const {
 }
 
 inline const TypeRawPtr* Type::isa_rawptr() const {
-  return is_rawptr() ? (TypeRawPtr*)this : nullptr;
+  return is_rawptr() ? static_cast<const TypeRawPtr*>(this) : nullptr;
 }
 
 inline const TypeRawPtr* Type::as_rawptr() const {
@@ -2598,7 +2598,7 @@ inline bool Type::is_narrowoop() const {
 }
 
 inline const TypeNarrowOop* Type::isa_narrowoop() const {
-  return is_narrowoop() ? (TypeNarrowOop*)this : nullptr;
+  return is_narrowoop() ? static_cast<const TypeNarrowOop*>(this) : nullptr;
 }
 
 inline const TypeNarrowOop* Type::as_narrowoop() const {
@@ -2610,7 +2610,7 @@ inline bool Type::is_narrowklass() const {
 }
 
 inline const TypeNarrowKlass* Type::isa_narrowklass() const {
-  return is_narrowklass() ? (TypeNarrowKlass*)this : nullptr;
+  return is_narrowklass() ? static_cast<const TypeNarrowKlass*>(this) : nullptr;
 }
 
 inline const TypeNarrowKlass* Type::as_narrowklass() const {
@@ -2623,7 +2623,7 @@ inline bool Type::is_oopptr() const {
 }
 
 inline const TypeOopPtr* Type::isa_oopptr() const {
-  return is_oopptr() ? (TypeOopPtr*)this : nullptr;
+  return is_oopptr() ? static_cast<const TypeOopPtr*>(this) : nullptr;
 }
 
 inline const TypeOopPtr* Type::as_oopptr() const {
@@ -2635,7 +2635,7 @@ inline bool Type::is_instptr() const {
 }
 
 inline const TypeInstPtr* Type::isa_instptr() const {
-  return is_instptr() ? (TypeInstPtr*)this : nullptr;
+  return is_instptr() ? static_cast<const TypeInstPtr*>(this) : nullptr;
 }
 
 inline const TypeInstPtr* Type::as_instptr() const {
@@ -2647,7 +2647,7 @@ inline bool Type::is_aryptr() const {
 }
 
 inline const TypeAryPtr* Type::isa_aryptr() const {
-  return is_aryptr() ? (TypeAryPtr*)this : nullptr;
+  return is_aryptr() ? static_cast<const TypeAryPtr*>(this) : nullptr;
 }
 
 inline const TypeAryPtr* Type::as_aryptr() const {
@@ -2659,7 +2659,7 @@ inline bool Type::is_metadataptr() const {
 }
 
 inline const TypeMetadataPtr* Type::isa_metadataptr() const {
-  return is_metadataptr() ? (TypeMetadataPtr*)this : nullptr;
+  return is_metadataptr() ? static_cast<const TypeMetadataPtr*>(this) : nullptr;
 }
 
 inline const TypeMetadataPtr* Type::as_metadataptr() const {
@@ -2671,7 +2671,7 @@ inline bool Type::is_klassptr() const {
 }
 
 inline const TypeKlassPtr* Type::isa_klassptr() const {
-  return is_klassptr() ? (TypeKlassPtr*)this : nullptr;
+  return is_klassptr() ? static_cast<const TypeKlassPtr*>(this) : nullptr;
 }
 
 inline const TypeKlassPtr* Type::as_klassptr() const {
@@ -2683,7 +2683,7 @@ inline bool Type::is_instklassptr() const {
 }
 
 inline const TypeInstKlassPtr* Type::isa_instklassptr() const {
-  return is_instklassptr() ? (TypeInstKlassPtr*)this : nullptr;
+  return is_instklassptr() ? static_cast<const TypeInstKlassPtr*>(this) : nullptr;
 }
 
 inline const TypeInstKlassPtr* Type::as_instklassptr() const {
@@ -2695,7 +2695,7 @@ inline bool Type::is_aryklassptr() const {
 }
 
 inline const TypeAryKlassPtr* Type::isa_aryklassptr() const {
-  return is_aryklassptr() ? (TypeAryKlassPtr*)this : nullptr;
+  return is_aryklassptr() ? static_cast<const TypeAryKlassPtr*>(this) : nullptr;
 }
 
 inline const TypeAryKlassPtr* Type::as_aryklassptr() const {

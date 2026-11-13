@@ -1726,9 +1726,9 @@ public:
 
       const typename PtrType::InstType* type_inst;
       if constexpr (PtrType::is_oopptr_type) {
-        type_inst = type->as_oopptr()->as_instptr();
+        type_inst = type->as_instptr();
       } else {
-        type_inst = type->as_klassptr()->as_instklassptr();
+        type_inst = type->as_instklassptr();
       }
 
       if (type_is_exact) {
@@ -1743,9 +1743,9 @@ public:
     if (type->base() == Type::InstPtr || type->base() == Type::InstKlassPtr) {
       const typename PtrType::InstType* type_inst;
       if constexpr (PtrType::is_oopptr_type) {
-        type_inst = type->as_oopptr()->as_instptr();
+        type_inst = type->as_instptr();
       } else {
-        type_inst = type->as_klassptr()->as_instklassptr();
+        type_inst = type->as_instklassptr();
       }
 
       return !type_is_exact && type_inst->instance_klass()->is_java_lang_Object() &&
@@ -1754,9 +1754,9 @@ public:
 
     const typename PtrType::AryType* type_ary;
     if constexpr (PtrType::is_oopptr_type) {
-      type_ary = type->as_oopptr()->as_aryptr();
+      type_ary = type->as_aryptr();
     } else {
-      type_ary = type->as_klassptr()->as_aryklassptr();
+      type_ary = type->as_aryklassptr();
     }
     auto type_elem = type_ary->elem();
     auto ary_klass = klass->as_ary();

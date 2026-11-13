@@ -404,7 +404,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     // If the clone copy is decomposed into load-stores - the address is adjusted to
     // point at where the array starts.
     const Type* toff = phase->type(src_offset);
-    int offset = toff->is_long() ? (int) toff->as_long()->get_con() : (int) toff->as_int()->get_con();
+    int offset = toff->is_long() ? static_cast<int>(toff->as_long()->get_con()) : toff->as_int()->get_con();
     int diff = arrayOopDesc::base_offset_in_bytes(elem) - offset;
     assert(diff >= 0, "clone should not start after 1st array element");
     if (diff > 0) {

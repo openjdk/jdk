@@ -1679,8 +1679,7 @@ Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
   BasicType bt = rt->basic_type();
   assert(has_reinterpret_variant(rt), "no reinterpret variant: %s %s", Name(), type2name(bt));
   bool is_mismatched = is_mismatched_access();
-  bool is_raw_type = gvn.type(in(MemNode::Memory))->is_rawptr();
-  if (!is_raw_type) {
+  if (!gvn.type(in(MemNode::Memory))->is_rawptr()) {
     is_mismatched = true; // conservatively match all non-raw accesses as mismatched
   }
   const int op = Opcode();
@@ -1709,8 +1708,7 @@ Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Ty
                                   mem_t->as_ptr(), val, bt, _mo, require_atomic_access);
 
   bool is_mismatched = is_mismatched_access();
-  bool is_raw_type = gvn.type(in(MemNode::Memory))->is_rawptr();
-  if (!is_raw_type) {
+  if (!gvn.type(in(MemNode::Memory))->is_rawptr()) {
     is_mismatched = true; // conservatively match all non-raw accesses as mismatched
   }
   if (is_mismatched) {

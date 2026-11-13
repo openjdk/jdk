@@ -5810,7 +5810,6 @@ IfNode* LibraryCallKit::hashcode_fast_path_if_from_identity_hash_code_call(Phase
     LoadNode* load_offset = cmp_i->in(1)->as_Load();
     if (!cmp_i->in(2)->is_ConI()) continue;
     ConINode* zero_i = cmp_i->in(2)->as_ConI();
-    assert(zero_i->type()->is_int(), "");
     if (!zero_i->type()->as_int()->is_con(0)) continue;
 
     assert(load_offset->in(2) != nullptr, "");
