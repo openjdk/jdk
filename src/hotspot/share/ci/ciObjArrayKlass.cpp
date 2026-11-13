@@ -173,9 +173,9 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined
 
     if (force_ref_layout) {
       const ArrayDescription description = ArrayDescription::reference(props);
-      array = ObjArrayKlass::cast(array)->klass_from_description(description, THREAD);
+      array = array = ObjArrayKlass::klass_from_description(element_klass->get_Klass(), description, THREAD);
     } else {
-      array = ObjArrayKlass::cast(array)->klass_with_properties(props, THREAD);
+      array = ObjArrayKlass::klass_with_properties(element_klass->get_Klass(), props, THREAD);
     }
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
