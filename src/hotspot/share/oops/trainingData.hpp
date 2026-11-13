@@ -532,7 +532,7 @@ class KlassTrainingData : public TrainingData {
     return holder()->name();
   }
   bool has_holder()       const { return _holder != nullptr; }
-  virtual bool is_valid() const { return has_holder(); }
+  virtual bool is_valid() const;
   InstanceKlass* holder() const { return _holder; }
 
   static KlassTrainingData* make(InstanceKlass* holder,
@@ -585,155 +585,6 @@ class KlassTrainingData : public TrainingData {
     }
   }
 };
-
-// Record information about a method at the time compilation is requested.
-class MethodTrainingData : public TrainingData {
-  friend TrainingData;
-  friend CompileTrainingData;
-
-  // Used by CDS. These classes need to access the private default constructor.
-  template <class T> friend class CppVtableTesterA;
-  template <class T> friend class CppVtableTesterB;
-  template <class T> friend class CppVtableCloner;
-
-  KlassTrainingData* _klass;
-  Method* _holder;
-  enum { CURRENT = 0, NEXT = 1  };
-  struct TrainingIteration {
-    CompileTrainingData* _last_toplevel_compiles[CompLevel_count - 1];
-    int _highest_top_level;
-    int _level_mask; // bit-set of all possible levels
-    bool _was_toplevel;
-    TrainingIteration() : _highest_top_level(CompLevel_none), _level_mask(0), _was_toplevel(false) {
-      for (int i = 0; i < CompLevel_count - 1; i++) {
-        _last_toplevel_compiles[i] = nullptr;
-      }
-    }
-  };
-  TrainingIteration _iterations[2]; // CURRENT and NEXT
-  // metadata snapshots of final state:
-  MethodCounters* _final_counters;
-  MethodData*     _final_profile;
-
-  int _invocation_count;
-  int _backedge_count;
-
-  MethodTrainingData();
-  MethodTrainingData(Method* method, KlassTrainingData* ktd) : TrainingData(method) {
-    _klass = ktd;
-    _holder = method;
-    _invocation_count = 0;
-    _backedge_count = 0;
-  }
-
-  static int level_mask(int level) {
-    return ((level & 0xF) != level ? 0 : 1 << level);
-  }
-
- public:
-  KlassTrainingData* klass()  const { return _klass; }
-  bool has_holder()           const { return _holder != nullptr; }
-  virtual bool is_valid() const { return has_holder(); }
-  Method* holder()            const { return _holder; }
-  bool only_inlined()         const { return !_iterations[CURRENT]._was_toplevel; }
-  bool saw_level(CompLevel l) const { return (_iterations[CURRENT]._level_mask & level_mask(l)) != 0; }
-  int highest_top_level()     const { return _iterations[CURRENT]._highest_top_level; }
-  MethodData* final_profile() const { return _final_profile; }
-  int invocation_count() const { return _invocation_count; }
-  int backedge_count() const { return _backedge_count; }
-
-  Symbol* name() const {
-    precond(has_holder());
-    return holder()->name();
-  }
-  Symbol* signature() const {
-    precond(has_holder());
-    return holder()->signature();
-  }
-
-  CompileTrainingData* last_toplevel_compile(int level) const {
-    if (level > CompLevel_none) {
-      return _iterations[CURRENT]._last_toplevel_compiles[level - 1];
-    }
-    return nullptr;
-  }
-
-  CompileTrainingData* compile_data_for_aot_code(int level) const {
-    CompileTrainingData* ctd = last_toplevel_compile(level);
-    if (ctd == nullptr && level == CompLevel_limited_profile) {
-      // We compile CompLevel_limited_profile AOT code for CompLevel_full_profile
-      ctd = _iterations[CURRENT]._last_toplevel_compiles[CompLevel_full_profile - 1];
-    }
-    return ctd;
-  }
-
-  void notice_compilation(int level, bool inlined = false) {
-    if (!inlined) {
-      _iterations[NEXT]._was_toplevel = true;
-    }
-    _iterations[NEXT]._level_mask |= level_mask(level);
-  }
-
-  void notice_toplevel_compilation(int level) {
-    _iterations[NEXT]._highest_top_level = MAX2(_iterations[NEXT]._highest_top_level, level);
-  }
-
-  static MethodTrainingData* make(const methodHandle& method,
-                                  bool null_if_not_found = false,
-                                  bool use_cache = true) NOT_CDS_RETURN_(nullptr);
-  static MethodTrainingData* find_fast(const methodHandle& method) { return make(method, true, true); }
-  static MethodTrainingData* find(const methodHandle& method) { return make(method, true, false); }
-
-  virtual MethodTrainingData* as_MethodTrainingData() const {
-    return const_cast<MethodTrainingData*>(this);
-  };
-
-  void print_on(outputStream* st, bool name_only) const;
-  virtual void print_on(outputStream* st) const { print_on(st, false); }
-  virtual void print_value_on(outputStream* st) const { print_on(st, true); }
-
-  virtual void prepare(Visitor& visitor);
-  virtual void merge(Visitor& visitor);
-  virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
-  virtual void remove_invalid_references() NOT_CDS_RETURN;
-
-  template<typename Function>
-  void iterate_compiles(Function fn) const { // lambda enabled API
-    for (int i = 0; i < CompLevel_count - 1; i++) {
-      CompileTrainingData* ctd;
-      ctd = _iterations[CURRENT]._last_toplevel_compiles[i];
-      if (ctd != nullptr) {
-        fn(ctd);
-      }
-      ctd = _iterations[NEXT]._last_toplevel_compiles[i];
-      if (ctd != nullptr) {
-        fn(ctd);
-      }
-    }
-  }
-
-  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
-  virtual MetaspaceObj::Type type() const { return MethodTrainingDataType; }
-
-#if INCLUDE_CDS
-  virtual void remove_unshareable_info();
-#endif
-
-  virtual int size() const {
-    return (int)align_metadata_size(align_up(sizeof(MethodTrainingData), BytesPerWord)/BytesPerWord);
-  }
-
-  virtual const char* internal_name() const {
-    return "{ method training data }";
-  };
-
-  void verify(bool verify_dep_counter);
-
-  static MethodTrainingData* allocate(Method* m, KlassTrainingData* ktd) {
-    return TrainingData::allocate<MethodTrainingData>(m, ktd);
-  }
-};
-
 
 // Information about particular JIT tasks.
 class CompileTrainingData : public TrainingData {
@@ -991,7 +842,7 @@ public:
 
   MethodTrainingData* method() const { return _method; }
   // Validity depends on the method's holder surviving cleanup.
-  virtual bool is_valid() const { return method()->has_holder(); }
+  virtual bool is_valid() const;
 
   int level() const { return _level; }
   bool is_osr() const { return _is_osr; }
@@ -1062,5 +913,157 @@ public:
     return TrainingData::allocate<CompileTrainingData>(mtd, level, is_osr, compile_id);
   }
 };
+
+// Record information about a method at the time compilation is requested.
+class MethodTrainingData : public TrainingData {
+  friend TrainingData;
+  friend CompileTrainingData;
+
+  // Used by CDS. These classes need to access the private default constructor.
+  template <class T> friend class CppVtableTesterA;
+  template <class T> friend class CppVtableTesterB;
+  template <class T> friend class CppVtableCloner;
+
+  KlassTrainingData* _klass;
+  Method* _holder;
+  enum { CURRENT = 0, NEXT = 1  };
+  struct TrainingIteration {
+    CompileTrainingData* _last_toplevel_compiles[CompLevel_count - 1];
+    int _highest_top_level;
+    int _level_mask; // bit-set of all possible levels
+    bool _was_toplevel;
+    TrainingIteration() : _highest_top_level(CompLevel_none), _level_mask(0), _was_toplevel(false) {
+      for (int i = 0; i < CompLevel_count - 1; i++) {
+        _last_toplevel_compiles[i] = nullptr;
+      }
+    }
+  };
+  TrainingIteration _iterations[2]; // CURRENT and NEXT
+  // metadata snapshots of final state:
+  MethodCounters* _final_counters;
+  MethodData*     _final_profile;
+
+  int _invocation_count;
+  int _backedge_count;
+
+  MethodTrainingData();
+  MethodTrainingData(Method* method, KlassTrainingData* ktd) : TrainingData(method) {
+    _klass = ktd;
+    _holder = method;
+    _invocation_count = 0;
+    _backedge_count = 0;
+  }
+
+  static int level_mask(int level) {
+    return ((level & 0xF) != level ? 0 : 1 << level);
+  }
+
+ public:
+  KlassTrainingData* klass()  const { return _klass; }
+  bool has_holder()           const { return _holder != nullptr; }
+  virtual bool is_valid() const;
+  Method* holder()            const { return _holder; }
+  bool only_inlined()         const { return !_iterations[CURRENT]._was_toplevel; }
+  bool saw_level(CompLevel l) const { return (_iterations[CURRENT]._level_mask & level_mask(l)) != 0; }
+  int highest_top_level()     const { return _iterations[CURRENT]._highest_top_level; }
+  MethodData* final_profile() const { return _final_profile; }
+  int invocation_count() const { return _invocation_count; }
+  int backedge_count() const { return _backedge_count; }
+
+  Symbol* name() const {
+    precond(has_holder());
+    return holder()->name();
+  }
+  Symbol* signature() const {
+    precond(has_holder());
+    return holder()->signature();
+  }
+
+  CompileTrainingData* last_toplevel_compile(int level) const {
+    if (level > CompLevel_none) {
+      return _iterations[CURRENT]._last_toplevel_compiles[level - 1];
+    }
+    return nullptr;
+  }
+
+  CompileTrainingData* compile_data_for_aot_code(int level) const {
+    CompileTrainingData* ctd = last_toplevel_compile(level);
+    if (ctd == nullptr && level == CompLevel_limited_profile) {
+      // We compile CompLevel_limited_profile AOT code for CompLevel_full_profile
+      ctd = _iterations[CURRENT]._last_toplevel_compiles[CompLevel_full_profile - 1];
+    }
+    return ctd;
+  }
+
+  void notice_compilation(int level, bool inlined = false) {
+    if (!inlined) {
+      _iterations[NEXT]._was_toplevel = true;
+    }
+    _iterations[NEXT]._level_mask |= level_mask(level);
+  }
+
+  void notice_toplevel_compilation(int level) {
+    _iterations[NEXT]._highest_top_level = MAX2(_iterations[NEXT]._highest_top_level, level);
+  }
+
+  static MethodTrainingData* make(const methodHandle& method,
+                                  bool null_if_not_found = false,
+                                  bool use_cache = true) NOT_CDS_RETURN_(nullptr);
+  static MethodTrainingData* find_fast(const methodHandle& method) { return make(method, true, true); }
+  static MethodTrainingData* find(const methodHandle& method) { return make(method, true, false); }
+
+  virtual MethodTrainingData* as_MethodTrainingData() const {
+    return const_cast<MethodTrainingData*>(this);
+  };
+
+  void print_on(outputStream* st, bool name_only) const;
+  virtual void print_on(outputStream* st) const { print_on(st, false); }
+  virtual void print_value_on(outputStream* st) const { print_on(st, true); }
+
+  virtual void prepare(Visitor& visitor);
+  virtual void merge(Visitor& visitor);
+  virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
+  virtual void remove_invalid_references() NOT_CDS_RETURN;
+
+  template<typename Function>
+  void iterate_compiles(Function fn) const { // lambda enabled API
+    for (int i = 0; i < CompLevel_count - 1; i++) {
+      CompileTrainingData* ctd;
+      ctd = _iterations[CURRENT]._last_toplevel_compiles[i];
+      if (ctd != nullptr) {
+        fn(ctd);
+      }
+      ctd = _iterations[NEXT]._last_toplevel_compiles[i];
+      if (ctd != nullptr) {
+        fn(ctd);
+      }
+    }
+  }
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
+  virtual MetaspaceObj::Type type() const { return MethodTrainingDataType; }
+
+#if INCLUDE_CDS
+  virtual void remove_unshareable_info();
+#endif
+
+  virtual int size() const {
+    return (int)align_metadata_size(align_up(sizeof(MethodTrainingData), BytesPerWord)/BytesPerWord);
+  }
+
+  virtual const char* internal_name() const {
+    return "{ method training data }";
+  };
+
+  void verify(bool verify_dep_counter);
+
+  static MethodTrainingData* allocate(Method* m, KlassTrainingData* ktd) {
+    return TrainingData::allocate<MethodTrainingData>(m, ktd);
+  }
+};
+
+inline bool KlassTrainingData::is_valid() const { return has_holder(); }
+inline bool CompileTrainingData::is_valid() const { return method()->has_holder(); }
+inline bool MethodTrainingData::is_valid() const { return has_holder(); }
 
 #endif // SHARE_OOPS_TRAININGDATA_HPP
