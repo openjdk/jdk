@@ -1454,11 +1454,11 @@ jint G1CollectedHeap::initialize() {
   // Ensure that the maximum number of regions we allow can fit the reservation.
   size_t num_regions_for_reservation = reserved_byte_size / G1HeapRegion::GrainBytes;
 
-  if (num_regions_for_reservation > G1HeapRegion::MaxRegionIdx) {
-    vm_exit_during_initialization(err_msg("Requested heap size (%zu%s) would exceed maximum number of regions %zu at region size %zu. Decrease maximum heap size.",
+  if (num_regions_for_reservation > G1HeapRegion::MaxNumRegions) {
+    vm_exit_during_initialization(err_msg("Requested heap size (%zu%s) would exceed maximum number of regions %u at region size %zu. Decrease maximum heap size.",
                                           byte_size_in_proper_unit(reserved_byte_size),
                                           proper_unit_for_byte_size(reserved_byte_size),
-                                          G1HeapRegion::MaxRegionIdx,
+                                          G1HeapRegion::MaxNumRegions,
                                           G1HeapRegion::GrainBytes));
   }
 
