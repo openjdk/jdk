@@ -60,7 +60,7 @@ public:
 
   inline oop holder() const { return _obj; }
   inline oop obj() const {
-    assert(!is_flat(), "flattened value does not have oop");
+    assert(!is_flat(), "flattened value does not have an oop");
     return _obj;
   }
   inline int offset() const { return _offset; }
