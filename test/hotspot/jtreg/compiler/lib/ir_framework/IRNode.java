@@ -3501,6 +3501,21 @@ public class IRNode {
         machOnlyNameRegex(X86_CMOVEL_IMM01UCFE, "cmovL_imm_01UCFE");
     }
 
+    public static final String X86_MEMBAR_ACQUIRE = PREFIX + "X86_MEMBAR_ACQUIRE" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_MEMBAR_ACQUIRE, "membar_acquire");
+    }
+
+    public static final String AARCH64_UNNECESSARY_MEMBAR_ACQUIRE = PREFIX + "AARCH64_UNNECESSARY_MEMBAR_ACQUIRE" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_UNNECESSARY_MEMBAR_ACQUIRE, "unnecessary_membar_acquire");
+    }
+
+    public static final String AARCH64_MEMBAR_ACQUIRE = PREFIX + "AARCH64_MEMBAR_ACQUIRE" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_MEMBAR_ACQUIRE, "membar_acquire");
+    }
+
     public static final String MOD_F = PREFIX + "MOD_F" + POSTFIX;
     static {
         String regex = START + "ModF" + MID + END;

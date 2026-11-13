@@ -3118,6 +3118,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     };
     use->visit_uses(push_phi_to_worklist, is_boundary);
   }
+  // DecodeN of a Phi of EncodePs is transformed into a Phi of the EncodePs' inputs
+  if (use->is_Phi()) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_DecodeN();
+    });
+  }
 }
 
 /**

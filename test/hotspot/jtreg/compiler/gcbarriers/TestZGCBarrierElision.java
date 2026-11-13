@@ -251,13 +251,13 @@ class TestZGCCorrectBarrierElision {
 class TestZGCEffectiveBarrierElision {
 
     @Test
-    // C2 does not emit a field load during parsing, so it also does not emit any barriers.
-    @IR(failOn = { IRNode.Z_LOAD_P_WITH_BARRIER_FLAG, Common.ELIDED }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_LOAD_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testAllocateThenLoad() {
         Outer o1 = new Outer();
         Common.blackhole(o1);
-        // This load is directly optimized away by C2.
+        // This load is directly optimized away by C2, leaving the MemBarAcquire behind
         Common.blackhole(o1.field1);
+        // This load is not optimized because its memory input is a MemBarAcquire
         Common.blackhole(o1.field1);
     }
 

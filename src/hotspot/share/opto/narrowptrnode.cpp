@@ -22,8 +22,30 @@
  *
  */
 
+#include "opto/cfgnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
+
+Node* DecodeNNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // DecodeN(Phi(EncodeP(n1), EncodeP(n2), ...)) -> Phi(n1, n2, ...)
+  Node* phi = in(1);
+  if (!phi->is_Phi()) {
+    return nullptr;
+  }
+
+  for (uint i = 1; i < phi->req(); i++) {
+    if (phi->in(i) == nullptr || !phi->in(i)->is_EncodeP()) {
+      return nullptr;
+    }
+  }
+
+  PhiNode* r = new PhiNode(phi->in(0), type());
+  phase->set_type_bottom(r);
+  for (uint i = 1; i < phi->req(); i++) {
+    r->init_req(i, phi->in(i)->in(1));
+  }
+  return r;
+}
 
 Node* DecodeNNode::Identity(PhaseGVN* phase) {
   const Type *t = phase->type( in(1) );

@@ -384,4 +384,15 @@ private:
   virtual bool depends_only_on_test_impl() const { return false; }
 };
 
+// Just an alias of its input, this is useful if we want to return an old node in Ideal
+class IdentityNode final : public Node {
+public:
+  IdentityNode(Node* n) : Node(nullptr, n) {}
+  int Opcode() const final;
+  const Type* Value(PhaseGVN* phase) const final;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) final;
+  Node* Identity(PhaseGVN* phase) final;
+  const Type* bottom_type() const final { return in(1)->bottom_type(); }
+};
+
 #endif // SHARE_OPTO_CASTNODE_HPP

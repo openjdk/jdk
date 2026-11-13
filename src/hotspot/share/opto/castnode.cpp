@@ -798,3 +798,15 @@ const TypeInteger* ConstraintCastNode::widen_type(const PhaseGVN* phase, const T
   }
   return this_type;
 }
+
+Node* IdentityNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return nullptr;
+}
+
+Node* IdentityNode::Identity(PhaseGVN* phase) {
+  return in(1);
+}
+
+const Type* IdentityNode::Value(PhaseGVN* phase) const {
+  return phase->type(in(1));
+}
