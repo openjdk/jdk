@@ -38,11 +38,6 @@
                        Register tmp1, Register tmp2,
                        bool is_latin, Label& DONE);
 
-  // Clobbers v4-v11.
-  void string_compare_different_encoding_v(Register str1, Register str2, Register cnt2,
-                                           Register tmp1, Register tmp2, bool encLU,
-                                           Label& DIFFERENCE, Label& DONE);
-
   void string_compare_long_same_encoding(Register result, Register str1, Register str2,
                                   const bool isLL, Register cnt1, Register cnt2,
                                   Register tmp1, Register tmp2, Register tmp3,

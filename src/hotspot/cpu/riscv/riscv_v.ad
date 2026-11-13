@@ -4364,13 +4364,36 @@ instruct varrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI b
   ins_pipe(pipe_class_memory);
 %}
 
+instruct vstring_compareU_128b(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
+                          iRegI_R10 result, vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
+                          vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
+                          iRegP_R28 tmp1, iRegL_R29 tmp2)
+%{
+  predicate(UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UU &&
+            MaxVectorSize == 16);
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
+        TEMP v4, TEMP v5, TEMP v6, TEMP v7, TEMP v8, TEMP v9, TEMP v10, TEMP v11);
+
+  format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareU" %}
+  ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ string_compare_v($str1$$Register, $str2$$Register,
+                        $cnt1$$Register, $cnt2$$Register, $result$$Register,
+                        $tmp1$$Register, $tmp2$$Register,
+                        StrIntrinsicNode::UU);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
 instruct vstring_compareU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
                           iRegI_R10 result, vReg_V4 v4, vReg_V5 v5,
                           vReg_V6 v6, vReg_V7 v7, vReg_V8 v8,
                           vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
                           iRegP_R28 tmp1, iRegL_R29 tmp2)
 %{
-  predicate(UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UU);
+  predicate(UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UU &&
+            MaxVectorSize > 16);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
          TEMP v4, TEMP v5, TEMP v6, TEMP v7,
@@ -4428,7 +4451,6 @@ instruct vstring_compareUL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI
   %}
   ins_pipe(pipe_class_memory);
 %}
-
 instruct vstring_compareLU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
                            iRegI_R10 result, vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
                            vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,

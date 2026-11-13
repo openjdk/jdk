@@ -3022,72 +3022,15 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
   BLOCK_COMMENT("} arrays_equals_v");
 }
 
-void C2_MacroAssembler::string_compare_different_encoding_v(Register str1, Register str2, Register cnt2,
-                                                           Register tmp1, Register tmp2, bool encLU,
-                                                           Label& DIFFERENCE, Label& DONE) {
-  Register strL = encLU ? str1 : str2;
-  Register strU = encLU ? str2 : str1;
-  VectorRegister vstr1 = encLU ? v8 : v4;
-  VectorRegister vstr2 = encLU ? v4 : v8;
-
-  Label wide, fixed_loop;
-  const int elems_m2 = 2 * MaxVectorSize;
-
-  mv(tmp1, elems_m2);
-  bgt(cnt2, tmp1, wide);
-
-  // One vl-bounded compare covers the whole string.
-  vsetvli(tmp1, cnt2, Assembler::e8, Assembler::m2, Assembler::ma, Assembler::ta);
-  vle8_v(vstr1, strL);
-  vsetvli(tmp1, cnt2, Assembler::e16, Assembler::m4, Assembler::ma, Assembler::ta);
-  vzext_vf2(vstr2, vstr1);
-  vle16_v(vstr1, strU);
-  vmsne_vv(v4, vstr2, vstr1);
-  vfirst_m(tmp2, v4);
-  bgez(tmp2, DIFFERENCE);
-  j(DONE);
-
-  bind(wide);
-  vsetvli(tmp1, x0, Assembler::e8, Assembler::m2, Assembler::ma, Assembler::ta);
-
-  bind(fixed_loop);
-  vsetvli(zr, tmp1, Assembler::e8, Assembler::m2, Assembler::ma, Assembler::ta);
-  vle8_v(vstr1, strL);
-  vsetvli(zr, tmp1, Assembler::e16, Assembler::m4, Assembler::ma, Assembler::ta);
-  vzext_vf2(vstr2, vstr1);
-  vle16_v(vstr1, strU);
-  vmsne_vv(v4, vstr2, vstr1);
-  vfirst_m(tmp2, v4);
-  bgez(tmp2, DIFFERENCE);
-  sub(cnt2, cnt2, tmp1);
-  beqz(cnt2, DONE);
-  addi(strL, strL, 2 * MaxVectorSize);
-  addi(strU, strU, 4 * MaxVectorSize);
-  bge(cnt2, tmp1, fixed_loop);
-
-  // Tail: one vl-bounded compare covers the rest.
-  vsetvli(tmp1, cnt2, Assembler::e8, Assembler::m2, Assembler::ma, Assembler::ta);
-  vle8_v(vstr1, strL);
-  vsetvli(tmp1, cnt2, Assembler::e16, Assembler::m4, Assembler::ma, Assembler::ta);
-  vzext_vf2(vstr2, vstr1);
-  vle16_v(vstr1, strU);
-  vmsne_vv(v4, vstr2, vstr1);
-  vfirst_m(tmp2, v4);
-  bgez(tmp2, DIFFERENCE);
-  j(DONE);
-}
-
 void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register cnt1, Register cnt2,
                                          Register result, Register tmp1, Register tmp2, int encForm) {
-  Label DIFFERENCE, DONE, L, SMALL_STRING, SMALL_LOOP, SMALL_DIFFERENCE;
+  Label DIFFERENCE, DONE, L, loop;
   bool encLL = encForm == StrIntrinsicNode::LL;
   bool encLU = encForm == StrIntrinsicNode::LU;
   bool encUL = encForm == StrIntrinsicNode::UL;
 
   bool str1_isL = encLL || encLU;
   bool str2_isL = encLL || encUL;
-
-  int minCharsInWord = encLL ? wordSize : wordSize / 2;
 
   BLOCK_COMMENT("string_compare_v {");
 
@@ -3105,9 +3048,6 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
   mv(cnt2, cnt1);
   bind(L);
 
-  mv(tmp1, minCharsInWord);
-  ble(cnt2, tmp1, SMALL_STRING);
-
   // We focus on the optimization of small sized string.
   // Please check below document for string size distribution statistics.
   // https://cr.openjdk.org/~shade/density/string-density-report.pdf
@@ -3116,24 +3056,26 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
 
     j(DONE);
   } else { // LU or UL
-    string_compare_different_encoding_v(str1, str2, cnt2, tmp1, tmp2, encLU, DIFFERENCE, DONE);
+    Register strL = encLU ? str1 : str2;
+    Register strU = encLU ? str2 : str1;
+    VectorRegister vstr1 = encLU ? v8 : v4;
+    VectorRegister vstr2 = encLU ? v4 : v8;
+
+    bind(loop);
+    vsetvli(tmp1, cnt2, Assembler::e8, Assembler::m2);
+    vle8_v(vstr1, strL);
+    vsetvli(tmp1, cnt2, Assembler::e16, Assembler::m4);
+    vzext_vf2(vstr2, vstr1);
+    vle16_v(vstr1, strU);
+    vmsne_vv(v4, vstr2, vstr1);
+    vfirst_m(tmp2, v4);
+    bgez(tmp2, DIFFERENCE);
+    sub(cnt2, cnt2, tmp1);
+    add(strL, strL, tmp1);
+    shift_left_add(strU, tmp1, strU, 1, tmp1);
+    bnez(cnt2, loop);
+    j(DONE);
   }
-
-  bind(SMALL_STRING);
-  beqz(cnt2, DONE);
-  bind(SMALL_LOOP);
-  str1_isL ? lbu(tmp1, Address(str1, 0)) : lhu(tmp1, Address(str1, 0));
-  str2_isL ? lbu(tmp2, Address(str2, 0)) : lhu(tmp2, Address(str2, 0));
-  bne(tmp1, tmp2, SMALL_DIFFERENCE);
-  addi(str1, str1, str1_isL ? 1 : 2);
-  addi(str2, str2, str2_isL ? 1 : 2);
-  subi(cnt2, cnt2, 1);
-  bnez(cnt2, SMALL_LOOP);
-  j(DONE);
-
-  bind(SMALL_DIFFERENCE);
-  sub(result, tmp1, tmp2);
-  j(DONE);
 
   bind(DIFFERENCE);
   slli(tmp1, tmp2, 1);
