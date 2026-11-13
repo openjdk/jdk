@@ -308,9 +308,10 @@ bool ciMethodData::load_data() {
   return true;
 }
 
-void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
+bool ciMegamorphicTypeData::translate_type_data_from(const MegamorphicTypeData* data) {
+  bool cleared_row = false;
   for (uint row = 0; row < row_limit(); row++) {
-    Klass* k = data->as_ReceiverTypeData()->receiver(row);
+    Klass* k = data->receiver(row);
     if (k != nullptr && k->class_loader_data() != nullptr && is_klass_loaded(k)) {
       if (k->is_loader_alive()) {
         ciKlass* klass = CURRENT_ENV->get_klass(k);
@@ -318,12 +319,27 @@ void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
       } else {
         // With concurrent class unloading, the MDO could have stale metadata; override it
         clear_row(row);
+        cleared_row = true;
       }
     } else {
       set_receiver(row, nullptr);
     }
   }
+  return cleared_row;
 }
+
+#ifndef PRODUCT
+void ciMegamorphicTypeData::print_receiver_data_on(outputStream* st, int total) const {
+  total += count();
+  for (uint row = 0; row < row_limit(); row++) {
+    if (receiver(row) != nullptr) {
+      _pd->tab(st);
+      receiver(row)->print_name_on(st);
+      st->print_cr("(%u %4.2f)", receiver_count(row), (float) receiver_count(row) / (float) total);
+    }
+  }
+}
+#endif
 
 void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries* entries) {
   for (int i = 0; i < number_of_entries(); i++) {
@@ -834,8 +850,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
         dump_replay_data_receiver_type_helper<ciArrayStoreData>(out, round, count, array_store_data);
       } else if (pdata->is_ArrayLoadData()) {
         ciArrayLoadData* array_load_data = (ciArrayLoadData*)pdata;
-        dump_replay_data_type_helper(out, round, count, array_load_data, ciArrayLoadData::array_offset(),
-                                     array_load_data->array()->valid_type());
+        dump_replay_data_receiver_type_helper<ciArrayLoadData>(out, round, count, array_load_data);
         dump_replay_data_type_helper(out, round, count, array_load_data, ciArrayLoadData::element_offset(),
                                      array_load_data->element()->valid_type());
       } else if (pdata->is_ACmpData()) {
@@ -951,19 +966,8 @@ void ciCallTypeData::print_data_on(outputStream* st, const char* extra) const {
 }
 
 void ciReceiverTypeData::print_receiver_data_on(outputStream* st) const {
-  uint row;
-  int entries = 0;
-  for (row = 0; row < row_limit(); row++) {
-    if (receiver(row) != nullptr)  entries++;
-  }
-  st->print_cr("count(%u) entries(%u)", count(), entries);
-  for (row = 0; row < row_limit(); row++) {
-    if (receiver(row) != nullptr) {
-      tab(st);
-      receiver(row)->print_name_on(st);
-      st->print_cr("(%u)", receiver_count(row));
-    }
-  }
+  st->print_cr("count(%u) entries(%u)", count(), _megamorphic_type_data.entries());
+  megamorphic_type_data()->print_receiver_data_on(st, count());
 }
 
 void ciReceiverTypeData::print_data_on(outputStream* st, const char* extra) const {
@@ -1015,11 +1019,17 @@ void ciArrayStoreData::print_data_on(outputStream* st, const char* extra) const 
 }
 
 void ciArrayLoadData::print_data_on(outputStream* st, const char* extra) const {
-  print_shared(st, "ciArrayLoadData", extra);
+  print_shared(st, "ArrayLoad", extra);
+  st->print("not flat %u (null free = %u, nullable = %u)", not_flat_count(), not_flat_null_free_count(), not_flat_nullable_count());
+  st->cr();
+  tab(st);
+  st->print("flat %u (null free atomic =  %u, null free not atomic =  %u, nullable = %u)", flat_count(), flat_nullfree_atomic_count(), flat_nullfree_not_atomic_count(), flat_nullable_count());
   st->cr();
   tab(st, true);
   st->print("array");
-  array()->print_data_on(st);
+  tab(st);
+  megamorphic_type_data()->print_receiver_data_on(st, 0);
+  st->cr();
   tab(st, true);
   st->print("element");
   element()->print_data_on(st);
