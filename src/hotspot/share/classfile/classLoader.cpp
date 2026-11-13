@@ -80,7 +80,6 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/resizableHashTable.hpp"
 #include "utilities/utf8.hpp"
 
 #include <ctype.h>
@@ -1301,91 +1300,6 @@ char* ClassLoader::uri_to_path(const char* uri) {
   return path;
 }
 
-// Hashtable to reduce the number of os::same_files() calls inside classpath_to_index().
-
-inline unsigned cstring_hash(const char* const& s) {
-  return java_lang_String::hash_code((const jbyte*)s, checked_cast<int>(strlen(s)));
-}
-
-inline bool cstring_equals(const char* const& a, const char* const& b) {
-  return strcmp(a, b) == 0;
-}
-
-typedef ResizeableHashTable<const char*, int,
-                            AnyObj::C_HEAP, MemTag::mtClassShared,
-                            &cstring_hash, &cstring_equals> ClasspathIndexHashTable;
-
-static ClasspathIndexHashTable* _classpath_index_hashtable = nullptr;
-
-static int* lookup_classpath_index(const char* path) {
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  if (_classpath_index_hashtable == nullptr) {
-    // Pre-populate the table. This should allow us to elide all calls to find_classpath_index()
-    // on non-Windows platforms.
-    _classpath_index_hashtable = new (mtClassShared)ClasspathIndexHashTable(/*min*/107, /*max*/4049);
-    AOTClassLocationConfig::dumptime_iterate([&] (AOTClassLocation* cl) {
-      if (!cl->is_modules_image()) {
-        int i = cl->index();
-        assert(i > 0, "module image is always at index 0");
-        ResourceMark rm;
-        const char* canon_path = ClassLoader::get_canonical_path(cl->path(), JavaThread::current()); // resource allocated
-        const char* canon_path_dup = os::strdup(canon_path, mtClassShared);
-        bool created;
-        _classpath_index_hashtable->put_if_absent(canon_path_dup, i, &created);
-        if (!created) {
-          // If the exact same path appears more than once in the classpath, only
-          // the first one is recorded.
-          os::free((void*)canon_path_dup);
-        }
-      }
-      return true; // Keep iterating
-    });
-  }
-
-  return _classpath_index_hashtable->get(path);
-}
-
-static int find_classpath_index(const char* path) {
-  int classpath_index = -1;
-  AOTClassLocationConfig::dumptime_iterate([&] (AOTClassLocation* cl) {
-    // os::same_files is necessary on Windows when UNC paths are used in the CLASSPATH.
-    if (!cl->is_modules_image() && os::same_files(cl->path(), path)) {
-      classpath_index = cl->index();
-      assert(classpath_index > 0, "module image is always at index 0");
-      return false; // Break the AOTClassLocationConfig::dumptime_iterate() loop.
-    } else {
-      return true; // Keep iterating
-    }
-  });
-
-  return classpath_index;
-}
-
-static void store_classpath_index(const char* path, int classpath_index) {
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-
-  const char* path_dup = os::strdup(path, mtClassShared);
-  bool created;
-  _classpath_index_hashtable->put_if_absent(path_dup, classpath_index, &created);
-  if (!created) {
-    int* saved = _classpath_index_hashtable->get(path_dup);
-    assert(*saved == classpath_index, "competing thread must store the save value");
-    os::free((void*)path_dup);
-  }
-}
-
-static int classpath_to_index(const char* path) {
-  int* saved = lookup_classpath_index(path);
-  if (saved != nullptr) {
-    return *saved;
-  }
-
-  int classpath_index = find_classpath_index(path);
-  store_classpath_index(path, classpath_index);
-
-  return classpath_index;
-}
-
 // Record the shared classpath index and loader type for classes loaded
 // by the builtin loaders at dump time.
 void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
@@ -1429,46 +1343,40 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     // The path table contains no entry before that. Any classes loaded prior
     // to the setup of the shared path table must be from the modules image.
     assert(stream->from_boot_loader_modules_image(), "stream must be loaded by boot loader from modules image");
+    assert(AOTClassLocationConfig::dumptime()->class_location_at(0)->is_modules_image(), "sanity check");
+    classpath_index = 0;
+  } else if (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:")) {
     classpath_index = 0;
   } else {
-    if (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:")) {
-      classpath_index = 0;
-    } else {
-      const char* path = ClassLoader::uri_to_path(src);
-      assert(path != nullptr, "sanity");
-      int i = classpath_to_index(path);
-      assert(i != 0, "must not be from module path");
+    const char* path = ClassLoader::uri_to_path(src);
+    assert(path != nullptr, "sanity");
 
+    if ((pkg_entry != nullptr) && !pkg_entry->in_unnamed_module()) {
+      // A class in a named module from the --module-path. Note that classes from the modules image
+      // are handled above and get an index of 0.
+      classpath_index = AOTClassLocationConfig::dumptime_get_class_location_index(path, /*is_named_module=*/ true);
+    } else {
+      // A class in an unnamed module
+      int i = AOTClassLocationConfig::dumptime_get_class_location_index(path, /*is_named_module=*/ false);
+      assert(i != 0, "must not be from module image");
       if (i > 0) {
         AOTClassLocation const* cl = AOTClassLocationConfig::dumptime()->class_location_at(i);
         // null pkg_entry and pkg_entry in an unnamed module implies the class
         // is from the -cp or boot loader append path which consists of -Xbootclasspath/a
         // and jvmti appended entries.
         if ((pkg_entry == nullptr) || (pkg_entry->in_unnamed_module())) {
-          // Ensure the index is within the -cp range before assigning
-          // to the classpath_index.
           if (SystemDictionary::is_system_class_loader(loader) && cl->from_app_classpath()) {
             classpath_index = i;
-          } else {
-            if (cl->from_boot_classpath()) {
-              if (loader != nullptr) {
-                // Probably loaded by jdk/internal/loader/ClassLoaders$BootClassLoader. Don't archive
-                // such classes.
-              } else {
-                classpath_index = i;
-              }
-            }
-          }
-        } else {
-          // A class from a named module from the --module-path. Ensure the index is
-          // within the --module-path range before assigning to the classpath_index.
-          if ((pkg_entry != nullptr) && !(pkg_entry->in_unnamed_module()) && cl->from_module_path()) {
+          } else if (loader == nullptr && cl->from_boot_classpath()) {
             classpath_index = i;
           }
         }
       }
     }
   }
+
+  // Note: classpath_index will be -1 if it's not found inside AOTClassLocationConfig, and
+  // such a class will not be archived.
 
   log_debug(aot, path)("classpath_index %s = %d", ik->external_name(), classpath_index);
   record_result_for_builtin_loader(checked_cast<s2>(classpath_index), ik, redefined);
