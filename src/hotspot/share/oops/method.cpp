@@ -1292,7 +1292,6 @@ void Method::remove_unshareable_flags() {
   set_is_not_c1_compilable(false);
   set_is_not_c2_osr_compilable(false);
   set_is_not_c1_osr_compilable(false);
-  set_queued_for_compilation(false);
   set_on_stack_flag(false);
   // This flag describes the adapter selected for this method in
   // the current VM. Recompute it when the method is linked and
