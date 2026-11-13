@@ -418,8 +418,7 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List<Node>& wo
 // numbering ("C->node_hash()", referenced by PhaseValue::_table) is not updated because
 // computing the hash values is not based on node IDs.
 PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
-                                     Unique_Node_List<Node>& worklist,
-                                     PhaseNumber phase_num) :
+                                     Unique_Node_List<Node>& worklist) :
   PhaseRemoveUseless(gvn, worklist, Remove_Useless_And_Renumber_Live),
   _new_type_array(C->comp_arena()),
   _old2new_map(C->unique(), C->unique(), -1),

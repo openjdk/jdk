@@ -226,23 +226,38 @@ void G1BarrierSetC2::eliminate_gc_barrier_data(Node* node) const {
   }
 }
 
+static TypePtr::PTR meet_ptr_of_oops_in_store_l_special(const MemNode* store) {
+  const Type* oops_meet = store->in(StoreLSpecialNode::FirstOop)->bottom_type();
+  if (!store->in(StoreLSpecialNode::SecondOop)->is_top()) {
+    oops_meet = oops_meet->meet(store->in(StoreLSpecialNode::SecondOop)->bottom_type());
+  }
+  const TypePtr* oops_meet_as_ptr = oops_meet->make_ptr();
+  return oops_meet_as_ptr->ptr();
+}
+
 static void refine_barrier_by_new_val_type(const Node* n) {
   if (n->Opcode() != Op_StoreP &&
-      n->Opcode() != Op_StoreN) {
+      n->Opcode() != Op_StoreN &&
+      n->Opcode() != Op_StoreLSpecial) {
     return;
   }
   MemNode* store = n->as_Mem();
-  const Node* newval = n->in(MemNode::ValueIn);
-  assert(newval != nullptr, "");
-  const Type* newval_bottom = newval->bottom_type();
-  TypePtr::PTR newval_type = newval_bottom->make_ptr()->ptr();
   uint8_t barrier_data = store->barrier_data();
-  if (!newval_bottom->isa_oopptr() &&
-      !newval_bottom->isa_narrowoop() &&
-      newval_type != TypePtr::Null) {
-    // newval is neither an OOP nor null, so there is no barrier to refine.
-    assert(barrier_data == 0, "non-OOP stores should have no barrier data");
-    return;
+  TypePtr::PTR newval_type;
+  if (n->Opcode() == Op_StoreLSpecial) {
+    newval_type = meet_ptr_of_oops_in_store_l_special(store);
+  } else {
+    const Node* newval = n->in(MemNode::ValueIn);
+    assert(newval != nullptr, "");
+    const Type* newval_bottom = newval->bottom_type();
+    newval_type = newval_bottom->make_ptr()->ptr();
+    if (!newval_bottom->isa_oopptr() &&
+        !newval_bottom->isa_narrowoop() &&
+        newval_type != TypePtr::Null) {
+      // newval is neither an OOP nor null, so there is no barrier to refine.
+      assert(barrier_data == 0, "non-OOP stores should have no barrier data");
+      return;
+    }
   }
   if (barrier_data == 0) {
     // No barrier to refine.
@@ -289,28 +304,34 @@ bool G1BarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
 uint G1BarrierSetC2::estimated_barrier_size(const Node* node) const {
   uint8_t barrier_data = MemNode::barrier_data(node);
   uint nodes = 0;
+  uint factor = 1;
+  if (node->Opcode() == Op_StoreLSpecial && !node->in(StoreLSpecialNode::SecondOop)->is_top()) {
+    // assigning two oops will make two barrier sets
+    factor = 2;
+  }
   if ((barrier_data & G1C2BarrierPre) != 0) {
     // Only consider the fast path for the barrier that is
     // actually inlined into the main code stream.
     // The slow path is laid out separately and does not
     // directly affect performance.
     // It has a cost of 6 (AddP, LoadB, Cmp, Bool, If, IfProj).
-    nodes += 6;
+    nodes += 6 * factor;
   }
   if ((barrier_data & G1C2BarrierPost) != 0) {
     // Approximate the number of nodes needed; an if costs 4 nodes (Cmp, Bool,
     // If, If projection), any other (Assembly) instruction is approximated with
     // a cost of 1.
-    nodes +=   4  // base cost for the card write containing getting base offset, address calculation and the card write;
-             + 6  // same region check: Uncompress (new_val) oop, xor, shr, (cmp), jmp
-             + 4  // new_val is null check
-             + (UseCondCardMark ? 4 : 0); // card not clean check.
+    uint post_nodes =   4  // base cost for the card write containing getting base offset, address calculation and the card write;
+                      + 6  // same region check: Uncompress (new_val) oop, xor, shr, (cmp), jmp
+                      + 4  // new_val is null check
+                      + (UseCondCardMark ? 4 : 0); // card not clean check.
+    nodes += post_nodes * factor;
   }
   return nodes;
 }
 
 bool G1BarrierSetC2::can_initialize_object(const StoreNode* store) const {
-  assert(store->Opcode() == Op_StoreP || store->Opcode() == Op_StoreN, "OOP store expected");
+  assert(store->Opcode() == Op_StoreP || store->Opcode() == Op_StoreN || store->Opcode() == Op_StoreLSpecial, "OOP store expected");
   // It is OK to move the store across the object initialization boundary only
   // if it does not have any barrier, or if it has barriers that can be safely
   // elided (because of the compensation steps taken on the allocation slow path
@@ -538,6 +559,7 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
       switch (mach->ideal_Opcode()) {
       case Op_StoreP:
       case Op_StoreN:
+      case Op_StoreLSpecial:
       case Op_CompareAndExchangeP:
       case Op_CompareAndSwapP:
       case Op_GetAndSetP:
