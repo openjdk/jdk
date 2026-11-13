@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8281429
+ * @bug 8281429 8393490
  * @summary Tests that C2 can correctly scalar replace some object allocation merges.
  * @library /test/lib /
  * @requires vm.debug == true & vm.flagless & vm.bits == 64 & vm.compiler2.enabled & vm.opt.final.EliminateAllocations
@@ -88,6 +88,8 @@ public class AllocationMergesTests {
                  "testMergedAccessAfterCallWithWrite_C2",
                  "testLoadAfterTrap_C2",
                  "testCondAfterMergeWithNull_C2",
+                 "testOOMEHandlerWithNullMerge_C2",
+                 "testOOMEHandlerWithAllocationMerge_C2",
                  "testLoadAfterLoopAlias_C2",
                  "testCallTwoSide_C2",
                  "testMergedAccessAfterCallNoWrite_C2",
@@ -147,6 +149,8 @@ public class AllocationMergesTests {
         Asserts.assertEQ(testMergedAccessAfterCallWithWrite_Interp(cond1, x, y),    testMergedAccessAfterCallWithWrite_C2(cond1, x, y));
         Asserts.assertEQ(testLoadAfterTrap_Interp(cond1, x, y),                     testLoadAfterTrap_C2(cond1, x, y));
         Asserts.assertEQ(testCondAfterMergeWithNull_Interp(cond1, cond2, x, y),     testCondAfterMergeWithNull_C2(cond1, cond2, x, y));
+        Asserts.assertEQ(testOOMEHandlerWithNullMerge_Interp(cond1, x, y),          testOOMEHandlerWithNullMerge_C2(cond1, x, y));
+        Asserts.assertEQ(testOOMEHandlerWithAllocationMerge_Interp(cond1, x, y),    testOOMEHandlerWithAllocationMerge_C2(cond1, x, y));
         Asserts.assertEQ(testLoadAfterLoopAlias_Interp(x, y),                       testLoadAfterLoopAlias_C2(x, y));
         Asserts.assertEQ(testCallTwoSide_Interp(cond1, x, y),                       testCallTwoSide_C2(cond1, x, y));
         Asserts.assertEQ(testMergedAccessAfterCallNoWrite_Interp(cond1, x, y),      testMergedAccessAfterCallNoWrite_C2(cond1, x, y));
@@ -442,6 +446,57 @@ public class AllocationMergesTests {
     @DontCompile
     int testCondAfterMergeWithNull_Interp(boolean cond1, boolean cond2, int x, int y) { return testCondAfterMergeWithNull(cond1, cond2, x, y); }
 
+    // -------------------------------------------------------------------------
+
+    @ForceInline
+    int testOOMEHandlerWithNullMerge(boolean cond, int x, int y) {
+        Point p = null;
+        try {
+            if (cond) {
+                p = new Point(y, x);
+            }
+        } catch (OutOfMemoryError ignore) {
+            // Fallthrough to get p == null on OOME
+        }
+        return p == null ? 0 : p.x * p.y;
+    }
+
+    @Test
+    @IR(counts = { IRNode.ALLOC, "1" })
+    int testOOMEHandlerWithNullMerge_C2(boolean cond, int x, int y) {
+        return testOOMEHandlerWithNullMerge(cond, x, y);
+    }
+    @DontCompile
+    int testOOMEHandlerWithNullMerge_Interp(boolean cond, int x, int y) {
+        return testOOMEHandlerWithNullMerge(cond, x, y);
+    }
+
+    // -------------------------------------------------------------------------
+
+    @ForceInline
+    int testOOMEHandlerWithAllocationMerge(boolean cond, int x, int y) {
+        Point p;
+        if (cond) {
+            try {
+                p = new Point(x, y);
+            } catch (OutOfMemoryError ignore) {
+                return 0;
+            }
+        } else {
+            p = new Point(y, x);
+        }
+        return p.x;
+    }
+
+    @Test
+    @IR(counts = { IRNode.ALLOC, "2" })
+    int testOOMEHandlerWithAllocationMerge_C2(boolean cond, int x, int y) {
+        return testOOMEHandlerWithAllocationMerge(cond, x, y);
+    }
+    @DontCompile
+    int testOOMEHandlerWithAllocationMerge_Interp(boolean cond, int x, int y) {
+        return testOOMEHandlerWithAllocationMerge(cond, x, y);
+    }
     // -------------------------------------------------------------------------
 
     @ForceInline
