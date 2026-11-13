@@ -118,7 +118,7 @@ public class HtmlIds {
     static final HtmlId SEARCH_RESULT_CONTAINER = HtmlId.of("search-result-container");
     static final HtmlId SEARCH_RESULT_SECTION = HtmlId.of("search-result-section");
     static final HtmlId SERVICES = HtmlId.of("services-summary");
-    static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
+    public static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
     static final HtmlId THEME_BUTTON = HtmlId.of("theme-button");
     static final HtmlId THEME_DARK = HtmlId.of("theme-dark");
     static final HtmlId THEME_LIGHT = HtmlId.of("theme-light");

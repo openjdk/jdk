@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class TestPackageAnnotation extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="header">
                     <h1 title="Package pkg1" class="title">Package pkg1</h1>
                     </div>
@@ -87,7 +87,7 @@ public class TestPackageAnnotation extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("pkg3/package-summary.html", true,
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="header">
                     <h1 title="Package pkg3" class="title">Package pkg3</h1>
                     </div>
