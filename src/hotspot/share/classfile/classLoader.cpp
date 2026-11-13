@@ -1306,6 +1306,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
                                 const ClassFileStream* stream, bool redefined) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(stream != nullptr, "sanity");
+  assert(AOTClassLocationConfig::dumptime_is_ready(), "sanity");
 
   if (ik->is_hidden()) {
     record_hidden_class(ik);
@@ -1334,20 +1335,14 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   assert(has_jrt_entry(), "CDS dumping does not support exploded JDK build");
 
   int classpath_index = -1;
-  PackageEntry* pkg_entry = ik->package();
 
-  if (!AOTClassLocationConfig::dumptime_is_ready()) {
-    // The shared path table is set up after module system initialization.
-    // The path table contains no entry before that. Any classes loaded prior
-    // to the setup of the shared path table must be from the modules image.
-    assert(stream->from_boot_loader_modules_image(), "stream must be loaded by boot loader from modules image");
+  if (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:")) {
     assert(AOTClassLocationConfig::dumptime()->class_location_at(0)->is_modules_image(), "sanity check");
-    classpath_index = 0;
-  } else if (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:")) {
     classpath_index = 0;
   } else {
     ResourceMark rm(current);
     const char* path = ClassLoader::uri_to_path(src);
+    PackageEntry* pkg_entry = ik->package();
     if ((pkg_entry != nullptr) && !pkg_entry->in_unnamed_module()) {
       // A class in a named module from the --module-path. Note that classes from the modules image
       // are handled above and get an index of 0.

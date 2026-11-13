@@ -477,11 +477,11 @@ inline bool cstring_equals(const char* const& a, const char* const& b) {
 }
 
 typedef ResizeableHashTable<const char*, int, AnyObj::C_HEAP, MemTag::mtClassShared,
-                            &cstring_hash, &cstring_equals> AOTClassLocationIndexHashtableSuper;
+                            &cstring_hash, &cstring_equals> AOTClassLocationIndexHashtableBase;
 
-class AOTClassLocationIndexHashtable: public AOTClassLocationIndexHashtableSuper {
+class AOTClassLocationIndexHashtable: public AOTClassLocationIndexHashtableBase {
 public:
-  AOTClassLocationIndexHashtable(bool is_named_module) : AOTClassLocationIndexHashtableSuper(/*min*/107, /*max*/4049) {
+  AOTClassLocationIndexHashtable(bool is_named_module) : AOTClassLocationIndexHashtableBase(/*min*/107, /*max*/4049) {
     AOTClassLocationConfig::dumptime_iterate([&] (AOTClassLocation* cl) {
       if (!cl->is_modules_image() && cl->from_module_path() == is_named_module) {
         int i = cl->index();
