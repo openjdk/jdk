@@ -57,7 +57,7 @@ public class MissingJspawnhelper {
             Path lib = Files.createDirectory(javaHome.resolve("lib"));
             symlinkEntriesExcept(testJdk.resolve("lib"), lib, "jspawnhelper");
 
-            // Point the child JVM at a temporary java.home that lacks lib/jspawnhelper.
+            // Launch a child JVM because the jspawnhelper path uses the java.home value cached at startup.
             ProcessTools.executeTestJava("-Djava.home=" + javaHome,
                     "-Djdk.lang.Process.launchMechanism=POSIX_SPAWN",
                     Child.class.getName()).shouldHaveExitValue(0);
