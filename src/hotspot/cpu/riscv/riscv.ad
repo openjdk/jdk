@@ -8552,6 +8552,22 @@ instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immL_simm12 src2) %{
 // ============================================================================
 // MemBar Instruction
 
+// A Zalasr release store followed by an RCsc acquire load supplies the
+// StoreLoad edge required by a Java volatile store. This is true under both
+// RVWMO and the stronger RVTSO model.
+instruct unnecessary_membar_volatile() %{
+  predicate(unnecessary_volatile(n));
+  match(MemBarVolatile);
+  ins_cost(0);
+
+  size(0);
+  format %{ "#@unnecessary_membar_volatile (Zalasr RCsc ordering)" %}
+  ins_encode %{
+    __ block_comment("unnecessary_membar_volatile (Zalasr RCsc ordering)");
+  %}
+  ins_pipe(real_empty);
+%}
+
 // RVTSO
 
 instruct unnecessary_membar_rvtso() %{
@@ -8593,7 +8609,7 @@ instruct membar_storeload_rvtso() %{
 %}
 
 instruct membar_volatile_rvtso() %{
-  predicate(UseZtso);
+  predicate(UseZtso && !unnecessary_volatile(n));
   match(MemBarVolatile);
   ins_cost(VOLATILE_REF_COST);
 
@@ -8744,7 +8760,7 @@ instruct membar_storeload_rvwmo() %{
 %}
 
 instruct membar_volatile_rvwmo() %{
-  predicate(!UseZtso);
+  predicate(!UseZtso && !unnecessary_volatile(n));
   match(MemBarVolatile);
   ins_cost(VOLATILE_REF_COST);
 
@@ -8772,19 +8788,6 @@ instruct membar_lock_rvwmo() %{
   %}
 
   ins_pipe(pipe_serial);
-%}
-
-instruct unnecessary_membar_volatile_rvwmo() %{
-  predicate(!UseZtso && unnecessary_volatile(n));
-  match(MemBarVolatile);
-  ins_cost(0);
-
-  size(0);
-  format %{ "#@unnecessary_membar_volatile_rvwmo (unnecessary so empty encoding)" %}
-  ins_encode %{
-    __ block_comment("unnecessary_membar_volatile_rvwmo");
-  %}
-  ins_pipe(real_empty);
 %}
 
 instruct membar_full_rvwmo() %{

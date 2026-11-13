@@ -194,21 +194,10 @@ void VM_Version::common_initialize() {
   }
 #endif
 
-  // Zalasr and Ztso are mutually exclusive. Under Ztso the acquire and release fences
-  // are elided anyway, see MacroAssembler::membar(), so all Zalasr would still buy is
-  // eliding the trailing StoreLoad fence of a volatile store, which is a separate
-  // optimization. Ztso takes precedence for now, so Zalasr is turned off.
-  if (UseZtso && UseZalasr) {
-    if (!FLAG_IS_DEFAULT(UseZalasr)) {
-      warning("UseZalasr is not supported together with UseZtso, disabling Zalasr.");
-    }
-    FLAG_SET_DEFAULT(UseZalasr, false);
-  }
-
   // Latch the native AtomicAccess dispatch mode only after every UseZalasr and
   // UseZtso adjustment above has settled. See the comment on
   // _atomic_access_mode in vm_version_riscv.hpp.
-  if (UseZalasr && !UseZtso) {
+  if (UseZalasr) {
     _atomic_access_mode = AtomicAccessMode::RVWMO_ZALASR;
   } else if (UseZtso) {
     _atomic_access_mode = AtomicAccessMode::ZTSO;
