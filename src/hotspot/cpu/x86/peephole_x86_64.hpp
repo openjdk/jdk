@@ -38,6 +38,8 @@ public:
                               MachNode* (*new_root)(), uint inst0_rule);
   static bool lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
                                    MachNode* (*new_root)(), uint inst0_rule);
+  static bool stackload_apxndd_op_coalesce(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                                   MachNode* (*new_root)(), uint inst0_rule);
 };
 
 #endif // CPU_X86_PEEPHOLE_X86_64_HPP
