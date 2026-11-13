@@ -27,6 +27,7 @@
 #include "os_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/align.hpp"
 
 #include <sys/mman.h>
 
@@ -61,18 +62,21 @@ bool ZLargePages::pd_collapse(void* addr, size_t bytes) {
 
 static bool madv_collapse_available() {
   const size_t size = 2 * M;
-  void* const res = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  const size_t chunk_size = 2 * size;
+  void* const res = mmap(nullptr, chunk_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
   if (res == MAP_FAILED) {
     return false;
   }
 
+  void* const aligned = (void*)align_up((char*)res, size);
+
   assert(size >= os::vm_page_size(), "Unexpected page size");
-  os::pretouch_memory(res, (void*)(((char*)res) + os::vm_page_size()));
+  os::pretouch_memory(aligned, (void*)(((char*)aligned) + os::vm_page_size()));
 
-  const bool result = ZLargePages::pd_collapse(res, size);
+  const bool result = ZLargePages::pd_collapse(aligned, size);
 
-  munmap(res, size);
+  munmap(res, chunk_size);
 
   return result;
 }
