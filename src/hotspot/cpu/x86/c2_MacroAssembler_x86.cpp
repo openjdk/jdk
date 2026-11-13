@@ -1433,7 +1433,7 @@ void C2_MacroAssembler::vshiftb_gfni(int opcode, XMMRegister dst, XMMRegister sr
   Label count_in_range;
   pushf();
   cmpl(rtmp, 31);
-  jccb(Assembler::belowEqual, count_in_range);
+  jcc(Assembler::belowEqual, count_in_range);
   popf();
   stop("byte shift count out of 0..31");
   bind(count_in_range);

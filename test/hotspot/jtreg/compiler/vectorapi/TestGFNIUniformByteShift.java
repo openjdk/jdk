@@ -38,7 +38,7 @@ import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 
 /*
- * @test
+ * @test id=default
  * @bug 8393068
  * @key randomness
  * @summary Optimize vector byte shift operations using x86 GFNI instructions
@@ -46,9 +46,19 @@ import jdk.incubator.vector.VectorSpecies;
  * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @run driver ${test.main.class}
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=0 ${test.main.class}
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=1 ${test.main.class}
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=2 ${test.main.class}
+ */
+
+/*
+ * @test id=useavx
+ * @bug 8393068
+ * @key randomness
+ * @library /test/lib /
+ * @modules jdk.incubator.vector
+ * @requires vm.compiler2.enabled
+ * @requires os.arch == "amd64" | os.arch == "x86_64"
+ * @run driver ${test.main.class} -XX:UseAVX=0
+ * @run driver ${test.main.class} -XX:UseAVX=1
+ * @run driver ${test.main.class} -XX:UseAVX=2
  */
 
 public class TestGFNIUniformByteShift {
@@ -83,6 +93,7 @@ public class TestGFNIUniformByteShift {
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
                      .addFlags("--add-modules=jdk.incubator.vector")
+                     .addFlags(args)
                      .start();
     }
 
