@@ -52,6 +52,22 @@ import jdk.test.whitebox.WhiteBox;
  *                   -XX:CompileCommand=compileonly,${test.main.class}::load
  *                   ${test.main.class}
  */
+
+/*
+ * @test id=c2
+ * @bug 8397208
+ * @summary Test GC barriers when buffering at atomic flat field loads.
+ * @enablePreview
+ * @library /test/lib /compiler/whitebox /
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @requires vm.gc.Serial & vm.compiler2.enabled
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Xbatch -Xmn4m -XX:+UseSerialGC -XX:-TieredCompilation
+ *                   -XX:-ReduceInitialCardMarks
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::load
+ *                   ${test.main.class}
+ */
 public class TestAtomicFlatFieldLoadBarrier {
     static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
