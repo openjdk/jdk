@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,11 @@ class PipeImpl
         }
 
         private class LoopbackConnector implements Runnable {
-
+            /**
+             * Creates a connected "socket pair", verifying the accepted connection.
+             * Uses non-blocking I/O and Net.poll to avoid recursive initialization
+             * issues with the virtual threads poller I/O mechanism.
+             */
             @Override
             public void run() {
                 ServerSocketChannel ssc = null;
@@ -111,28 +115,46 @@ class PipeImpl
                     ByteBuffer secret = ByteBuffer.allocate(NUM_SECRET_BYTES);
                     ByteBuffer bb = ByteBuffer.allocate(NUM_SECRET_BYTES);
 
-                    for(;;) {
-                        // Bind ServerSocketChannel to a port on the loopback
-                        // address
+                    for (;;) {
+                        // Bind ServerSocketChannel to a port on the loopback address
                         if (ssc == null || !ssc.isOpen()) {
-                            ssc = createListener(preferUnixDomain);
+                            ssc = createListener(sp, preferUnixDomain);
+                            ssc.configureBlocking(false);
                             sa = ssc.getLocalAddress();
                         }
 
                         // Establish connection (assume connection is eagerly accepted)
-                        sc1 = SocketChannel.open(sa);
+                        sc1 = (sa instanceof UnixDomainSocketAddress)
+                                ? sp.openSocketChannel(UNIX)
+                                : sp.openSocketChannel();
+                        sc1.configureBlocking(false);
+                        if (!sc1.connect(sa)) {
+                            do {
+                                poll(sc1, Net.POLLOUT);
+                            } while (!sc1.finishConnect());
+                        }
                         RANDOM_NUMBER_GENERATOR.nextBytes(secret.array());
                         do {
                             sc1.write(secret);
                         } while (secret.hasRemaining());
                         secret.rewind();
+                        sc1.configureBlocking(true);
 
-                        // Get a connection and verify it is legitimate
-                        sc2 = ssc.accept();
+                        // Accept a connection and verify it is legitimate
+                        while ((sc2 = ssc.accept()) == null) {
+                            poll(ssc, Net.POLLIN);
+                        }
+                        sc2.configureBlocking(false);
                         do {
-                            sc2.read(bb);
+                            int n = sc2.read(bb);
+                            if (n < 0) {
+                                throw new IOException("EOF during handshake");
+                            } else if (n == 0) {
+                                poll(sc2, Net.POLLIN);
+                            }
                         } while (bb.hasRemaining());
                         bb.rewind();
+                        sc2.configureBlocking(true);
 
                         if (bb.equals(secret))
                             break;
@@ -161,6 +183,10 @@ class PipeImpl
                         }
                     } catch (IOException e2) {}
                 }
+            }
+
+            private void poll(SelectableChannel channel, int event) throws IOException {
+                Net.poll(((SelChImpl) channel).getFD(), event, -1);
             }
         }
     }
@@ -200,11 +226,12 @@ class PipeImpl
         return sink;
     }
 
-    private static ServerSocketChannel createListener(boolean preferUnixDomain) throws IOException {
+    private static ServerSocketChannel createListener(SelectorProvider sp,
+                                                      boolean preferUnixDomain) throws IOException {
         ServerSocketChannel listener = null;
         if (preferUnixDomain && UnixDomainSockets.isSupported()) {
             try {
-                listener = ServerSocketChannel.open(UNIX);
+                listener = sp.openServerSocketChannel(UNIX);
                 listener.bind(null);
                 return listener;
             } catch (IOException | UnsupportedOperationException e) {
@@ -212,7 +239,7 @@ class PipeImpl
                     listener.close();
             }
         }
-        listener = ServerSocketChannel.open();
+        listener = sp.openServerSocketChannel();
         InetAddress lb = InetAddress.getLoopbackAddress();
         listener.bind(new InetSocketAddress(lb, 0));
         return listener;

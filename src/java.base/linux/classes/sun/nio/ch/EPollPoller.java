@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class EPollPoller extends Poller {
     private final Cleanable cleaner;
 
     EPollPoller(Poller.Mode mode, boolean subPoller, boolean read) throws IOException {
-        boolean wakeable = (mode == Mode.POLLER_PER_CARRIER) && subPoller;
+        boolean closeable = (mode == Mode.POLLER_PER_CARRIER) && subPoller;
         int maxEvents = (subPoller) ? 16 : 64;
 
         int epfd = EPoll.create();
@@ -57,11 +57,9 @@ class EPollPoller extends Poller {
             address = EPoll.allocatePollArray(maxEvents);
 
             // register one end of the pipe with epoll to allow for wakeup
-            if (wakeable) {
-                eventfd = new EventFD();
-                IOUtil.configureBlocking(eventfd.efd(), false);
-                EPoll.ctl(epfd, EPOLL_CTL_ADD, eventfd.efd(), EPOLLIN);
-            }
+            eventfd = new EventFD();
+            IOUtil.configureBlocking(eventfd.efd(), false);
+            EPoll.ctl(epfd, EPOLL_CTL_ADD, eventfd.efd(), EPOLLIN);
         } catch (Throwable e) {
             FileDispatcherImpl.closeIntFD(epfd);
             if (address != 0L) EPoll.freePollArray(address);
@@ -77,7 +75,7 @@ class EPollPoller extends Poller {
 
         // create action to close epoll instance, register cleaner when wakeable
         this.closer = closer(epfd, address, eventfd);
-        if (wakeable) {
+        if (closeable) {
             this.cleaner = CleanerFactory.cleaner().register(this, closer);
         } else {
             this.cleaner = null;
@@ -131,9 +129,6 @@ class EPollPoller extends Poller {
 
     @Override
     void wakeupPoller() throws IOException {
-        if (eventfd == null) {
-            throw new UnsupportedOperationException();
-        }
         eventfd.set();
     }
 
