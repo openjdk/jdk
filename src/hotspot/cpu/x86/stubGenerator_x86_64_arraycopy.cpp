@@ -274,8 +274,8 @@ void StubGenerator::copy_bytes_forward(Register end_from, Register end_to,
     const int element_size = type2aelembytes(type);
     Label L_align, L_aligned, L_nt_loop, L_tail, L_scalar;
     __ BIND(L_copy_bytes);
-    const uintx threshold = MAX2(ArrayCopyNonTemporalThreshold / 8 +
-                                 (ArrayCopyNonTemporalThreshold % 8 != 0), (uintx)8);
+    const uint threshold = MAX2(ArrayCopyNonTemporalThreshold / 8 +
+                                (ArrayCopyNonTemporalThreshold % 8 != 0 ? 1u : 0u), 8u);
     if (Assembler::is_simm32(-(int64_t)threshold)) {
       __ cmpptr(qword_count, (int32_t)(-(int64_t)threshold));
     } else {

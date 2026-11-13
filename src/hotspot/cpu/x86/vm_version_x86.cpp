@@ -1905,7 +1905,7 @@ void VM_Version::get_processor_features() {
       }
     }
     if (l3_size > 0) {
-      FLAG_SET_DEFAULT(ArrayCopyNonTemporalThreshold, l3_size);
+      FLAG_SET_DEFAULT(ArrayCopyNonTemporalThreshold, (uint)l3_size);
     }
   }
 
