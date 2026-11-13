@@ -1005,6 +1005,7 @@ public class TransPatterns extends TreeTranslator {
         VarSymbol commonNestedBinding = null;
         boolean previousNullable = false;
         boolean previousCompletesNormally = false;
+        boolean previousHasFallThroughtTest = false;
 
         for (List<JCCase> c = inputCases; c.nonEmpty(); c = c.tail) {
             VarSymbol currentBinding = null;
@@ -1045,6 +1046,7 @@ public class TransPatterns extends TreeTranslator {
                        !previousNullable &&
                        !currentNullable &&
                        !previousCompletesNormally &&
+                       !previousHasFallThroughtTest &&
                        !currentCompletesNormally &&
                        new TreeDiffer(types, List.of(commonBinding), List.of(currentBinding))
                                .scan(commonNestedExpression, currentNestedExpression)) {
@@ -1062,6 +1064,7 @@ public class TransPatterns extends TreeTranslator {
             }
             previousNullable = currentNullable;
             previousCompletesNormally = currentCompletesNormally;
+            previousHasFallThroughtTest = c.head.fallThroughGuardBypass != null;
         }
         resolveAccummulator.resolve(commonBinding, commonNestedExpression, commonNestedBinding);
         return result.toList();

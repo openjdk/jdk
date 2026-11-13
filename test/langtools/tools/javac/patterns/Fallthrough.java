@@ -31,15 +31,26 @@
 
 void main() {
     Object obj = new Object();
-    assertEquals(test(null, null), 111);
-    assertEquals(test(null, obj), 111);
-    assertEquals(test(null, 1_000), 1_111);
-    assertEquals(test("", null), 100);
-    assertEquals(test("", obj), 110);
-    assertEquals(test("", 1_000), 1_110);
-    assertEquals(test(obj, null), 100);
-    assertEquals(test(obj, obj), 100);
-    assertEquals(test(obj, 1_000), 100);
+    assertEquals(111, test(null, null));
+    assertEquals(111, test(null, obj));
+    assertEquals(1_111, test(null, 1_000));
+    assertEquals(100, test("", null));
+    assertEquals(110, test("", obj));
+    assertEquals(1_110, test("", 1_000));
+    assertEquals(100, test(obj, null));
+    assertEquals(100, test(obj, obj));
+    assertEquals(100, test(obj, 1_000));
+    assertEquals(1_111_111, testRecord(null));
+    assertEquals(1_111_110, testRecord(new R(1)));
+    assertEquals(1_111_100, testRecord(new R(1f)));
+    assertEquals(1_111_000, testRecord(new R("")));
+    assertEquals(1_110_000, testRecord(new R(new StringBuilder())));
+    assertEquals(1_100_000, testRecord(new R(null)));
+    assertEquals(1_000_000, testRecord(""));
+    assertEquals(1, testRecordFactorOut(null));
+    assertEquals(1, testRecordFactorOut(new R(1)));
+    assertEquals(2, testRecordFactorOut(new R(1f)));
+    assertEquals(4, testRecordFactorOut(""));
 }
 
 int test(Object o1, Object o2) {
@@ -58,9 +69,50 @@ int test(Object o1, Object o2) {
     return result;
 }
 
+int testRecord(Object o) {
+    int result = 0;
+    switch(o) {
+        case null:
+            result += 1;
+        case R(Integer _):
+            result += 10;
+        case R(Number _):
+            result += 100;
+        case R(String _):
+            result += 1_000;
+        case R(CharSequence _):
+            result += 10_000;
+        case R(_):
+            result += 100_000;
+        default:
+            result += 1000_000;
+    }
+    return result;
+}
+
+int testRecordFactorOut(Object o) {
+    int result = 0;
+    switch(o) {
+        case null:
+        case R(Integer _):
+            result += 1;
+            break;
+        case R(Number _):
+            result += 2;
+            break;
+        default:
+            result += 4;
+            break;
+    }
+    return result;
+}
+
 void assertEquals(int expected, int actual) {
     if (expected != actual) {
         throw new AssertionError("expected: " + expected +
-                                 "actual: " + actual);
+                                 ", actual: " + actual);
     }
+}
+
+record R(Object o) {
 }
