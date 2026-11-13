@@ -425,10 +425,11 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 // 1, 2, 4, or 8 bytes. We can use the corresponding primitive arraycopy stubs which copy the elements atomically.
 // Flat arrays with elements larger than 8 bytes cannot have an atomic layout.
 bool ArrayCopyNode::can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const TypeAryPtr* dest_ary) const {
-  assert(src_ary != nullptr && dest_ary != nullptr, "must be array pointers");
+  assert(src_ary != nullptr, "src must be an array pointer");
+  assert(dest_ary != nullptr, "dest must be an array pointer");
 
   if (!src_ary->has_compatible_arraycopy_layout(dest_ary)) {
-    // We don't know whether src and dest have the same layout.
+    // We cannot prove that src and dest have compatible layouts.
     return false;
   }
 
