@@ -198,7 +198,8 @@ public class TestIllegalLink extends NativeTestHelper {
             },
         }));
 
-        for (ValueLayout illegalLayout : List.of(C_CHAR, ValueLayout.JAVA_CHAR, C_BOOL, C_SHORT, C_FLOAT)) {
+        for (ValueLayout illegalLayout : List.of(C_CHAR, ValueLayout.JAVA_CHAR, C_BOOL, C_SHORT, C_FLOAT,
+                UCHAR, USHORT, UINT8, UINT16)) {
             cases.add(new Object[]{
                 FunctionDescriptor.ofVoid(C_INT, illegalLayout),
                 new Linker.Option[]{Linker.Option.firstVariadicArg(1)},

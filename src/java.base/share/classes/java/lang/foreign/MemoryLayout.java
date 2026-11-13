@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -994,7 +994,9 @@ public sealed interface MemoryLayout
      *     {@linkplain ValueLayout#order() order}, and
      *     {@linkplain ValueLayout#carrier() carrier}. Additionally, two address
      *     layouts are considered equal if they also have the same
-     *     {@linkplain AddressLayout#targetLayout() target layout};</li>
+     *     {@linkplain AddressLayout#targetLayout() target layout}. Additionally,
+     *     two integral layouts are consider equal if they also have the same
+     *     {@linkplain ValueLayout.OfIntegral#isSigned() signedness};</li>
      *     <li>two sequence layouts are considered equal if they have the same element
      *     count (see {@link SequenceLayout#elementCount()}), and if their element
      *     layouts (see {@link SequenceLayout#elementLayout()}) are also equal;</li>

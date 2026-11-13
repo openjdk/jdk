@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Arm Limited. All rights reserved.
  * Copyright (c) 2021, 2022, Microsoft. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -46,7 +46,8 @@ import java.util.Map;
 public final class WindowsAArch64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
-            SharedUtils.canonicalLayouts(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_CHAR);
+            SharedUtils.canonicalLayouts(ValueLayout.JAVA_INT, ULONG,
+                    ValueLayout.JAVA_BYTE, ValueLayout.JAVA_CHAR);
 
     public static WindowsAArch64Linker getInstance() {
         class Holder {

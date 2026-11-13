@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -449,7 +449,8 @@ public abstract class CallArranger {
                 }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, (ValueLayout) layout);
-                    bindings.vmStore(storage, carrier);
+                    // pass integral extension policy here in case it's present (on Mac)
+                    bindings.vmStore(storage, carrier, SharedUtils.isSigned(layout));
                 }
                 case FLOAT -> {
                     boolean forVariadicFunctionArgs = forArguments && forVariadicFunction;
