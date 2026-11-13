@@ -131,10 +131,12 @@ DECLARE_LOCAL_FUNC(aarch64_atomic_fetch_add_4_relaxed_default_impl):
         .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_xchg_1_default_impl):
         ATOMIC_OP(ldaxrb, stlxrb, w, swpalb)
+        .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_xchg_4_default_impl):
-        ATOMIC_OP(ldaxr, stlxr, w, swpal)
+        ATOMIC_OP(ldaxr,  stlxr,  w, swpal)
+        .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_xchg_8_default_impl):
-        ATOMIC_OP(ldaxr, stlxr, x, swpal)
+        ATOMIC_OP(ldaxr,  stlxr,  x, swpal)
 
 #undef ATOMIC_OP
 #ifdef __ARM_FEATURE_ATOMICS
@@ -175,10 +177,10 @@ DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_1_default_impl):
         ATOMIC_OP(ldxrb, stxrb, w, CMPB, DMB, casalb)
         .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_4_default_impl):
-        ATOMIC_OP(ldxr, stxr, w, CMPW, DMB, casal)
+        ATOMIC_OP(ldxr, stxr,   w, CMPW, DMB, casal)
         .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_8_default_impl):
-        ATOMIC_OP(ldxr, stxr, x, CMPX, DMB, casal)
+        ATOMIC_OP(ldxr, stxr,   x, CMPX, DMB, casal)
 
         .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_4_release_default_impl):
@@ -189,20 +191,20 @@ DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_8_release_default_impl):
 
        .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_4_seq_cst_default_impl):
-        ATOMIC_OP(ldaxr, stlxr, w, CMPW, , casl)
+        ATOMIC_OP(ldaxr, stlxr, w, CMPW, , casal)
         .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_8_seq_cst_default_impl):
-        ATOMIC_OP(ldaxr, stlxr, x, CMPX, , casl)
+        ATOMIC_OP(ldaxr, stlxr, x, CMPX, , casal)
 
         .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_1_relaxed_default_impl):
         ATOMIC_OP(ldxrb, stxrb, w, CMPB, , casb)
         .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_4_relaxed_default_impl):
-        ATOMIC_OP(ldxr, stxr, w, CMPW, , casl)
+        ATOMIC_OP(ldxr,  stxr,  w, CMPW, , cas)
         .align 5
 DECLARE_LOCAL_FUNC(aarch64_atomic_cmpxchg_8_relaxed_default_impl):
-        ATOMIC_OP(ldxr, stxr, x, CMPX, , casl)
+        ATOMIC_OP(ldxr,  stxr,  x, CMPX, , cas)
 
 // ;; Local Variables:
 // ;; mode: asm
