@@ -53,6 +53,10 @@ on:
       static-suffix:
         required: false
         type: string
+      test-tier:
+        required: false
+        type: string
+        default: 'tier1'
 
 env:
   # These are needed to make the MSYS2 bash work properly
@@ -60,8 +64,175 @@ env:
   CHERE_INVOKING: 1
 
 jobs:
+  setup-test-matrix:
+    name: 'Setup test matrix'
+    runs-on: ubuntu-24.04
+    outputs:
+       matrix: ${{ steps.select-test-matrix.outputs.matrix }}
+    steps:
+      - name: 'Select tier1 or tier2 test matrix'
+        id: select-test-matrix
+        shell: bash
+        run: |
+          TIER1_MATRIX='{
+            "test-name": [
+              "jdk/tier1 part 1",
+              "jdk/tier1 part 2",
+              "jdk/tier1 part 3",
+              "langtools/tier1",
+              "hs/tier1 common",
+              "hs/tier1 compiler part 1",
+              "hs/tier1 compiler part 2",
+              "hs/tier1 compiler part 3",
+              "hs/tier1 gc",
+              "hs/tier1 runtime",
+              "hs/tier1 serviceability",
+              "lib-test/tier1"
+            ],
+            "include": [
+              {
+                "test-name": "jdk/tier1 part 1",
+                "test-suite": "test/jdk/:tier1_part1"
+              },
+              {
+                "test-name": "jdk/tier1 part 2",
+                "test-suite": "test/jdk/:tier1_part2"
+              },
+              {
+                "test-name": "jdk/tier1 part 3",
+                "test-suite": "test/jdk/:tier1_part3"
+              },
+              {
+                "test-name": "langtools/tier1",
+                "test-suite": "test/langtools/:tier1"
+              },
+              {
+                "test-name": "hs/tier1 common",
+                "test-suite": "test/hotspot/jtreg/:tier1_common",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier1 compiler part 1",
+                "test-suite": "test/hotspot/jtreg/:tier1_compiler_1",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier1 compiler part 2",
+                "test-suite": "test/hotspot/jtreg/:tier1_compiler_2",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier1 compiler part 3",
+                "test-suite": "test/hotspot/jtreg/:tier1_compiler_3",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier1 gc",
+                "test-suite": "test/hotspot/jtreg/:tier1_gc",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier1 runtime",
+                "test-suite": "test/hotspot/jtreg/:tier1_runtime",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier1 serviceability",
+                "test-suite": "test/hotspot/jtreg/:tier1_serviceability",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "lib-test/tier1",
+                "test-suite": "test/lib-test/:tier1",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              }
+            ]
+          }'
+
+          TIER2_MATRIX='{
+            "test-name": [
+              "jdk/tier2 part 1",
+              "jdk/tier2 part 2",
+              "jdk/tier2 part 3",
+              "langtools/tier2",
+              "hs/tier2 runtime",
+              "hs/tier2 runtime platform agnostic",
+              "hs/tier2 serviceability",
+              "hs/tier2 compiler",
+              "hs/tier2 ctw",
+              "hs/tier2 gc epsilon",
+              "hs/tier2 gc shenandoah"
+            ],
+            "include": [
+              {
+                "test-name": "jdk/tier2 part 1",
+                "test-suite": "test/jdk/:tier2_part1",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "jdk/tier2 part 2",
+                "test-suite": "test/jdk/:tier2_part2",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "jdk/tier2 part 3",
+                "test-suite": "test/jdk/:tier2_part3",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "langtools/tier2",
+                "test-suite": "test/langtools/:tier2",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier2 runtime",
+                "test-suite": "test/hotspot/jtreg/:hotspot_tier2_runtime",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier2 runtime platform agnostic",
+                "test-suite": "test/hotspot/jtreg/:hotspot_tier2_runtime_platform_agnostic",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier2 serviceability",
+                "test-suite": "test/hotspot/jtreg/:hotspot_tier2_serviceability",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier2 compiler",
+                "test-suite": "test/hotspot/jtreg/:tier2_compiler",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier2 ctw",
+                "test-suite": "test/hotspot/jtreg/:tier2_ctw",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier2 gc epsilon",
+                "test-suite": "test/hotspot/jtreg/:tier2_gc_epsilon",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              },
+              {
+                "test-name": "hs/tier2 gc shenandoah",
+                "test-suite": "test/hotspot/jtreg/:tier2_gc_shenandoah",
+                "debug-suffix": "${{ inputs.debug-suffix }}"
+              }
+            ]
+          }'
+
+          if [ "${{ inputs.test-tier }}" = "tier1" ]; then
+            MATRIX=$(echo "$TIER1_MATRIX" | jq -c .)
+          else
+            MATRIX=$(echo "$TIER2_MATRIX" | jq -c .)
+          fi
+
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
   test:
     name: test
+    needs: setup-test-matrix
     runs-on: ${{ inputs.runs-on }}
     defaults:
       run:
@@ -69,65 +240,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        test-name:
-          - 'jdk/tier1 part 1'
-          - 'jdk/tier1 part 2'
-          - 'jdk/tier1 part 3'
-          - 'langtools/tier1'
-          - 'hs/tier1 common'
-          - 'hs/tier1 compiler part 1'
-          - 'hs/tier1 compiler part 2'
-          - 'hs/tier1 compiler part 3'
-          - 'hs/tier1 gc'
-          - 'hs/tier1 runtime'
-          - 'hs/tier1 serviceability'
-          - 'lib-test/tier1'
-
-        include:
-          - test-name: 'jdk/tier1 part 1'
-            test-suite: 'test/jdk/:tier1_part1'
-
-          - test-name: 'jdk/tier1 part 2'
-            test-suite: 'test/jdk/:tier1_part2'
-
-          - test-name: 'jdk/tier1 part 3'
-            test-suite: 'test/jdk/:tier1_part3'
-
-          - test-name: 'langtools/tier1'
-            test-suite: 'test/langtools/:tier1'
-
-          - test-name: 'hs/tier1 common'
-            test-suite: 'test/hotspot/jtreg/:tier1_common'
-            debug-suffix: ${{ inputs.debug-suffix }}
-
-          - test-name: 'hs/tier1 compiler part 1'
-            test-suite: 'test/hotspot/jtreg/:tier1_compiler_1'
-            debug-suffix: ${{ inputs.debug-suffix }}
-
-          - test-name: 'hs/tier1 compiler part 2'
-            test-suite: 'test/hotspot/jtreg/:tier1_compiler_2'
-            debug-suffix: ${{ inputs.debug-suffix }}
-
-          - test-name: 'hs/tier1 compiler part 3'
-            test-suite: 'test/hotspot/jtreg/:tier1_compiler_3'
-            debug-suffix: ${{ inputs.debug-suffix }}
-
-          - test-name: 'hs/tier1 gc'
-            test-suite: 'test/hotspot/jtreg/:tier1_gc'
-            debug-suffix: ${{ inputs.debug-suffix }}
-
-          - test-name: 'hs/tier1 runtime'
-            test-suite: 'test/hotspot/jtreg/:tier1_runtime'
-            debug-suffix: ${{ inputs.debug-suffix }}
-
-          - test-name: 'hs/tier1 serviceability'
-            test-suite: 'test/hotspot/jtreg/:tier1_serviceability'
-            debug-suffix: ${{ inputs.debug-suffix }}
-
-          - test-name: 'lib-test/tier1'
-            test-suite: 'test/lib-test/:tier1'
-            debug-suffix: ${{ inputs.debug-suffix }}
+      matrix: ${{ fromJson(needs.setup-test-matrix.outputs.matrix) }}
 
     steps:
       - name: 'Checkout the JDK source'
