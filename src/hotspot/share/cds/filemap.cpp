@@ -124,17 +124,26 @@ void CDSMustMatchFlags::init() {
 #undef INIT_CDS_MUST_MATCH_FLAG
 }
 
+template <typename T>
+bool CDSMustMatchFlags::check_flag(T saved, T actual, const char* name) {
+  if (saved != actual) {
+    ResourceMark rm;
+    stringStream ss;
+    ss.print("VM option %s is different between dumptime (", name);
+    do_print(&ss, saved);
+    ss.print(") and runtime (");
+    do_print(&ss, name);
+    ss.print(")");
+    aot_log_info(aot)("%s", ss.as_string());
+    return false;
+  } else {
+    return true;
+  }
+}
+
 bool CDSMustMatchFlags::runtime_check() const {
 #define CHECK_CDS_MUST_MATCH_FLAG(n) \
-  if (_v_##n != n) { \
-    ResourceMark rm; \
-    stringStream ss; \
-    ss.print("VM option %s is different between dumptime (", #n);  \
-    do_print(&ss, _v_ ## n); \
-    ss.print(") and runtime ("); \
-    do_print(&ss, n); \
-    ss.print(")"); \
-    aot_log_info(aot)("%s", ss.as_string()); \
+  if (!check_flag(_v_##n, n, #n)) { \
     return false; \
   }
   CDS_MUST_MATCH_FLAGS_DO(CHECK_CDS_MUST_MATCH_FLAG);
@@ -2003,87 +2012,78 @@ int FileMapHeader::compute_crc() {
   return crc;
 }
 
+#define CHECK_ARCHIVED_FLAG(archivedValue, flag) \
+  if (!check_archived_flag(archivedValue, JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(flag)))) { return false; }
+
+static bool check_archived_flag(bool archivedValue, JVMFlag* flag) {
+  if (archivedValue != flag->get_bool()) {
+    AOTMetaspace::report_loading_error("The %s's %s setting (%s)"
+                                       " does not equal the current %s setting (%s).",
+                                       CDSConfig::type_of_archive_being_loaded(),
+                                       flag->name(), archivedValue ? "enabled" : "disabled",
+                                       flag->name(), flag->get_bool() ? "enabled" : "disabled");
+    return false;
+  } else {
+    return true;
+  }
+}
+
+static bool check_archived_flag(int archivedValue, JVMFlag* flag) {
+  if (archivedValue != flag->get_int()) {
+    AOTMetaspace::report_loading_error("The %s's %s setting (%d)"
+                                       " does not equal the current %s setting (%d).",
+                                       CDSConfig::type_of_archive_being_loaded(),
+                                       flag->name(), CDSConfig::type_of_archive_being_loaded(),
+                                       flag->name(), archivedValue, flag->get_int());
+    return false;
+  } else {
+    return true;
+  }
+}
+
+static bool check_archived_flag(uint archivedValue, JVMFlag* flag) {
+  if (archivedValue != flag->get_uint()) {
+    AOTMetaspace::report_loading_error("The %s's %s setting (%d)"
+                                       " does not equal the current %s setting (%d).",
+                                       CDSConfig::type_of_archive_being_loaded(),
+                                       flag->name(), CDSConfig::type_of_archive_being_loaded(),
+                                       flag->name(), archivedValue, flag->get_uint());
+    return false;
+  } else {
+    return true;
+  }
+}
+
+static bool check_archived_flag(intx archivedValue, JVMFlag* flag) {
+  if (archivedValue != flag->get_intx()) {
+    AOTMetaspace::report_loading_error("The %s's %s setting (%zd)"
+                                       " does not equal the current %s setting (%zd).",
+                                       CDSConfig::type_of_archive_being_loaded(),
+                                       flag->name(), CDSConfig::type_of_archive_being_loaded(),
+                                       flag->name(), archivedValue, flag->get_intx());
+    return false;
+  } else {
+    return true;
+  }
+}
+
+
 // This function should only be called during run time with UseSharedSpaces enabled.
 bool FileMapHeader::validate() {
   const char* file_type = CDSConfig::type_of_archive_being_loaded();
-  if (_obj_alignment != ObjectAlignmentInBytes) {
-    AOTMetaspace::report_loading_error("The %s's ObjectAlignmentInBytes of %d"
-                                          " does not equal the current ObjectAlignmentInBytes of %d.",
-                                          file_type, _obj_alignment, ObjectAlignmentInBytes);
-    return false;
-  }
-  if (_compact_strings != CompactStrings) {
-    AOTMetaspace::report_loading_error("The %s's CompactStrings setting (%s)"
-                                          " does not equal the current CompactStrings setting (%s).", file_type,
-                                          _compact_strings ? "enabled" : "disabled",
-                                          CompactStrings   ? "enabled" : "disabled");
-    return false;
-  }
+  CHECK_ARCHIVED_FLAG(_obj_alignment, ObjectAlignmentInBytes);
+  CHECK_ARCHIVED_FLAG(_compact_strings, CompactStrings);
+
   if (TrainingData::have_data()) {
-    if (_type_profile_level != TypeProfileLevel) {
-      AOTMetaspace::report_loading_error("The %s's TypeProfileLevel setting (%d)"
-                                            " does not equal the current TypeProfileLevel setting (%d).", file_type,
-                                            _type_profile_level, TypeProfileLevel);
-      return false;
-    }
-    if (_type_profile_args_limit != TypeProfileArgsLimit) {
-      AOTMetaspace::report_loading_error("The %s's TypeProfileArgsLimit setting (%d)"
-                                            " does not equal the current TypeProfileArgsLimit setting (%d).", file_type,
-                                            _type_profile_args_limit, TypeProfileArgsLimit);
-      return false;
-    }
-    if (_type_profile_parms_limit != TypeProfileParmsLimit) {
-      AOTMetaspace::report_loading_error("The %s's TypeProfileParmsLimit setting (%d)"
-                                            " does not equal the current TypeProfileParmsLimit setting (%d).", file_type,
-                                            _type_profile_parms_limit, TypeProfileParmsLimit);
-      return false;
-
-    }
-    if (_type_profile_width != TypeProfileWidth) {
-      AOTMetaspace::report_loading_error("The %s's TypeProfileWidth setting (%d)"
-                                            " does not equal the current TypeProfileWidth setting (%d).", file_type,
-                                            (int)_type_profile_width, (int)TypeProfileWidth);
-      return false;
-
-    }
-    if (_bci_profile_width != BciProfileWidth) {
-      AOTMetaspace::report_loading_error("The %s's BciProfileWidth setting (%d)"
-                                            " does not equal the current BciProfileWidth setting (%d).", file_type,
-                                            (int)_bci_profile_width, (int)BciProfileWidth);
-      return false;
-    }
-    if (_type_profile_casts != TypeProfileCasts) {
-      AOTMetaspace::report_loading_error("The %s's TypeProfileCasts setting (%s)"
-                                            " does not equal the current TypeProfileCasts setting (%s).", file_type,
-                                            _type_profile_casts ? "enabled" : "disabled",
-                                            TypeProfileCasts    ? "enabled" : "disabled");
-
-      return false;
-
-    }
-    if (_profile_traps != ProfileTraps) {
-      AOTMetaspace::report_loading_error("The %s's ProfileTraps setting (%s)"
-                                            " does not equal the current ProfileTraps setting (%s).", file_type,
-                                            _profile_traps ? "enabled" : "disabled",
-                                            ProfileTraps   ? "enabled" : "disabled");
-
-      return false;
-    }
-    if (_profile_exception_handlers != ProfileExceptionHandlers) {
-      AOTMetaspace::report_loading_error("The %s's ProfileExceptionHandlers setting (%s)"
-                                            " does not equal the current ProfileExceptionHandlers setting (%s).", file_type,
-                                            _profile_exception_handlers ? "enabled" : "disabled",
-                                            ProfileExceptionHandlers   ? "enabled" : "disabled");
-
-      return false;
-    }
-    if (_spec_trap_limit_extra_entries != SpecTrapLimitExtraEntries) {
-      AOTMetaspace::report_loading_error("The %s's SpecTrapLimitExtraEntries setting (%d)"
-                                            " does not equal the current SpecTrapLimitExtraEntries setting (%d).", file_type,
-                                            _spec_trap_limit_extra_entries, SpecTrapLimitExtraEntries);
-      return false;
-
-    }
+    CHECK_ARCHIVED_FLAG(_type_profile_level,            TypeProfileLevel);
+    CHECK_ARCHIVED_FLAG(_type_profile_args_limit,       TypeProfileArgsLimit);
+    CHECK_ARCHIVED_FLAG(_type_profile_parms_limit,      TypeProfileParmsLimit);
+    CHECK_ARCHIVED_FLAG(_type_profile_width,            TypeProfileWidth);
+    CHECK_ARCHIVED_FLAG(_bci_profile_width,             BciProfileWidth);
+    CHECK_ARCHIVED_FLAG(_type_profile_casts,            TypeProfileCasts);
+    CHECK_ARCHIVED_FLAG(_profile_traps,                 ProfileTraps);
+    CHECK_ARCHIVED_FLAG(_profile_exception_handlers,    ProfileExceptionHandlers);
+    CHECK_ARCHIVED_FLAG(_spec_trap_limit_extra_entries, SpecTrapLimitExtraEntries);
   }
 
   if (_cpu_features_offset != -1) {
@@ -2117,13 +2117,9 @@ bool FileMapHeader::validate() {
   }
 
 
-  if (!_verify_local && BytecodeVerificationLocal) {
-    //  we cannot load boot classes, so there's no point of using the CDS archive
-    AOTMetaspace::report_loading_error("The %s's BytecodeVerificationLocal setting (%s)"
-                                          " does not equal the current BytecodeVerificationLocal setting (%s).", file_type,
-                                          _verify_local ? "enabled" : "disabled",
-                                          BytecodeVerificationLocal ? "enabled" : "disabled");
-    return false;
+  if (!_verify_local) {
+    // If we cannot load boot classes, there's no point of using the CDS archive
+    CHECK_ARCHIVED_FLAG(_verify_local, BytecodeVerificationLocal);
   }
 
   // For backwards compatibility, we don't check the BytecodeVerificationRemote setting
@@ -2165,13 +2161,7 @@ bool FileMapHeader::validate() {
     }
   }
 
-  if (compact_headers() != UseCompactObjectHeaders) {
-    aot_log_warning(aot)("Unable to use %s.\nThe %s's UseCompactObjectHeaders setting (%s)"
-                     " does not equal the current UseCompactObjectHeaders setting (%s).", file_type, file_type,
-                     _compact_headers          ? "enabled" : "disabled",
-                     UseCompactObjectHeaders   ? "enabled" : "disabled");
-    return false;
-  }
+  CHECK_ARCHIVED_FLAG(compact_headers(), UseCompactObjectHeaders);
 
   if (is_static()) {
     // Only the static archive can contain the full module graph.

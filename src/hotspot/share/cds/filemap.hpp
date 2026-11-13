@@ -134,6 +134,8 @@ private:
   void print_info() const;
 
 public:
+  template <typename T> static bool check_flag(T saved, T actual, const char* name);
+
   void init();
   bool runtime_check() const;
   void print(outputStream* st) const;
