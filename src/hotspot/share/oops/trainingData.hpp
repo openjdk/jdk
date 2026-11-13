@@ -532,7 +532,6 @@ class KlassTrainingData : public TrainingData {
     return holder()->name();
   }
   bool has_holder()       const { return _holder != nullptr; }
-  virtual bool is_valid() const;
   InstanceKlass* holder() const { return _holder; }
 
   static KlassTrainingData* make(InstanceKlass* holder,
@@ -552,6 +551,7 @@ class KlassTrainingData : public TrainingData {
   virtual void merge(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
   virtual void remove_invalid_references() NOT_CDS_RETURN;
+  virtual bool is_valid() const;
 
   MetaspaceObj::Type type() const {
     return KlassTrainingDataType;
@@ -841,8 +841,6 @@ public:
   virtual CompileTrainingData* as_CompileTrainingData() const { return const_cast<CompileTrainingData*>(this); };
 
   MethodTrainingData* method() const { return _method; }
-  // Validity depends on the method's holder surviving cleanup.
-  virtual bool is_valid() const;
 
   int level() const { return _level; }
   bool is_osr() const { return _is_osr; }
@@ -887,6 +885,8 @@ public:
   virtual void merge(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
   virtual void remove_invalid_references() NOT_CDS_RETURN;
+  // Validity depends on the method's holder surviving cleanup.
+  virtual bool is_valid() const;
 
   void print_on(outputStream* st, bool name_only) const;
   virtual void print_on(outputStream* st) const { print_on(st, false); }
@@ -961,7 +961,6 @@ class MethodTrainingData : public TrainingData {
  public:
   KlassTrainingData* klass()  const { return _klass; }
   bool has_holder()           const { return _holder != nullptr; }
-  virtual bool is_valid() const;
   Method* holder()            const { return _holder; }
   bool only_inlined()         const { return !_iterations[CURRENT]._was_toplevel; }
   bool saw_level(CompLevel l) const { return (_iterations[CURRENT]._level_mask & level_mask(l)) != 0; }
@@ -1024,6 +1023,7 @@ class MethodTrainingData : public TrainingData {
   virtual void merge(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
   virtual void remove_invalid_references() NOT_CDS_RETURN;
+  virtual bool is_valid() const;
 
   template<typename Function>
   void iterate_compiles(Function fn) const { // lambda enabled API
