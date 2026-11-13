@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,21 +65,29 @@ public class TestFullGCCount {
         // Perform some gc, record collector counts.
         for (int i = 0; i < iterations; i++) {
             System.gc();
-            addCollectionCount(counts, i);
+            addCollectionCount(counts);
         }
 
         // Check the increments:
         //   Old gen collectors should increase by one,
         //   New collectors may or may not increase.
-        //   Any increase >=2 is unexpected.
+        //   Any increase > 1 is unexpected (except G1 Concurrent GC: each concurrent
+        //   STW pause increments that bean, so two pauses in one cycle are normal).
         for (String collector : counts.keySet()) {
+            int maxAllowedIncrement = 1;
+            if ("G1 Concurrent GC".equals(collector)) {
+                // G1ConcGCMonitoringScope is used in each STW pause, Remark
+                // and Cleanup, during a concurrent cycle, so the count may
+                // increase up to 2 per concurrent cycle.
+                maxAllowedIncrement = 2;
+            }
             System.out.println("Checking: " + collector);
 
             for (int i = 0; i < iterations - 1; i++) {
                 List<Long> theseCounts = counts.get(collector);
                 long a = theseCounts.get(i);
                 long b = theseCounts.get(i + 1);
-                if (b - a >= 2) {
+                if (b - a > maxAllowedIncrement) {
                     failed = true;
                     errorMessage += "Collector '" + collector + "' has increment " + (b - a) +
                                     " at iteration " + i + "\n";
@@ -93,7 +101,7 @@ public class TestFullGCCount {
         System.out.println("Passed.");
     }
 
-    private static void addCollectionCount(HashMap<String, List<Long>> counts, int iteration) {
+    private static void addCollectionCount(HashMap<String, List<Long>> counts) {
         for (int i = 0; i < collectors.size(); i++) {
             GarbageCollectorMXBean collector = collectors.get(i);
             List<Long> thisList = counts.get(collector.getName());
