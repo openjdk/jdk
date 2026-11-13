@@ -25,13 +25,26 @@
 package MyPackage;
 
 /**
- * @test
- * @summary Verifies that AsyncGetCallTrace is call-able and provides sane information on platform and virtual threads.
+ * @test id=platform
+ * @summary Verifies that AsyncGetCallTrace is call-able and provides sane information.
  * @compile ASGCTBaseTest.java
  * @requires os.family == "linux"
  * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="arm" | os.arch=="aarch64" | os.arch=="ppc64" | os.arch=="ppc64le" | os.arch=="s390x" | os.arch=="riscv64"
  * @requires vm.jvmti
- * @run main/othervm/native -agentlib:AsyncGetCallTraceTest MyPackage.ASGCTBaseTest
+ * @requires test.thread.factory == null
+ * @run main/othervm/native -agentlib:AsyncGetCallTraceTest MyPackage.ASGCTBaseTest platform
+ */
+
+/**
+ * @test id=virtual
+ * @summary Verifies that AsyncGetCallTrace is call-able and provides sane information.
+ * @compile ASGCTBaseTest.java
+ * @requires os.family == "linux"
+ * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="arm" | os.arch=="aarch64" | os.arch=="ppc64" | os.arch=="ppc64le" | os.arch=="s390x" | os.arch=="riscv64"
+ * @requires vm.jvmti
+ * @requires vm.continuations
+ * @requires test.thread.factory == null
+ * @run main/othervm/native -agentlib:AsyncGetCallTraceTest MyPackage.ASGCTBaseTest virtual
  */
 
 public class ASGCTBaseTest {
@@ -55,13 +68,10 @@ public class ASGCTBaseTest {
     return result[0];
   }
 
-  // main may run on either kind of thread under the test thread factory, so both are checked explicitly
   public static void main(String[] args) throws InterruptedException {
-    if (!check(false)) {
-      throw new RuntimeException("AsyncGetCallTrace call failed on a platform thread.");
-    }
-    if (!check(true)) {
-      throw new RuntimeException("AsyncGetCallTrace call failed on a virtual thread.");
+    boolean virtual = args.length > 0 && args[0].equals("virtual");
+    if (!check(virtual)) {
+      throw new RuntimeException("AsyncGetCallTrace call failed.");
     }
   }
 }

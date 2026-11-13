@@ -266,7 +266,7 @@ Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls)
   jvmti->GetStackTrace(thread, 0, MAX_DEPTH, gstFrames, &gstCount);
 
   // On a virtual thread AsyncGetCallTrace walks on into the carrier where GetStackTrace
-  // stops at the continuation entry, without continuations both end at the thread's run.
+  // stops at the continuation entry.
   bool carrier_frames = trace.num_frames > gstCount;
   if (!carrier_frames && gstCount != trace.num_frames) {
     fprintf(stderr, "GetStackTrace and AsyncGetCallTrace return different number of frames: %d vs %d)", gstCount, trace.num_frames);
