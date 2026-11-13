@@ -43,6 +43,7 @@
 #include "opto/phase.hpp"
 #include "opto/phasetype.hpp"
 #include "opto/predicates.hpp"
+#include "opto/rangecheck.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
@@ -3299,41 +3300,25 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
           // The underflow and overflow limits: 0 <= scale*I+offset < limit
           add_constraint(stride_con, lscale_con, offset, zero, limit, next_limit_ctrl, &pre_limit, &main_limit);
 
-
-          InitializedAssertionPredicateCreator initialized_assertion_predicate_creator(this);
+          RangeCheckInfo info(T_INT, scale_con, int_offset, b_test._test, cmp->Opcode() == Op_CmpU, int_limit);
+          // We don't have the exact final_iv, so the only case we can add
+          // InitializedAssertionPredicate is when abs_stride_is_one. These predicates serve as a
+          // runtime check for the correctness of add_constraint, so create them if we can.
           if (abs_stride_is_one) {
-            // If the main loop becomes empty and the array access for this range check is sunk out of the loop, the index
-            // for the array access will be set to the index value of the final iteration which could be out of loop.
-            // Add an Initialized Assertion Predicate for that corner case. The final iv is computed from LoopLimit which
-            // is the LoopNode::limit() only if abs(stride) == 1 otherwise the computation depends on LoopNode::init_trip()
-            // as well. When LoopLimit only depends on LoopNode::limit(), there are cases where the zero trip guard for
-            // the main loop doesn't constant fold after range check elimination but, the array access for the final
-            // iteration of the main loop is out of bound and the index for that access is out of range for the range
-            // check CastII.
-            // Note that we do not need to emit a Template Assertion Predicate to update this predicate. When further
-            // splitting this loop, the final IV will still be the same. When unrolling the loop, we will remove a
-            // previously added Initialized Assertion Predicate here. But then abs(stride) is greater than 1, and we
-            // cannot remove an empty loop with a constant limit when init is not a constant as well. We will use
-            // a LoopLimitCheck node that can only be folded if the zero grip guard is also foldable.
-            loop_entry = initialized_assertion_predicate_creator.create(final_iv_placeholder, loop_entry, stride_con,
-                                                                        scale_con, int_offset, int_limit,
-                                                                        AssertionPredicateType::FinalIv);
+            assert(final_iv_placeholder != nullptr, "must be constructed");
+            InitializedAssertionPredicateCreator initialized_assertion_predicate_creator(this);
+            Node* init = cl->uncasted_init_trip(true);
+            loop_entry = initialized_assertion_predicate_creator.create(loop_entry, info, init, final_iv_placeholder, stride_con);
           }
 
-          // Add two Template Assertion Predicates to create new Initialized Assertion Predicates from when either
-          // unrolling or splitting this main-loop further.
-          TemplateAssertionPredicateCreator template_assertion_predicate_creator(cl, scale_con , int_offset, int_limit,
-                                                                                 this);
+          // Add two Template Assertion Predicates. The shape is similar to that of a loop after
+          // loop predication. When a loop is peeled or unrolled, new Initialized Assertion
+          // Predicates will be constructed based on these templates.
+          TemplateAssertionPredicateCreator template_assertion_predicate_creator(cl, info, this);
           loop_entry = template_assertion_predicate_creator.create(loop_entry);
           // Make sure to rewire data dependencies on the removed check to the Template Assertion Predicate in order
           // to update them correctly when further splitting the main loop later.
           ctrl_target_for_data_rewire = loop_entry;
-
-          // Initialized Assertion Predicate for the value of the initial main-loop.
-          Node* init = cl->uncasted_init_trip(true);
-          loop_entry = initialized_assertion_predicate_creator.create(init, loop_entry, stride_con, scale_con,
-                                                                      int_offset, int_limit,
-                                                                      AssertionPredicateType::InitValue);
         } else {
           if (PrintOpto) {
             tty->print_cr("missed RCE opportunity");
