@@ -32,9 +32,9 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * INVOKEINTERFACE - Invoke interface method
  *
- * <PRE>
+ * <pre>
  * Stack: ..., objectref, [arg1, [arg2 ...]] -&gt; ...
- * </PRE>
+ * </pre>
  *
  * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokeinterface"> The
  *      invokeinterface instruction in The Java Virtual Machine Specification</a>
@@ -49,20 +49,26 @@ public final class INVOKEINTERFACE extends InvokeInstruction {
     INVOKEINTERFACE() {
     }
 
+    /**
+     * Constructs an INVOKEINTERFACE instruction.
+     *
+     * @param index index into constant pool.
+     * @param nargs number of arguments.
+     */
     public INVOKEINTERFACE(final int index, final int nargs) {
         super(Const.INVOKEINTERFACE, index);
         super.setLength(5);
-        if (nargs < 1) {
-            throw new ClassGenException("Number of arguments must be > 0 " + nargs);
+        if (nargs < 1 || nargs > Const.MAX_BYTE) {
+            throw new ClassGenException("Number of arguments out of range (1 - " + Const.MAX_BYTE + "): " + nargs);
         }
         this.nargs = nargs;
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -83,9 +89,9 @@ public final class INVOKEINTERFACE extends InvokeInstruction {
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {
@@ -96,7 +102,9 @@ public final class INVOKEINTERFACE extends InvokeInstruction {
     }
 
     /**
-     * The <B>count</B> argument according to the Java Language Specification, Second Edition.
+     * The <strong>count</strong> argument according to the Java Language Specification, Second Edition.
+     *
+     * @return The count argument.
      */
     public int getCount() {
         return nargs;
@@ -109,7 +117,7 @@ public final class INVOKEINTERFACE extends InvokeInstruction {
     }
 
     /**
-     * Read needed data (i.e., index) from file.
+     * Reads needed data (that is, index) from file.
      */
     @Override
     protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
@@ -120,7 +128,7 @@ public final class INVOKEINTERFACE extends InvokeInstruction {
     }
 
     /**
-     * @return mnemonic for instruction with symbolic references resolved
+     * @return mnemonic for instruction with symbolic references resolved.
      */
     @Override
     public String toString(final ConstantPool cp) {

@@ -34,8 +34,8 @@ public class ObjectType extends ReferenceType {
     /**
      * Constructs a new instance.
      *
-     * @param className fully qualified class name, e.g. java.lang.String
-     * @return a new instance.
+     * @param className fully qualified class name, for example {@link String}.
+     * @return A new instance.
      * @since 6.0
      */
     public static ObjectType getInstance(final String className) {
@@ -47,7 +47,7 @@ public class ObjectType extends ReferenceType {
     /**
      * Constructs a new instance.
      *
-     * @param className fully qualified class name, e.g. {@link String}
+     * @param className fully qualified class name, for example {@link String}.
      */
     public ObjectType(final String className) {
         super(Const.T_REFERENCE, "L" + Utility.packageToPath(className) + ";");
@@ -55,9 +55,11 @@ public class ObjectType extends ReferenceType {
     }
 
     /**
-     * Java Virtual Machine Specification edition 2,  5.4.4 Access Control
+     * Java Virtual Machine Specification edition 2, 5.4.4 Access Control.
      *
-     * @throws ClassNotFoundException if the class referenced by this type can't be found
+     * @param accessor The accessing type.
+     * @return true if accessible.
+     * @throws ClassNotFoundException Thrown if the class referenced by this type can't be found.
      */
     public boolean accessibleTo(final ObjectType accessor) throws ClassNotFoundException {
         final JavaClass jc = Repository.lookupClass(className);
@@ -77,7 +79,7 @@ public class ObjectType extends ReferenceType {
     }
 
     /**
-     * @return name of referenced class
+     * @return name of referenced class.
      */
     @Override
     public String getClassName() {
@@ -85,7 +87,9 @@ public class ObjectType extends ReferenceType {
     }
 
     /**
-     * @return a hash code value for the object.
+     * Gets the hash code.
+     *
+     * @return A hash code value for the object.
      */
     @Override
     public int hashCode() {
@@ -94,6 +98,8 @@ public class ObjectType extends ReferenceType {
 
     /**
      * If "this" doesn't reference a class, it references an interface or a non-existant entity.
+     *
+     * @return true if it references a class, false otherwise.
      * @deprecated (since 6.0) this method returns an inaccurate result if the class or interface referenced cannot be
      *             found: use referencesClassExact() instead
      */
@@ -110,8 +116,8 @@ public class ObjectType extends ReferenceType {
     /**
      * Return true if this type references a class, false if it references an interface.
      *
-     * @return true if the type references a class, false if it references an interface
-     * @throws ClassNotFoundException if the class or interface referenced by this type can't be found
+     * @return true if the type references a class, false if it references an interface.
+     * @throws ClassNotFoundException Thrown if the class or interface referenced by this type can't be found
      */
     public boolean referencesClassExact() throws ClassNotFoundException {
         final JavaClass jc = Repository.lookupClass(className);
@@ -121,6 +127,7 @@ public class ObjectType extends ReferenceType {
     /**
      * If "this" doesn't reference an interface, it references a class or a non-existant entity.
      *
+     * @return true if it references an interface, false otherwise.
      * @deprecated (since 6.0) this method returns an inaccurate result if the class or interface referenced cannot be
      *             found: use referencesInterfaceExact() instead
      */
@@ -137,8 +144,8 @@ public class ObjectType extends ReferenceType {
     /**
      * Return true if this type references an interface, false if it references a class.
      *
-     * @return true if the type references an interface, false if it references a class
-     * @throws ClassNotFoundException if the class or interface referenced by this type can't be found
+     * @return true if the type references an interface, false if it references a class.
+     * @throws ClassNotFoundException Thrown if the class or interface referenced by this type can't be found
      */
     public boolean referencesInterfaceExact() throws ClassNotFoundException {
         final JavaClass jc = Repository.lookupClass(className);
@@ -148,7 +155,9 @@ public class ObjectType extends ReferenceType {
     /**
      * Return true if this type is a subclass of given ObjectType.
      *
-     * @throws ClassNotFoundException if any of this class's superclasses can't be found
+     * @param superclass The superclass to check against.
+     * @return true if this is a subclass.
+     * @throws ClassNotFoundException Thrown if any of this class's superclasses can't be found.
      */
     public boolean subclassOf(final ObjectType superclass) throws ClassNotFoundException {
         if (referencesInterfaceExact() || superclass.referencesInterfaceExact()) {

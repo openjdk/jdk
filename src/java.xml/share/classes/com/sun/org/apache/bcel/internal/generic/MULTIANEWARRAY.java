@@ -31,9 +31,9 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * MULTIANEWARRAY - Create new mutidimensional array of references
  *
- * <PRE>
+ * <pre>
  * Stack: ..., count1, [count2, ...] -&gt; ..., arrayref
- * </PRE>
+ * </pre>
  */
 public class MULTIANEWARRAY extends CPInstruction implements LoadClass, AllocationInstruction, ExceptionThrower {
 
@@ -45,9 +45,15 @@ public class MULTIANEWARRAY extends CPInstruction implements LoadClass, Allocati
     MULTIANEWARRAY() {
     }
 
+    /**
+     * Constructs a MULTIANEWARRAY instruction.
+     *
+     * @param index index into constant pool.
+     * @param dimensions number of dimensions.
+     */
     public MULTIANEWARRAY(final int index, final short dimensions) {
         super(com.sun.org.apache.bcel.internal.Const.MULTIANEWARRAY, index);
-        if (dimensions < 1) {
+        if (dimensions < 1 || dimensions > com.sun.org.apache.bcel.internal.Const.MAX_BYTE) {
             throw new ClassGenException("Invalid dimensions value: " + dimensions);
         }
         this.dimensions = dimensions;
@@ -56,9 +62,9 @@ public class MULTIANEWARRAY extends CPInstruction implements LoadClass, Allocati
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -73,7 +79,7 @@ public class MULTIANEWARRAY extends CPInstruction implements LoadClass, Allocati
     /**
      * Also works for instructions whose stack effect depends on the constant pool entry they reference.
      *
-     * @return Number of words consumed from stack by this instruction
+     * @return Number of words consumed from stack by this instruction.
      */
     @Override
     public int consumeStack(final ConstantPoolGen cpg) {
@@ -81,9 +87,9 @@ public class MULTIANEWARRAY extends CPInstruction implements LoadClass, Allocati
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {
@@ -93,7 +99,9 @@ public class MULTIANEWARRAY extends CPInstruction implements LoadClass, Allocati
     }
 
     /**
-     * @return number of dimensions to be created
+     * Gets the number of dimensions.
+     *
+     * @return number of dimensions to be created.
      */
     public final short getDimensions() {
         return dimensions;
@@ -115,17 +123,17 @@ public class MULTIANEWARRAY extends CPInstruction implements LoadClass, Allocati
     }
 
     /**
-     * Read needed data (i.e., no. dimension) from file.
+     * Reads needed data (that is, no. dimension) from file.
      */
     @Override
     protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
         super.initFromFile(bytes, wide);
-        dimensions = bytes.readByte();
+        dimensions = (short) bytes.readUnsignedByte();
         super.setLength(4);
     }
 
     /**
-     * @return mnemonic for instruction
+     * @return mnemonic for instruction.
      */
     @Override
     public String toString(final boolean verbose) {
@@ -133,7 +141,7 @@ public class MULTIANEWARRAY extends CPInstruction implements LoadClass, Allocati
     }
 
     /**
-     * @return mnemonic for instruction with symbolic references resolved
+     * @return mnemonic for instruction with symbolic references resolved.
      */
     @Override
     public String toString(final ConstantPool cp) {

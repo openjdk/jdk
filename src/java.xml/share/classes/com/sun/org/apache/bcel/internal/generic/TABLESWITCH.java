@@ -24,10 +24,11 @@ package com.sun.org.apache.bcel.internal.generic;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import com.sun.org.apache.bcel.internal.classfile.ClassFormatException;
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
- * TABLESWITCH - Switch within given range of values, i.e., low..high
+ * TABLESWITCH - Switch within given range of values, that is, low..high
  *
  * @see SWITCH
  */
@@ -40,9 +41,11 @@ public class TABLESWITCH extends Select {
     }
 
     /**
-     * @param match sorted array of match values, match[0] must be low value, match[match_length - 1] high value
-     * @param targets where to branch for matched values
-     * @param defaultTarget default branch
+     * Constructs a TABLESWITCH instruction.
+     *
+     * @param match sorted array of match values, match[0] must be low value, match[match_length - 1] high value.
+     * @param targets where to branch for matched values.
+     * @param defaultTarget default branch.
      */
     public TABLESWITCH(final int[] match, final InstructionHandle[] targets, final InstructionHandle defaultTarget) {
         super(com.sun.org.apache.bcel.internal.Const.TABLESWITCH, match, targets, defaultTarget);
@@ -54,9 +57,9 @@ public class TABLESWITCH extends Select {
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -68,9 +71,9 @@ public class TABLESWITCH extends Select {
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {
@@ -86,14 +89,22 @@ public class TABLESWITCH extends Select {
     }
 
     /**
-     * Read needed data (e.g. index) from file.
+     * Reads needed data (for example index) from file.
      */
     @Override
     protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
         super.initFromFile(bytes, wide);
         final int low = bytes.readInt();
         final int high = bytes.readInt();
-        final int matchLength = high - low + 1;
+        // Compute in long arithmetic to guard against integer overflow, and require the match table to actually fit into the remaining code bytes (4 bytes
+        // per jump offset). The low and high fields are attacker-controlled in a malicious class file and could otherwise request a multi-gigabyte
+        // allocation, or a negative array size, before a single table entry is read.
+        final long matchLengthLong = (long) high - low + 1;
+        if (matchLengthLong < 0 || matchLengthLong > bytes.available() / 4) {
+            throw new ClassFormatException(
+                    "Invalid tableswitch: low=" + low + ", high=" + high + ", but only " + bytes.available() + " bytes of code remain.");
+        }
+        final int matchLength = (int) matchLengthLong;
         setMatchLength(matchLength);
         final short fixedLength = (short) (13 + matchLength * 4);
         setFixedLength(fixedLength);

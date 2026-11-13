@@ -32,17 +32,17 @@ public interface BCELComparator<T> {
     /**
      * Compares two objects and return what a.equals(b) should return.
      *
-     * @param a an object.
-     * @param b an object to be compared with {@code a} for equality.
+     * @param a An object.
+     * @param b An object to be compared with {@code a} for equality.
      * @return {@code true} if the arguments are equal to each other and {@code false} otherwise.
      */
     boolean equals(T a, T b);
 
     /**
-     * Gets the hash code for o.hashCode()
+     * Gets the hash code for o.hashCode().
      *
-     * @param o
-     * @return hash code for o.hashCode()
+     * @param o The object.
+     * @return hash code for o.hashCode().
      */
     int hashCode(T o);
 }

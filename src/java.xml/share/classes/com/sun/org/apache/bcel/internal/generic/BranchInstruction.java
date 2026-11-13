@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,11 +25,11 @@ import java.io.IOException;
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
- * Abstract super class for branching instructions like GOTO, IFEQ, etc.. Branch instructions may have a variable
- * length, namely GOTO, JSR, LOOKUPSWITCH and TABLESWITCH.
+ * Abstract super class for branching instructions like GOTO, IFEQ, and so on. Branch instructions may have a variable length, namely GOTO, JSR, LOOKUPSWITCH
+ * and TABLESWITCH.
  *
  * @see InstructionList
- * @LastModified: Feb 2023
+ * @LastModified: Nov 2026
  */
 public abstract class BranchInstruction extends Instruction implements InstructionTargeter {
 
@@ -72,8 +72,8 @@ public abstract class BranchInstruction extends Instruction implements Instructi
     /**
      * Common super constructor
      *
-     * @param opcode Instruction opcode
-     * @param target instruction to branch to
+     * @param opcode Instruction opcode.
+     * @param target instruction to branch to.
      */
     protected BranchInstruction(final short opcode, final InstructionHandle target) {
         super(opcode, (short) 3);
@@ -81,7 +81,7 @@ public abstract class BranchInstruction extends Instruction implements Instructi
     }
 
     /**
-     * @return true, if ih is target of this instruction
+     * @return true, if ih is target of this instruction.
      */
     @Override
     public boolean containsTarget(final InstructionHandle ih) {
@@ -99,9 +99,9 @@ public abstract class BranchInstruction extends Instruction implements Instructi
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {
@@ -110,18 +110,22 @@ public abstract class BranchInstruction extends Instruction implements Instructi
         if (!isValidShort(index)) {
             throw new ClassGenException("Branch target offset too large for short: " + index);
         }
-        out.writeShort(index); // May be negative, i.e., point backwards
+        out.writeShort(index); // May be negative, that is, point backwards
     }
 
     /**
-     * @return target offset in byte code
+     * Gets the target offset in byte code.
+     *
+     * @return target offset in byte code.
      */
     public final int getIndex() {
         return index;
     }
 
     /**
-     * @return the position
+     * Gets the position.
+     *
+     * @return The position.
      * @since 6.0
      */
     protected int getPosition() {
@@ -129,22 +133,28 @@ public abstract class BranchInstruction extends Instruction implements Instructi
     }
 
     /**
-     * @return target of branch instruction
+     * Gets the target of branch instruction.
+     *
+     * @return target of branch instruction.
      */
     public InstructionHandle getTarget() {
         return target;
     }
 
     /**
-     * @return the offset to this instruction's target
+     * Gets the offset to this instruction's target.
+     *
+     * @return The offset to this instruction's target.
      */
     protected int getTargetOffset() {
         return getTargetOffset(target);
     }
 
     /**
-     * @param target branch target
-     * @return the offset to 'target' relative to this instruction
+     * Gets the offset to target relative to this instruction.
+     *
+     * @param target branch target.
+     * @return The offset to 'target' relative to this instruction.
      */
     protected int getTargetOffset(final InstructionHandle target) {
         if (target == null) {
@@ -158,9 +168,9 @@ public abstract class BranchInstruction extends Instruction implements Instructi
     }
 
     /**
-     * Read needed data (e.g. index) from file. Conversion to a InstructionHandle is done in InstructionList(byte[]).
+     * Reads needed data (for example index) from file. Conversion to a InstructionHandle is done in InstructionList(byte[]).
      *
-     * @param bytes input stream
+     * @param bytes input stream.
      * @param wide wide prefix?
      * @see InstructionList
      */
@@ -171,7 +181,9 @@ public abstract class BranchInstruction extends Instruction implements Instructi
     }
 
     /**
-     * @param index the index to set
+     * Sets the index.
+     *
+     * @param index The index to set.
      * @since 6.0
      */
     protected void setIndex(final int index) {
@@ -179,7 +191,9 @@ public abstract class BranchInstruction extends Instruction implements Instructi
     }
 
     /**
-     * @param position the position to set
+     * Sets the position.
+     *
+     * @param position The position to set.
      * @since 6.0
      */
     protected void setPosition(final int position) {
@@ -207,7 +221,7 @@ public abstract class BranchInstruction extends Instruction implements Instructi
     /**
      * Set branch target
      *
-     * @param target branch target
+     * @param target branch target.
      */
     public void setTarget(final InstructionHandle target) {
         notifyTarget(this.target, target, this);
@@ -220,8 +234,8 @@ public abstract class BranchInstruction extends Instruction implements Instructi
      * &lt;position in byte code&gt; &lt;name of opcode&gt; "["&lt;opcode number&gt;"]" "("&lt;length of instruction&gt;")"
      * "&lt;"&lt;target instruction&gt;"&gt;" "@"&lt;branch target offset&gt;
      *
-     * @param verbose long/short format switch
-     * @return mnemonic for instruction
+     * @param verbose long/short format switch.
+     * @return mnemonic for instruction.
      */
     @Override
     public String toString(final boolean verbose) {
@@ -254,9 +268,9 @@ public abstract class BranchInstruction extends Instruction implements Instructi
      * length instructions 'setPositions' performs multiple passes over the instruction list to calculate the correct (byte)
      * positions and offsets by calling this function.
      *
-     * @param offset additional offset caused by preceding (variable length) instructions
-     * @param maxOffset the maximum offset that may be caused by these instructions
-     * @return additional offset caused by possible change of this instruction's length
+     * @param offset additional offset caused by preceding (variable length) instructions.
+     * @param maxOffset The maximum offset that may be caused by these instructions.
+     * @return additional offset caused by possible change of this instruction's length.
      */
     protected int updatePosition(final int offset, final int maxOffset) {
         position += offset;
@@ -264,8 +278,8 @@ public abstract class BranchInstruction extends Instruction implements Instructi
     }
 
     /**
-     * @param oldIh old target
-     * @param newIh new target
+     * @param oldIh old target.
+     * @param newIh new target.
      */
     @Override
     public void updateTarget(final InstructionHandle oldIh, final InstructionHandle newIh) {
