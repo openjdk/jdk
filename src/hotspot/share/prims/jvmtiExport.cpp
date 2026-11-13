@@ -2280,8 +2280,8 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
 }
 
 // Returns true if a field access or modification event should be skipped while the event
-// thread is initializing a class with strictly-initialized static fields or constructing
-// an object with strictly-initialized fields in its class hierarchy.
+// thread is initializing a class with strictly-initialized static fields or executing a
+// constructor with strictly-initialized instance fields in its declaring-class hierarchy.
 static bool should_skip_field_event_during_strict_initialization(JavaThread* thread, Klass* field_klass, Handle object, jfieldID field) {
   fieldDescriptor fd;
   if (!JvmtiEnv::get_field_descriptor(field_klass, field, &fd)) {
