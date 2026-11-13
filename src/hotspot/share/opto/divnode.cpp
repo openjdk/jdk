@@ -659,8 +659,8 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
     return TypeInt::ONE;
   }
 
-  const TypeInt* i1 = t1->is_int();
-  const TypeInt* i2 = t2->is_int();
+  const TypeInt* i1 = t1->as_int();
+  const TypeInt* i2 = t2->as_int();
 
   return compute_signed_div_type<TypeInt>(i1, i2);
 }
@@ -726,8 +726,8 @@ const Type* DivLNode::Value(PhaseGVN* phase) const {
     return TypeLong::ONE;
   }
 
-  const TypeLong* i1 = t1->is_long();
-  const TypeLong* i2 = t2->is_long();
+  const TypeLong* i1 = t1->as_long();
+  const TypeLong* i2 = t2->as_long();
 
   return compute_signed_div_type<TypeLong>(i1, i2);
 }
@@ -1105,7 +1105,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Get the modulus
   const Type *t = phase->type( in(2) );
   if( t == Type::TOP ) return nullptr;
-  const TypeInt *ti = t->is_int();
+  const TypeInt* ti = t->as_int();
 
   // Check for useless control input
   // Check for excluding mod-zero case
@@ -1241,8 +1241,8 @@ static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node*
     return TypeInteger::zero(bt);
   }
 
-  const TypeInteger* i1 = t1->is_integer(bt);
-  const TypeInteger* i2 = t2->is_integer(bt);
+  const TypeInteger* i1 = t1->as_integer(bt);
+  const TypeInteger* i2 = t2->as_integer(bt);
   if (i1->is_con() && i2->is_con()) {
     // We must be modulo'ing 2 int constants.
     // Special case: min_jlong % '-1' is UB, and e.g., x86 triggers a division error.
@@ -1404,7 +1404,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Get the modulus
   const Type *t = phase->type( in(2) );
   if( t == Type::TOP ) return nullptr;
-  const TypeLong *tl = t->is_long();
+  const TypeLong* tl = t->as_long();
 
   // Check for useless control input
   // Check for excluding mod-zero case
@@ -1614,7 +1614,7 @@ const Type* ModFloatingNode::Value(PhaseGVN* phase) const {
   }
   const Type* constant_result = get_result_if_constant(dividend_type, divisor_type);
   if (constant_result != nullptr) {
-    const TypeTuple* tt = t->is_tuple();
+    const TypeTuple* tt = t->as_tuple();
     uint cnt = tt->cnt();
     uint param_cnt = cnt - TypeFunc::Parms;
     const Type** fields = TypeTuple::fields(param_cnt);
