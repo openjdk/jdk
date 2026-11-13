@@ -43,7 +43,7 @@ public class InvalidMethodSignatureException extends ClassFormatException {
      * Constructs a new instance with the specified invalid signature as the message and a cause.
      *
      * @param signature The invalid signature is saved for later retrieval by the {@link #getMessage()} method.
-     * @param cause     the cause (which is saved for later retrieval by the {@link #getCause()} method). A {@code null} value is permitted, and indicates that
+     * @param cause     The cause (which is saved for later retrieval by the {@link #getCause()} method). A {@code null} value is permitted, and indicates that
      *                  the cause is nonexistent or unknown.
      */
     public InvalidMethodSignatureException(final String signature, final Throwable cause) {

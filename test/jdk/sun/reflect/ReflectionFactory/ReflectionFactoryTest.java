@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.util.Arrays;
 import sun.reflect.ReflectionFactory;
 
 import org.testng.Assert;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
@@ -53,13 +54,22 @@ import org.testng.TestNG;
  * @bug 8137058 8164908 8168980 8275137 8333796
  * @summary Basic test for the unsupported ReflectionFactory
  * @modules jdk.unsupported
- * @run testng ReflectionFactoryTest
+ * @run testng/othervm -Djdk.reflect.allowNonSerializableConstruction=true ReflectionFactoryTest
+ * @run testng/othervm -Djdk.reflect.allowNonSerializableConstruction=false ReflectionFactoryTest
  */
 
 public class ReflectionFactoryTest {
 
     // Initialized by init()
     static ReflectionFactory factory;
+    static boolean allowNonSerializableConstruction;
+
+    @BeforeClass
+    static void init() {
+        factory = ReflectionFactory.getReflectionFactory();
+        allowNonSerializableConstruction = Boolean.getBoolean(
+                "jdk.reflect.allowNonSerializableConstruction");
+    }
 
     @DataProvider(name = "ClassConstructors")
     static Object[][] classConstructors() {
@@ -68,11 +78,6 @@ public class ReflectionFactoryTest {
                 {Foo.class},
                 {Bar.class},
         };
-    }
-
-    @BeforeClass
-    static void init() {
-        factory = ReflectionFactory.getReflectionFactory();
     }
 
     /**
@@ -90,11 +95,15 @@ public class ReflectionFactoryTest {
         @SuppressWarnings("unchecked")
         Constructor<?> c = factory.newConstructorForSerialization(type);
 
-        Object o = c.newInstance();
-        Assert.assertEquals(o.getClass(), type, "Instance is wrong type");
-        if (o instanceof Foo) {
-            Foo foo = (Foo)o;
-            foo.check();
+        if (allowNonSerializableConstruction || Serializable.class.isAssignableFrom(type)) {
+            Object o = c.newInstance();
+            Assert.assertEquals(o.getClass(), type, "Instance is wrong type");
+            if (o instanceof Foo) {
+                Foo foo = (Foo)o;
+                foo.check();
+            }
+        } else {
+            Assert.assertNull(c, "null expected for " + type);
         }
     }
 
@@ -113,10 +122,13 @@ public class ReflectionFactoryTest {
      * Tests that the given Constructor, in the hierarchy, is run.
      */
     @Test(dataProvider="NonSerialConstructors")
-    static void testNonSerializableConstructor(Class<?> cl,
-                                               Constructor<?> constructorToCall)
+    static void testNonSerializableConstructor(Class<?> cl, Constructor<?> constructorToCall)
         throws ReflectiveOperationException
     {
+        if (!allowNonSerializableConstruction) {
+            throw new SkipException("2-arg newConstructorForSerialization method disabled");
+        }
+
         @SuppressWarnings("unchecked")
         Constructor<?> c = factory.newConstructorForSerialization(cl,
                                                                   constructorToCall);
@@ -672,7 +684,7 @@ public class ReflectionFactoryTest {
         };
         // all the same methods, except for `writeFields`
         Arrays.fill(called, false);
-        Constructor<?> ctor = factory.newConstructorForSerialization(Ser2.class, Object.class.getDeclaredConstructor());
+        Constructor<?> ctor = factory.newConstructorForSerialization(Ser2.class);
         ser = (Ser2) ctor.newInstance();
         readObject.invokeExact(ser, ois);
         // excluding "writeFields", so 18 instead of 19

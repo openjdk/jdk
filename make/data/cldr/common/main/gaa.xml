@@ -667,6 +667,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">/</numericDateSeparator>
+						<numericTimeSeparator draft="provisional">:</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} 'be' 'ni' 'atswa' {0}</pattern>
@@ -704,11 +708,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd" draft="unconfirmed">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM" draft="unconfirmed">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">MMMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, MMMM d, y</dateFormatItem>
 						<dateFormatItem id="yQQQ" draft="unconfirmed">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ" draft="unconfirmed">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="other" draft="unconfirmed">Y 'otsi' w</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
 							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
@@ -887,7 +898,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat type="standard">{0} Be Yɛ Fɛi Beiaŋ</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
-					<standard draft="unconfirmed">Be Ni Maji Ni Yɔɔ Jeŋ Fɛɛ Kɛtsuɔ Nii</standard>
+					<standard>Be Ni Maji Ni Yɔɔ Jeŋ Fɛɛ Kɛtsuɔ Nii</standard>
 				</long>
 			</zone>
 			<zone type="Etc/Unknown">
@@ -913,6 +924,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/St_Barthelemy">
 				<exemplarCity draft="unconfirmed">St. Barthélemy</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity draft="unconfirmed">Nasau</exemplarCity>
 			</zone>
 			<zone type="America/Whitehorse">
 				<exemplarCity draft="unconfirmed">Okpɔŋɔ Yɛŋ</exemplarCity>
@@ -986,11 +1000,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Truk">
 				<exemplarCity draft="unconfirmed">Tsuuk</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight draft="unconfirmed">Be Ni Britainbii Kɛtsuɔ Nii Yɛ Latsa Beiaŋ</daylight>
-				</long>
-			</zone>
 			<zone type="Africa/Accra">
 				<exemplarCity draft="unconfirmed">Ga</exemplarCity>
 			</zone>
@@ -1005,11 +1014,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Port-au-Prince">
 				<exemplarCity draft="unconfirmed">Abladei Alɛjiadaamɔhe</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight draft="unconfirmed">Be Ni Irelandbii Kɛtsuɔ Nii</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity draft="unconfirmed">Yerusalem</exemplarCity>
@@ -1056,8 +1060,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Nouakchott">
 				<exemplarCity draft="unconfirmed">Nouakshott</exemplarCity>
 			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity draft="unconfirmed">Montserat</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity draft="unconfirmed">Hermosilo</exemplarCity>
+			</zone>
 			<zone type="America/Chihuahua">
 				<exemplarCity draft="unconfirmed">Tsihuahua</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity draft="unconfirmed">Montere</exemplarCity>
 			</zone>
 			<zone type="America/Mexico_City">
 				<exemplarCity draft="unconfirmed">Meziko Maŋ</exemplarCity>
@@ -1114,7 +1127,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">Ankorage</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/New_Salem">
-				<exemplarCity draft="unconfirmed">New Salem, Dakota Kooyigbɛ</exemplarCity>
+				<exemplarCity draft="unconfirmed">Salem Manheiaŋ, Dakota Kooyigbɛ</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Center">
 				<exemplarCity draft="unconfirmed">Maŋteŋ, Dakota Kooyigbɛ</exemplarCity>
@@ -1123,19 +1136,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">Tsikago</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vincennes">
-				<exemplarCity draft="unconfirmed">Vinsennes, Indiana</exemplarCity>
+				<exemplarCity draft="unconfirmed">Vinsenes, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Tell_City">
 				<exemplarCity draft="unconfirmed">Osheku Maŋ, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Knox">
-				<exemplarCity draft="unconfirmed">Knos, Indiana</exemplarCity>
+				<exemplarCity draft="unconfirmed">Nos, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Winamac">
 				<exemplarCity draft="unconfirmed">Winamak, Indiana</exemplarCity>
 			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity draft="unconfirmed">Louisvile</exemplarCity>
+			</zone>
 			<zone type="America/Kentucky/Monticello">
-				<exemplarCity draft="unconfirmed">Montisello, Kentuky</exemplarCity>
+				<exemplarCity draft="unconfirmed">Montiselo, Kentuky</exemplarCity>
 			</zone>
 			<zone type="America/St_Vincent">
 				<exemplarCity draft="unconfirmed">St. Vinsent</exemplarCity>
@@ -1212,6 +1228,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">Azores Be Yɛ Latsa Beiaŋ</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Britin Be tsɔɔmɔ</generic>
+					<daylight>Be Ni Britainbii Kɛtsuɔ Nii Yɛ Latsa Beiaŋ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
 					<generic draft="unconfirmed">Kape Verde Be</generic>
@@ -1233,7 +1255,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>Betsɔɔmɔ ni ka ŋɛlɛ kome nɔ</standard>
+					<standard>Greenwich Be Tsɔɔmɔ</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
@@ -1252,19 +1274,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard draft="unconfirmed">Hawaii-Aleutia Be Yɛ Fɛi Beiaŋ</standard>
+					<standard>Hawaii Be Yɛ Fɛi Beiaŋ</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic draft="unconfirmed">Hawaii-Aleutia Be</generic>
-					<standard draft="unconfirmed">Hawaii-Aleutia Be Yɛ Fɛi Beiaŋ</standard>
-					<daylight draft="unconfirmed">Hawaii-Aleutia Be Yɛ Latsa Beiaŋ</daylight>
+					<generic>Hawaii-Aleutia Be</generic>
+					<standard>Hawaii-Aleutia Be Yɛ Fɛi Beiaŋ</standard>
+					<daylight>Hawaii-Aleutia Be Yɛ Latsa Beiaŋ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Indian_Ocean">
 				<long>
 					<standard draft="unconfirmed">Indian Ŋshɔ Lɛ Be</standard>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Ireland Be tsɔɔmɔ</generic>
+					<daylight>Be Ni Irelandbii Kɛtsuɔ Nii</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mauritius">

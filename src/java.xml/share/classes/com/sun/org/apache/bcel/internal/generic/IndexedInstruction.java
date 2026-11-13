@@ -22,11 +22,21 @@
 package com.sun.org.apache.bcel.internal.generic;
 
 /**
- * Denote entity that refers to an index, e.g. local variable instructions, RET, CPInstruction, etc.
+ * Denote entity that refers to an index, for example local variable instructions, RET, CPInstruction, etc.
  */
 public interface IndexedInstruction {
 
+    /**
+     * Gets the index.
+     *
+     * @return The index.
+     */
     int getIndex();
 
+    /**
+     * Sets the index.
+     *
+     * @param index The index.
+     */
     void setIndex(int index);
 }

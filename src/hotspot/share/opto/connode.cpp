@@ -43,21 +43,21 @@ uint ConNode::hash() const {
 
 //------------------------------make-------------------------------------------
 ConNode *ConNode::make(const Type *t) {
-  if (t->isa_half_float_constant()) {
-    return new ConHNode( t->is_half_float_constant() );
+  if (t->is_half_float_constant()) {
+    return new ConHNode(t->as_half_float_constant());
   }
-  switch( t->basic_type() ) {
-  case T_INT:         return new ConINode( t->is_int() );
-  case T_LONG:        return new ConLNode( t->is_long() );
-  case T_FLOAT:       return new ConFNode( t->is_float_constant() );
-  case T_DOUBLE:      return new ConDNode( t->is_double_constant() );
-  case T_VOID:        return new ConNode ( Type::TOP );
-  case T_OBJECT:      return new ConPNode( t->is_ptr() );
-  case T_ARRAY:       return new ConPNode( t->is_aryptr() );
-  case T_ADDRESS:     return new ConPNode( t->is_ptr() );
-  case T_NARROWOOP:   return new ConNNode( t->is_narrowoop() );
-  case T_NARROWKLASS: return new ConNKlassNode( t->is_narrowklass() );
-  case T_METADATA:    return new ConPNode( t->is_ptr() );
+  switch (t->basic_type()) {
+  case T_INT:         return new ConINode(t->as_int());
+  case T_LONG:        return new ConLNode(t->as_long());
+  case T_FLOAT:       return new ConFNode(t->as_float_constant());
+  case T_DOUBLE:      return new ConDNode(t->as_double_constant());
+  case T_VOID:        return new ConNode (Type::TOP);
+  case T_OBJECT:      return new ConPNode(t->as_ptr());
+  case T_ARRAY:       return new ConPNode(t->as_aryptr());
+  case T_ADDRESS:     return new ConPNode(t->as_ptr());
+  case T_NARROWOOP:   return new ConNNode(t->as_narrowoop());
+  case T_NARROWKLASS: return new ConNKlassNode(t->as_narrowklass());
+  case T_METADATA:    return new ConPNode(t->as_ptr());
     // Expected cases:  TypePtr::NULL_PTR, any is_rawptr()
     // Also seen: AnyPtr(TopPTR *+top);
     // %%%% Stop using TypePtr::NULL_PTR to represent nulls:  use either TypeRawPtr::NULL_PTR

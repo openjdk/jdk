@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1457,6 +1457,7 @@ vmTestbase_nsk_jdwp_quick = \
   vmTestbase/nsk/jdwp/Method/IsObsolete/isobsolete002/TestDescription.java \
   vmTestbase/nsk/jdwp/ReferenceType/SourceDebugExtension/srcdebugext001/TestDescription.java \
   vmTestbase/nsk/jdwp/StackFrame/PopFrames/popframes001/TestDescription.java \
+  vmTestbase/nsk/jdwp/StackFrame/PopFrames/popframes002/TestDescription.java \
   vmTestbase/nsk/jdwp/VirtualMachine/CapabilitiesNew/capabilitiesnew001/TestDescription.java \
   vmTestbase/nsk/jdwp/VirtualMachine/RedefineClasses/redefinecls001/TestDescription.java \
   vmTestbase/nsk/jdwp/VirtualMachine/SetDefaultStratum/setdefstrat001/TestDescription.java \

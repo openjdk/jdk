@@ -82,7 +82,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tog">tonga (Nyasa)</language>
 			<language type="ttm">nordleg tutchone</language>
 			<language type="tvl">tuvalu</language>
-			<language type="tyv">tuvinisk</language>
 			<language type="tzm">sentral-tamazight</language>
 			<language type="udm">udmurt</language>
 			<language type="war">waray</language>
@@ -201,26 +200,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="colCaseFirst">organisering av store og små bokstavar</key>
 			<key type="colCaseLevel">sortering av store og små bokstavar</key>
 			<key type="collation">sorteringsrekkjefølgje</key>
-			<key type="colNormalization">normalisert sortering</key>
-			<key type="colNumeric">numerisk sortering</key>
-			<key type="colStrength">sorteringsstyrke</key>
 			<key type="em">emojivising</key>
+			<key type="fw">første vekedag</key>
+			<key type="h0">blanda inn</key>
+			<key type="kv">høgste ignorerte</key>
 			<key type="lb">lineskiftstil</key>
 			<key type="lw">lineskift innanfor ord</key>
+			<key type="m0">transformasjonsreglar</key>
+			<key type="mu">måleining</key>
 			<key type="numbers">tal</key>
+			<key type="s0">transformasjonskjelde</key>
+			<key type="t0">maskinomsett</key>
 		</keys>
 		<types>
 			<type key="cf" type="account">valutaformat for rekneskapsføring</type>
 			<type key="cf" type="account" scope="core">rekneskapsføring</type>
+			<type key="colCaseFirst" type="lower" scope="core">små bokstavar</type>
+			<type key="colCaseFirst" type="no" scope="core">små bokstavar</type>
+			<type key="colCaseFirst" type="upper" scope="core">store bokstavar</type>
 			<type key="collation" type="ducet">standard Unicode-sorteringsrekkjefølgje</type>
+			<type key="collation" type="eor" scope="core">europeiske reglar</type>
 			<type key="collation" type="pinyin">pinyin-sortering</type>
-			<type key="collation" type="standard">standard sorteringsrekkjefølgje</type>
+			<type key="colReorder" type="digit" scope="core">siffer</type>
+			<type key="colReorder" type="punct" scope="core">teiknsetjing</type>
+			<type key="colStrength" type="primary" scope="core">kun grunnbokstavar</type>
+			<type key="colStrength" type="quaternary" scope="core">grunnbokstavar, aksentar, kasus, variantar, kana</type>
+			<type key="colStrength" type="secondary" scope="core">grunnbokstavar, aksentar</type>
+			<type key="colStrength" type="tertiary" scope="core">grunnbokstavar, aksentar, kasus, variantar</type>
 			<type key="d0" type="fwidth">full breidd</type>
 			<type key="d0" type="hwidth">halv breidd</type>
+			<type key="hc" type="c12">12-timarssystem</type>
+			<type key="hc" type="c24">24-timarssystem</type>
 			<type key="hc" type="h11">12-timarssystem (0–11)</type>
 			<type key="hc" type="h12">12-timarssystem (1–12)</type>
 			<type key="hc" type="h23">24-timarssystem (0–23)</type>
 			<type key="hc" type="h24">24-timarssystem (1–24)</type>
+			<type key="kv" type="currency" scope="core">forskyv mellomrom, teiknsetjing, alle symbol</type>
+			<type key="kv" type="punct" scope="core">forskyv mellomrom, teiknsetjing</type>
+			<type key="kv" type="space" scope="core">forskyv mellomrom, teiknsetjing</type>
+			<type key="kv" type="symbol" scope="core">forskyv mellomrom, teiknsetjing, ikkje-valutasymbol</type>
 			<type key="lb" type="loose">laus lineskiftstil</type>
 			<type key="lb" type="loose" scope="core">laus</type>
 			<type key="lb" type="normal">normal lineskiftstil</type>
@@ -229,20 +247,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="lw" type="phrase" scope="core">behald i fraser</type>
 			<type key="numbers" type="arab">arabisk-indiske siffer</type>
 			<type key="numbers" type="arabext">utvida arabisk-indiske siffer</type>
+			<type key="numbers" type="arabext" scope="core">utvida arabisk-indisk</type>
 			<type key="numbers" type="armn">armenske tal</type>
 			<type key="numbers" type="armnlow">små armenske tal</type>
 			<type key="numbers" type="beng">bengalske siffer</type>
 			<type key="numbers" type="deva">devanagari-siffer</type>
 			<type key="numbers" type="ethi">etiopiske tal</type>
+			<type key="numbers" type="finance" scope="core">finans</type>
 			<type key="numbers" type="fullwide">siffer med full breidd</type>
+			<type key="numbers" type="fullwide" scope="core">full breidd</type>
 			<type key="numbers" type="geor">georgiske tal</type>
 			<type key="numbers" type="grek">greske tal</type>
 			<type key="numbers" type="greklow">små greske tal</type>
 			<type key="numbers" type="gujr">gujarati-siffer</type>
 			<type key="numbers" type="guru">gurmukhi-siffer</type>
+			<type key="numbers" type="hanidays" scope="core">han-teikn for nummerering av dagar i månaden i tradisjonelle kalendrarar</type>
 			<type key="numbers" type="hanidec">kinesiske desimaltal</type>
+			<type key="numbers" type="hanidec" scope="core">posisjonelt desimalsystem med kinesiske talteikn som siffer</type>
 			<type key="numbers" type="hans">forenkla kinesiske tal</type>
 			<type key="numbers" type="hansfin">forenkla kinesiske finanstal</type>
+			<type key="numbers" type="hansfin" scope="core">forenkla kinesisk finans</type>
 			<type key="numbers" type="hant">tradisjonelle kinesiske tal</type>
 			<type key="numbers" type="hantfin">tradisjonelle kinesiske finanstal</type>
 			<type key="numbers" type="hebr">hebraiske tal</type>
@@ -251,28 +275,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="jpanfin">japanske finanstal</type>
 			<type key="numbers" type="khmr">khmer-siffer</type>
 			<type key="numbers" type="knda">kannada-siffer</type>
+			<type key="numbers" type="lanatham" scope="core">tai tham tham (kyrkjeleg)</type>
 			<type key="numbers" type="laoo">laotiske siffer</type>
 			<type key="numbers" type="latn">vestlege siffer</type>
+			<type key="numbers" type="mathbold" scope="core">matematisk halvfeit</type>
+			<type key="numbers" type="mathdbl" scope="core">matematisk dobbelstreka</type>
+			<type key="numbers" type="mathmono" scope="core">matematisk fastbreiddeskrift</type>
+			<type key="numbers" type="mathsanb" scope="core">matematisk sans-serif halvfeit</type>
 			<type key="numbers" type="mlym">malayalam-siffer</type>
 			<type key="numbers" type="mtei">meetei mayek-siffer</type>
 			<type key="numbers" type="mymr">burmesiske siffer</type>
+			<type key="numbers" type="mymrepka" scope="core">myanmarsk austleg pwo-karen</type>
 			<type key="numbers" type="native">språkspesifikke siffer</type>
+			<type key="numbers" type="native" scope="core">språkspesifikke siffer</type>
 			<type key="numbers" type="orya">odia-siffer</type>
 			<type key="numbers" type="roman">romartal</type>
+			<type key="numbers" type="roman" scope="core">store romartal</type>
 			<type key="numbers" type="romanlow">små romartal</type>
+			<type key="numbers" type="romanlow" scope="core">små romartal</type>
 			<type key="numbers" type="taml">tamilske tal</type>
 			<type key="numbers" type="tamldec">tamilske siffer</type>
 			<type key="numbers" type="telu">telugu-siffer</type>
 			<type key="numbers" type="thai">thailandske siffer</type>
 			<type key="numbers" type="tibt">tibetanske siffer</type>
+			<type key="numbers" type="traditional" scope="core">tradisjonelle tal</type>
 			<type key="numbers" type="vaii">vai-siffer</type>
+			<type key="t0" type="und">uspesifisert maskinomsetting</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="UK">britisk</measurementSystemName>
 		</measurementSystemNames>
 	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[aàå æ b c d eéèê f g h i j k l m n oóòôø p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áǎäã čç đ í ńñ ŋ ö š ŧ úü ž]</exemplarCharacters>
+	</characters>
 	<dates>
 		<calendars>
+			<calendar type="generic">
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="gregorian">
 				<days>
 					<dayContext type="format">
@@ -302,17 +351,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">torsdag</day>
 							<day type="fri">fredag</day>
 							<day type="sat">laurdag</day>
-						</dayWidth>
-					</dayContext>
-					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">søn</day>
-							<day type="mon">mån</day>
-							<day type="tue">tys</day>
-							<day type="wed">ons</day>
-							<day type="thu">tor</day>
-							<day type="fri">fre</day>
-							<day type="sat">lau</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -435,12 +473,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="one">'veke' w 'i' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'veke' w 'i' Y</dateFormatItem>
 					</availableFormats>
-					<intervalFormats>
-						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd.MM–dd.MM</greatestDifference>
-							<greatestDifference id="M">dd.MM–dd.MM</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="iso8601">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -501,7 +540,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-short">
-				<displayName>md.</displayName>
 				<relative type="-1">førre md.</relative>
 				<relative type="0">denne md.</relative>
 				<relative type="1">neste md.</relative>
@@ -882,6 +920,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="minute-narrow">
+				<displayName>min</displayName>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">–{0} min</relativeTimePattern>
 					<relativeTimePattern count="other">–{0} min</relativeTimePattern>
@@ -932,16 +971,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Atlantic/Faeroe">
 				<exemplarCity>Færøyane</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>britisk sommartid</daylight>
-				</long>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>irsk sommartid</daylight>
-				</long>
-			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komorane</exemplarCity>
 			</zone>
@@ -966,6 +995,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ashgabat">
 				<exemplarCity>Asjgabat</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>tidssone for Acre</generic>
+					<standard>normaltid for Acre</standard>
+					<daylight>sommartid for Acre</daylight>
+				</long>
+			</metazone>
 			<metazone type="Africa_Eastern">
 				<long>
 					<standard>austafrikansk tid</standard>
@@ -973,8 +1009,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Alaska">
 				<long>
-					<generic>alaskisk tid</generic>
-					<standard>alaskisk normaltid</standard>
+					<generic>tidssone for Alaska</generic>
+					<standard>normaltid for Alaska</standard>
 					<daylight>alaskisk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1015,14 +1051,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>tidssone for Apia</generic>
-					<standard>normaltid for Apia</standard>
+					<generic>tidssone for Samoa</generic>
+					<standard>normaltid for Samoa</standard>
 					<daylight>sommartid for Apia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
 				<long>
-					<generic>arabisk tid</generic>
+					<generic>tidssone for Saudi-Arabia</generic>
 					<standard>arabisk normaltid</standard>
 					<daylight>arabisk sommartid</daylight>
 				</long>
@@ -1043,8 +1079,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Armenia">
 				<long>
-					<generic>armensk tid</generic>
-					<standard>armensk normaltid</standard>
+					<generic>tidssone for Armenia</generic>
+					<standard>normaltid for Armenia</standard>
 					<daylight>armensk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1057,14 +1093,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
-					<generic>sentralaustralsk tid</generic>
+					<generic>tidssone for Sentral-Australia</generic>
 					<standard>sentralaustralsk standardtid</standard>
 					<daylight>sentralaustralsk sommartid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
-					<generic>vest-sentralaustralsk tid</generic>
+					<generic>tidssone for Sentralvest-Australia</generic>
 					<standard>vest-sentralaustralsk standardtid</standard>
 					<daylight>vest-sentralaustralsk sommartid</daylight>
 				</long>
@@ -1078,29 +1114,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
-					<generic>vestaustralsk tid</generic>
+					<generic>tidssone for Vest-Australia</generic>
 					<standard>vestaustralsk standardtid</standard>
 					<daylight>vestaustralsk sommartid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
 				<long>
-					<generic>aserbajdsjansk tid</generic>
-					<standard>aserbajdsjansk normaltid</standard>
+					<generic>tidssone for Aserbajdsjan</generic>
+					<standard>normaltid for Aserbajdsjan</standard>
 					<daylight>aserbajdsjansk sommartid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azores">
 				<long>
-					<generic>asorisk tid</generic>
-					<standard>asorisk normaltid</standard>
+					<generic>tidssone for Asorene</generic>
+					<standard>normaltid for Asorene</standard>
 					<daylight>asorisk sommartid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
 				<long>
-					<generic>bangladeshisk tid</generic>
-					<standard>bangladeshisk normaltid</standard>
+					<generic>tidssone for Bangladesh</generic>
+					<standard>normaltid for Bangladesh</standard>
 					<daylight>bangladeshisk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1111,10 +1147,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>sommartid for Brasilia</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>tidssone for Storbritannia</generic>
+					<daylight>britisk sommartid</daylight>
+				</long>
+			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
-					<generic>kappverdisk tid</generic>
-					<standard>kappverdisk normaltid</standard>
+					<generic>tidssone for Kapp Verde</generic>
+					<standard>normaltid for Kapp Verde</standard>
 					<daylight>kappverdisk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1134,8 +1176,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="China">
 				<long>
-					<generic>kinesisk tid</generic>
-					<standard>kinesisk normaltid</standard>
+					<generic>tidssone for Kina</generic>
+					<standard>normaltid for Kina</standard>
 					<daylight>kinesisk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1160,9 +1202,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Cuba">
 				<long>
-					<generic>kubansk tid</generic>
-					<standard>kubansk normaltid</standard>
-					<daylight>kubansk sommartid</daylight>
+					<generic>tidssone for Cuba</generic>
+					<standard>normaltid for Cuba</standard>
+					<daylight>sommartid for Cuba</daylight>
 				</long>
 			</metazone>
 			<metazone type="DumontDUrville">
@@ -1184,7 +1226,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Europe_Central">
 				<long>
-					<generic>sentraleuropeisk tid</generic>
+					<generic>tidssone for Sentral-Europa</generic>
 					<standard>sentraleuropeisk standardtid</standard>
 					<daylight>sentraleuropeisk sommartid</daylight>
 				</long>
@@ -1203,7 +1245,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
-					<generic>vesteuropeisk tid</generic>
+					<generic>tidssone for Vest-Europa</generic>
 					<standard>vesteuropeisk standardtid</standard>
 					<daylight>vesteuropeisk sommartid</daylight>
 				</long>
@@ -1217,9 +1259,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Fiji">
 				<long>
-					<generic>fijiansk tid</generic>
-					<standard>fijiansk normaltid</standard>
-					<daylight>fijiansk sommartid</daylight>
+					<generic>tidssone for Fiji</generic>
+					<standard>normaltid for Fiji</standard>
+					<daylight>sommartid for Fiji</daylight>
 				</long>
 			</metazone>
 			<metazone type="French_Southern">
@@ -1234,8 +1276,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Georgia">
 				<long>
-					<generic>georgisk tid</generic>
-					<standard>georgisk normaltid</standard>
+					<generic>tidssone for Georgia</generic>
+					<standard>normaltid for Georgia</standard>
 					<daylight>georgisk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1244,25 +1286,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>tidssone for Gilbertøyane</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>tidssone for Grønland</generic>
+					<standard>normaltid for Grønland</standard>
+					<daylight>sommartid for Grønland</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic>austgrønlandsk tid</generic>
-					<standard>austgrønlandsk normaltid</standard>
-					<daylight>austgrønlandsk sommartid</daylight>
+					<generic>tidssone for Austgrønland</generic>
+					<standard>normaltid for Austgrønland</standard>
+					<daylight>sommartid for Austgrønland</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>vestgrønlandsk tid</generic>
-					<standard>vestgrønlandsk normaltid</standard>
-					<daylight>vestgrønlandsk sommartid</daylight>
+					<generic>tidssone for Vestgrønland</generic>
+					<standard>normaltid for Vestgrønland</standard>
+					<daylight>sommartid for Vestgrønland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>normaltid for Hawaii/Aleutane</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>tidssone for Hawaii og Aleutene</generic>
-					<standard>normaltid for Hawaii og Aleutene</standard>
-					<daylight>sommartid for Hawaii og Aleutene</daylight>
+					<generic>tidssone for Hawaii og Aleutane</generic>
+					<standard>normaltid for Hawaii og Aleutane</standard>
+					<daylight>sommartid for Hawaii og Aleutane</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -1286,8 +1340,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Iran">
 				<long>
-					<generic>iransk tid</generic>
-					<standard>iransk normaltid</standard>
+					<generic>tidssone for Iran</generic>
+					<standard>normaltid for Iran</standard>
 					<daylight>iransk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1300,16 +1354,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Israel">
 				<long>
-					<generic>israelsk tid</generic>
-					<standard>israelsk normaltid</standard>
+					<generic>tidssone for Israel</generic>
+					<standard>normaltid for Israel</standard>
 					<daylight>israelsk sommartid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Japan">
 				<long>
-					<generic>japansk tid</generic>
-					<standard>japansk normaltid</standard>
+					<generic>tidssone for Japan</generic>
+					<standard>normaltid for Japan</standard>
 					<daylight>japansk sommartid</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>tidssone for Kamsjatka</generic>
+					<standard>normaltid for Kamsjatka</standard>
+					<daylight>sommartid for Kamsjatka</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -1319,8 +1380,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Korea">
 				<long>
-					<generic>koreansk tid</generic>
-					<standard>koreansk normaltid</standard>
+					<generic>tidssone for Korea</generic>
+					<standard>normaltid for Korea</standard>
 					<daylight>koreansk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1357,8 +1418,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Mauritius">
 				<long>
-					<generic>mauritisk tid</generic>
-					<standard>mauritisk normaltid</standard>
+					<generic>tidssone for Mauritius</generic>
+					<standard>normaltid for Mauritius</standard>
 					<daylight>mauritisk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1385,8 +1446,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="New_Caledonia">
 				<long>
-					<generic>kaledonsk tid</generic>
-					<standard>kaledonsk normaltid</standard>
+					<generic>tidssone for Ny-Caledonia</generic>
+					<standard>normaltid for Ny-Caledonia</standard>
 					<daylight>kaledonsk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1434,8 +1495,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Pakistan">
 				<long>
-					<generic>pakistansk tid</generic>
-					<standard>pakistansk normaltid</standard>
+					<generic>tidssone for Pakistan</generic>
+					<standard>normaltid for Pakistan</standard>
 					<daylight>pakistansk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1455,8 +1516,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Philippines">
 				<long>
-					<generic>filippinsk tid</generic>
-					<standard>filippinsk normaltid</standard>
+					<generic>tidssone for Filippinene</generic>
+					<standard>normaltid for Filippinene</standard>
 					<daylight>filippinsk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1479,11 +1540,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>sommartid for Sakhalin</daylight>
 				</long>
 			</metazone>
-			<metazone type="Samoa">
+			<metazone type="Samara">
 				<long>
-					<generic>samoansk tid</generic>
-					<standard>samoansk normaltid</standard>
-					<daylight>samoansk sommartid</daylight>
+					<generic>tidssone for Samara</generic>
+					<standard>normaltid for Samara</standard>
+					<daylight>sommartid for Samara</daylight>
 				</long>
 			</metazone>
 			<metazone type="Taipei">
@@ -1495,8 +1556,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Tonga">
 				<long>
-					<generic>tongansk tid</generic>
-					<standard>tongansk normaltid</standard>
+					<generic>tidssone for Tonga</generic>
+					<standard>normaltid for Tonga</standard>
 					<daylight>tongansk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1505,10 +1566,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>tidssone for Chuukøyane</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>tidssone for Tyrkia</generic>
+					<standard>normaltid for Tyrkia</standard>
+					<daylight>tyrkisk sommartid</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
-					<generic>turkmensk tid</generic>
-					<standard>turkmensk normaltid</standard>
+					<generic>tidssone for Turkmenistan</generic>
+					<standard>normaltid for Turkmenistan</standard>
 					<daylight>turkmensk sommartid</daylight>
 				</long>
 			</metazone>
@@ -1521,15 +1589,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Uzbekistan">
 				<long>
-					<generic>usbekisk tid</generic>
-					<standard>usbekisk normaltid</standard>
+					<generic>tidssone for Usbekistan</generic>
+					<standard>normaltid for Usbekistan</standard>
 					<daylight>usbekisk sommartid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vanuatu">
 				<long>
-					<generic>vanuatisk tid</generic>
-					<standard>vanuatisk normaltid</standard>
+					<generic>tidssone for Vanuatu</generic>
+					<standard>normaltid for Vanuatu</standard>
 					<daylight>vanuatisk sommartid</daylight>
 				</long>
 			</metazone>
@@ -2699,7 +2767,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} b. quart</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
-				<displayName>delar/milliard</displayName>
+				<displayName>delar/mrd.</displayName>
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">

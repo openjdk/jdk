@@ -41,6 +41,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "registerSaver_riscv.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/globals.hpp"
@@ -72,67 +73,16 @@
 
 const int StackAlignmentInSlots = StackAlignmentInBytes / VMRegImpl::stack_slot_size;
 
-class RegisterSaver {
-  const bool _save_vectors;
- public:
-  RegisterSaver(bool save_vectors) : _save_vectors(UseRVV && save_vectors) {}
-  ~RegisterSaver() {}
-  OopMap* save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words);
-  void restore_live_registers(MacroAssembler* masm);
-
-  // Offsets into the register save area
-  // Used by deoptimization when it is managing result register
-  // values on its own
-  // gregs:28, float_register:32; except: x1(ra) & x2(sp) & gp(x3) & tp(x4)
-  // |---v0---|<---SP
-  // |---v1---|save vectors only in generate_handler_blob
-  // |-- .. --|
-  // |---v31--|-----
-  // |---f0---|
-  // |---f1---|
-  // |   ..   |
-  // |---f31--|
-  // |---reserved slot for stack alignment---|
-  // |---x5---|
-  // |   x6   |
-  // |---.. --|
-  // |---x31--|
-  // |---fp---|
-  // |---ra---|
-  int v0_offset_in_bytes(void) { return 0; }
-  int f0_offset_in_bytes(void) {
-    int f0_offset = 0;
+int RegisterSaver::f0_offset_in_bytes(void) {
+  int f0_offset = 0;
 #ifdef COMPILER2
-    if (_save_vectors) {
-      f0_offset += Matcher::scalable_vector_reg_size(T_INT) * VectorRegister::number_of_registers *
-                   BytesPerInt;
-    }
+  if (_save_vectors) {
+    f0_offset += Matcher::scalable_vector_reg_size(T_INT) * VectorRegister::number_of_registers *
+                 BytesPerInt;
+  }
 #endif
-    return f0_offset;
-  }
-  int reserved_slot_offset_in_bytes(void) {
-    return f0_offset_in_bytes() +
-           FloatRegister::max_slots_per_register *
-           FloatRegister::number_of_registers *
-           BytesPerInt;
-  }
-
-  int reg_offset_in_bytes(Register r) {
-    assert (r->encoding() > 4, "ra, sp, gp and tp not saved");
-    return reserved_slot_offset_in_bytes() + (r->encoding() - 4 /* x1, x2, x3, x4 */) * wordSize;
-  }
-
-  int freg_offset_in_bytes(FloatRegister f) {
-    return f0_offset_in_bytes() + f->encoding() * wordSize;
-  }
-
-  int ra_offset_in_bytes(void) {
-    return reserved_slot_offset_in_bytes() +
-           (Register::number_of_registers - 3) *
-           Register::max_slots_per_register *
-           BytesPerInt;
-  }
-};
+  return f0_offset;
+}
 
 OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words) {
   int vector_size_in_bytes = 0;
