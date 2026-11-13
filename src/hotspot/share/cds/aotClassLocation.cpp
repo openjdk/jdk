@@ -509,6 +509,11 @@ static AOTClassLocationIndexHashtable* _unnamed_module_table = nullptr;   // BOO
 
 int AOTClassLocationConfig::dumptime_get_class_location_index(const char* path, bool is_named_module) {
   assert(CDSConfig::is_dumping_archive(), "");
+
+  // The `ClassFileStream::source` computed by the Java class loader code may not have the exact same
+  // output as ClassLoader::get_canonical_path(). E.g., when the source is a directory, the Java
+  // code would append a trailing "/" character, while the C code doesn't. To be safe, always
+  // canonicalize again with the C code.
   ResourceMark rm;
   const char* canon_path = ClassLoader::get_canonical_path(path, JavaThread::current());
   int* saved = is_named_module ?
