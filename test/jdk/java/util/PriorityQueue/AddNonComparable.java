@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 8066070
+ * @bug 8066070 8390157
  * @run testng AddNonComparable
  */
 
 import org.testng.annotations.Test;
 
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.SortedMap;
@@ -44,6 +45,7 @@ import java.util.function.Supplier;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class AddNonComparable {
 
@@ -78,6 +80,24 @@ public class AddNonComparable {
                  assertEquals(q.size(), 1);
                  assertNull(e);
              });
+    }
+
+    @Test
+    public void copyConstructorSingleton() {
+        // 8390157: copy constructors must reject a non-Comparable element
+        // even when the source collection is a singleton
+        List<NonComparable> singleton = List.of(new NonComparable());
+        assertThrowsCCE(() -> new PriorityQueue<NonComparable>(singleton));
+        assertThrowsCCE(() -> new PriorityQueue<NonComparable>(singleton, null));
+        assertEquals(new PriorityQueue<>(List.of(new AComparable())).size(), 1);
+    }
+
+    static void assertThrowsCCE(Supplier<PriorityQueue<?>> supplier) {
+        try {
+            supplier.get();
+            fail("expected ClassCastException");
+        } catch (ClassCastException expected) {
+        }
     }
 
     static <E> void test(SortedSet<E> set, Supplier<E> supplier,
