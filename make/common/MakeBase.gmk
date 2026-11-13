@@ -71,6 +71,15 @@ ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
   RWILDCARD_WORKS := true
 endif
 
+# Delete variables.
+# When undefine directive is not available, this does nothing.
+# Param 1 - Names of variables to undefine
+ifneq ($(filter undefine, $(.FEATURES)), )
+  UndefineVariables = $(foreach v, $1, $(eval undefine $v))
+else
+  UndefineVariables =
+endif
+
 # For convenience, MakeBase.gmk continues to include these separate files, at
 # least for now.
 # Utils.gmk must be included before FileUtils.gmk, since it uses some of the
