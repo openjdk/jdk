@@ -9282,19 +9282,23 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
   }
 
   if (UseAVX > 1) {
-    Label copy_64_loop, copy_32, copy_16, copy_tail_avx, reset_for_copy_tail;
+    Label copy_64_loop, copy_32, copy_32_first, copy_16, copy_16_first, copy_16_last, reset_for_copy_tail;
 
     cmpl(len, 8);
     jcc(Assembler::less, copy_tail);
 
     movl(tmp5, 0xff00ff00);   // create mask to test for Unicode chars in vectors
     movdl(tmp1Reg, tmp5);
-    vpbroadcastd(tmp1Reg, tmp1Reg, Assembler::AVX_256bit);   // store Unicode mask in tmp1Reg
 
-    andl(len, 0xffffffe0);
-    jccb(Assembler::zero, copy_32);
+    cmpl(len, 16);
+    jcc(Assembler::less, copy_16_first);
+
+    vpbroadcastd(tmp1Reg, tmp1Reg, Assembler::AVX_256bit);   // store Unicode mask in tmp1Reg
+    cmpl(len, 32);
+    jccb(Assembler::less, copy_32_first);
 
     // compress 32 chars per iter
+    andl(len, 0xffffffe0);
     lea(src, Address(src, len, Address::times_2));
     lea(dst, Address(dst, len, Address::times_1));
     negptr(len);
@@ -9310,17 +9314,18 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     vmovdqu(Address(dst, len, Address::times_1), tmp4Reg);
     addptr(len, 32);
     jccb(Assembler::notZero, copy_64_loop);
+    movl(len, result);
+    andl(len, 0x1f);
 
     // compress next vector of 16 chars (if any)
     bind(copy_32);
-    movl(len, result);
-    andl(len, 0x1f);
-    testl(result, 0x00000010);     // check if there's a block of 16 chars to compress
-    jccb(Assembler::zero, copy_16);
+    cmpl(len, 16);
+    jccb(Assembler::less, copy_16);
 
+    bind(copy_32_first);
     vmovdqu(tmp2Reg, Address(src, 0));
     vptest(tmp2Reg, tmp1Reg, Assembler::AVX_256bit);       // check for Unicode chars in vector
-    jccb(Assembler::notZero, copy_tail_avx);
+    jccb(Assembler::notZero, copy_tail);
     vextracti128_high(tmp3Reg, tmp2Reg);
     vpackuswb(tmp2Reg, tmp2Reg, tmp3Reg, Assembler::AVX_128bit);    // only LATIN1 chars; compress each to 1 byte
     movdqu(Address(dst, 0), tmp2Reg);
@@ -9330,18 +9335,22 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 
     // compress next vector of 8 chars (if any)
     bind(copy_16);
-    testl(result, 0x00000008);     // check if there's a block of 8 chars to compress
-    jccb(Assembler::zero, copy_tail_avx);
+    cmpl(len, 8);
+    jccb(Assembler::less, copy_tail);
+    jmpb(copy_16_last);
 
+    bind(copy_16_first);
+    vpbroadcastd(tmp1Reg, tmp1Reg, Assembler::AVX_128bit);   // store Unicode mask in tmp1Reg
+    bind(copy_16_last);
     movdqu(tmp2Reg, Address(src, 0));
     vptest(tmp2Reg, tmp1Reg, Assembler::AVX_128bit);       // check for Unicode chars in vector
-    jccb(Assembler::notZero, copy_tail_avx);
+    jccb(Assembler::notZero, copy_tail);
     vpackuswb(tmp2Reg, tmp2Reg, tmp2Reg, Assembler::AVX_128bit);    // only LATIN1 chars; compress each to 1 byte
     movq(Address(dst, 0), tmp2Reg);
     addptr(src, 16);
     addptr(dst, 8);
     subl(len, 8);
-    jmpb(copy_tail_avx);
+    jmpb(copy_tail);
 
     bind(reset_for_copy_tail);
     movl(tmp5, result);
@@ -9351,7 +9360,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     subptr(len, tmp5);
     jmpb(copy_chars_loop);
 
-    bind(copy_tail_avx);
+    bind(copy_tail);
   } else if (UseSSE42Intrinsics) {
     Label copy_32_loop, copy_16, copy_tail_sse, reset_for_copy_tail;
 
