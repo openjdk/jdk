@@ -543,6 +543,7 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _search_entries(nullptr),
   _store_entries(nullptr),
   _store_entries_cnt(0),
+  _store_nmethod_cnt(0),
   _compile_id(0),
   _comp_level(0)
 {
@@ -1382,7 +1383,7 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
     CompilerDirectiveMatcher matcher(method, comp_level);
     DirectiveSet* directives = matcher.directive_set();
     if (directives->IgnoreAOTCompiledOption || directives->ExcludeOption) {
-      LogStreamHandle(Info, aot, codecache, compilation) log;
+      LogStreamHandle(Info, aot, compilation) log;
       if (log.is_enabled()) {
         log.print_cr("Ignore AOT code entry on level %d for ", comp_level);
         method->print_value_on(&log);
@@ -2626,6 +2627,9 @@ AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, GrowableArray<ciMethod*>*
 
   TraceTime t1("Total time to store AOT code", &_t_totalStore, enable_timers(), false);
   AOTCodeEntry* entry = cache->write_nmethod(nm, java_callees, for_preload);
+  if (entry != nullptr) {
+    cache->_store_nmethod_cnt++;
+  }
   {
     ResourceMark rm;
     const char* name = nm->method()->name_and_sig_as_C_string();

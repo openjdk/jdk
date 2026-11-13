@@ -2568,23 +2568,25 @@ void nmethod::post_compiled_method(CompileTask* task) {
   task->set_nm_insts_size(insts_size());
   task->set_nm_total_size(total_size());
 
-  CompileTrainingData* ctd = task->training_data();
-  if (ctd != nullptr) {
-    // Record inline code size during training to help inlining during production run
-    assert(TrainingData::need_data(), "should be called only during training"); // training run
-    int inline_size = inline_instructions_size();
-    if (inline_size < 0) inline_size = 0;
-    ctd->set_inline_instructions_size(inline_size);
+  if (!task->is_aot_compile()) {
+    CompileTrainingData* ctd = task->training_data();
+    if (ctd != nullptr) {
+      // Record inline code size during training to help inlining during production run
+      assert(TrainingData::need_data(), "should be called only during training"); // training run
+      int inline_size = inline_instructions_size();
+      if (inline_size < 0) inline_size = 0;
+      ctd->set_inline_instructions_size(inline_size);
+    }
+
+    // task->is_aot_load() is true only for loaded AOT code.
+    // nmethod::_aot_code_entry is set for loaded and stored AOT code
+    // to invalidate the entry when nmethod is deoptimized.
+    // VerifyAOTCode is option to verify AOT code without installing.
+    guarantee((_aot_code_entry != nullptr) || !task->is_aot_load() || VerifyAOTCode, "sanity");
+
+    // JVMTI -- compiled method notification (must be done outside lock)
+    post_compiled_method_load_event();
   }
-
-  // task->is_aot_load() is true only for loaded AOT code.
-  // nmethod::_aot_code_entry is set for loaded and stored AOT code
-  // to invalidate the entry when nmethod is deoptimized.
-  // VerifyAOTCode is option to verify AOT code without installing.
-  guarantee((_aot_code_entry != nullptr) || !task->is_aot_load() || VerifyAOTCode, "sanity");
-
-  // JVMTI -- compiled method notification (must be done outside lock)
-  post_compiled_method_load_event();
 
   if (CompilationLog::log() != nullptr) {
     CompilationLog::log()->log_nmethod(JavaThread::current(), this);
