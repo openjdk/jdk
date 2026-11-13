@@ -30,9 +30,9 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
 /**
  * INVOKESTATIC - Invoke a class (static) method
  *
- * <PRE>
+ * <pre>
  * Stack: ..., [arg1, [arg2 ...]] -&gt; ...
- * </PRE>
+ * </pre>
  *
  * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokestatic"> The invokestatic
  *      instruction in The Java Virtual Machine Specification</a>
@@ -45,15 +45,20 @@ public class INVOKESTATIC extends InvokeInstruction {
     INVOKESTATIC() {
     }
 
+    /**
+     * Constructs an INVOKESTATIC instruction.
+     *
+     * @param index index into constant pool.
+     */
     public INVOKESTATIC(final int index) {
         super(Const.INVOKESTATIC, index);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -69,9 +74,9 @@ public class INVOKESTATIC extends InvokeInstruction {
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {

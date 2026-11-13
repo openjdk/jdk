@@ -71,6 +71,8 @@ compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch6
 
 compiler/igvn/TestIncorrectDeadPathTypeNode.java 8392354 generic-all
 
+compiler/c1/TestMemoryEffects.java 8397213 generic-aarch64
+
 #############################################################################
 
 # :hotspot_gc
@@ -87,11 +89,15 @@ gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 83869
 gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
+gc/shenandoah/generational/TestGenerationalReferenceProcessing.java#young 8396415 generic-all
+gc/shenandoah/generational/TestGenerationalReferenceProcessing.java#young-no-compressed-oops 8396415 generic-all
 
 #############################################################################
 
 # :hotspot_runtime
 
+runtime/interpreter/PopFrameMethodNameInvariantTest.java#virtual 8396838 linux-ppc64le,aix-ppc64,linux-s390x
+runtime/interpreter/PopFrameMethodNameInvariantTest.java#virtual-invokeExact 8396838 linux-ppc64le,aix-ppc64,linux-s390x
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
 runtime/Monitor/SyncOnValueBasedClassTest.java 8340995 linux-s390x
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
@@ -163,6 +169,8 @@ vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInTarget/TestDescription.java 83
 vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8324756 generic-all
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
+vmTestbase/nsk/jdwp/StackFrame/PopFrames/popframes002/TestDescription.java 8396838 linux-ppc64le,aix-ppc64,linux-s390x
+vmTestbase/nsk/jdwp/StackFrame/PopFrames/popframes003/TestDescription.java 8396838 linux-ppc64le,aix-ppc64,linux-s390x
 
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64
 

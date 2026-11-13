@@ -1394,7 +1394,7 @@ void ClassLoader::record_result_for_builtin_loader(s2 classpath_index, InstanceK
     precond(loader == nullptr);
   }
 
-  if (CDSConfig::is_dumping_preimage_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {
+  if (CDSConfig::is_dumping_aot_configuration() || CDSConfig::is_dumping_dynamic_archive()) {
     if (!AOTClassLocationConfig::dumptime()->is_valid_classpath_index(classpath_index, result)) {
       classpath_index = -1;
     }
@@ -1430,9 +1430,9 @@ void ClassLoader::record_hidden_class(InstanceKlass* ik) {
 void ClassLoader::append_boot_classpath(ClassPathEntry* new_entry) {
   if (CDSConfig::is_using_archive()) {
     warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
-    FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
+    FileMapInfo::static_input_archive()->set_has_platform_or_app_classes(false);
     if (DynamicArchive::is_mapped()) {
-      FileMapInfo::dynamic_info()->set_has_platform_or_app_classes(false);
+      FileMapInfo::dynamic_input_archive()->set_has_platform_or_app_classes(false);
     }
   }
   add_to_boot_append_entries(new_entry);

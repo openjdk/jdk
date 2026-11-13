@@ -1066,6 +1066,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="standard">थाखोआरि रोखोम फारि</type>
 			<type key="collation" type="stroke">स्ट्रोक वर्गीकरण</type>
 			<type key="collation" type="traditional">पारम्पारिक वर्गीकरण</type>
+			<type key="hc" type="c12">12 घन्टानि आदब</type>
+			<type key="hc" type="c24">24 घन्टानि आदब</type>
 			<type key="hc" type="h11">12 घन्टानि आदब (0–11)</type>
 			<type key="hc" type="h12">12 घन्टानि आदब (1–12)</type>
 			<type key="hc" type="h23">24 घन्टानि आदब ( 0–23)</type>
@@ -1511,6 +1513,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">-</numericDateSeparator>
+						<numericTimeSeparator draft="provisional">:</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1562,10 +1568,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">EEE, MMMM d, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0}– {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">Bनि h – Bनि h</greatestDifference>
 							<greatestDifference id="h">B नि h–h</greatestDifference>
@@ -1949,7 +1962,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>जि.एम.ति {0}</gmtFormat>
-			<gmtZeroFormat>जि.एम.ति</gmtZeroFormat>
 			<regionFormat>{0} सम</regionFormat>
 			<regionFormat type="daylight">{0} साननि सोरां सम</regionFormat>
 			<regionFormat type="standard">{0} थाखोआरि सम</regionFormat>
@@ -1960,6 +1972,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>गोरोबहोनाय मुलुगनां सम</standard>
 				</long>
+				<short>
+					<standard>इउ टि सि</standard>
+				</short>
 			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>मिथियै नोगोर</exemplarCity>
@@ -2427,9 +2442,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>लिब्रेभिल</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>ब्रीटीश दैज्लां सम</daylight>
-				</long>
 				<exemplarCity>लन्दन</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2520,9 +2532,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>जयापुरा</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>आईरीश थाखोआरि सम</daylight>
-				</long>
 				<exemplarCity>डाबलिन</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3254,13 +3263,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>आलास्कानि सानारि सम</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>अलमाटी टाईम</generic>
-					<standard>अलमाटी स्टैंडर्ड टाईम</standard>
-					<daylight>अलमाटी समर टाईम</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>आमाजन सम</generic>
@@ -3308,20 +3310,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>आपिया सम</generic>
 					<standard>आपिया थाखोआरि सम</standard>
 					<daylight>आपिया सान सम</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>अक्टाऊ सम</generic>
-					<standard>अक़्टाऊ स्टैंडर्ड टाईम</standard>
-					<daylight>अक़्टाऊ समर टाईम</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>आक्त’ब सम</generic>
-					<standard>अक़्टोबे स्टैंडर्ड टाईम</standard>
-					<daylight>अक़्टोबे समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3423,6 +3411,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>ब्राजीलिया सम</generic>
 					<standard>ब्राजीलिया थाखोआरि सम</standard>
 					<daylight>ब्राजीलिया दैज्लां सम</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>ब्रिटिश सम</generic>
+					<daylight>ब्रीटीश दैज्लां सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3612,11 +3606,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>सेनाब ग्रीनलेण्ड दैज्लां सम</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>गुआम स्टैंडर्ड टाईम</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>गाल्फ थाखोआरि सम</standard>
@@ -3629,7 +3618,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>हावाई-एल्युतियान थाखोआरि सम</standard>
+					<standard>हावाइ एल्युतियान स्टेन्डार्ड सम</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3691,6 +3680,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>इरान सम</generic>
 					<standard>इरान थाखोआरि सम</standard>
 					<daylight>इरान सानारि सम</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>आइरिस सम</generic>
+					<daylight>आईरीश थाखोआरि सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -3755,11 +3750,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>कीर्गीस्तान सम</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>लंका स्टैंडर्ड टाईम</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>लाईन द्वीपफोरनि सम</standard>
@@ -3770,13 +3760,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>लर्ड हावि सम</generic>
 					<standard>लर्ड हावि थाखोआरि सम</standard>
 					<daylight>लर्ड हावि सानारि सम</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>माकाऊ सम</generic>
-					<standard>माकाऊ स्टैंडर्ड टाईम</standard>
-					<daylight>माकाऊ समर टाईम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -3894,11 +3877,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>फेरनान्द’ दे नर’न्हा दैज्लां सम</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>नॉर्थ मारिआना स्टैंडर्ड टाईम</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>नभ’सिबिर्स्क सम</generic>
@@ -3978,13 +3956,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>प्यंयां सम</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>क़ीज़ीलोर्डा टाईम</generic>
-					<standard>क़ीज़ीलोर्डा स्टैंडर्ड टाईम</standard>
-					<daylight>क़ीज़ीलोर्डा समर टाईम</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>रियूनियन सम</standard>
@@ -4011,9 +3982,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>साम’वा सम</generic>
 					<standard>साम’वा थाखोआरि सम</standard>
-					<daylight>साम’वा सानारि सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

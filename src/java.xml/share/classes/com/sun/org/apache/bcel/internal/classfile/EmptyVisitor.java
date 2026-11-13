@@ -22,12 +22,14 @@
 package com.sun.org.apache.bcel.internal.classfile;
 
 /**
- * Visitor with empty method bodies, can be extended and used in conjunction with the DescendingVisitor class, e.g. By
+ * Visitor with empty method bodies, can be extended and used in conjunction with the DescendingVisitor class, for example. By
  * courtesy of David Spencer.
  *
  * @see DescendingVisitor
  */
 public class EmptyVisitor implements Visitor {
+
+    /** Constructs an EmptyVisitor. */
     protected EmptyVisitor() {
     }
 
@@ -299,6 +301,11 @@ public class EmptyVisitor implements Visitor {
     public void visitParameterAnnotationEntry(final ParameterAnnotationEntry parameterAnnotationEntry) {
     }
 
+    /** @since 6.13.0 */
+    @Override
+    public void visitPermittedSubclasses(final PermittedSubclasses obj) {
+    }
+
     @Override
     public void visitSignature(final Signature obj) {
     }
@@ -317,7 +324,8 @@ public class EmptyVisitor implements Visitor {
 
     /**
      * Visits a {@link StackMapType} object.
-     * @param obj object to visit
+     *
+     * @param obj object to visit.
      * @since 6.8.0
      */
     @Override

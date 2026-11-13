@@ -50,15 +50,28 @@ public final class ByteSequence extends DataInputStream {
 
     private final ByteArrayStream byteStream;
 
+    /**
+     * Constructs a ByteSequence.
+     *
+     * @param bytes The byte array.
+     */
     public ByteSequence(final byte[] bytes) {
         super(new ByteArrayStream(bytes));
         byteStream = (ByteArrayStream) in;
     }
 
+    /**
+     * Gets the current index.
+     *
+     * @return The current index.
+     */
     public int getIndex() {
         return byteStream.getPosition();
     }
 
+    /**
+     * Unreads the last byte.
+     */
     void unreadByte() {
         byteStream.unreadByte();
     }
