@@ -1846,7 +1846,7 @@ bool LibraryCallKit::inline_math(vmIntrinsics::ID id) {
 }
 
 //------------------------------runtime_math-----------------------------
-bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName) {
+bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName, bool is_stub) {
   assert(call_type == OptoRuntime::Math_DD_D_Type() || call_type == OptoRuntime::Math_D_D_Type(),
          "must be (DD)D or (D)D type");
 
@@ -1855,7 +1855,7 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
   Node* b = (call_type == OptoRuntime::Math_DD_D_Type()) ? argument(2) : nullptr;
 
   const TypePtr* no_memory_effects = nullptr;
-  int flags = RC_LEAF | RC_PURE | (StubRoutines::contains(funcAddr) ? RC_NO_EGPRS : 0);
+  int flags = RC_LEAF | RC_PURE | (is_stub ? RC_NO_EGPRS : 0);
   Node* trig = make_runtime_call(flags, call_type, funcAddr, funcName,
                                  no_memory_effects,
                                  a, top(), b, b ? top() : nullptr);
@@ -1889,37 +1889,37 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_dsin:
     return StubRoutines::dsin() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dsin(), "dsin") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dsin),   "SIN");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dsin(), "dsin", true) :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dsin),   "SIN", false);
   case vmIntrinsics::_dcos:
     return StubRoutines::dcos() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcos(), "dcos") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dcos),   "COS");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcos(), "dcos", true) :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dcos),   "COS", false);
   case vmIntrinsics::_dtan:
     return StubRoutines::dtan() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtan(), "dtan") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dtan), "TAN");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtan(), "dtan", true) :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dtan), "TAN", false);
   case vmIntrinsics::_dsinh:
     return StubRoutines::dsinh() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dsinh(), "dsinh") : false;
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dsinh(), "dsinh", true) : false;
   case vmIntrinsics::_dtanh:
     return StubRoutines::dtanh() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtanh(), "dtanh") : false;
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtanh(), "dtanh", true) : false;
   case vmIntrinsics::_dcbrt:
     return StubRoutines::dcbrt() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcbrt(), "dcbrt") : false;
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcbrt(), "dcbrt", true) : false;
   case vmIntrinsics::_dexp:
     return StubRoutines::dexp() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp),  "EXP");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp", true) :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp),  "EXP", false);
   case vmIntrinsics::_dlog:
     return StubRoutines::dlog() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog(), "dlog") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog),   "LOG");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog(), "dlog", true) :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog),   "LOG", false);
   case vmIntrinsics::_dlog10:
     return StubRoutines::dlog10() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog10(), "dlog10") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), "LOG10");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog10(), "dlog10", true) :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), "LOG10", false);
 
   case vmIntrinsics::_roundD: return Matcher::match_rule_supported(Op_RoundD) ? inline_double_math(id) : false;
   case vmIntrinsics::_ceil:

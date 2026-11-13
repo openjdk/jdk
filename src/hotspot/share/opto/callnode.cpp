@@ -1735,7 +1735,6 @@ bool CallLeafNode::cmp( const Node &n ) const {
 }
 
 void CallLeafNode::set_no_egprs() {
-  assert(StubRoutines::contains(entry_point()), "%s is not a generated stub", _name);
   _no_egprs = true;
 }
 
