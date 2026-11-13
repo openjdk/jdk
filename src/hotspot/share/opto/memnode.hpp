@@ -1163,7 +1163,7 @@ private:
 public:
   ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base, Node* val, bool is_large)
     : Node(ctrl, arymem, word_cnt, base, val), _is_large(is_large),
-      _requires_word_fill(val->bottom_type()->isa_long() && (!val->bottom_type()->is_long()->is_con() || val->bottom_type()->is_long()->get_con() != 0)) {
+      _requires_word_fill(val->bottom_type()->is_long() && (!val->bottom_type()->as_long()->is_con() || val->bottom_type()->as_long()->get_con() != 0)) {
     init_class_id(Class_ClearArray);
   }
   virtual int         Opcode() const;

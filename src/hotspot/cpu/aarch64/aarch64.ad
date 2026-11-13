@@ -1971,7 +1971,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
 
   assert(src_lo != OptoReg::Bad && dst_lo != OptoReg::Bad, "must move at least 1 register");
 
-  if (src_hi != OptoReg::Bad && !bottom_type()->isa_pvectmask()) {
+  if (src_hi != OptoReg::Bad && !bottom_type()->is_pvectmask()) {
     assert((src_lo&1)==0 && src_lo+1==src_hi &&
            (dst_lo&1)==0 && dst_lo+1==dst_hi,
            "expected aligned-adjacent pairs");
@@ -1986,7 +1986,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
   int src_offset = ra_->reg2offset(src_lo);
   int dst_offset = ra_->reg2offset(dst_lo);
 
-  if (bottom_type()->isa_vect() && !bottom_type()->isa_pvectmask()) {
+  if (bottom_type()->is_vect() && !bottom_type()->is_pvectmask()) {
     uint ireg = ideal_reg();
     DEBUG_ONLY(int algm = MIN2(RegMask::num_registers(ireg), (int)Matcher::stack_alignment_in_slots()) * VMRegImpl::stack_slot_size);
     assert((src_lo_rc != rc_stack) || is_aligned(src_offset, algm), "unaligned vector spill sp offset %d (src)", src_offset);
@@ -2134,7 +2134,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     } else {
       st->print("%s", Matcher::regName[dst_lo]);
     }
-    if (bottom_type()->isa_vect() && !bottom_type()->isa_pvectmask()) {
+    if (bottom_type()->is_vect() && !bottom_type()->is_pvectmask()) {
       int vsize = 0;
       switch (ideal_reg()) {
       case Op_VecD:
@@ -2642,7 +2642,7 @@ static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
   }
 
   const Type* t = imm_node->bottom_type();
-  if (!(t->isa_int() || t->isa_long())) {
+  if (!(t->is_int() || t->is_long())) {
     return false;
   }
 
@@ -2651,7 +2651,7 @@ static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
   case Op_OrV:
   case Op_XorV: {
     Assembler::SIMD_RegVariant T = Assembler::elemType_to_regVariant(Matcher::vector_element_basic_type(n));
-    uint64_t value = t->isa_long() ? (uint64_t)imm_node->get_long() : (uint64_t)imm_node->get_int();
+    uint64_t value = t->is_long() ? (uint64_t)imm_node->get_long() : (uint64_t)imm_node->get_int();
     return Assembler::operand_valid_for_sve_logical_immediate(Assembler::regVariant_to_elemBits(T), value);
   }
   case Op_AddVB:
@@ -8289,8 +8289,8 @@ instruct encodeHeapOop_not_null(iRegNNoSp dst, iRegP src, rFlagsReg cr) %{
 %}
 
 instruct decodeHeapOop(iRegPNoSp dst, iRegN src, rFlagsReg cr) %{
-  predicate(n->bottom_type()->is_ptr()->ptr() != TypePtr::NotNull &&
-            n->bottom_type()->is_ptr()->ptr() != TypePtr::Constant);
+  predicate(n->bottom_type()->as_ptr()->ptr() != TypePtr::NotNull &&
+            n->bottom_type()->as_ptr()->ptr() != TypePtr::Constant);
   match(Set dst (DecodeN src));
   ins_cost(INSN_COST * 3);
   format %{ "decode_heap_oop $dst, $src" %}
@@ -8303,8 +8303,8 @@ instruct decodeHeapOop(iRegPNoSp dst, iRegN src, rFlagsReg cr) %{
 %}
 
 instruct decodeHeapOop_not_null(iRegPNoSp dst, iRegN src, rFlagsReg cr) %{
-  predicate(n->bottom_type()->is_ptr()->ptr() == TypePtr::NotNull ||
-            n->bottom_type()->is_ptr()->ptr() == TypePtr::Constant);
+  predicate(n->bottom_type()->as_ptr()->ptr() == TypePtr::NotNull ||
+            n->bottom_type()->as_ptr()->ptr() == TypePtr::Constant);
   match(Set dst (DecodeN src));
   ins_cost(INSN_COST * 3);
   format %{ "decode_heap_oop_not_null $dst, $src" %}
@@ -8390,7 +8390,7 @@ instruct castII_checked(iRegI dst, rFlagsReg cr)
 
   format %{ "# castII_checked of $dst" %}
   ins_encode %{
-    __ verify_int_in_range(_idx, bottom_type()->is_int(), $dst$$Register, rscratch1);
+    __ verify_int_in_range(_idx, bottom_type()->as_int(), $dst$$Register, rscratch1);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -8418,7 +8418,7 @@ instruct castII_checked_nosp(iRegINoSp dst, rFlagsReg cr)
 
   format %{ "# castII_checked of $dst" %}
   ins_encode %{
-    __ verify_int_in_range(_idx, bottom_type()->is_int(), $dst$$Register, rscratch1);
+    __ verify_int_in_range(_idx, bottom_type()->as_int(), $dst$$Register, rscratch1);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -8443,7 +8443,7 @@ instruct castLL_checked(iRegL dst, rFlagsReg cr)
 
   format %{ "# castLL_checked of $dst" %}
   ins_encode %{
-    __ verify_long_in_range(_idx, bottom_type()->is_long(), $dst$$Register, rscratch1);
+    __ verify_long_in_range(_idx, bottom_type()->as_long(), $dst$$Register, rscratch1);
   %}
   ins_pipe(pipe_slow);
 %}

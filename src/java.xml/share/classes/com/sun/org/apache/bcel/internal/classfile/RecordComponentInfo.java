@@ -25,6 +25,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 /**
  * Record component info from a record. Instances from this class maps
@@ -44,9 +45,9 @@ public class RecordComponentInfo implements Node {
     /**
      * Constructs a new instance from an input stream.
      *
-     * @param input        Input stream
-     * @param constantPool Array of constants
-     * @throws IOException if an I/O error occurs.
+     * @param input        Input stream.
+     * @param constantPool Array of constants.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     public RecordComponentInfo(final DataInput input, final ConstantPool constantPool) throws IOException {
         this.index = input.readUnsignedShort();
@@ -67,16 +68,35 @@ public class RecordComponentInfo implements Node {
     /**
      * Dumps contents into a file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     public void dump(final DataOutputStream file) throws IOException {
         file.writeShort(index);
         file.writeShort(descriptorIndex);
-        file.writeShort(attributes.length);
+        file.writeShort(Args.requireU2(attributes.length, "attributes.length"));
         for (final Attribute attribute : attributes) {
             attribute.dump(file);
         }
+    }
+
+    /**
+     * Gets the attribute for the given tag if present, or null if absent.
+     *
+     * @param <T> The attribute type.
+     * @param tag The attribute tag.
+     * @return Attribute for given tag, null if not found.
+     * Refer to {@link com.sun.org.apache.bcel.internal.Const#ATTR_UNKNOWN} constants named ATTR_* for possible values.
+     * @since 6.13.0
+     */
+    @SuppressWarnings("unchecked")
+    public final <T extends Attribute> T getAttribute(final byte tag) {
+        for (final Attribute attribute : getAttributes()) {
+            if (attribute.getTag() == tag) {
+                return (T) attribute;
+            }
+        }
+        return null;
     }
 
     /**
@@ -118,7 +138,7 @@ public class RecordComponentInfo implements Node {
     /**
      * Converts this instance to a String suitable for debugging.
      *
-     * @return a String suitable for debugging.
+     * @return A String suitable for debugging.
      */
     @Override
     public String toString() {

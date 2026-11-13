@@ -22,9 +22,15 @@
 package com.sun.org.apache.bcel.internal.generic;
 
 /**
- * Gets the type associated with an instruction, int for ILOAD, or the type of the field of a PUTFIELD instruction, e.g..
+ * Gets the type associated with an instruction, int for ILOAD, or the type of the field of a PUTFIELD instruction.
  */
 public interface TypedInstruction {
 
+    /**
+     * Gets the type associated with this instruction.
+     *
+     * @param cpg The constant pool generator.
+     * @return The type associated with this instruction.
+     */
     Type getType(ConstantPoolGen cpg);
 }

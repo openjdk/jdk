@@ -43,16 +43,18 @@ public final class ConstantMethodref extends ConstantCP {
     /**
      * Initialize instance from input data.
      *
-     * @param input input stream
-     * @throws IOException if an I/O error occurs.
+     * @param input input stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     ConstantMethodref(final DataInput input) throws IOException {
         super(Const.CONSTANT_Methodref, input);
     }
 
     /**
-     * @param classIndex Reference to the class containing the method
-     * @param nameAndTypeIndex and the method signature
+     * Constructs a ConstantMethodref.
+     *
+     * @param classIndex Reference to the class containing the method.
+     * @param nameAndTypeIndex and the method signature.
      */
     public ConstantMethodref(final int classIndex, final int nameAndTypeIndex) {
         super(Const.CONSTANT_Methodref, classIndex, nameAndTypeIndex);
@@ -61,8 +63,8 @@ public final class ConstantMethodref extends ConstantCP {
     /**
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
-     *
-     * @param v Visitor object
+     *.
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {

@@ -22,12 +22,15 @@
 package com.sun.org.apache.bcel.internal.generic;
 
 /**
- * Denotes an instruction that may produce a value on top of the stack (this excludes DUP_X1, e.g.)
+ * Denotes an instruction that may produce a value on top of the stack (this excludes DUP_X1, for example)
  */
 public interface StackProducer {
 
     /**
-     * @return how many words are produced on stack
+     * Gets how many words are produced on stack.
+     *
+     * @param cpg The constant pool generator.
+     * @return how many words are produced on stack.
      */
     int produceStack(ConstantPoolGen cpg);
 }
