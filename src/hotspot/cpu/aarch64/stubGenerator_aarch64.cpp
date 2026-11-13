@@ -8974,19 +8974,23 @@ class StubGenerator: public StubCodeGenerator {
 
       __ ubfiz(vt, v, 19, 36);
       __ add(c[i - 5], c[i - 5], vt);
-      __ add(c[i - 4], c[i - 4], v, Assembler::ASR, 36);
+      __ asr(vt, v, 36);
+      __ add(c[i - 4], c[i - 4], vt);
 
       __ ubfiz(vt, v, 42, 13);
       __ add(c[i - 6], c[i - 6], vt);
-      __ add(c[i - 5], c[i - 5], v, Assembler::ASR, 13);
+      __ asr(vt, v, 13);
+      __ add(c[i - 5], c[i - 5], vt);
 
       __ ubfiz(vt, v, 33, 22);
       __ sub(c[i - 7], c[i - 7], vt);
-      __ sub(c[i - 6], c[i - 6], v, Assembler::ASR, 22);
+      __ asr(vt, v, 22);
+      __ sub(c[i - 6], c[i - 6], vt);
 
       __ ubfiz(vt, v, 1, 54);
       __ add(c[i - 7], c[i - 7], vt);
-      __ add(c[i - 6], c[i - 6], v, Assembler::ASR, 54);
+      __ asr(vt, v, 54);
+      __ add(c[i - 6], c[i - 6], vt);
     }
 
     // Carry-add with reduction from high limb
@@ -8996,38 +9000,46 @@ class StubGenerator: public StubCodeGenerator {
     __ add(tmp, c[5], carry_add);
     __ asr(tmp, tmp, BPL_P384);
     __ add(c[6], c[6], tmp);
-    __ sub(c[5], c[5], tmp, Assembler::LSL, BPL_P384);
+    __ lsl(tmp, tmp, BPL_P384);
+    __ sub(c[5], c[5], tmp);
 
     // Limb 6
     __ add(tmp, c[6], carry_add);
     __ asr(tmp, tmp, BPL_P384);
-    __ sub(c[6], c[6], tmp, Assembler::LSL, BPL_P384);
+    __ lsl(vt, tmp, BPL_P384);
+    __ sub(c[6], c[6], vt);
 
     // Reduce high order limb and fold back into low order limb
     __ mov(v, tmp);
 
     __ ubfiz(vt, v, 19, 36);
     __ add(c[2], c[2], vt);
-    __ add(c[3], c[3], v, Assembler::ASR, 36);
+    __ asr(vt, v, 36);
+    __ add(c[3], c[3], vt);
 
     __ ubfiz(vt, v, 42, 13);
     __ add(c[1], c[1], vt);
-    __ add(c[2], c[2], v, Assembler::ASR, 13);
+    __ asr(vt, v, 13);
+    __ add(c[2], c[2], vt);
 
     __ ubfiz(vt, v, 33, 22);
     __ sub(c[0], c[0], vt);
-    __ sub(c[1], c[1], v, Assembler::ASR, 22);
+
+    __ asr(vt, v, 22);
+    __ sub(c[1], c[1], vt);
 
     __ ubfiz(vt, v, 1, 54);
     __ add(c[0], c[0], vt);
-    __ add(c[1], c[1], v, Assembler::ASR, 54);
+    __ asr(vt, v, 54);
+    __ add(c[1], c[1], vt);
 
     // Limbs 0 - 5
     for (int i = 0; i < 6; i++) {
       __ add(tmp, c[i], carry_add);
       __ asr(tmp, tmp, BPL_P384);
       __ add(c[i + 1], c[i + 1], tmp);
-      __ sub(c[i], c[i], tmp, Assembler::LSL, BPL_P384);
+      __ lsl(tmp, tmp, BPL_P384);
+      __ sub(c[i], c[i], tmp);
     }
   }
 
@@ -9175,8 +9187,10 @@ class StubGenerator: public StubCodeGenerator {
         __ mul(low, a, aArg);
         __ extr(high, high, low, BPL_P384);
         __ andr(low, low, MASK_P384);
-        __ add(c[i + j], c[i + j], low, Assembler::LSL, 1);
-        __ add(c[i + j + 1], c[i + j + 1], high, Assembler::LSL, 1);
+        __ lsl(low, low, 1);
+        __ add(c[i + j], c[i + j], low);
+        __ lsl(high, high, 1);
+        __ add(c[i + j + 1], c[i + j + 1], high);
       }
     }
 
