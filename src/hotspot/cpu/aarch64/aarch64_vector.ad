@@ -5477,7 +5477,7 @@ instruct replicateF(vReg dst, vRegF src) %{
       // Use DUP (indexed, unpredicated) instead of CPY (predicated, merging) to replicate
       // the scalar FP element. Unlike CPY (predicated, merging), DUP (indexed, unpredicated)
       // overwrites all destination lanes without requiring any predicate or preserving the
-      // inactive destination lanes, so it has less dependencies.
+      // inactive destination lanes, so it has fewer dependencies.
       __ sve_dup($dst$$FloatRegister, __ S, $src$$FloatRegister, 0);
     }
   %}
@@ -5496,7 +5496,7 @@ instruct replicateD(vReg dst, vRegD src) %{
       // Use DUP (indexed, unpredicated) instead of CPY (predicated, merging) to replicate
       // the scalar FP element. Unlike CPY (predicated, merging), DUP (indexed, unpredicated)
       // overwrites all destination lanes without requiring any predicate or preserving the
-      // inactive destination lanes, so it has less dependencies.
+      // inactive destination lanes, so it has fewer dependencies.
       __ sve_dup($dst$$FloatRegister, __ D, $src$$FloatRegister, 0);
     }
   %}
@@ -5516,7 +5516,7 @@ instruct replicateHF(vReg dst, vRegF src) %{
       // Use DUP (indexed, unpredicated) instead of CPY (predicated, merging) to replicate
       // the scalar FP element. Unlike CPY (predicated, merging), DUP (indexed, unpredicated)
       // overwrites all destination lanes without requiring any predicate or preserving the
-      // inactive destination lanes, so it has less dependencies.
+      // inactive destination lanes, so it has fewer dependencies.
       __ sve_dup($dst$$FloatRegister, __ H, $src$$FloatRegister, 0);
     }
   %}
