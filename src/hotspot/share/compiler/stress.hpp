@@ -30,6 +30,9 @@
 #include "compiler/compilerDirectives.hpp"
 #include "memory/allocation.hpp"
 
+class ciMethod;
+class Method;
+
 class Stress : public StackObj {
  private:
   uint _stress_seed;
@@ -39,6 +42,9 @@ class Stress : public StackObj {
 
   uint random();
   bool randomized_select(uint count);
+
+  static bool should_exclude_compilation(const Method* method, int comp_level);
+  static bool should_exclude_inlining(ciMethod* callee, CompilerType comp);
 };
 
 #endif // SHARE_COMPILER_STRESS_HPP

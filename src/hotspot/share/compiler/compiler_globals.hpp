@@ -389,6 +389,17 @@
           "available.")                                                     \
           range(0, max_juint)                                               \
                                                                             \
+  product(bool, StressExcludeCompilation, false, DIAGNOSTIC,                \
+          "Randomly exclude methods from compilation by C1 and/or C2")      \
+                                                                            \
+  product(bool, StressExcludeInlining, false, DIAGNOSTIC,                   \
+          "Randomly exclude methods from inlining by C1 and/or C2")         \
+                                                                            \
+  product(uint, StressExcludeMean, 2, DIAGNOSTIC,                           \
+          "On average, one in StressExcludeMean methods is excluded per "   \
+          "compiler by StressExcludeCompilation and StressExcludeInlining") \
+          range(1, max_juint)                                               \
+                                                                            \
   /* AOT Code Caching flags */                                              \
                                                                             \
   product(uint, DisableAOTCode, 0, DIAGNOSTIC,                              \

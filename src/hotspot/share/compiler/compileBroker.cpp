@@ -39,6 +39,7 @@
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
+#include "compiler/stress.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -1590,6 +1591,8 @@ bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int os
       tty->cr();
     }
     method->set_not_compilable("excluded by CompileCommand", comp_level, !quietly);
+  } else if (StressExcludeCompilation && Stress::should_exclude_compilation(method(), comp_level)) {
+    method->set_not_compilable("excluded by StressExcludeCompilation", comp_level, true);
   }
 
   return false;
