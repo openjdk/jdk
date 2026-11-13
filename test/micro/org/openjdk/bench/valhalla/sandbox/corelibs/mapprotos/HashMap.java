@@ -23,7 +23,7 @@
  * questions.
  */
 
-package org.openjdk.bench.valhalla.sandbox.corelibs.corelibs.mapprotos;
+package org.openjdk.bench.valhalla.sandbox.corelibs.mapprotos;
 
 import java.io.IOException;
 import java.io.InvalidObjectException;

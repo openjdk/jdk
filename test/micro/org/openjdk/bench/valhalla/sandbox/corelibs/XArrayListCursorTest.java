@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
-package org.openjdk.bench.valhalla.sandbox.corelibs.corelibs;
+package org.openjdk.bench.valhalla.sandbox.corelibs;
 
 import java.util.List;
 import java.util.Iterator;
