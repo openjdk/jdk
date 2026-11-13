@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
                 KRB5_OID, GSSCredential.ACCEPT_ONLY);
 
             // Create a context using the server's credentials
-            secCtx = mgr.createContext(cred);
+            updateSecCtx(mgr.createContext(cred));
 
             if ((allQop&INTEGRITY_ONLY_PROTECTION) != 0) {
                 // Might need integrity
@@ -144,6 +144,7 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
      * @return A non-null byte array containing the challenge to be
      * sent to the client, or null when no more data is to be sent.
      */
+    @Override
     public byte[] evaluateResponse(byte[] responseData) throws SaslException {
         if (completed) {
             throw new SaslException(
@@ -332,6 +333,7 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
         }
     }
 
+    @Override
     public String getAuthorizationID() {
         if (completed) {
             return authzid;
@@ -340,6 +342,7 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
         }
     }
 
+    @Override
     public Object getNegotiatedProperty(String propName) {
         if (!completed) {
             throw new IllegalStateException("Authentication incomplete");

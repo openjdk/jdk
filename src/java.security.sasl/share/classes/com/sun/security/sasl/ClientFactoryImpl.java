@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import sun.security.util.PBEUtil;
 
 /**
  * Client factory for EXTERNAL, CRAM-MD5, PLAIN.
@@ -143,7 +143,7 @@ public final class ClientFactoryImpl implements SaslClientFactory {
             String authId;
 
             if (pw != null) {
-                bytepw = new String(pw).getBytes(UTF_8);
+                bytepw = PBEUtil.encodePassword(pw);
                 pcb.clearPassword();
             } else {
                 bytepw = null;
