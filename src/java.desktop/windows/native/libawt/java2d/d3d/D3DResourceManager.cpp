@@ -232,8 +232,6 @@ D3DResourceManager::ReleaseResource(IManagedResource* pResource)
 HRESULT
 D3DResourceManager::AddResource(IManagedResource* pResource)
 {
-    HRESULT res = S_OK;
-
     J2dTraceLn(J2D_TRACE_INFO, "D3DRM::AddResource");
 
     if (pResource != NULL) {

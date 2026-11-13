@@ -1058,7 +1058,7 @@ AwtTextComponent::WmContextMenu(HWND hCtrl, UINT xPos, UINT yPos) {
                                                          GWLP_WNDPROC);
         }
         ::SetLastError(0);
-        INT_PTR ret = ::SetWindowLongPtr(m_hEditCtrl, GWLP_WNDPROC,
+        [[maybe_unused]] INT_PTR ret = ::SetWindowLongPtr(m_hEditCtrl, GWLP_WNDPROC,
                                    (INT_PTR)AwtTextArea::EditProc);
         DASSERT(ret != 0 || ::GetLastError() == 0);
     }
