@@ -153,20 +153,20 @@ void ZUnload::unlink() {
 }
 
 void ZUnload::purge() {
+  ZStatTimerOld timer(ZSubPhaseConcurrentClassesPurge);
+
   if (!ClassUnloading) {
     // Process allocation requests even when class unloading is disabled.
-    Metaspace::purge(false);
+    Metaspace::purge(false /* classes_unloaded */);
     return;
   }
-
-  ZStatTimerOld timer(ZSubPhaseConcurrentClassesPurge);
 
   {
     SuspendibleThreadSetJoiner sts_joiner;
     ZNMethod::purge();
   }
 
-  ClassLoaderDataGraph::purge(/*at_safepoint*/false);
+  ClassLoaderDataGraph::purge(false /* at_safepoint */);
   CodeCache::purge_exception_caches();
 }
 
