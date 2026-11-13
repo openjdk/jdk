@@ -267,11 +267,21 @@ void MacroAssembler::lea(Address dst, AddressLiteral adr, Register rscratch) {
   movptr(dst, rscratch);
 }
 
+void MacroAssembler::leal(Register dst, Address src) {
+  if ((src.base() != noreg) && (src.index() == noreg) &&
+      (src.disp() == 0) && (src.reloc() == relocInfo::none)) {
+    // base-only lea, use move (other simple cases not seen).
+    movl(dst, src.base());
+  } else {
+    Assembler::leal(dst, src);
+  }
+}
+
 void MacroAssembler::leaq(Register dst, Address src) {
   if ((src.base() != noreg) && (src.index() == noreg) &&
       (src.disp() == 0) && (src.reloc() == relocInfo::none)) {
     // base-only lea, use move (other simple cases not seen).
-    mov(dst, src.base());
+    movq(dst, src.base());
   } else {
     Assembler::leaq(dst, src);
   }
