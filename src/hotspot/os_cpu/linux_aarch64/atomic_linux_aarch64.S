@@ -132,6 +132,48 @@ DECLARE_FUNC(aarch64_atomic_xchg_8_default_impl):
         ret
 
         .align 5
+DECLARE_FUNC(aarch64_atomic_xchg_1_relaxed_default_impl):
+        hint    #0x22 // bti c
+#ifdef __ARM_FEATURE_ATOMICS
+        swpb    w1, w2, [x0]
+#else
+        prfm    pstl1strm, [x0]
+0:      ldxrb   w2, [x0]
+        stxrb   w8, w1, [x0]
+        cbnz    w8, 0b
+#endif
+        mov     w0, w2
+        ret
+
+        .align 5
+DECLARE_FUNC(aarch64_atomic_xchg_4_relaxed_default_impl):
+        hint    #0x22 // bti c
+#ifdef __ARM_FEATURE_ATOMICS
+        swp     w1, w2, [x0]
+#else
+        prfm    pstl1strm, [x0]
+0:      ldxr    w2, [x0]
+        stxr    w8, w1, [x0]
+        cbnz    w8, 0b
+#endif
+        mov     w0, w2
+        ret
+
+        .align 5
+DECLARE_FUNC(aarch64_atomic_xchg_8_relaxed_default_impl):
+        hint    #0x22 // bti c
+#ifdef __ARM_FEATURE_ATOMICS
+        swp     x1, x2, [x0]
+#else
+        prfm    pstl1strm, [x0]
+0:      ldxr    x2, [x0]
+        stxr    w8, x1, [x0]
+        cbnz    w8, 0b
+#endif
+        mov     x0, x2
+        ret
+
+        .align 5
 DECLARE_FUNC(aarch64_atomic_cmpxchg_1_default_impl):
         hint    #0x22 // bti c
 #ifdef __ARM_FEATURE_ATOMICS

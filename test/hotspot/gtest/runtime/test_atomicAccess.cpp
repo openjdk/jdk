@@ -314,6 +314,13 @@ struct AtomicAccessOrderedXchgTestSupport {
   }
 };
 
+TEST_VM(AtomicAccessOrderedXchgTest, int8) {
+  using Support = AtomicAccessOrderedXchgTestSupport<int8_t>;
+  for (atomic_memory_order order : memory_orders) {
+    Support().test(order);
+  }
+}
+
 TEST_VM(AtomicAccessOrderedXchgTest, int32) {
   using Support = AtomicAccessOrderedXchgTestSupport<int32_t>;
   for (atomic_memory_order order : memory_orders) {
