@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,8 +172,11 @@ public class StackMapDecoder {
     private static boolean needsLarvalFrameForTransition(List<NameAndTypeEntry> prevUnsets, StackMapFrameInfo fr) {
         if (prevUnsets.equals(fr.unsetFields()))
             return false;
-        if (!fr.locals().contains(SimpleVerificationTypeInfo.UNINITIALIZED_THIS)) {
-            assert fr.unsetFields().isEmpty() : fr; // should be checked in StackMapFrameInfo constructor
+        if (!fr.locals().contains(SimpleVerificationTypeInfo.UNINITIALIZED_THIS) &&
+                !fr.stack().contains(SimpleVerificationTypeInfo.UNINITIALIZED_THIS) &&
+                fr.unsetFields().isEmpty()) {
+            // Technically the unset field must be empty when there's no uninitializedThis in stack or locals
+            // Just in case we encounter malformed frames
             return false;
         }
         return true;
@@ -299,7 +302,9 @@ public class StackMapDecoder {
                     stack = List.of(newStack);
                 }
             }
-            if (actualFrameType != EARLY_LARVAL && !unsetFields.isEmpty() && !locals.contains(SimpleVerificationTypeInfo.UNINITIALIZED_THIS)) {
+            if (actualFrameType != EARLY_LARVAL && !unsetFields.isEmpty() &&
+                    !locals.contains(SimpleVerificationTypeInfo.UNINITIALIZED_THIS) &&
+                    !stack.contains(SimpleVerificationTypeInfo.UNINITIALIZED_THIS)) {
                 // clear unsets post larval
                 unsetFields = List.of();
             }
@@ -388,16 +393,6 @@ public class StackMapDecoder {
             locals = Util.sanitizeU2List(locals);
             stack = Util.sanitizeU2List(stack);
             unsetFields = Util.sanitizeU2List(unsetFields);
-
-            uninitializedThisCheck:
-            if (!unsetFields.isEmpty()) {
-                for (var local : locals) {
-                    if (local == SimpleVerificationTypeInfo.UNINITIALIZED_THIS) {
-                        break uninitializedThisCheck;
-                    }
-                }
-                throw new IllegalArgumentException("unset fields requires uninitializedThis in locals");
-            }
         }
 
         public StackMapFrameImpl(int frameType,

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8388319
  * @enablePreview
  * @library /test/lib
  * @build jdk.test.lib.ByteCodeLoader
@@ -482,5 +483,51 @@ class StrictStackMapsTest {
         assertEquals(List.of(ConstantPoolBuilder.of().nameAndTypeEntry("f", CD_int)), frame.unsetFields());
 
         runtimeVerify(testName, bytes);
+    }
+
+    @Test
+    void uninitThisOnStackTest() {
+        var testName = "Test";
+        var testDesc = ClassDesc.of(testName);
+        var bytes = ClassFile.of().build(testDesc, clb -> clb
+                .withVersion(latestMajorVersion(), PREVIEW_MINOR_VERSION)
+                .withFlags(ACC_PUBLIC | ACC_IDENTITY)
+                .withField("f", CD_int, ACC_STRICT_INIT)
+                .withMethodBody(INIT_NAME, MTD_void, 0, cob -> {
+                    cob.aload(0) // stack for invokespecial
+                            .dup() // stack for putfield
+                            .iconst_4()
+                            .iconst_m1() // stack for astore
+                            .istore(0) // nuke uninitializedThis from locals
+                            .iconst_3(); // stack for branch
+                    var elseLabel = cob.newLabel();
+                    var endIfLabel = cob.newLabel();
+                    cob.ifeq(elseLabel)
+                            .putfield(testDesc, "f", CD_int)
+                            .goto_(endIfLabel)
+                            .labelBinding(elseLabel)
+                            .putfield(testDesc, "f", CD_int)
+                            .labelBinding(endIfLabel)
+                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                            .return_();
+                }));
+        var parsed = ClassFile.of().parse(bytes);
+        var frames = parsed.methods().getFirst().code().orElseThrow()
+                .findAttribute(Attributes.stackMapTable()).orElseThrow().entries();
+        assertEquals(2, frames.size());
+        var elseFrame = frames.getFirst();
+        assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER), elseFrame.locals());
+        assertEquals(List.of(
+                StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS,
+                StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS,
+                StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER), elseFrame.stack());
+        assertEquals(List.of(ConstantPoolBuilder.of().nameAndTypeEntry("f", CD_int)), elseFrame.unsetFields());
+        var endIfFrame = frames.getLast();
+        assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER), endIfFrame.locals());
+        assertEquals(List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS), endIfFrame.stack());
+        assertEquals(List.of(), endIfFrame.unsetFields());
+
+        // TODO enable verification after verifier sync
+        //runtimeVerify(testName, bytes);
     }
 }
