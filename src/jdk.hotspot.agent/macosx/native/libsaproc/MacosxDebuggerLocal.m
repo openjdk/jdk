@@ -257,7 +257,7 @@ jlong lookupByNameIncore(
 
 /* Create a pool and initiate a try block to catch any exception */
 #define JNI_COCOA_ENTER(env) \
- NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
+ @autoreleasepool { \
  @try {
 
 /* Don't allow NSExceptions to escape to Java.
@@ -269,9 +269,7 @@ jlong lookupByNameIncore(
  @catch (NSException *e) { \
      NSLog(@"%@", [e callStackSymbols]); \
  } \
- @finally { \
-    [pool drain]; \
- };
+};
 
 static NSString* JavaStringToNSString(JNIEnv *env, jstring jstr) {
 

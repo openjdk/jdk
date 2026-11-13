@@ -898,7 +898,7 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
         // need to block this thread against the main thread
         // so signals get caught correctly
         __block int rslt = 0;
-        NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+        @autoreleasepool
         {
             NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock: ^{
                 JavaMainArgs args;
@@ -918,7 +918,6 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
              */
             [op performSelectorOnMainThread:@selector(start) withObject:nil waitUntilDone:YES];
         }
-        [pool drain];
         return rslt;
     } else {
         return ContinueInNewThread(ifn, threadStackSize, argc, argv, mode, what, ret);
