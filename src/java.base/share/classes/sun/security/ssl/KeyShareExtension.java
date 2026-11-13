@@ -235,37 +235,61 @@ final class KeyShareExtension {
             }
 
             List<NamedGroup> namedGroups;
+            boolean exactList;
             if (chc.serverSelectedNamedGroup != null) {
                 // Response to HelloRetryRequest
                 namedGroups = List.of(chc.serverSelectedNamedGroup);
+                exactList = true;
             } else {
-                namedGroups = chc.clientRequestedNamedGroups;
-                if (namedGroups == null || namedGroups.isEmpty()) {
+                if (chc.clientRequestedNamedGroups == null
+                        || chc.clientRequestedNamedGroups.isEmpty()) {
                     // No supported groups.
                     if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning(
-                            "Ignore key_share extension, no supported groups");
+                                "Ignore key_share extension, no supported groups");
                     }
                     return null;
                 }
+                if (chc.clientInitialKeyShareGroups != null) {
+                    namedGroups = chc.clientInitialKeyShareGroups;
+                    exactList = true;
+                } else {
+                    namedGroups = chc.clientRequestedNamedGroups;
+                    exactList = false;
+                }
             }
 
-            // Go through the named groups and take the most-preferred
-            // group from two categories (i.e. XDH and ECDHE).  Once we have
-            // the most preferred group from two types we can exit the loop.
             List<KeyShareEntry> keyShares = new LinkedList<>();
-            EnumSet<NamedGroupSpec> ngTypes =
-                    EnumSet.noneOf(NamedGroupSpec.class);
             byte[] keyExchangeData;
-            for (NamedGroup ng : namedGroups) {
-                if (!ngTypes.contains(ng.spec)) {
+
+            if (exactList) {
+                // Has preferred groups: either after HRR or have starred
+                for (NamedGroup ng : namedGroups) {
                     if ((keyExchangeData = getShare(chc, ng)) != null) {
                         keyShares.add(new KeyShareEntry(ng.id,
                                 keyExchangeData));
-                        ngTypes.add(ng.spec);
-                        if (ngTypes.size() == 2) {
-                            break;
+                    }
+                }
+            }
+
+            // Cannot create keyshare for preferred groups. Fallback to
+            // automatic selection unless this is after HRR.
+            if (keyShares.isEmpty() && chc.serverSelectedNamedGroup == null) {
+                // Go through the named groups and take the most-preferred
+                // group from two categories (e.g. XDH and ECDHE).  Once we have
+                // the most preferred group from two types we can exit the loop.
+                EnumSet<NamedGroupSpec> ngTypes =
+                        EnumSet.noneOf(NamedGroupSpec.class);
+                for (NamedGroup ng : chc.clientRequestedNamedGroups) {
+                    if (!ngTypes.contains(ng.spec)) {
+                        if ((keyExchangeData = getShare(chc, ng)) != null) {
+                            keyShares.add(new KeyShareEntry(ng.id,
+                                    keyExchangeData));
+                            ngTypes.add(ng.spec);
+                            if (ngTypes.size() == 2) {
+                                break;
+                            }
                         }
                     }
                 }
@@ -350,13 +374,31 @@ final class KeyShareExtension {
                 return;     // ignore the extension
             }
 
+            if (shc.clientRequestedNamedGroups == null) {
+                throw shc.conContext.fatal(Alert.MISSING_EXTENSION,
+                        "No supported_groups extension");
+            }
+
+            NamedGroup mutual = null;
+            for (var clientng : shc.clientRequestedNamedGroups) {
+                if (NamedGroup.isActivatable(shc.sslConfig,
+                        shc.algorithmConstraints, clientng)) {
+                    mutual = clientng;
+                    break;
+                }
+            }
+
+            if (mutual == null) {
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No common named group");
+            }
+
             // Parse the extension
             CHKeyShareSpec spec = new CHKeyShareSpec(shc, buffer);
             List<SSLCredentials> credentials = new LinkedList<>();
             for (KeyShareEntry entry : spec.clientShares) {
                 NamedGroup ng = NamedGroup.valueOf(entry.namedGroupId);
-                if (ng == null || !NamedGroup.isActivatable(shc.sslConfig,
-                        shc.algorithmConstraints, ng)) {
+                if (ng == null) {
                     if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
@@ -365,7 +407,9 @@ final class KeyShareExtension {
                     }
                     continue;
                 }
-
+                if (ng.id != mutual.id) {
+                    continue;
+                }
                 try {
                     SSLCredentials kaCred =
                         ng.decodeCredentials(entry.keyExchange);
@@ -806,7 +850,7 @@ final class KeyShareExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"selected group\": '['{0}']'", Locale.ENGLISH);
+                "\"selected group\": {0}", Locale.ENGLISH);
 
             Object[] messageFields = {
                     NamedGroup.nameOf(selectedGroup)

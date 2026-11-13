@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,9 +175,11 @@ final class SupportedGroupsExtension {
             // Produce the extension.
             ArrayList<NamedGroup> namedGroups =
                     new ArrayList<>(chc.sslConfig.namedGroups.length);
+            ArrayList<NamedGroup> preferredGroups =
+                    new ArrayList<>(chc.sslConfig.namedGroups.length);
             for (String name : chc.sslConfig.namedGroups) {
-                NamedGroup ng = NamedGroup.nameOf(name);
-                if (ng == null) {
+                NamedGroup.PreferredGroup pg = NamedGroup.PreferredGroup.of(name);
+                if (pg == null) {
                     if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
@@ -187,18 +189,19 @@ final class SupportedGroupsExtension {
                 }
 
                 if ((!SSLConfiguration.enableFFDHE) &&
-                    (ng.spec == NamedGroupSpec.NAMED_GROUP_FFDHE)) {
+                    (pg.ng().spec == NamedGroupSpec.NAMED_GROUP_FFDHE)) {
                     continue;
                 }
 
-                if (ng.isAvailable(chc.activeProtocols) &&
-                        ng.isSupported(chc.activeCipherSuites) &&
-                        ng.isPermitted(chc.algorithmConstraints)) {
-                    namedGroups.add(ng);
+                if (pg.ng().isAvailable(chc.activeProtocols) &&
+                        pg.ng().isSupported(chc.activeCipherSuites) &&
+                        pg.ng().isPermitted(chc.algorithmConstraints)) {
+                    namedGroups.add(pg.ng());
+                    if (pg.preferred()) preferredGroups.add(pg.ng());
                 } else if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
-                        "Ignore inactive or disabled named group: " + ng.name);
+                        "Ignore inactive or disabled named group: " + pg.ng().name);
                 }
             }
 
@@ -222,6 +225,12 @@ final class SupportedGroupsExtension {
             // Update the context.
             chc.clientRequestedNamedGroups =
                     Collections.unmodifiableList(namedGroups);
+            // If no preferred is chosen, set clientInitialKeyShareGroups
+            // to null and JSSE will pick one or two; otherwise, send their
+            // keyshares.
+            chc.clientInitialKeyShareGroups =
+                    preferredGroups.isEmpty() ? null :
+                            Collections.unmodifiableList(preferredGroups);
             chc.handshakeExtensions.put(CH_SUPPORTED_GROUPS,
                     new SupportedGroupsSpec(namedGroups));
 
@@ -339,8 +348,8 @@ final class SupportedGroupsExtension {
             ArrayList<NamedGroup> namedGroups = new ArrayList<>(
                     shc.sslConfig.namedGroups.length);
             for (String name : shc.sslConfig.namedGroups) {
-                NamedGroup ng = NamedGroup.nameOf(name);
-                if (ng == null) {
+                NamedGroup.PreferredGroup pg = NamedGroup.PreferredGroup.of(name);
+                if (pg == null) {
                     if (SSLLogger.isOn() &&
                             SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
@@ -349,6 +358,7 @@ final class SupportedGroupsExtension {
                     continue;
                 }
 
+                NamedGroup ng = pg.ng();
                 if ((!SSLConfiguration.enableFFDHE) &&
                     (ng.spec == NamedGroupSpec.NAMED_GROUP_FFDHE)) {
                     continue;
