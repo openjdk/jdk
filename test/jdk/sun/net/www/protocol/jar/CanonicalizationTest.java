@@ -35,7 +35,7 @@ public class CanonicalizationTest {
 
         check(new URL(base, ""), "jar:file:/foo!/");
         check(new URL(base, "."), "jar:file:/foo!/");
-        check(new URL(base, ".."), "jar:file:/foo!");
+        check(new URL(base, ".."), "jar:file:/foo!/");
         check(new URL(base, ".x"), "jar:file:/foo!/.x");
         check(new URL(base, "..x"), "jar:file:/foo!/..x");
         check(new URL(base, "..."), "jar:file:/foo!/...");
@@ -51,6 +51,7 @@ public class CanonicalizationTest {
         check(new URL(base, "foo/../,,/.."), "jar:file:/foo!/");
         check(new URL(base, "foo/../."), "jar:file:/foo!/");
         check(new URL(base, "foo/../.x"), "jar:file:/foo!/.x");
+        check(new URL(base, "./../../"), "jar:file:/foo!/");
     }
 
     private static void check(URL url, String expected) {

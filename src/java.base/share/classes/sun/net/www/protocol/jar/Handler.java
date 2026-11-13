@@ -27,6 +27,9 @@ package sun.net.www.protocol.jar;
 
 import java.io.IOException;
 import java.net.*;
+
+import jdk.internal.access.SharedSecrets;
+
 import static jdk.internal.util.Exceptions.filterJarName;
 import static jdk.internal.util.Exceptions.formatMsg;
 
@@ -229,40 +232,56 @@ public class Handler extends java.net.URLStreamHandler {
             // Defer substring and concat until canonicalization is required
             String before = file.substring(0, off);
             String after = file.substring(off);
-            return before + doCanonicalize(after);
+            return before + doNormalize(after);
         }
     }
 
-    private static String doCanonicalize(String file) {
-        int i, lim;
-
-        // Remove embedded /../
-        while ((i = file.indexOf("/../")) >= 0) {
-            if ((lim = file.lastIndexOf('/', i - 1)) >= 0) {
-                file = file.substring(0, lim) + file.substring(i + 3);
-            } else {
-                file = file.substring(i + 3);
-            }
+    static String doNormalize(String file) {
+        String normalizedPath = SharedSecrets.getJavaNetURLAccess().normalize(file);
+        // jar long-standing behaviour:
+        //   leading /../ are removed
+        int index = normalizedPath.lastIndexOf("/../");
+        if (index > -1) {
+            normalizedPath = normalizedPath.substring(index + 3);
         }
-        // Remove embedded /./
-        while ((i = file.indexOf("/./")) >= 0) {
-            file = file.substring(0, i) + file.substring(i + 2);
+        // jar long-standing behavior:
+        //   trailing /.. is removed
+        if (normalizedPath.endsWith("/..")) {
+            normalizedPath = normalizedPath.substring(0, normalizedPath.length() - 3);
         }
-        // Remove trailing ..
-        while (file.endsWith("/..")) {
-            i = file.indexOf("/..");
-            if ((lim = file.lastIndexOf('/', i - 1)) >= 0) {
-                file = file.substring(0, lim+1);
-            } else {
-                file = file.substring(0, i);
-            }
-        }
-        // Remove trailing .
-        if (file.endsWith("/."))
-            file = file.substring(0, file.length() -1);
-
-        return file;
+        return normalizedPath.isEmpty() ? "/" : normalizedPath;
     }
+
+//    private static String doCanonicalize(String file) {
+//        int i, lim;
+//
+//        // Remove embedded /../
+//        while ((i = file.indexOf("/../")) >= 0) {
+//            if ((lim = file.lastIndexOf('/', i - 1)) >= 0) {
+//                file = file.substring(0, lim) + file.substring(i + 3);
+//            } else {
+//                file = file.substring(i + 3);
+//            }
+//        }
+//        // Remove embedded /./
+//        while ((i = file.indexOf("/./")) >= 0) {
+//            file = file.substring(0, i) + file.substring(i + 2);
+//        }
+//        // Remove trailing ..
+//        while (file.endsWith("/..")) {
+//            i = file.indexOf("/..");
+//            if ((lim = file.lastIndexOf('/', i - 1)) >= 0) {
+//                file = file.substring(0, lim+1);
+//            } else {
+//                file = file.substring(0, i);
+//            }
+//        }
+//        // Remove trailing .
+//        if (file.endsWith("/."))
+//            file = file.substring(0, file.length() -1);
+//
+//        return file;
+//    }
 
     @SuppressWarnings("deprecation")
     private static URL newURL(String spec) throws MalformedURLException {
