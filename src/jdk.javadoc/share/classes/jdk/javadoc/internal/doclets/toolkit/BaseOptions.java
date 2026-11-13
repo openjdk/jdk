@@ -171,6 +171,12 @@ public abstract class BaseOptions {
     }
 
     /**
+     * Argument for command-line option {@code --legacy-note-tags}.
+     * True if we should generate legacy markup for note tags.
+     */
+    private boolean legacyNoteTags = false;
+
+    /**
      * Argument for command-line option {@code --link-modularity-mismatch}.
      * Describes how to handle external documentation with non-matching modularity.
      */
@@ -429,6 +435,14 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         keywords = true;
+                        return true;
+                    }
+                },
+
+                new Hidden(resources, "--legacy-note-tags") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        legacyNoteTags = true;
                         return true;
                     }
                 },
@@ -864,6 +878,14 @@ public abstract class BaseOptions {
      */
     public boolean keywords() {
         return keywords;
+    }
+
+    /**
+     * Argument for command-line option {@code --legacy-note-tags}.
+     * True if we should generate legacy markup for note tags.
+     */
+    public boolean legacyNoteTags() {
+        return legacyNoteTags;
     }
 
     /**

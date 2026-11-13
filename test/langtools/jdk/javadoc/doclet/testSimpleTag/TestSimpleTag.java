@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4695326 4750173 4920381 8078320 8071982 8239804 8393742
+ * @bug 4695326 4750173 4920381 8078320 8071982 8239804 8393742 8358754
  * @summary Test the declaration of simple tags using -tag. Verify that
  * "-tag name" is a shortcut for "-tag name:a:Name:".  Also verity that
  * you can escape the ":" character with a back slash so that it is not
@@ -65,8 +65,11 @@ public class TestSimpleTag extends JavadocTester {
                 "<dl class=\"notes\">",
                 "<dt>Todo:</dt>",
                 "<dt>EJB Beans:</dt>",
+                "<dd>This is a bean.</dd>",
                 "<dt>Regular Tag:</dt>",
+                "<dd>Just a regular simple tag.</dd>",
                 "<dt>Tag-With-Hyphens:</dt>",
+                "<dd>a tag that contains hyphens.</dd>",
                 """
                     <dt>Parameters:</dt>
                     <dd><code>arg</code> - this is an int argument.</dd>""");
@@ -124,6 +127,7 @@ public class TestSimpleTag extends JavadocTester {
 
         checkOutput("test/MultiTag.html", true, """
                 <dl class="notes">
+                <div id="block-warning" class="note-tag-warning">
                 <dt>Warning:</dt>
                 <dd>First warning.</dd>
                 <dd>Another warning.

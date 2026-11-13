@@ -32,15 +32,14 @@ import com.sun.jdi.event.ModificationWatchpointEvent;
  * This interface is the root of a
  * value hierarchy encompassing primitive values and object values.
  *
- * <div class="preview-block">
- *      <div class="preview-comment">
+ * {@previewNote (jep=401)
  * The Java Debug Interface (JDI) supports debugging of programs that use
  * {@linkplain Class#isValue() value objects}. A value object is an instance of a
  * value class, declared with the value modifier. The JDI
  * {@code com.sun.jdi.Value} interface is used to mirror a value in the target VM.
  * That value may be a value object or an identity object.
- *      </div>
- * </div>
+ * }
+ *
  * <P>
  * Some examples of where values may be accessed:
  * <BLOCKQUOTE><TABLE role="presentation">

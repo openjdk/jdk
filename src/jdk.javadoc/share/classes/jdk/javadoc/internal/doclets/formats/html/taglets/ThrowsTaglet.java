@@ -247,7 +247,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         Set<TypeMirror> alreadyDocumentedExceptions = new HashSet<>();
         List<ThrowsTree> exceptionTags = utils.getThrowsTrees(executable);
         for (ThrowsTree t : exceptionTags) {
-            config.tagletManager.checkTags(holder, t.getDescription());
+            config.tagletManager.checkTags(holder, t.getDescription(), true);
             Element exceptionElement = getExceptionType(t, executable);
             outputAnExceptionTagDeeply(exceptionSection, exceptionElement, t, executable, alreadyDocumentedExceptions, typeSubstitutions);
         }

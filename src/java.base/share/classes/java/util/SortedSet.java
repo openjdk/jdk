@@ -70,7 +70,7 @@ package java.util;
  * ordering as the input sorted set.  There is no way to enforce this
  * recommendation, as interfaces cannot contain constructors.
  *
- * <p>Note: several methods return subsets with restricted ranges.
+ * {@note Several methods return subsets with restricted ranges.
  * Such ranges are <i>half-open</i>, that is, they include their low
  * endpoint but not their high endpoint (where applicable).
  * If you need a <i>closed range</i> (which includes both endpoints), and
@@ -79,14 +79,14 @@ package java.util;
  * {@code successor(highEndpoint)}.  For example, suppose that {@code s}
  * is a sorted set of strings.  The following idiom obtains a view
  * containing all of the strings in {@code s} from {@code low} to
- * {@code high}, inclusive:<pre>
- *   SortedSet&lt;String&gt; sub = s.subSet(low, high+"\0");</pre>
+ * {@code high}, inclusive:
+ * <pre>SortedSet&lt;String&gt; sub = s.subSet(low, high+"\0");</pre>
  *
  * A similar technique can be used to generate an <i>open range</i> (which
  * contains neither endpoint).  The following idiom obtains a view
  * containing all of the Strings in {@code s} from {@code low} to
- * {@code high}, exclusive:<pre>
- *   SortedSet&lt;String&gt; sub = s.subSet(low+"\0", high);</pre>
+ * {@code high}, exclusive:
+ * <pre>SortedSet&lt;String&gt; sub = s.subSet(low+"\0", high);</pre>}
  *
  * <p>This interface is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
