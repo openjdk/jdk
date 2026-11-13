@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,8 @@ public class Level implements java.io.Serializable {
      * OFF is a special level that can be used to turn off logging.
      * This level is initialized to <CODE>Integer.MAX_VALUE</CODE>.
      */
-    public static final Level OFF = new Level("OFF",Integer.MAX_VALUE, defaultBundle);
+    public static final Level OFF =
+            new Level("OFF", Integer.MAX_VALUE, defaultBundle);
 
     /**
      * SEVERE is a message level indicating a serious failure.
@@ -120,7 +121,7 @@ public class Level implements java.io.Serializable {
      * to end users and to system administrators.
      * This level is initialized to <CODE>1000</CODE>.
      */
-    public static final Level SEVERE = new Level("SEVERE",1000, defaultBundle);
+    public static final Level SEVERE = new Level("SEVERE", 1000, defaultBundle);
 
     /**
      * WARNING is a message level indicating a potential problem.

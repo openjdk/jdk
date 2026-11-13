@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public final class LazyLoggers {
      */
     static final class LazyLoggerAccessor implements LoggerAccessor {
 
-        // The factories that will be used to create the logger lazyly
+        // The factories that will be used to create the logger lazily
         final LazyLoggerFactories<? extends Logger> factories;
 
         // We need to pass the actual caller module when creating the logger.
@@ -111,7 +111,7 @@ public final class LazyLoggers {
         // whether this is the loading thread, can be null
         private final BooleanSupplier isLoadingThread;
 
-        // The name of the logger that will be created lazyly
+        // The name of the logger that will be created lazily
         final String name;
         // The plain logger SPI object - null until it is accessed for the
         // first time.
@@ -363,7 +363,7 @@ public final class LazyLoggers {
            new LazyLoggerFactories<>(loggerSupplier);
 
 
-    // A concrete implementation of Logger that delegates to a  System.Logger,
+    // A concrete implementation of Logger that delegates to a System.Logger,
     // but only creates the System.Logger instance lazily when it's used for
     // the first time.
     // The JdkLazyLogger uses a LazyLoggerAccessor objects, which relies
@@ -447,4 +447,18 @@ public final class LazyLoggers {
         }
     }
 
+    /**
+     * Returns the underlying concrete {@link System.Logger} for the given logger.
+     * <p>
+     * If the supplied logger is a {@code LazyLoggers.JdkLazyLogger}, this method unwraps it and
+     * returns the wrapped logger instance; otherwise it returns the logger unchanged.
+     *
+     * @param l the logger to unwrap; may be a lazy logger wrapper
+     * @return the concrete (unwrapped) logger, or {@code l} if it is not a lazy wrapper
+     */
+    public static System.Logger getConcreteLogger(System.Logger l) {
+        return (l instanceof LazyLoggers.JdkLazyLogger lazy)
+                ? lazy.loggerAccessor.wrapped()
+                : l;
+    }
 }
