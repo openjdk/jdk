@@ -3155,6 +3155,7 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
                                               Register ch, Register result,
                                               Register tmp1, Register tmp2,
                                               bool isL) {
+  assert_different_registers(str1, cnt1, ch, result, tmp1, tmp2);
   mv(result, zr);
 
   Label loop, MATCH, DONE;
