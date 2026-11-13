@@ -126,7 +126,7 @@ public class TestMemoryEffects {
             // Count number of successful handshakes where the value is wrong.
             // A conservative estimate for the test failing due to reordering
             // is 9/20. With 200 handshakes the probability of the test randomly
-            // is about 10E-200.
+            // failing is about 4.39E-200.
             final int maxHandshakes = 200;
             int successfulHandshakes = 0;
             // Limit the number of attempts to check if the test is still working.
