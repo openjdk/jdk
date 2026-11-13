@@ -24,20 +24,23 @@
 
 #include "runtime/sharedRuntime.hpp"
 
+#ifdef AARCH64
 // These are copied defines originally from fdlibm.h.
 
 #define __HI(x) *(1+(int*)&x)
 #define __LO(x) *(int*)&x
 
-// This code is a copy of __ieee754_fmod() formerly from the JDK's libfdlibm and is
-// used as a workaround for issues with the Windows x64 CRT implementation
-// of fmod. Microsoft has acknowledged that this is an issue in Visual Studio
-// 2012 and forward, but has not provided a time frame for a fix other than that
-// it'll not be fixed in Visual Studio 2013 or 2015.
+// This code is a copy of __ieee754_fmod() formerly from the JDK's libfdlibm and
+// used to be a workaround for issues with the Windows x64 CRT implementation of
+// fmod, but while Windows x64 now uses handwritten assembly, it was discovered
+// that Windows ARM64 now also suffers from the same bug, so this is now used
+// on Windows ARM64 instead. Microsoft has acknowledged that this is an issue in
+// Visual Studio 2012 and forward, but has not provided a time frame for a fix
+// other than that it'll not be fixed in Visual Studio 2013 or 2015.
 
 static const double one = 1.0, Zero[] = { 0.0, -0.0, };
 
-double SharedRuntime::fmod_winx64(double x, double y)
+double SharedRuntime::fmod_winarm64(double x, double y)
 {
   int n, hx, hy, hz, ix, iy, sx, i;
   unsigned lx, ly, lz;
@@ -154,3 +157,5 @@ double SharedRuntime::fmod_winx64(double x, double y)
   }
   return x;               /* exact output */
 }
+
+#endif
