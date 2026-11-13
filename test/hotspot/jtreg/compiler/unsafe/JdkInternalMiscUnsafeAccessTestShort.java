@@ -353,14 +353,49 @@ public class JdkInternalMiscUnsafeAccessTestShort {
             assertEquals(x, (short)0x0123, "getAndSet short value");
         }
 
-        UNSAFE.putShort(base, offset, (short)0x0123);
-
         // get and add, add and get
         {
+            UNSAFE.putShort(base, offset, (short)0x0123);
             short o = UNSAFE.getAndAddShort(base, offset, (short)0x4567);
             assertEquals(o, (short)0x0123, "getAndAdd short");
             short x = UNSAFE.getShort(base, offset);
             assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAdd short");
+        }
+
+        // get and add, add and get - positive 12-bit immediate
+        {
+            UNSAFE.putShort(base, offset, (short)0x0123);
+            short o = UNSAFE.getAndAddShort(base, offset, (short)0xFFF);
+            assertEquals(o, (short)0x0123, "getAndAdd short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)((short)0x0123 + (short)0xFFF), "getAndAdd short");
+        }
+
+        // get and add, add and get - negative 12-bit immediate
+        {
+            UNSAFE.putShort(base, offset, (short)0x0123);
+            short o = UNSAFE.getAndAddShort(base, offset, (short)-(short)0xFFF);
+            assertEquals(o, (short)0x0123, "getAndAdd short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)((short)0x0123 - (short)0xFFF), "getAndAdd short");
+        }
+
+        // get and add, add and get - positive immediate encodable with 12-bit shift
+        {
+            UNSAFE.putShort(base, offset, (short)0x0123);
+            short o = UNSAFE.getAndAddShort(base, offset, (short)0x1000);
+            assertEquals(o, (short)0x0123, "getAndAdd short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)((short)0x0123 + (short)0x1000), "getAndAdd short");
+        }
+
+        // get and add, add and get - negative immediate encodable with 12-bit shift
+        {
+            UNSAFE.putShort(base, offset, (short)0x0123);
+            short o = UNSAFE.getAndAddShort(base, offset, (short)0xF000);
+            assertEquals(o, (short)0x0123, "getAndAdd short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)((short)0x0123 + (short)0xF000), "getAndAdd short");
         }
     }
 
