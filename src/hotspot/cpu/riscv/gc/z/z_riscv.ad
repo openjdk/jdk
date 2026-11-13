@@ -36,11 +36,14 @@ source %{
 static void z_color(MacroAssembler* masm, Register dst, Register src, Register tmp) {
   assert_different_registers(dst, tmp);
 
+  const Register color = src == noreg ? dst : tmp;
   __ relocate(barrier_Relocation::spec(), [&] {
-    __ li16u(tmp, barrier_Relocation::unpatched);
+    __ li16u(color, barrier_Relocation::unpatched);
   }, ZBarrierRelocationFormatStoreGoodBits);
-  __ slli(dst, src, ZPointerLoadShift);
-  __ orr(dst, dst, tmp);
+  if (src != noreg) {
+    __ slli(dst, src, ZPointerLoadShift);
+    __ orr(dst, dst, tmp);
+  }
 }
 
 static void z_uncolor(MacroAssembler* masm, Register ref) {
@@ -150,6 +153,23 @@ instruct zStoreP(memory mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsRe
   ins_pipe(pipe_serial);
 %}
 
+// Store Null Pointer
+instruct zStorePNull(memory mem, immP_0 zero, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
+%{
+  predicate(UseZGC && !needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem zero));
+  effect(TEMP tmp1, TEMP tmp2, KILL cr);
+
+  ins_cost(125); // XXX
+  format %{ "sd    $mem, $zero\t# ptr, #@zStorePNull" %}
+  ins_encode %{
+    const Address ref_addr(as_Register($mem$$base), $mem$$disp);
+    z_store_barrier(masm, this, ref_addr, noreg, $tmp1$$Register, $tmp2$$Register, false /* is_atomic */);
+    __ sd($tmp1$$Register, ref_addr);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
 instruct zStorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
 %{
   predicate(UseZGC && needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
@@ -161,6 +181,22 @@ instruct zStorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2
   ins_encode %{
     guarantee($mem$$disp == 0, "impossible encoding");
     z_store_barrier(masm, this, Address($mem$$Register), $src$$Register, $tmp1$$Register, $tmp2$$Register, false /* is_atomic */);
+    __ sd_rl($tmp1$$Register, $mem$$Register);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct zStorePVolatileNull(indirect mem, immP_0 zero, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
+%{
+  predicate(UseZGC && needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem zero));
+  effect(TEMP tmp1, TEMP tmp2, KILL cr);
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "sd.rl  $mem, $zero\t# ptr, #@zStorePVolatileNull" %}
+  ins_encode %{
+    guarantee($mem$$disp == 0, "impossible encoding");
+    z_store_barrier(masm, this, Address($mem$$Register), noreg, $tmp1$$Register, $tmp2$$Register, false /* is_atomic */);
     __ sd_rl($tmp1$$Register, $mem$$Register);
   %}
   ins_pipe(pipe_serial);
