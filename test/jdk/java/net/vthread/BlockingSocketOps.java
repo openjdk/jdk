@@ -741,19 +741,16 @@ class BlockingSocketOps {
         Thread unparkerThread = Thread.ofPlatform().daemon().start(() -> {
             try {
                 // wait for target thread to park
-                while (!isWaiting(target)) {
-                    Thread.sleep(20);
-                }
+                awaitParked(target, 20);
 
-                // if the target thread is parked in write then we nudge it a few times
-                // to avoid wakeup with some bytes written
+                // When writing we need to "nudge" the target thread to allow further
+                // progress before giving it a more time to settle.
                 if (writing) {
                     for (int i = 0; i < 3; i++) {
                         LockSupport.unpark(target);
-                        while (!isWaiting(target)) {
-                            Thread.sleep(20);
-                        }
+                        Thread.sleep(20);
                     }
+                    awaitParked(target, 100);
                 }
 
                 // capture the blocker object
@@ -773,9 +770,25 @@ class BlockingSocketOps {
     }
 
     /**
+     * Wait for the given Thread to be parked (or waiting) for the given millis duration.
+     */
+    private static void awaitParked(Thread target, long millis) throws InterruptedException {
+        long sleepTime = 10;
+        int parkedTime = 0;
+        while (parkedTime < millis) {
+            Thread.sleep(sleepTime);
+            if (isParked(target)) {
+                parkedTime += sleepTime;
+            } else {
+                parkedTime = 0;
+            }
+        }
+    }
+
+    /**
      * Return true if the given Thread is parked.
      */
-    private static boolean isWaiting(Thread target) {
+    private static boolean isParked(Thread target) {
         Thread.State state = target.getState();
         assertNotEquals(Thread.State.TERMINATED, state);
         return (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING);
