@@ -160,10 +160,23 @@ following members:
         <td> The {@linkplain java.lang.Thread#getName() thread name}. </td>
     </tr>
     <tr>
+        <th scope="row"> threadObj </th>
+        <td> string </td>
+        <td> yes </td>
+        <td> The {@linkplain java.util.Objects#toIdentityString(Object) identity string}
+            of the java.lang.Thread object.</td>
+    </tr>
+    <tr>
         <th scope="row"> state </th>
         <td> string </td>
         <td> no </td>
         <td> The string representation of the {@linkplain java.lang.Thread#getState() thread state}. </td>
+    </tr>
+    <tr>
+        <th scope="row"> cpuTime </th>
+        <td> number </td>
+        <td> yes </td>
+        <td> The thread CPU time, in nanoseconds, if available. </td>
     </tr>
     <tr>
         <th scope="row"> virtual </th>

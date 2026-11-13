@@ -258,6 +258,24 @@ public final class ThreadDump {
         }
 
         /**
+         * Returns the thread's threadObj member or null.
+         */
+        public String threadObj() {
+            return threadObj.getOrAbsent("threadObj")
+                    .map(JSONValue::asString)
+                    .orElse(null);
+        }
+
+        /**
+         * Returns the thread's CPU time if available.
+         */
+        public OptionalLong cpuTime() {
+            return threadObj.getOrAbsent("cpuTime")
+                    .map(v -> OptionalLong.of(v.asLong()))
+                    .orElseGet(OptionalLong::empty);
+        }
+
+        /**
          * Returns true if virtual thread.
          */
         public boolean isVirtual() {
