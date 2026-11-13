@@ -330,7 +330,7 @@ inline bool is_valid(zpointer ptr, bool assert_on_failure = false) {
   }
 
   if ((value & ~ZPointerStoreMetadataMask) != 0) {
-#ifndef AARCH64
+#if !defined(AARCH64) && !defined(RISCV64)
     const int index = ZPointer::load_shift_lookup_index(value);
     if (index != 0 && !is_power_of_2(index)) {
       report_is_valid_failure("Invalid remap bits");
