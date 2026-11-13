@@ -97,6 +97,11 @@ public class Lookup {
 
         String[] strs = tmp.split(":");
         addr = strs[0];
+        if (strs.length < 2) {
+            // the sub process returned "<address>:" without a host name,
+            // and String.split() drops the trailing empty string
+            throw new SkippedException(addr + " can't reverse resolved to host - test skipped.");
+        }
         ipv4Name = strs[1];
         if (addr.equals(ipv4Name)) {
             throw new SkippedException(addr + " can't reverse resolved to host - test skipped.");
@@ -112,6 +117,11 @@ public class Lookup {
 
         strs = tmp.split(":");
         addr = strs[0];
+        if (strs.length < 2) {
+            // the sub process returned "<address>:" without a host name,
+            // and String.split() drops the trailing empty string
+            throw new SkippedException(addr + " can't reverse resolved to host - test skipped.");
+        }
         ipv4Reversed = strs[1];
         if (addr.equals(ipv4Reversed)) {
             throw new SkippedException(addr + " can't reverse resolved to host - test skipped.");
