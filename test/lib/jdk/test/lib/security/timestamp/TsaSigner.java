@@ -27,6 +27,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
 
@@ -232,7 +233,7 @@ public class TsaSigner {
                         new PKCS9Attribute(PKCS9Attribute.CONTENT_TYPE_OID,
                                 infoOid),
                         new PKCS9Attribute(PKCS9Attribute.SIGNING_TIME_OID,
-                                new Date()),
+                                Instant.now()),
                         new PKCS9Attribute(PKCS9Attribute.MESSAGE_DIGEST_OID,
                                 MessageDigest.getInstance(digestAlg.getName())
                                         .digest(tstInfoSeqData))

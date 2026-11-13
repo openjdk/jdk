@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,40 @@
 
 import jdk.test.lib.Utils;
 import sun.security.util.ObjectIdentifier;
-import sun.security.x509.*;
+import sun.security.x509.AccessDescription;
+import sun.security.x509.AuthorityInfoAccessExtension;
+import sun.security.x509.AuthorityKeyIdentifierExtension;
+import sun.security.x509.CRLDistributionPointsExtension;
+import sun.security.x509.CRLNumberExtension;
+import sun.security.x509.CRLReasonCodeExtension;
+import sun.security.x509.CertificateIssuerExtension;
+import sun.security.x509.CertificatePoliciesExtension;
+import sun.security.x509.CertificatePolicyId;
+import sun.security.x509.CertificatePolicyMap;
+import sun.security.x509.DistributionPoint;
+import sun.security.x509.DistributionPointName;
+import sun.security.x509.ExtendedKeyUsageExtension;
+import sun.security.x509.GeneralName;
+import sun.security.x509.GeneralNames;
+import sun.security.x509.GeneralSubtrees;
+import sun.security.x509.InhibitAnyPolicyExtension;
+import sun.security.x509.InvalidityDateExtension;
+import sun.security.x509.IssuerAlternativeNameExtension;
+import sun.security.x509.IssuingDistributionPointExtension;
+import sun.security.x509.KeyIdentifier;
+import sun.security.x509.NameConstraintsExtension;
+import sun.security.x509.PolicyConstraintsExtension;
+import sun.security.x509.PolicyInformation;
+import sun.security.x509.PolicyMappingsExtension;
+import sun.security.x509.PrivateKeyUsageExtension;
+import sun.security.x509.ReasonFlags;
+import sun.security.x509.SerialNumber;
+import sun.security.x509.SubjectAlternativeNameExtension;
+import sun.security.x509.SubjectInfoAccessExtension;
+import sun.security.x509.X500Name;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -125,10 +156,11 @@ public class IllegalExtensions {
         Utils.runAndCheckException(() -> new PolicyMappingsExtension(List.of()), IllegalArgumentException.class);
         Utils.runAndCheckException(() -> new PolicyMappingsExtension(null), IllegalArgumentException.class);
 
-        new PrivateKeyUsageExtension(new Date(), new Date());
-        new PrivateKeyUsageExtension(new Date(), null);
-        new PrivateKeyUsageExtension((Date) null, new Date());
-        Utils.runAndCheckException(() -> new PrivateKeyUsageExtension((Date) null, null), IllegalArgumentException.class);
+        Instant now = Instant.now();
+        new PrivateKeyUsageExtension(now, now);
+        new PrivateKeyUsageExtension(now, null);
+        new PrivateKeyUsageExtension((Instant) null, now);
+        Utils.runAndCheckException(() -> new PrivateKeyUsageExtension((Instant) null, null), IllegalArgumentException.class);
 
         new SubjectAlternativeNameExtension(names);
         Utils.runAndCheckException(() -> new SubjectAlternativeNameExtension(null), IllegalArgumentException.class);
