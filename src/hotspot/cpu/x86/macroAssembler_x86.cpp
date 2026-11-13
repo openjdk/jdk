@@ -267,6 +267,16 @@ void MacroAssembler::lea(Address dst, AddressLiteral adr, Register rscratch) {
   movptr(dst, rscratch);
 }
 
+void MacroAssembler::leaq(Register dst, Address src) {
+  if ((src.base() != noreg) && (src.index() == noreg) &&
+      (src.disp() == 0) && (src.reloc() == relocInfo::none)) {
+    // base-only lea, use move (other simple cases not seen).
+    mov(dst, src.base());
+  } else {
+    Assembler::leaq(dst, src);
+  }
+}
+
 void MacroAssembler::leave() {
   // %%% is this really better? Why not on 32bit too?
   emit_int8((unsigned char)0xC9); // LEAVE

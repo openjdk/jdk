@@ -889,8 +889,11 @@ public:
   void atomic_incptr(Address counter_addr) { atomic_incq(counter_addr); }
 
   using Assembler::lea;
+  void lea(Register dst, Address src) { leaq(dst, src); }
   void lea(Register dst, AddressLiteral adr);
   void lea(Address  dst, AddressLiteral adr, Register rscratch);
+
+  void leaq(Register dst, Address src);
 
   void leal32(Register dst, Address src) { leal(dst, src); }
 
