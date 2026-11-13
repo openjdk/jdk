@@ -527,6 +527,12 @@ public class Flags {
     public static final long NON_SEALED = 1L<<63;  // part of ExtendedStandardFlags, cannot be reused
 
     /**
+     * Flag to indicate singleobject class declaration.
+     */
+    @Use({FlagTarget.CLASS})
+    public static final long SINGLEOBJECT = 1L<<32; // part of ExtendedStandardFlags, cannot be reused
+
+    /**
      * Flag to indicate that a field is strict
      */
     @Use({FlagTarget.VARIABLE})
@@ -564,14 +570,14 @@ public class Flags {
     @NotFlag
     public static final long
         //NOTE: flags in ExtendedStandardFlags cannot be overlayed across Symbol kinds:
-        ExtendedStandardFlags             = (long)StandardFlags | DEFAULT | SEALED | NON_SEALED | VALUE_CLASS,
-        ExtendedMemberClassFlags          = (long)MemberClassFlags | SEALED | NON_SEALED | VALUE_CLASS,
-        ExtendedMemberStaticClassFlags    = (long) MemberStaticClassFlags | SEALED | NON_SEALED | VALUE_CLASS,
-        ExtendedClassFlags                = (long)ClassFlags | SEALED | NON_SEALED | VALUE_CLASS,
+        ExtendedStandardFlags             = (long)StandardFlags | DEFAULT | SEALED | NON_SEALED | VALUE_CLASS | SINGLEOBJECT,
+        ExtendedMemberClassFlags          = (long)MemberClassFlags | SEALED | NON_SEALED | VALUE_CLASS | SINGLEOBJECT,
+        ExtendedMemberStaticClassFlags    = (long) MemberStaticClassFlags | SEALED | NON_SEALED | VALUE_CLASS | SINGLEOBJECT,
+        ExtendedClassFlags                = (long)ClassFlags | SEALED | NON_SEALED | VALUE_CLASS | SINGLEOBJECT,
         ExtendedLocalClassFlags           = (long) LocalClassFlags | VALUE_CLASS,
         ExtendedStaticLocalClassFlags     = (long) StaticLocalClassFlags | VALUE_CLASS,
         ValueFieldFlags                   = (long) VarFlags | STRICT | FINAL,
-        ModifierFlags                     = ((long)StandardFlags & ~INTERFACE) | DEFAULT | SEALED | NON_SEALED | VALUE_CLASS,
+        ModifierFlags                     = ((long)StandardFlags & ~INTERFACE) | DEFAULT | SEALED | NON_SEALED | VALUE_CLASS | SINGLEOBJECT,
         InterfaceMethodMask               = ABSTRACT | PRIVATE | STATIC | PUBLIC | STRICTFP | DEFAULT,
         AnnotationTypeElementMask         = ABSTRACT | PUBLIC,
         LocalVarFlags                     = FINAL | PARAMETER,
