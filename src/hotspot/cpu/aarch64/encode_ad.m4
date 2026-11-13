@@ -20,9 +20,12 @@ dnl or visit www.oracle.com if you need additional information or have any
 dnl questions.
 dnl
 dnl
-dnl Process this file with m4 ad_encode.m4 to generate the load/store
+dnl Process this file with m4 encode_ad.m4 to generate the load/store
 dnl patterns used in aarch64.ad.
 dnl
+
+// BEGIN Section generated automatically from encode_ad.m4. Do not edit ----------------
+
 define(choose, `loadStore($1, &MacroAssembler::$3, $2, $4,
                $5, $6, $7, $8, $9);dnl
 
@@ -32,7 +35,7 @@ define(access, `
     $4choose(masm, $1_reg,$2,$mem->opcode(),
         as_Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp,$5)')dnl
 define(load,`
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_$2($1 dst, memory$5 mem) %{dnl
 access(dst,$2,$3,$4,$5)')dnl
@@ -51,12 +54,12 @@ load(iRegL,ldr,,,8)
 load(vRegF,ldrs,Float,,4)
 load(vRegD,ldrd,Float,,8)
 define(STORE,`
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_$2($1 src, memory$5 mem) %{dnl
 access(src,$2,$3,$4,$5)')dnl
 define(STORE0,`
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_$2`'0(memory$4 mem) %{
     choose(masm,zr,$2,$mem->opcode(),
@@ -80,10 +83,12 @@ STORE0(iRegL,str,,8)
 STORE(vRegF,strs,Float,,4)
 STORE(vRegD,strd,Float,,8)
 
-  // This encoding class is generated automatically from ad_encode.m4.
+  // This encoding class is generated automatically from encode_ad.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strb0_ordered(memory4 mem) %{
       __ membar(Assembler::StoreStore);
       loadStore(masm, &MacroAssembler::strb, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
+
+// END Section generated automatically from encode_ad.m4. Do not edit ------------------
