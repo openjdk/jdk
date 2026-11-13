@@ -312,9 +312,6 @@ char* VM_Version::os_uarch_additional_features() {
       }
     }
   }
-  if (mode == VM_NOTSET) {
-    mode = VM_MBARE;
-  }
   fclose(f);
 
   // The code generator assumes that every address it embeds in an instruction
@@ -334,6 +331,9 @@ char* VM_Version::os_uarch_additional_features() {
            "the default address space to the sv48 range (current kernel is %ld.%ld.%ld).",
            (int)mode, major, minor, patch));
     }
+  }
+  if (mode == VM_NOTSET || mode == VM_MBARE || mode == VM_SV57) {
+    mode = VM_SV48;
   }
 
   satp_mode.enable_feature(mode);

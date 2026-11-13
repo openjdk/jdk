@@ -124,7 +124,7 @@ public class AOTCodeTestUnknownExternAddress {
 
 class TestUnknownAddress {
     private static Unsafe unsafe;
-    private static final long UNKNOWN_ADDRESS = 0x1234_5678_9000L;
+    private static final long UNKNOWN_ADDRESS = 0x12_3456_7800L;
     private static final long MINUS_1_ADDRESS = -1L;
 
     static {
