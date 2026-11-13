@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8' ?>
 <!DOCTYPE supplementalData SYSTEM '../../common/dtd/ldmlSupplemental.dtd'>
 <!--
-	Copyright © 1991-2024 Unicode, Inc.
+	Copyright © 1991-2026 Unicode, Inc.
 	For terms of use, see http://www.unicode.org/copyright.html
 	SPDX-License-Identifier: Unicode-3.0
 	CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -13,7 +13,7 @@
 	<plurals>
 
 <!-- other -->
-		<pluralRanges locales="id ja km ko lo ms my th vi yue zh">
+		<pluralRanges locales="id ja km ko lo ms my th yue zh">
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
 
@@ -28,12 +28,12 @@
 			<pluralRange start="other" end="one"   result="other"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="az de el gl gsw hu kk ky lij ml mn ne nl sc sq sw ta te tk tr ug uz">
+		<pluralRanges locales="az de el gsw hu kk ky lij ml mn ne nl sc sq sw ta te tk tr ug uz">
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="one"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="af an bg en et eu fi ia io nb no pcm sv ur">
+		<pluralRanges locales="af an bg en et eu fi ia io nb no pcm sv ur vi">
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="other"/>
 			<pluralRange start="other" end="other" result="other"/>
@@ -50,7 +50,7 @@
 			<pluralRange start="other" end="one"   result="other"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="ak fa or sd">
+		<pluralRanges locales="ak fa or sd tg">
 			<pluralRange start="one"   end="one"   result="other"/>
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="one"/>
@@ -114,7 +114,7 @@
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="it scn">
+		<pluralRanges locales="gl it scn">
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="one"/>
 			<pluralRange start="other" end="other" result="other"/>

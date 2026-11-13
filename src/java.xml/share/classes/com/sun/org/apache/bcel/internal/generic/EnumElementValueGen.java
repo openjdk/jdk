@@ -29,6 +29,8 @@ import com.sun.org.apache.bcel.internal.classfile.ElementValue;
 import com.sun.org.apache.bcel.internal.classfile.EnumElementValue;
 
 /**
+ * Generates enum element values in annotations.
+ *
  * @since 6.0
  */
 public class EnumElementValueGen extends ElementValueGen {
@@ -37,6 +39,13 @@ public class EnumElementValueGen extends ElementValueGen {
 
     private final int valueIdx;
 
+    /**
+     * Constructs an EnumElementValueGen from an EnumElementValue.
+     *
+     * @param value The enum element value.
+     * @param cpool The constant pool.
+     * @param copyPoolEntries whether to copy pool entries.
+     */
     public EnumElementValueGen(final EnumElementValue value, final ConstantPoolGen cpool, final boolean copyPoolEntries) {
         super(ENUM_CONSTANT, cpool);
         if (copyPoolEntries) {
@@ -49,8 +58,12 @@ public class EnumElementValueGen extends ElementValueGen {
     }
 
     /**
-     * This ctor assumes the constant pool already contains the right type and value - as indicated by typeIdx and valueIdx.
-     * This ctor is used for deserialization
+     * This constructor assumes the constant pool already contains the right type and value - as indicated by typeIdx and valueIdx.
+     * This constructor is used for deserialization.
+     *
+     * @param typeIdx The type index.
+     * @param valueIdx The value index.
+     * @param cpool The constant pool.
      */
     protected EnumElementValueGen(final int typeIdx, final int valueIdx, final ConstantPoolGen cpool) {
         super(ENUM_CONSTANT, cpool);
@@ -61,6 +74,13 @@ public class EnumElementValueGen extends ElementValueGen {
         this.valueIdx = valueIdx;
     }
 
+    /**
+     * Constructs an EnumElementValueGen.
+     *
+     * @param t The object type.
+     * @param value The value.
+     * @param cpool The constant pool.
+     */
     public EnumElementValueGen(final ObjectType t, final String value, final ConstantPoolGen cpool) {
         super(ENUM_CONSTANT, cpool);
         typeIdx = cpool.addUtf8(t.getSignature()); // was addClass(t);
@@ -75,7 +95,9 @@ public class EnumElementValueGen extends ElementValueGen {
     }
 
     /**
-     * Return immutable variant of this EnumElementValue
+     * Returns immutable variant of this EnumElementValueGen.
+     *
+     * @return immutable variant.
      */
     @Override
     public ElementValue getElementValue() {
@@ -83,8 +105,11 @@ public class EnumElementValueGen extends ElementValueGen {
         return new EnumElementValue(super.getElementValueType(), typeIdx, valueIdx, getConstantPool().getConstantPool());
     }
 
-    // BCELBUG: Should we need to call utility.signatureToString() on the output
-    // here?
+    /**
+     * Gets the enum type string.
+     *
+     * @return The enum type string.
+     */
     public String getEnumTypeString() {
         // Constant cc = getConstantPool().getConstant(typeIdx);
         // ConstantClass cu8 =
@@ -95,6 +120,11 @@ public class EnumElementValueGen extends ElementValueGen {
         // return Utility.signatureToString(cu8.getBytes());
     }
 
+    /**
+     * Gets the enum value string.
+     *
+     * @return The enum value string.
+     */
     public String getEnumValueString() {
         return ((ConstantUtf8) getConstantPool().getConstant(valueIdx)).getBytes();
         // ConstantString cu8 =
@@ -103,10 +133,20 @@ public class EnumElementValueGen extends ElementValueGen {
         // ((ConstantUtf8) getConstantPool().getConstant(cu8.getStringIndex())).getBytes();
     }
 
+    /**
+     * Gets the type index.
+     *
+     * @return The type index.
+     */
     public int getTypeIndex() {
         return typeIdx;
     }
 
+    /**
+     * Gets the value index.
+     *
+     * @return The value index.
+     */
     public int getValueIndex() {
         return valueIdx;
     }

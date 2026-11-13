@@ -177,8 +177,8 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
   Node* limit_n = cl->limit();
   if (init_n != nullptr && limit_n != nullptr) {
     jlong stride_con = cl->stride_con();
-    const TypeInteger* init_type = phase->_igvn.type(init_n)->is_integer(loop_bt);
-    const TypeInteger* limit_type = phase->_igvn.type(limit_n)->is_integer(loop_bt);
+    const TypeInteger* init_type = phase->_igvn.type(init_n)->as_integer(loop_bt);
+    const TypeInteger* limit_type = phase->_igvn.type(limit_n)->as_integer(loop_bt);
 
     // compute trip count
     // It used to be computed as:
@@ -214,8 +214,8 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
 #ifdef ASSERT
     if (loop_bt == T_INT) {
       // Use longs to avoid integer overflow.
-      jlong init_con = (stride_con > 0) ? init_type->is_int()->_lo : init_type->is_int()->_hi;
-      jlong limit_con = (stride_con > 0) ? limit_type->is_int()->_hi : limit_type->is_int()->_lo;
+      jlong init_con = (stride_con > 0) ? init_type->as_int()->_lo : init_type->as_int()->_hi;
+      jlong limit_con = (stride_con > 0) ? limit_type->as_int()->_hi : limit_type->as_int()->_lo;
       int stride_m = stride_con - (stride_con > 0 ? 1 : -1);
       jlong trip_count = (limit_con - init_con + stride_m) / stride_con;
       // The loop body is always executed at least once even if init >= limit (for stride_con > 0) or
@@ -444,7 +444,7 @@ Node* IdealLoopTree::reassociate_add_sub_cmp(Node* n1, int inv1_idx, int inv2_id
     neg_inv2 = !neg_inv2;
   }
 
-  bool is_int = n2->bottom_type()->isa_int() != nullptr;
+  bool is_int = n2->bottom_type()->is_int();
   Node* inv1_c = phase->get_ctrl(inv1);
   Node* n_inv1;
   if (neg_inv1) {
@@ -1282,7 +1282,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     Node* phi = cl->phi();
     if (phi != nullptr) {
       assert(phi->is_Phi() && phi->in(0) == _head, "Counted loop should have iv phi.");
-      const TypeInt* iv_type = phase->_igvn.type(phi)->is_int();
+      const TypeInt* iv_type = phase->_igvn.type(phi)->as_int();
       int next_stride = stride_con * 2; // stride after this unroll
       if (next_stride > 0) {
         if (iv_type->_lo > max_jint - next_stride || // overflow
@@ -1300,7 +1300,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
 
   // After unroll limit will be adjusted: new_limit = limit-stride.
   // Bailout if adjustment overflow.
-  const TypeInt* limit_type = phase->_igvn.type(limit_n)->is_int();
+  const TypeInt* limit_type = phase->_igvn.type(limit_n)->as_int();
   if ((stride_con > 0 && ((min_jint + stride_con) > limit_type->_hi)) ||
       (stride_con < 0 && ((max_jint + stride_con) < limit_type->_lo)))
     return false;  // overflow
@@ -1337,7 +1337,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_VectorCastF2X:
       case Op_PopCountVI:
       case Op_PopCountVL: {
-        const TypeVect* vt = n->bottom_type()->is_vect();
+        const TypeVect* vt = n->bottom_type()->as_vect();
         body_size += Matcher::vector_op_pre_select_sz_estimate(n->Opcode(), vt->element_basic_type(), vt->length());
       } break;
       case Op_StrComp:
@@ -2295,7 +2295,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree* loop, Node_List<Node>& old_new, bo
     assert(opaq != nullptr && opaq->in(1) == limit, "sanity");
 
     // Verify that policy_unroll result is still valid.
-    const TypeInt* limit_type = _igvn.type(limit)->is_int();
+    const TypeInt* limit_type = _igvn.type(limit)->as_int();
     assert((stride_con > 0 && ((min_jint + stride_con) <= limit_type->_hi)) ||
            (stride_con < 0 && ((max_jint + stride_con) >= limit_type->_lo)),
            "sanity");
@@ -2541,8 +2541,8 @@ Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* o
 // holds true in the main-loop. Stride, scale, offset and limit are all loop
 // invariant. Further, stride and scale are constants (offset and limit often are).
 void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* offset, Node* low_limit, Node* upper_limit, Node* pre_ctrl, Node** pre_limit, Node** main_limit) {
-  assert(_igvn.type(offset)->isa_long() != nullptr && _igvn.type(low_limit)->isa_long() != nullptr &&
-         _igvn.type(upper_limit)->isa_long() != nullptr, "arguments should be long values");
+  assert(_igvn.type(offset)->is_long() && _igvn.type(low_limit)->is_long() &&
+         _igvn.type(upper_limit)->is_long(), "arguments should be long values");
 
   // For a positive stride, we need to reduce the main-loop limit and
   // increase the pre-loop limit. This is reversed for a negative stride.
@@ -2622,11 +2622,11 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
 // See grammar specification in PhaseIdealLoop::is_scaled_iv_plus_offset().
 bool PhaseIdealLoop::is_iv(Node* exp, Node* iv, BasicType bt) {
   exp = exp->uncast();
-  if (exp == iv && iv->bottom_type()->isa_integer(bt)) {
+  if (exp == iv && iv->bottom_type()->is_integer(bt)) {
     return true;
   }
 
-  if (bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L && exp->in(1)->uncast() == iv) {
+  if (bt == T_LONG && iv->bottom_type()->is_int() && exp->Opcode() == Op_ConvI2L && exp->in(1)->uncast() == iv) {
     return true;
   }
   return false;
@@ -2659,7 +2659,7 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
     }
     return true;
   }
-  if (bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L) {
+  if (bt == T_LONG && iv->bottom_type()->is_int() && exp->Opcode() == Op_ConvI2L) {
     // Risk for short scaling: avoid long range-check transformations, because
     // the current implementation (transform_long_range_checks) does not protect
     // against overflow.
@@ -3435,7 +3435,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
     _igvn.replace_input_of(main_bol, 1, main_cmp);
   }
   assert(main_limit == cl->limit() || get_ctrl(main_limit) == new_limit_ctrl, "wrong control for added limit");
-  const TypeInt* orig_limit_t = _igvn.type(orig_limit)->is_int();
+  const TypeInt* orig_limit_t = _igvn.type(orig_limit)->as_int();
   bool upward = cl->stride_con() > 0;
   // The new loop limit is <= (for an upward loop) >= (for a downward loop) than the orig limit.
   // The expression that computes the new limit may be too complicated and the computed type of the new limit
@@ -3675,8 +3675,8 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   bool needs_guard = !cl->is_main_loop() && !cl->is_post_loop();
   if (needs_guard) {
     // Skip guard if values not overlap.
-    const TypeInt* init_t = phase->_igvn.type(cl->init_trip())->is_int();
-    const TypeInt* limit_t = phase->_igvn.type(cl->limit())->is_int();
+    const TypeInt* init_t = phase->_igvn.type(cl->init_trip())->as_int();
+    const TypeInt* limit_t = phase->_igvn.type(cl->limit())->as_int();
     int  stride_con = cl->stride_con();
     if (stride_con > 0) {
       needs_guard = (init_t->_hi >= limit_t->_lo);
@@ -4186,7 +4186,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
       Node* value = n->in(MemNode::ValueIn);
       if (!lpt->is_invariant(value)) {
         msg  = "variant store value";
-      } else if (!_igvn.type(n->in(MemNode::Address))->isa_aryptr()) {
+      } else if (!_igvn.type(n->in(MemNode::Address))->is_aryptr()) {
         msg = "not array address";
       }
       store = n;
@@ -4235,7 +4235,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
 
   // Make sure there is an appropriate fill routine
   BasicType t = msg == nullptr ?
-    store->out_adr_type()->isa_aryptr()->elem()->array_element_basic_type() : T_VOID;
+    store->out_adr_type()->as_aryptr()->elem()->array_element_basic_type() : T_VOID;
   const char* fill_name;
   if (msg == nullptr &&
       StubRoutines::select_fill_function(t, false, fill_name) == nullptr) {
@@ -4482,7 +4482,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 #endif
   }
 
-  BasicType t = store->out_adr_type()->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType t = store->out_adr_type()->as_aryptr()->elem()->array_element_basic_type();
   bool aligned = false;
   if (offset != nullptr && head->init_trip()->is_Con()) {
     int element_size = type2aelembytes(t);

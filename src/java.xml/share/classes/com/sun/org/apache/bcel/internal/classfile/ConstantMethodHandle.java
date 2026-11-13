@@ -50,13 +50,19 @@ public final class ConstantMethodHandle extends Constant {
     /**
      * Initialize instance from file data.
      *
-     * @param file Input stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Input stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     ConstantMethodHandle(final DataInput file) throws IOException {
         this(file.readUnsignedByte(), file.readUnsignedShort());
     }
 
+    /**
+     * Constructs a ConstantMethodHandle.
+     *
+     * @param referenceKind Kind of method reference.
+     * @param referenceIndex Index to the method reference.
+     */
     public ConstantMethodHandle(final int referenceKind, final int referenceIndex) {
         super(Const.CONSTANT_MethodHandle);
         this.referenceKind = referenceKind;
@@ -67,7 +73,7 @@ public final class ConstantMethodHandle extends Constant {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class. I.e.,
      * the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -75,10 +81,10 @@ public final class ConstantMethodHandle extends Constant {
     }
 
     /**
-     * Dump method kind and index to file stream in binary format.
+     * Dumps method kind and index to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -87,24 +93,44 @@ public final class ConstantMethodHandle extends Constant {
         file.writeShort(referenceIndex);
     }
 
+    /**
+     * Gets the reference index.
+     *
+     * @return The reference index.
+     */
     public int getReferenceIndex() {
         return referenceIndex;
     }
 
+    /**
+     * Gets the reference kind.
+     *
+     * @return The reference kind.
+     */
     public int getReferenceKind() {
         return referenceKind;
     }
 
+    /**
+     * Sets the reference index.
+     *
+     * @param referenceIndex The reference index.
+     */
     public void setReferenceIndex(final int referenceIndex) {
         this.referenceIndex = referenceIndex;
     }
 
+    /**
+     * Sets the reference kind.
+     *
+     * @param referenceKind The reference kind.
+     */
     public void setReferenceKind(final int referenceKind) {
         this.referenceKind = referenceKind;
     }
 
     /**
-     * @return String representation
+     * @return String representation.
      */
     @Override
     public String toString() {

@@ -20,6 +20,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="as">Asamese</language>
 			<language type="ast">Asturiani</language>
 			<language type="az">Asabegyanni</language>
+			<language type="ba">Bashke</language>
 			<language type="bal">Balukyi</language>
 			<language type="be">Belarus kasa</language>
 			<language type="bg">Bɔlgeria kasa</language>
@@ -46,6 +47,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ee">Ayigbe</language>
 			<language type="el">Greek kasa</language>
 			<language type="en">Borɔfo</language>
+			<language type="en_AU">Borɔfo (Australia)</language>
+			<language type="en_CA">Borɔfo Canada</language>
 			<language type="en_GB">Ngresi Borɔfo</language>
 			<language type="en_US">Amɛrika Borɔfo</language>
 			<language type="eo">Esperanto</language>
@@ -78,6 +81,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="id">Indonihyia kasa</language>
 			<language type="ie">Kasa afrafra</language>
 			<language type="ig">Igbo kasa</language>
+			<language type="ii">Sichuan Yi</language>
 			<language type="is">Aeslande kasa</language>
 			<language type="it">Italy kasa</language>
 			<language type="ja">Gyapan kasa</language>
@@ -92,6 +96,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kok">Konkani kasa</language>
 			<language type="ks">Kahyimiɛ</language>
 			<language type="ku">Kɛɛde kasa</language>
+			<language type="ku" menu="core">Kεεde kasa</language>
+			<language type="ku" menu="extension">Kurumannyi</language>
 			<language type="kxv">Kuvi kasa</language>
 			<language type="ky">Kɛgyese kasa</language>
 			<language type="lb">Lɔsimbɔge kasa</language>
@@ -118,14 +124,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nn">Nɔwefoɔ Ninɔso</language>
 			<language type="no">Nɔwefoɔ kasa</language>
 			<language type="nqo">Nko</language>
+			<language type="nso">Soto Atifi</language>
 			<language type="oc">Osita kasa</language>
+			<language type="om">Oromo</language>
 			<language type="or">Odia</language>
 			<language type="pa">Pungyabi kasa</language>
 			<language type="pcm">Nigeriafoɔ Pigyin</language>
 			<language type="pl">Pɔland kasa</language>
+			<language type="pms">Piedmontese</language>
 			<language type="prg">Prusia kasa</language>
 			<language type="ps">Pahyito</language>
 			<language type="pt">Pɔɔtugal kasa</language>
+			<language type="pt_BR">Portugal Kasa (Brazil)</language>
+			<language type="pt_PT">Portugal Kasa (Yuropu)</language>
 			<language type="qu">Kwɛkya</language>
 			<language type="raj">Ragyasitan kasa</language>
 			<language type="rm">Romanhye kasa</language>
@@ -136,13 +147,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sah">Yakut Kasa</language>
 			<language type="sat">Santal kasa</language>
 			<language type="sc">Saadinia kasa</language>
+			<language type="scn">Sicilian</language>
 			<language type="sd">Sindi</language>
+			<language type="shn">Shan</language>
 			<language type="si">Sinhala</language>
 			<language type="sk">Slovak Kasa</language>
 			<language type="sl">Slovɛniafoɔ Kasa</language>
 			<language type="so">Somalia kasa</language>
 			<language type="sq">Aabeniani</language>
 			<language type="sr">Sɛbia Kasa</language>
+			<language type="st">Sotho Anaafoɔ</language>
 			<language type="su">Sunda Kasa</language>
 			<language type="sv">Sweden kasa</language>
 			<language type="sw">Swahili</language>
@@ -154,9 +168,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="th">Taeland kasa</language>
 			<language type="ti">Tigrinya kasa</language>
 			<language type="tk">Tɛkmɛnistan Kasa</language>
+			<language type="tn">Tswana</language>
 			<language type="to">Tonga kasa</language>
 			<language type="tr">Tɛɛki kasa</language>
 			<language type="tt">Tata kasa</language>
+			<language type="tyv">Tuvinian</language>
 			<language type="ug">Yugaa Kasa</language>
 			<language type="uk">Ukren kasa</language>
 			<language type="und">kasa a yɛnnim</language>
@@ -552,87 +568,226 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<keys>
 			<key type="calendar">Kalɛnna</key>
 			<key type="cf">Sika Fɔmate</key>
+			<key type="colAlternate">Mfa Nyiyimu Ahyεnsodeε Nyε Adwuma</key>
+			<key type="colBackwards">Asεnte Akyisan Nyiyimu</key>
+			<key type="colCaseFirst">Atwerεdeε Akεseε/Nketewa Nhyehyεeε</key>
+			<key type="colCaseLevel">Nyiyimu a εgyina Atwerεdeε Kεseyε so</key>
 			<key type="collation">Nyiyie Kwan</key>
+			<key type="colNormalization">Nyiyimu a Yεgye Tom</key>
+			<key type="colNumeric">Nᴐma Nyiyimu</key>
+			<key type="colReorder">Krataa/Blᴐᴐko Hyehyε Foforᴐε</key>
+			<key type="colStrength">Nyiyimu Ahoᴐden</key>
 			<key type="currency">Sika</key>
+			<key type="d0">Dane Kᴐbea mu</key>
+			<key type="dx">Deε εnka Dihyinari ho</key>
+			<key type="em">Yimogyi Adida</key>
+			<key type="fw">Nnawᴐtwe Da a εdi kan</key>
+			<key type="h0">Afrafra</key>
 			<key type="hc">Dɔnhwere Nkɔmmaeɛ (12 anaa 24)</key>
+			<key type="i0">Kwan a Yεfa So De Tom</key>
+			<key type="k0">Kiibᴐᴐdo</key>
+			<key type="kv">Dodoᴐ a Yεabu Ani Agu So</key>
 			<key type="lb">Line Break Nhyehyɛeɛ Ketee</key>
+			<key type="lw">Nsensaneeε Nkyekyεmu wᴐ Nsεmfua mu</key>
+			<key type="m0">Nsakramu Nhyehyεeε</key>
 			<key type="ms">Nsusudeɛ Sestɛm</key>
+			<key type="mu">Susudua din</key>
 			<key type="numbers">Nɔma</key>
+			<key type="rg">Baabi a Ntosoᴐnsεm Wᴐ</key>
+			<key type="s0">Sesa Baabi a εfiri</key>
+			<key type="sd">Mantam nkyekyεmu</key>
+			<key type="ss">Abbr. akyi Kasamu Nkyekyεmu</key>
+			<key type="t">Sakramu</key>
+			<key type="t0">Afidie Akyerε Aseε</key>
+			<key type="timezone">Berε Fam</key>
+			<key type="va">Kasa mu Sonobi</key>
+			<key type="x">Ankorεankorε de di dwuma</key>
+			<key type="x0">Ankorεankorε Dwumadie Nsakramu</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Budafoɔ Kalɛnna</type>
+			<type key="calendar" type="buddhist" scope="core">Budani</type>
 			<type key="calendar" type="chinese">Kyaenafoɔ Kalɛnna</type>
+			<type key="calendar" type="chinese" scope="core">Kyaenani</type>
 			<type key="calendar" type="coptic">Kɔtesefoɔ Kalɛnna</type>
+			<type key="calendar" type="coptic" scope="core">Kɔputese</type>
 			<type key="calendar" type="dangi">Dangi Kalɛnna</type>
+			<type key="calendar" type="dangi" scope="core">Dangyi</type>
 			<type key="calendar" type="ethiopic">Yitiopia Kalɛnna</type>
+			<type key="calendar" type="ethiopic" scope="core">Yitiopia</type>
 			<type key="calendar" type="ethiopic-amete-alem">Yitiopia Amete Alɛm Kalɛnna</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">Yitiopia Amete Alem</type>
 			<type key="calendar" type="gregorian">Gregorian Kalɛnna</type>
-			<type key="calendar" type="gregorian" scope="core">Gregorian</type>
+			<type key="calendar" type="gregorian" scope="core">Grigoriani</type>
 			<type key="calendar" type="hebrew">Hibri Kalɛnda</type>
+			<type key="calendar" type="hebrew" scope="core">Hibruni</type>
+			<type key="calendar" type="indian" scope="core">Indiani</type>
 			<type key="calendar" type="islamic">Higyiri Kalɛnda</type>
+			<type key="calendar" type="islamic" scope="core">Hijiri</type>
 			<type key="calendar" type="islamic-civil">Higyiri Kalɛnda (tabula, sivil epokyi</type>
+			<type key="calendar" type="islamic-civil" scope="core">Hijiri (bere bi mu)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijiri, Saudi Arabia ahunuiε</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hijiri pono so bere bi</type>
 			<type key="calendar" type="islamic-umalqura">Higyiri Kalɛnda (Ummm al-Kura)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">Hijiri (Umm al-Qura</type>
 			<type key="calendar" type="iso8601">ISO-8601 Kalɛnna</type>
+			<type key="calendar" type="iso8601" scope="core">Gregoriani</type>
 			<type key="calendar" type="japanese">Gyapanfoɔ Kalɛnna</type>
+			<type key="calendar" type="japanese" scope="core">Japanni</type>
 			<type key="calendar" type="persian">Pɛɛsiafoɔ Kalɛnda</type>
+			<type key="calendar" type="persian" scope="core">Persiani</type>
 			<type key="calendar" type="roc">Minguo Kalɛnda</type>
+			<type key="calendar" type="roc" scope="core">Minguo</type>
 			<type key="cf" type="account">Sika Nkotabuo Fɔmate</type>
+			<type key="cf" type="account" scope="core">Nseseε</type>
 			<type key="cf" type="standard">Sika Fɔmate Susudua</type>
+			<type key="cf" type="standard" scope="core">Susudua</type>
+			<type key="colCaseFirst" type="lower" scope="core">Ketewa</type>
+			<type key="colCaseFirst" type="no" scope="core">Ketewa</type>
+			<type key="colCaseFirst" type="upper" scope="core">Kεseε</type>
+			<type key="collation" type="compat" scope="core">Deε εne no kᴐ</type>
+			<type key="collation" type="dictionary" scope="core">Dihyinari</type>
 			<type key="collation" type="ducet">Koodu Korɔ Nyiyie Kwan a ɛdi Kan</type>
+			<type key="collation" type="ducet" scope="core">Mfiaseε Unicode</type>
+			<type key="collation" type="emoji" scope="core">Yimogyi</type>
+			<type key="collation" type="eor" scope="core">Yuropu nhyehyεeε</type>
+			<type key="collation" type="phonebook" scope="core">Fonbuuku</type>
+			<type key="collation" type="phonetic" scope="core">Fonεtese</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">Daa-Botaeɛ Adehwehwɛ</type>
+			<type key="collation" type="search" scope="core">Hwehwε</type>
+			<type key="collation" type="searchjl" scope="core">Koria konsonante mfiaseε</type>
 			<type key="collation" type="standard">Nyiyie Kwan Susudua</type>
 			<type key="collation" type="standard" scope="core">Susudua</type>
+			<type key="collation" type="stroke" scope="core">Nnwodwoeε</type>
+			<type key="collation" type="traditional" scope="core">Tetedeε</type>
+			<type key="collation" type="unihan" scope="core">Nnwodwoeε a ano yε den</type>
+			<type key="collation" type="zhuyin" scope="core">Suyin</type>
+			<type key="colReorder" type="currency" scope="core">Karεnsi</type>
+			<type key="colReorder" type="digit" scope="core">Degyete</type>
+			<type key="colReorder" type="punct" scope="core">Atwerε mu agyinaehyεdeε</type>
+			<type key="colReorder" type="space" scope="core">Deε hwee nni</type>
+			<type key="colReorder" type="symbol" scope="core">Ahyεnsodeε</type>
+			<type key="colStrength" type="identical" scope="core">Nyinaa</type>
+			<type key="colStrength" type="primary" scope="core">Mfiaseε Atwerεdeε Nko Ara</type>
+			<type key="colStrength" type="quaternary" scope="core">Mfiaseε, Asεnte, Atwerεdeε, Sonobi, Kana</type>
+			<type key="colStrength" type="secondary" scope="core">Mfiaseε, Asεnte</type>
+			<type key="colStrength" type="tertiary" scope="core">Mfiaseε, Asεnte, Atwerεdeε, Sonobi</type>
+			<type key="d0" type="fwidth">Rekᴐ Muayᴐ Mu</type>
+			<type key="d0" type="hwidth">Rekᴐ Fayᴐ Mu</type>
+			<type key="em" type="default" scope="core">Mfiasedeε</type>
+			<type key="em" type="emoji" scope="core">Yimogyi</type>
+			<type key="em" type="text" scope="core">Atwerε</type>
+			<type key="hc" type="c12">Nnɔnhwere 12 Sestɛm</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">Nnɔnhwere 24 Sestɛm</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">Nnɔnhwere 12 Sestɛm (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0 NDASH11)</type>
 			<type key="hc" type="h12">Nnɔnhwere 12 Sestɛm (1–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1NDASH 12</type>
 			<type key="hc" type="h23">Nnɔnhwere 24 Sestɛm (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0 NDASH 23)</type>
 			<type key="hc" type="h24">Nnɔnhwere 24 Sestɛm (0–24)</type>
+			<type key="hc" type="h24" scope="core">24 (1 NDASH 24)</type>
+			<type key="kv" type="currency" scope="core">Akwan a εdeda mu, atwerε mu agyinaehyεdeε, ahyεnsodeε</type>
+			<type key="kv" type="punct" scope="core">Akwan a εdeda mu, atwerε mu agyinaehyεdeε</type>
+			<type key="kv" type="space" scope="core">Akwan a εdeda mu, atwerε mu agyinaehyεdeε</type>
+			<type key="kv" type="symbol" scope="core">Akwan a εdeda mu, atwerε mu agyinaehyεdeε, ahyεnsodeε a εnyε karnsiε</type>
 			<type key="lb" type="loose">Line Break Nhyehyɛeɛ a Emu Yɛ Mmrɛ</type>
+			<type key="lb" type="loose" scope="core">Yε mmrε</type>
 			<type key="lb" type="normal">Daa Line Break Nhyehyɛeɛ</type>
+			<type key="lb" type="normal" scope="core">Nᴐᴐmaa</type>
 			<type key="lb" type="strict">Line Break Nhyehyɛeɛ Ferenkyemm</type>
+			<type key="lb" type="strict" scope="core">Ferenkyemm</type>
+			<type key="lw" type="breakall" scope="core">Nkyekyε ne nyinaa mu</type>
+			<type key="lw" type="keepall" scope="core">Gya ne nyinaa</type>
+			<type key="lw" type="normal" scope="core">Nᴐᴐmaa</type>
+			<type key="lw" type="phrase" scope="core">Gya no kasasin mu</type>
+			<type key="m0" type="bgn">US BGN Nkyerεasetraa</type>
+			<type key="m0" type="ungegn">UN GEGN Nkyerεasetraa</type>
 			<type key="ms" type="metric">Mɛtreke Nhyehyɛeɛ</type>
+			<type key="ms" type="metric" scope="core">Mεtreke</type>
 			<type key="ms" type="uksystem">Imperial Nsusudeɛ Sestɛm</type>
+			<type key="ms" type="uksystem" scope="core">UK</type>
 			<type key="ms" type="ussystem">US Nsusudeɛ Sestɛm</type>
+			<type key="ms" type="ussystem" scope="core">US</type>
 			<type key="numbers" type="arab">Arabeke Digyete</type>
 			<type key="numbers" type="arabext">Arabeke Digyete a Wɔatrɛm</type>
+			<type key="numbers" type="arabext" scope="core">Arabic-Indic a Wᴐatrεm</type>
 			<type key="numbers" type="armn">Aamenia Nɔma</type>
 			<type key="numbers" type="armnlow">Aamenia Nɔma Nkumaa</type>
+			<type key="numbers" type="armnlow" scope="core">Armenia atwerεdeε ketewa</type>
 			<type key="numbers" type="beng">Bangla Gigyete</type>
 			<type key="numbers" type="cakm">Kyakma Digyete</type>
 			<type key="numbers" type="deva">Devanagari Gigyete</type>
 			<type key="numbers" type="ethi">Yitiopia Nɔma</type>
+			<type key="numbers" type="finance" scope="core">Sikasεm</type>
 			<type key="numbers" type="fullwide">Digyete a Emu Pi</type>
+			<type key="numbers" type="fullwide" scope="core">Ntrεmu nyinaa</type>
 			<type key="numbers" type="geor">Gyɔgyea Nɔma</type>
 			<type key="numbers" type="grek">Griiki Nɔma</type>
 			<type key="numbers" type="greklow">Griiki Nɔma Nkumaa</type>
+			<type key="numbers" type="greklow" scope="core">Griiki atwerεdeε nketewa</type>
 			<type key="numbers" type="gujr">Gugyarati Digyete</type>
 			<type key="numbers" type="guru">Gurumuki Digyete</type>
+			<type key="numbers" type="hanidays" scope="core">Ha-atwerεdeε sεdeε yεde nᴐma ma nna a εwᴐ bosome mu wᴐ tete kalεnna so</type>
 			<type key="numbers" type="hanidec">Kyaenafoɔ Dɛsima Nɔma</type>
+			<type key="numbers" type="hanidec" scope="core">Dεsimaa gyinabea nhyehyεeε wᴐ Kyaenafoᴐ nᴐma atwerε mu</type>
 			<type key="numbers" type="hans">Kyaenafoɔ Dɛsima Nɔma a Emu Yɛ Mmrɛ</type>
 			<type key="numbers" type="hansfin">Kyaenafoɔ Sikasɛm Dɛsima Nɔma a Emu Yɛ Mmrɛ</type>
+			<type key="numbers" type="hansfin" scope="core">Kyaenafoᴐ sikasεm ngomu</type>
 			<type key="numbers" type="hant">Kyaenafoɔ Tete Nɔma</type>
 			<type key="numbers" type="hantfin">Tete Kyaena Sikasɛm Nɔma</type>
+			<type key="numbers" type="hantfin" scope="core">Tete Kyaena sikasεm</type>
 			<type key="numbers" type="hebr">Hibri Nɔma</type>
 			<type key="numbers" type="java">Gyavaniisi Digyete</type>
 			<type key="numbers" type="jpan">Gyapanfoɔ Nɔma</type>
 			<type key="numbers" type="jpanfin">Gyapanfoɔ Sikasɛm Nɔma</type>
+			<type key="numbers" type="jpanfin" scope="core">Gyapanfoᴐ sikasεm</type>
+			<type key="numbers" type="jpanyear" scope="core">Gyapanfoᴐ afe a εdi kan Gannan nᴐma</type>
 			<type key="numbers" type="khmr">Kima Digyete</type>
 			<type key="numbers" type="knda">Kanada Digyete</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (ecclesiastical)</type>
 			<type key="numbers" type="laoo">Lawo Digyete</type>
 			<type key="numbers" type="latn">Atɔeɛ Fam Digyete</type>
+			<type key="numbers" type="mathbold" scope="core">Nkontabudeε duruduru</type>
+			<type key="numbers" type="mathdbl" scope="core">Nkontabudeε san-prenu</type>
+			<type key="numbers" type="mathmono" scope="core">Nkontabudeε kwankoro</type>
+			<type key="numbers" type="mathsanb" scope="core">Nkontabudeε sans-serif duruduru</type>
+			<type key="numbers" type="mathsans" scope="core">Nkontabudeε sans-serif</type>
 			<type key="numbers" type="mlym">Malayalam Digyete</type>
 			<type key="numbers" type="mtei">Meeti Mayɛke Digyete</type>
 			<type key="numbers" type="mymr">Mayaama Digyete</type>
+			<type key="numbers" type="mymrepka" scope="core">Myanmar Apueiε Pwo Karen</type>
+			<type key="numbers" type="mymrpao" scope="core">Myanmar Pao</type>
+			<type key="numbers" type="mymrshan" scope="core">Myanmar Shan</type>
+			<type key="numbers" type="mymrtlng" scope="core">Myanmar Tai Laing</type>
+			<type key="numbers" type="native">Kuro no ara Degyete</type>
+			<type key="numbers" type="native" scope="core">Kuro no ara degyete</type>
 			<type key="numbers" type="olck">Ol Kyiki Digyete</type>
 			<type key="numbers" type="orya">Odia Digyete</type>
+			<type key="numbers" type="outlined" scope="core">Yεawae anim</type>
 			<type key="numbers" type="roman">Roman Nɔma</type>
+			<type key="numbers" type="roman" scope="core">Roman atwerεdeε akεseε</type>
 			<type key="numbers" type="romanlow">Romanfoɔ Nɔma Nkumaa</type>
+			<type key="numbers" type="romanlow" scope="core">Roman atwerεdeε nkumaa</type>
+			<type key="numbers" type="segment" scope="core">Yεakyekyεm</type>
 			<type key="numbers" type="taml">Tamil Tete Nɔma</type>
 			<type key="numbers" type="tamldec">Tamil Digyete</type>
+			<type key="numbers" type="tamldec" scope="core">Tamil Foforᴐ</type>
 			<type key="numbers" type="telu">Telugu Digyete</type>
 			<type key="numbers" type="thai">Taelanfoɔ Digyete</type>
 			<type key="numbers" type="tibt">Tibɛtan Digyete</type>
+			<type key="numbers" type="traditional" scope="core">Tete nᴐma</type>
 			<type key="numbers" type="vaii">Vai Gigyete</type>
+			<type key="t0" type="und">Afidie Nkyerεseε a Yεnkyerεeε</type>
+			<type key="va" type="posix" scope="core">POSIX sonobi</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Dum</typeValue>
+			<typeValue type="yes">Sᴐ</typeValue>
+		</typeValues>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b d e ɛ f g h i k l m n o ɔ p r s t u w y]</exemplarCharacters>
@@ -641,6 +796,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</characters>
 	<dates>
 		<calendars>
+			<calendar type="chinese">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>Da</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -704,6 +866,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM – MMM Y G</greatestDifference>
 							<greatestDifference id="y">MMM y– MMM Y G</greatestDifference>
@@ -774,15 +939,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">Fia</day>
 							<day type="sat">Mem</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">Kwa</day>
-							<day type="mon">Dwo</day>
-							<day type="tue">Ben</day>
-							<day type="wed">Wuk</day>
-							<day type="thu">Yaw</day>
-							<day type="fri">Fia</day>
-							<day type="sat">Mem</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Sun</day>
 							<day type="mon">Dwoada</day>
@@ -794,15 +950,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">Kwa</day>
-							<day type="mon">Dwo</day>
-							<day type="tue">Ben</day>
-							<day type="wed">Wuk</day>
-							<day type="thu">Yaw</day>
-							<day type="fri">Fia</day>
-							<day type="sat">Mem</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">K</day>
 							<day type="mon">D</day>
@@ -811,24 +958,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">Y</day>
 							<day type="fri">F</day>
 							<day type="sat">M</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">Kwa</day>
-							<day type="mon">Dwo</day>
-							<day type="tue">Ben</day>
-							<day type="wed">Wuk</day>
-							<day type="thu">Yaw</day>
-							<day type="fri">Fia</day>
-							<day type="sat">Mem</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">Sun</day>
-							<day type="mon">Dwoada</day>
-							<day type="tue">Benada</day>
-							<day type="wed">Wukuada</day>
-							<day type="thu">Yawoada</day>
-							<day type="fri">Fiada</day>
-							<day type="sat">Memeneda</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -857,24 +986,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">an</dayPeriod>
 							<dayPeriod type="pm">anw</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AN</dayPeriod>
-							<dayPeriod type="pm">ANW</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AN</dayPeriod>
-							<dayPeriod type="pm">ANW</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AN</dayPeriod>
-							<dayPeriod type="pm">ANW</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AN</dayPeriod>
-							<dayPeriod type="pm">ANW</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -942,6 +1053,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -981,6 +1095,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">MMMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">EEE, MMMM d, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
@@ -1065,6 +1181,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M">E, MMM d – E, MMM d, y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="iso8601">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>Da</numericDateSeparator>
+					</numericSeparators>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -1281,10 +1404,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">Memeneda {0} a atwam</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="sat-short">
+				<relative type="-1">Memeneda a atwam</relative>
+				<relative type="0">Memeneda yi</relative>
+				<relative type="1">Memeneda a εreba</relative>
+			</field>
 			<field type="sat-narrow">
 				<relative type="-1">Memeneda a atwam</relative>
 				<relative type="0">Memeneda yi</relative>
-				<relative type="1">next Saturday</relative>
+				<relative type="1">Memeneda a εreba</relative>
 			</field>
 			<field type="dayperiod">
 				<displayName>anɔpa/anwummerɛ</displayName>
@@ -1316,26 +1444,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="second">
 				<displayName>Simasin</displayName>
 				<relative type="0">seesei</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">simasin {0} mu</relativeTimePattern>
-					<relativeTimePattern count="other">simasin {0} mu</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">simasin {0} a atwam</relativeTimePattern>
-					<relativeTimePattern count="other">simasin {0} a atwam</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">simasin {0} mu</relativeTimePattern>
-					<relativeTimePattern count="other">simasin {0} mu</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">simasin {0} a atwam</relativeTimePattern>
-					<relativeTimePattern count="other">simasin {0} a atwam</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-narrow">
 				<relativeTime type="future">
 					<relativeTimePattern count="one">simasin {0} mu</relativeTimePattern>
 					<relativeTimePattern count="other">simasin {0} mu</relativeTimePattern>
@@ -1629,9 +1737,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Farosu</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Engresi Awia Berɛ</daylight>
-				</long>
 				<exemplarCity>Lɔndɔn</exemplarCity>
 			</zone>
 			<zone type="America/Cayenne">
@@ -1686,9 +1791,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Gyayapura</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Irelandfoɔ Susudua Berɛ</daylight>
-				</long>
 				<exemplarCity>Dɔblin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -1988,6 +2090,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Indian/Mayotte">
 				<exemplarCity>Mayote</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Acre Berε</generic>
+					<standard>Acre Susudua Berε</standard>
+					<daylight>Acre Ahuhuro Berε</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Afganistan Berɛ</standard>
@@ -2057,9 +2166,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>Apia Berɛ</generic>
-					<standard>Apia Susudua Berɛ</standard>
-					<daylight>Apia Awia Berɛ</daylight>
+					<generic>Samoa Atᴐeε Berε</generic>
+					<standard>Samoa Atᴐeε Susudua Berε</standard>
+					<daylight>Samoa Atᴐeε Awiaberε</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -2161,6 +2270,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Brasilia Berɛ</generic>
 					<standard>Brasilia Susudua Berɛ</standard>
 					<daylight>Brasilia Awia Berɛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Engresi Berɛ</generic>
+					<daylight>Engresi Awia Berɛ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -2336,6 +2451,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Greenwich Mean Berɛ</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Greenland Berε</generic>
+					<standard>Greenland Susudua Berε</standard>
+					<daylight>Greenland Ahuhoro Berε</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Greenland Apueeɛ Berɛ</generic>
@@ -2362,7 +2484,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Hawaii-Aleutian Susudua Berɛ</standard>
+					<standard>Hawaii Susudua Berɛ</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -2423,6 +2545,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Iran Awia Berɛ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Irelandfoɔ Berɛ</generic>
+					<daylight>Irelandfoɔ Susudua Berɛ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Yiikusk Berɛ</generic>
@@ -2442,6 +2570,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Gyapan Berɛ</generic>
 					<standard>Gyapan Susudua Berɛ</standard>
 					<daylight>Gyapan Awia Berɛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Kamchaka Berε</generic>
+					<standard>Kamchatka Susudua Berε</standard>
+					<daylight>Kamchatka Ahuhuro Berε</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -2706,11 +2841,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Sakhalin Awia Berɛ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>Samara Berε</generic>
+					<standard>Samara Susudua Berε</standard>
+					<daylight>Samara Ahuhuro Berε</daylight>
+				</long>
+			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa Berɛ</generic>
 					<standard>Samoa Susudua Berɛ</standard>
-					<daylight>Samoa Awia Berɛ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -2777,6 +2917,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Kyuuk Berɛ</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Turkiye Berε</generic>
+					<standard>Turkiye Susudua Berε</standard>
+					<daylight>Turkiye Ahuhuro Berε</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Tɛkmɛnistan Berɛ</generic>
@@ -2794,6 +2941,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Yurugwae Berɛ</generic>
 					<standard>Yurugwae Susudua Berɛ</standard>
 					<daylight>Yurugwae Awia Berɛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Ürümqi Bere</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -2936,10 +3088,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="1000000000" count="one">¤0G</pattern>
 					<pattern type="1000000000" count="one" alt="alphaNextToNumber">¤ 0G</pattern>
 					<pattern type="1000000000" count="other">¤0G</pattern>
-					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0G</pattern>
-					<pattern type="10000000000" count="one">¤00G</pattern>
-					<pattern type="10000000000" count="one" alt="alphaNextToNumber">¤ 00G</pattern>
-					<pattern type="10000000000" count="other">¤00G</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0B</pattern>
+					<pattern type="10000000000" count="one">¤ 00B</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber">¤ 00B</pattern>
+					<pattern type="10000000000" count="other">¤00B</pattern>
 					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00G</pattern>
 					<pattern type="100000000000" count="one">¤000G</pattern>
 					<pattern type="100000000000" count="one" alt="alphaNextToNumber">¤ 000G</pattern>
@@ -3059,8 +3211,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CNY">
 				<displayName>Kyaena yuan</displayName>
-				<displayName count="one">Kyaena yuan</displayName>
-				<displayName count="other">Kyaena yuan</displayName>
 			</currency>
 			<currency type="COP">
 				<displayName>Kolombia peso</displayName>
@@ -3103,8 +3253,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="EUR">
 				<displayName>yuro</displayName>
-				<displayName count="one">yuro</displayName>
-				<displayName count="other">yuro</displayName>
 			</currency>
 			<currency type="FJD">
 				<displayName>Figyi Dɔla</displayName>
@@ -3400,8 +3548,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SZL">
 				<displayName>Swazi lilangeni</displayName>
-				<displayName count="one">Swazi lilangeni</displayName>
-				<displayName count="other">Swazi lilangeni</displayName>
 			</currency>
 			<currency type="THB">
 				<displayName>Tai bat</displayName>
@@ -3507,8 +3653,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZWG">
 				<displayName>Zimbabwe sika kᴐkᴐᴐ</displayName>
-				<displayName count="one">Zimbabwe sika kᴐkᴐᴐ</displayName>
-				<displayName count="other">Zimbabwe sika kᴐkᴐᴐ</displayName>
 			</currency>
 		</currencies>
 		<minimalPairs>
@@ -3744,6 +3888,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} millisɛkɛns</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<displayName>simasini kumaa</displayName>
 				<unitPattern count="one">{0} mikrosɛkɛn</unitPattern>
 				<unitPattern count="other">{0} mikrosɛkɛns</unitPattern>
 			</unit>
@@ -3863,12 +4008,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">astrɔnɔmikaa winit {0}</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName>fɛɛlɔɔne</displayName>
 				<unitPattern count="one">fɛɛlɔɔne {0}</unitPattern>
 				<unitPattern count="other">fɛɛlɔɔne {0}</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName>fatɔmse</displayName>
 				<unitPattern count="one">fatɔmse {0}</unitPattern>
 				<unitPattern count="other">fatɔmse {0}</unitPattern>
 			</unit>
@@ -3963,17 +4106,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">sola mass {0}</unitPattern>
 				<unitPattern count="other">sola mass {0}</unitPattern>
 			</unit>
-			<unit type="pressure-bar">
-				<displayName>poma</displayName>
-				<unitPattern count="one">{0}poma</unitPattern>
-				<unitPattern count="other">{0}poma</unitPattern>
+			<unit type="pressure-ofhg">
+				<unitPattern count="one">Mεεkuri {0}</unitPattern>
+				<unitPattern count="other">{0} Hg</unitPattern>
 			</unit>
 			<unit type="speed-knot">
 				<unitPattern count="one">{0} kn</unitPattern>
 				<unitPattern count="other">Pɔ {0}</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
-				<displayName>hyew°</displayName>
 				<unitPattern count="one">{0} hyew digrii</unitPattern>
 				<unitPattern count="other">{0} hyew digrii</unitPattern>
 			</unit>
@@ -4018,6 +4159,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">koko {0}</unitPattern>
 			</unit>
 			<unit type="volume-dram">
+				<displayName>drᴐm ahodoᴐ</displayName>
 				<unitPattern count="one">drɔm fl {0}</unitPattern>
 				<unitPattern count="other">drɔm fl {0}</unitPattern>
 			</unit>
@@ -4306,9 +4448,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-day">
 				<displayName>da</displayName>
 			</unit>
-			<unit type="duration-second">
-				<displayName>simasini</displayName>
-			</unit>
 			<unit type="duration-microsecond">
 				<displayName>μsec</displayName>
 			</unit>
@@ -4320,12 +4459,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
-			<unit type="length-furlong">
-				<displayName>fɛɛlɔɔne</displayName>
-			</unit>
-			<unit type="length-fathom">
-				<displayName>fatɔmse</displayName>
-			</unit>
 			<unit type="length-point">
 				<displayName>pts</displayName>
 			</unit>
@@ -4334,10 +4467,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}gr</unitPattern>
 				<unitPattern count="other">{0}gr</unitPattern>
 			</unit>
-			<unit type="pressure-bar">
-				<displayName>poma</displayName>
-				<unitPattern count="one">{0}poma</unitPattern>
-				<unitPattern count="other">{0}poma</unitPattern>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName>pt</displayName>

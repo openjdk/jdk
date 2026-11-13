@@ -43,8 +43,8 @@ public final class ModuleRequires implements Cloneable, Node {
     /**
      * Constructs object from file stream.
      *
-     * @param file Input stream
-     * @throws IOException if an I/O Exception occurs in readUnsignedShort
+     * @param file Input stream.
+     * @throws IOException Thrown if an I/O Exception occurs in readUnsignedShort.
      */
     ModuleRequires(final DataInput file) throws IOException {
         requiresIndex = file.readUnsignedShort();
@@ -56,7 +56,7 @@ public final class ModuleRequires implements Cloneable, Node {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -64,7 +64,9 @@ public final class ModuleRequires implements Cloneable, Node {
     }
 
     /**
-     * @return deep copy of this object
+     * Creates a deep copy of this object.
+     *
+     * @return deep copy of this object.
      */
     public ModuleRequires copy() {
         try {
@@ -76,10 +78,10 @@ public final class ModuleRequires implements Cloneable, Node {
     }
 
     /**
-     * Dump table entry to file stream in binary format.
+     * Dumps table entry to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O Exception occurs in writeShort
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O Exception occurs in writeShort.
      */
     public void dump(final DataOutputStream file) throws IOException {
         file.writeShort(requiresIndex);
@@ -89,8 +91,9 @@ public final class ModuleRequires implements Cloneable, Node {
 
     /**
      * Gets the module name from the constant pool.
-     * @param constantPool Array of constants usually obtained from the ClassFile object
-     * @return module name
+     *
+     * @param constantPool Array of constants usually obtained from the ClassFile object.
+     * @return module name.
      * @since 6.10.0
      */
     public String getModuleName(final ConstantPool constantPool) {
@@ -99,7 +102,8 @@ public final class ModuleRequires implements Cloneable, Node {
 
     /**
      * Gets the flags for this ModuleRequires.
-     * @return the requiresFlags
+     *
+     * @return The requiresFlags.
      * @since 6.10.0
      */
     public int getRequiresFlags() {
@@ -108,7 +112,8 @@ public final class ModuleRequires implements Cloneable, Node {
 
     /**
      * Gets the required version from the constant pool.
-     * @param constantPool Array of constants usually obtained from the ClassFile object
+     *
+     * @param constantPool Array of constants usually obtained from the ClassFile object.
      * @return required version, "0" if version index is 0.
      * @since 6.10.0
      */
@@ -117,7 +122,7 @@ public final class ModuleRequires implements Cloneable, Node {
     }
 
     /**
-     * @return String representation
+     * @return String representation.
      */
     @Override
     public String toString() {
@@ -125,7 +130,10 @@ public final class ModuleRequires implements Cloneable, Node {
     }
 
     /**
-     * @return Resolved string representation
+     * Gets the resolved string representation.
+     *
+     * @param constantPool The constant pool.
+     * @return Resolved string representation.
      */
     public String toString(final ConstantPool constantPool) {
         final StringBuilder buf = new StringBuilder();

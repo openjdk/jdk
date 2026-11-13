@@ -550,6 +550,16 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   return entry;
 }
 
+// Continuation entry for an interpreted frame thawed after its callee was
+// popped by JVMTI PopFrame.
+address TemplateInterpreterGenerator::generate_cont_popframe_reexecute_entry() {
+  address entry = __ pc();
+  // We reuse the deopt entry with step=0, which restores the interpreter
+  // state and reexecutes the invoke.
+  __ jump_to_entry(Interpreter::deopt_entry(vtos, 0));
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_result_handler_for(
         BasicType type) {
     address entry = __ pc();
@@ -1880,16 +1890,17 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ strw(r3, Address(rthread, JavaThread::popframe_condition_offset()));
 
   {
-    // Check to see whether we are returning to a deoptimized frame.
-    // (The PopFrame call ensures that the caller of the popped frame is
-    // either interpreted or compiled and deoptimizes it if compiled.)
-    // In this case, we can't call dispatch_next() after the frame is
-    // popped, but instead must save the incoming arguments and restore
-    // them after deoptimization has occurred.
+    // Check to see whether we are returning to a deoptimized frame or
+    // into the continuation return barrier (the PopFrame call ensures that
+    // the caller of the popped frame is either interpreted or compiled and
+    // deoptimizes it if compiled). In both cases, we can't call dispatch_next()
+    // after the frame is popped, but instead must save the incoming arguments
+    // and restore them after deoptimization or thaw has occurred.
     //
     // Note that we don't compare the return PC against the
     // deoptimization blob's unpack entry because of the presence of
-    // adapter frames in C2.
+    // adapter frames in C2. Checking for an interpreter return PC covers
+    // the return barrier as well.
     Label caller_not_deoptimized;
     __ ldr(c_rarg1, Address(rfp, frame::return_addr_offset * wordSize));
     // This is a return address, so requires authenticating for PAC.

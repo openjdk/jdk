@@ -392,7 +392,7 @@ public:
   void verify_input(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
     Node* n = in(idx);
-    assert((!n->bottom_type()->isa_long() && !n->bottom_type()->isa_double()) ||
+    assert((!n->bottom_type()->is_long() && !n->bottom_type()->is_double()) ||
            in(idx + 1)->is_top(), "2nd half of long/double");
   }
 
@@ -841,7 +841,7 @@ public:
     const TypeTuple* r = tf()->range_sig();
     return (!tf()->returns_value_type_as_fields() &&
             r->cnt() > TypeFunc::Parms &&
-            r->field_at(TypeFunc::Parms)->isa_ptr());
+            r->field_at(TypeFunc::Parms)->is_ptr());
   }
 
   // Collect all the interesting edges from a call for use in
@@ -936,8 +936,8 @@ public:
         method != nullptr &&
         method->is_method_handle_intrinsic() &&
         r->cnt() > TypeFunc::Parms &&
-        r->field_at(TypeFunc::Parms)->isa_oopptr() &&
-        r->field_at(TypeFunc::Parms)->is_oopptr()->can_be_value_type()) {
+        r->field_at(TypeFunc::Parms)->is_oopptr() &&
+        r->field_at(TypeFunc::Parms)->as_oopptr()->can_be_value_type()) {
       // Make sure this call is processed by PhaseMacroExpand::expand_mh_intrinsic_return
       C->add_macro_node(this);
     }

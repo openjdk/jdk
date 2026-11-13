@@ -28,11 +28,8 @@ import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.util.BCELComparator;
 
 /**
- * Abstract superclass for classes to represent the different constant types
- * in the constant pool of a class file. The classes keep closely to
- * the JVM specification.
- *
- * @LastModified: Sept 2025
+ * Abstract superclass for classes to represent the different constant types in the constant pool of a class file. The
+ * classes keep closely to the JVM specification.
  */
 public abstract class Constant implements Cloneable, Node {
 
@@ -52,6 +49,8 @@ public abstract class Constant implements Cloneable, Node {
     };
 
     /**
+     * Gets the comparison strategy object.
+     *
      * @return Comparison strategy object.
      */
     public static BCELComparator<Constant> getComparator() {
@@ -61,10 +60,10 @@ public abstract class Constant implements Cloneable, Node {
     /**
      * Reads one constant from the given input, the type depends on a tag byte.
      *
-     * @param dataInput Input stream
-     * @return Constant object
-     * @throws IOException if an I/O error occurs reading from the given {@code dataInput}.
-     * @throws ClassFormatException if the next byte is not recognized
+     * @param dataInput Input stream.
+     * @return Constant object.
+     * @throws IOException Thrown if an I/O error occurs reading from the given {@code dataInput}.
+     * @throws ClassFormatException Thrown if the next byte is not recognized
      * @since 6.0 made public
      */
     public static Constant readConstant(final DataInput dataInput) throws IOException, ClassFormatException {
@@ -110,21 +109,24 @@ public abstract class Constant implements Cloneable, Node {
     }
 
     /**
-     * @param comparator Comparison strategy object
+     * Sets the comparison strategy object.
+     *
+     * @param comparator Comparison strategy object.
      */
     public static void setComparator(final BCELComparator<Constant> comparator) {
         bcelComparator = comparator;
     }
 
     /*
-     * In fact this tag is redundant since we can distinguish different 'Constant' objects by their type, i.e., via
+     * In fact this tag is redundant since we can distinguish different 'Constant' objects by their type, that is, via
      * 'instanceof'. In some places we will use the tag for switch()es anyway.
      *
      * First, we want match the specification as closely as possible. Second we need the tag as an index to select the
      * corresponding class name from the 'CONSTANT_NAMES' array.
      */
+
     /**
-     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
+     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter.
      */
     @java.lang.Deprecated
     protected byte tag; // TODO should be private & final
@@ -137,7 +139,7 @@ public abstract class Constant implements Cloneable, Node {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public abstract void accept(Visitor v);
@@ -152,7 +154,9 @@ public abstract class Constant implements Cloneable, Node {
     }
 
     /**
-     * @return deep copy of this constant
+     * Creates a deep copy of this constant.
+     *
+     * @return deep copy of this constant.
      */
     public Constant copy() {
         try {
@@ -163,6 +167,12 @@ public abstract class Constant implements Cloneable, Node {
         return null;
     }
 
+    /**
+     * Dumps constant to file stream in binary format.
+     *
+     * @param file The output stream.
+     * @throws IOException Thrown if an I/O error occurs.
+     */
     public abstract void dump(DataOutputStream file) throws IOException;
 
     /**
@@ -177,7 +187,9 @@ public abstract class Constant implements Cloneable, Node {
     }
 
     /**
-     * @return Tag of constant, i.e., its type. No setTag() method to avoid confusion.
+     * Gets the tag of constant.
+     *
+     * @return Tag of constant, that is, its type. No setTag() method to avoid confusion.
      */
     public final byte getTag() {
         return tag;

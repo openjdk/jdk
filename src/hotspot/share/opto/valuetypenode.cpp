@@ -335,7 +335,7 @@ void ValueTypeNode::make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_Lis
   uint nfields = add_fields_to_safepoint(worklist, sfpt);
   jvms->set_endoff(sfpt->req());
   // Replace safepoint edge by SafePointScalarObjectNode
-  SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(type()->isa_instptr(),
+  SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(type()->as_instptr(),
                                                                   nullptr,
                                                                   first_ind,
                                                                   sfpt->jvms()->depth(),
@@ -465,7 +465,7 @@ void ValueTypeNode::load(GraphKit* kit, Node* base, Node* ptr, bool immutable_me
       if (trust_null_free_oop && field_null_free) {
         val_type = val_type->join_speculative(TypePtr::NOTNULL);
       }
-      const TypePtr* field_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(field_ptr)->is_ptr() : TypeRawPtr::BOTTOM;
+      const TypePtr* field_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(field_ptr)->as_ptr() : TypeRawPtr::BOTTOM;
       value = kit->access_load_at(base, field_ptr, field_ptr_type, val_type, bt, decorators);
     }
     set_field_value(i, value);
@@ -488,7 +488,7 @@ void ValueTypeNode::store_flat(GraphKit* kit, Node* base, Node* ptr, bool atomic
     if (!null_free) {
       int nm_offset = vk->null_marker_offset_in_payload();
       Node* nm_ptr = kit->basic_plus_adr(base, ptr, nm_offset);
-      const TypePtr* nm_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(nm_ptr)->is_ptr() : TypeRawPtr::BOTTOM;
+      const TypePtr* nm_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(nm_ptr)->as_ptr() : TypeRawPtr::BOTTOM;
       kit->access_store_at(base, nm_ptr, nm_ptr_type, get_null_marker(), TypeInt::BOOL, T_BOOLEAN, decorators);
     }
     store(kit, base, ptr, immutable_memory, decorators);
@@ -634,7 +634,7 @@ void ValueTypeNode::store(GraphKit* kit, Node* base, Node* ptr, bool immutable_m
     } else {
       // Store field value to memory
       BasicType bt = type2field[ft->basic_type()];
-      const TypePtr* field_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(field_ptr)->is_ptr() : TypeRawPtr::BOTTOM;
+      const TypePtr* field_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(field_ptr)->as_ptr() : TypeRawPtr::BOTTOM;
       const Type* val_type = Type::get_const_type(ft);
       kit->access_store_at(base, field_ptr, field_ptr_type, field_val, val_type, bt, decorators);
     }
@@ -690,8 +690,8 @@ bool ValueTypeNode::can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, 
     return false;
   }
 
-  if (!lhs->bottom_type()->isa_ptr() ||
-      (rhs != nullptr && !rhs->bottom_type()->isa_ptr())) {
+  if (!lhs->bottom_type()->is_ptr() ||
+      (rhs != nullptr && !rhs->bottom_type()->is_ptr())) {
     return false;
   }
 
@@ -699,8 +699,8 @@ bool ValueTypeNode::can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, 
     return true;
   }
 
-  if (!lhs->bottom_type()->is_ptr()->can_be_value_type() ||
-      (rhs != nullptr && !rhs->bottom_type()->is_ptr()->can_be_value_type())) {
+  if (!lhs->bottom_type()->as_ptr()->can_be_value_type() ||
+      (rhs != nullptr && !rhs->bottom_type()->as_ptr()->can_be_value_type())) {
     return true;
   }
 
@@ -788,10 +788,10 @@ static Node* emit_substitutability_check_pointer(GraphKit* kit, PhiNode* result,
   Node* cmp = nullptr;
   if (same_oop(&gvn, lhs, rhs)) {
     cmp = kit->intcon(0);
-  } else if (!lhs_type->is_ptr()->can_be_value_type() || !rhs_type->is_ptr()->can_be_value_type()) {
+  } else if (!lhs_type->as_ptr()->can_be_value_type() || !rhs_type->as_ptr()->can_be_value_type()) {
     // If one of the sides is not a value object, can only be substitutable if they are the same
     cmp = kit->CmpP(lhs, rhs);
-  } else if (lhs_type->is_instptr()->as_klass_type()->join(rhs_type->is_instptr()->as_klass_type())->empty()) {
+  } else if (lhs_type->as_instptr()->as_klass_type()->join(rhs_type->as_instptr()->as_klass_type())->empty()) {
     // Both belongs to provably different types, must be different unless both are null. Cannot
     // rely on the pointer independence alone because different pointers may still be
     // substitutable.
@@ -850,7 +850,7 @@ Node* ValueTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node*
   const Type* rhs_type = igvn.type(rhs);
   assert(!lhs_type->maybe_null() && !rhs_type->maybe_null(), "must check null beforehand");
   ciValueKlass* vk = lhs_type->is_valueklassptr() ? lhs_type->value_klass() : rhs_type->value_klass();
-  const TypeInstPtr* vk_type = TypeOopPtr::make_from_klass(vk)->join(TypePtr::NOTNULL)->is_instptr();
+  const TypeInstPtr* vk_type = TypeOopPtr::make_from_klass(vk)->join(TypePtr::NOTNULL)->as_instptr();
 
   if (!lhs->is_ValueType()) {
     if (!lhs_type->higher_equal(vk_type)) {
@@ -1612,7 +1612,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_impl(GraphKit* kit, ciValueKlass* v
     if (!null_free) {
       int nm_offset = vk->null_marker_offset_in_payload();
       Node* nm_ptr = kit->basic_plus_adr(base, ptr, nm_offset);
-      const TypePtr* nm_ptr_type = (decorators & C2_MISMATCHED) == 0 ? gvn.type(nm_ptr)->is_ptr() : TypeRawPtr::BOTTOM;
+      const TypePtr* nm_ptr_type = (decorators & C2_MISMATCHED) == 0 ? gvn.type(nm_ptr)->as_ptr() : TypeRawPtr::BOTTOM;
       Node* nm_value = kit->access_load_at(base, nm_ptr, nm_ptr_type, TypeInt::BOOL, T_BOOLEAN, decorators);
       vt->set_req(NullMarker, nm_value);
     }
@@ -1803,6 +1803,14 @@ Node* ValueTypeNode::is_loaded(PhaseGVN* phase, ciValueKlass* vk, Node* base, in
 
 Node* ValueTypeNode::tagged_klass(ciValueKlass* vk, PhaseGVN& gvn) {
   const TypeKlassPtr* tk = TypeKlassPtr::make(vk);
+#if INCLUDE_CDS
+  if (gvn.C->is_aot_compile()) {
+    // Keep klass as metadata to make it relocatable for AOT code.
+    Node* k_con = gvn.makecon(tk);
+    Node* bits  = gvn.transform(new CastP2XNode(nullptr, k_con));
+    return gvn.transform(new OrLNode(bits, gvn.longcon(1)));
+  }
+#endif
   intptr_t bits = tk->get_con();
   set_nth_bit(bits, 0);
   return gvn.longcon((jlong)bits);
@@ -2007,7 +2015,7 @@ const Type* ValueTypeNode::Value(PhaseGVN* phase) const {
   Node* oop = get_oop();
   const Type* toop = phase->type(oop);
 #ifdef ASSERT
-  if (oop->is_Con() && toop->is_zero_type() && _type->isa_oopptr()->is_known_instance()) {
+  if (oop->is_Con() && toop->is_zero_type() && _type->as_oopptr()->is_known_instance()) {
     // We are not allocated (anymore) and should therefore not have an instance id
     dump(1);
     assert(false, "Unbuffered value type should not have known instance id");
@@ -2031,7 +2039,7 @@ const Type* ValueTypeNode::Value(PhaseGVN* phase) const {
   if (tinit == Type::TOP) {
     return Type::TOP;
   }
-  if (tinit->isa_int() && tinit->is_int()->is_con(1)) {
+  if (tinit->is_int() && tinit->as_int()->is_con(1)) {
     t = t->join_speculative(TypePtr::NOTNULL);
   }
   return t;
@@ -2126,7 +2134,7 @@ bool LoadFlatNode::expand_non_atomic(PhaseIterGVN& igvn) const {
 
     ciField* field = _vk->nonstatic_field_at(i);
     Node* field_ptr = kit.basic_plus_adr(base, ptr, field->offset_in_bytes() - _vk->payload_offset());
-    const TypePtr* field_ptr_type = field_ptr->Value(&igvn)->is_ptr();
+    const TypePtr* field_ptr_type = field_ptr->Value(&igvn)->as_ptr();
     igvn.set_type(field_ptr, field_ptr_type);
 
     Node* field_value = kit.access_load_at(base, field_ptr, field_ptr_type, igvn.type(proj_out), field->type()->basic_type(), _decorators);
@@ -2137,7 +2145,7 @@ bool LoadFlatNode::expand_non_atomic(PhaseIterGVN& igvn) const {
     ProjNode* proj_out = proj_out_or_null(TypeFunc::Parms + _vk->nof_nonstatic_fields());
     if (proj_out != nullptr) {
       Node* null_marker_ptr = kit.basic_plus_adr(base, ptr, _vk->null_marker_offset_in_payload());
-      const TypePtr* null_marker_ptr_type = null_marker_ptr->Value(&igvn)->is_ptr();
+      const TypePtr* null_marker_ptr_type = null_marker_ptr->Value(&igvn)->as_ptr();
       igvn.set_type(null_marker_ptr, null_marker_ptr_type);
       Node* null_marker_value = kit.access_load_at(base, null_marker_ptr, null_marker_ptr_type, TypeInt::BOOL, T_BOOLEAN, _decorators);
       igvn.replace_node(proj_out, null_marker_value);
@@ -2334,7 +2342,7 @@ bool StoreFlatNode::expand_non_atomic(PhaseIterGVN& igvn) const {
   for (int i = 0; i < vk->nof_nonstatic_fields(); i++) {
     ciField* field = vk->nonstatic_field_at(i);
     Node* field_ptr = kit.basic_plus_adr(base, ptr, field->offset_in_bytes() - vk->payload_offset());
-    const TypePtr* field_ptr_type = field_ptr->Value(&igvn)->is_ptr();
+    const TypePtr* field_ptr_type = field_ptr->Value(&igvn)->as_ptr();
     igvn.set_type(field_ptr, field_ptr_type);
     Node* field_value = value->field_value_by_offset(field->offset_in_bytes(), true);
     kit.access_store_at(base, field_ptr, field_ptr_type, field_value, igvn.type(field_value), field->type()->basic_type(), _decorators);
@@ -2342,7 +2350,7 @@ bool StoreFlatNode::expand_non_atomic(PhaseIterGVN& igvn) const {
 
   if (!_null_free) {
     Node* null_marker_ptr = kit.basic_plus_adr(base, ptr, vk->null_marker_offset_in_payload());
-    const TypePtr* null_marker_ptr_type = null_marker_ptr->Value(&igvn)->is_ptr();
+    const TypePtr* null_marker_ptr_type = null_marker_ptr->Value(&igvn)->as_ptr();
     igvn.set_type(null_marker_ptr, null_marker_ptr_type);
     Node* null_marker_value = value->get_null_marker();
     kit.access_store_at(base, null_marker_ptr, null_marker_ptr_type, null_marker_value, TypeInt::BOOL, T_BOOLEAN, _decorators);

@@ -33,7 +33,6 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  * @see LOOKUPSWITCH
  * @see TABLESWITCH
  * @see InstructionList
- * @LastModified: Sept 2025
  */
 public abstract class Select extends BranchInstruction implements VariableLengthInstruction, StackConsumer /* @since 6.0 */, StackProducer {
 
@@ -41,7 +40,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
      * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
      */
     @Deprecated
-    protected int[] match; // matches, i.e., case 1: ... TODO could be package-protected?
+    protected int[] match; // matches, that is, case 1: ... TODO could be package-protected?
 
     /**
      * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
@@ -82,9 +81,9 @@ public abstract class Select extends BranchInstruction implements VariableLength
     /**
      * (Match, target) pairs for switch. 'Match' and 'targets' must have the same length of course.
      *
-     * @param match array of matching values
-     * @param targets instruction targets
-     * @param defaultTarget default instruction target
+     * @param match array of matching values.
+     * @param targets instruction targets.
+     * @param defaultTarget default instruction target.
      */
     Select(final short opcode, final int[] match, final InstructionHandle[] targets, final InstructionHandle defaultTarget) {
         // don't set default target before instruction is built
@@ -112,7 +111,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * @return true, if ih is target of this instruction
+     * @return true, if ih is target of this instruction.
      */
     @Override
     public boolean containsTarget(final InstructionHandle ih) {
@@ -139,9 +138,9 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {
@@ -154,7 +153,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * @return the fixed_length
+     * @return The fixed_length.
      * @since 6.0
      */
     final int getFixedLength() {
@@ -162,14 +161,16 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * @return array of match target offsets
+     * Gets the match target offsets.
+     *
+     * @return array of match target offsets.
      */
     public int[] getIndices() {
         return indices;
     }
 
     /**
-     * @return index entry from indices
+     * @return index entry from indices.
      * @since 6.0
      */
     final int getIndices(final int index) {
@@ -177,7 +178,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * @return match entry
+     * @return match entry.
      * @since 6.0
      */
     final int getMatch(final int index) {
@@ -185,7 +186,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * @return the match_length
+     * @return The match_length.
      * @since 6.0
      */
     final int getMatchLength() {
@@ -193,7 +194,9 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * @return array of match indices
+     * Gets the match indices.
+     *
+     * @return array of match indices.
      */
     public int[] getMatchs() {
         return match;
@@ -201,7 +204,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
 
     /**
      *
-     * @return the padding
+     * @return The padding.
      * @since 6.0
      */
     final int getPadding() {
@@ -209,7 +212,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * @return target entry
+     * @return target entry.
      * @since 6.0
      */
     final InstructionHandle getTarget(final int index) {
@@ -217,14 +220,16 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * @return array of match targets
+     * Gets the match targets.
+     *
+     * @return array of match targets.
      */
     public InstructionHandle[] getTargets() {
         return targets;
     }
 
     /**
-     * Read needed data (e.g. index) from file.
+     * Reads needed data (for example index) from file.
      */
     @Override
     protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
@@ -237,7 +242,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * @param fixedLength the fixed_length to set
+     * @param fixedLength The fixed_length to set.
      * @since 6.0
      */
     final void setFixedLength(final int fixedLength) {
@@ -252,7 +257,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
 
     /**
      *
-     * @param array
+     * @param array.
      * @since 6.0
      */
     final void setIndices(final int[] array) {
@@ -261,8 +266,8 @@ public abstract class Select extends BranchInstruction implements VariableLength
 
     /**
      *
-     * @param index
-     * @param value
+     * @param index.
+     * @param value.
      * @since 6.0
      */
     final void setMatch(final int index, final int value) {
@@ -271,7 +276,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
 
     /**
      *
-     * @param array
+     * @param array.
      * @since 6.0
      */
     final void setMatches(final int[] array) {
@@ -279,7 +284,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * @param matchLength the match_length to set
+     * @param matchLength The match_length to set.
      * @since 6.0
      */
     final int setMatchLength(final int matchLength) {
@@ -288,7 +293,10 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * Sets branch target for 'i'th case
+     * Sets branch target for 'i'th case.
+     *
+     * @param i The case index.
+     * @param target The branch target.
      */
     public void setTarget(final int i, final InstructionHandle target) { // TODO could be package-protected?
         notifyTarget(targets[i], target, this);
@@ -297,7 +305,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
 
     /**
      *
-     * @param array
+     * @param array.
      * @since 6.0
      */
     final void setTargets(final InstructionHandle[] array) {
@@ -305,7 +313,7 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * @return mnemonic for instruction
+     * @return mnemonic for instruction.
      */
     @Override
     public String toString(final boolean verbose) {
@@ -336,9 +344,9 @@ public abstract class Select extends BranchInstruction implements VariableLength
      * length instructions 'setPositions' performs multiple passes over the instruction list to calculate the correct (byte)
      * positions and offsets by calling this function.
      *
-     * @param offset additional offset caused by preceding (variable length) instructions
-     * @param maxOffset the maximum offset that may be caused by these instructions
-     * @return additional offset caused by possible change of this instruction's length
+     * @param offset additional offset caused by preceding (variable length) instructions.
+     * @param maxOffset The maximum offset that may be caused by these instructions.
+     * @return additional offset caused by possible change of this instruction's length.
      */
     @Override
     protected int updatePosition(final int offset, final int maxOffset) {
@@ -353,8 +361,8 @@ public abstract class Select extends BranchInstruction implements VariableLength
     }
 
     /**
-     * @param oldIh old target
-     * @param newIh new target
+     * @param oldIh old target.
+     * @param newIh new target.
      */
     @Override
     public void updateTarget(final InstructionHandle oldIh, final InstructionHandle newIh) {

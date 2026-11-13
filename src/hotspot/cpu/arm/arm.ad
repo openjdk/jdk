@@ -90,13 +90,13 @@ class CallStubImpl {
   //--------------------------------------------------------------
 
  public:
-  // Size of call trampoline stub.
-  static uint size_call_trampoline() {
+  // Size of call stub.
+  static uint size_call_stub() {
     return 0; // no call trampolines on this platform
   }
 
-  // number of relocations needed by a call trampoline stub
-  static uint reloc_call_trampoline() {
+  // Number of relocations needed by a call stub.
+  static uint reloc_call_stub() {
     return 0; // no call trampolines on this platform
   }
 };
@@ -434,7 +434,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
     return size;            // Self copy, no move
 
 #ifdef TODO
-  if (bottom_type()->isa_vect() != nullptr) {
+  if (bottom_type()->is_vect()) {
   }
 #endif
 
