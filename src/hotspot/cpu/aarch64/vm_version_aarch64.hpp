@@ -238,6 +238,18 @@ public:
     return false;
   }
 
+  static bool is_neoverse() {
+    return _cpu == CPU_ARM &&
+           model_is_in({ CPU_MODEL_ARM_NEOVERSE_N1, CPU_MODEL_ARM_NEOVERSE_V1,
+                         CPU_MODEL_ARM_NEOVERSE_N2, CPU_MODEL_ARM_NEOVERSE_V2,
+                         CPU_MODEL_ARM_NEOVERSE_N3, CPU_MODEL_ARM_NEOVERSE_V3,
+                         CPU_MODEL_ARM_NEOVERSE_V3AE });
+  }
+
+  static bool is_apple() {
+    return _cpu == CPU_APPLE;
+  }
+
   static bool is_zva_enabled() { return 0 < _zva_length; }
   static int zva_length() {
     assert(is_zva_enabled(), "ZVA not available");
