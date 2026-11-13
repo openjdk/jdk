@@ -110,7 +110,7 @@ G1HeapRegion* G1HeapRegionManager::allocate_free_region(G1HeapRegionType type, u
 
 G1HeapRegion* G1HeapRegionManager::allocate_humongous_from_free_list(uint num_regions) {
   uint candidate = find_contiguous_in_free_list(num_regions);
-  if (candidate == G1HeapRegion::NoRegionIdx) {
+  if (candidate == G1HeapRegion::InvalidRegionIdx) {
     return nullptr;
   }
   return allocate_free_regions_starting_at(candidate, num_regions);
@@ -118,7 +118,7 @@ G1HeapRegion* G1HeapRegionManager::allocate_humongous_from_free_list(uint num_re
 
 G1HeapRegion* G1HeapRegionManager::allocate_humongous_allow_expand(uint num_regions) {
   uint candidate = find_contiguous_allow_expand(num_regions);
-  if (candidate == G1HeapRegion::NoRegionIdx) {
+  if (candidate == G1HeapRegion::InvalidRegionIdx) {
     return nullptr;
   }
   expand_exact(candidate, num_regions, G1CollectedHeap::heap()->workers());
@@ -459,17 +459,17 @@ uint G1HeapRegionManager::find_contiguous_in_range(uint start, uint end, uint nu
       }
     }
   }
-  return G1HeapRegion::NoRegionIdx;
+  return G1HeapRegion::InvalidRegionIdx;
 }
 
 uint G1HeapRegionManager::find_contiguous_in_free_list(uint num_regions) {
-  uint candidate = G1HeapRegion::NoRegionIdx;
+  uint candidate = G1HeapRegion::InvalidRegionIdx;
   G1HeapRegionRange range(0,0);
 
   do {
     range = _committed_map.next_active_range(range.end());
     candidate = find_contiguous_in_range(range.start(), range.end(), num_regions);
-  } while (candidate == G1HeapRegion::NoRegionIdx && range.end() < max_num_regions());
+  } while (candidate == G1HeapRegion::InvalidRegionIdx && range.end() < max_num_regions());
 
   return candidate;
 }

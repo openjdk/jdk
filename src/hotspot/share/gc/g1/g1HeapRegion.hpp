@@ -89,7 +89,7 @@ public:
   // For simplicity, limit to 2^31 regions which allow more than enough maximum heap size.
   static const uint MaxRegionIdx = INT_MAX - 1;
   // Sentinel value for an invalid region index.
-  static const uint NoRegionIdx = UINT_MAX;
+  static const uint InvalidRegionIdx = UINT_MAX;
 
   HeapWord* bottom() const         { return _bottom; }
   HeapWord* end() const            { return _end;    }
