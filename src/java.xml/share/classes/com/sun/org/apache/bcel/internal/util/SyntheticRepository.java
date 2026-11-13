@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,7 +40,7 @@ import java.util.Map;
  *
  * @see com.sun.org.apache.bcel.internal.Repository
  *
- * @LastModified: Feb 2023
+ * @LastModified: Nov 2026
  */
 public class SyntheticRepository implements Repository {
 

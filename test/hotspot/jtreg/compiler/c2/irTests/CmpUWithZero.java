@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +25,7 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
 
 /*
  * @test
@@ -57,6 +59,41 @@ public class CmpUWithZero {
     private void testRunner() {
         test(0);
         test(42);
+    }
+
+    @Test
+    @IR(counts = { IRNode.CMP_L, "1" }, failOn = { IRNode.CMP_UL })
+    public static boolean testLongLT(long x) {
+        return Long.compareUnsigned(x, 1) < 0;
+    }
+
+    @Test
+    @IR(counts = { IRNode.CMP_L, "1" }, failOn = { IRNode.CMP_UL })
+    public static boolean testLongLE(long x) {
+        return Long.compareUnsigned(x, 0) <= 0;
+    }
+
+    @Test
+    @IR(counts = { IRNode.CMP_L, "1" }, failOn = { IRNode.CMP_UL })
+    public static boolean testLongGT(long x) {
+        return Long.compareUnsigned(x, 0) > 0;
+    }
+
+    @Test
+    @IR(counts = { IRNode.CMP_L, "1" }, failOn = { IRNode.CMP_UL })
+    public static boolean testLongGE(long x) {
+        return Long.compareUnsigned(x, 1) >= 0;
+    }
+
+    @Run(test = { "testLongLT", "testLongLE", "testLongGT", "testLongGE" })
+    @Warmup(0)
+    public static void testLongRunner() {
+        for (long x : new long[] { Long.MIN_VALUE, -1, 0, 1, 2, 1L << 32, Long.MAX_VALUE }) {
+            Asserts.assertEQ(testLongLT(x), x == 0);
+            Asserts.assertEQ(testLongLE(x), x == 0);
+            Asserts.assertEQ(testLongGT(x), x != 0);
+            Asserts.assertEQ(testLongGE(x), x != 0);
+        }
     }
 
 }

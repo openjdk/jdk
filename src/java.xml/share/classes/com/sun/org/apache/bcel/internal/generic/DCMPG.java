@@ -24,21 +24,22 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * DCMPG - Compare doubles: value1 &gt; value2
  *
- * <PRE>
+ * <pre>
  * Stack: ..., value1.word1, value1.word2, value2.word1, value2.word2 -&gt; ..., result
- * </PRE>
+ * </pre>
  */
 public class DCMPG extends Instruction implements TypedInstruction, StackProducer, StackConsumer {
 
+    /** Constructs a DCMPG instruction. */
     public DCMPG() {
         super(com.sun.org.apache.bcel.internal.Const.DCMPG, (short) 1);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -49,7 +50,7 @@ public class DCMPG extends Instruction implements TypedInstruction, StackProduce
     }
 
     /**
-     * @return Type.DOUBLE
+     * @return Type.DOUBLE.
      */
     @Override
     public Type getType(final ConstantPoolGen cp) {

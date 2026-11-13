@@ -27,6 +27,7 @@
  * @test
  * @summary AOT training run should fail if critical classes have been redefined by JVMTI
  * @bug 8380409
+ * @requires vm.flagless
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib
  * @run driver RedefineClassHelper
@@ -56,7 +57,7 @@ public class RedefineCriticalClasses {
         processArgs.add("app.jar");
         processArgs.add("RedefineCriticalClassesApp");
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(processArgs);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(processArgs);
         CDSTestUtils.executeAndLog(pb, "train")
             .shouldContain("Redefined: class java.lang.Class")
             .shouldContain("Skipping java/lang/Class: Has been redefined")
