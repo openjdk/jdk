@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ class PlatformEvent : public CHeapObj<mtSynchronizer> {
     volatile int _Event ;
     HANDLE _ParkHandle ;
 
-  public:       // TODO-FIXME: make dtor private
-    ~PlatformEvent() { guarantee (0, "invariant") ; }
+  public:
+    ~PlatformEvent() { CloseHandle(_ParkHandle); }
 
   public:
     PlatformEvent() {
