@@ -1606,6 +1606,12 @@ char* ClassLoader::get_canonical_path(const char* orig, Thread* thread) {
   ResourceMark rm(thread);
   // os::native_path writes into orig_copy
   char* orig_copy = ResourceArea::strdup(thread, orig);
+#if defined(_WINDOWS)
+  if (strncmp("\\\\?\\", orig_copy, 4) == 0) {
+    // Work around JDK-8397366
+    orig_copy += 4;
+  }
+#endif
   if ((CanonicalizeEntry)(os::native_path(orig_copy), canonical_path, JVM_MAXPATHLEN) < 0) {
     return nullptr;
   }

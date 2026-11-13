@@ -488,12 +488,14 @@ public:
         assert(i > 0, "module image is always at index 0");
         ResourceMark rm;
         const char* canon_path = ClassLoader::get_canonical_path(cl->path(), JavaThread::current()); // resource allocated
-        const char* canon_path_dup = os::strdup(canon_path, mtClassShared);
-        bool created;
-        put_if_absent(canon_path_dup, i, &created);
-        if (!created) {
-          // If the exact same path appears more than once, only the first one is recorded.
-          os::free((void*)canon_path_dup);
+        if (canon_path != nullptr) { // invalid paths are ignored
+          const char* canon_path_dup = os::strdup(canon_path, mtClassShared);
+          bool created;
+          put_if_absent(canon_path_dup, i, &created);
+          if (!created) {
+            // If the exact same path appears more than once, only the first one is recorded.
+            os::free((void*)canon_path_dup);
+          }
         }
       }
       return true; // Keep iterating
@@ -516,13 +518,15 @@ int AOTClassLocationConfig::dumptime_get_class_location_index(const char* path, 
   // canonicalize again with the C code.
   ResourceMark rm;
   const char* canon_path = ClassLoader::get_canonical_path(path, JavaThread::current());
-  int* saved = is_named_module ?
-    _named_module_table->get(canon_path) : _unnamed_module_table->get(canon_path);
-  if (saved != nullptr) {
-    return *saved;
-  } else {
-    return -1;
+  if (canon_path != nullptr) {
+    int* saved = is_named_module ?
+      _named_module_table->get(canon_path) : _unnamed_module_table->get(canon_path);
+    if (saved != nullptr) {
+      return *saved;
+    }
   }
+
+  return -1;
 }
 
 void AOTClassLocationConfig::dumptime_init(JavaThread* current) {
