@@ -110,16 +110,19 @@ void VM_Version::RVExtFeatureValue::update_flag() {
   }
 
   // Direct writes preserve the flag origin, matching FLAG_SET_DEFAULT.
-  if (!deps_all_enabled()) {
-    flag->write<bool>(false);
-    disable_feature();
-    stringStream ss;
-    ss.print("missing dependent extension(s): ");
-    deps_string(ss);
-    log_disabled(ss.as_string(true));
-  } else if (flag->is_default()) {
-    flag->write<bool>(true);
+  if (deps_all_enabled()) {
+    if (flag->is_default()) {
+      flag->write<bool>(true);
+    }
+    return;
   }
+
+  flag->write<bool>(false);
+  disable_feature();
+  stringStream ss;
+  ss.print("missing dependent extension(s): ");
+  deps_string(ss);
+  log_disabled(ss.as_string(true));
 }
 
 bool VM_Version::RVExtFeatureValue::deps_all_enabled() const {
