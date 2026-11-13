@@ -50,7 +50,6 @@ typedef struct {
  * regions.
  */
 class ShenandoahGenerationalHeuristics : public ShenandoahAdaptiveHeuristics {
-
 public:
   explicit ShenandoahGenerationalHeuristics(ShenandoahGeneration* generation);
 

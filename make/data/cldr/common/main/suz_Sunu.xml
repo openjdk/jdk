@@ -11,10 +11,71 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="suz"/>
 		<script type="Sunu"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="en">‰</language>
+			<language type="suz">𑯒𑯅𑯍𑯅𑯓𑯖𑯄</language>
+		</languages>
+		<scripts>
+			<script type="Deva">𑯀𑯂𑯎𑯍𑯖𑯊𑯈𑯄𑯃</script>
+			<script type="Sunu">𑯒𑯅𑯍𑯅𑯓𑯖𑯄</script>
+		</scripts>
+		<territories>
+			<territory type="NP">𑯍𑯂𑯉𑯖𑯂</territory>
+		</territories>
+	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[𑯀 𑯁 𑯂 𑯃 𑯄 𑯅 𑯆 𑯇 𑯈 𑯉 𑯊 𑯋 𑯌 𑯍 𑯎 𑯏 𑯐 𑯑 𑯒 𑯓 𑯔 𑯕 𑯖 𑯗 𑯘 𑯙 𑯚 𑯛 𑯜 𑯝 𑯞 𑯟 𑯠]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[𑯰 𑯱 𑯲 𑯳 𑯴 𑯵 𑯶 𑯷 𑯸 𑯹]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[, \: ! ? . “” 𑯡]</exemplarCharacters>
 	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">𑯏𑯈𑯍𑯈𑯅𑯄𑯃</month>
+							<month type="2">𑯙𑯂𑯎𑯅𑯄𑯈𑯄𑯃</month>
+							<month type="3">𑯇𑯖𑯄𑯌</month>
+							<month type="4">𑯈𑯉𑯄𑯃𑯐</month>
+							<month type="5">𑯇𑯂</month>
+							<month type="6">𑯏𑯅𑯍</month>
+							<month type="7">𑯏𑯅𑯐𑯖𑯃</month>
+							<month type="8">𑯈𑯊𑯈𑯒𑯞</month>
+							<month type="9">𑯒𑯂𑯉𑯞𑯃𑯇𑯎𑯈𑯄</month>
+							<month type="10">𑯈𑯆𑯞𑯅𑯎𑯈𑯄</month>
+							<month type="11">𑯍𑯑𑯎𑯂𑯇𑯎𑯈𑯄</month>
+							<month type="12">𑯀𑯃𑯒𑯂𑯇𑯎𑯈𑯄</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">𑯌𑯂𑯄𑯂𑯍𑯖̍𑯠𑯁𑯃</day>
+							<day type="mon">𑯁𑯖̍𑯒𑯍𑯖̍𑯠𑯁𑯃</day>
+							<day type="tue">𑯄𑯃𑯇𑯒𑯃𑯍𑯖̍𑯠𑯁𑯃</day>
+							<day type="wed">𑯀𑯅𑯇𑯒𑯃𑯍𑯖̍𑯠𑯁𑯃</day>
+							<day type="thu">𑯋𑯑𑯐𑯙𑯖𑯍𑯖̍𑯠𑯁𑯃</day>
+							<day type="fri">𑯊𑯃𑯐𑯙𑯖𑯍𑯖̍𑯠𑯁𑯃</day>
+							<day type="sat">𑯄𑯂𑯐𑯙𑯖𑯍𑯖̍𑯠𑯁𑯃</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Coordinated Universal Time</standard>
+				</long>
+			</zone>
+			<metazone type="GMT">
+				<long>
+					<standard>Greenwich Mean Time</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
 </ldml>

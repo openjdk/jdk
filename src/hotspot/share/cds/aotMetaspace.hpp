@@ -60,7 +60,7 @@ class AOTMetaspace : AllStatic {
   static intx _relocation_delta;
   static char* _requested_base_address;
   static Array<Method*>* _archived_method_handle_intrinsics;
-  static int volatile _preimage_static_archive_dumped;
+  static int volatile _aot_configuration_dumped;
   static FileMapInfo* _output_mapinfo;
 
  public:
@@ -94,6 +94,7 @@ public:
   static void initialize_runtime_shared_and_meta_spaces() NOT_CDS_RETURN;
   static void post_initialize(TRAPS) NOT_CDS_RETURN;
   static void get_aot_code_region_size() NOT_CDS_RETURN;
+  static char* get_archived_cpu_features() NOT_CDS_RETURN_(nullptr);
 
   static void print_on(outputStream* st);
 
@@ -124,7 +125,7 @@ public:
   // inside the metaspace of the dynamic static CDS archive
   static bool in_aot_cache_dynamic_region(void* p) NOT_CDS_RETURN_(false);
 
-  static bool preimage_static_archive_dumped() NOT_CDS_RETURN_(false);
+  static bool aot_configuration_dumped() NOT_CDS_RETURN_(false);
 
   [[noreturn]] static void unrecoverable_loading_error(const char* message = "unrecoverable error");
   static void report_loading_error(const char* format, ...) ATTRIBUTE_PRINTF(1, 0);
@@ -196,7 +197,7 @@ public:
 
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;
-  static void fork_and_dump_final_static_archive(TRAPS);
+  static void fork_and_dump_aot_cache(TRAPS);
   static void open_output_mapinfo();
   static bool write_static_archive(ArchiveBuilder* builder,
                                    FileMapInfo* map_info,

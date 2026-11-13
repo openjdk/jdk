@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,6 +384,12 @@ JNIEXPORT jstring JNICALL Java_sun_awt_FcFontManager_getFontPathNative
 
 #include <fontconfig/fontconfig.h>
 
+/* FC_VARIABLE was added in fontconfig 2.13.1 which is newer than what is in
+ * the devkit used to build JDK, so conditionally define it.
+ */
+#ifndef FC_VARIABLE
+#define FC_VARIABLE "variable"
+#endif
 
 static void* openFontConfig() {
 
@@ -527,6 +533,8 @@ typedef int (*FcGetVersionFuncType)();
 typedef FcStrList* (*FcConfigGetCacheDirsFuncType)(FcConfig *config);
 typedef FcChar8* (*FcStrListNextFuncType)(FcStrList *list);
 typedef FcChar8* (*FcStrListDoneFuncType)(FcStrList *list);
+
+typedef FcPattern* (*FcFreeTypeQueryFuncType)(FcChar8 *file, int id, FcBlanks *k, int *count);
 
 static char **getFontConfigLocations() {
 
@@ -793,6 +801,9 @@ Java_sun_font_FontConfigManager_getFontConfig
     FcConfigSubstituteFuncType FcConfigSubstitute;
     FcDefaultSubstituteFuncType  FcDefaultSubstitute;
     FcFontMatchFuncType FcFontMatch;
+    FcFreeTypeQueryFuncType FcFreeTypeQuery;
+    FcPatternGetIntegerFuncType FcPatternGetInteger;
+    FcPatternGetBoolFuncType FcPatternGetBool;
     FcPatternGetStringFuncType FcPatternGetString;
     FcPatternDestroyFuncType FcPatternDestroy;
     FcPatternGetCharSetFuncType FcPatternGetCharSet;
@@ -866,6 +877,11 @@ Java_sun_font_FontConfigManager_getFontConfig
     FcDefaultSubstitute = (FcDefaultSubstituteFuncType)
         dlsym(libfontconfig, "FcDefaultSubstitute");
     FcFontMatch = (FcFontMatchFuncType)dlsym(libfontconfig, "FcFontMatch");
+    FcFreeTypeQuery = (FcFreeTypeQueryFuncType)dlsym(libfontconfig, "FcFreeTypeQuery");
+    FcPatternGetBool =
+        (FcPatternGetBoolFuncType)dlsym(libfontconfig, "FcPatternGetBool");
+    FcPatternGetInteger =
+        (FcPatternGetIntegerFuncType)dlsym(libfontconfig, "FcPatternGetInteger");
     FcPatternGetString =
         (FcPatternGetStringFuncType)dlsym(libfontconfig, "FcPatternGetString");
     FcPatternDestroy =
@@ -891,6 +907,9 @@ Java_sun_font_FontConfigManager_getFontConfig
         FcConfigSubstitute   == NULL ||
         FcDefaultSubstitute  == NULL ||
         FcFontMatch          == NULL ||
+        FcFreeTypeQuery      == NULL ||
+        FcPatternGetBool     == NULL ||
+        FcPatternGetInteger  == NULL ||
         FcPatternGetString   == NULL ||
         FcPatternDestroy     == NULL ||
         FcPatternGetCharSet  == NULL ||
@@ -963,6 +982,7 @@ Java_sun_font_FontConfigManager_getFontConfig
         jarray fcFontArr = NULL;
         FcCharSet *unionCharset = NULL;
         FcCharSet *prevUnionCharset = NULL;
+        int expectedWeight, expectedSlant, skippedVarFont;
 
         fcCompFontObj = (*env)->GetObjectArrayElement(env, fcCompFontArray, i);
         fcNameStr =
@@ -1047,12 +1067,38 @@ Java_sun_font_FontConfigManager_getFontConfig
             }
         }
 
+        expectedWeight = 80;
+        expectedSlant = 0;
+        (*FcPatternGetInteger)(pattern, FC_WEIGHT, 0, &expectedWeight);
+        (*FcPatternGetInteger)(pattern, FC_SLANT, 0, &expectedSlant);
+        skippedVarFont = 0;
         for (j=0; j<nfonts; j++) {
             FcPattern *fontPattern = fontset->fonts[j];
             FcChar8 *fontformat;
             FcCharSet *charset = NULL;
+            FcChar8 *filename;
+            int weight, slant;
 
             fontformat = NULL;
+            if (fontCount == 0) {
+                // Query to see if it is a variable font.  0x8000000 is used as the
+                // font index to tell fontconfig you want the variable font info.
+                // NULL is returned from FcFreeTypeQuery if it is not a variable font.
+                // So we could stop there rather than doing the check for FC_VARIABLE.
+                FcResult pr = (*FcPatternGetString)(fontPattern, FC_FILE, 0, &filename);
+                if (pr == FcResultMatch) {
+                    FcPattern *vp = (*FcFreeTypeQuery)(filename, 0x80000000, NULL, NULL);
+                    if (vp != NULL) {
+                        FcBool variable = FcFalse;
+                        FcResult res = (*FcPatternGetBool)(vp, FC_VARIABLE, 0, &variable);
+                        (*FcPatternDestroy)(vp);
+                        if ((res == FcResultMatch) && (variable == FcTrue)) {
+                            skippedVarFont = 1;
+                            continue;
+                        }
+                    }
+                }
+            }
             (*FcPatternGetString)(fontPattern, FC_FONTFORMAT, 0, &fontformat);
             /* We only want TrueType fonts but some Linuxes still depend
              * on Type 1 fonts for some Locale support, so we'll allow
@@ -1067,6 +1113,38 @@ Java_sun_font_FontConfigManager_getFontConfig
              ) {
                 continue;
             }
+
+            /* If we skipped some variation fonts, then whatever we pick for
+             * the first slot should match the required style, even at the
+             * expense of skipping more slots.
+             * But only up to a point. If we get half way through the list of
+             * fonts, it is better to take whatever we find.
+             * For data fontconfig uses in its pattern the following translation
+             * weight : light : 50, regular: 80, medium: 100, demibold: 180, bold: 200
+             * slant : roman : 0, italic : 100, oblique : 110
+             * Java passes in regular/bold and roman/italic, so the values for
+             * those are the set of expected values.
+             * For weight, allow some "slack".
+             */
+            if (fontCount == 0 && skippedVarFont && (j < (nfonts / 2))) {
+                weight = expectedWeight;
+                slant = expectedSlant;
+                (*FcPatternGetInteger)(fontPattern, FC_WEIGHT, 0, &weight);
+                (*FcPatternGetInteger)(fontPattern, FC_SLANT, 0, &slant);
+                if ((expectedWeight == 80) && ((weight < 60 || weight > 100))) {
+                    continue;
+                }
+                if ((expectedWeight == 200) && (weight <= 150)) {
+                    continue;
+                }
+                if ((expectedSlant == 0) && (slant != 0)) {
+                    continue;
+                }
+                if ((expectedSlant > 0) && (slant == 0)) {
+                    continue;
+                }
+            }
+
             result = (*FcPatternGetCharSet)(fontPattern,
                                             FC_CHARSET, 0, &charset);
             if (result != FcResultMatch) {

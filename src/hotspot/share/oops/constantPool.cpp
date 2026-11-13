@@ -542,7 +542,7 @@ void ConstantPool::remove_resolved_klass_if_non_archivable(int cp_index) {
   bool can_archive;
   Klass* k = nullptr;
 
-  if (CDSConfig::is_dumping_preimage_static_archive()) {
+  if (CDSConfig::is_dumping_aot_configuration()) {
     can_archive = false;
   } else {
     k = resolved_klass_at(cp_index);

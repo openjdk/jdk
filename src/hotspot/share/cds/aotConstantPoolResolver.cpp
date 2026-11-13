@@ -528,8 +528,8 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(Constant
   {
     Klass* k = find_loaded_class(Thread::current(), cp->pool_holder()->class_loader(), klass_name);
     if (k == nullptr) {
-      // Dumping AOT cache: all classes should have been loaded by FinalImageRecipes::load_all_classes(). k must have
-      // been a class that was excluded when FinalImageRecipes recorded all classes at the end of the training run.
+      // Dumping AOT cache: all classes should have been loaded by AOTMetaspaceRecipes::load_all_classes(). k must have
+      // been a class that was excluded when AOTMetaspaceRecipes recorded all classes at the end of the training run.
       //
       // Dumping static CDS archive: all classes in the classlist have already been loaded, before we resolve
       // constants. k must have been a class that was excluded when the classlist was written

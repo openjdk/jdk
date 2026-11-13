@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, Red Hat, Inc.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8029661 8325164 8368073 8368514 8368520
+ * @bug 8029661 8325164 8368073 8368514 8368520 8396708
  * @summary Test TLS 1.2 and TLS 1.3
  * @modules java.base/sun.security.internal.spec
  *          java.base/sun.security.util
