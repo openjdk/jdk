@@ -84,10 +84,10 @@ class G1HeapRegion : public CHeapObj<mtGC> {
   HeapWord* _pre_dummy_top;
 
 public:
-  // Valid region indexes range from 0 .. MaxRegionIdx.
+  // Valid region indexes range from 0 .. MaxNumRegions-1.
   // We restrict to INT_MAX because we internally need the NoRegionIdx sentinel internally.
   // For simplicity, limit to 2^31 regions which allow more than enough maximum heap size.
-  static const uint MaxRegionIdx = INT_MAX - 1;
+  static const uint MaxNumRegions = INT_MAX;
   // Sentinel value for an invalid region index.
   static const uint InvalidRegionIdx = UINT_MAX;
 
