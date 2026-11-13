@@ -34,7 +34,6 @@ import jdk.internal.vm.annotation.NullRestricted;
  * @bug 8397215
  * @summary Empty value fields must retain volatile accesses and memory barriers
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @enablePreview
  * @modules java.base/jdk.internal.vm.annotation
  * @run driver ${test.main.class}
