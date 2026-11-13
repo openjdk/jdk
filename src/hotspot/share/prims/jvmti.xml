@@ -6643,7 +6643,6 @@ class C2 extends C1 implements I2 {
        containing the watched field.
        For this purpose, the VM identifies the object being constructed by the
        reference in slot 0 of the current constructor frame's local variable array.
-       Constructor invocations in caller frames are not considered.
        </li>
        <li>
        An event for a watched static field is not generated when the class

@@ -50,10 +50,9 @@ import com.sun.jdi.event.EventSet;
  * frame of the event thread is a constructor for the object containing the
  * field and the constructor's declaring class or any of its superclasses has
  * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized}
- * instance fields. Constructor invocations in caller frames are not considered.
- * A notification is also not generated for a static field when the class
- * declaring the field is being initialized by the event thread and the class
- * declares strictly-initialized static fields.
+ * instance fields. A notification is also not generated for a static field when
+ * the class declaring the field is being initialized by the event thread and
+ * the class declares strictly-initialized static fields.
  * <p>
  * Note that the modification
  * of a Field is not considered an access.
