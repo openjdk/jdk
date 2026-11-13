@@ -42,8 +42,10 @@ public class IINC extends LocalVariableInstruction {
     }
 
     /**
-     * @param n index of local variable
-     * @param c increment factor
+     * Constructs an IINC instruction.
+     *
+     * @param n index of local variable.
+     * @param c increment factor.
      */
     public IINC(final int n, final int c) {
         // Default behavior of LocalVariableInstruction causes error
@@ -55,9 +57,9 @@ public class IINC extends LocalVariableInstruction {
 
     /**
      * Calls corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -68,7 +70,7 @@ public class IINC extends LocalVariableInstruction {
     /**
      * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {
@@ -86,14 +88,18 @@ public class IINC extends LocalVariableInstruction {
     }
 
     /**
-     * @return increment factor
+     * Gets the increment factor.
+     *
+     * @return increment factor.
      */
     public final int getIncrement() {
         return c;
     }
 
     /**
-     * @return int type
+     * Gets the int type.
+     *
+     * @return int type.
      */
     @Override
     public Type getType(final ConstantPoolGen cp) {
@@ -101,7 +107,7 @@ public class IINC extends LocalVariableInstruction {
     }
 
     /**
-     * Reads needed data (e.g. index) from file.
+     * Reads needed data (for example index) from file.
      */
     @Override
     protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
@@ -119,21 +125,30 @@ public class IINC extends LocalVariableInstruction {
 
     /**
      * Sets increment factor.
+     *
+     * @param c The increment factor.
+     * @throws ClassGenException Thrown if the increment is out of bounds.
      */
     public final void setIncrement(final int c) {
+        if (!isValidShort(c)) {
+            throw new ClassGenException("Illegal increment: " + c);
+        }
         this.c = c;
         setWide();
     }
 
     /**
      * Sets index of local variable.
+     *
+     * @param index index of local variable.
+     * @throws ClassGenException Thrown if index is out of bounds.
      */
     @Override
-    public final void setIndex(final int n) {
-        if (n < 0) {
-            throw new ClassGenException("Negative index value: " + n);
+    public final void setIndex(final int index) {
+        if (!isNonNegativeUShort(index)) {
+            throw new ClassGenException("Illegal index: " + index);
         }
-        super.setIndexOnly(n);
+        super.setIndexOnly(index);
         setWide();
     }
 

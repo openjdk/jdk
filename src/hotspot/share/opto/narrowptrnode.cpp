@@ -63,7 +63,7 @@ const Type* DecodeNNode::Value(PhaseGVN* phase) const {
   if (t == Type::TOP) return Type::TOP;
   if (t == TypeNarrowOop::NULL_PTR) return TypePtr::NULL_PTR;
 
-  assert(t->isa_narrowoop(), "only narrowoop here");
+  assert(t->is_narrowoop(), "only narrowoop here");
   return t->make_ptr();
 }
 
@@ -83,7 +83,7 @@ const Type* EncodePNode::Value(PhaseGVN* phase) const {
   if (t == Type::TOP) return Type::TOP;
   if (t == TypePtr::NULL_PTR) return TypeNarrowOop::NULL_PTR;
 
-  assert(t->isa_oop_ptr(), "only oopptr here");
+  assert(t->is_oopptr(), "only oopptr here");
   return t->make_narrowoop();
 }
 
@@ -104,7 +104,7 @@ const Type* DecodeNKlassNode::Value(PhaseGVN* phase) const {
   if (t == Type::TOP) return Type::TOP;
   assert(t != TypeNarrowKlass::NULL_PTR, "null klass?");
 
-  assert(t->isa_narrowklass(), "only narrow klass ptr here");
+  assert(t->is_narrowklass(), "only narrow klass ptr here");
   return t->make_ptr();
 }
 
@@ -124,7 +124,7 @@ const Type* EncodePKlassNode::Value(PhaseGVN* phase) const {
   if (t == Type::TOP) return Type::TOP;
   assert (t != TypePtr::NULL_PTR, "null klass?");
 
-  assert(t->isa_klassptr(), "only klass ptr here");
+  assert(t->is_klassptr(), "only klass ptr here");
   return t->make_narrowklass();
 }
 

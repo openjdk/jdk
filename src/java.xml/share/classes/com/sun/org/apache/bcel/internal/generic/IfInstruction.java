@@ -33,15 +33,19 @@ public abstract class IfInstruction extends BranchInstruction implements StackCo
     }
 
     /**
-     * @param opcode opcode of instruction
-     * @param target Target instruction to branch to
+     * Constructs an IfInstruction.
+     *
+     * @param opcode opcode of instruction.
+     * @param target Target instruction to branch to.
      */
     protected IfInstruction(final short opcode, final InstructionHandle target) {
         super(opcode, target);
     }
 
     /**
-     * @return negation of instruction, e.g. IFEQ.negate() == IFNE
+     * Gets the negation of this instruction.
+     *
+     * @return negation of instruction, for example IFEQ.negate() == IFNE.
      */
     public abstract IfInstruction negate();
 }

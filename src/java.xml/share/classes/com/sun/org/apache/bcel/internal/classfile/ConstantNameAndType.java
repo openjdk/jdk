@@ -50,16 +50,18 @@ public final class ConstantNameAndType extends Constant {
     /**
      * Initialize instance from file data.
      *
-     * @param file Input stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Input stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     ConstantNameAndType(final DataInput file) throws IOException {
         this(file.readUnsignedShort(), file.readUnsignedShort());
     }
 
     /**
-     * @param nameIndex Name of field/method
-     * @param signatureIndex and its signature
+     * Constructs a ConstantNameAndType.
+     *
+     * @param nameIndex Name of field/method.
+     * @param signatureIndex and its signature.
      */
     public ConstantNameAndType(final int nameIndex, final int signatureIndex) {
         super(Const.CONSTANT_NameAndType);
@@ -71,7 +73,7 @@ public final class ConstantNameAndType extends Constant {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -79,10 +81,10 @@ public final class ConstantNameAndType extends Constant {
     }
 
     /**
-     * Dump name and signature index to file stream in binary format.
+     * Dumps name and signature index to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -92,13 +94,18 @@ public final class ConstantNameAndType extends Constant {
     }
 
     /**
-     * @return name
+     * Gets the name.
+     *
+     * @param cp The constant pool.
+     * @return name.
      */
     public String getName(final ConstantPool cp) {
         return cp.constantToString(getNameIndex(), Const.CONSTANT_Utf8);
     }
 
     /**
+     * Gets the name index in constant pool of field/method name.
+     *
      * @return Name index in constant pool of field/method name.
      */
     public int getNameIndex() {
@@ -106,13 +113,18 @@ public final class ConstantNameAndType extends Constant {
     }
 
     /**
-     * @return signature
+     * Gets the signature.
+     *
+     * @param cp The constant pool.
+     * @return signature.
      */
     public String getSignature(final ConstantPool cp) {
         return cp.constantToString(getSignatureIndex(), Const.CONSTANT_Utf8);
     }
 
     /**
+     * Gets the index in constant pool of field/method signature.
+     *
      * @return Index in constant pool of field/method signature.
      */
     public int getSignatureIndex() {
@@ -120,21 +132,25 @@ public final class ConstantNameAndType extends Constant {
     }
 
     /**
-     * @param nameIndex the name index of this constant
+     * Sets the name index.
+     *
+     * @param nameIndex The name index of this constant.
      */
     public void setNameIndex(final int nameIndex) {
         this.nameIndex = nameIndex;
     }
 
     /**
-     * @param signatureIndex the signature index in the constant pool of this type
+     * Sets the signature index.
+     *
+     * @param signatureIndex The signature index in the constant pool of this type.
      */
     public void setSignatureIndex(final int signatureIndex) {
         this.signatureIndex = signatureIndex;
     }
 
     /**
-     * @return String representation
+     * @return String representation.
      */
     @Override
     public String toString() {

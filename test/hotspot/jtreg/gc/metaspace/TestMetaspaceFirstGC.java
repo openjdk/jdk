@@ -36,12 +36,11 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xms200m -XX:MinMetaspaceFreeRatio=0 -XX:MetaspaceSize=99m -XX:StartFlightRecording:name=startup TestMetaspaceFirstGC 99m
  */
 
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -98,12 +97,12 @@ public class TestMetaspaceFirstGC {
     // the recording decides afterwards if it came from loadOneClass and was the first request.
     private static final CountDownLatch metadataGC = new CountDownLatch(1);
 
-    public interface Dummy {}
+    // empty methods per generated class, one load takes a few tens of KB of metaspace this way
+    private static final int METHODS_PER_CLASS = 300;
 
-    static class DummyHandler implements InvocationHandler {
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args) {
-            return null;
+    private static class DefiningLoader extends ClassLoader {
+        Class<?> define(String name, byte[] bytes) {
+            return defineClass(name, bytes, 0, bytes.length);
         }
     }
 
@@ -130,7 +129,7 @@ public class TestMetaspaceFirstGC {
             getMetaspaceUsed();
             new LoadSample().commit();
             Instant loadingStart = Instant.now();
-            // metaspace commits in 64K granules and one class load allocates a few KB, the sample
+            // metaspace commits in 64K granules and one class load allocates tens of KB, the sample
             // is taken right before the load that failed
             long tolerance = 1024 * 1024;
             long initialThreshold = WhiteBox.getWhiteBox().metaspaceCapacityUntilGC();
@@ -310,14 +309,16 @@ public class TestMetaspaceFirstGC {
     }
 
     private static void loadOneClass() {
-        try {
-            String jarUrl = "file:" + (classCounter++) + ".jar";
-            URLClassLoader cl = new URLClassLoader(new URL[]{new URL(jarUrl)});
-            loaders.add(cl);
-            Proxy.newProxyInstance(cl, new Class[]{Dummy.class}, new DummyHandler());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        String name = "Generated" + (classCounter++);
+        byte[] bytes = ClassFile.of().build(ClassDesc.of(name), clb -> {
+            for (int i = 0; i < METHODS_PER_CLASS; i++) {
+                clb.withMethodBody("m" + i, MethodTypeDesc.of(ConstantDescs.CD_void),
+                                   ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC, cob -> cob.return_());
+            }
+        });
+        DefiningLoader cl = new DefiningLoader();
+        loaders.add(cl);
+        cl.define(name, bytes);
     }
 
     private static long getMetaspaceCommitted() {

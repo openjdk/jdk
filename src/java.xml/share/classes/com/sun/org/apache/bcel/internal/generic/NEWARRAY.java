@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,12 +29,12 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * NEWARRAY - Create new array of basic type (int, short, ...)
  *
- * <PRE>
+ * <pre>
  * Stack: ..., count -&gt; ..., arrayref
- * </PRE>
+ * </pre>
  *
  * type must be one of T_INT, T_SHORT, ...
- * @LastModified: Jan 2020
+ * @LastModified: Nov 2026
  */
 public class NEWARRAY extends Instruction implements AllocationInstruction, ExceptionThrower, StackProducer {
 
@@ -46,10 +46,20 @@ public class NEWARRAY extends Instruction implements AllocationInstruction, Exce
     NEWARRAY() {
     }
 
+    /**
+     * Constructs a NEWARRAY instruction.
+     *
+     * @param type element type of array.
+     */
     public NEWARRAY(final BasicType type) {
         this(type.getType());
     }
 
+    /**
+     * Constructs a NEWARRAY instruction.
+     *
+     * @param type element type code.
+     */
     public NEWARRAY(final byte type) {
         super(com.sun.org.apache.bcel.internal.Const.NEWARRAY, (short) 2);
         this.type = type;
@@ -57,9 +67,9 @@ public class NEWARRAY extends Instruction implements AllocationInstruction, Exce
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -70,9 +80,9 @@ public class NEWARRAY extends Instruction implements AllocationInstruction, Exce
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {
@@ -86,21 +96,25 @@ public class NEWARRAY extends Instruction implements AllocationInstruction, Exce
     }
 
     /**
-     * @return type of constructed array
+     * Gets the type of the constructed array.
+     *
+     * @return type of constructed array.
      */
     public final Type getType() {
         return new ArrayType(BasicType.getType(type), 1);
     }
 
     /**
-     * @return numeric code for basic element type
+     * Gets the type code.
+     *
+     * @return numeric code for basic element type.
      */
     public final byte getTypecode() {
         return type;
     }
 
     /**
-     * Read needed data (e.g. index) from file.
+     * Reads needed data (for example index) from file.
      */
     @Override
     protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
@@ -109,7 +123,7 @@ public class NEWARRAY extends Instruction implements AllocationInstruction, Exce
     }
 
     /**
-     * @return mnemonic for instruction
+     * @return mnemonic for instruction.
      */
     @Override
     public String toString(final boolean verbose) {

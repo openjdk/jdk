@@ -171,7 +171,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">Griechisch</language>
 			<language type="elx">Elamisch</language>
 			<language type="en">Englisch</language>
-			<language type="en_GB" alt="short">Englisch (GB)</language>
 			<language type="enm">Mittelenglisch</language>
 			<language type="eo">Esperanto</language>
 			<language type="es">Spanisch</language>
@@ -344,6 +343,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lil">Lillooet</language>
 			<language type="liv">Livisch</language>
 			<language type="lkt">Lakota</language>
+			<language type="lld" draft="contributed">Ladinisch</language>
 			<language type="lmo">Lombardisch</language>
 			<language type="ln">Lingala</language>
 			<language type="lo">Laotisch</language>
@@ -1220,23 +1220,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="cf">Währungsformat</key>
 			<key type="colAlternate">Sortierung ohne Symbole</key>
 			<key type="colBackwards">Umgekehrte Sortierung von Akzenten</key>
-			<key type="colCaseFirst">Sortierung nach Groß- bzw. Kleinbuchstaben</key>
+			<key type="colCaseFirst">Sortierung nach Groß- oder Kleinschreibung</key>
 			<key type="colCaseLevel">Sortierung nach Groß- oder Kleinschreibung</key>
 			<key type="collation">Sortierung</key>
 			<key type="colNormalization">Normierte Sortierung</key>
 			<key type="colNumeric">Sortierung nach Zahlen</key>
+			<key type="colReorder">Änderung der Reihenfolge nach Schrift/Kästchen</key>
 			<key type="colStrength">Sortierstärke</key>
 			<key type="currency">Währung</key>
-			<key type="em" draft="contributed">Emojidarstellung</key>
+			<key type="d0">Umwandlungsziel</key>
+			<key type="dx">In Wörterbüchern nicht umgebrochen</key>
+			<key type="em">Emojidarstellung</key>
+			<key type="fw">Erster Tag der Woche</key>
+			<key type="h0">Eingebunden</key>
 			<key type="hc">Stundenformat (12h/24h)</key>
+			<key type="i0">Eingabemethode</key>
+			<key type="k0">Tastatur</key>
+			<key type="kv">Größter ignorierter Umfang</key>
 			<key type="lb">Zeilenumbruchstil</key>
-			<key type="lw" draft="contributed">Zeilenumbruch im Wortinneren</key>
+			<key type="lw">Zeilenumbruch im Wortinneren</key>
+			<key type="m0">Tranformationsregeln</key>
 			<key type="ms">Maßsystem</key>
-			<key type="numbers">Ziffern</key>
-			<key type="ss" draft="contributed">Satzabbruch nach Abk.</key>
+			<key type="mu">Maßeinheit</key>
+			<key type="numbers">Zahlen</key>
+			<key type="rg">Bereich für ergänzende Daten</key>
+			<key type="s0">Ausgangsdaten umwandeln</key>
+			<key type="sd">Gliederung nach Regionen</key>
+			<key type="ss">Satzabbruch nach Abk.</key>
+			<key type="t">Transformieren</key>
+			<key type="t0">Maschinell übersetzt</key>
 			<key type="timezone">Zeitzone</key>
 			<key type="va">Lokale Variante</key>
 			<key type="x">Privatnutzung</key>
+			<key type="x0">Transformation für private Nutzung</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Buddhistischer Kalender</type>
@@ -1256,15 +1272,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">Jüdischer Kalender</type>
 			<type key="calendar" type="hebrew" scope="core">jüdisch</type>
 			<type key="calendar" type="indian">Indischer Nationalkalender</type>
+			<type key="calendar" type="indian" scope="core">Indischer Nationalkalender</type>
 			<type key="calendar" type="islamic">Hidschra-Kalender</type>
 			<type key="calendar" type="islamic" scope="core">Hidschra</type>
 			<type key="calendar" type="islamic-civil">Hidschra-Kalender (tabellarisch, nicht-astronomisch)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Hidschra (tabellarisch, nicht-astronomisch)</type>
 			<type key="calendar" type="islamic-rgsa" draft="provisional">Islamischer Kalender (Saudi-Arabien, Beobachtung)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Hidschra, Sichtung Saudi-Arabien</type>
 			<type key="calendar" type="islamic-tbla" draft="provisional">Islamischer Kalender (tabellarisch, astronomische Epoche)</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hidschra (tabellarisch, astronomisch)</type>
 			<type key="calendar" type="islamic-umalqura">Hidschra-Kalender (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hidschra (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601-Kalender</type>
+			<type key="calendar" type="iso8601" scope="core">gregorianisch</type>
 			<type key="calendar" type="japanese">Japanischer Kalender</type>
 			<type key="calendar" type="japanese" scope="core">japanisch</type>
 			<type key="calendar" type="persian">Persischer Kalender</type>
@@ -1272,16 +1292,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="roc">Minguo-Kalender</type>
 			<type key="calendar" type="roc" scope="core">Minguo</type>
 			<type key="cf" type="account">Währungsformat (Buchhaltung)</type>
-			<type key="cf" type="account" scope="core" draft="contributed">Buchhaltung</type>
+			<type key="cf" type="account" scope="core">Buchhaltung</type>
 			<type key="cf" type="standard">Währungsformat (Standard)</type>
-			<type key="cf" type="standard" scope="core" draft="contributed">Standard</type>
+			<type key="cf" type="standard" scope="core">Standard</type>
 			<type key="colAlternate" type="non-ignorable" draft="contributed">Symbole sortieren</type>
 			<type key="colAlternate" type="shifted" draft="contributed">Symbole sortieren ignorieren</type>
 			<type key="colBackwards" type="no" draft="contributed">Akzente normal sortieren</type>
 			<type key="colBackwards" type="yes" draft="contributed">Akzente umgekehrt sortieren</type>
 			<type key="colCaseFirst" type="lower" draft="contributed">Kleinbuchstaben zuerst aufführen</type>
+			<type key="colCaseFirst" type="lower" scope="core">Kleinschreibung</type>
 			<type key="colCaseFirst" type="no" draft="contributed">Normal sortieren</type>
+			<type key="colCaseFirst" type="no" scope="core">Kleinschreibung</type>
 			<type key="colCaseFirst" type="upper" draft="contributed">Großbuchstaben zuerst aufführen</type>
+			<type key="colCaseFirst" type="upper" scope="core">Großschreibung</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Ohne Groß-/Kleinschreibung sortieren</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Nach Groß-/Kleinschreibung sortieren</type>
 			<type key="collation" type="compat">Vorherige Sortierung, Kompatibilität</type>
@@ -1291,7 +1314,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="ducet">Unicode-Sortierung</type>
 			<type key="collation" type="ducet" scope="core">Standard-Unicode</type>
 			<type key="collation" type="emoji" draft="unconfirmed">Emoji-Sortierung</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
 			<type key="collation" type="eor" draft="contributed">Europäische Sortierregeln</type>
+			<type key="collation" type="eor" scope="core">Europäische Regeln</type>
 			<type key="collation" type="phonebook">Telefonbuch-Sortierung</type>
 			<type key="collation" type="phonebook" scope="core">Telefonbuch</type>
 			<type key="collation" type="phonetic">Phonetische Sortierung</type>
@@ -1301,6 +1326,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="search">Allgemeine Suche</type>
 			<type key="collation" type="search" scope="core">Suche</type>
 			<type key="collation" type="searchjl" draft="contributed">Suche nach Anfangsbuchstaben des koreanischen Alphabets</type>
+			<type key="collation" type="searchjl" scope="core">Koreanischer Anlautkonsonant</type>
 			<type key="collation" type="standard">Standard-Sortierung</type>
 			<type key="collation" type="standard" scope="core">Standard</type>
 			<type key="collation" type="stroke">Strichfolge</type>
@@ -1315,17 +1341,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colNormalization" type="yes" draft="contributed">Nach Unicode sortieren</type>
 			<type key="colNumeric" type="no" draft="contributed">Ziffern einzeln sortieren</type>
 			<type key="colNumeric" type="yes" draft="contributed">Ziffern numerisch sortieren</type>
+			<type key="colReorder" type="currency" scope="core">Währung</type>
+			<type key="colReorder" type="digit" scope="core">Ziffern</type>
+			<type key="colReorder" type="punct" scope="core">Satzzeichen</type>
+			<type key="colReorder" type="space" scope="core">Leerraum</type>
+			<type key="colReorder" type="symbol" scope="core">Sonderzeichen</type>
 			<type key="colStrength" type="identical" draft="contributed">Alle sortieren</type>
+			<type key="colStrength" type="identical" scope="core">Alle</type>
 			<type key="colStrength" type="primary" draft="contributed">Nur Basisbuchstaben sortieren</type>
+			<type key="colStrength" type="primary" scope="core">Grundzeichen</type>
 			<type key="colStrength" type="quaternary" draft="contributed">Akzente/Fall/Breite/Kana sortieren</type>
+			<type key="colStrength" type="quaternary" scope="core">Grundzeichen, Akzente, Fälle, Varianten, Kana</type>
 			<type key="colStrength" type="secondary" draft="contributed">Akzente sortieren</type>
+			<type key="colStrength" type="secondary" scope="core">Grundzeichen, Akzente</type>
 			<type key="colStrength" type="tertiary" draft="contributed">Akzente/Fall/Breite sortieren</type>
+			<type key="colStrength" type="tertiary" scope="core">Grundzeichen, Akzente, Fälle, Varianten</type>
 			<type key="d0" type="fwidth">Vollbreit</type>
 			<type key="d0" type="hwidth">Halbbreit</type>
 			<type key="d0" type="npinyin" draft="contributed">Numerisch</type>
-			<type key="em" type="default" scope="core" draft="contributed">Standard</type>
-			<type key="em" type="emoji" scope="core" draft="contributed">Emoji</type>
-			<type key="em" type="text" scope="core" draft="contributed">Text</type>
+			<type key="em" type="default" scope="core">Standard</type>
+			<type key="em" type="emoji" scope="core">Emoji</type>
+			<type key="em" type="text" scope="core">Text</type>
+			<type key="hc" type="c12">12-Stunden-Format</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24-Stunden-Format</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12-Stunden-Format (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12-Stunden-Format (1-12)</type>
@@ -1334,29 +1374,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24-Stunden-Format (1-24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Speziell: Leerzeichen, Satzzeichen, alle Sonderzeichen</type>
+			<type key="kv" type="punct" scope="core">Speziell: Leerzeichen, Satzzeichen</type>
+			<type key="kv" type="space" scope="core">Speziell: Leerzeichen, Satzzeichen</type>
+			<type key="kv" type="symbol" scope="core">Speziell: Leerzeichen, Satzzeichen, Nicht-Währungssymbole</type>
 			<type key="lb" type="loose">Lockerer Zeilenumbruch</type>
-			<type key="lb" type="loose" scope="core" draft="contributed">Locker</type>
+			<type key="lb" type="loose" scope="core">Locker</type>
 			<type key="lb" type="normal">Normaler Zeilenumbruch</type>
-			<type key="lb" type="normal" scope="core" draft="contributed">Normal</type>
+			<type key="lb" type="normal" scope="core">Normal</type>
 			<type key="lb" type="strict">Fester Zeilenumbruch</type>
-			<type key="lb" type="strict" scope="core" draft="contributed">Fest</type>
-			<type key="lw" type="breakall" scope="core" draft="contributed">Überall erlaubt</type>
-			<type key="lw" type="keepall" scope="core" draft="contributed">Nirgendwo erlaubt</type>
-			<type key="lw" type="normal" scope="core" draft="contributed">Normal</type>
-			<type key="lw" type="phrase" scope="core" draft="contributed">Wortgruppen erhalten</type>
+			<type key="lb" type="strict" scope="core">Fest</type>
+			<type key="lw" type="breakall" scope="core">Überall erlaubt</type>
+			<type key="lw" type="keepall" scope="core">Nirgendwo erlaubt</type>
+			<type key="lw" type="normal" scope="core">Normal</type>
+			<type key="lw" type="phrase" scope="core">Wortgruppen erhalten</type>
 			<type key="m0" type="bgn">BGN</type>
 			<type key="m0" type="ungegn">UNGEGN</type>
 			<type key="ms" type="metric">Metrisches System</type>
-			<type key="ms" type="metric" scope="core" draft="contributed">Metrisch</type>
+			<type key="ms" type="metric" scope="core">Metrisch</type>
 			<type key="ms" type="uksystem">Britisches Maßsystem</type>
-			<type key="ms" type="uksystem" scope="core" draft="contributed">Britisch</type>
+			<type key="ms" type="uksystem" scope="core">Britisch</type>
 			<type key="ms" type="ussystem">US-Maßsystem</type>
-			<type key="ms" type="ussystem" scope="core" draft="contributed">US-amerikanisch</type>
+			<type key="ms" type="ussystem" scope="core">US-amerikanisch</type>
 			<type key="numbers" type="ahom" draft="unconfirmed">Ahom-Ziffern</type>
 			<type key="numbers" type="arab">Arabisch-indische Ziffern</type>
 			<type key="numbers" type="arabext">Erweiterte arabisch-indische Ziffern</type>
+			<type key="numbers" type="arabext" scope="core">Erweitert arabisch-indisch</type>
 			<type key="numbers" type="armn">Armenische Ziffern</type>
-			<type key="numbers" type="armnlow">Armenische Ziffern in Kleinschrift</type>
+			<type key="numbers" type="armnlow">Armenische Ziffern in Kleinschreibung</type>
+			<type key="numbers" type="armnlow" scope="core">Armenische Zahlzeichen in Kleinschreibung</type>
 			<type key="numbers" type="bali" draft="contributed">Balinesische Ziffern</type>
 			<type key="numbers" type="beng">Bengalische Ziffern</type>
 			<type key="numbers" type="brah" draft="contributed">Brahmi-Ziffern</type>
@@ -1366,56 +1412,80 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="deva">Devanagari-Ziffern</type>
 			<type key="numbers" type="ethi">Äthiopische Ziffern</type>
 			<type key="numbers" type="finance" draft="contributed">Finanzzahlen</type>
+			<type key="numbers" type="finance" scope="core">Finanzen</type>
 			<type key="numbers" type="fullwide">Vollbreite Ziffern</type>
+			<type key="numbers" type="fullwide" scope="core">Vollbreit</type>
 			<type key="numbers" type="geor">Georgische Ziffern</type>
 			<type key="numbers" type="gong" draft="unconfirmed">Gunjala-Gondi-Ziffern</type>
 			<type key="numbers" type="gonm" draft="unconfirmed">Masaram-Gondi-Ziffern</type>
 			<type key="numbers" type="grek">Griechische Ziffern</type>
-			<type key="numbers" type="greklow">Griechische Ziffern in Kleinschrift</type>
+			<type key="numbers" type="greklow">Griechische Ziffern in Kleinschreibung</type>
+			<type key="numbers" type="greklow" scope="core">Griechische Zeichen in Kleinschreibung</type>
 			<type key="numbers" type="gujr">Gujarati-Ziffern</type>
 			<type key="numbers" type="guru">Gurmukhi-Ziffern</type>
+			<type key="numbers" type="hanidays" scope="core">Nummerierung der Monatstage in Hanzi in traditionellen Kalendern</type>
 			<type key="numbers" type="hanidec">Chinesische Dezimalzahlen</type>
+			<type key="numbers" type="hanidec" scope="core">Dezimales Stellenwertsystem mit chinesischen Zahlen-Ideogrammen als Ziffern</type>
 			<type key="numbers" type="hans">Vereinfacht-chinesische Ziffern</type>
 			<type key="numbers" type="hansfin">Vereinfacht-chinesische Finanzziffern</type>
+			<type key="numbers" type="hansfin" scope="core">Vereinfacht-chinesische Finanzzeichen</type>
 			<type key="numbers" type="hant">Traditionell-chinesische Ziffern</type>
 			<type key="numbers" type="hantfin">Traditionell-chinesische Finanzziffern</type>
+			<type key="numbers" type="hantfin" scope="core">Traditionell-chinesische Finanzzeichen</type>
 			<type key="numbers" type="hebr">Hebräische Ziffern</type>
 			<type key="numbers" type="hmng" draft="unconfirmed">Pahawh-Hmong-Ziffern</type>
 			<type key="numbers" type="hmnp" draft="unconfirmed">Nyiakeng-Puachue-Hmong-Ziffern</type>
 			<type key="numbers" type="java">Javanesische Ziffern</type>
 			<type key="numbers" type="jpan">Japanische Ziffern</type>
 			<type key="numbers" type="jpanfin">Japanische Finanzziffern</type>
+			<type key="numbers" type="jpanfin" scope="core">Japanische Finanzzeichen</type>
+			<type key="numbers" type="jpanyear" scope="core">Japanische Gannen-Jahreszählung des ersten Jahres</type>
 			<type key="numbers" type="kali" draft="contributed">Kayah-Li-Ziffern</type>
 			<type key="numbers" type="khmr">Khmer-Ziffern</type>
 			<type key="numbers" type="knda">Kannada-Ziffern</type>
 			<type key="numbers" type="lana" draft="contributed">Lanna-Ziffern (säkular)</type>
 			<type key="numbers" type="lanatham" draft="contributed">Lanna-Ziffern (sakral)</type>
+			<type key="numbers" type="lanatham" scope="core">Lan Na (religiös)</type>
 			<type key="numbers" type="laoo">Laotische Ziffern</type>
 			<type key="numbers" type="latn">Westliche Ziffern</type>
 			<type key="numbers" type="lepc" draft="contributed">Lepcha-Ziffern</type>
 			<type key="numbers" type="limb" draft="contributed">Limbu-Ziffern</type>
 			<type key="numbers" type="mathbold" draft="unconfirmed">Mathematische Fettschrift-Ziffern</type>
+			<type key="numbers" type="mathbold" scope="core">Mathematisch fett mit Doppelstrich</type>
 			<type key="numbers" type="mathdbl" draft="unconfirmed">Mathematische Doppelstrich-Ziffern</type>
+			<type key="numbers" type="mathdbl" scope="core">Mathematisch mit Doppelstrich</type>
 			<type key="numbers" type="mathmono" draft="unconfirmed">Mathematische Konstantschrift-Ziffern</type>
+			<type key="numbers" type="mathmono" scope="core">Mathematisch Monospace</type>
 			<type key="numbers" type="mathsanb" draft="unconfirmed">Mathematische Grotesk-Fettschrift-Ziffern</type>
+			<type key="numbers" type="mathsanb" scope="core">Mathematisch Sans Serif fett</type>
 			<type key="numbers" type="mathsans" draft="unconfirmed">Mathematische Grotesk-Ziffern</type>
+			<type key="numbers" type="mathsans" scope="core">Mathematisch Sans Serif</type>
 			<type key="numbers" type="mlym">Malayalam-Ziffern</type>
 			<type key="numbers" type="modi" draft="unconfirmed">Modi-Ziffern</type>
 			<type key="numbers" type="mong">Mongolische Ziffern</type>
 			<type key="numbers" type="mroo" draft="unconfirmed">Mro-Ziffern</type>
 			<type key="numbers" type="mtei">Meitei-Mayek-Ziffern</type>
 			<type key="numbers" type="mymr">Myanmar-Ziffern</type>
+			<type key="numbers" type="mymrepka" scope="core">Östliche Pwo Karen in Myanmar</type>
+			<type key="numbers" type="mymrpao" scope="core">Pa’o in Myanmar</type>
 			<type key="numbers" type="mymrshan" draft="contributed">Myanmarische Shan-Ziffern</type>
+			<type key="numbers" type="mymrshan" scope="core">Shan in Myanmar</type>
 			<type key="numbers" type="mymrtlng" draft="unconfirmed">Myanmarische Tai-Laing-Ziffern</type>
+			<type key="numbers" type="mymrtlng" scope="core">Tai Laing in Myanmar</type>
 			<type key="numbers" type="native">Native Ziffern</type>
+			<type key="numbers" type="native" scope="core">Native Ziffern</type>
 			<type key="numbers" type="nkoo" draft="contributed">N’Ko-Ziffern</type>
 			<type key="numbers" type="olck">Ol-Chiki-Ziffern</type>
 			<type key="numbers" type="orya">Oriya-Ziffern</type>
 			<type key="numbers" type="osma" draft="unconfirmed">Osmaniya-Ziffern</type>
+			<type key="numbers" type="outlined" scope="core">Umriss</type>
 			<type key="numbers" type="rohg" draft="unconfirmed">Hanifi-Rohingya-Ziffern</type>
 			<type key="numbers" type="roman">Römische Ziffern</type>
+			<type key="numbers" type="roman" scope="core">Römisch, in Großbuchstaben</type>
 			<type key="numbers" type="romanlow">Römische Ziffern in Kleinschrift</type>
+			<type key="numbers" type="romanlow" scope="core">Römisch, in Kleinbuchstaben</type>
 			<type key="numbers" type="saur" draft="contributed">Saurashtra-Ziffern</type>
+			<type key="numbers" type="segment" scope="core">Segmentiert</type>
 			<type key="numbers" type="shrd" draft="contributed">Sharada-Ziffern</type>
 			<type key="numbers" type="sind" draft="unconfirmed">Khudawadi-Ziffern</type>
 			<type key="numbers" type="sinh" draft="unconfirmed">Sinhala-Lith-Ziffern</type>
@@ -1423,19 +1493,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="sund" draft="contributed">Sundanesische Ziffern</type>
 			<type key="numbers" type="takr" draft="contributed">Takri-Ziffern</type>
 			<type key="numbers" type="talu" draft="contributed">Neue Tai-Lü-Ziffern</type>
-			<type key="numbers" type="taml">Tamilische Ziffern</type>
+			<type key="numbers" type="taml">Traditionelle tamilische Ziffern</type>
 			<type key="numbers" type="tamldec">Tamil-Ziffern</type>
+			<type key="numbers" type="tamldec" scope="core">Moderne tamilische Zahlzeichen</type>
 			<type key="numbers" type="telu">Telugu-Ziffern</type>
 			<type key="numbers" type="thai">Thai-Ziffern</type>
 			<type key="numbers" type="tibt">Tibetische Ziffern</type>
 			<type key="numbers" type="tirh" draft="unconfirmed">Tirhuta-Ziffern</type>
 			<type key="numbers" type="traditional" draft="contributed">Traditionelle Zahlen</type>
+			<type key="numbers" type="traditional" scope="core">Traditionelle Zahlzeichen</type>
 			<type key="numbers" type="vaii">Vai-Ziffern</type>
 			<type key="numbers" type="wara" draft="unconfirmed">Warang-Citi-Ziffern</type>
 			<type key="numbers" type="wcho" draft="unconfirmed">Wancho-Ziffern</type>
 			<type key="ss" type="none" scope="core" draft="contributed">Aus</type>
 			<type key="ss" type="standard" scope="core" draft="contributed">Ein</type>
+			<type key="t0" type="und">Nicht näher bezeichnete maschinelle Übersetzung</type>
+			<type key="va" type="posix" scope="core">POSIX-Variante</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Aus</typeValue>
+			<typeValue type="yes">Ein</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Internationales (SI)</measurementSystemName>
 		</measurementSystemNames>
@@ -1455,9 +1533,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters>[aä b c d e f g h i j k l m n oö p q r s ß t uü v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[áàăâåãā æ ç éèĕêëē ğ íìĭîïİī ı ñ óòŏôøō œ ş úùŭûū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="numbers-auxiliary" draft="contributed">[| ~]</exemplarCharacters>
+		<exemplarCharacters type="numbers-auxiliary">[| ~]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘‚ &quot;“„ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
-		<exemplarCharacters type="punctuation-auxiliary" draft="contributed">[× | ~]</exemplarCharacters>
+		<exemplarCharacters type="punctuation-auxiliary">[× | ~]</exemplarCharacters>
 		<parseLenients scope="date" level="lenient">
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
@@ -2258,6 +2336,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL–LLLL</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d.–d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM–d. MMMM</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
@@ -2516,6 +2598,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -2524,7 +2609,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern>{1} 'um' {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="relative">
-							<pattern draft="contributed">{1} 'um' {0}</pattern>
+							<pattern>{1} 'um' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
@@ -2566,13 +2651,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d. MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d. MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">d MMMM Y G, E</dateFormatItem>
 						<dateFormatItem id="H">HH 'Uhr'</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="hv">h a v</dateFormatItem>
 						<dateFormatItem id="Hv">HH 'Uhr' v</dateFormatItem>
 						<dateFormatItem id="Md">d.M.</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M.</dateFormatItem>
@@ -2593,11 +2679,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d. MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d. MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d. MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d. MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'Woche' w 'des' 'Jahres' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'Woche' w 'des' 'Jahres' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{1}, {0}</appendItem>
+						<appendItem request="Era">{0} {1}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{1}, {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h 'Uhr' B – h 'Uhr' B</greatestDifference>
@@ -2650,7 +2743,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">E, d. MMM y – E, d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
 							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
@@ -2698,6 +2790,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL–LLLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d.–d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -2825,7 +2921,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="1">Minguo</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0" draft="contributed">v. VR China</era>
+						<era type="0">vdR</era>
 					</eraNarrow>
 				</eras>
 			</calendar>
@@ -3421,11 +3517,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Atlantic/Faeroe">
 				<exemplarCity>Färöer</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Britische Sommerzeit</daylight>
-				</long>
-			</zone>
 			<zone type="Asia/Tbilisi">
 				<exemplarCity>Tiflis</exemplarCity>
 			</zone>
@@ -3437,11 +3528,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Hong_Kong">
 				<exemplarCity>Hongkong</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Irische Sommerzeit</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Calcutta">
 				<exemplarCity>Kalkutta</exemplarCity>
@@ -3662,13 +3748,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Alaska-Sommerzeit</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>Almaty-Zeit</generic>
-					<standard>Almaty-Normalzeit</standard>
-					<daylight>Almaty-Sommerzeit</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>Amazonas-Zeit</generic>
@@ -3716,20 +3795,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Apia-Zeit</generic>
 					<standard>Apia-Normalzeit</standard>
 					<daylight>Apia-Sommerzeit</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>Aqtau-Zeit</generic>
-					<standard>Aqtau-Normalzeit</standard>
-					<daylight>Aqtau-Sommerzeit</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>Aqtöbe-Zeit</generic>
-					<standard>Aqtöbe-Normalzeit</standard>
-					<daylight>Aqtöbe-Sommerzeit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3831,6 +3896,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Brasília-Zeit</generic>
 					<standard>Brasília-Normalzeit</standard>
 					<daylight>Brasília-Sommerzeit</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic draft="contributed">Britische Zeit</generic>
+					<daylight>Britische Sommerzeit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -4026,23 +4097,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Mittlere Greenwich-Zeit</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Grönländische Zeit</generic>
+					<standard>Grönländische Normalzeit</standard>
+					<daylight>Grönländische Sommerzeit</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic>Ostgrönland-Zeit</generic>
-					<standard>Ostgrönland-Normalzeit</standard>
-					<daylight>Ostgrönland-Sommerzeit</daylight>
+					<generic>Ostgrönländische Zeit</generic>
+					<standard>Ostgrönländische Normalzeit</standard>
+					<daylight>Ostgrönländische Sommerzeit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>Westgrönland-Zeit</generic>
-					<standard>Westgrönland-Normalzeit</standard>
-					<daylight>Westgrönland-Sommerzeit</daylight>
-				</long>
-			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard draft="contributed">Guam-Zeit</standard>
+					<generic>Westgrönländische Zeit</generic>
+					<standard>Westgrönländische Normalzeit</standard>
+					<daylight>Westgrönländische Sommerzeit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
@@ -4057,7 +4130,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Hawaii-Aleuten-Normalzeit</standard>
+					<standard>Hawaii-Normalzeit</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4116,6 +4189,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Iranische Zeit</generic>
 					<standard>Iranische Normalzeit</standard>
 					<daylight>Iranische Sommerzeit</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic draft="contributed">Irische Zeit</generic>
+					<daylight>Irische Sommerzeit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -4185,11 +4264,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Kirgisische Zeit</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard draft="contributed">Sri-Lanka-Zeit</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>Linieninseln-Zeit</standard>
@@ -4200,13 +4274,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Lord-Howe-Zeit</generic>
 					<standard>Lord-Howe-Normalzeit</standard>
 					<daylight>Lord-Howe-Sommerzeit</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic draft="contributed">Macau-Zeit</generic>
-					<standard draft="contributed">Macau-Normalzeit</standard>
-					<daylight draft="contributed">Macau-Sommerzeit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -4324,11 +4391,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Fernando-de-Noronha-Sommerzeit</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard draft="contributed">Nördliche-Marianen-Zeit</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Nowosibirsker Zeit</generic>
@@ -4408,13 +4470,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Pjöngjang-Zeit</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic draft="contributed">Quysylorda-Zeit</generic>
-					<standard draft="contributed">Quysylorda-Normalzeit</standard>
-					<daylight draft="contributed">Qysylorda-Sommerzeit</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Réunion-Zeit</standard>
@@ -4441,9 +4496,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa-Zeit</generic>
 					<standard>Samoa-Normalzeit</standard>
-					<daylight>Samoa-Sommerzeit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4534,6 +4587,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Uruguayische Zeit</generic>
 					<standard>Uruguayische Normalzeit</standard>
 					<daylight>Uruguayische Sommerzeit</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard draft="contributed">Ürümqi-Zeit</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -5000,9 +5058,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="CNH">
 				<displayName>Renminbi-Yuan (Offshore)</displayName>
-			</currency>
-			<currency type="CNX">
-				<displayName draft="contributed">Dollar der Chinesischen Volksbank</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Renminbi Yuan</displayName>
@@ -5498,8 +5553,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="MVR">
 				<displayName>Malediven-Rufiyaa</displayName>
-				<displayName count="one">Malediven-Rufiyaa</displayName>
-				<displayName count="other">Malediven-Rufiyaa</displayName>
 			</currency>
 			<currency type="MWK">
 				<displayName>Malawi-Kwacha</displayName>
@@ -6064,8 +6117,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName draft="contributed">Simbabwe-Gold</displayName>
-				<displayName count="one">Simbabwe-Gold</displayName>
-				<displayName count="other">Simbabwe-Gold</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName>Simbabwe-Dollar (2009)</displayName>
@@ -6456,15 +6507,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} Millimol pro Liter</unitPattern>
 			</unit>
 			<unit type="concentr-item">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>Elemente</displayName>
 				<unitPattern count="one">{0} Element</unitPattern>
 				<unitPattern count="one" case="accusative" draft="contributed">{0} Element</unitPattern>
 				<unitPattern count="one" case="dative" draft="contributed">{0} Element</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} Elements</unitPattern>
+				<unitPattern count="one" case="genitive">{0} Elements</unitPattern>
 				<unitPattern count="other">{0} Elemente</unitPattern>
 				<unitPattern count="other" case="accusative" draft="contributed">{0} Elemente</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} Elementen</unitPattern>
+				<unitPattern count="other" case="dative">{0} Elementen</unitPattern>
 				<unitPattern count="other" case="genitive" draft="contributed">{0} Elemente</unitPattern>
 			</unit>
 			<unit type="concentr-part">
@@ -7029,7 +7080,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-newton">
 				<gender>neuter</gender>
-				<displayName>Newton</displayName>
 				<unitPattern count="one">{0} Newton</unitPattern>
 				<unitPattern count="one" case="accusative">{0} Newton</unitPattern>
 				<unitPattern count="one" case="dative">{0} Newton</unitPattern>
@@ -8321,9 +8371,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} Weber</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
-				<displayName draft="contributed">Lichtgeschwindigkeit</displayName>
+				<displayName>Lichtgeschwindigkeit</displayName>
 				<unitPattern count="one">{0}-fache Lichtgeschwindigkeit</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}-fache Lichtgeschwindigkeit</unitPattern>
+				<unitPattern count="other">{0}-fache Lichtgeschwindigkeit</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<gender>neuter</gender>
@@ -8813,9 +8863,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} Gy</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
-				<displayName draft="contributed">Lichtgeschw.</displayName>
+				<displayName>Lichtgeschw.</displayName>
 				<unitPattern count="one">{0}-fache Lichtg.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}-fache Lichtg.</unitPattern>
+				<unitPattern count="other">{0}-fache Lichtg.</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e9">
 				<displayName>Milliardstel</displayName>
@@ -8886,7 +8936,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} Elem.</unitPattern>
 			</unit>
 			<unit type="concentr-part">
-				<displayName>Teil</displayName>
 				<unitPattern count="one">{0} Teil</unitPattern>
 				<unitPattern count="other">{0} Teil</unitPattern>
 			</unit>
@@ -8899,7 +8948,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}mol</unitPattern>
 			</unit>
 			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
 				<unitPattern count="one">{0}Glc</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}Glc</unitPattern>
 			</unit>
@@ -9149,9 +9197,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-liter">
 				<displayName>l</displayName>
 			</unit>
-			<unit type="volume-fluid-ounce-metric">
-				<displayName>fl.oz. m.</displayName>
-			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ac ft</displayName>
 			</unit>
@@ -9201,34 +9246,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0}sr</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}sr</unitPattern>
 			</unit>
-			<unit type="electric-coulomb">
-				<unitPattern count="one">{0} C</unitPattern>
-				<unitPattern count="other">{0} C</unitPattern>
-			</unit>
-			<unit type="electric-farad">
-				<unitPattern count="one">{0} F</unitPattern>
-				<unitPattern count="other">{0} F</unitPattern>
-			</unit>
-			<unit type="electric-henry">
-				<unitPattern count="one">{0} H</unitPattern>
-				<unitPattern count="other">{0} H</unitPattern>
-			</unit>
-			<unit type="electric-siemens">
-				<unitPattern count="one">{0} S</unitPattern>
-				<unitPattern count="other">{0} S</unitPattern>
-			</unit>
 			<unit type="energy-calorie-it">
-				<displayName>calIT</displayName>
 				<unitPattern count="one" draft="contributed">{0}calIT</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}calIT</unitPattern>
-			</unit>
-			<unit type="energy-sievert">
-				<unitPattern count="one">{0} Sv</unitPattern>
-				<unitPattern count="other">{0} Sv</unitPattern>
-			</unit>
-			<unit type="energy-gray">
-				<unitPattern count="one">{0} Gy</unitPattern>
-				<unitPattern count="other">{0} Gy</unitPattern>
 			</unit>
 			<unit type="magnetic-tesla">
 				<unitPattern count="one" draft="contributed">{0}T</unitPattern>
@@ -9239,9 +9259,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0}Wb</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
-				<displayName draft="contributed">c</displayName>
-				<unitPattern count="one" draft="contributed">{0} c</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} c</unitPattern>
+				<displayName>c</displayName>
+				<unitPattern count="one">{0} c</unitPattern>
+				<unitPattern count="other">{0} c</unitPattern>
 			</unit>
 			<unit type="duration-night">
 				<unitPattern count="one">{0}Nacht</unitPattern>

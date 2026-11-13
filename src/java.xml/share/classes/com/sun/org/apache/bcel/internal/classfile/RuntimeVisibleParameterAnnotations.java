@@ -36,14 +36,14 @@ public class RuntimeVisibleParameterAnnotations extends ParameterAnnotations {
     /**
      * Constructs a new instance.
      *
-     * @param nameIndex Index pointing to the name <em>Code</em>
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constantPool Array of constants
+     * @param nameIndex Index pointing to the name <em>Code</em>.
+     * @param length Content length in bytes.
+     * @param input Input stream.
+     * @param constantPool Array of constants.
      * @throws IOException Thrown when an I/O exception of some sort has occurred.
      */
     public RuntimeVisibleParameterAnnotations(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool)
         throws IOException {
-        super(Const.ATTR_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS, nameIndex, length, input, constantPool);
+        super(Const.ATTR_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS, nameIndex, length, input, constantPool, true);
     }
 }

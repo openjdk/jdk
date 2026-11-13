@@ -141,7 +141,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
   // operations on anti-dep loads as we do their killing stores.
   if( n->is_Store() && n->in(MemNode::Memory)->in(0) == n->in(0) ) {
     // Get store's memory slice
-    int alias_idx = C->get_alias_index(_igvn.type(n->in(MemNode::Address))->is_ptr());
+    int alias_idx = C->get_alias_index(_igvn.type(n->in(MemNode::Address))->as_ptr());
 
     // Get memory-phi anti-dep loads will be using
     Node *memphi = n->in(MemNode::Memory);
@@ -150,7 +150,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     // it will then "split-up".
     for (DUIterator_Fast imax,i = memphi->fast_outs(imax); i < imax; i++) {
       Node *load = memphi->fast_out(i);
-      if( load->is_Load() && alias_idx == C->get_alias_index(_igvn.type(load->in(MemNode::Address))->is_ptr()) )
+      if (load->is_Load() && alias_idx == C->get_alias_index(_igvn.type(load->in(MemNode::Address))->as_ptr()))
         set_ctrl(load,blk1);
     }
   }

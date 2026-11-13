@@ -781,7 +781,7 @@ const TypeInteger* IfNode::filtered_integer_type(PhaseGVN* gvn, Node* val, Node*
 
 const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj) {
   const TypeInteger* t = filtered_integer_type(gvn, val, if_proj, T_INT);
-  return t == nullptr ? nullptr : t->is_int();
+  return t == nullptr ? nullptr : t->as_int();
 }
 
 //------------------------------fold_compares----------------------------
@@ -1561,7 +1561,7 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
   Node_Stack<Node> stack(2);
 
   assert(r->Opcode() == Op_LoadRange, "unexpected range check");
-  const TypeInt* array_size = igvn->type(r)->is_int();
+  const TypeInt* array_size = igvn->type(r)->as_int();
 
   stack.push(l, 0);
 
@@ -1574,7 +1574,7 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
       Node* use = n->raw_out(i);
       if (stack.size() == 1) {
         if (use->Opcode() == Op_ConvI2L) {
-          const TypeLong* bounds = use->as_Type()->type()->is_long();
+          const TypeLong* bounds = use->as_Type()->type()->as_long();
           if (bounds->_lo <= array_size->_lo && bounds->_hi >= array_size->_hi &&
               (bounds->_lo != array_size->_lo || bounds->_hi != array_size->_hi)) {
             stack.set_index(i+1);
@@ -1614,8 +1614,8 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
             }
           }
         }
-      } else if (use->in(0) == nullptr && (igvn->type(use)->isa_long() ||
-                                        igvn->type(use)->isa_ptr())) {
+      } else if (use->in(0) == nullptr && (igvn->type(use)->is_long() ||
+                                           igvn->type(use)->is_ptr())) {
         stack.set_index(i+1);
         stack.push(use, 0);
         break;
@@ -1925,7 +1925,7 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  Node* prev_dom = search_identical(dist, igvn);
+  Node* prev_dom = search_identical(dist);
 
   if (prev_dom != nullptr) {
     Node* true_proj = this->true_proj();
@@ -2021,14 +2021,13 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool prev_dom_not
   return new ConINode(TypeInt::ZERO);
 }
 
-Node* IfNode::search_identical(int dist, PhaseIterGVN* igvn) {
+Node* IfNode::search_identical(int dist) {
   // Setup to scan up the CFG looking for a dominating test
   Node* dom = in(0);
   Node* prev_dom = this;
   int op = Opcode();
   // Search up the dominator tree for an If with an identical test
-  while (dom->Opcode() != op ||  // Not same opcode?
-         !same_condition(dom, igvn) ||  // Not same input 1?
+  while (dom->Opcode() != op || !has_same_non_constant_condition(dom->as_If()) ||
          prev_dom->in(0) != dom) {  // One path of test does not dominate?
     if (dist < 0) return nullptr;
 
@@ -2052,11 +2051,14 @@ Node* IfNode::search_identical(int dist, PhaseIterGVN* igvn) {
   return prev_dom;
 }
 
-bool IfNode::same_condition(const Node* dom, PhaseIterGVN* igvn) const {
-  Node* dom_bool = dom->in(1);
+// Check if 'other_if' has the same non constant condition as 'this'. If both have a constant, then we return false
+// because we either don't optimize the node (i.e. a ParsePredicate) or fold it away by IGVN. Returning true would
+// then unnecessarily enable optimizations.
+bool IfNode::has_same_non_constant_condition(const IfNode* other_if) const {
+  Node* dom_bool = other_if->in(1);
   Node* this_bool = in(1);
   if (dom_bool == this_bool) {
-    return true;
+    return this_bool != nullptr && !this_bool->is_Con();
   }
 
   if (dom_bool == nullptr || !dom_bool->is_Bool() ||
@@ -2261,7 +2263,7 @@ static int subsuming_bool_test_encode(Node* node) {
 // If the test is constant & we match, then we are the input Control
 Node* IfProjNode::Identity(PhaseGVN* phase) {
   // Can only optimize if cannot go the other way
-  const TypeTuple *t = phase->type(in(0))->is_tuple();
+  const TypeTuple* t = phase->type(in(0))->as_tuple();
   if (t == TypeTuple::IFNEITHER || (always_taken(t) &&
        // During parsing (GVN) we don't remove dead code aggressively.
        // Cut off dead branch and let PhaseRemoveUseless take care of it.
@@ -2621,7 +2623,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return dominated_by(prev_dom, igvn, true);
     }
   } else {
-    prev_dom = search_identical(4, igvn);
+    prev_dom = search_identical(4);
 
     if (prev_dom == nullptr) {
       return nullptr;

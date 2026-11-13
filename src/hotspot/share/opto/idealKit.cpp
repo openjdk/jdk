@@ -71,11 +71,11 @@ void IdealKit::if_then(Node* left, BoolTest::mask relop,
                        Node* right, float prob, float cnt, bool push_new_state) {
   assert((state() & (BlockS|LoopS|IfThenS|ElseS)), "bad state for new If");
   Node* bol;
-  if (left->bottom_type()->isa_ptr() == nullptr) {
-    if (left->bottom_type()->isa_int() != nullptr) {
+  if (!left->bottom_type()->is_ptr()) {
+    if (left->bottom_type()->is_int()) {
       bol = Bool(CmpI(left, right), relop);
     } else {
-      assert(left->bottom_type()->isa_long() != nullptr, "what else?");
+      assert(left->bottom_type()->is_long(), "what else?");
       bol = Bool(CmpL(left, right), relop);
     }
   } else {

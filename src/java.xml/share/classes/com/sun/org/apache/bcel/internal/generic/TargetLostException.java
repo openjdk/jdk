@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -46,7 +46,7 @@ package com.sun.org.apache.bcel.internal.generic;
  * @see InstructionHandle
  * @see InstructionList
  * @see InstructionTargeter
- * @LastModified: Sept 2025
+ * @LastModified: Nov 2026
  */
 public final class TargetLostException extends Exception {
 
@@ -54,6 +54,12 @@ public final class TargetLostException extends Exception {
     @SuppressWarnings("serial") // Array component type is not Serializable
     private final InstructionHandle[] targets;
 
+    /**
+     * Constructs a TargetLostException.
+     *
+     * @param targets The instruction handles.
+     * @param message The exception message.
+     */
     TargetLostException(final InstructionHandle[] targets, final String message) {
         super(message);
         this.targets = targets;

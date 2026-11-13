@@ -27,5 +27,10 @@ package com.sun.org.apache.bcel.internal.generic;
  */
 public interface FieldObserver {
 
+    /**
+     * Notifies observer of a field change.
+     *
+     * @param field The field that changed.
+     */
     void notify(FieldGen field);
 }

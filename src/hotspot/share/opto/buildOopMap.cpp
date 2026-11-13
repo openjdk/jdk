@@ -235,7 +235,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
     assert( def, "since live better have reaching def" );
 
     if (def->is_MachTemp()) {
-      assert(!def->bottom_type()->isa_oop_ptr(),
+      assert(!def->bottom_type()->is_oopptr(),
              "ADLC only assigns OOP types to MachTemp defs corresponding to xRegN operands");
       // Exclude MachTemp definitions even if they are typed as oops.
       continue;
@@ -243,7 +243,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
 
     // Classify the reaching def as oop, derived, callee-save, dead, or other
     const Type *t = def->bottom_type();
-    if( t->isa_oop_ptr() ) {    // Oop or derived?
+    if (t->is_oopptr()) {    // Oop or derived?
       assert( !OptoReg::is_valid(_callees[reg]), "oop can't be callee save" );
 #ifdef _LP64
       // 64-bit pointers record oop-ishness on 2 aligned adjacent registers.
@@ -264,7 +264,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
         regalloc->C->record_method_not_compilable(ss.as_string());
         continue;
       }
-      if (t->is_ptr()->offset() == 0) { // Not derived?
+      if (t->as_ptr()->offset() == 0) { // Not derived?
         if( mcall ) {
           // Outgoing argument GC mask responsibility belongs to the callee,
           // not the caller.  Inspect the inputs to the call, to see if
@@ -324,7 +324,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
         omap->set_derived_oop(r, b);
       }
 
-    } else if( t->isa_narrowoop() ) {
+    } else if (t->is_narrowoop()) {
       assert( !OptoReg::is_valid(_callees[reg]), "oop can't be callee save" );
       // Check for a legal reg name in the oopMap and bailout if it is not.
       if (!omap->legal_vm_reg_name(r)) {
@@ -358,7 +358,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
     } else {
       // Other - some reaching non-oop value
 #ifdef ASSERT
-      if (t->isa_rawptr()) {
+      if (t->is_rawptr()) {
         ResourceMark rm;
         Unique_Node_List<const Node> worklist;
         worklist.push(def);
@@ -519,7 +519,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
               // with these, but are presuming (with trepidation) that not any of
               // them are oops. This can be fixed by making get_base_and_disp()
               // look at a specific input instead of all inputs.
-              assert(!def->bottom_type()->isa_oop_ptr(), "expecting non-oop mem input");
+              assert(!def->bottom_type()->is_oopptr(), "expecting non-oop mem input");
             } else if (base != fp || offset == Type::OffsetBot) {
               // Do nothing: the fp operand is either not from a memory use
               // (base == nullptr) OR the fp is used in a non-memory context
