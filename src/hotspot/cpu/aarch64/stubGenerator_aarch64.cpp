@@ -159,6 +159,13 @@ static const int64_t _modulus_P256[5] = {
   0x0000001000000000L, 0x0000ffffffff0000L
 };
 
+const int32_t LIMBS_P384      = 7;
+const int32_t BPL_P384        = 55;
+const int32_t REM_P384        = 64 - BPL_P384;
+const int32_t COLUMNS_P384    = LIMBS_P384 * 2;
+const uint64_t MASK_P384      = (uint64_t) -1 >> REM_P384;
+const uint64_t CARRY_ADD_P384 = (uint64_t) 1 << (BPL_P384 - 1);
+
 static const char _encodeBlock_toBase64[64] = {
   'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
   'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -8958,6 +8965,72 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void carry_reduce_P384(Register c[], Register tmp, Register carry_add,
+        Register v, Register vt) {
+
+    // Reduce upper limbs
+    for (int i = 13; i > 6; i--) {
+      __ mov(v, c[i]);
+
+      __ ubfiz(vt, v, 19, 36);
+      __ add(c[i - 5], c[i - 5], vt);
+      __ add(c[i - 4], c[i - 4], v, Assembler::ASR, 36);
+
+      __ ubfiz(vt, v, 42, 13);
+      __ add(c[i - 6], c[i - 6], vt);
+      __ add(c[i - 5], c[i - 5], v, Assembler::ASR, 13);
+
+      __ ubfiz(vt, v, 33, 22);
+      __ sub(c[i - 7], c[i - 7], vt);
+      __ sub(c[i - 6], c[i - 6], v, Assembler::ASR, 22);
+
+      __ ubfiz(vt, v, 1, 54);
+      __ add(c[i - 7], c[i - 7], vt);
+      __ add(c[i - 6], c[i - 6], v, Assembler::ASR, 54);
+    }
+
+    // Carry-add with reduction from high limb
+    __ mov(carry_add, CARRY_ADD_P384);
+
+    // Limb 5
+    __ add(tmp, c[5], carry_add);
+    __ asr(tmp, tmp, BPL_P384);
+    __ add(c[6], c[6], tmp);
+    __ sub(c[5], c[5], tmp, Assembler::LSL, BPL_P384);
+
+    // Limb 6
+    __ add(tmp, c[6], carry_add);
+    __ asr(tmp, tmp, BPL_P384);
+    __ sub(c[6], c[6], tmp, Assembler::LSL, BPL_P384);
+
+    // Reduce high order limb and fold back into low order limb
+    __ mov(v, tmp);
+
+    __ ubfiz(vt, v, 19, 36);
+    __ add(c[2], c[2], vt);
+    __ add(c[3], c[3], v, Assembler::ASR, 36);
+
+    __ ubfiz(vt, v, 42, 13);
+    __ add(c[1], c[1], vt);
+    __ add(c[2], c[2], v, Assembler::ASR, 13);
+
+    __ ubfiz(vt, v, 33, 22);
+    __ sub(c[0], c[0], vt);
+    __ sub(c[1], c[1], v, Assembler::ASR, 22);
+
+    __ ubfiz(vt, v, 1, 54);
+    __ add(c[0], c[0], vt);
+    __ add(c[1], c[1], v, Assembler::ASR, 54);
+
+    // Limbs 0 - 5
+    for (int i = 0; i < 6; i++) {
+      __ add(tmp, c[i], carry_add);
+      __ asr(tmp, tmp, BPL_P384);
+      __ add(c[i + 1], c[i + 1], tmp);
+      __ sub(c[i], c[i], tmp, Assembler::LSL, BPL_P384);
+    }
+  }
+
   /**
    * Arithmetic polynomial multiplication in CurveP384.  The algorithm mimics
    * the version in the IntegerPolynomialP384 class, including the use of all
@@ -8993,115 +9066,40 @@ class StubGenerator: public StubCodeGenerator {
     RegSetIterator<Register> regs = (RegSet::range(r3, r21) - r18_tls).begin();
     auto saved_regs = RegSet::range(r19, r21);
 
-    const int32_t limbs      = 7;
-    const int32_t bpl        = 55;
-    const int32_t rem        = 64 - bpl;
-    const int32_t columns    = limbs * 2;
-    const uint64_t mask      = (uint64_t) -1 >> rem;
-    const uint64_t CARRY_ADD = (uint64_t) 1 << (bpl - 1);
-
     Register a     = *regs++;
     Register b     = *regs++;
     Register low   = *regs++;
     Register high  = *regs++;
-    Register c[columns];
+    Register c[COLUMNS_P384];
 
     // save callee-saved registers on stack
     __ push(saved_regs, sp);
 
-    for (int i = 0; i < columns; i++) {
+    for (int i = 0; i < COLUMNS_P384; i++) {
       c[i] = *regs++;
       __ mov(c[i], zr);
     }
 
     // Perform high/low multiplication with signed 7x55 bit limbs
-    for (int i = 0; i < limbs; i++) {
+    for (int i = 0; i < LIMBS_P384; i++) {
       __ ldr(b, Address(bLimbs, i * 8));
-      for (int j = 0; j < limbs; j++) {
+      for (int j = 0; j < LIMBS_P384; j++) {
         __ ldr(a, Address(aLimbs, j * 8));
         __ smulh(high, a, b);
         __ mul(low, a, b);
-        __ extr(high, high, low, bpl);
-        __ andr(low, low,  mask);
+        __ extr(high, high, low, BPL_P384);
+        __ andr(low, low,  MASK_P384);
         __ add(c[i + j], c[i + j], low);
         __ add(c[i + j + 1], c[i + j + 1], high);
       }
     }
 
-    Register v  = a;
-    Register vt = b;
+    carry_reduce_P384(c, low, high, a, b);
 
-    // Reduce upper limbs
-    for (int i = 13; i > 6; i--) {
-      __ mov(v, c[i]);
-
-      __ ubfiz(vt, v, 19, 36);
-      __ add(c[i - 5], c[i - 5], vt);
-      __ add(c[i - 4], c[i - 4], v, Assembler::ASR, 36);
-
-      __ ubfiz(vt, v, 42, 13);
-      __ add(c[i - 6], c[i - 6], vt);
-      __ add(c[i - 5], c[i - 5], v, Assembler::ASR, 13);
-
-      __ ubfiz(vt, v, 33, 22);
-      __ sub(c[i - 7], c[i - 7], vt);
-      __ sub(c[i - 6], c[i - 6], v, Assembler::ASR, 22);
-
-      __ ubfiz(vt, v, 1, 54);
-      __ add(c[i - 7], c[i - 7], vt);
-      __ add(c[i - 6], c[i - 6], v, Assembler::ASR, 54);
-    }
-
-    // Carry-add with reduction from high limb
-    Register tmp       = low;
-    Register carry_add = high;
-
-    __ mov(carry_add, CARRY_ADD);
-
-    // Limb 5
-    __ add(tmp, c[5], carry_add);
-    __ asr(tmp, tmp, bpl);
-    __ add(c[6], c[6], tmp);
-    __ sub(c[5], c[5], tmp, Assembler::LSL, bpl);
-
-    // Limb 6
-    __ add(tmp, c[6], carry_add);
-    __ asr(tmp, tmp, bpl);
-    __ lsl(vt, tmp, bpl);
-    __ sub(c[6], c[6], vt);
-
-    // Reduce high order limb and fold back into low order limb
-    __ mov(v, tmp);
-
-    __ ubfiz(vt, v, 19, 36);
-    __ add(c[2], c[2], vt);
-    __ add(c[3], c[3], v, Assembler::ASR, 36);
-
-    __ ubfiz(vt, v, 42, 13);
-    __ add(c[1], c[1], vt);
-    __ add(c[2], c[2], v, Assembler::ASR, 13);
-
-    __ ubfiz(vt, v, 33, 22);
-    __ sub(c[0], c[0], vt);
-    __ sub(c[1], c[1], v, Assembler::ASR, 22);
-
-    __ ubfiz(vt, v, 1, 54);
-    __ add(c[0], c[0], vt);
-    __ add(c[1], c[1], v, Assembler::ASR, 54);
-
-    // Limbs 0 - 5
-    for (int i = 0; i < 6; i++) {
-      __ add(tmp, c[i], carry_add);
-      __ asr(tmp, tmp, bpl);
-      __ add(c[i + 1], c[i + 1], tmp);
-      __ lsl(tmp, tmp, bpl);
-      __ sub(c[i], c[i], tmp);
-    }
-
-    for (int i = 0; i < limbs - 1; i += 2) {
+    for (int i = 0; i < LIMBS_P384 - 1; i += 2) {
       __ stp(c[i], c[i + 1], Address(rLimbs, i * 8));
     }
-    __ str(c[limbs - 1], Address(rLimbs, (limbs - 1) * 8));
+    __ str(c[LIMBS_P384 - 1], Address(rLimbs, (LIMBS_P384 - 1) * 8));
 
     // restore calleee-saved registers from stack
     __ pop(saved_regs, sp);
@@ -9149,18 +9147,11 @@ class StubGenerator: public StubCodeGenerator {
     RegSetIterator<Register> regs = (RegSet::range(r2, r20) - r18_tls).begin();
     auto saved_regs = RegSet::range(r19, r20);
 
-    const int32_t limbs      = 7;
-    const int32_t bpl        = 55;
-    const int32_t rem        = 64 - bpl;
-    const int32_t columns    = limbs * 2;
-    const uint64_t mask      = (uint64_t) -1 >> rem;
-    const uint64_t CARRY_ADD = (uint64_t) 1 << (bpl - 1);
-
     Register a     = *regs++;
     Register aArg  = *regs++;
     Register low   = *regs++;
     Register high  = *regs++;
-    Register c[columns];
+    Register c[COLUMNS_P384];
 
     __ push(saved_regs, sp);
 
@@ -9170,97 +9161,31 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Perform high/low multiplication with signed 7x55-bit limbs
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < LIMBS_P384; i++) {
       __ ldr(aArg, Address(aLimbs, i * 8));
       __ smulh(high, aArg, aArg);
       __ mul(low, aArg, aArg);
-      __ extr(high, high, low, bpl);
-      __ andr(low, low, mask);
+      __ extr(high, high, low, BPL_P384);
+      __ andr(low, low, MASK_P384);
       __ add(c[i * 2], c[i * 2], low);
       __ add(c[i * 2 + 1], c[i * 2 + 1], high);
-      for (int j = i + 1; j < 7; j++) {
+      for (int j = i + 1; j < LIMBS_P384; j++) {
         __ ldr(a, Address(aLimbs, j * 8));
         __ smulh(high, a, aArg);
         __ mul(low, a, aArg);
-        __ extr(high, high, low, bpl);
-        __ andr(low, low, mask);
+        __ extr(high, high, low, BPL_P384);
+        __ andr(low, low, MASK_P384);
         __ add(c[i + j], c[i + j], low, Assembler::LSL, 1);
         __ add(c[i + j + 1], c[i + j + 1], high, Assembler::LSL, 1);
       }
     }
 
-    Register v     = a;
-    Register vt    = aArg;
+    carry_reduce_P384(c, low, high, a, aArg);
 
-    // Reduce upper limbs
-    for (int i = 13; i > 6; i--) {
-      __ mov(v, c[i]);
-
-      __ ubfiz(vt, v, 19, 36);
-      __ add(c[i - 5], c[i - 5], vt);
-      __ add(c[i - 4], c[i - 4], v, Assembler::ASR, 36);
-
-      __ ubfiz(vt, v, 42, 13);
-      __ add(c[i - 6], c[i - 6], vt);
-      __ add(c[i - 5], c[i - 5], v, Assembler::ASR, 13);
-
-      __ ubfiz(vt, v, 33, 22);
-      __ sub(c[i - 7], c[i - 7], vt);
-      __ sub(c[i - 6], c[i - 6], v, Assembler::ASR, 22);
-
-      __ ubfiz(vt, v, 1, 54);
-      __ add(c[i - 7], c[i - 7], vt);
-      __ add(c[i - 6], c[i - 6], v, Assembler::ASR, 54);
-    }
-
-    // Carry-add with reduction from high limb
-    Register tmp       = low;
-    Register carry_add = high;
-
-    __ mov(carry_add, CARRY_ADD);
-
-    // Limb 5
-    __ add(tmp, c[5], carry_add);
-    __ asr(tmp, tmp, bpl);
-    __ add(c[6], c[6], tmp);
-    __ sub(c[5], c[5], tmp, Assembler::LSL, bpl);
-
-    // Limb 6
-    __ add(tmp, c[6], carry_add);
-    __ asr(tmp, tmp, bpl);
-    __ sub(c[6], c[6], tmp, Assembler::LSL, bpl);
-
-    // Reduce high order limb and fold back into low order limb
-    __ mov(v, tmp);
-
-    __ ubfiz(vt, v, 19, 36);
-    __ add(c[2], c[2], vt);
-    __ add(c[3], c[3], v, Assembler::ASR, 36);
-
-    __ ubfiz(vt, v, 42, 13);
-    __ add(c[1], c[1], vt);
-    __ add(c[2], c[2], v, Assembler::ASR, 13);
-
-    __ ubfiz(vt, v, 33, 22);
-    __ sub(c[0], c[0], vt);
-    __ sub(c[1], c[1], v, Assembler::ASR, 22);
-
-    __ ubfiz(vt, v, 1, 54);
-    __ add(c[0], c[0], vt);
-    __ add(c[1], c[1], v, Assembler::ASR, 54);
-
-    // Limbs 0 - 5
-    for (int i = 0; i < 6; i++) {
-      __ add(tmp, c[i], carry_add);
-      __ asr(tmp, tmp, bpl);
-      __ add(c[i + 1], c[i + 1], tmp);
-      __ sub(c[i], c[i], tmp, Assembler::LSL, bpl);
-    }
-
-    for (int i = 0; i < (limbs - 1); i += 2) {
+    for (int i = 0; i < (LIMBS_P384 - 1); i += 2) {
       __ stp(c[i], c[i + 1], Address(rLimbs, i * 8));
     }
-    __ str(c[limbs - 1], Address(rLimbs, (limbs - 1) * 8));
+    __ str(c[LIMBS_P384 - 1], Address(rLimbs, (LIMBS_P384 - 1) * 8));
 
     __ pop(saved_regs, sp);
 
