@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,38 +44,43 @@ public final class PrimitiveClassDescImpl
         extends DynamicConstantDesc<Class<?>> implements ClassDesc {
 
     /** {@link ClassDesc} representing the primitive type {@code int} */
-    public static final PrimitiveClassDescImpl CD_int = new PrimitiveClassDescImpl("I");
+    public static @Stable PrimitiveClassDescImpl CD_int;
 
     /** {@link ClassDesc} representing the primitive type {@code long} */
-    public static final PrimitiveClassDescImpl CD_long = new PrimitiveClassDescImpl("J");
+    public static @Stable PrimitiveClassDescImpl CD_long;
 
     /** {@link ClassDesc} representing the primitive type {@code float} */
-    public static final PrimitiveClassDescImpl CD_float = new PrimitiveClassDescImpl("F");
+    public static @Stable PrimitiveClassDescImpl CD_float;
 
     /** {@link ClassDesc} representing the primitive type {@code double} */
-    public static final PrimitiveClassDescImpl CD_double = new PrimitiveClassDescImpl("D");
+    public static @Stable PrimitiveClassDescImpl CD_double;
 
     /** {@link ClassDesc} representing the primitive type {@code short} */
-    public static final PrimitiveClassDescImpl CD_short = new PrimitiveClassDescImpl("S");
+    public static @Stable PrimitiveClassDescImpl CD_short;
 
     /** {@link ClassDesc} representing the primitive type {@code byte} */
-    public static final PrimitiveClassDescImpl CD_byte = new PrimitiveClassDescImpl("B");
+    public static @Stable PrimitiveClassDescImpl CD_byte;
 
     /** {@link ClassDesc} representing the primitive type {@code char} */
-    public static final PrimitiveClassDescImpl CD_char = new PrimitiveClassDescImpl("C");
+    public static @Stable PrimitiveClassDescImpl CD_char;
 
     /** {@link ClassDesc} representing the primitive type {@code boolean} */
-    public static final PrimitiveClassDescImpl CD_boolean = new PrimitiveClassDescImpl("Z");
+    public static @Stable PrimitiveClassDescImpl CD_boolean;
 
     /** {@link ClassDesc} representing the primitive type {@code void} */
-    public static final PrimitiveClassDescImpl CD_void = new PrimitiveClassDescImpl("V");
+    public static @Stable PrimitiveClassDescImpl CD_void;
 
-    private final String descriptor;
+    static {
+        // Trigger ConstantDescs initialization if we are not initialized by
+        // ConstantDescs; our fields are initialized by ConstantDescs
+        ConstantDescs.BSM_PRIMITIVE_CLASS.refKind();
+    }
+
     private @Stable Wrapper lazyWrapper; // initialized only after this
 
     /**
      * Creates a {@linkplain ClassDesc} given a descriptor string for a primitive
-     * type.
+     * type. Only called by {@link ConstantDescs}.
      *
      * @param descriptor the descriptor string, which must be a one-character
      * string corresponding to one of the nine base types
@@ -83,9 +88,8 @@ public final class PrimitiveClassDescImpl
      * describe a valid primitive type
      * @jvms 4.3 Descriptors
      */
-    private PrimitiveClassDescImpl(String descriptor) {
+    public PrimitiveClassDescImpl(String descriptor) {
         super(ConstantDescs.BSM_PRIMITIVE_CLASS, requireNonNull(descriptor), ConstantDescs.CD_Class);
-        this.descriptor = descriptor;
     }
 
     public Wrapper wrapper() {
@@ -122,7 +126,7 @@ public final class PrimitiveClassDescImpl
 
     @Override
     public String descriptorString() {
-        return descriptor;
+        return constantName();
     }
 
     @Override
