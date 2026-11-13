@@ -129,12 +129,12 @@ bool CDSMustMatchFlags::check_flag(T saved, T actual, const char* name) {
   if (saved != actual) {
     ResourceMark rm;
     stringStream ss;
-    ss.print("VM option %s is different between dumptime (", name);
+    ss.print("The %s's %s setting (", CDSConfig::type_of_archive_being_loaded(), name);
     do_print(&ss, saved);
-    ss.print(") and runtime (");
-    do_print(&ss, name);
+    ss.print(") does not equal the current %s setting (", name);
+    do_print(&ss, actual);
     ss.print(")");
-    aot_log_info(aot)("%s", ss.as_string());
+    AOTMetaspace::report_loading_error("%s", ss.as_string());
     return false;
   } else {
     return true;
@@ -823,10 +823,6 @@ bool FileMapInfo::init_from_file(int fd) {
       aot_log_warning(aot)("The %s has been truncated.", file_type);
       return false;
     }
-  }
-
-  if (!header()->check_must_match_flags()) {
-    return false;
   }
 
   return true;
@@ -2012,78 +2008,30 @@ int FileMapHeader::compute_crc() {
   return crc;
 }
 
-#define CHECK_ARCHIVED_FLAG(archivedValue, flag) \
-  if (!check_archived_flag(archivedValue, JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(flag)))) { return false; }
-
-static bool check_archived_flag(bool archivedValue, JVMFlag* flag) {
-  if (archivedValue != flag->get_bool()) {
-    AOTMetaspace::report_loading_error("The %s's %s setting (%s)"
-                                       " does not equal the current %s setting (%s).",
-                                       CDSConfig::type_of_archive_being_loaded(),
-                                       flag->name(), archivedValue ? "enabled" : "disabled",
-                                       flag->name(), flag->get_bool() ? "enabled" : "disabled");
-    return false;
-  } else {
-    return true;
-  }
-}
-
-static bool check_archived_flag(int archivedValue, JVMFlag* flag) {
-  if (archivedValue != flag->get_int()) {
-    AOTMetaspace::report_loading_error("The %s's %s setting (%d)"
-                                       " does not equal the current %s setting (%d).",
-                                       CDSConfig::type_of_archive_being_loaded(),
-                                       flag->name(), CDSConfig::type_of_archive_being_loaded(),
-                                       flag->name(), archivedValue, flag->get_int());
-    return false;
-  } else {
-    return true;
-  }
-}
-
-static bool check_archived_flag(uint archivedValue, JVMFlag* flag) {
-  if (archivedValue != flag->get_uint()) {
-    AOTMetaspace::report_loading_error("The %s's %s setting (%d)"
-                                       " does not equal the current %s setting (%d).",
-                                       CDSConfig::type_of_archive_being_loaded(),
-                                       flag->name(), CDSConfig::type_of_archive_being_loaded(),
-                                       flag->name(), archivedValue, flag->get_uint());
-    return false;
-  } else {
-    return true;
-  }
-}
-
-static bool check_archived_flag(intx archivedValue, JVMFlag* flag) {
-  if (archivedValue != flag->get_intx()) {
-    AOTMetaspace::report_loading_error("The %s's %s setting (%zd)"
-                                       " does not equal the current %s setting (%zd).",
-                                       CDSConfig::type_of_archive_being_loaded(),
-                                       flag->name(), CDSConfig::type_of_archive_being_loaded(),
-                                       flag->name(), archivedValue, flag->get_intx());
-    return false;
-  } else {
-    return true;
-  }
-}
-
+#define CHECK_MUST_MATCH_FLAG(saved, flag) \
+  if (!CDSMustMatchFlags::check_flag(saved, flag, #flag)) { return false; }
 
 // This function should only be called during run time with UseSharedSpaces enabled.
 bool FileMapHeader::validate() {
   const char* file_type = CDSConfig::type_of_archive_being_loaded();
-  CHECK_ARCHIVED_FLAG(_obj_alignment, ObjectAlignmentInBytes);
-  CHECK_ARCHIVED_FLAG(_compact_strings, CompactStrings);
+
+  if (!_must_match.runtime_check()) {
+    return false;
+  }
+
+  CHECK_MUST_MATCH_FLAG(_obj_alignment, ObjectAlignmentInBytes);
+  CHECK_MUST_MATCH_FLAG(_compact_strings, CompactStrings);
 
   if (TrainingData::have_data()) {
-    CHECK_ARCHIVED_FLAG(_type_profile_level,            TypeProfileLevel);
-    CHECK_ARCHIVED_FLAG(_type_profile_args_limit,       TypeProfileArgsLimit);
-    CHECK_ARCHIVED_FLAG(_type_profile_parms_limit,      TypeProfileParmsLimit);
-    CHECK_ARCHIVED_FLAG(_type_profile_width,            TypeProfileWidth);
-    CHECK_ARCHIVED_FLAG(_bci_profile_width,             BciProfileWidth);
-    CHECK_ARCHIVED_FLAG(_type_profile_casts,            TypeProfileCasts);
-    CHECK_ARCHIVED_FLAG(_profile_traps,                 ProfileTraps);
-    CHECK_ARCHIVED_FLAG(_profile_exception_handlers,    ProfileExceptionHandlers);
-    CHECK_ARCHIVED_FLAG(_spec_trap_limit_extra_entries, SpecTrapLimitExtraEntries);
+    CHECK_MUST_MATCH_FLAG(_type_profile_level,            TypeProfileLevel);
+    CHECK_MUST_MATCH_FLAG(_type_profile_args_limit,       TypeProfileArgsLimit);
+    CHECK_MUST_MATCH_FLAG(_type_profile_parms_limit,      TypeProfileParmsLimit);
+    CHECK_MUST_MATCH_FLAG(_type_profile_width,            TypeProfileWidth);
+    CHECK_MUST_MATCH_FLAG(_bci_profile_width,             BciProfileWidth);
+    CHECK_MUST_MATCH_FLAG(_type_profile_casts,            TypeProfileCasts);
+    CHECK_MUST_MATCH_FLAG(_profile_traps,                 ProfileTraps);
+    CHECK_MUST_MATCH_FLAG(_profile_exception_handlers,    ProfileExceptionHandlers);
+    CHECK_MUST_MATCH_FLAG(_spec_trap_limit_extra_entries, SpecTrapLimitExtraEntries);
   }
 
   if (_cpu_features_offset != -1) {
@@ -2119,7 +2067,7 @@ bool FileMapHeader::validate() {
 
   if (!_verify_local) {
     // If we cannot load boot classes, there's no point of using the CDS archive
-    CHECK_ARCHIVED_FLAG(_verify_local, BytecodeVerificationLocal);
+    CHECK_MUST_MATCH_FLAG(_verify_local, BytecodeVerificationLocal);
   }
 
   // For backwards compatibility, we don't check the BytecodeVerificationRemote setting
@@ -2161,7 +2109,8 @@ bool FileMapHeader::validate() {
     }
   }
 
-  CHECK_ARCHIVED_FLAG(compact_headers(), UseCompactObjectHeaders);
+
+  CHECK_MUST_MATCH_FLAG(compact_headers(), UseCompactObjectHeaders);
 
   if (is_static()) {
     // Only the static archive can contain the full module graph.
