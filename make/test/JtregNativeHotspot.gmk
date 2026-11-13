@@ -75,12 +75,12 @@ ifeq ($(call isTargetOs, linux), true)
     HOTSPOT_JTREG_LIBRARIES_LIBS_libSuspendInCritical += -latomic
   endif
 else
-  HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c \
+  HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c libNoEhFrame.c \
       exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp
 endif
 
 ifneq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64), true+true)
-  HOTSPOT_JTREG_EXCLUDE += libTestSVEWithJNI.c libNoEhFrame.c
+  HOTSPOT_JTREG_EXCLUDE += libTestSVEWithJNI.c
 endif
 
 ifeq ($(call isTargetOs, windows), true)
