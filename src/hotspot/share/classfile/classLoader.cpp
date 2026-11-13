@@ -1333,9 +1333,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
 
   assert(has_jrt_entry(), "CDS dumping does not support exploded JDK build");
 
-  ResourceMark rm(current);
   int classpath_index = -1;
-
   PackageEntry* pkg_entry = ik->package();
 
   if (!AOTClassLocationConfig::dumptime_is_ready()) {
@@ -1348,9 +1346,8 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   } else if (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:")) {
     classpath_index = 0;
   } else {
+    ResourceMark rm(current);
     const char* path = ClassLoader::uri_to_path(src);
-    assert(path != nullptr, "sanity");
-
     if ((pkg_entry != nullptr) && !pkg_entry->in_unnamed_module()) {
       // A class in a named module from the --module-path. Note that classes from the modules image
       // are handled above and get an index of 0.

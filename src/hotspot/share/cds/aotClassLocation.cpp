@@ -507,16 +507,12 @@ public:
 static AOTClassLocationIndexHashtable* _named_module_table = nullptr;     // MODULE_PATH
 static AOTClassLocationIndexHashtable* _unnamed_module_table = nullptr;   // BOOT_CLASSPATH + APP_CLASSPATH
 
-// The path must be canonicalized, or else -1 will be returned.
-//
-// NOTE: This function is called only from ClassLoader::record_result().
-// All archivable classes that are loaded by the supported loaders (boot and app) from
-// {-Xbootclasspath/a, -classpath, --module-path} would have be been given a code source
-// with a canonicalized path. Therefore, we can do a quick hashtable look up.
 int AOTClassLocationConfig::dumptime_get_class_location_index(const char* path, bool is_named_module) {
   assert(CDSConfig::is_dumping_archive(), "");
+  ResourceMark rm;
+  const char* canon_path = ClassLoader::get_canonical_path(path, JavaThread::current());
   int* saved = is_named_module ?
-    _named_module_table->get(path) : _unnamed_module_table->get(path);
+    _named_module_table->get(canon_path) : _unnamed_module_table->get(canon_path);
   if (saved != nullptr) {
     return *saved;
   } else {
