@@ -114,7 +114,8 @@ public class TestNullnessPropagation {
 
     @Run(test = "test2")
     public void test2_verifier() {
-        test2(null);
-        test2(new MyValue());
+        Asserts.assertNull(test2(null));
+        var mv = new MyValue();
+        Asserts.assertEQ(test2(mv), mv.o);
     }
 }
