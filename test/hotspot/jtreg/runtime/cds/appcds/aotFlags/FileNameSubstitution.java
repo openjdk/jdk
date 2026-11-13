@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,9 @@
  */
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -61,7 +60,7 @@ public class FileNameSubstitution {
         //----------------------------------------------------------------------
         printTestCase("AOTConfiguration (two-command training)");
         removeOutputFiles();
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=test-%p.aotconfig",
             "-Xlog:os",
@@ -74,7 +73,7 @@ public class FileNameSubstitution {
         out.shouldHaveExitValue(0);
 
         // "create" with AOTCache
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=test-%p.aot",
@@ -87,7 +86,7 @@ public class FileNameSubstitution {
         out.shouldHaveExitValue(0);
 
         // "create" with AOTCacheOutput
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCacheOutput=test-%p.aot",
@@ -102,7 +101,7 @@ public class FileNameSubstitution {
         //----------------------------------------------------------------------
         printTestCase("AOTConfiguration/AOTCache (single-command training)");
         removeOutputFiles();
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=test-%p.aotconfig",
             "-XX:AOTCacheOutput=test-%p.aot",
@@ -122,7 +121,7 @@ public class FileNameSubstitution {
         //----------------------------------------------------------------------
         printTestCase("AOTConfiguration (two-command training) -- %t");
         removeOutputFiles();
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=test-%t.aotconfig",
             "-Xlog:os",
@@ -140,7 +139,7 @@ public class FileNameSubstitution {
 
         //----------------------------------------------------------------------
         printTestCase("Cannot use %p twice");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=test-%p%p.aotconfig",
             "-Xlog:os",
@@ -152,7 +151,7 @@ public class FileNameSubstitution {
 
         //----------------------------------------------------------------------
         printTestCase("Cannot use %t twice");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=test-%t%t.aotconfig",
             "-Xlog:os",

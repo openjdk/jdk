@@ -968,7 +968,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<types>
 			<type key="calendar" type="buddhist" draft="unconfirmed">ᱵᱚᱣᱫᱷ ᱢᱟᱦᱮᱛᱟ</type>
 			<type key="calendar" type="chinese" draft="unconfirmed">ᱪᱟᱭᱱᱤᱡᱽ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="chinese" scope="core" draft="unconfirmed">ᱪᱟᱭᱱᱤᱡᱽ</type>
 			<type key="calendar" type="coptic" draft="unconfirmed">ᱠᱚᱯᱴᱤᱠ ᱢᱟᱦᱮᱛᱟ</type>
+			<type key="calendar" type="coptic" scope="core" draft="unconfirmed">ᱠᱚᱯᱴᱤᱠ</type>
 			<type key="calendar" type="dangi" draft="unconfirmed">ᱰᱟᱱᱜᱤ ᱢᱟᱦᱮᱛᱟ</type>
 			<type key="calendar" type="ethiopic" draft="unconfirmed">ᱤᱛᱷᱤᱭᱚᱯᱤᱠ ᱢᱟᱦᱮᱛᱟ</type>
 			<type key="calendar" type="ethiopic-amete-alem" draft="unconfirmed">ᱤᱛᱷᱤᱭᱚᱯᱤᱠ ᱟᱢᱮᱴᱮ ᱟᱞᱮᱢ ᱢᱟᱦᱮᱛᱟ</type>
@@ -1001,6 +1003,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="traditional" draft="unconfirmed">ᱫᱤᱥᱤ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
 			<type key="collation" type="unihan" draft="unconfirmed">ᱨᱮᱰᱤᱠᱟᱼᱥᱴᱨᱚᱠ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
 			<type key="collation" type="zhuyin" draft="unconfirmed">ᱡᱷᱩᱣᱤᱱ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
+			<type key="hc" type="c12" draft="unconfirmed">12 ᱴᱟᱰᱟᱝ ᱰᱟᱦᱮᱨᱟ</type>
+			<type key="hc" type="c24" draft="unconfirmed">24 ᱴᱟᱰᱟᱝ ᱰᱟᱦᱮᱨᱟ</type>
 			<type key="hc" type="h11" draft="unconfirmed">12 ᱴᱟᱰᱟᱝ ᱰᱟᱦᱮᱨᱟ (0–11)</type>
 			<type key="hc" type="h12" draft="unconfirmed">12 ᱴᱟᱰᱟᱝ ᱰᱟᱦᱮᱨᱟ (1–12)</type>
 			<type key="hc" type="h23" draft="unconfirmed">24 ᱴᱟᱰᱟᱝ ᱰᱟᱦᱮᱨᱟ (0–23)</type>
@@ -1086,6 +1090,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="wara" draft="unconfirmed">ᱨᱟᱝ ᱪᱤᱛᱤ ᱮᱞᱠᱷᱟ</type>
 			<type key="numbers" type="wcho" draft="unconfirmed">ᱣᱟᱱᱪᱩ ᱮᱞᱠᱷᱟ</type>
 		</types>
+		<typeValues>
+			<typeValue type="no" draft="unconfirmed">ᱵᱚᱸᱫ</typeValue>
+			<typeValue type="yes" draft="unconfirmed">ᱪᱟᱹᱞᱩ</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">ᱢᱮᱴᱨᱤᱠ</measurementSystemName>
 			<measurementSystemName type="UK">ᱭᱩᱠᱮ</measurementSystemName>
@@ -1280,6 +1288,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">-</numericDateSeparator>
+						<numericTimeSeparator draft="provisional">:</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1300,6 +1312,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="yMMMMd" draft="contributed">y MMMM d</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">y MMMM d, EEE</dateFormatItem>
+					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="indian">
@@ -1420,7 +1436,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>ᱡᱤᱮᱢᱴᱤ{0}</gmtFormat>
-			<gmtZeroFormat>ᱡᱤᱮᱢᱴᱤ</gmtZeroFormat>
 			<regionFormat>{0} ᱚᱠᱛᱚ</regionFormat>
 			<regionFormat type="daylight">{0} ᱫᱤᱱᱵᱮᱲᱟ ᱚᱠᱛᱚ</regionFormat>
 			<regionFormat type="standard">{0} ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</regionFormat>
@@ -1856,14 +1871,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱼᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
+					<standard>ᱦᱟᱣᱟᱭᱤ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱼᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱚᱠᱛᱚ</generic>
-					<standard draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱼᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
-					<daylight draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱼᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
+					<generic>ᱦᱟᱣᱟᱭᱤ ᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱚᱠᱛᱚ</generic>
+					<standard>ᱦᱟᱣᱟᱭᱤ ᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
+					<daylight>ᱦᱟᱣᱟᱭᱤ ᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

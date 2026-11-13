@@ -187,6 +187,9 @@ private:
   AOTMappedHeapHeader _mapped_heap_header;
   AOTStreamedHeapHeader _streamed_heap_header;
 
+  int    _cpu_features_size;
+  int    _cpu_features_offset;
+
   // The following are parameters that affect MethodData layout.
   uint    _type_profile_level;
   int     _type_profile_args_limit;
@@ -219,6 +222,7 @@ public:
   void set_base_archive_name_size(unsigned int s)           { _generic_header._base_archive_name_size = s;   }
 
   bool is_static()                         const { return magic() == CDS_ARCHIVE_MAGIC; }
+  bool is_aot_configuration()              const { return magic() == AOT_CONFIGURATION_MAGIC; }
   size_t core_region_alignment()           const { return _core_region_alignment; }
   int obj_alignment()                      const { return _obj_alignment; }
   address narrow_oop_base()                const { return _narrow_oop_base; }
@@ -244,6 +248,15 @@ public:
   bool has_full_module_graph()             const { return _has_full_module_graph; }
   size_t rw_ptrmap_start_pos()             const { return _rw_ptrmap_start_pos; }
   size_t ro_ptrmap_start_pos()             const { return _ro_ptrmap_start_pos; }
+  int cpu_features_size()                  const { return _cpu_features_size; }
+  void* archived_cpu_features() {
+    if (_cpu_features_offset == -1) {
+      return nullptr;
+    }
+    char* cpu_features = ((char*)this) + _cpu_features_offset;
+    assert(is_aligned(cpu_features, VM_Version::cpu_features_alignment()), "sanity check");
+    return (void *)cpu_features;
+  }
 
   // Heap archiving
   const AOTMappedHeapHeader*   mapped_heap()   const { return &_mapped_heap_header; }
@@ -284,7 +297,8 @@ public:
   }
 
   void populate(FileMapInfo *info, size_t core_region_alignment, size_t header_size,
-                size_t base_archive_name_size, size_t base_archive_name_offset);
+                size_t base_archive_name_size, size_t base_archive_name_offset,
+                int cpu_features_size, int cpu_features_offset);
   static bool is_valid_region(int region) {
     return (0 <= region && region < NUM_CDS_REGIONS);
   }
@@ -327,7 +341,7 @@ public:
   FileMapHeader *header() const       { return _header; }
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 const char** base_archive_name);
-  static void check_preimage_static_archive(const char* file);
+  static void check_aot_configuration(const char* file);
 
   bool init_from_file(int fd);
 
@@ -374,6 +388,9 @@ public:
 
   void set_requested_base(char* b)                  { header()->set_requested_base(b); }
   char* requested_base_address()           const    { return header()->requested_base_address(); }
+
+  int cpu_features_size() const;
+  void* archived_cpu_features() const;
 
   class DynamicArchiveHeader* dynamic_header() const {
     assert(!is_static(), "must be");

@@ -35,8 +35,7 @@ import jdk.jfr.Recording;
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm jdk.jfr.startupargs.TestStartNoSettings
- *      -XX:StartFlightRecording:settings=none
+ * @run main/othervm -XX:StartFlightRecording:settings=none ${test.main.class}
  */
 public class TestStartNoSettings {
 

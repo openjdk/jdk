@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ import java.util.spi.LocaleServiceProvider;
  * specifying the desired numbering system. For example, {@code "ar-u-nu-arab"}
  * (in the BCP 47 language tag form) specifies Arabic with the Arabic-Indic
  * digits and symbols, while {@code "ar-u-nu-latn"} specifies Arabic with the
- * Latin digits and symbols. Refer to the <em>Unicode Locale Data Markup
- * Language (LDML)</em> specification for numbering systems.
+ * Latin digits and symbols. Refer to the <em>Unicode Common Locale Data
+ * {@literal &} Rules (CLDR)</em> specification for numbering systems.
  *
  * @since        1.6
  * @see Locale#forLanguageTag(String)
