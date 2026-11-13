@@ -105,7 +105,6 @@ static bool has_neoverse_n1_errata_1542419() {
            (major_rev_num == 4 && minor_rev_num == 0)));
 }
 
-
 static void install_atomic_entry_points() {
   if (! UseLSE) {
     return;
