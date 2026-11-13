@@ -47,18 +47,18 @@ public class MissingJspawnhelper {
         Path testJdk = Path.of(Utils.TEST_JDK).toAbsolutePath();
         Path scratch = Path.of("").toRealPath();
         Path tempDir = Path.of(System.getProperty("java.io.tmpdir")).toRealPath();
-        // jtreg can follow symlinks when it saves files from scratch.
+        // When retaining files, jtreg may follow directory symlinks and move files out of the test JDK.
         if (tempDir.startsWith(scratch)) {
             throw new IOException("Temporary directory must be outside jtreg scratch: " + tempDir);
         }
-        Path javaHome = Files.createTempDirectory(tempDir, "missing-jspawnhelper-");
-        try (Closeable cleanup = () -> FileUtils.deleteFileTreeWithRetry(javaHome)) {
-            symlinkEntriesExcept(testJdk, javaHome, "lib");
-            Path lib = Files.createDirectory(javaHome.resolve("lib"));
+        Path tempJavaHome = Files.createTempDirectory(tempDir, "missing-jspawnhelper-");
+        try (Closeable cleanup = () -> FileUtils.deleteFileTreeWithRetry(tempJavaHome)) {
+            symlinkEntriesExcept(testJdk, tempJavaHome, "lib");
+            Path lib = Files.createDirectory(tempJavaHome.resolve("lib"));
             symlinkEntriesExcept(testJdk.resolve("lib"), lib, "jspawnhelper");
 
             // Launch a child JVM because the jspawnhelper path uses the java.home value cached at startup.
-            ProcessTools.executeTestJava("-Djava.home=" + javaHome,
+            ProcessTools.executeTestJava("-Djava.home=" + tempJavaHome,
                     "-Djdk.lang.Process.launchMechanism=POSIX_SPAWN",
                     Child.class.getName()).shouldHaveExitValue(0);
         }
