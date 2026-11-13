@@ -99,6 +99,70 @@ class ValueObjectCompilationTests extends CompilationTestCase {
                 }
                 """);
         assertFail("compiler.err.mod.not.allowed.here",
+                """
+                class Test {
+                    value String x;
+                }
+                """);
+        assertFail("compiler.err.mod.not.allowed.here",
+                """
+                class Test {
+                    value String foo();
+                }
+                """);
+        assertFail("compiler.err.mod.not.allowed.here",
+                """
+                class Test {
+                    value java.lang.String x;
+                }
+                """);
+        assertFail("compiler.err.mod.not.allowed.here",
+                """
+                class Test {
+                    value java.lang.String foo();
+                }
+                """);
+        assertFail("compiler.err.mod.not.allowed.here",
+                """
+                import java.util.List;
+                class Test {
+                    value List<String> x;
+                }
+                """);
+        assertFail("compiler.err.mod.not.allowed.here",
+                """
+                import java.util.List;
+                class Test {
+                    value List<String> foo();
+                }
+                """);
+        assertFail("compiler.err.mod.not.allowed.here",
+                """
+                class Test {
+                    value String[] x;
+                }
+                """);
+        assertFail("compiler.err.mod.not.allowed.here",
+                """
+                class Test {
+                    value String[] foo();
+                }
+                """);
+        assertFail("compiler.err.mod.not.allowed.here",
+                """
+                class Test {
+                    value String @TA [] x;
+                }
+                @interface TA {}
+                """);
+        assertFail("compiler.err.mod.not.allowed.here",
+                """
+                class Test {
+                    value String @TA []foo();
+                }
+                @interface TA {}
+                """);
+        assertFail("compiler.err.mod.not.allowed.here",
                 d -> Assert.check("modifier value not allowed here".equals(d.getMessage(Locale.ROOT))),
                 """
                 value enum Enum {}
