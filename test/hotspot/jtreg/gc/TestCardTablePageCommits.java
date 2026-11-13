@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @summary Tests that the card table does not commit the same page twice
  * @requires vm.gc.Parallel
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver gc.TestCardTablePageCommits
  */
 public class TestCardTablePageCommits {

@@ -28,8 +28,6 @@ package gc.arguments;
  * @bug 8021879 8311029
  * @requires vm.gc.G1 & vm.opt.G1HeapRegionSize == null
  * @summary Verify that the flag G1HeapRegionSize is updated properly
- * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
  * @library /test/lib
  * @library /
  * @run driver gc.arguments.TestG1HeapRegionSize

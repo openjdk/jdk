@@ -32,7 +32,6 @@ package gc.parallel;
  * @requires vm.bits != "32"
  * @summary Make sure that Parallel GC does not crash when verifying after promotion failure
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xlog:gc -XX:MaxTenuringThreshold=1 -XX:+UseCompactObjectHeaders -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseParallelGC -XX:+PromotionFailureALot -XX:PromotionFailureALotInterval=1 -XX:PromotionFailureALotCount=1 -XX:+VerifyAfterGC -Xmx16m gc.parallel.TestPromotionFailureVerification

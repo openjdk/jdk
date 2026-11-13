@@ -29,7 +29,6 @@ package gc.g1;
  * @requires vm.gc.G1
  * @summary Test valid and invalid combinations of ConcGCThreads and ParallelGCThreads and the expected error message when invalid.
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver gc.g1.TestConcParallelGCThreadsCombinations
  */
 

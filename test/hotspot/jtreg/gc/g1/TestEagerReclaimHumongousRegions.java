@@ -30,8 +30,7 @@ package gc.g1;
  * @requires vm.gc.G1
  * @requires vm.debug
  * @library /test/lib /testlibrary /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

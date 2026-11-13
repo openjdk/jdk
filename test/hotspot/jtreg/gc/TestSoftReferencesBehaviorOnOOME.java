@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ package gc;
  * @requires vm.gc != "Z"
  * @requires vm.gc != "Shenandoah"
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run main/othervm -Xmx128m gc.TestSoftReferencesBehaviorOnOOME 512 2k
  * @run main/othervm -Xmx128m gc.TestSoftReferencesBehaviorOnOOME 128k 256k
  * @run main/othervm -Xmx128m gc.TestSoftReferencesBehaviorOnOOME 2k 32k

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ package gc.g1;
  *          is *not* upgraded to STW full GC
  * @requires vm.gc.G1
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run main/othervm -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent -Xmx8m -Xms8m -XX:G1HeapRegionSize=1m gc.g1.TestConcurrentSystemGC
  */
 

@@ -27,8 +27,6 @@
  * @summary Test that Shenandoah checks SoftMaxHeapSize
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver TestSoftMaxHeapSize
  */
 

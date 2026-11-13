@@ -35,8 +35,7 @@ import static jdk.test.lib.Asserts.*;
  * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @run main/othervm gc.metaspace.TestMetaspaceMemoryPool
  * @run main/othervm -XX:MaxMetaspaceSize=60m gc.metaspace.TestMetaspaceMemoryPool
  * @run main/othervm -XX:CompressedClassSpaceSize=60m gc.metaspace.TestMetaspaceMemoryPool

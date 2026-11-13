@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ package gc.arguments;
  * @summary Tests argument processing for double type flag, G1ConcMarkStepDurationMillis
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver gc.arguments.TestG1ConcMarkStepDurationMillis
  */
 

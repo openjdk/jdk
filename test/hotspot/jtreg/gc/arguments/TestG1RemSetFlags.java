@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package gc.arguments;
  * @test TestG1RemSetFlags
  * @requires vm.gc.G1 & vm.opt.UnlockExperimentalVMOptions == null & vm.opt.G1RemSetHowlNumBuckets == null & vm.opt.G1RemSetHowlMaxNumBuckets == null
  * @summary Verify that the remembered set flags are updated as expected
- * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
  * @library /test/lib
  * @library /
  * @run driver gc.arguments.TestG1RemSetFlags
