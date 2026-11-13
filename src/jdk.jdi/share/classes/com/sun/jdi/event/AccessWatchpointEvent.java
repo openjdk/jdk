@@ -31,19 +31,20 @@ import com.sun.jdi.request.AccessWatchpointRequest;
 /**
  * Notification of a field access in the target VM.
  * <p>
- * This notification is not generated for an instance field while the object
- * containing the field is being constructed by the event thread if the
- * object's class or any of its superclasses has
+ * This notification is not generated for an instance field if the current
+ * frame of the event thread is a constructor for the object containing the
+ * field and the constructor's declaring class or any of its superclasses has
  * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized}
- * instance fields. It is also not generated for a static field when the class
- * declaring the field is being initialized by the event thread and the class
- * declares strictly-initialized static fields.
+ * instance fields. Constructor invocations in caller frames are not considered.
+ * It is also not generated for a static field when the class declaring the
+ * field is being initialized by the event thread and the class declares
+ * strictly-initialized static fields.
  * <p>
  * Field modifications are not considered field accesses.
  *
  * @apiNote The instance fields of {@linkplain Class#isValue() value classes} are
  * strictly-initialized. Consequently, events for watched instance fields of a value
- * class are not generated during construction of an instance of the value class.
+ * class are not generated for accesses or modifications directly in its constructors.
  *
  * @see AccessWatchpointRequest
  * @see EventQueue

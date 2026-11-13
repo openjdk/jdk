@@ -160,11 +160,11 @@ class WatchStrictInitFields {
             }
 
             void x(int newX) {
-                x = newX;   // modification event?
+                x = newX;   // modification event
             }
 
             int x() {
-                return x;   // access event?
+                return x;   // access event
             }
         }
 
@@ -210,8 +210,8 @@ class WatchStrictInitFields {
         void testThisEscape() {
             try (var _ = watch(TestClass.class, "x")) {
                 var obj = new TestClass(100, 200, 300);
-                assertEquals(0, modCount());
-                assertEquals(0, accessCount());
+                assertEquals(1, modCount());
+                assertEquals(1, accessCount());
             }
         }
     }
@@ -251,19 +251,19 @@ class WatchStrictInitFields {
             }
 
             void x(int newX) {
-                x = newX;    // modification event?
+                x = newX;    // modification event
             }
 
             int x() {
-                return x;    // access event?
+                return x;    // access event
             }
 
             void y(int newY) {
-                y = newY;    // modification event?
+                y = newY;    // modification event
             }
 
             int y() {
-                return y;    // access event?
+                return y;    // access event
             }
         }
 
@@ -327,8 +327,8 @@ class WatchStrictInitFields {
                  var _ = watch(TestClass.class, "y")) {
 
                 var obj = new TestClass(100, 101, 200, 201, 300, 301);
-                assertEquals(0, modCount());
-                assertEquals(0, accessCount());
+                assertEquals(2, modCount());
+                assertEquals(2, accessCount());
             }
         }
     }
@@ -423,8 +423,8 @@ class WatchStrictInitFields {
         class SuperClass {
             SuperClass(int value) {
                 var thisObject = (TestClass) this;
-                thisObject.x = value;                // modification event not sent
-                assertEquals(value, thisObject.x);   // access event not sent
+                thisObject.x = value;                // modification event sent
+                assertEquals(value, thisObject.x);   // access event sent
             }
         }
 
@@ -456,28 +456,28 @@ class WatchStrictInitFields {
         void testFieldAccess() {
             try (var _ = watch(TestClass.class, "x")) {
                 var obj = new TestClass(100, 200);
-                assertEquals(0, modCount());
-                assertEquals(0, accessCount());
+                assertEquals(1, modCount());
+                assertEquals(1, accessCount());
 
                 // modify after construction
                 obj.x = 300;
-                assertEquals(1, modCount());
-                assertEquals(0, accessCount());
+                assertEquals(2, modCount());
+                assertEquals(1, accessCount());
 
                 // access after construction
                 assertEquals(300, obj.x);
-                assertEquals(1, modCount());
-                assertEquals(1, accessCount());
+                assertEquals(2, modCount());
+                assertEquals(2, accessCount());
 
                 // mutator method
                 obj.x(400);
-                assertEquals(2, modCount());
-                assertEquals(1, accessCount());
+                assertEquals(3, modCount());
+                assertEquals(2, accessCount());
 
                 // accessor method
                 assertEquals(400, obj.x());
-                assertEquals(2, modCount());
-                assertEquals(2, accessCount());
+                assertEquals(3, modCount());
+                assertEquals(3, accessCount());
             }
         }
 
@@ -485,8 +485,8 @@ class WatchStrictInitFields {
         void testThisEscape() {
             try (var _ = watch(TestClass.class, "x")) {
                 var obj = new TestClass(100, 200, 300);
-                assertEquals(0, modCount());
-                assertEquals(0, accessCount());
+                assertEquals(1, modCount());
+                assertEquals(1, accessCount());
             }
         }
     }
@@ -528,11 +528,11 @@ class WatchStrictInitFields {
             }
 
             void x(int v3) {
-                x = new Box(v3);     // 2 x modification events?
+                x = new Box(v3);     // 2 x modification events
             }
 
             int x() {
-                return x.value;       // 2 x access events?
+                return x.value;       // 2 x access events
             }
         }
 
@@ -584,8 +584,8 @@ class WatchStrictInitFields {
                  var _ = watch(TestClass.class, "x")) {
 
                 var obj = new TestClass(100, 200, 300);
-                assertEquals(3, modCount());      // 3 * putfield Box.value
-                assertEquals(4, accessCount());   // 4 * getfield Box.value
+                assertEquals(4, modCount());      // 3 * putfield Box.value + x(int)
+                assertEquals(5, accessCount());   // 4 * getfield Box.value + x()
             }
         }
     }

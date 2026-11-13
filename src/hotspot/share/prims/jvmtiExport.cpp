@@ -2296,29 +2296,22 @@ static bool should_skip_field_event_during_strict_initialization(JavaThread* thr
     return ik->has_strict_static_fields() && ik->is_reentrant_initialization(thread);
   }
 
-  // Do not skip if there are no strict instance fields in the class hierarchy.
-  InstanceKlass* receiver_klass = InstanceKlass::cast(object()->klass());
-  if (!receiver_klass->has_strict_instance_fields_in_hierarchy()) {
-    return false;
-  }
-
-  // Skip field event for an instance field when the object containing the field is being
-  // constructed by the event thread and the object's class, or any of its superclasses,
-  // has strictly-initialized instance fields.
+  // Skip an instance field event when the current Java frame is a constructor
+  // whose declaring class has strictly-initialized instance fields in its hierarchy
+  // and slot 0 contains a reference to the object containing the watched field.
   ResourceMark rm(thread);
   RegisterMap reg_map(thread,
                       RegisterMap::UpdateMap::skip,
                       RegisterMap::ProcessFrames::skip,
                       RegisterMap::WalkContinuation::skip);
-  for (javaVFrame* jvf = thread->last_java_vframe(&reg_map); jvf != nullptr; jvf = jvf->java_sender()) {
-    Method* frame_method = jvf->method();
-    if (frame_method->is_object_constructor() && frame_method->method_holder()->has_strict_instance_fields_in_hierarchy()) {
+  javaVFrame* jvf = thread->last_java_vframe(&reg_map);
+  if (jvf != nullptr) {
+    Method* method = jvf->method();
+    if (method->is_object_constructor() && method->method_holder()->has_strict_instance_fields_in_hierarchy()) {
       StackValueCollection* locals = jvf->locals();
       if (!locals->is_empty()) {
         StackValue* receiver = locals->at(0);
-        if (receiver->type() == T_OBJECT && !receiver->obj_is_scalar_replaced() && receiver->get_obj()() == object()) {
-          return true;
-        }
+        return receiver->type() == T_OBJECT && !receiver->obj_is_scalar_replaced() && receiver->get_obj()() == object();
       }
     }
   }
