@@ -50,6 +50,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 // Static array so we can figure out which bytecodes stop us from compiling
 // the most. Some of the non-static variables are needed in bytecodeInfo.cpp
@@ -755,19 +756,26 @@ void Parse::do_all_blocks() {
         set_map(clone_map());
       }
 
-      if (control()->is_Region() && !block->is_loop_head() && !has_irreducible && !block->is_handler()) {
-        // In the absence of irreducible loops, the Region and Phis
-        // associated with a merge that doesn't involve a backedge can
-        // be simplified now since the RPO parsing order guarantees
-        // that any path which was supposed to reach here has already
-        // been parsed or must be dead.
-        Node* c = control();
-        Node* result = _gvn.transform(control());
-        if (c != result && TraceOptoParse) {
-          tty->print_cr("Block #%d replace %d with %d", block->rpo(), c->_idx, result->_idx);
+      if (control()->is_Region()) {
+        if (Arguments::is_valhalla_enabled()) {
+          // Canonicalize early larval aliases after creating merge Phis
+          canonicalize_early_larval_aliases();
         }
-        if (result != top()) {
-          record_for_igvn(result);
+
+        if (!block->is_loop_head() && !has_irreducible && !block->is_handler()) {
+          // In the absence of irreducible loops, the Region and Phis
+          // associated with a merge that doesn't involve a backedge can
+          // be simplified now since the RPO parsing order guarantees
+          // that any path which was supposed to reach here has already
+          // been parsed or must be dead.
+          Node* c = control();
+          Node* result = _gvn.transform(control());
+          if (c != result && TraceOptoParse) {
+            tty->print_cr("Block #%d replace %d with %d", block->rpo(), c->_idx, result->_idx);
+          }
+          if (result != top()) {
+            record_for_igvn(result);
+          }
         }
       }
 
@@ -1830,6 +1838,62 @@ void Parse::load_state_from(Block* block) {
   set_sp( block->start_sp());
 }
 
+// Aliases of the same early larval object can end up as different Phi nodes at
+// a control-flow merge. Canonicalize all live aliases in locals and stack slots
+// by their ciWrapper identity, ensuring that scalarization after '<init>' is
+// applied consistently to every alias of the same allocation.
+void Parse::canonicalize_early_larval_aliases() {
+  ResourceMark rm;
+  const JVMState* state = jvms();
+  const uint first = state->locoff();
+  const uint limit = state->stkoff() + sp();
+  MethodLivenessResult liveness;
+  bool liveness_computed = false;
+  using AliasHashTable = ResizeableHashTable<uint, Node*, AnyObj::RESOURCE_AREA, mtCompiler>;
+  AliasHashTable* aliases = nullptr;
+
+  // Iterate over all early larvals in locals and stack in the parser map
+  for (uint i = first; i < limit; i++) {
+    Node* value = map()->in(i);
+    if (value == top()) {
+      continue;
+    }
+    ciType* type;
+    const bool is_local = state->is_loc(i);
+    const int idx = is_local ? i - state->locoff() : i - state->stkoff();
+    if (is_local) {
+      type = block()->flow()->local_type_at(idx);
+    } else {
+      assert(state->is_stk(i), "must be an active stack slot");
+      type = block()->flow()->stack_type_at(idx);
+    }
+    if (!type->is_early_larval()) {
+      continue;
+    }
+    if (is_local) {
+      if (!liveness_computed) {
+        liveness = method()->raw_liveness_at_bci(block()->start());
+        liveness_computed = true;
+      }
+      // Exclude dead locals which may contain stale nodes
+      // or Phis of unrelated allocations.
+      if (!liveness.is_valid() || !liveness.at(idx)) {
+        continue;
+      }
+    }
+    assert(!value->is_ValueType() && _gvn.type(value)->isa_oopptr() != nullptr, "unexpected early larval");
+
+    if (aliases == nullptr) {
+      aliases = new AliasHashTable(4, MAX2(4u, limit - i));
+    }
+    // Same ciWrapper identity -> aliases of the same early larval object
+    bool created;
+    Node** canonical_alias = aliases->put_if_absent(type->ident(), value, &created);
+    if (!created && value != *canonical_alias) {
+      map()->set_req(i, *canonical_alias);
+    }
+  }
+}
 
 //-----------------------------record_state------------------------------------
 void Parse::Block::record_state(Parse* p) {

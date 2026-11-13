@@ -349,7 +349,7 @@ public final class HijrahChronology extends AbstractChronology implements Serial
      * Gets the calendar type of the Islamic calendar.
      * <p>
      * The calendar type is an identifier defined by the
-     * <em>Unicode Locale Data Markup Language (LDML)</em> specification.
+     * <em>Unicode Common Locale Data {@literal &} Rules (CLDR)</em> specification.
      * It can be used to lookup the {@code Chronology} using {@link Chronology#of(String)}.
      *
      * @return the calendar system type; non-null if the calendar has

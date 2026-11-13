@@ -31,7 +31,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *      -XX:+WhiteBoxAPI CheckSharingWithDefaultArchive -showversion
+ *      -XX:+WhiteBoxAPI -showversion ${test.main.class}
  */
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;

@@ -838,6 +838,9 @@ final class StringUTF16 {
             int cp1 = codePointAt(value, k, tlast, true);
             int cp2 = codePointAt(other, k, olast, true);
             if (cp1 != cp2) {
+                if (Character.charCount(cp1) != Character.charCount(cp2)) {
+                    return compareToFC0(value, k, tlast, other, k, olast);
+                }
                 long cf1 = CaseFolding.fold(cp1);
                 long cf2 = CaseFolding.fold(cp2);
                 if (cf1 != cf2) {

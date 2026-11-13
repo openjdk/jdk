@@ -1144,9 +1144,19 @@ Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* uncast_in1 = in(1)->uncast();
   Node* uncast_in2 = in(2)->uncast();
   if (uncast_in1->is_ValueType() && phase->type(uncast_in2)->is_zero_type()) {
-    // Null checking a scalarized but nullable value type. Check the null marker
-    // input instead of the oop input to avoid keeping buffer allocations alive.
-    return new CmpINode(uncast_in1->as_ValueType()->get_null_marker(), phase->intcon(0));
+    Node* null_marker = uncast_in1->as_ValueType()->get_null_marker();
+    const TypeInt* null_marker_type = phase->type(null_marker)->isa_int();
+    bool null_marker_is_known = null_marker_type != nullptr && null_marker_type->is_con();
+    if (can_reshape || null_marker_is_known) {
+      // Null checking a scalarized but nullable value type. Check the null marker
+      // input instead of the oop input to avoid keeping buffer allocations alive.
+      return new CmpINode(uncast_in1->as_ValueType()->get_null_marker(), phase->intcon(0));
+    } else {
+      // Keep the CmpP during parsing so that the parser can recognize the compare-against-null
+      // pattern
+      phase->record_for_igvn(this);
+      return nullptr;
+    }
   }
   if (uncast_in1->is_ValueType() || uncast_in2->is_ValueType()) {
     // In C2 IR, CmpP on value objects is a pointer comparison, not a value comparison.
@@ -1752,6 +1762,19 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  // Change x u< 1 or x u<= 0 to x == 0
+  // and    x u> 0 or u>= 1   to x != 0
+  if ((cop == Op_CmpU || cop == Op_CmpUL) && cmp1_op != Op_LoadRange) {
+    const BasicType bt = cop == Op_CmpU ? T_INT : T_LONG;
+    const jlong limit = bt == T_INT ? cmp2->find_int_con(-1) : cmp2->find_long_con(-1);
+    if (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) && limit == 1) ||
+        ((_test._test == BoolTest::le || _test._test == BoolTest::gt) && limit == 0)) {
+      Node* zero = phase->integercon(0, bt);
+      Node* ncmp = phase->transform(CmpNode::make(cmp1, zero, bt));
+      return new BoolNode(ncmp, _test.is_less() ? BoolTest::eq : BoolTest::ne);
+    }
+  }
+
   // Change "bool eq/ne (cmp (xor X 1) 0)" into "bool ne/eq (cmp X 0)".
   // The XOR-1 is an idiom used to flip the sense of a bool.  We flip the
   // test instead.
@@ -1782,18 +1805,6 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         return new BoolNode(m_cmpu_0, BoolTest::gt);
       }
     }
-  }
-
-  // Change x u< 1 or x u<= 0 to x == 0
-  // and    x u> 0 or u>= 1   to x != 0
-  if (cop == Op_CmpU &&
-      cmp1_op != Op_LoadRange &&
-      (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) &&
-        cmp2->find_int_con(-1) == 1) ||
-       ((_test._test == BoolTest::le || _test._test == BoolTest::gt) &&
-        cmp2->find_int_con(-1) == 0))) {
-    Node* ncmp = phase->transform(new CmpINode(cmp1, phase->intcon(0)));
-    return new BoolNode(ncmp, _test.is_less() ? BoolTest::eq : BoolTest::ne);
   }
 
   // Change (arraylength <= 0) or (arraylength == 0)
