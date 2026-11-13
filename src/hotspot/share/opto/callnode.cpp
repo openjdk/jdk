@@ -1266,7 +1266,7 @@ int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
 // Parse::array_load) to end in an uncommon trap. In that case, the call to
 // 'load_unknown_value' is useless. Replace it with an uncommon trap with the same JVMState.
 bool CallStaticJavaNode::remove_unknown_flat_array_load(PhaseIterGVN* igvn, Node* ctl, Node* mem, Node* unc_arg) {
-  if (ctl == nullptr || ctl->is_top() || !is<MergeMemNode>(mem) || mem->is_top()) {
+  if (ctl == nullptr || ctl->is_top() || !is<MergeMemNode>(mem)) {
     return false;
   }
   if (ctl->is_Region()) {
