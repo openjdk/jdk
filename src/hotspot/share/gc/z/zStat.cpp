@@ -366,9 +366,6 @@ void ZStatValue::initialize() {
   // Allocation aligned memory
   const size_t size = _cpu_offset * ZCPU::count();
   _base = ZUtils::alloc_aligned_unfreeable(ZCacheLineSize, size);
-
-  // Sort before JFR registration and before the ZStat thread is started.
-  ZStatSampler::sort();
 }
 
 const char* ZStatValue::group() const {
@@ -432,6 +429,10 @@ void ZStatIterableValue<T>::sort() {
 //
 // Stat sampler
 //
+void ZStatSampler::initialize() {
+  sort();
+}
+
 ZStatSampler::ZStatSampler(const char* group, const char* name, ZStatUnitPrinter printer)
   : ZStatIterableValue<ZStatSampler>(group, name, sizeof(ZStatSamplerData)),
     _printer(printer) {}
@@ -1106,6 +1107,7 @@ void ZStatSystemMemoryUsage::sample_and_collect() {
 ZStat::ZStat()
   : _metronome(SampleHz) {
   set_name("ZStat");
+  ZStatSampler::initialize();
   create_and_start();
   ZStatMutatorAllocRate::initialize();
 }
