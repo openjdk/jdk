@@ -151,6 +151,9 @@ void VM_Version::initialize() {
 
   _cpu_features = _features;
 
+  // ASIMD suport must be available as it is required by the AAPCS64
+  // Procdure Call Standard that the OS requires
+  assert(supports_feature(CPU_ASIMD), "Neon ASIMD support is mandatory");
   apply_aot_cache_cpu_features();
 
   int dcache_line = dcache_line_size();
@@ -194,7 +197,7 @@ void VM_Version::initialize() {
   }
 
   if (FLAG_IS_DEFAULT(ContendedPaddingWidth) && (dcache_line > ContendedPaddingWidth)) {
-    ContendedPaddingWidth = dcache_line;
+    FLAG_SET_DEFAULT(ContendedPaddingWidth, dcache_line);
   }
 
   if (os::supports_map_sync()) {
@@ -321,7 +324,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (supports_feature(CPU_FP) || supports_feature(CPU_ASIMD)) {
+  if (supports_feature(CPU_FP)) {
     if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
     }
@@ -418,7 +421,7 @@ void VM_Version::initialize() {
   }
 
   if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
-    UseMD5Intrinsics = true;
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
   }
 
   if (UseSHA && supports_sha1()) {
@@ -483,45 +486,24 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
-  if (supports_feature(CPU_ASIMD)) {
-    if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
-      UseChaCha20Intrinsics = true;
-    }
-  } else if (UseChaCha20Intrinsics) {
-    if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
-      warning("ChaCha20 intrinsic requires ASIMD instructions");
-    }
-    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
   }
 
   if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
-     UseIntPolyIntrinsics = true;
+    FLAG_SET_DEFAULT(UseIntPolyIntrinsics, true);
   }
 
-  if (supports_feature(CPU_ASIMD)) {
-      if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
-          UseKyberIntrinsics = true;
-      }
-  } else if (UseKyberIntrinsics) {
-      if (!FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
-          warning("Kyber intrinsics require ASIMD instructions");
-      }
-      FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
+  if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+    FLAG_SET_DEFAULT(UseKyberIntrinsics, true);
   }
 
-  if (supports_feature(CPU_ASIMD)) {
-      if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
-          UseDilithiumIntrinsics = true;
-      }
-  } else if (UseDilithiumIntrinsics) {
-      if (!FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
-          warning("Dilithium intrinsics require ASIMD instructions");
-      }
-      FLAG_SET_DEFAULT(UseDilithiumIntrinsics, false);
+  if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+    FLAG_SET_DEFAULT(UseDilithiumIntrinsics, true);
   }
 
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
-    UseBASE64Intrinsics = true;
+    FLAG_SET_DEFAULT(UseBASE64Intrinsics, true);
   }
 
   if (is_zva_enabled()) {
@@ -614,27 +596,27 @@ void VM_Version::initialize() {
   }
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
-    UseMultiplyToLenIntrinsic = true;
+    FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
   }
 
   if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
-    UseSquareToLenIntrinsic = true;
+    FLAG_SET_DEFAULT(UseSquareToLenIntrinsic, true);
   }
 
   if (FLAG_IS_DEFAULT(UseMulAddIntrinsic)) {
-    UseMulAddIntrinsic = true;
+    FLAG_SET_DEFAULT(UseMulAddIntrinsic, true);
   }
 
   if (FLAG_IS_DEFAULT(UseMontgomeryMultiplyIntrinsic)) {
-    UseMontgomeryMultiplyIntrinsic = true;
+    FLAG_SET_DEFAULT(UseMontgomeryMultiplyIntrinsic, true);
   }
   if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
-    UseMontgomerySquareIntrinsic = true;
+    FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
   }
 
   if (UseSVE > 0) {
     if (FLAG_IS_DEFAULT(MaxVectorSize)) {
-      MaxVectorSize = _initial_sve_vector_length;
+      FLAG_SET_DEFAULT(MaxVectorSize, _initial_sve_vector_length);
     } else if (MaxVectorSize < FloatRegister::sve_vl_min) {
       warning("SVE does not support vector length less than %d bytes. Disabling SVE.",
               FloatRegister::sve_vl_min);
@@ -690,11 +672,11 @@ void VM_Version::initialize() {
   }
 
   if (FLAG_IS_DEFAULT(OptoScheduling)) {
-    OptoScheduling = true;
+    FLAG_SET_DEFAULT(OptoScheduling, true);
   }
 
   if (FLAG_IS_DEFAULT(AlignVector)) {
-    AlignVector = AvoidUnalignedAccesses;
+    FLAG_SET_DEFAULT(AlignVector, AvoidUnalignedAccesses);
   }
 
   if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
