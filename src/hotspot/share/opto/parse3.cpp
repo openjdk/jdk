@@ -140,6 +140,9 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
     }
     pop();
     push_node(field->layout_type(), value);
+    if (is_reference_type(bt) && !field->type()->is_loaded()) {
+      null_assert_for_unloaded_type(peek(), field->type(), "field", true);
+    }
     return;
   }
 
@@ -180,7 +183,7 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
         if (con->is_null_object()) {
           type = TypePtr::NULL_PTR;
         } else {
-          type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
+          type = TypeOopPtr::make_from_constant(con);
         }
         assert(type != nullptr, "field singleton type must be consistent");
       } else {
@@ -224,17 +227,7 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
     // not need to mention the class index, since the class will
     // already have been loaded if we ever see a non-null value.)
     // uncommon_trap(iter().get_field_signature_index());
-    if (PrintOpto && (Verbose || WizardMode)) {
-      method()->print_name(); tty->print_cr(" asserting nullness of field at bci: %d", bci());
-    }
-    if (C->log() != nullptr) {
-      C->log()->elem("assert_null reason='field' klass='%d'",
-                     C->log()->identify(field_klass));
-    }
-    // If there is going to be a trap, put it at the next bytecode:
-    set_bci(iter().next_bci());
-    null_assert(peek());
-    set_bci(iter().cur_bci()); // put it back
+    null_assert_for_unloaded_type(peek(), field_klass, "field", true);
   }
 }
 
@@ -415,7 +408,7 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
     guarantee(length_con >= 0, "non-constant multianewarray");
     ciArrayKlass* array_klass_1 = array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
     const TypePtr* adr_type = TypeAryPtr::OOPS;
-    const TypeOopPtr*    elemtype = _gvn.type(array)->is_aryptr()->elem()->make_oopptr();
+    const TypeOopPtr*    elemtype = _gvn.type(array)->as_aryptr()->elem()->make_oopptr();
     const intptr_t header   = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
     for (jint i = 0; i < length_con; i++) {
       Node*    elem   = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1, nargs);
@@ -541,12 +534,12 @@ void Parse::do_multianewarray() {
   const Type* type = TypeOopPtr::make_from_klass_raw(array_klass, Type::trust_interfaces);
 
   // Improve the type:  We know it's not null, exact, and of a given length.
-  type = type->is_ptr()->cast_to_ptr_type(TypePtr::NotNull);
-  type = type->is_aryptr()->cast_to_exactness(true);
+  type = type->as_ptr()->cast_to_ptr_type(TypePtr::NotNull);
+  type = type->as_aryptr()->cast_to_exactness(true);
 
   const TypeInt* ltype = _gvn.find_int_type(length[0]);
   if (ltype != nullptr)
-    type = type->is_aryptr()->cast_to_size(ltype);
+    type = type->as_aryptr()->cast_to_size(ltype);
 
     // We cannot sharpen the nested sub-arrays, since the top level is mutable.
 

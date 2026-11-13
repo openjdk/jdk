@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4348864 4112924 4425386 4495052 4836940 4851113 8008577 8174269
+ * @bug 4348864 4112924 4425386 4495052 4836940 4851113 8008577 8174269 8384532
  * @summary test time zone display names in en_US locale
  * @run junit TimeZoneNameTest
  */
@@ -58,7 +58,7 @@ public class TimeZoneNameTest
         "N", "Atlantic/Jan_Mayen", "CET", "Central European Standard Time", "CEST", "Central European Summer Time",
         "N", "Europe/Oslo", "CET", "Central European Standard Time", "CEST", "Central European Summer Time",
 
-        "N", "Pacific/Honolulu", "HST", "Hawaii-Aleutian Standard Time", "HST", "Hawaii-Aleutian Standard Time",
+        "N", "Pacific/Honolulu", "HST", "Hawaii Time", "HST", "Hawaii Time",
         "N", "America/Los_Angeles", "PST", "Pacific Standard Time", "PDT", "Pacific Daylight Time",
         "N", "US/Pacific", "PST", "Pacific Standard Time", "PDT", "Pacific Daylight Time",
         "N", "America/Phoenix", "MST", "Mountain Standard Time", "MST", "Mountain Standard Time",

@@ -36,6 +36,7 @@
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
+#include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
@@ -534,13 +535,13 @@ int PhaseRenumberLive::update_embedded_ids(Node* n) {
   }
 
   const Type* type = _new_type_array.fast_lookup(n->_idx);
-  if (type != nullptr && type->isa_oopptr() && type->is_oopptr()->is_known_instance()) {
+  if (type != nullptr && type->is_oopptr() && type->as_oopptr()->is_known_instance()) {
     if (!_is_pass_finished) {
         return -1; // delay
     }
-    int old_idx = type->is_oopptr()->instance_id();
+    int old_idx = type->as_oopptr()->instance_id();
     int new_idx = new_index(old_idx);
-    const Type* new_type = type->is_oopptr()->with_instance_id(new_idx);
+    const Type* new_type = type->as_oopptr()->with_instance_id(new_idx);
     _new_type_array.map(n->_idx, new_type);
     no_of_updates++;
   }
@@ -604,8 +605,8 @@ ConNode* PhaseValues::makecon(const Type* t) {
   switch (t->base()) {  // fast paths
   case Type::Half:
   case Type::Top:  return (ConNode*) C->top();
-  case Type::Int:  return intcon( t->is_int()->get_con() );
-  case Type::Long: return longcon( t->is_long()->get_con() );
+  case Type::Int:  return intcon(t->as_int()->get_con());
+  case Type::Long: return longcon(t->as_long()->get_con());
   default:         break;
   }
   if (t->is_zero_type())
@@ -734,9 +735,7 @@ Node* PhaseGVN::transform(Node* n) {
       set_progress();
     }
 #endif
-    set_type(k, t);
-    // If k is a TypeNode, capture any more-precise type permanently into Node
-    k->raise_bottom_type(t);
+    set_type_and_raise_bottom_type(k, t);
   }
 
   if (t->singleton() && !k->is_Con()) {
@@ -1077,8 +1076,8 @@ bool PhaseIterGVN::needs_deep_revisit(const Node* n) const {
   if (n->Opcode() == Op_CmpP) {
     const Type* t1 = type_or_null(n->in(1));
     const Type* t2 = type_or_null(n->in(2));
-    return t1 != nullptr && t1->isa_oopptr() &&
-           t2 != nullptr && t2->isa_oopptr();
+    return t1 != nullptr && t1->is_oopptr() &&
+           t2 != nullptr && t2->is_oopptr();
   }
   // IfNode::Ideal() -> search_identical() walks up the CFG dominator tree.
   // RangeCheckNode::Ideal() scans up to ~999 nodes up the chain.
@@ -1248,8 +1247,8 @@ void PhaseIterGVN::optimize(bool deep) {
 static bool klass_bottom_type_invalidated(const Node* n, const Type* new_type) {
   // Concurrent class loading can invalidate a klass bottom type.
   const Type* bt = n->bottom_type();
-  return (bt->isa_klassptr() != nullptr ||
-          bt->isa_narrowklass() != nullptr) &&
+  return (bt->is_klassptr() ||
+          bt->is_narrowklass()) &&
          !new_type->higher_equal_speculative(bt);
 }
 
@@ -1338,9 +1337,9 @@ void PhaseIterGVN::verify_Value_for(const Node* n, const Type* tnew, bool strict
   }
   // Exception (1)
   // Integer "widen" changes, but range is the same.
-  if (told->isa_integer(tnew->basic_type()) != nullptr) { // both either int or long
-    const TypeInteger* t0 = told->is_integer(tnew->basic_type());
-    const TypeInteger* t1 = tnew->is_integer(tnew->basic_type());
+  if (told->is_integer(tnew->basic_type())) { // both either int or long
+    const TypeInteger* t0 = told->as_integer(tnew->basic_type());
+    const TypeInteger* t1 = tnew->as_integer(tnew->basic_type());
     if (t0->lo_as_long() == t1->lo_as_long() &&
         t0->hi_as_long() == t1->hi_as_long()) {
       return; // ignore integer widen
@@ -1356,7 +1355,7 @@ void PhaseIterGVN::verify_Value_for(const Node* n, const Type* tnew, bool strict
   }
   // Exception (3)
   // CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-  if (!strict && n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
+  if (!strict && n->Opcode() == Op_CmpP && type(n->in(1))->is_oopptr() && type(n->in(2))->is_oopptr()) {
     // SubNode::Value
     // CmpPNode::sub
     // MemNode::detect_ptr_independence
@@ -1959,6 +1958,15 @@ Node* PhaseIterGVN::register_new_node_with_optimizer(Node* n, Node* orig) {
   return n;
 }
 
+Node* PhaseIterGVN::find_node_or_register_new_node_with_optimizer(Node* n) {
+  Node* existing = hash_find_insert(n);
+  if (existing != nullptr) {
+    n->destruct(this);
+    return existing;
+  }
+  return register_new_node_with_optimizer(n);
+}
+
 //------------------------------transform--------------------------------------
 // Non-recursive: idealize Node 'n' with respect to its inputs and its value
 Node *PhaseIterGVN::transform( Node *n ) {
@@ -2159,9 +2167,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   if (type_or_null(k) != t) {
     NOT_PRODUCT(inc_new_values();)
     set_progress();
-    set_type(k, t);
-    // If k is a TypeNode, capture any more-precise type permanently into Node
-    k->raise_bottom_type(t);
+    set_type_and_raise_bottom_type(k, t);
     // Move users of node to worklist
     add_users_to_worklist(k);
   }
@@ -2695,6 +2701,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
+  // If changed SubI inputs, check AndI users for AndI(SubI(0, x), 1) -> AndI(x, 1) opportunity.
+  if (use_op == Op_SubI) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_AndI;
+    });
+  }
   // If changed AndI/AndL inputs, check RShift/URShift users for "(x & mask) >> shift" optimization opportunity
   // LShiftNode::IdealIL optimizes patterns like: LShift(And(RShift(x, c), Y), c)
   // Additionally, check for nested And reassociation:
@@ -2786,6 +2798,55 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->is_MinMax();
     });
   }
+
+  // fold_subI_no_underflow_pattern parses nested no-overflow
+  // addition and subtraction with constants. Thus, we need
+  // notification for:
+  //        u4           u3      u2           u1
+  // n -> AddL -> MaxL/MinL -> AddL -> MaxL/MinL   (4-hop - dropped)
+  //         n -> MaxL/MinL -> AddL -> MaxL/MinL   (3-hop)
+  //                      n -> AddL -> MaxL/MinL   (2-hop)
+  //
+  // However, the 4-hop notification could be a bit expensive,
+  // and so far no reproducer has been found. There probably
+  // cannot be any: one would have to update either side of
+  // the u4 AddL, without updating the type of AddL itself
+  // (that would cause a 3-hop notification). But for the
+  // optimization to be unlocked, the types of the inputs
+  // to the AddL would have to change, which would trigger
+  // a type update for AddL.
+  //
+  // 2-hop notification for fold_subI_no_underflow_pattern
+  if (use->Opcode() == Op_AddL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u1) {
+      return u1->Opcode() == Op_MaxL || u1->Opcode() == Op_MinL;
+    });
+  }
+  // 3-hop notification for fold_subI_no_underflow_pattern
+  if (use->Opcode() == Op_MaxL || use->Opcode() == Op_MinL) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* u2 = use->fast_out(i);
+      if (u2->Opcode() == Op_AddL) {
+        add_users_to_worklist_if(worklist, u2, [](Node* u1) {
+          return u1->Opcode() == Op_MaxL || u1->Opcode() == Op_MinL;
+        });
+      }
+    }
+  }
+  // Check for MinI/MaxI(MinI/MaxI(AddI(x, conx), other), AddI(y, cony))
+  //   -> MinI/MaxI(AddI(x, MinI/MaxI(conx, cony)), other), where all
+  // operations are either MinI or MaxI. This requires a 3-hop
+  // notification like above.
+  if (use_op == Op_AddI) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      if (Node* u2 = use->fast_out(i); u2 != nullptr && u2->is_MinMax()) {
+        add_users_to_worklist_if(worklist, u2, [](Node* u1) {
+          return u1->is_MinMax();
+        });
+      }
+    }
+  }
+
   // Check for A | (B | C) and (B | C) | A where A == B or A == C.
   if (use_op == Op_OrI || use_op == Op_OrL) {
     add_users_to_worklist_if(worklist, use, [&](Node* u) { return u->Opcode() == use->Opcode(); });
@@ -2840,11 +2901,11 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
-  if (use_op == Op_LoadP && use->bottom_type()->isa_rawptr()) {
+  if (use_op == Op_LoadP && use->bottom_type()->is_rawptr()) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
       const Type* ut = u->bottom_type();
-      if (u->Opcode() == Op_LoadP && ut->isa_instptr()) {
+      if (u->Opcode() == Op_LoadP && ut->is_instptr()) {
         worklist.push(u);
       }
     }
@@ -2905,7 +2966,8 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
 
   // f(f(x)) => x for f = Reverse / ReverseBytes
-  if (use_op == Op_ReverseV || use_op == Op_ReverseBytesV) {
+  if (use_op == Op_ReverseV || use_op == Op_ReverseBytesV ||
+      use_op == Op_ReverseBytesS || use_op == Op_ReverseBytesUS) {
     add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
       return u->Opcode() == use_op;
     });
@@ -2927,8 +2989,17 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (VectorNode::is_associative_and_commutative_vector_operation(use_op) &&
       !use->as_Vector()->is_predicated_vector()) {
     add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
-      return u->Opcode() == use_op && !u->as_Vector()->is_predicated_vector() &&
-             (u->in(1)->Opcode() == Op_Replicate || u->in(2)->Opcode() == Op_Replicate);
+      if (u->Opcode() != use_op || u->as_Vector()->is_predicated_vector()) {
+        return false;
+      }
+      // Reached from remove_globally_dead_node() -> replace_edge() ->
+      // set_req_X() after clearing one input leaves the shared input with a
+      // single user and has_special_unique_user() is true. 'u' is still being
+      // disconnected, so a required input may already be null.
+      Node* in1 = u->in(1);
+      Node* in2 = u->in(2);
+      return (in1 != nullptr && in1->Opcode() == Op_Replicate) ||
+             (in2 != nullptr && in2->Opcode() == Op_Replicate);
     });
   }
 
@@ -3114,8 +3185,8 @@ void PhaseCCP::verify_type(Node* n, const Type* tnew, const Type* told) {
     tty->print("tnew = "); tnew->dump(); tty->cr();
     fatal("Not monotonic");
   }
-  assert(!told->isa_int() || !tnew->isa_int() || told->is_int()->_widen <= tnew->is_int()->_widen, "widen increases");
-  assert(!told->isa_long() || !tnew->isa_long() || told->is_long()->_widen <= tnew->is_long()->_widen, "widen increases");
+  assert(!told->is_int() || !tnew->is_int() || told->as_int()->_widen <= tnew->as_int()->_widen, "widen increases");
+  assert(!told->is_long() || !tnew->is_long() || told->as_long()->_widen <= tnew->as_long()->_widen, "widen increases");
 }
 #endif //ASSERT
 
@@ -3218,7 +3289,7 @@ bool PhaseCCP::needs_revisit(Node* n) const {
     return true;
   }
   // CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-  if (n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
+  if (n->Opcode() == Op_CmpP && type(n->in(1))->is_oopptr() && type(n->in(2))->is_oopptr()) {
     return true;
   }
   return false;
@@ -3426,11 +3497,11 @@ void PhaseCCP::push_cast(Unique_Node_List<Node>& worklist, const Node* use) {
 // Loading the java mirror from a Klass requires two loads and the type of the mirror load depends on the type of 'n'.
 // See LoadNode::Value().
 void PhaseCCP::push_loadp(Unique_Node_List<Node>& worklist, const Node* use) const {
-  if (use->Opcode() == Op_LoadP && use->bottom_type()->isa_rawptr()) {
+  if (use->Opcode() == Op_LoadP && use->bottom_type()->is_rawptr()) {
     for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
       Node* loadp = use->fast_out(i);
       const Type* ut = loadp->bottom_type();
-      if (loadp->Opcode() == Op_LoadP && ut->isa_instptr() && ut != type(loadp)) {
+      if (loadp->Opcode() == Op_LoadP && ut->is_instptr() && ut != type(loadp)) {
         worklist.push(loadp);
       }
     }

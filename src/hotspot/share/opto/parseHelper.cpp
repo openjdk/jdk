@@ -62,6 +62,30 @@ void GraphKit::make_dtrace_method_entry_exit(ciMethod* method, bool is_entry) {
                     thread, method_node);
 }
 
+Node* Parse::null_assert_for_unloaded_type(Node* value, ciType* unloaded_type,
+                                           const char* reason, bool trap_at_next_bci,
+                                           ciMethod* callee) {
+  if (PrintOpto && (Verbose || WizardMode)) {
+    method()->print_name();
+    tty->print_cr(" asserting nullness of %s at bci: %d", reason, bci());
+    if (callee != nullptr) {
+      callee->print_name();
+      tty->cr();
+    }
+  }
+  if (C->log() != nullptr) {
+    C->log()->elem("assert_null reason='%s' klass='%d'",
+                   reason, C->log()->identify(unloaded_type));
+  }
+  if (trap_at_next_bci) {
+    set_bci(iter().next_bci());
+  }
+  Node* result = null_assert(value);
+  if (trap_at_next_bci) {
+    set_bci(iter().cur_bci()); // put it back
+  }
+  return result;
+}
 
 //=============================================================================
 //------------------------------do_checkcast-----------------------------------
@@ -75,20 +99,10 @@ void Parse::do_checkcast() {
   // then the checkcast does nothing.
   const TypeOopPtr *tp = _gvn.type(obj)->isa_oopptr();
   if (!will_link || (tp && !tp->is_loaded())) {
-    if (C->log() != nullptr) {
-      if (!will_link) {
-        C->log()->elem("assert_null reason='checkcast' klass='%d'",
-                       C->log()->identify(klass));
-      }
-      if (tp && !tp->is_loaded()) {
-        // %%% Cannot happen?
-        ciKlass* klass = tp->unloaded_klass();
-        C->log()->elem("assert_null reason='checkcast source' klass='%d'",
-                       C->log()->identify(klass));
-      }
-    }
-    null_assert(obj);
-    assert( stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null" );
+    ciKlass* unloaded_klass = !will_link ? klass : tp->unloaded_klass();
+    const char* reason = !will_link ? "checkcast" : "checkcast source";
+    null_assert_for_unloaded_type(obj, unloaded_klass, reason, false);
+    assert(stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null");
     return;
   }
 
@@ -115,12 +129,8 @@ void Parse::do_instanceof() {
   ciKlass* klass = iter().get_klass(will_link);
 
   if (!will_link) {
-    if (C->log() != nullptr) {
-      C->log()->elem("assert_null reason='instanceof' klass='%d'",
-                     C->log()->identify(klass));
-    }
-    null_assert(peek());
-    assert( stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null" );
+    null_assert_for_unloaded_type(peek(), klass, "instanceof", false);
+    assert(stopped() || _gvn.type(peek())->higher_equal(TypePtr::NULL_PTR), "what's left behind is null");
     if (!stopped()) {
       // The object is now known to be null.
       // Shortcut the effect of gen_instanceof and return "false" directly.
@@ -150,7 +160,7 @@ Node* Parse::array_store_check(const Type*& elemtype) {
     // This cutout lets us avoid the uncommon_trap(Reason_array_check)
     // below, which turns into a performance liability if the
     // gen_checkcast folds up completely.
-    if (_gvn.type(ary)->is_aryptr()->is_null_free()) {
+    if (_gvn.type(ary)->as_aryptr()->is_null_free()) {
       null_check(obj);
     }
     return obj;
@@ -159,7 +169,7 @@ Node* Parse::array_store_check(const Type*& elemtype) {
   // Extract the array klass type
   Node* array_klass = load_object_klass(ary);
   // Get the array klass
-  const TypeKlassPtr* tak = _gvn.type(array_klass)->is_klassptr();
+  const TypeKlassPtr* tak = _gvn.type(array_klass)->as_klassptr();
 
   // The type of array_klass is usually INexact array-of-oop.  Heroically
   // cast array_klass to EXACT array and uncommon-trap if the cast fails.
@@ -168,13 +178,13 @@ Node* Parse::array_store_check(const Type*& elemtype) {
   if (MonomorphicArrayCheck && !tak->klass_is_exact()) {
     // Make a constant out of the inexact array klass
     const TypeAryKlassPtr* extak = nullptr;
-    const TypeOopPtr* ary_t = _gvn.type(ary)->is_oopptr();
+    const TypeOopPtr* ary_t = _gvn.type(ary)->as_oopptr();
     ciKlass* ary_spec = ary_t->speculative_type();
     Deoptimization::DeoptReason reason = Deoptimization::Reason_none;
     // Try to cast the array to an exact type from profile data. First
     // check the speculative type.
     if (ary_spec != nullptr && !too_many_traps(Deoptimization::Reason_speculate_class_check)) {
-      extak = TypeKlassPtr::make(ary_spec)->is_aryklassptr();
+      extak = TypeKlassPtr::make(ary_spec)->as_aryklassptr();
       reason = Deoptimization::Reason_speculate_class_check;
     } else if (UseArrayLoadStoreProfile) {
       // No speculative type: check profile data at this bci.
@@ -187,10 +197,10 @@ Node* Parse::array_store_check(const Type*& elemtype) {
         bool null_free_array = true;
         method()->array_access_profiled_type(bci(), array_type, element_type, element_ptr, flat_array, null_free_array);
         if (array_type != nullptr) {
-          extak = TypeKlassPtr::make(array_type)->is_aryklassptr();
+          extak = TypeKlassPtr::make(array_type)->as_aryklassptr();
         }
       }
-    } else if (!too_many_traps(Deoptimization::Reason_array_check) && tak->isa_aryklassptr()) {
+    } else if (!too_many_traps(Deoptimization::Reason_array_check) && tak->is_aryklassptr()) {
       // If the compiler has determined that the type of array 'ary' (represented
       // by 'array_klass') is java/lang/Object, the compiler must not assume that
       // the array 'ary' is monomorphic.
@@ -209,7 +219,7 @@ Node* Parse::array_store_check(const Type*& elemtype) {
       // 'array_klass' to be ObjArrayKlass, which can result in invalid memory accesses.
       //
       // See issue JDK-8057622 for details.
-      extak = tak->cast_to_exactness(true)->is_aryklassptr();
+      extak = tak->cast_to_exactness(true)->as_aryklassptr();
       reason = Deoptimization::Reason_array_check;
     }
     if (extak != nullptr && extak->exact_klass(true) != nullptr) {
@@ -232,7 +242,7 @@ Node* Parse::array_store_check(const Type*& elemtype) {
         Node* cast = _gvn.transform(new CheckCastPPNode(control(), ary, extak->as_exact_instance_type()));
         replace_in_map(ary, cast);
         ary = cast;
-        elemtype = _gvn.type(ary)->is_aryptr()->elem();
+        elemtype = _gvn.type(ary)->as_aryptr()->elem();
 
         CompileLog* log = C->log();
         if (log != nullptr) {
@@ -251,7 +261,7 @@ Node* Parse::array_store_check(const Type*& elemtype) {
   Node* a_e_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p2, tak));
 
   // If we statically know that this is a value type array, use precise element klass for checkcast
-  const TypeAryPtr* arytype = _gvn.type(ary)->is_aryptr();
+  const TypeAryPtr* arytype = _gvn.type(ary)->as_aryptr();
   const TypePtr* elem_ptr = elemtype->make_ptr();
   bool null_free = arytype->is_null_free();
   if (elem_ptr->is_valueklassptr()) {
@@ -275,7 +285,7 @@ Node* Parse::array_store_check(const Type*& elemtype) {
   // merged or hidden behind super types. Therefore, an inexact null-free array always represents some kind of
   // value type array - either of an abstract value class or Object.
   if (null_free) {
-    ciKlass* klass = elem_ptr->is_instptr()->instance_klass();
+    ciKlass* klass = elem_ptr->as_instptr()->instance_klass();
     if (klass->exact_klass()) {
       assert(elem_ptr->is_valueklassptr() || arytype->is_autobox_cache(), "elements must be value type or autobox cache");
     } else {

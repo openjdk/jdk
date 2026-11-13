@@ -361,8 +361,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   G1CMTaskQueueSet*       _task_queues; // Task queue set
   TaskTerminator          _terminator;  // For termination
 
-  PartialArrayStateManager* _partial_array_state_manager;
-
   // Two sync barriers that are used to synchronize tasks when an
   // overflow occurs. The algorithm is the following. All tasks enter
   // the first one to ensure that they have all stopped manipulating
@@ -631,8 +629,6 @@ public:
   // Calculates the number of concurrent GC threads to be used in the marking phase.
   uint calc_active_marking_workers();
 
-  PartialArrayStateManager* partial_array_state_manager() const;
-
   // Resets the global marking data structures, as well as the
   // task local ones; should be called during concurrent start.
   void reset();
@@ -644,9 +640,9 @@ public:
   // to be called concurrently to the mutator. It will yield to safepoint requests.
   void cleanup_for_next_mark();
 
-  // Recycle the memory that has been requested by allocators associated with
-  // this manager.
-  void reset_partial_array_state_manager();
+  // Reclaim partial-array state memory after all marking workers have stopped.
+  // Reset every allocator before marking resumes.
+  void reset_partial_array_splitters();
 
   // Clear the next marking bitmap during safepoint.
   void clear_bitmap(WorkerThreads* workers);
@@ -893,11 +889,9 @@ public:
   void reset(G1CMBitMap* mark_bitmap);
   // Minimal reset of the task, making it ready for continuing to mark.
   void reset_for_restart();
-  // Register/unregister Partial Array Splitter Allocator with the PartialArrayStateManager.
-  // This allows us to discard memory arenas used for partial object array states at the end
-  // of a concurrent mark cycle.
-  void register_partial_array_splitter();
-  void unregister_partial_array_splitter();
+  // Reclaim states only after all marking/remark workers have stopped using
+  // them.  Every task's splitter must reset before marking resumes.
+  void reset_partial_array_splitter();
   // Clears all the fields that correspond to a claimed region.
   void clear_region_fields();
 

@@ -41,11 +41,13 @@
 #include "nativeInst_x86.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadIdentifier.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_x86.inline.hpp"
 
@@ -482,7 +484,22 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       if (vk->can_be_returned_as_fields()) {
         address unpack_handler = vk->unpack_handler();
         assert(unpack_handler != nullptr, "must be");
-        __ call(RuntimeAddress(unpack_handler));
+#if INCLUDE_CDS
+        if (AOTCodeCache::is_on_for_dump()) {
+          // in AOT compiled code call the unpack handler indirectly
+          // via the klass. The handler's blob does not currently get
+          // saved to the archive. So, a direct call to the handler
+          // address cannot be injected into a caller that is saved
+          // and restored.
+          __ mov_metadata(rdi, vk->constant_encoding());
+          __ movptr(rdi, Address(rdi, ValueKlass::adr_members_offset()));
+          __ movptr(rdi, Address(rdi, ValueKlass::unpack_handler_offset()));
+          __ call(rdi);
+        } else
+#endif
+        {
+          __ call(RuntimeAddress(unpack_handler));
+        }
       }
     } else if (return_type->is_instance_klass() && (!return_type->is_loaded() || StressCallingConvention)) {
       Label skip;
@@ -581,15 +598,6 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
     }
 
     case T_LONG: {
-#if INCLUDE_CDS
-      if (AOTCodeCache::is_on_for_dump()) {
-        address b = c->as_pointer();
-        if (b == (address)ThreadIdentifier::unsafe_offset()) {
-          __ lea(dest->as_register_lo(), ExternalAddress(b));
-          break;
-        }
-      }
-#endif
       assert(patch_code == lir_patch_none, "no patching handled here");
 #if INCLUDE_CDS
       if (AOTCodeCache::is_on_for_dump()) {
@@ -598,6 +606,12 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
           __ lea(dest->as_register_lo(), ExternalAddress(b));
           break;
         }
+#if INCLUDE_JVMTI
+        if (b == (address)&JvmtiExport::_should_notify_object_alloc) {
+          __ lea(dest->as_register_lo(), ExternalAddress(b));
+          break;
+        }
+#endif
         if (AOTRuntimeConstants::contains(b)) {
           __ load_aotrc_address(dest->as_register_lo(), b);
           break;
@@ -814,6 +828,13 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   } else {
     ShouldNotReachHere();
   }
+}
+
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  assert(UseCompressedOops, "should only be used with compressed oops");
+  Register dst = dest->as_pointer_register();
+  move_regs(src->as_pointer_register(), dst);
+  __ decode_heap_oop(dst);
 }
 
 void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {

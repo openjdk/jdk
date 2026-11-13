@@ -122,8 +122,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dar">darginski</language>
 			<language type="dav">taita</language>
 			<language type="de">nemački</language>
-			<language type="de_AT">austrijski nemački</language>
-			<language type="de_CH">švajcarski visoki nemački</language>
+			<language type="de_CH">standardni nemački (Švajcarska)</language>
 			<language type="del">delaverski</language>
 			<language type="den">slejvi</language>
 			<language type="dgr">dogripski</language>
@@ -170,8 +169,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fo">farski</language>
 			<language type="fon">fon</language>
 			<language type="fr">francuski</language>
-			<language type="fr_CA">kanadski francuski</language>
-			<language type="fr_CH">švajcarski francuski</language>
 			<language type="frc">kajunski francuski</language>
 			<language type="frm">srednjefrancuski</language>
 			<language type="fro">starofrancuski</language>
@@ -415,6 +412,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pi">pali</language>
 			<language type="pis">pidžin</language>
 			<language type="pl">poljski</language>
+			<language type="pms">pijemontski</language>
 			<language type="pon">ponpejski</language>
 			<language type="pqm">malisepasamakvodi</language>
 			<language type="prg">pruski</language>
@@ -1086,18 +1084,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="collation">redosled sortiranja</key>
 			<key type="colNormalization">normalizovano sortiranje</key>
 			<key type="colNumeric">numeričko sortiranje</key>
-			<key type="colStrength">sortiranje prema jačini</key>
+			<key type="colReorder">promena redosleda prema pismu ili grupi karaktera</key>
+			<key type="colStrength">kriterijum sortiranja</key>
 			<key type="currency">valuta</key>
+			<key type="d0">odredište pretvaranja</key>
+			<key type="dx">izuzeci od preloma rečnika</key>
 			<key type="em">prezentacija emodžija</key>
+			<key type="fw">prvi dan u nedelji</key>
+			<key type="h0">pomešano</key>
 			<key type="hc">prikazivanje vremena (12- ili 24-časovno)</key>
+			<key type="i0">način unosa</key>
+			<key type="k0">tastatura</key>
+			<key type="kv">Najignorisanije</key>
 			<key type="lb">stil preloma reda</key>
 			<key type="lw">prelomi redova unutar reči</key>
+			<key type="m0">pravila pretvaranja</key>
 			<key type="ms">sistem mernih jedinica</key>
+			<key type="mu">merna jedinica</key>
 			<key type="numbers">brojevi</key>
+			<key type="rg">region za dodatne podatke</key>
+			<key type="s0">izvor transformacije</key>
+			<key type="sd">podela regiona</key>
 			<key type="ss">Prelom rečenice posle skraćenice</key>
+			<key type="t">transformacija</key>
+			<key type="t0">mašinski prevod</key>
 			<key type="timezone">Vremenska zona</key>
 			<key type="va">Varijanta lokaliteta</key>
 			<key type="x">Privatna upotreba</key>
+			<key type="x0">transformacija za privatnu upotrebu</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">budistički kalendar</type>
@@ -1117,15 +1131,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="hebrew">hebrejski kalendar</type>
 			<type key="calendar" type="hebrew" scope="core">hebrejski</type>
 			<type key="calendar" type="indian">Indijski nacionalni kalendar</type>
+			<type key="calendar" type="indian" scope="core">indijski nacionalni</type>
 			<type key="calendar" type="islamic">islamski kalendar</type>
 			<type key="calendar" type="islamic" scope="core">islamski</type>
 			<type key="calendar" type="islamic-civil">islamski civilni kalendar</type>
 			<type key="calendar" type="islamic-civil" scope="core">islamski civilni</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">islamski Saudijske Arabije</type>
 			<type key="calendar" type="islamic-tbla">islamski astronomski kalendar</type>
 			<type key="calendar" type="islamic-tbla" scope="core">islamski astronomski</type>
 			<type key="calendar" type="islamic-umalqura">islamski kalendar (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">islamski (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 kalendar</type>
+			<type key="calendar" type="iso8601" scope="core">gregorijanski</type>
 			<type key="calendar" type="japanese">japanski kalendar</type>
 			<type key="calendar" type="japanese" scope="core">japanski</type>
 			<type key="calendar" type="persian">persijski kalendar</type>
@@ -1141,8 +1158,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="colBackwards" type="no" draft="contributed">Sortiraj akcente normalno</type>
 			<type key="colBackwards" type="yes" draft="contributed">Sortiraj akcente obrnuto</type>
 			<type key="colCaseFirst" type="lower" draft="contributed">Sortiraj prvo mala slova</type>
+			<type key="colCaseFirst" type="lower" scope="core">malo slovo</type>
 			<type key="colCaseFirst" type="no" draft="contributed">Sortiraj normalan redosled velikih i malih slova</type>
+			<type key="colCaseFirst" type="no" scope="core">malo slovo</type>
 			<type key="colCaseFirst" type="upper" draft="contributed">Sortiraj prvo velika slova</type>
+			<type key="colCaseFirst" type="upper" scope="core">malo slovo</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Sortiraj bez obzira na velika i mala slova</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Sortiraj mala i velika slova</type>
 			<type key="collation" type="compat">prethodni redosled sortiranja, zbog kompatibilnosti</type>
@@ -1151,7 +1171,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="dictionary" scope="core">rečnik</type>
 			<type key="collation" type="ducet">podrazumevani Unicode redosled sortiranja</type>
 			<type key="collation" type="ducet" scope="core">podrazumevani Unicode</type>
+			<type key="collation" type="emoji" scope="core">emodži</type>
 			<type key="collation" type="eor" draft="contributed">evropska pravila redosleda</type>
+			<type key="collation" type="eor" scope="core">evropska pravila</type>
 			<type key="collation" type="phonebook">sortiranje kao telefonski imenik</type>
 			<type key="collation" type="phonebook" scope="core">telefonski imenik</type>
 			<type key="collation" type="phonetic">fonetski redosled sortiranja</type>
@@ -1161,6 +1183,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="search">pretraga opšte namene</type>
 			<type key="collation" type="search" scope="core">pretraga</type>
 			<type key="collation" type="searchjl" draft="contributed">Pretraga prema hangul početnom suglasniku</type>
+			<type key="collation" type="searchjl" scope="core">korejski početni konsonant</type>
 			<type key="collation" type="standard">standardni redosled sortiranja</type>
 			<type key="collation" type="standard" scope="core">standardni</type>
 			<type key="collation" type="stroke">sortiranje po broju poteza</type>
@@ -1175,17 +1198,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="colNormalization" type="yes" draft="contributed">Sortiraj Unicode normalizovano</type>
 			<type key="colNumeric" type="no" draft="contributed">Sortiraj cifre pojedinačno</type>
 			<type key="colNumeric" type="yes" draft="contributed">Sortiraj cifre numerički</type>
+			<type key="colReorder" type="currency" scope="core">valuta</type>
+			<type key="colReorder" type="digit" scope="core">cifre</type>
+			<type key="colReorder" type="punct" scope="core">interpunkcija</type>
+			<type key="colReorder" type="space" scope="core">beo prostor</type>
+			<type key="colReorder" type="symbol" scope="core">simbol</type>
 			<type key="colStrength" type="identical" draft="contributed">Sortiraj sve</type>
+			<type key="colStrength" type="identical" scope="core">sve</type>
 			<type key="colStrength" type="primary" draft="contributed">Sortiraj samo osnovna slova</type>
+			<type key="colStrength" type="primary" scope="core">samo osnovna slova</type>
 			<type key="colStrength" type="quaternary" draft="contributed">Sortiraj akcente/mala i velika slova/širinu/kana simbole</type>
+			<type key="colStrength" type="quaternary" scope="core">osnovna, akcenti, veliko/malo slovo, varijante, kana</type>
 			<type key="colStrength" type="secondary" draft="contributed">Sortiraj akcente</type>
+			<type key="colStrength" type="secondary" scope="core">osnovna, akcenti</type>
 			<type key="colStrength" type="tertiary" draft="contributed">Sortiraj akcente/mala i velika slova/širinu</type>
+			<type key="colStrength" type="tertiary" scope="core">osnovna, akcenti, veliko/malo slovo, varijante</type>
 			<type key="d0" type="fwidth">puna širina</type>
 			<type key="d0" type="hwidth">pola širine</type>
 			<type key="d0" type="npinyin" draft="contributed">Numerička</type>
 			<type key="em" type="default" scope="core">podrazumevano</type>
 			<type key="em" type="emoji" scope="core">emodži</type>
 			<type key="em" type="text" scope="core">tekst</type>
+			<type key="hc" type="c12">12-časovni sistem</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24-časovni sistem</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12-časovni sistem (0-11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12-časovni sistem (1-12)</type>
@@ -1194,6 +1231,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24-časovni sistem (1-24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Shift razmaci, interpunkcija, svi simboli</type>
+			<type key="kv" type="punct" scope="core">Shift razmaci, interpunkcija</type>
+			<type key="kv" type="space" scope="core">Shift razmaci, interpunkcija</type>
+			<type key="kv" type="symbol" scope="core">Shift razmaci, interpunkcija, simboli koji ne predstavljaju valutu</type>
 			<type key="lb" type="loose">razmaknuti stil preloma reda</type>
 			<type key="lb" type="loose" scope="core">razmaknuti</type>
 			<type key="lb" type="normal">normalni stil preloma reda</type>
@@ -1214,51 +1255,85 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="ms" type="ussystem" scope="core">SAD</type>
 			<type key="numbers" type="arab">arapsko-indijske cifre</type>
 			<type key="numbers" type="arabext">produžene arapsko-indijske cifre</type>
+			<type key="numbers" type="arabext" scope="core">produženi arapsko-indijski</type>
 			<type key="numbers" type="armn">jermenski brojevi</type>
 			<type key="numbers" type="armnlow">mali jermenski brojevi</type>
+			<type key="numbers" type="armnlow" scope="core">mali jermenski</type>
 			<type key="numbers" type="beng">bengalske cifre</type>
 			<type key="numbers" type="cakm">čakma cifre</type>
 			<type key="numbers" type="deva">devangari cifre</type>
 			<type key="numbers" type="ethi">etiopski brojevi</type>
 			<type key="numbers" type="finance" draft="contributed">Finansijski brojevi</type>
+			<type key="numbers" type="finance" scope="core">finansijski</type>
 			<type key="numbers" type="fullwide">cifre pune širine</type>
+			<type key="numbers" type="fullwide" scope="core">pune širine</type>
 			<type key="numbers" type="geor">gruzijski brojevi</type>
 			<type key="numbers" type="grek">grčki brojevi</type>
 			<type key="numbers" type="greklow">mali grčki brojevi</type>
+			<type key="numbers" type="greklow" scope="core">mali grčki</type>
 			<type key="numbers" type="gujr">gudžaratske cifre</type>
 			<type key="numbers" type="guru">gurmuki cifre</type>
+			<type key="numbers" type="hanidays" scope="core">numerisanje dana u mesecu han znakovima za tradicionalne kalendare</type>
 			<type key="numbers" type="hanidec">kineski decimalni brojevi</type>
+			<type key="numbers" type="hanidec" scope="core">pozicioni decimalni sistem koji koristi kineske ideograme za brojeve kao cifre</type>
 			<type key="numbers" type="hans">pojednostavljeni kineski brojevi</type>
 			<type key="numbers" type="hansfin">pojednostavljeni kineski finansijski brojevi</type>
+			<type key="numbers" type="hansfin" scope="core">pojednostavljeni kineski finansijski</type>
 			<type key="numbers" type="hant">tradicionalni kineski brojevi</type>
 			<type key="numbers" type="hantfin">tradicionalni kineski finansijski brojevi</type>
+			<type key="numbers" type="hantfin" scope="core">tradicionalni kineski finansijski</type>
 			<type key="numbers" type="hebr">hebrejski brojevi</type>
 			<type key="numbers" type="java">javanske cifre</type>
 			<type key="numbers" type="jpan">japanski brojevi</type>
 			<type key="numbers" type="jpanfin">japanski finansijski brojevi</type>
+			<type key="numbers" type="jpanfin" scope="core">japanski finansijski</type>
+			<type key="numbers" type="jpanyear" scope="core">japansko ganen numerisanje prve godine</type>
 			<type key="numbers" type="khmr">kmerske cifre</type>
 			<type key="numbers" type="knda">kanada cifre</type>
+			<type key="numbers" type="lanatham" scope="core">tajski (crkveni)</type>
 			<type key="numbers" type="laoo">laoške cifre</type>
 			<type key="numbers" type="latn">zapadne cifre</type>
+			<type key="numbers" type="mathbold" scope="core">matematički podebljani</type>
+			<type key="numbers" type="mathdbl" scope="core">matematički dvostruko povučeni</type>
+			<type key="numbers" type="mathmono" scope="core">matematički jednorazmačni</type>
+			<type key="numbers" type="mathsanb" scope="core">matematički bezserifni podebljani</type>
+			<type key="numbers" type="mathsans" scope="core">matematički bezserifni</type>
 			<type key="numbers" type="mlym">malajalam cifre</type>
 			<type key="numbers" type="mong" draft="contributed">mongolske cifre</type>
 			<type key="numbers" type="mtei">mitei majek cifre</type>
 			<type key="numbers" type="mymr">mijanmarske cifre</type>
+			<type key="numbers" type="mymrepka" scope="core">mijanmarski istočni pvo karen</type>
+			<type key="numbers" type="mymrpao" scope="core">mijanmarski pao</type>
+			<type key="numbers" type="mymrshan" scope="core">mijanmarski šan</type>
+			<type key="numbers" type="mymrtlng" scope="core">mijanmarski tai laing</type>
 			<type key="numbers" type="native">lokalne cifre</type>
+			<type key="numbers" type="native" scope="core">lokalne cifre</type>
 			<type key="numbers" type="olck">ol čiki cifre</type>
 			<type key="numbers" type="orya">orija cifre</type>
+			<type key="numbers" type="outlined" scope="core">konturno</type>
 			<type key="numbers" type="roman">rimski brojevi</type>
+			<type key="numbers" type="roman" scope="core">veliki rimski</type>
 			<type key="numbers" type="romanlow">mali rimski brojevi</type>
+			<type key="numbers" type="romanlow" scope="core">mali rimski</type>
+			<type key="numbers" type="segment" scope="core">segmentirani</type>
 			<type key="numbers" type="taml">tamilski brojevi</type>
 			<type key="numbers" type="tamldec">tamilske cifre</type>
+			<type key="numbers" type="tamldec" scope="core">moderni tamilski</type>
 			<type key="numbers" type="telu">telugu cifre</type>
 			<type key="numbers" type="thai">tajske cifre</type>
 			<type key="numbers" type="tibt">tibetanske cifre</type>
 			<type key="numbers" type="traditional" draft="contributed">Tradicionalni brojevi</type>
+			<type key="numbers" type="traditional" scope="core">tradicionalni brojevi</type>
 			<type key="numbers" type="vaii">vai cifre</type>
 			<type key="ss" type="none" scope="core">Uključeno</type>
 			<type key="ss" type="standard" scope="core">Isključeno</type>
+			<type key="t0" type="und">nespecifikovan mašinski prevod</type>
+			<type key="va" type="posix" scope="core">POSIX varijanta</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">isključeno</typeValue>
+			<typeValue type="yes">uključeno</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">metrički</measurementSystemName>
 			<measurementSystemName type="UK">britanski</measurementSystemName>
@@ -1401,15 +1476,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMMEd">E, d. MMM y. G</dateFormatItem>
 						<dateFormatItem id="hm">hh:mm a</dateFormatItem>
 						<dateFormatItem id="hms">hh:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hv">HH v</dateFormatItem>
 						<dateFormatItem id="Md">d.M.</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M.</dateFormatItem>
 						<dateFormatItem id="MMdd">MM-dd</dateFormatItem>
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
-						<dateFormatItem id="MMMdd">dd.MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd">E, d. MMM</dateFormatItem>
+						<dateFormatItem id="MMMdd">d.MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMEd">E, d. MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E d. MMMM</dateFormatItem>
 						<dateFormatItem id="y">y. G</dateFormatItem>
 						<dateFormatItem id="yyyy">y. G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M.y. GGGGG</dateFormatItem>
@@ -1425,6 +1499,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">QQQQ y. G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="numeric">{0}–{1}.</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
@@ -1464,6 +1541,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, dd. – E, dd. MMM</greatestDifference>
 							<greatestDifference id="M">E, dd. MMM – E, dd. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y. G</greatestDifference>
@@ -1703,6 +1784,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -1732,23 +1816,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y. G</dateFormatItem>
-						<dateFormatItem id="GyMd">d.MM.y. GGGGG</dateFormatItem>
+						<dateFormatItem id="GyM">M. y. G</dateFormatItem>
+						<dateFormatItem id="GyMd">d.M.y. GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E d.M.y. G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y. G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y. G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d. MMM y. G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E d. MMM y. G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y. G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d. MMMM y. G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E d. MMMM y. G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hv">HH v</dateFormatItem>
+						<dateFormatItem id="M">L.</dateFormatItem>
 						<dateFormatItem id="Md">d. M.</dateFormatItem>
-						<dateFormatItem id="MEd">E, d. M.</dateFormatItem>
-						<dateFormatItem id="MMdd">dd.MM.</dateFormatItem>
+						<dateFormatItem id="MEd">E d. M.</dateFormatItem>
+						<dateFormatItem id="MMdd">d.M.</dateFormatItem>
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
-						<dateFormatItem id="MMMdd">dd.MMM</dateFormatItem>
+						<dateFormatItem id="MMMdd">d.MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMEd">E, d. MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E d. MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM: W. 'nedelja'</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="few">MMMM: W. 'nedelja'</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM: W. 'nedelja'</dateFormatItem>
@@ -1762,6 +1851,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">d. MMM y.</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d. MMM y.</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y.</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d. MMM y.</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E d. MMMM y.</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y.</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y.</dateFormatItem>
 						<dateFormatItem id="yw" count="one">w. 'nedelja' 'u' Y.</dateFormatItem>
@@ -1769,6 +1860,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">w. 'nedelja' 'u' Y.</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1801,12 +1895,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">dd.–dd. MMM</greatestDifference>
+							<greatestDifference id="d">d–d. MMM</greatestDifference>
 							<greatestDifference id="M">dd. MMM – dd. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, dd. – E, dd. MMM</greatestDifference>
 							<greatestDifference id="M">E, dd. MMM – E, dd. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d–d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y–y.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M – M. y.</greatestDifference>
@@ -1946,246 +2047,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</eras>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="GyM">M. y. G</dateFormatItem>
-						<dateFormatItem id="GyMEd">G dd. MM. y, E</dateFormatItem>
+						<dateFormatItem id="MMMdd">d. MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="japanese">
 				<eras>
 					<eraAbbr>
-						<era type="0">Taika (645–650)</era>
-						<era type="1">Hakuči (650–671)</era>
-						<era type="2">Hakuho (672–686)</era>
-						<era type="3">Šučo (686–701)</era>
-						<era type="4">Taiho (701–704)</era>
-						<era type="5">Keiun (704–708)</era>
-						<era type="6">Vado (708–715)</era>
-						<era type="7">Reiki (715–717)</era>
-						<era type="8">Joro (717–724)</era>
-						<era type="9">Jinki (724–729)</era>
-						<era type="10">Tempio (729–749)</era>
-						<era type="11">Tempio-kampo (749-749)</era>
-						<era type="12">Tempio-šoho (749-757)</era>
-						<era type="13">Tempio-hođi (757-765)</era>
-						<era type="14">Tempo-đingo (765-767)</era>
-						<era type="15">Đingo-keiun (767-770)</era>
-						<era type="16">Hoki (770–780)</era>
-						<era type="17">Ten-o (781-782)</era>
-						<era type="18">Enrjaku (782–806)</era>
-						<era type="19">Daido (806–810)</era>
-						<era type="20">Konin (810–824)</era>
-						<era type="21">Tenčo (824–834)</era>
-						<era type="22">Šova (834–848)</era>
-						<era type="23">Kajo (848–851)</era>
-						<era type="24">Ninju (851–854)</era>
-						<era type="25">Saiko (854–857)</era>
-						<era type="26">Tenan (857–859)</era>
-						<era type="27">Jogan (859–877)</era>
-						<era type="28">Genkei (877–885)</era>
-						<era type="29">Ninja (885–889)</era>
-						<era type="30">Kampjo (889–898)</era>
-						<era type="31">Šotai (898–901)</era>
-						<era type="32">Enđi (901–923)</era>
-						<era type="33">Enčo (923–931)</era>
-						<era type="34">Šohei (931–938)</era>
-						<era type="35">Tengjo (938–947)</era>
-						<era type="36">Tenriaku (947–957)</era>
-						<era type="37">Tentoku (957–961)</era>
-						<era type="38">Ova (961–964)</era>
-						<era type="39">Koho (964–968)</era>
-						<era type="40">Ana (968–970)</era>
-						<era type="41">Tenroku (970–973)</era>
-						<era type="42">Ten-en (973-976)</era>
-						<era type="43">Jogen (976–978)</era>
-						<era type="44">Tengen (978–983)</era>
-						<era type="45">Eikan (983–985)</era>
-						<era type="46">Kana (985–987)</era>
-						<era type="47">Ei-en (987-989)</era>
-						<era type="48">Eiso (989–990)</era>
-						<era type="49">Šorjaku (990–995)</era>
-						<era type="50">Čotoku (995–999)</era>
-						<era type="51">Čoho (999–1004)</era>
-						<era type="52">Kanko (1004–1012)</era>
-						<era type="53">Čova (1012–1017)</era>
-						<era type="54">Kanin (1017–1021)</era>
-						<era type="55">Đian (1021–1024)</era>
-						<era type="56">Manju (1024–1028)</era>
-						<era type="57">Čogen (1028–1037)</era>
-						<era type="58">Čorjaku (1037–1040)</era>
-						<era type="59">Čokju (1040–1044)</era>
-						<era type="60">Kantoku (1044–1046)</era>
-						<era type="61">Eišo (1046–1053)</era>
-						<era type="62">Tenđi (1053–1058)</era>
-						<era type="63">Kohei (1058–1065)</era>
-						<era type="64">Đirjaku (1065–1069)</era>
-						<era type="65">Enkju (1069–1074)</era>
-						<era type="66">Šoho (1074–1077)</era>
-						<era type="67">Šorjaku (1077–1081)</era>
-						<era type="68">Eišo (1081–1084)</era>
-						<era type="69">Otoku (1084–1087)</era>
-						<era type="70">Kanđi (1087–1094)</era>
-						<era type="71">Kaho (1094–1096)</era>
-						<era type="72">Eičo (1096–1097)</era>
-						<era type="73">Šotoku (1097–1099)</era>
-						<era type="74">Kova (1099–1104)</era>
-						<era type="75">Čođi (1104–1106)</era>
-						<era type="76">Kašo (1106–1108)</era>
-						<era type="77">Tenin (1108–1110)</era>
-						<era type="78">Ten-ei (1110-1113)</era>
-						<era type="79">Eikju (1113–1118)</era>
-						<era type="80">Đen-ei (1118-1120)</era>
-						<era type="81">Hoan (1120–1124)</era>
-						<era type="82">Tenđi (1124–1126)</era>
-						<era type="83">Daiđi (1126–1131)</era>
-						<era type="84">Tenšo (1131–1132)</era>
-						<era type="85">Čošao (1132–1135)</era>
-						<era type="86">Hoen (1135–1141)</era>
-						<era type="87">Eiđi (1141–1142)</era>
-						<era type="88">Kođi (1142–1144)</era>
-						<era type="89">Tenjo (1144–1145)</era>
-						<era type="90">Kjuan (1145–1151)</era>
-						<era type="91">Ninpei (1151–1154)</era>
-						<era type="92">Kjuju (1154–1156)</era>
-						<era type="93">Hogen (1156–1159)</era>
-						<era type="94">Heiđi (1159–1160)</era>
-						<era type="95">Eirjaku (1160–1161)</era>
-						<era type="96">Oho (1161–1163)</era>
-						<era type="97">Čokan (1163–1165)</era>
-						<era type="98">Eiman (1165–1166)</era>
-						<era type="99">Nin-an (1166-1169)</era>
-						<era type="100">Kao (1169–1171)</era>
-						<era type="101">Šoan (1171–1175)</era>
-						<era type="102">Angen (1175–1177)</era>
-						<era type="103">Đišo (1177–1181)</era>
-						<era type="104">Jova (1181–1182)</era>
-						<era type="105">Đuei (1182–1184)</era>
-						<era type="106">Genrjuku (1184–1185)</era>
-						<era type="107">Bunđi (1185–1190)</era>
-						<era type="108">Kenkju (1190–1199)</era>
-						<era type="109">Šođi (1199–1201)</era>
-						<era type="110">Kenin (1201–1204)</era>
-						<era type="111">Genkju (1204–1206)</era>
-						<era type="112">Ken-ei (1206-1207)</era>
-						<era type="113">Šogen (1207–1211)</era>
-						<era type="114">Kenrjaku (1211–1213)</era>
-						<era type="115">Kenpo (1213–1219)</era>
-						<era type="116">Šokju (1219–1222)</era>
-						<era type="117">Đu (1222–1224)</era>
-						<era type="118">Đenin (1224–1225)</era>
-						<era type="119">Karoku (1225–1227)</era>
-						<era type="120">Antei (1227–1229)</era>
-						<era type="121">Kanki (1229–1232)</era>
-						<era type="122">Đoei (1232–1233)</era>
-						<era type="123">Tempuku (1233–1234)</era>
-						<era type="124">Bunrjaku (1234–1235)</era>
-						<era type="125">Katei (1235–1238)</era>
-						<era type="126">Rjakunin (1238–1239)</era>
-						<era type="127">En-o (1239-1240)</era>
-						<era type="128">Ninji (1240–1243)</era>
-						<era type="129">Kangen (1243–1247)</era>
-						<era type="130">Hođi (1247–1249)</era>
-						<era type="131">Kenčo (1249–1256)</era>
-						<era type="132">Kogen (1256–1257)</era>
-						<era type="133">Šoka (1257–1259)</era>
-						<era type="134">Šogen (1259–1260)</era>
-						<era type="135">Bun-o (1260-1261)</era>
-						<era type="136">Kočo (1261–1264)</era>
-						<era type="137">Bun-ei (1264-1275)</era>
-						<era type="138">Kenđi (1275–1278)</era>
-						<era type="139">Koan (1278–1288)</era>
-						<era type="140">Šu (1288–1293)</era>
-						<era type="141">Einin (1293–1299)</era>
-						<era type="142">Šoan (1299–1302)</era>
-						<era type="143">Kengen (1302–1303)</era>
-						<era type="144">Kagen (1303–1306)</era>
-						<era type="145">Tokuđi (1306–1308)</era>
-						<era type="146">Enkei (1308–1311)</era>
-						<era type="147">Očo (1311–1312)</era>
-						<era type="148">Šova (1312–1317)</era>
-						<era type="149">Bunpo (1317–1319)</era>
-						<era type="150">Đeno (1319–1321)</era>
-						<era type="151">Đenkjo (1321–1324)</era>
-						<era type="152">Šoču (1324–1326)</era>
-						<era type="153">Kareki (1326–1329)</era>
-						<era type="154">Gentoku (1329–1331)</era>
-						<era type="155">Genko (1331–1334)</era>
-						<era type="156">Kemu (1334–1336)</era>
-						<era type="157">Engen (1336–1340)</era>
-						<era type="158">Kokoku (1340–1346)</era>
-						<era type="159">Šohei (1346–1370)</era>
-						<era type="160">Kentoku (1370–1372)</era>
-						<era type="161">Buču (1372–1375)</era>
-						<era type="162">Tenju (1375–1379)</era>
-						<era type="163">Korjaku (1379–1381)</era>
-						<era type="164">Kova (1381–1384)</era>
-						<era type="165">Genču (1384–1392)</era>
-						<era type="166">Meitoku (1384–1387)</era>
-						<era type="167">Kakei (1387–1389)</era>
-						<era type="168">Ku (1389–1390)</era>
-						<era type="169">Meitoku (1390–1394)</era>
-						<era type="170">Oei (1394–1428)</era>
-						<era type="171">Šočo (1428–1429)</era>
-						<era type="172">Eikjo (1429–1441)</era>
-						<era type="173">Kakitsu (1441–1444)</era>
-						<era type="174">Bun-an (1444-1449)</era>
-						<era type="175">Hotoku (1449–1452)</era>
-						<era type="176">Kjotoku (1452–1455)</era>
-						<era type="177">Košo (1455–1457)</era>
-						<era type="178">Čoroku (1457–1460)</era>
-						<era type="179">Kanšo (1460–1466)</era>
-						<era type="180">Bunšo (1466–1467)</era>
-						<era type="181">Onin (1467–1469)</era>
-						<era type="182">Bunmei (1469–1487)</era>
-						<era type="183">Čokjo (1487–1489)</era>
-						<era type="184">Entoku (1489–1492)</era>
-						<era type="185">Meio (1492–1501)</era>
-						<era type="186">Bunki (1501–1504)</era>
-						<era type="187">Eišo (1504–1521)</era>
-						<era type="188">Taiei (1521–1528)</era>
-						<era type="189">Kjoroku (1528–1532)</era>
-						<era type="190">Tenmon (1532–1555)</era>
-						<era type="191">Kođi (1555–1558)</era>
-						<era type="192">Eiroku (1558–1570)</era>
-						<era type="193">Genki (1570–1573)</era>
-						<era type="194">Tenšo (1573–1592)</era>
-						<era type="195">Bunroku (1592–1596)</era>
-						<era type="196">Keičo (1596–1615)</era>
-						<era type="197">Genva (1615–1624)</era>
-						<era type="198">Kan-ei (1624-1644)</era>
-						<era type="199">Šoho (1644–1648)</era>
-						<era type="200">Keian (1648–1652)</era>
-						<era type="201">Šu (1652–1655)</era>
-						<era type="202">Meirjaku (1655–1658)</era>
-						<era type="203">Manji (1658–1661)</era>
-						<era type="204">Kanbun (1661–1673)</era>
-						<era type="205">Enpo (1673–1681)</era>
-						<era type="206">Tenva (1681–1684)</era>
-						<era type="207">Jokjo (1684–1688)</era>
-						<era type="208">Genroku (1688–1704)</era>
-						<era type="209">Hoei (1704–1711)</era>
-						<era type="210">Šotoku (1711–1716)</era>
-						<era type="211">Kjoho (1716–1736)</era>
-						<era type="212">Genbun (1736–1741)</era>
-						<era type="213">Kanpo (1741–1744)</era>
-						<era type="214">Enkjo (1744–1748)</era>
-						<era type="215">Kan-en (1748-1751)</era>
-						<era type="216">Horjaku (1751–1764)</era>
-						<era type="217">Meiva (1764–1772)</era>
-						<era type="218">An-ei (1772-1781)</era>
-						<era type="219">Tenmei (1781–1789)</era>
-						<era type="220">Kansei (1789–1801)</era>
-						<era type="221">Kjova (1801–1804)</era>
-						<era type="222">Bunka (1804–1818)</era>
-						<era type="223">Bunsei (1818–1830)</era>
-						<era type="224">Tenpo (1830–1844)</era>
-						<era type="225">Koka (1844–1848)</era>
-						<era type="226">Kaei (1848–1854)</era>
-						<era type="227">Ansei (1854–1860)</era>
-						<era type="228">Man-en (1860-1861)</era>
-						<era type="229">Bunkju (1861–1864)</era>
-						<era type="230">Genđi (1864–1865)</era>
-						<era type="231">Keiko (1865–1868)</era>
 						<era type="232">Meiđi</era>
 						<era type="233">Taišo</era>
 						<era type="234">Šova</era>
@@ -3205,9 +3074,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Librevil</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Britanija, letnje vreme</daylight>
-				</long>
 				<exemplarCity>London</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -3298,9 +3164,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Džajapura</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Irska, standardno vreme</daylight>
-				</long>
 				<exemplarCity>Dablin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -4035,13 +3898,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Aljaska, letnje vreme</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>Almati vreme</generic>
-					<standard>Almati standardno vreme</standard>
-					<daylight>Almati letnje računanje vremena</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>Amazon vreme</generic>
@@ -4089,20 +3945,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Apija vreme</generic>
 					<standard>Apija, standardno vreme</standard>
 					<daylight>Apija, letnje vreme</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>Akvatau vreme</generic>
-					<standard>Akvatau standardno vreme</standard>
-					<daylight>Akvatau letnje računanje vremena</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>Akutobe vreme</generic>
-					<standard>Akutobe standardno vreme</standard>
-					<daylight>Akutobe letnje računanje vremena</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -4204,6 +4046,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Brazilija vreme</generic>
 					<standard>Brazilija, standardno vreme</standard>
 					<daylight>Brazilija, letnje vreme</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Britanija vreme</generic>
+					<daylight>Britanija, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -4397,6 +4245,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>GMT</standard>
 				</short>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Grenland</generic>
+					<standard>Grenland, standardno vreme</standard>
+					<daylight>Grenland, letnje vreme</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Istočni Grenland</generic>
@@ -4411,11 +4266,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Zapadni Grenland, letnje vreme</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>Guam standardno vreme</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Zalivsko vreme</standard>
@@ -4428,14 +4278,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Havajsko-aleutsko standardno vreme</standard>
+					<standard>Havaji, standardno vreme</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>Havajsko-aleutsko vreme</generic>
-					<standard>Havajsko-aleutsko standardno vreme</standard>
-					<daylight>Havajsko-aleutsko letnje vreme</daylight>
+					<generic>Havaji i Aleutska ostrva, vreme</generic>
+					<standard>Havaji i Aleutska ostrva, standardno vreme</standard>
+					<daylight>Havaji i Aleutska ostrva, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -4489,6 +4339,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Iran, letnje vreme</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Irska vreme</generic>
+					<daylight>Irska, standardno vreme</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Irkuck vreme</generic>
@@ -4512,9 +4368,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic>Petropavlovsko-kamčatsko vreme</generic>
-					<standard>Petropavlovsko-kamčatsko standardno vreme</standard>
-					<daylight>Petropavlovsko-kamčatsko letnje računanje vremena</daylight>
+					<generic>Kamčatka, vreme</generic>
+					<standard>Kamčatka, standardno vreme</standard>
+					<daylight>Kamčatka, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -4556,11 +4412,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Kirgistan vreme</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>Šri Lanka vreme</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>Ostrva Lajn vreme</standard>
@@ -4571,13 +4422,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Lord Hov vreme</generic>
 					<standard>Lord Hov, standardno vreme</standard>
 					<daylight>Lord Hov, letnje vreme</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>Makao vreme</generic>
-					<standard>Makao standardno vreme</standard>
-					<daylight>Makao letnje računanje vremena</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -4695,11 +4539,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Fernando de Noronja, letnje vreme</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>Severna Marijanska Ostrva vreme</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Novosibirsk vreme</generic>
@@ -4779,13 +4618,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Pjongjanško vreme</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>Kizilorda vreme</generic>
-					<standard>Kizilorda standardno vreme</standard>
-					<daylight>Kizilorda letnje računanje vremena</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Reinion vreme</standard>
@@ -4812,9 +4644,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa vreme</generic>
 					<standard>Samoa, standardno vreme</standard>
-					<daylight>Samoa, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4905,6 +4735,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Urugvaj vreme</generic>
 					<standard>Urugvaj, standardno vreme</standard>
 					<daylight>Urugvaj, letnje vreme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Urumči vreme</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -5025,28 +4860,40 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimalFormatLength type="short">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 hilj'.'</pattern>
+					<pattern type="1000" count="few">0 hilj'.'</pattern>
 					<pattern type="1000" count="other">0 hilj'.'</pattern>
 					<pattern type="10000" count="one">00 hilj'.'</pattern>
+					<pattern type="10000" count="few">00 hilj'.'</pattern>
 					<pattern type="10000" count="other">00 hilj'.'</pattern>
 					<pattern type="100000" count="one">000 hilj'.'</pattern>
+					<pattern type="100000" count="few">000 hilj'.'</pattern>
 					<pattern type="100000" count="other">000 hilj'.'</pattern>
 					<pattern type="1000000" count="one">0 mil'.'</pattern>
+					<pattern type="1000000" count="few">0 mil'.'</pattern>
 					<pattern type="1000000" count="other">0 mil'.'</pattern>
 					<pattern type="10000000" count="one">00 mil'.'</pattern>
+					<pattern type="10000000" count="few">00 mil'.'</pattern>
 					<pattern type="10000000" count="other">00 mil'.'</pattern>
 					<pattern type="100000000" count="one">000 mil'.'</pattern>
+					<pattern type="100000000" count="few">000 mil'.'</pattern>
 					<pattern type="100000000" count="other">000 mil'.'</pattern>
 					<pattern type="1000000000" count="one">0 mlrd'.'</pattern>
+					<pattern type="1000000000" count="few">0 mlrd'.'</pattern>
 					<pattern type="1000000000" count="other">0 mlrd'.'</pattern>
 					<pattern type="10000000000" count="one">00 mlrd'.'</pattern>
+					<pattern type="10000000000" count="few">00 mlrd'.'</pattern>
 					<pattern type="10000000000" count="other">00 mlrd'.'</pattern>
 					<pattern type="100000000000" count="one">000 mlrd'.'</pattern>
+					<pattern type="100000000000" count="few">000 mlrd'.'</pattern>
 					<pattern type="100000000000" count="other">000 mlrd'.'</pattern>
 					<pattern type="1000000000000" count="one">0 bil'.'</pattern>
+					<pattern type="1000000000000" count="few">0 bil'.'</pattern>
 					<pattern type="1000000000000" count="other">0 bil'.'</pattern>
 					<pattern type="10000000000000" count="one">00 bil'.'</pattern>
+					<pattern type="10000000000000" count="few">00 bil'.'</pattern>
 					<pattern type="10000000000000" count="other">00 bil'.'</pattern>
 					<pattern type="100000000000000" count="one">000 bil'.'</pattern>
+					<pattern type="100000000000000" count="few">000 bil'.'</pattern>
 					<pattern type="100000000000000" count="other">000 bil'.'</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
@@ -5502,12 +5349,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">kineski juan (ostrvski)</displayName>
 				<displayName count="few">kineska juana (ostrvska)</displayName>
 				<displayName count="other">kineskih juana (ostrvskih)</displayName>
-			</currency>
-			<currency type="CNX">
-				<displayName draft="provisional">Dolar kineske narodne banke</displayName>
-				<displayName count="one" draft="provisional">dolar kineske narodne banke</displayName>
-				<displayName count="few" draft="provisional">dolara kineske narodne banke</displayName>
-				<displayName count="other" draft="provisional">dolara kineske narodne banke</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>kineski juan</displayName>
@@ -6760,9 +6601,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XCG">
 				<displayName>karipski gulden</displayName>
-				<displayName count="one">karipski gulden</displayName>
-				<displayName count="few">karipski gulden</displayName>
-				<displayName count="other">karipski gulden</displayName>
 			</currency>
 			<currency type="XDR">
 				<displayName>Posebna crtaća prava</displayName>
@@ -6910,9 +6748,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZWG">
 				<displayName>zimbabveansko zlato</displayName>
-				<displayName count="one">zimbabveansko zlato</displayName>
-				<displayName count="few">zimbabveansko zlato</displayName>
-				<displayName count="other">zimbabveansko zlato</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName>Zimbabveanski dolar (2009)</displayName>
@@ -7285,9 +7120,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="concentr-part">
 				<displayName>delovi</displayName>
-				<unitPattern count="one">{0} deo</unitPattern>
-				<unitPattern count="few">{0} dela</unitPattern>
-				<unitPattern count="other">{0} delova</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
 				<gender>feminine</gender>
@@ -9324,9 +9156,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="speed-beaufort">
 				<displayName>Bf</displayName>
-				<unitPattern count="one">B {0}</unitPattern>
-				<unitPattern count="few">B {0}</unitPattern>
-				<unitPattern count="other">B {0}</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>stepeni Farenhajta</displayName>
@@ -9426,17 +9255,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="concentr-part">
-				<displayName>deo</displayName>
-				<unitPattern count="one">{0} deo</unitPattern>
-				<unitPattern count="few">{0} dela</unitPattern>
-				<unitPattern count="other">{0} delova</unitPattern>
-			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
@@ -9537,11 +9357,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} ks</unitPattern>
 				<unitPattern count="other">{0} ks</unitPattern>
 			</unit>
-			<unit type="speed-beaufort">
-				<unitPattern count="one">B {0}</unitPattern>
-				<unitPattern count="few">B {0}</unitPattern>
-				<unitPattern count="other">B {0}</unitPattern>
-			</unit>
 			<unit type="volume-liter">
 				<displayName>l</displayName>
 			</unit>
@@ -9572,9 +9387,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} qt Imp</unitPattern>
 				<unitPattern count="few">{0} qt Imp</unitPattern>
 				<unitPattern count="other">{0} qt Imp</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>cal [IT]</displayName>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>

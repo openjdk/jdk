@@ -32,7 +32,6 @@ import com.sun.org.apache.bcel.internal.Const;
  * @see ConstantMethodref
  * @see ConstantInterfaceMethodref
  * @see ConstantInvokeDynamic
- * @LastModified: Sept 2025
  */
 public abstract class ConstantCP extends Constant {
 
@@ -41,15 +40,16 @@ public abstract class ConstantCP extends Constant {
      */
     // Note that this field is used to store the
     // bootstrap_method_attr_index of a ConstantInvokeDynamic.
+
     /**
-     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
+     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter.
      */
     @java.lang.Deprecated
     protected int class_index; // TODO make private (has getter & setter)
     // This field has the same meaning for all subclasses.
 
     /**
-     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
+     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter.
      */
     @java.lang.Deprecated
     protected int name_and_type_index; // TODO make private (has getter & setter)
@@ -57,17 +57,20 @@ public abstract class ConstantCP extends Constant {
     /**
      * Initialize instance from file data.
      *
-     * @param tag Constant type tag
-     * @param file Input stream
-     * @throws IOException if an I/O error occurs.
+     * @param tag Constant type tag.
+     * @param file Input stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     ConstantCP(final byte tag, final DataInput file) throws IOException {
         this(tag, file.readUnsignedShort(), file.readUnsignedShort());
     }
 
     /**
-     * @param classIndex Reference to the class containing the field
-     * @param nameAndTypeIndex and the field signature
+     * Constructs a ConstantCP.
+     *
+     * @param tag The constant type tag.
+     * @param classIndex Reference to the class containing the field.
+     * @param nameAndTypeIndex and the field signature.
      */
     protected ConstantCP(final byte tag, final int classIndex, final int nameAndTypeIndex) {
         super(tag);
@@ -85,10 +88,10 @@ public abstract class ConstantCP extends Constant {
     }
 
     /**
-     * Dump constant field reference to file stream in binary format.
+     * Dumps constant field reference to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public final void dump(final DataOutputStream file) throws IOException {
@@ -98,6 +101,9 @@ public abstract class ConstantCP extends Constant {
     }
 
     /**
+     * Gets the class this field belongs to.
+     *
+     * @param cp The constant pool.
      * @return Class this field belongs to.
      */
     public String getClass(final ConstantPool cp) {
@@ -105,6 +111,8 @@ public abstract class ConstantCP extends Constant {
     }
 
     /**
+     * Gets the reference (index) to class this constant refers to.
+     *
      * @return Reference (index) to class this constant refers to.
      */
     public final int getClassIndex() {
@@ -112,6 +120,8 @@ public abstract class ConstantCP extends Constant {
     }
 
     /**
+     * Gets the reference (index) to signature of the field.
+     *
      * @return Reference (index) to signature of the field.
      */
     public final int getNameAndTypeIndex() {
@@ -119,14 +129,18 @@ public abstract class ConstantCP extends Constant {
     }
 
     /**
-     * @param classIndex points to Constant_class
+     * Sets the class index.
+     *
+     * @param classIndex points to Constant_class.
      */
     public final void setClassIndex(final int classIndex) {
         this.class_index = classIndex;
     }
 
     /**
-     * @param nameAndTypeIndex points to Constant_NameAndType
+     * Sets the name and type index.
+     *
+     * @param nameAndTypeIndex points to Constant_NameAndType.
      */
     public final void setNameAndTypeIndex(final int nameAndTypeIndex) {
         this.name_and_type_index = nameAndTypeIndex;

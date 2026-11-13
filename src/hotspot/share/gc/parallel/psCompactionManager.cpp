@@ -46,7 +46,6 @@ ParCompactionManager**  ParCompactionManager::_manager_array = nullptr;
 
 ParCompactionManager::PSMarkTasksQueueSet*  ParCompactionManager::_marking_stacks = nullptr;
 ParCompactionManager::RegionTaskQueueSet*   ParCompactionManager::_region_task_queues = nullptr;
-PartialArrayStateManager* ParCompactionManager::_partial_array_state_manager = nullptr;
 
 ObjectStartArray*    ParCompactionManager::_start_array = nullptr;
 ParMarkBitMap*       ParCompactionManager::_mark_bitmap = nullptr;
@@ -58,7 +57,7 @@ PreservedMarksSet* ParCompactionManager::_preserved_marks_set = nullptr;
 ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks,
                                            ReferenceProcessor* ref_processor,
                                            uint parallel_gc_threads)
-  :_partial_array_splitter(_partial_array_state_manager, parallel_gc_threads),
+  :_partial_array_splitter(parallel_gc_threads),
    _mark_and_push_closure(this, ref_processor) {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
@@ -82,9 +81,6 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   assert(_manager_array == nullptr, "Attempt to initialize twice");
   _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads, mtGC);
 
-  assert(_partial_array_state_manager == nullptr, "Attempt to initialize twice");
-  _partial_array_state_manager
-    = new PartialArrayStateManager(parallel_gc_threads);
   _marking_stacks = new PSMarkTasksQueueSet(parallel_gc_threads);
   _region_task_queues = new RegionTaskQueueSet(parallel_gc_threads);
 

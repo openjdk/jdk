@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.stream.Stream;
 
+import com.sun.org.apache.bcel.internal.util.Args;
+
 /**
  * base class for parameter annotations
  *
@@ -42,30 +44,31 @@ public abstract class ParameterAnnotations extends Attribute implements Iterable
     /**
      * Constructs a new instance.
      *
-     * @param parameterAnnotationType the subclass type of the parameter annotation
-     * @param nameIndex Index pointing to the name <em>Code</em>
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constantPool Array of constants
+     * @param parameterAnnotationType The subclass type of the parameter annotation.
+     * @param nameIndex Index pointing to the name <em>Code</em>.
+     * @param length Content length in bytes.
+     * @param input Input stream.
+     * @param constantPool Array of constants.
+     * @param isRuntimeVisible whether these parameter annotations are runtime visible.
      */
-    ParameterAnnotations(final byte parameterAnnotationType, final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool)
-        throws IOException {
+    ParameterAnnotations(final byte parameterAnnotationType, final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool,
+        final boolean isRuntimeVisible) throws IOException {
         this(parameterAnnotationType, nameIndex, length, (ParameterAnnotationEntry[]) null, constantPool);
         final int numParameters = input.readUnsignedByte();
         parameterAnnotationTable = new ParameterAnnotationEntry[numParameters];
         for (int i = 0; i < numParameters; i++) {
-            parameterAnnotationTable[i] = new ParameterAnnotationEntry(input, constantPool);
+            parameterAnnotationTable[i] = new ParameterAnnotationEntry(input, constantPool, isRuntimeVisible);
         }
     }
 
     /**
      * Constructs a new instance.
      *
-     * @param parameterAnnotationType the subclass type of the parameter annotation
-     * @param nameIndex Index pointing to the name <em>Code</em>
-     * @param length Content length in bytes
-     * @param parameterAnnotationTable the actual parameter annotations
-     * @param constantPool Array of constants
+     * @param parameterAnnotationType The subclass type of the parameter annotation.
+     * @param nameIndex Index pointing to the name <em>Code</em>.
+     * @param length Content length in bytes.
+     * @param parameterAnnotationTable The actual parameter annotations.
+     * @param constantPool Array of constants.
      */
     public ParameterAnnotations(final byte parameterAnnotationType, final int nameIndex, final int length,
         final ParameterAnnotationEntry[] parameterAnnotationTable, final ConstantPool constantPool) {
@@ -77,7 +80,7 @@ public abstract class ParameterAnnotations extends Attribute implements Iterable
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -85,7 +88,7 @@ public abstract class ParameterAnnotations extends Attribute implements Iterable
     }
 
     /**
-     * @return deep copy of this attribute
+     * @return deep copy of this attribute.
      */
     @Override
     public Attribute copy(final ConstantPool constantPool) {
@@ -95,7 +98,7 @@ public abstract class ParameterAnnotations extends Attribute implements Iterable
     @Override
     public void dump(final DataOutputStream dos) throws IOException {
         super.dump(dos);
-        dos.writeByte(parameterAnnotationTable.length);
+        dos.writeByte(Args.requireU1(parameterAnnotationTable.length, "parameterAnnotationTable.length"));
 
         for (final ParameterAnnotationEntry element : parameterAnnotationTable) {
             element.dump(dos);
@@ -104,14 +107,18 @@ public abstract class ParameterAnnotations extends Attribute implements Iterable
     }
 
     /**
-     * returns the array of parameter annotation entries in this parameter annotation
+     * Gets the parameter annotation entries.
+     *
+     * @return The array of parameter annotation entries in this parameter annotation.
      */
     public ParameterAnnotationEntry[] getParameterAnnotationEntries() {
         return parameterAnnotationTable;
     }
 
     /**
-     * @return the parameter annotation entry table
+     * Gets the parameter annotation table.
+     *
+     * @return The parameter annotation entry table.
      */
     public final ParameterAnnotationEntry[] getParameterAnnotationTable() {
         return parameterAnnotationTable;
@@ -123,7 +130,9 @@ public abstract class ParameterAnnotations extends Attribute implements Iterable
     }
 
     /**
-     * @param parameterAnnotationTable the entries to set in this parameter annotation
+     * Sets the parameter annotation table.
+     *
+     * @param parameterAnnotationTable The entries to set in this parameter annotation.
      */
     public final void setParameterAnnotationTable(final ParameterAnnotationEntry[] parameterAnnotationTable) {
         this.parameterAnnotationTable = parameterAnnotationTable != null ? parameterAnnotationTable : EMPTY_ARRAY;

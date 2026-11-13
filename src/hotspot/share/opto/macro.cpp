@@ -129,7 +129,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
   Node *orig_mem = mem;
   Node *alloc_mem = alloc->as_Allocate()->proj_out_or_null(TypeFunc::Memory, /*io_use:*/false);
   assert(alloc_mem != nullptr, "Allocation without a memory projection.");
-  const TypeOopPtr *tinst = phase->C->get_adr_type(alias_idx)->isa_oopptr();
+  const TypeOopPtr* tinst = phase->C->get_adr_type(alias_idx)->as_oopptr();
   while (true) {
     if (mem == alloc_mem || mem == start_mem ) {
       return mem;  // hit one of our sentinels
@@ -172,9 +172,9 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       const TypePtr* atype = mem->as_Store()->out_adr_type();
       int adr_idx = phase->C->get_alias_index(atype);
       if (adr_idx == alias_idx) {
-        assert(atype->isa_oopptr(), "address type must be oopptr");
+        assert(atype->is_oopptr(), "address type must be oopptr");
         int adr_offset = atype->flat_offset();
-        uint adr_iid = atype->is_oopptr()->instance_id();
+        uint adr_iid = atype->as_oopptr()->instance_id();
         // Array elements references have the same alias_idx
         // but different offset and different instance_id.
         if (adr_offset == offset && adr_iid == alloc->_idx) {
@@ -210,7 +210,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
                mem->Opcode() == Op_StrCompressedCopy, "sanity");
         adr = mem->in(3); // Destination array
       }
-      const TypePtr* atype = adr->bottom_type()->is_ptr();
+      const TypePtr* atype = adr->bottom_type()->as_ptr();
       int adr_idx = phase->C->get_alias_index(atype);
       if (adr_idx == alias_idx) {
         DEBUG_ONLY(mem->dump();)
@@ -220,7 +220,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       mem = mem->in(MemNode::Memory);
     } else if (mem->Opcode() == Op_StrInflatedCopy) {
       Node* adr = mem->in(3); // Destination array
-      const TypePtr* atype = adr->bottom_type()->is_ptr();
+      const TypePtr* atype = adr->bottom_type()->as_ptr();
       int adr_idx = phase->C->get_alias_index(atype);
       if (adr_idx == alias_idx) {
         DEBUG_ONLY(mem->dump();)
@@ -298,9 +298,9 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
   if (ac->is_clonebasic()) {
     assert(ac->in(ArrayCopyNode::Src) != ac->in(ArrayCopyNode::Dest), "clone source equals destination");
     adr = _igvn.transform(AddPNode::make_with_base(base, _igvn.MakeConX(offset)));
-    adr_type = _igvn.type(base)->is_ptr();
-    if (adr_type->isa_aryptr()) {
-      adr_type = adr_type->is_aryptr()->add_field_offset_and_offset(offset);
+    adr_type = _igvn.type(base)->as_ptr();
+    if (adr_type->is_aryptr()) {
+      adr_type = adr_type->as_aryptr()->add_field_offset_and_offset(offset);
     } else {
       adr_type = adr_type->add_offset(offset);
     }
@@ -313,18 +313,18 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
     uint shift = exact_log2(type2aelembytes(bt));
     Node* src_pos = ac->in(ArrayCopyNode::SrcPos);
     Node* dest_pos = ac->in(ArrayCopyNode::DestPos);
-    const TypeInt* src_pos_t = _igvn.type(src_pos)->is_int();
-    const TypeInt* dest_pos_t = _igvn.type(dest_pos)->is_int();
+    const TypeInt* src_pos_t = _igvn.type(src_pos)->as_int();
+    const TypeInt* dest_pos_t = _igvn.type(dest_pos)->as_int();
 
-    adr_type = _igvn.type(base)->is_aryptr();
+    adr_type = _igvn.type(base)->as_aryptr();
     if (((const TypeAryPtr*)adr_type)->is_flat()) {
       shift = ((const TypeAryPtr*)adr_type)->flat_log_elem_size();
     }
     if (src_pos_t->is_con() && dest_pos_t->is_con()) {
       intptr_t off = ((src_pos_t->get_con() - dest_pos_t->get_con()) << shift) + offset;
       adr = _igvn.transform(AddPNode::make_with_base(base, base, _igvn.MakeConX(off)));
-      adr_type = _igvn.type(adr)->is_aryptr();
-      assert(adr_type == _igvn.type(base)->is_aryptr()->add_field_offset_and_offset(off), "incorrect address type");
+      adr_type = _igvn.type(adr)->as_aryptr();
+      assert(adr_type == _igvn.type(base)->as_aryptr()->add_field_offset_and_offset(off), "incorrect address type");
       if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
         // Don't emit a new load from src if src == dst but try to get the value from memory instead
         return value_from_mem(ac, ctl, ft, ftype, (const TypeAryPtr*)adr_type, alloc);
@@ -346,7 +346,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
       // In the case of a flat value type array, each field has its
       // own slice so we need to extract the field being accessed from
       // the address computation
-      adr_type = ((TypeAryPtr*)adr_type)->add_field_offset_and_offset(offset)->add_offset(Type::OffsetBot)->is_aryptr();
+      adr_type = ((TypeAryPtr*)adr_type)->add_field_offset_and_offset(offset)->add_offset(Type::OffsetBot)->as_aryptr();
       adr = _igvn.transform(new CastPPNode(ctl, adr, adr_type));
     }
   }
@@ -366,7 +366,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
     return make_arraycopy_load(ac, offset, ac->control(), ac->memory(), ft, ftype, alloc);
   }
 
-  if (ftype->isa_narrowoop()) {
+  if (ftype->is_narrowoop()) {
     // PhaseMacroExpand::scalar_replacement adds DecodeN nodes
     res = _igvn.transform(new EncodePNode(res, ftype));
   }
@@ -531,7 +531,7 @@ Node* PhaseMacroExpand::value_from_alloc(BasicType ft, const TypeOopPtr* adr_t, 
   }
 
   if (ft == T_NARROWOOP) {
-    assert(init_value->bottom_type()->isa_ptr(), "must be a pointer");
+    assert(init_value->bottom_type()->is_ptr(), "must be a pointer");
     init_value = transform_later(new EncodePNode(init_value, init_value->bottom_type()->make_narrowoop()));
   }
 
@@ -722,7 +722,7 @@ Node* PhaseMacroExpand::value_type_from_mem(ciValueKlass* vk, const TypeAryPtr* 
       if (field_value == nullptr || force_scalarization_failure) {
         report_failure(field_offset_in_element, field_value != nullptr);
         return nullptr;
-      } else if (ft->isa_narrowoop()) {
+      } else if (ft->is_narrowoop()) {
         assert(UseCompressedOops, "unexpected narrow oop");
         if (field_value->is_EncodeP()) {
           field_value = field_value->in(1);
@@ -766,7 +766,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
     } else if (!res_type->klass_is_exact()) {
       NOT_PRODUCT(fail_eliminate = "Not an exact type.";)
       can_eliminate = false;
-    } else if (res_type->isa_aryptr()) {
+    } else if (res_type->is_aryptr()) {
       int length = alloc->in(AllocateNode::ALength)->find_int_con(-1);
       if (length < 0) {
         NOT_PRODUCT(fail_eliminate = "Array's size is not constant";)
@@ -781,7 +781,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
       Node* use = res->fast_out(j);
 
       if (use->is_AddP()) {
-        const TypePtr* addp_type = igvn->type(use)->is_ptr();
+        const TypePtr* addp_type = igvn->type(use)->as_ptr();
         int offset = addp_type->offset();
 
         if (offset == Type::OffsetTop || offset == Type::OffsetBot) {
@@ -812,7 +812,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
                  use->in(ArrayCopyNode::Src)->get_ptr_type()->is_flat() &&
                  !use->in(ArrayCopyNode::Src)
                       ->get_ptr_type()
-                      ->isa_aryptr()
+                      ->as_aryptr()
                       ->elem()
                       ->value_klass()
                       ->is_naturally_atomic(
@@ -1012,7 +1012,7 @@ void PhaseMacroExpand::undo_previous_scalarizations(Node_List<SafePointNode>& sa
 #endif
 
 void PhaseMacroExpand::process_field_value_at_safepoint(const Type* field_type, Node* field_val, SafePointNode* sfpt, Unique_Node_List<ValueTypeNode>* value_worklist) {
-  if (UseCompressedOops && field_type->isa_narrowoop()) {
+  if (UseCompressedOops && field_type->is_narrowoop()) {
     // Enable "DecodeN(EncodeP(Allocate)) --> Allocate" transformation
     // to be able scalar replace the allocation.
     if (field_val->is_EncodeP()) {
@@ -1093,7 +1093,7 @@ bool PhaseMacroExpand::add_array_elems_to_safepoint(AllocateNode* alloc, const T
 // 'offset_minus_header' refers to the offset of the payload of 'iklass' inside 'base' minus the
 // payload offset of 'iklass'. If 'base' is of type 'iklass' then 'offset_minus_header' == 0.
 bool PhaseMacroExpand::add_inst_fields_to_safepoint(ciInstanceKlass* iklass, AllocateNode* alloc, Node* base, int offset_minus_header, SafePointNode* sfpt, Unique_Node_List<ValueTypeNode>* value_worklist) {
-  const TypeInstPtr* base_type = _igvn.type(base)->is_instptr();
+  const TypeInstPtr* base_type = _igvn.type(base)->as_instptr();
   auto report_failure = [&](int offset, bool is_forced_failure) {
 #ifndef PRODUCT
     if (PrintEliminateAllocations) {
@@ -1160,7 +1160,7 @@ bool PhaseMacroExpand::add_inst_fields_to_safepoint(ciInstanceKlass* iklass, All
       field_type = Type::get_const_basic_type(basic_elem_type);
     }
 
-    const TypeInstPtr* field_addr_type = base_type->add_offset(offset)->isa_instptr();
+    const TypeInstPtr* field_addr_type = base_type->add_offset(offset)->as_instptr();
     Node* field_val = value_from_mem(sfpt, sfpt->control(), basic_elem_type, field_type, field_addr_type, alloc);
     bool force_scalarization_failure = StressEliminateAllocations &&
                                        (C->stress().random() % StressEliminateAllocationsMean == 0);
@@ -1194,9 +1194,9 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
   if (res != nullptr) { // Could be null when there are no users
     res_type = _igvn.type(res)->isa_oopptr();
 
-    if (res_type->isa_instptr()) {
+    if (res_type->is_instptr()) {
       // find the fields of the class which will be needed for safepoint debug information
-      iklass = res_type->is_instptr()->instance_klass();
+      iklass = res_type->as_instptr()->instance_klass();
       nfields = iklass->nof_nonstatic_fields();
     } else {
       // find the array's elements which will be needed for safepoint debug information
@@ -1226,7 +1226,7 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
 
   bool success;
   if (iklass == nullptr) {
-    success = add_array_elems_to_safepoint(alloc, res_type->is_aryptr(), sfpt, value_worklist);
+    success = add_array_elems_to_safepoint(alloc, res_type->as_aryptr(), sfpt, value_worklist);
   } else {
     success = add_inst_fields_to_safepoint(iklass, alloc, res, 0, sfpt, value_worklist);
   }
@@ -1387,7 +1387,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc, bool value_t
         _igvn.rehash_node_delayed(use);
         use->as_ValueType()->set_oop(_igvn, _igvn.zerocon(T_OBJECT));
         use->as_ValueType()->set_is_buffered(_igvn, false);
-        const TypeOopPtr* toop = _igvn.type(use)->is_oopptr()->cast_to_instance_id(TypeOopPtr::InstanceBot);
+        const TypeOopPtr* toop = _igvn.type(use)->as_oopptr()->cast_to_instance_id(TypeOopPtr::InstanceBot);
         _igvn.set_type(use, toop);
         use->as_ValueType()->set_type(toop);
         // Process users
@@ -1505,12 +1505,12 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     return false;
   }
   Node* klass = alloc->in(AllocateNode::KlassNode);
-  const TypeKlassPtr* tklass = _igvn.type(klass)->is_klassptr();
+  const TypeKlassPtr* tklass = _igvn.type(klass)->as_klassptr();
 
   // Attempt to eliminate value type buffer allocations
   // regardless of usage and escape/replaceable status.
-  bool value_type_alloc = tklass->isa_instklassptr() &&
-                          tklass->is_instklassptr()->instance_klass()->is_value_klass();
+  bool value_type_alloc = tklass->is_instklassptr() &&
+                          tklass->as_instklassptr()->instance_klass()->is_value_klass();
   if (!alloc->_is_non_escaping && !value_type_alloc) {
     return false;
   }
@@ -1518,8 +1518,8 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   // regardless scalar replaceable status.
   Node* res = alloc->result_cast();
   bool boxing_alloc = (res == nullptr) && C->eliminate_boxing() &&
-                      tklass->isa_instklassptr() &&
-                      tklass->is_instklassptr()->instance_klass()->is_box_klass();
+                      tklass->is_instklassptr() &&
+                      tklass->as_instklassptr()->instance_klass()->is_box_klass();
   if (!alloc->_is_scalar_replaceable && !boxing_alloc && !value_type_alloc) {
     return false;
   }
@@ -1621,7 +1621,7 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode* call) {
 
 Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
   Node* adr = off_heap_plus_addr(base, offset);
-  const TypePtr* adr_type = adr->bottom_type()->is_ptr();
+  const TypePtr* adr_type = adr->bottom_type()->as_ptr();
   Node* value = LoadNode::make(_igvn, ctl, mem, adr, adr_type, value_type, bt, MemNode::unordered);
   transform_later(value);
   return value;
@@ -2196,8 +2196,8 @@ Node* PhaseMacroExpand::initialize_object(AllocateNode* alloc,
     rawmem = make_store_raw(control, rawmem, object, arrayOopDesc::length_offset_in_bytes(), length, T_INT);
     // conservatively small header size:
     header_size = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-    if (_igvn.type(klass_node)->isa_aryklassptr()) {   // we know the exact header size in most cases:
-      BasicType elem = _igvn.type(klass_node)->is_klassptr()->as_exact_instance_type()->isa_aryptr()->elem()->array_element_basic_type();
+    if (_igvn.type(klass_node)->is_aryklassptr()) {   // we know the exact header size in most cases:
+      BasicType elem = _igvn.type(klass_node)->as_klassptr()->as_exact_instance_type()->as_aryptr()->elem()->array_element_basic_type();
       if (is_reference_type(elem, true)) {
         elem = T_OBJECT;
       }
@@ -2411,7 +2411,7 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
   const TypeFunc* slow_call_type;
   address slow_call_address;  // Address of slow call
   if (init != nullptr && init->is_complete_with_arraycopy() &&
-      ary_klass_t && ary_klass_t->elem()->isa_klassptr() == nullptr) {
+      ary_klass_t && !ary_klass_t->elem()->is_klassptr()) {
     // Don't zero type array during slow allocation in VM since
     // it will be initialized later by arraycopy in compiled code.
     slow_call_address = OptoRuntime::new_array_nozero_Java();
@@ -3028,7 +3028,7 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
     Node* ctrl = iff->in(0);
 
     Node* subklass = nullptr;
-    if (_igvn.type(obj_or_subklass)->isa_klassptr()) {
+    if (_igvn.type(obj_or_subklass)->is_klassptr()) {
       subklass = obj_or_subklass;
     } else {
       Node* k_adr = basic_plus_adr(obj_or_subklass, oopDesc::klass_offset_in_bytes());
@@ -3065,7 +3065,7 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
 // }
 void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
   assert(UseArrayFlattening, "Should not be called if flat arrays are not enabled");
-  bool use_mark_word = _igvn.type(check->in(FlatArrayCheckNode::ArrayOrKlass))->isa_oopptr() != nullptr;
+  bool use_mark_word = _igvn.type(check->in(FlatArrayCheckNode::ArrayOrKlass))->is_oopptr();
   Unique_Node_List<BoolNode> outputs;
 
   for (DUIterator_Fast imax, i = check->fast_outs(imax); i < imax; i++) {
@@ -3090,7 +3090,7 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
       assert(t != nullptr, "Mixing array and klass inputs");
       assert(!t->is_flat() && !t->is_not_flat(), "Should have been optimized out");
       Node* mark_adr = basic_plus_adr(ary, oopDesc::mark_offset_in_bytes());
-      Node* mark_load = _igvn.transform(LoadNode::make(_igvn, nullptr, mem, mark_adr, mark_adr->bottom_type()->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
+      Node* mark_load = _igvn.transform(LoadNode::make(_igvn, nullptr, mem, mark_adr, mark_adr->bottom_type()->as_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
       mark = _igvn.transform(new OrXNode(mark, mark_load));
     }
     assert(!mark->is_Con(), "Should have been optimized out");
@@ -3122,17 +3122,17 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
     for (uint i = FlatArrayCheckNode::ArrayOrKlass; i < check->req(); ++i) {
       Node* array_or_klass = check->in(i);
       Node* klass = nullptr;
-      const TypePtr* t = _igvn.type(array_or_klass)->is_ptr();
+      const TypePtr* t = _igvn.type(array_or_klass)->as_ptr();
       assert(!t->is_flat() && !t->is_not_flat(), "Should have been optimized out");
-      if (t->isa_oopptr() != nullptr) {
+      if (t->is_oopptr()) {
         Node* klass_adr = basic_plus_adr(array_or_klass, oopDesc::klass_offset_in_bytes());
         klass = transform_later(LoadKlassNode::make(_igvn, C->immutable_memory(), klass_adr, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
       } else {
-        assert(t->isa_klassptr(), "Unexpected input type");
+        assert(t->is_klassptr(), "Unexpected input type");
         klass = array_or_klass;
       }
       Node* lh_addr = basic_plus_adr(top(), klass, in_bytes(Klass::layout_helper_offset()));
-      Node* lh_val = _igvn.transform(LoadNode::make(_igvn, nullptr, C->immutable_memory(), lh_addr, lh_addr->bottom_type()->is_ptr(), TypeInt::INT, T_INT, MemNode::unordered));
+      Node* lh_val = _igvn.transform(LoadNode::make(_igvn, nullptr, C->immutable_memory(), lh_addr, lh_addr->bottom_type()->as_ptr(), TypeInt::INT, T_INT, MemNode::unordered));
       lhs = _igvn.transform(new OrINode(lhs, lh_val));
     }
     Node* masked = transform_later(new AndINode(lhs, intcon(Klass::_lh_array_tag_flat_value_bit_inplace)));
