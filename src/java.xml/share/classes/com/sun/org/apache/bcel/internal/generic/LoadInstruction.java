@@ -22,7 +22,7 @@
 package com.sun.org.apache.bcel.internal.generic;
 
 /**
- * Denotes an unparameterized instruction to load a value from a local variable, e.g. ILOAD.
+ * Denotes an unparameterized instruction to load a value from a local variable, for example ILOAD.
  */
 public abstract class LoadInstruction extends LocalVariableInstruction implements PushInstruction {
 
@@ -35,9 +35,11 @@ public abstract class LoadInstruction extends LocalVariableInstruction implement
     }
 
     /**
-     * @param opcode Instruction opcode
-     * @param cTag Instruction number for compact version, ALOAD_0, e.g.
-     * @param n local variable index (unsigned short)
+     * Constructs a LoadInstruction.
+     *
+     * @param opcode Instruction opcode.
+     * @param cTag Instruction number for compact version, ALOAD_0, for example.
+     * @param n local variable index (unsigned short).
      */
     protected LoadInstruction(final short opcode, final short cTag, final int n) {
         super(opcode, cTag, n);
@@ -45,9 +47,9 @@ public abstract class LoadInstruction extends LocalVariableInstruction implement
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {

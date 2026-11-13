@@ -60,7 +60,7 @@ void PhaseMacroExpand::insert_mem_bar(Node** ctrl, Node** mem, int opcode, int a
 Node* PhaseMacroExpand::array_element_address(Node* ary, Node* idx, BasicType elembt, bool raw_base) {
   uint shift  = exact_log2(type2aelembytes(elembt));
   const TypeAryPtr* array_type = _igvn.type(ary)->isa_aryptr();
-  if (array_type != nullptr && array_type->is_aryptr()->is_flat()) {
+  if (array_type != nullptr && array_type->is_flat()) {
     // Use T_FLAT_ELEMENT to get proper alignment with COH when fetching the array element address.
     elembt = T_FLAT_ELEMENT;
   }
@@ -875,7 +875,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
       // insert a wide membar now that it's being expanded: a load that uses the input memory state of the ArrayCopy
       // could then become anti dependent on the membar when it was not anti dependent on the ArrayCopy leading to a
       // broken graph.
-      mem_bar_alias_idx = C->get_alias_index(ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr());
+      mem_bar_alias_idx = C->get_alias_index(ac->_dest_type->add_offset(Type::OffsetBot)->as_ptr());
     }
     insert_mem_bar(ctrl, &out_mem, Op_MemBarCPUOrder, mem_bar_alias_idx);
   }
@@ -891,7 +891,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
   _igvn.replace_node(_callprojs->fallthrough_catchproj, *ctrl);
 
 #ifdef ASSERT
-  const TypeOopPtr* dest_t = _igvn.type(orig_dest)->is_oopptr();
+  const TypeOopPtr* dest_t = _igvn.type(orig_dest)->as_oopptr();
   if (dest_t->is_known_instance()) {
     ArrayCopyNode* ac = nullptr;
     assert(ArrayCopyNode::may_modify(dest_t, (*ctrl)->in(0)->as_MemBar(), &_igvn, ac), "dependency on arraycopy lost");
@@ -1020,7 +1020,7 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
           assert(raw_val == nullptr, "val may not be null");
           mem = StoreNode::make(_igvn, ctrl, mem, p1, adr_type, intcon(0), T_INT, MemNode::unordered);
         } else {
-          assert(_igvn.type(val)->isa_narrowoop(), "should be narrow oop");
+          assert(_igvn.type(val)->is_narrowoop(), "should be narrow oop");
           mem = new StoreNNode(ctrl, mem, p1, adr_type, val, MemNode::unordered);
         }
         mem = transform_later(mem);
@@ -1072,8 +1072,8 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
         ((src_off ^ dest_off) & (BytesPerLong-1)) == 0) {
       Node* sptr = basic_plus_adr(src,  src_off);
       Node* dptr = basic_plus_adr(dest, dest_off, raw_base);
-      const TypePtr* s_adr_type = _igvn.type(sptr)->is_ptr();
-      assert(s_adr_type->isa_aryptr(), "impossible slice");
+      const TypePtr* s_adr_type = _igvn.type(sptr)->as_ptr();
+      assert(s_adr_type->is_aryptr(), "impossible slice");
       uint s_alias_idx = C->get_alias_index(s_adr_type);
       uint d_alias_idx = C->get_alias_index(adr_type);
       bool is_mismatched = (basic_elem_type != T_INT);
@@ -1193,7 +1193,7 @@ Node* PhaseMacroExpand::generate_checkcast_arraycopy(Node** ctrl, MergeMemNode**
   // super_check_offset, for the desired klass.
   int sco_offset = in_bytes(Klass::super_check_offset_offset());
   Node* p3 = off_heap_plus_addr(dest_elem_klass, sco_offset);
-  Node* n3 = new LoadINode(nullptr, *mem /*memory(p3)*/, p3, _igvn.type(p3)->is_ptr(), TypeInt::INT, MemNode::unordered);
+  Node* n3 = new LoadINode(nullptr, *mem /*memory(p3)*/, p3, _igvn.type(p3)->as_ptr(), TypeInt::INT, MemNode::unordered);
   Node* check_offset = ConvI2X(transform_later(n3));
   Node* check_value  = dest_elem_klass;
 
@@ -1302,7 +1302,7 @@ const TypePtr* PhaseMacroExpand::adjust_for_flat_array(const TypeAryPtr* top_des
                                                        Node*& dest_length) {
   assert(UseArrayFlattening, "Should not be called if flat arrays are not enabled");
 #ifdef ASSERT
-  assert(top_dest->elem()->make_ptr()->is_instptr()->is_valueklassptr(), "must be concrete value klass");
+  assert(top_dest->elem()->make_ptr()->as_instptr()->is_valueklassptr(), "must be concrete value klass");
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bool needs_barriers = top_dest->elem()->value_klass()->contains_oops() &&
     bs->array_copy_requires_gc_barriers(dest_length != nullptr, T_OBJECT, false, false, BarrierSetC2::Optimization);
@@ -1400,14 +1400,14 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
       // on all slices to prevent writes into the source from floating below the arraycopy.
       int mem_bar_alias_idx = Compile::AliasIdxBot;
       if (ac->_dest_type != TypeOopPtr::BOTTOM) {
-        mem_bar_alias_idx = C->get_alias_index(ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr());
+        mem_bar_alias_idx = C->get_alias_index(ac->_dest_type->add_offset(Type::OffsetBot)->as_ptr());
       }
       insert_mem_bar(&ctrl, &mem, Op_MemBarCPUOrder, mem_bar_alias_idx);
       adr_type = adjust_for_flat_array(top_dest, src_offset, dest_offset, length, dest_elem, dest_length);
     } else {
-      adr_type = dest_type->is_oopptr()->add_offset(Type::OffsetBot);
+      adr_type = dest_type->as_oopptr()->add_offset(Type::OffsetBot);
       if (ac->_dest_type != TypeOopPtr::BOTTOM) {
-        adr_type = ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr();
+        adr_type = ac->_dest_type->add_offset(Type::OffsetBot)->as_ptr();
       }
     }
     merge_mem = MergeMemNode::make(mem);
@@ -1540,7 +1540,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     // on all slices to prevent writes into the source from floating below the arraycopy.
     int mem_bar_alias_idx = Compile::AliasIdxBot;
     if (ac->_dest_type != TypeOopPtr::BOTTOM) {
-      mem_bar_alias_idx = C->get_alias_index(ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr());
+      mem_bar_alias_idx = C->get_alias_index(ac->_dest_type->add_offset(Type::OffsetBot)->as_ptr());
     }
     insert_mem_bar(&ctrl, &mem, Op_MemBarCPUOrder, mem_bar_alias_idx);
   }
@@ -1608,7 +1608,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   if (flat_and_same_nullness) {
     adr_type = adjust_for_flat_array(top_dest, src_offset, dest_offset, length, dest_elem, dest_length);
   } else if (ac->_dest_type != TypeOopPtr::BOTTOM) {
-    adr_type = ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr();
+    adr_type = ac->_dest_type->add_offset(Type::OffsetBot)->as_ptr();
   } else {
     adr_type = TypeAryPtr::get_array_body_type(dest_elem);
   }
