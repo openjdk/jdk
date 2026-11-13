@@ -25,7 +25,6 @@ import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 
 /**
  * Utility class implementing a (typesafe) queue of JavaClass objects.
- * @LastModified: Jan 2020
  */
 public class ClassQueue {
 
@@ -35,14 +34,35 @@ public class ClassQueue {
     @Deprecated
     protected LinkedList<JavaClass> vec = new LinkedList<>(); // TODO not used externally
 
+    /**
+     * Constructs a new ClassQueue.
+     */
+    public ClassQueue() {
+    }
+
+    /**
+     * Removes and returns the first JavaClass from the queue.
+     *
+     * @return The first JavaClass from the queue.
+     */
     public JavaClass dequeue() {
         return vec.removeFirst();
     }
 
+    /**
+     * Checks if the queue is empty.
+     *
+     * @return true if the queue is empty.
+     */
     public boolean empty() {
         return vec.isEmpty();
     }
 
+    /**
+     * Adds a JavaClass to the end of the queue.
+     *
+     * @param clazz The JavaClass to add.
+     */
     public void enqueue(final JavaClass clazz) {
         vec.addLast(clazz);
     }

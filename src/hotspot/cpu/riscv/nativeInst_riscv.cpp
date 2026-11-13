@@ -144,9 +144,8 @@ address NativeCall::stub_address_destination_at(address src) {
   return dest;
 }
 
-// Returns the address stub of this reloc call, or nullptr if the call does not
-// have an address stub yet, which is the case while code is being emitted into
-// a CodeBuffer.
+// Return the call's address stub, or nullptr if the call is still unlinked
+// and no nmethod relocations are available to locate the stub.
 address NativeCall::stub_address() const {
   address call_addr = instruction_address();
   assert(NativeCall::is_at(call_addr), "unexpected code at call site");
@@ -167,8 +166,7 @@ address NativeCall::stub_address() const {
   // relocation info. See Relocation::pd_set_call_destination.
   CodeBlob *code = CodeCache::find_blob(call_addr);
   if (code == nullptr || !code->is_nmethod()) {
-    // Code is still living in a CodeBuffer, there is no relocation info to
-    // search and nothing to patch yet.
+    // An unlinked call's stub cannot be found without nmethod relocations.
     return nullptr;
   }
 

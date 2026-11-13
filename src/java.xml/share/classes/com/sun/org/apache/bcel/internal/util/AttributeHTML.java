@@ -91,7 +91,7 @@ final class AttributeHTML implements Closeable {
         } else {
             printWriter.print("<TR BGCOLOR=\"#A0A0A0\"><TD>");
         }
-        printWriter.println("<H4><A NAME=\"" + anchor + "\">" + attrCount + " " + Const.getAttributeName(tag) + "</A></H4>");
+        printWriter.println("<H4><A NAME=\"" + Class2HTML.toHTML(anchor) + "\">" + attrCount + " " + Const.getAttributeName(tag) + "</A></H4>");
         /*
          * Handle different attributes
          */
@@ -162,9 +162,9 @@ final class AttributeHTML implements Closeable {
                 signature = Utility.signatureToString(signature, false);
                 final int start = var.getStartPC();
                 final int end = start + var.getLength();
-                printWriter.println("<LI>" + Class2HTML.referenceType(signature) + "&nbsp;<B>" + var.getName() + "</B> in slot %" + var.getIndex()
-                    + "<BR>Valid from lines " + "<A HREF=\"" + className + "_code.html#code" + methodNumber + "@" + start + "\" TARGET=Code>" + start
-                    + "</A> to " + "<A HREF=\"" + className + "_code.html#code" + methodNumber + "@" + end + "\" TARGET=Code>" + end + "</A></LI>");
+                printWriter.println("<LI>" + Class2HTML.referenceType(signature) + "&nbsp;<B>" + Class2HTML.toHTML(var.getName()) + "</B> in slot %" + var.getIndex()
+                        + "<BR>Valid from lines <A HREF=\"" + className + "_code.html#code" + methodNumber + "@" + start + "\" TARGET=Code>" + start
+                        + "</A> to <A HREF=\"" + className + "_code.html#code" + methodNumber + "@" + end + "\" TARGET=Code>" + end + "</A></LI>");
             });
             printWriter.print("</UL>\n");
             break;
@@ -176,7 +176,7 @@ final class AttributeHTML implements Closeable {
                 final String access;
                 index = clazz.getInnerNameIndex();
                 if (index > 0) {
-                    name = constantPool.getConstantUtf8(index).getBytes();
+                    name = Class2HTML.toHTML(constantPool.getConstantUtf8(index).getBytes());
                 } else {
                     name = "&lt;anonymous&gt;";
                 }
@@ -187,7 +187,7 @@ final class AttributeHTML implements Closeable {
             printWriter.print("</UL>\n");
             break;
         default: // Such as Unknown attribute or Deprecated
-            printWriter.print("<P>" + attribute);
+            printWriter.print("<P>" + Class2HTML.toHTML(String.valueOf(attribute)));
         }
         printWriter.println("</TD></TR>");
         printWriter.flush();

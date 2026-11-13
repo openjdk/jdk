@@ -24,14 +24,15 @@ package com.sun.org.apache.bcel.internal.generic;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
  * RET - Return from subroutine
  *
- * <PRE>
+ * <pre>
  * Stack: ... -&gt; ...
- * </PRE>
+ * </pre>
  */
 public class RET extends Instruction implements IndexedInstruction, TypedInstruction {
 
@@ -39,21 +40,26 @@ public class RET extends Instruction implements IndexedInstruction, TypedInstruc
     private int index; // index to local variable containg the return address
 
     /**
-     * Empty constructor needed for Instruction.readInstruction. Not to be used otherwise.
+     * Default constructor needed for Instruction.readInstruction. Not to be used otherwise.
      */
     RET() {
     }
 
+    /**
+     * Constructs a RET instruction.
+     *
+     * @param index index of local variable containing the return address.
+     */
     public RET(final int index) {
-        super(com.sun.org.apache.bcel.internal.Const.RET, (short) 2);
+        super(Const.RET, (short) 2);
         setIndex(index); // May set wide as side effect
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -61,14 +67,14 @@ public class RET extends Instruction implements IndexedInstruction, TypedInstruc
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {
         if (wide) {
-            out.writeByte(com.sun.org.apache.bcel.internal.Const.WIDE);
+            out.writeByte(Const.WIDE);
         }
         out.writeByte(super.getOpcode());
         if (wide) {
@@ -79,7 +85,7 @@ public class RET extends Instruction implements IndexedInstruction, TypedInstruc
     }
 
     /**
-     * @return index of local variable containg the return address
+     * @return index of local variable containg the return address.
      */
     @Override
     public final int getIndex() {
@@ -87,7 +93,7 @@ public class RET extends Instruction implements IndexedInstruction, TypedInstruc
     }
 
     /**
-     * @return return address type
+     * @return return address type.
      */
     @Override
     public Type getType(final ConstantPoolGen cp) {
@@ -95,7 +101,7 @@ public class RET extends Instruction implements IndexedInstruction, TypedInstruc
     }
 
     /**
-     * Read needed data (e.g. index) from file.
+     * Reads needed data (for example index) from file.
      */
     @Override
     protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
@@ -111,18 +117,21 @@ public class RET extends Instruction implements IndexedInstruction, TypedInstruc
 
     /**
      * Sets index of local variable containg the return address
+     *
+     * @param index index of local variable containg the return address.
+     * @throws ClassGenException Thrown if index is out of bounds.
      */
     @Override
-    public final void setIndex(final int n) {
-        if (n < 0) {
-            throw new ClassGenException("Negative index value: " + n);
+    public final void setIndex(final int index) {
+        if (!isNonNegativeUShort(index)) {
+            throw new ClassGenException("Illegal value: " + index);
         }
-        index = n;
+        this.index = index;
         setWide();
     }
 
     private void setWide() {
-        wide = index > com.sun.org.apache.bcel.internal.Const.MAX_BYTE;
+        wide = index > Const.MAX_BYTE;
         if (wide) {
             super.setLength(4); // Including the wide byte
         } else {
@@ -131,7 +140,7 @@ public class RET extends Instruction implements IndexedInstruction, TypedInstruc
     }
 
     /**
-     * @return mnemonic for instruction
+     * @return mnemonic for instruction.
      */
     @Override
     public String toString(final boolean verbose) {

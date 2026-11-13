@@ -35,15 +35,20 @@ public class JSR extends JsrInstruction implements VariableLengthInstruction {
     JSR() {
     }
 
+    /**
+     * Constructs a JSR instruction.
+     *
+     * @param target branch target.
+     */
     public JSR(final InstructionHandle target) {
         super(com.sun.org.apache.bcel.internal.Const.JSR, target);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -55,9 +60,9 @@ public class JSR extends JsrInstruction implements VariableLengthInstruction {
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {

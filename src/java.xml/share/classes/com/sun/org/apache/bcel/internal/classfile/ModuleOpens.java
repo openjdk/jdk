@@ -48,24 +48,21 @@ public final class ModuleOpens implements Cloneable, Node {
     /**
      * Constructs object from file stream.
      *
-     * @param file Input stream
-     * @throws IOException if an I/O Exception occurs in readUnsignedShort
+     * @param dataInput Input stream.
+     * @throws IOException Thrown if an I/O Exception occurs in readUnsignedShort.
      */
-    ModuleOpens(final DataInput file) throws IOException {
-        opensIndex = file.readUnsignedShort();
-        opensFlags = file.readUnsignedShort();
-        opensToCount = file.readUnsignedShort();
-        opensToIndex = new int[opensToCount];
-        for (int i = 0; i < opensToCount; i++) {
-            opensToIndex[i] = file.readUnsignedShort();
-        }
+    ModuleOpens(final DataInput dataInput) throws IOException {
+        opensIndex = dataInput.readUnsignedShort();
+        opensFlags = dataInput.readUnsignedShort();
+        opensToIndex = ClassParser.readU2U2Table(dataInput);
+        opensToCount = opensToIndex.length;
     }
 
     /**
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -73,7 +70,9 @@ public final class ModuleOpens implements Cloneable, Node {
     }
 
     /**
-     * @return deep copy of this object
+     * Creates a deep copy of this object.
+     *
+     * @return deep copy of this object.
      */
     public ModuleOpens copy() {
         try {
@@ -85,10 +84,10 @@ public final class ModuleOpens implements Cloneable, Node {
     }
 
     /**
-     * Dump table entry to file stream in binary format.
+     * Dumps table entry to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O Exception occurs in writeShort
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O Exception occurs in writeShort.
      */
     public void dump(final DataOutputStream file) throws IOException {
         file.writeShort(opensIndex);
@@ -101,7 +100,8 @@ public final class ModuleOpens implements Cloneable, Node {
 
     /**
      * Gets the flags for this ModuleOpens.
-     * @return the opensFlags
+     *
+     * @return The opensFlags.
      * @since 6.10.0
      */
     public int getOpensFlags() {
@@ -110,8 +110,9 @@ public final class ModuleOpens implements Cloneable, Node {
 
     /**
      * Gets the opened package name.
-     * @param constantPool the constant pool from the ClassFile
-     * @return the opened package name
+     *
+     * @param constantPool The constant pool from the ClassFile.
+     * @return The opened package name.
      * @since 6.10.0
      */
     public String getPackageName(final ConstantPool constantPool) {
@@ -120,8 +121,9 @@ public final class ModuleOpens implements Cloneable, Node {
 
     /**
      * Gets an array of module names for this ModuleOpens.
-     * @param constantPool Array of constants usually obtained from the ClassFile object
-     * @return array of module names following 'opens to'
+     *
+     * @param constantPool Array of constants usually obtained from the ClassFile object.
+     * @return array of module names following 'opens to'.
      * @since 6.10.0
      */
     public String[] getToModuleNames(final ConstantPool constantPool) {
@@ -133,7 +135,7 @@ public final class ModuleOpens implements Cloneable, Node {
     }
 
     /**
-     * @return String representation
+     * @return String representation.
      */
     @Override
     public String toString() {
@@ -141,7 +143,10 @@ public final class ModuleOpens implements Cloneable, Node {
     }
 
     /**
-     * @return Resolved string representation
+     * Gets the resolved string representation.
+     *
+     * @param constantPool The constant pool.
+     * @return Resolved string representation.
      */
     public String toString(final ConstantPool constantPool) {
         final StringBuilder buf = new StringBuilder();

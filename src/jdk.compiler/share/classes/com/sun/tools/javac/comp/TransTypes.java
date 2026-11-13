@@ -720,10 +720,6 @@ public class TransTypes extends TreeTranslator {
                     rcvr = new VarSymbol(SYNTHETIC, names.fromString("rec$"), tree.getQualifierExpression().type, owner);
                     rcvr.pos = tree.pos;
                     receiverExpression = attr.makeNullCheck(tree.getQualifierExpression());
-                    if (receiverExpression.hasTag(Tag.NULLCHK)) {
-                        Type t = types.skipTypeVars(tree.getQualifierExpression().type, false);
-                        receiverExpression.type = t.isCompound() ? erasure(tree.sym.owner.type) : erasure(t);
-                    }
                     break;
                 case UNBOUND:
                     // The receiver is the first parameter, extract it and
@@ -966,11 +962,7 @@ public class TransTypes extends TreeTranslator {
             if (tree.def == null) {
                 tree.encl = translate(tree.encl, erasure(tree.encl.type));
             } else {
-                JCExpression expr = attr.makeNullCheck(tree.encl);
-                if (expr.hasTag(Tag.NULLCHK)) {
-                    expr.type = erasure(tree.encl.type);
-                }
-                tree.args = tree.args.prepend(expr);
+                tree.args = tree.args.prepend(attr.makeNullCheck(tree.encl));
                 tree.encl = null;
             }
         }
@@ -1030,7 +1022,7 @@ public class TransTypes extends TreeTranslator {
 
     public void visitUnary(JCUnary tree) {
         tree.arg = translate(tree.arg, (tree.getTag() == Tag.NULLCHK)
-            ? tree.type
+            ? erasure(tree.type)
             : tree.operator.type.getParameterTypes().head);
         result = tree;
     }
