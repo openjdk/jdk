@@ -65,7 +65,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.thread.VThreadRunner;
@@ -112,7 +111,7 @@ class BlockingSocketOps {
 
                 // delayed write from sc1
                 byte[] ba1 = "XXX".getBytes("UTF-8");
-                var unparker = runAfterParkedAsync(() -> s1.getOutputStream().write(ba1));
+                runAfterParkedAsync(() -> s1.getOutputStream().write(ba1));
 
                 // read from sc2 should block
                 if (timeout > 0) {
@@ -122,9 +121,6 @@ class BlockingSocketOps {
                 int n = s2.getInputStream().read(ba2);
                 assertTrue(n > 0);
                 assertTrue(ba2[0] == 'X');
-
-                // check blocker object was set when thread parked
-                assertNotNull(unparker.parkBlocker());
             }
         });
     }
@@ -141,8 +137,8 @@ class BlockingSocketOps {
 
                 // delayed read from s2 to EOF
                 InputStream in = s2.getInputStream();
-                var unparker = runAfterParkedAsync(() ->
-                        in.transferTo(OutputStream.nullOutputStream()), true);
+                Thread unparker = runAfterParkedAsync(() ->
+                        in.transferTo(OutputStream.nullOutputStream()));
 
                 // write should block
                 byte[] ba = new byte[100*1024];
@@ -151,9 +147,6 @@ class BlockingSocketOps {
                         out.write(ba);
                     }
                 }
-
-                // check blocker object was set when thread parked
-                assertNotNull(unparker.parkBlocker());
 
                 // wait for reader to finish
                 unparker.join();
@@ -440,7 +433,7 @@ class BlockingSocketOps {
                 // schedule connect
                 var socket1 = new Socket();
                 SocketAddress remote = listener.getLocalSocketAddress();
-                var unparker = runAfterParkedAsync(() -> socket1.connect(remote));
+                runAfterParkedAsync(() -> socket1.connect(remote));
 
                 // accept should block
                 if (timeout > 0) {
@@ -449,9 +442,6 @@ class BlockingSocketOps {
                 var socket2 = listener.accept();
                 socket1.close();
                 socket2.close();
-
-                // check blocker object was set when thread parked
-                assertNotNull(unparker.parkBlocker());
             }
         });
     }
@@ -562,7 +552,7 @@ class BlockingSocketOps {
                 byte[] bytes = "XXX".getBytes("UTF-8");
                 DatagramPacket p1 = new DatagramPacket(bytes, bytes.length);
                 p1.setSocketAddress(s2.getLocalSocketAddress());
-                var unparker = runAfterParkedAsync(() -> s1.send(p1));
+                runAfterParkedAsync(() -> s1.send(p1));
 
                 // receive should block
                 if (timeout > 0) {
@@ -573,9 +563,6 @@ class BlockingSocketOps {
                 s2.receive(p2);
                 assertEquals(s1.getLocalSocketAddress(), p2.getSocketAddress());
                 assertTrue(ba[0] == 'X');
-
-                // check blocker object was set when thread parked
-                assertNotNull(unparker.parkBlocker());
             }
         });
     }
@@ -708,80 +695,32 @@ class BlockingSocketOps {
     }
 
     /**
-     * The unparker returned by runAfterParkedAsync.
+     * Runs the given task asynchronously after the current virtual thread parks
+     * with its parkBlocker set.
+     * @return the unparker thread
      */
-    private static class Unparker {
-        final Thread thread;
-        final AtomicReference<Object> parkBlockerRef;
-
-        Unparker(Thread thread, AtomicReference<Object> parkBlockerRef) {
-            this.thread = thread;
-            this.parkBlockerRef = parkBlockerRef;
-        }
-
-        Object parkBlocker() {
-            return parkBlockerRef.get();
-        }
-
-        void join() throws InterruptedException {
-            thread.join();
-        }
-    }
-
-    /**
-     * Runs the given task asynchronously after the current virtual thread parks.
-     * @param writing if the thread will block in write
-     * @return the unparker object
-     */
-    private static Unparker runAfterParkedAsync(ThrowingRunnable task, boolean writing) {
+    private static Thread runAfterParkedAsync(ThrowingRunnable task) {
         Thread target = Thread.currentThread();
         if (!target.isVirtual())
             throw new WrongThreadException();
-        var parkBlockerRef = new AtomicReference<Object>();
-        Thread unparkerThread = Thread.ofPlatform().daemon().start(() -> {
+        return Thread.ofPlatform().daemon().start(() -> {
             try {
-                // wait for target thread to park
-                awaitParked(target, 20);
-
-                // When writing we need to "nudge" the target thread to allow further
-                // progress before giving it a more time to settle.
-                if (writing) {
-                    for (int i = 0; i < 3; i++) {
-                        LockSupport.unpark(target);
-                        Thread.sleep(20);
-                    }
-                    awaitParked(target, 100);
-                }
-
-                // capture the blocker object
-                parkBlockerRef.set(LockSupport.getBlocker(target));
-
+                // wait for target thread to park, then execute task
+                awaitParked(target);
                 task.run();
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
-        return new Unparker(unparkerThread, parkBlockerRef);
-    }
-
-    private static Unparker runAfterParkedAsync(ThrowingRunnable task) {
-        return runAfterParkedAsync(task, false);
     }
 
     /**
-     * Wait for the given Thread to be parked (or waiting) for the given millis duration.
+     * Wait for the given Thread to park with its parkBlocker set.
      */
-    private static void awaitParked(Thread target, long millis) throws InterruptedException {
-        long sleepTime = 10;
-        int parkedTime = 0;
-        while (parkedTime < millis) {
-            Thread.sleep(sleepTime);
-            if (isParked(target)) {
-                parkedTime += sleepTime;
-            } else {
-                parkedTime = 0;
-            }
+    private static void awaitParked(Thread target) throws InterruptedException {
+        Object parkBlocker;
+        while (!isParked(target) || (parkBlocker = LockSupport.getBlocker(target)) == null) {
+            Thread.sleep(10);
         }
     }
 
