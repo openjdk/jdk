@@ -163,6 +163,9 @@ class MethodCounters : public Metadata {
   MethodTrainingData* method_training_data() const {
     return reinterpret_cast<MethodTrainingData*>(_method_training_data);
   }
+  void clear_method_training_data() {
+    _method_training_data = nullptr;
+  }
   bool init_method_training_data(MethodTrainingData* td) {
     MethodTrainingData* cur = method_training_data();
     if (cur == td) {
