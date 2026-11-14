@@ -135,11 +135,9 @@ void VM_Version::apply_aot_cache_cpu_features() {
       return;
     }
     _rv_ext_features_disabled_by_aot_cache = runtime_cpu_features->features_not_in(archived_cpu_features);
-    // Undetected extensions can still have flags enabled by command-line options or RVA profiles.
     for (int i = 0; i < RVExtFeatureSet::CPU_FEATURE_COUNT; i++) {
       if (!archived_cpu_features->support_feature(i)) {
         _ext_feature_list[i]->disable_feature();
-        // Normal flag initialization skips disabled extensions.
         _ext_feature_list[i]->update_flag();
       }
     }
@@ -156,7 +154,7 @@ void VM_Version::apply_aot_cache_cpu_features() {
   }
 }
 
-void VM_Version::setup_cpu_available_features() {
+void VM_Version::detect_cpu_features(char*& uarch) {
 
   assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
   assert(ext_m.feature_bit() == HWCAP_ISA_M, "Bit for M must follow Linux HWCAP");
@@ -172,7 +170,7 @@ void VM_Version::setup_cpu_available_features() {
     os_aux_features();
   }
 
-  char* uarch = os_uarch_additional_features();
+  uarch = os_uarch_additional_features();
   vendor_features();
 
   // Linux kernel require Zifencei
@@ -181,8 +179,26 @@ void VM_Version::setup_cpu_available_features() {
     ext_Zifencei.enable_feature();
   }
 
-  apply_aot_cache_cpu_features();
+  for (int i = 0; i < RVExtFeatureSet::CPU_FEATURE_COUNT; i++) {
+    if (_ext_feature_list[i]->feature_enabled()) {
+      _ext_feature_list[i]->update_flag();
+    }
+  }
 
+  if (UseCtxFencei) {
+    // Note that we can set this up only for effected threads
+    // via PR_RISCV_SCOPE_PER_THREAD, i.e. on VM attach/deattach.
+    int ret = prctl(PR_RISCV_SET_ICACHE_FLUSH_CTX, PR_RISCV_CTX_SW_FENCEI_ON, PR_RISCV_SCOPE_PER_PROCESS);
+    if (ret == 0) {
+      log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
+    } else {
+      FLAG_SET_ERGO(UseCtxFencei, false);
+      log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) disabled, unsupported by kernel.");
+    }
+  }
+}
+
+void VM_Version::publish_cpu_features(char* uarch) {
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
     // Use at max half the buffer.
@@ -193,20 +209,10 @@ void VM_Version::setup_cpu_available_features() {
   int features_offset = strnlen(buf, sizeof(buf));
 
   strcat(buf, "rv64");
+  _features = 0;
   int i = 0;
   while (_feature_list[i] != nullptr) {
     if (_feature_list[i]->feature_enabled()) {
-      if (i < RVExtFeatureSet::CPU_FEATURE_COUNT) {
-        assert(_ext_feature_list[i] == _feature_list[i], "feature lists must have the same extension order");
-        _ext_feature_list[i]->update_flag();
-      }
-
-      // Feature will be disabled by update_flag() if flag
-      // is set to false by the user on the command line.
-      if (!_feature_list[i]->feature_enabled()) {
-        continue;
-      }
-
       _feature_list[i]->log_enabled();
 
       // The feature string
@@ -235,18 +241,6 @@ void VM_Version::setup_cpu_available_features() {
       }
     }
     i++;
-  }
-
-  if (UseCtxFencei) {
-    // Note that we can set this up only for effected threads
-    // via PR_RISCV_SCOPE_PER_THREAD, i.e. on VM attach/deattach.
-    int ret = prctl(PR_RISCV_SET_ICACHE_FLUSH_CTX, PR_RISCV_CTX_SW_FENCEI_ON, PR_RISCV_SCOPE_PER_PROCESS);
-    if (ret == 0) {
-      log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
-    } else {
-      FLAG_SET_ERGO(UseCtxFencei, false);
-      log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) disabled, unsupported by kernel.");
-    }
   }
 
   _cpu_info_string = os::strdup(buf, mtInternal);

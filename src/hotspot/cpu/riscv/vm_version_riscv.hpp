@@ -92,8 +92,8 @@ class VM_Version : public Abstract_VM_Version {
     const JVMFlagsEnum _flag;
     RVExtFeatureValue* const* const _dependencies;
 
-    bool deps_all_enabled() const;
-    void deps_string(stringStream& ss) const;
+    bool deps_all_flags_enabled() const;
+    void deps_flags_string(stringStream& ss) const;
 #ifdef ASSERT
     void verify_deps() const;
 #endif // ASSERT
@@ -118,6 +118,10 @@ class VM_Version : public Abstract_VM_Version {
       RVExtFeatureSet::current()->clear_feature(_cpu_feature_index);
     }
     void update_flag();
+    void validate_flag();
+    void update_feature();
+
+    bool flag_enabled();
     void log_enabled();
     void log_disabled(const char* reason);
   };
@@ -437,8 +441,12 @@ private:
   // Features removed by AOT cache restrictions, retained for diagnostics.
   static RVExtFeatureSet _rv_ext_features_disabled_by_aot_cache;
 
-  // Enables features in _feature_list
-  static void setup_cpu_available_features();
+  static void detect_cpu_features(char*& uarch);
+  static void sync_cpu_features();
+  static void publish_cpu_features(char* uarch);
+
+  static void adjust_cpu_feature_flags();
+  static void validate_cpu_feature_flags();
 
   static void apply_aot_cache_cpu_features();
 
