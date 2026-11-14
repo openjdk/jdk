@@ -193,6 +193,9 @@ class MacroAssembler: public Assembler {
   // Convert between half precision float encoded into a short and a float in a FloatRegister.
   void inline f2hf(Register dst, FloatRegister src, FloatRegister tmp);
   void inline hf2f(FloatRegister dst, Register src);
+  // Bitwise move between an int and a float (reinterpret, not a numeric conversion).
+  void inline intBitsToFloat(FloatRegister dst, Register src);
+  void inline floatToIntBits(Register dst, FloatRegister src, FloatRegister tmp);
 
   inline void pd_patch_instruction(address branch, address target, const char* file, int line);
   NOT_PRODUCT(static void pd_print_patched_instruction(address branch);)

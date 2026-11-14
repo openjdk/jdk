@@ -303,6 +303,23 @@ inline void MacroAssembler::hf2f(FloatRegister dst, Register src) {
   xscvhpdp(dst->to_vsr(), dst->to_vsr());
 }
 
+inline void MacroAssembler::intBitsToFloat(FloatRegister dst, Register src) {
+  // Single precision values in FloatRegisters use double precision format on PPC64.
+  if (PowerArchitecturePPC64 >= 9) {
+    mtfprws(dst, src);                         // Move int into all word elements.
+  } else {
+    mtfprwz(dst, src);                         // Move int into word element 1.
+    xxspltw(dst->to_vsr(), dst->to_vsr(), 1);  // Replicate it into word element 0.
+  }
+  xscvspdpn(dst->to_vsr(), dst->to_vsr());     // Convert from word element 0.
+}
+
+inline void MacroAssembler::floatToIntBits(Register dst, FloatRegister src, FloatRegister tmp) {
+  // Single precision values in FloatRegisters use double precision format on PPC64.
+  xscvdpspn(tmp->to_vsr(), src->to_vsr());
+  mfvsrwz(dst, tmp->to_vsr());
+}
+
 // Convenience bc_far versions
 inline void MacroAssembler::blt_far(ConditionRegister crx, Label& L, int optimize) { MacroAssembler::bc_far(bcondCRbiIs1, bi0(crx, less), L, optimize); }
 inline void MacroAssembler::bgt_far(ConditionRegister crx, Label& L, int optimize) { MacroAssembler::bc_far(bcondCRbiIs1, bi0(crx, greater), L, optimize); }

@@ -2942,14 +2942,6 @@ encode %{
     __ bind(done);
   %}
 
-  enc_class enc_cmove_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL mem ) %{
-    int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
-    Label done;
-    __ bso($crx$$CondRegister, done);
-    __ ld($dst$$Register, Idisp, $mem$$base$$Register);
-    __ bind(done);
-  %}
-
   enc_class enc_bc(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
     Label d;   // dummy
     __ bind(d);
@@ -4420,76 +4412,6 @@ operand indOffset16NarrowAlg4_klass(iRegNsrc reg, immL16Alg4 offset) %{
     index(0x0);
     scale(0x0);
     disp($offset);
-  %}
-%}
-
-//----------Special Memory Operands--------------------------------------------
-// Stack Slot Operand
-//
-// This operand is used for loading and storing temporary values on
-// the stack where a match requires a value to flow through memory.
-operand stackSlotI(sRegI reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegI);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotL(sRegL reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegL);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotP(sRegP reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegP);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotF(sRegF reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegF);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotD(sRegD reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegD);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
   %}
 %}
 
@@ -8927,10 +8849,9 @@ instruct andcL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 
 //----------Moves between int/long and float/double----------------------------
 //
-// The following rules move values from int/long registers/stack-locations
-// to float/double registers/stack-locations and vice versa, without doing any
-// conversions. These rules are used to implement the bit-conversion methods
-// of java.lang.Float/Double, e.g.
+// The following rules move values from int/long registers to float/double
+// registers and vice versa, without doing any value conversion. These rules are
+// used to implement the bit-conversion methods of java.lang.Float etc., e.g.
 //   int   floatToIntBits(float value)
 //   float intBitsToFloat(int bits)
 
@@ -8967,101 +8888,37 @@ instruct moveI2D_reg(regD dst, iRegIsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-//---------- Chain stack slots between similar types --------
-
-// These are needed so that the rules below can match.
-
-// Load integer from stack slot
-instruct stkI_to_regI(iRegIdst dst, stackSlotI src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LWZ     $dst, $src" %}
-  size(4);
-  ins_encode( enc_lwz(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Store integer to stack slot
-instruct regI_to_stkI(stackSlotI dst, iRegIsrc src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STW     $src, $dst \t// stk" %}
-  size(4);
-  ins_encode( enc_stw(src, dst) ); // rs=rt
-  ins_pipe(pipe_class_memory);
-%}
-
-// Load long from stack slot
-instruct stkL_to_regL(iRegLdst dst, stackSlotL src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LD      $dst, $src \t// long" %}
-  size(4);
-  ins_encode( enc_ld(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Store long to stack slot
-instruct regL_to_stkL(stackSlotL dst, iRegLsrc src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STD     $src, $dst \t// long" %}
-  size(4);
-  ins_encode( enc_std(src, dst) ); // rs=rt
-  ins_pipe(pipe_class_memory);
-%}
-
 //----------Moves between int and float
-
-// Move float value from float stack-location to integer register.
-instruct moveF2I_stack_reg(iRegIdst dst, stackSlotF src) %{
+instruct moveF2I_reg_reg(iRegIdst dst, regF src, regF tmp) %{
   match(Set dst (MoveF2I src));
-  ins_cost(MEMORY_REF_COST);
+  effect(TEMP tmp);
 
-  format %{ "LWZ     $dst, $src \t// MoveF2I" %}
-  size(4);
-  ins_encode( enc_lwz(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Move float value from float register to integer stack-location.
-instruct moveF2I_reg_stack(stackSlotI dst, regF src) %{
-  match(Set dst (MoveF2I src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STFS    $src, $dst \t// MoveF2I" %}
-  size(4);
-  ins_encode( enc_stfs(src, dst) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Move integer value from integer stack-location to float register.
-instruct moveI2F_stack_reg(regF dst, stackSlotI src) %{
-  match(Set dst (MoveI2F src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LFS     $dst, $src \t// MoveI2F" %}
-  size(4);
+  format %{ "XSCVDPSPN $tmp, $src \t// MoveF2I\n\t"
+            "MFVSRWZ   $dst, $tmp" %}
+  size(8);
   ins_encode %{
-    int Idisp = $src$$disp + frame_slots_bias($src$$base, ra_);
-    __ lfs($dst$$FloatRegister, Idisp, $src$$base$$Register);
+    __ floatToIntBits($dst$$Register, $src$$FloatRegister, $tmp$$FloatRegister);
   %}
-  ins_pipe(pipe_class_memory);
+  ins_pipe(pipe_class_default);
 %}
 
-// Move integer value from integer register to float stack-location.
-instruct moveI2F_reg_stack(stackSlotF dst, iRegIorL2I src) %{
+instruct moveI2F_reg_reg(regF dst, iRegIorL2I src) %{
   match(Set dst (MoveI2F src));
-  ins_cost(MEMORY_REF_COST);
 
-  format %{ "STW     $src, $dst \t// MoveI2F" %}
-  size(4);
-  ins_encode( enc_stw(src, dst) );
-  ins_pipe(pipe_class_memory);
+  format %{ $$template
+    if (PowerArchitecturePPC64 >= 9) {
+      $$emit$$"MTVSRWS   $dst, $src \t// MoveI2F\n\t"
+    } else {
+      $$emit$$"MTVSRWZ   $dst, $src \t// MoveI2F\n\t"
+      $$emit$$"XXSPLTW   $dst, $dst, 1\n\t"
+    }
+    $$emit$$"XSCVSPDPN $dst, $dst"
+  %}
+  size((PowerArchitecturePPC64 >= 9 ? 8 : 12));
+  ins_encode %{
+    __ intBitsToFloat($dst$$FloatRegister, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 //----------Register Move Instructions-----------------------------------------
@@ -9430,17 +9287,6 @@ instruct convL2I_reg(iRegIdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVI   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
 instruct cmovI_bso_reg_con0(iRegIdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE src);
@@ -9548,17 +9394,6 @@ instruct zeroExtendL_regL(iRegLdst dst, iRegLsrc src, immL_32bits mask) %{
   ins_encode %{
     __ clrldi($dst$$Register, $src$$Register, 32);
   %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVL   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
 
@@ -12088,19 +11923,18 @@ instruct repl4I_immIminus1(vecX dst, immI_minus1 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Move float to int register via stack, replicate.
+// Move float to int register, replicate.
 instruct repl2F_reg_Ex(iRegLdst dst, regF src) %{
   match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 2 &&
             Matcher::vector_element_basic_type(n) == T_FLOAT);
-  ins_cost(2 * MEMORY_REF_COST + DEFAULT_COST);
+  ins_cost(3 * DEFAULT_COST);
   expand %{
-    stackSlotL tmpS;
     iRegIdst tmpI;
-    moveF2I_reg_stack(tmpS, src);   // Move float to stack.
-    moveF2I_stack_reg(tmpI, tmpS);  // Move stack to int reg.
-    moveReg(dst, tmpI);             // Move int to long reg.
-    repl32(dst);                    // Replicate bitpattern.
+    regF tmpF;
+    moveF2I_reg_reg(tmpI, src, tmpF); // Move float bits to int reg.
+    moveReg(dst, tmpI);               // Move int to long reg.
+    repl32(dst);                      // Replicate bitpattern.
   %}
 %}
 
