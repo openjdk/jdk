@@ -111,12 +111,6 @@ void MethodCounters::set_aot_preload_code_entry(AOTCodeEntry* entry) {
   precond(entry == nullptr || entry->for_preload());
   _aot_preload_code_entry = entry;
 }
-
-void MethodCounters::remove_unshareable_info() {
-}
-void MethodCounters::restore_unshareable_info(TRAPS) {
-  _method_training_data = method_training_data_sentinel();
-}
 #endif // INCLUDE_CDS
 
 void MethodCounters::print_on(outputStream* st) const {
