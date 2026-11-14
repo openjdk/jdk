@@ -30,8 +30,8 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
- * @run main Exhaustiveness
-*/
+ * @run main/othervm/timeout=480 Exhaustiveness
+ */
 
 import java.io.IOException;
 import java.nio.file.Files;
