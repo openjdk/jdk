@@ -41,7 +41,7 @@ static unsigned get_value_object_hash(oop holder, int offset, Klass* klass) {
 
 static unsigned get_value_object_hash(const JvmtiHeapwalkObject & obj) {
   assert(obj.is_value(), "Must be value class");
-  return get_value_object_hash(obj.obj(), obj.offset(), obj.value_klass());
+  return get_value_object_hash(obj.holder(), obj.offset(), obj.value_klass());
 }
 
 static bool equal_oops(oop obj1, oop obj2); // forward declaration
@@ -132,7 +132,7 @@ bool JvmtiHeapwalkObject::equals(const JvmtiHeapwalkObject& obj1, const JvmtiHea
 
   if (obj1.is_value() && obj1.value_klass() == obj2.value_klass()) {
     // instances of the same value class
-    return equal_value_objects(obj1.obj(), obj1.offset(), obj2.obj(), obj2.offset(), obj1.value_klass());
+    return equal_value_objects(obj1.holder(), obj1.offset(), obj2.holder(), obj2.offset(), obj1.value_klass());
   }
   return false;
 }
@@ -178,7 +178,7 @@ void JvmtiTagMapKey::release_handle() {
 
 JvmtiHeapwalkObject JvmtiTagMapKey::heapwalk_object() const {
   if (_obj != nullptr) {
-    return JvmtiHeapwalkObject(_obj->obj(), _obj->offset(), _obj->value_klass(), _obj->optional_flat_layout());
+    return JvmtiHeapwalkObject(_obj->holder(), _obj->offset(), _obj->value_klass(), _obj->optional_flat_layout());
   }
   oop obj = object_no_keepalive();
   if (obj == nullptr) {
@@ -312,7 +312,7 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
 }
 
 JvmtiValueTagMapKey::JvmtiValueTagMapKey(const JvmtiHeapwalkObject& obj)
-  : _holder(obj.obj()), _offset(obj.offset()), _value_klass(obj.value_klass()), _optional_flat_layout(obj.optional_flat_layout()) {}
+  : _holder(obj.holder()), _offset(obj.offset()), _value_klass(obj.value_klass()), _optional_flat_layout(obj.optional_flat_layout()) {}
 
 OopHandle JvmtiValueTagMapKey::create_holder_oop_handle() const {
   // move object into Handle when copying into the table

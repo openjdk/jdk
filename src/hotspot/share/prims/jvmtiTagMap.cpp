@@ -1097,7 +1097,7 @@ static jint invoke_primitive_field_callback_for_instance_fields(
     jvmtiPrimitiveType value_type = (jvmtiPrimitiveType)type;
 
     // get field value
-    address addr = cast_from_oop<address>(obj.obj()) + obj.offset() + field->field_offset();
+    address addr = cast_from_oop<address>(obj.holder()) + obj.offset() + field->field_offset();
     jvalue value;
     copy_to_jvalue(&value, addr, value_type);
 
@@ -1404,11 +1404,11 @@ void IterateThroughHeapObjectClosure::visit_flat_fields(const JvmtiHeapwalkObjec
     }
     // check for possible nulls
     if (field->is_nullable_flat()) {
-      if (field->value_klass()->is_payload_marked_as_null(obj.obj(), field_offset)) {
+      if (field->value_klass()->is_payload_marked_as_null(obj.holder(), field_offset)) {
         continue;
       }
     }
-    JvmtiHeapwalkObject field_obj(obj.obj(), field_offset, field->value_klass(), field->flat_layout());
+    JvmtiHeapwalkObject field_obj(obj.holder(), field_offset, field->value_klass(), field->flat_layout());
 
     visit_object(field_obj);
 
@@ -3188,16 +3188,16 @@ inline bool VM_HeapWalkOperation::iterate_over_object(const JvmtiHeapwalkObject&
       if (field->is_flat()) {
         // check for possible nulls
         if (field->is_nullable_flat()) {
-          if (field->value_klass()->is_payload_marked_as_null(o.obj(), field_offset)) {
+          if (field->value_klass()->is_payload_marked_as_null(o.holder(), field_offset)) {
             continue;
           }
         }
-        JvmtiHeapwalkObject field_obj(o.obj(), field_offset, field->value_klass(), field->flat_layout());
+        JvmtiHeapwalkObject field_obj(o.holder(), field_offset, field->value_klass(), field->flat_layout());
         if (!CallbackInvoker::report_field_reference(o, field_obj, slot)) {
           return false;
         }
       } else {
-        oop fld_o = o.obj()->obj_field_access<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>(field_offset);
+        oop fld_o = o.holder()->obj_field_access<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>(field_offset);
         // ignore any objects that aren't visible to profiler
         if (fld_o != nullptr) {
           assert(Universe::heap()->is_in(fld_o), "unsafe code should not have references to Klass* anymore");
@@ -3209,7 +3209,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(const JvmtiHeapwalkObject&
     } else {
       if (is_reporting_primitive_fields()) {
         // primitive instance field
-        address addr = cast_from_oop<address>(o.obj()) + field_offset;
+        address addr = cast_from_oop<address>(o.holder()) + field_offset;
         if (!CallbackInvoker::report_primitive_instance_field(o, slot, addr, type)) {
           return false;
         }
@@ -3402,7 +3402,7 @@ bool VM_HeapWalkOperation::visit(const JvmtiHeapwalkObject& o) {
         // a java.lang.Class
         return iterate_over_class(o);
       }
-    } else if (java_lang_ClassLoader::is_instance(o.obj())) {
+    } else if (java_lang_ClassLoader::is_subclass(klass)) {
       return iterate_over_class_loader(o);
     } else {
       // we report stack references only when initial object is not specified
