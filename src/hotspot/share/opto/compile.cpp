@@ -4258,6 +4258,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_LoadNKlass:
   case Op_LoadL:
   case Op_LoadL_unaligned:
+  case Op_LoadLSpecial:
   case Op_LoadP:
   case Op_LoadN:
   case Op_LoadRange:

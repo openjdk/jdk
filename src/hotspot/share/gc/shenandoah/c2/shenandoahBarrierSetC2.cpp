@@ -379,6 +379,16 @@ void ShenandoahBarrierSetC2::final_refinement(Compile* compile) const {
       }
     }
 
+    // In the absence of proper C2 interface, we need to make sure these
+    // nodes are tagged with their relevant accesses.
+    if (opc == Op_LoadLSpecial) {
+      if (ShenandoahLoadRefBarrier) bd |= ShenandoahBitStrong;
+    }
+    if (opc == Op_StoreLSpecial) {
+      if (ShenandoahSATBBarrier) bd |= ShenandoahBitKeepAlive;
+      if (ShenandoahCardBarrier) bd |= ShenandoahBitCardMark;
+    }
+
     // If there are no real barrier flags on the node, strip away additional fluff.
     // Matcher does not care about this, and we would like to avoid invoking "barrier_data() != 0"
     // rules when the only flags are the irrelevant fluff.
@@ -807,7 +817,7 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
     } else if (is_LoadStore(opc)) {
       bd = n->as_LoadStore()->barrier_data();
       adr_type = n->as_LoadStore()->out_adr_type();
-    } else if (n->is_Mem()) {
+    } else if (n->is_Mem() && (opc != Op_LoadLSpecial && opc != Op_StoreLSpecial)) {
       bd = MemNode::barrier_data(n);
       verify_gc_barrier_assert(bd == 0, "Other mem nodes should have no barrier data", bd, n);
     }
@@ -920,19 +930,19 @@ void ShenandoahBarrierStubC2::register_stub(ShenandoahBarrierStubC2* stub) {
   }
 }
 
-ShenandoahBarrierStubC2* ShenandoahBarrierStubC2::create(const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, bool do_load) {
-  auto* stub = new (Compile::current()->comp_arena()) ShenandoahBarrierStubC2(node, obj, addr, tmp1, tmp2, narrow, do_load);
+ShenandoahBarrierStubC2* ShenandoahBarrierStubC2::create(const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, bool do_load, Register preserve1) {
+  auto* stub = new (Compile::current()->comp_arena()) ShenandoahBarrierStubC2(node, obj, addr, tmp1, tmp2, narrow, do_load, preserve1);
   register_stub(stub);
   return stub;
 }
 
-void ShenandoahBarrierStubC2::load_post(MacroAssembler* masm, const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow) {
+void ShenandoahBarrierStubC2::load_post(MacroAssembler* masm, const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, Register preserve1) {
   // Load post-barrier:
   //  a. Satisfies the need for LRB for normal loads
   //  b. Passes a weak load through LRB-weak
   //  c. Keep-alives a weak load
   if (needs_slow_barrier(node)) {
-    ShenandoahBarrierStubC2* const stub = create(node, obj, addr, tmp1, tmp2, narrow, /* do_load = */ false);
+    ShenandoahBarrierStubC2* const stub = create(node, obj, addr, tmp1, tmp2, narrow, /* do_load = */ false, preserve1);
     char check = 0;
     check |= needs_keep_alive_barrier(node)    ? ShenandoahHeap::MARKING : 0;
     check |= needs_load_ref_barrier(node)      ? ShenandoahHeap::HAS_FORWARDED : 0;
@@ -945,7 +955,7 @@ void ShenandoahBarrierStubC2::store_pre(MacroAssembler* masm, const MachNode* no
   // Store pre-barrier: SATB, keep-alive the current memory value.
   if (needs_slow_barrier(node)) {
     assert(!needs_load_ref_barrier(node), "Should not be required for stores");
-    ShenandoahBarrierStubC2* const stub = create(node, tmp1, addr, tmp2, tmp3, narrow, /* do_load = */ true);
+    ShenandoahBarrierStubC2* const stub = create(node, tmp1, addr, tmp2, tmp3, narrow, /* do_load = */ true, noreg);
     stub->enter_if_gc_state(*masm, ShenandoahHeap::MARKING, tmp1, tmp2);
   }
 }
@@ -959,7 +969,7 @@ void ShenandoahBarrierStubC2::load_store_pre(MacroAssembler* masm, const MachNod
   // (a) and (b) are covered because load barrier does memory location fixup.
   // (c) is covered by KA on the current memory value.
   if (needs_slow_barrier(node)) {
-    ShenandoahBarrierStubC2* const stub = create(node, tmp1, addr, tmp2, tmp3, narrow, /* do_load = */ true);
+    ShenandoahBarrierStubC2* const stub = create(node, tmp1, addr, tmp2, tmp3, narrow, /* do_load = */ true, noreg);
     char check = 0;
     check |= needs_keep_alive_barrier(node) ? ShenandoahHeap::MARKING : 0;
     check |= needs_load_ref_barrier(node)   ? ShenandoahHeap::HAS_FORWARDED : 0;

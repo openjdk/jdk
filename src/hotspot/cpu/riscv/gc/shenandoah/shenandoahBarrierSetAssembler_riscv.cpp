@@ -659,7 +659,37 @@ void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler
     }
   }
 
-  ShenandoahBarrierStubC2::load_post(masm, node, dst, src, tmp1, tmp2, is_narrow);
+  ShenandoahBarrierStubC2::load_post(masm, node, dst, src, tmp1, tmp2, is_narrow, noreg);
+}
+
+void ShenandoahBarrierSetAssembler::load_c2_special(const MachNode* node, MacroAssembler* masm, Register dst, Address src, int offset,
+    Register tmp1, Register tmp2, Register tmp3) {
+  assert(src.index() == noreg, "Base register only");
+  assert(src.offset() == 0, "Base register only");
+  Register src_base = src.base();
+
+  bool first_oop = offset == 0 || offset == -1;
+  bool second_oop = offset == 4 || offset == -1;
+
+  // Do the actual load. This load is the candidate for implicit null check, and MUST come first.
+  // We must perform a single load for atomicity reasons.
+  __ ld(dst, Address(src_base));
+
+  // Separate words into tmp and dst.
+  __ zext(tmp1, dst, 32);
+  __ srli(dst, dst, 32);
+
+  // Do barriers if needed.
+  if (first_oop) {
+    ShenandoahBarrierStubC2::load_post(masm, node, tmp1, Address(src_base), tmp2, tmp3, /* narrow = */ true, dst);
+  }
+  if (second_oop) {
+    ShenandoahBarrierStubC2::load_post(masm, node, dst, Address(src_base, 4), tmp2, tmp3, /* narrow = */ true, tmp1);
+  }
+
+  // Recombine barrier results into dst.
+  __ slli(dst, dst, 32);
+  __ orr(dst, dst, tmp1);
 }
 
 void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssembler* masm, Address dst, bool dst_narrow,
@@ -699,6 +729,33 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
   }
 
   ShenandoahBarrierStubC2::store_post(masm, node, dst, tmp2, tmp3);
+}
+
+void ShenandoahBarrierSetAssembler::store_c2_special(const MachNode* node, MacroAssembler* masm, Address dst, Register src, int offset,
+    Register tmp1, Register tmp2, Register tmp3) {
+  assert(dst.index() == noreg, "Base register only");
+  assert(dst.offset() == 0, "Base register only");
+  Register dst_base = dst.base();
+
+  bool first_oop = offset == 0 || offset == -1;
+  bool second_oop = offset == 4 || offset == -1;
+
+  if (first_oop) {
+    ShenandoahBarrierStubC2::store_pre(masm, node, Address(dst_base), tmp1, tmp2, tmp3, true);
+  }
+  if (second_oop) {
+    ShenandoahBarrierStubC2::store_pre(masm, node, Address(dst_base, 4), tmp1, tmp2, tmp3, true);
+  }
+
+  // Do the actual store
+  __ sd(src, Address(dst_base));
+
+  if (first_oop) {
+    ShenandoahBarrierStubC2::store_post(masm, node, Address(dst_base), tmp1, tmp2);
+  }
+  if (second_oop) {
+    ShenandoahBarrierStubC2::store_post(masm, node, Address(dst_base, 4), tmp1, tmp2);
+  }
 }
 
 void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, MacroAssembler* masm, Register res, Register addr,

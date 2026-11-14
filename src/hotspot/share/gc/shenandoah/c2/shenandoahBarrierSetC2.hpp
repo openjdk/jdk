@@ -187,10 +187,10 @@ class ShenandoahBarrierStubC2 : public BarrierStubC2 {
   address keepalive_runtime_entry_addr();
   address lrb_runtime_entry_addr();
 
-  static ShenandoahBarrierStubC2* create(const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, bool do_load);
+  static ShenandoahBarrierStubC2* create(const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, bool do_load, Register preserve1);
   void post_init();
 
-  ShenandoahBarrierStubC2(const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, bool do_load) :
+  ShenandoahBarrierStubC2(const MachNode* node, Register obj, Address addr, Register tmp1, Register tmp2, bool narrow, bool do_load, Register preserve1) :
     BarrierStubC2(node),
     _obj(obj),
     _addr(addr),
@@ -208,6 +208,9 @@ class ShenandoahBarrierStubC2 : public BarrierStubC2 {
     } else {
       assert(_tmp1 == _tmp2, "should both be noreg");
       assert_different_registers(_obj, _addr.base(), _addr.index());
+    }
+    if (preserve1 != noreg) {
+      preserve(preserve1);
     }
     post_init();
   }
@@ -233,7 +236,7 @@ public:
     return needs_load_ref_barrier(node) || needs_keep_alive_barrier(node);
   }
 
-  static void       load_post(MacroAssembler* masm, const MachNode* node, Register obj, Address addr,  Register tmp1, Register tmp2, bool narrow);
+  static void       load_post(MacroAssembler* masm, const MachNode* node, Register obj, Address addr,  Register tmp1, Register tmp2, bool narrow, Register preserve1);
   static void       store_pre(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2, Register tmp3, bool narrow);
   static void      store_post(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2);
   static void  load_store_pre(MacroAssembler* masm, const MachNode* node, Address addr, Register tmp1, Register tmp2, Register tmp3, bool narrow);

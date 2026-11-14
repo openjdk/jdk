@@ -2171,10 +2171,35 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   Node* base = this->base();
   Node* ptr = this->ptr();
 
+  int oop_off_1 = -1;
+  int oop_off_2 = -1;
+  collect_oop_offsets(_vk, oop_off_1, oop_off_2);
+
+  assert((oop_off_1 == -1 && oop_off_2 == -1) ||  // No oops
+         (oop_off_1 == 0  && oop_off_2 == -1) ||  // One oop at either offset
+         (oop_off_1 == 4  && oop_off_2 == -1) ||
+         (oop_off_1 == 0  && oop_off_2 == 4)  ||  // Two oops at either offsets
+         (oop_off_1 == 4  && oop_off_2 == 0),
+         "invalid layout for %s: oop_off_1=%d, oop_off_2=%d",
+         _vk->name()->as_utf8(), oop_off_1, oop_off_2);
+
   BasicType payload_bt = _vk->atomic_size_to_basic_type(_null_free);
+  const TypePtr* adr_type = TypeRawPtr::BOTTOM;
+
+  Node* payload = nullptr;
+
   kit.insert_mem_bar(Op_MemBarCPUOrder);
-  Node* payload = kit.access_load_at(base, ptr, TypeRawPtr::BOTTOM, Type::get_const_basic_type(payload_bt), payload_bt,
-                                     _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD, kit.control());
+  if (UseShenandoahGC && (oop_off_1 != -1)) {
+    assert(payload_bt == T_LONG, "Unexpected payload type");
+    int oop_offset = (oop_off_2 == -1) ? oop_off_1 : -1;
+    payload = igvn.transform(new LoadLSpecialNode(kit.control(), kit.memory(adr_type), ptr, adr_type,
+                                                  igvn.intcon(oop_offset), MemNode::unordered, LoadNode::UnknownControl));
+  } else {
+    assert((oop_off_1 == -1 && oop_off_2 == -1) || !UseShenandoahGC,
+           "No embedded oop fields, or GC does not care about the loads");
+    payload = kit.access_load_at(base, ptr, adr_type, Type::get_const_basic_type(payload_bt), payload_bt,
+                                 _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD, kit.control());
+  }
   kit.insert_mem_bar(Op_MemBarCPUOrder);
 
   Node* old_ctrl = proj_out_or_null(TypeFunc::Control);
@@ -2188,6 +2213,28 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   }
 
   expand_projs_atomic(igvn, kit.control(), payload);
+}
+
+void LoadFlatNode::collect_oop_offsets(ciValueKlass* vk, int& oop_off_1, int& oop_off_2) {
+  oop_off_1 = -1;
+  oop_off_2 = -1;
+
+  // Iterate over the fields and find oops
+  for (int i = 0; i < vk->nof_nonstatic_fields(); i++) {
+    ciField* field = vk->nonstatic_field_at(i);
+    int field_offset_in_payload = field->offset_in_bytes() - vk->payload_offset();
+    if (!field->type()->is_primitive_type()) {
+      // Narrow oop field
+      assert(UseCompressedOops, "Naturally atomic");
+      assert(field_offset_in_payload == 0 || field_offset_in_payload == 4, "Unexpected oop offset. field_offset_in_payload=%d", field_offset_in_payload);
+      if (oop_off_1 == -1) {
+        oop_off_1 = field_offset_in_payload;
+      } else {
+        assert(oop_off_2 == -1, "already set");
+        oop_off_2 = field_offset_in_payload;
+      }
+    }
+  }
 }
 
 void LoadFlatNode::collect_field_types(ciValueKlass* vk, const Type** field_types, int idx, int limit, bool null_free, bool trust_null_free_oop) {
@@ -2386,32 +2433,30 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   Node* payload = convert_to_payload(igvn, kit.control(), value, _null_free, oop_off_1, oop_off_2);
 
   ciValueKlass* vk = igvn.type(value)->value_klass();
-  // convert_to_payload should give us the offsets of up to 2 oops of vk in oop_off_1 and oop_off_2. The following holds:
-  // - they must be valid offsets for oops (0 or 4) or -1 (no oop)
-  // - if there is at least one oop, oop_off_1 != oop_off_2, i.e. oop_off_1 == oop_off_2 only if they are both -1, i.e. offsets are distincts
-  // - in case there is only one oop, its offset is stored in oop_off_1, and oop_off_2 == -1
-  assert(oop_off_1 == -1 || oop_off_1 == 0 || oop_off_1 == 4, "invalid layout for %s, first oop at offset %d", vk->name()->as_utf8(), oop_off_1);
-  assert(oop_off_2 == -1 || oop_off_2 == 0 || oop_off_2 == 4, "invalid layout for %s, second oop at offset %d", vk->name()->as_utf8(), oop_off_2);
-  assert(oop_off_1 != oop_off_2 || oop_off_1 == -1, "we should have: oop_off_1 == oop_off_2 => oop_off_1 == -1. But oop_off_1=oop_off_2=%d", oop_off_1);
-  assert(oop_off_1 != -1 || oop_off_2 == -1, "we should have: oop_off_1 == -1 => oop_off_2 == -1. But oop_off_1=%d, oop_off_2=%d", oop_off_1, oop_off_2);
+
+  assert((oop_off_1 == -1 && oop_off_2 == -1) ||  // No oops
+         (oop_off_1 == 0  && oop_off_2 == -1) ||  // One oop at either offset
+         (oop_off_1 == 4  && oop_off_2 == -1) ||
+         (oop_off_1 == 0  && oop_off_2 == 4)  ||  // Two oops at either offsets
+         (oop_off_1 == 4  && oop_off_2 == 0),
+         "invalid layout for %s: oop_off_1=%d, oop_off_2=%d",
+         vk->name()->as_utf8(), oop_off_1, oop_off_2);
+
   BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
+  const TypePtr* adr_type = TypeRawPtr::BOTTOM;
+
   kit.insert_mem_bar(Op_MemBarCPUOrder);
-  if (!UseG1GC || oop_off_1 == -1) {
-    // No oop fields or no late barrier expansion. Emit an atomic store of the payload and add GC barriers if needed.
-    assert(oop_off_2 == -1 || !UseG1GC, "sanity");
-    // ZGC does not support compressed oops, so only one oop can be in the payload which is written by a "normal" oop store.
-    assert((oop_off_1 == -1 && oop_off_2 == -1) || !UseZGC, "ZGC does not support embedded oops in flat fields");
-    kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, Type::get_const_basic_type(payload_bt), payload_bt, _decorators | C2_MISMATCHED, true, value);
-  } else {
-    // Contains oops and requires late barrier expansion. Emit a special store node that allows to emit GC barriers in the backend.
-    assert(UseG1GC, "Unexpected GC");
+  if ((UseG1GC || UseShenandoahGC) && (oop_off_1 != -1)) {
     assert(payload_bt == T_LONG, "Unexpected payload type");
-    // If one oop, set the offset (if no offset is set, two oops are assumed by the backend)
     Node* oop_offset = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : nullptr;
     Node* mem = kit.reset_memory();
     kit.set_all_memory(mem);
-    Node* store = igvn.transform(new StoreLSpecialNode(kit.control(), mem, ptr, TypeRawPtr::BOTTOM, payload, oop_offset, MemNode::unordered));
-    kit.set_memory(store, TypeRawPtr::BOTTOM);
+    Node* store = igvn.transform(new StoreLSpecialNode(kit.control(), mem, ptr, adr_type, payload, oop_offset, MemNode::unordered));
+    kit.set_memory(store, adr_type);
+  } else {
+    assert((oop_off_1 == -1 && oop_off_2 == -1) || (!UseG1GC && !UseShenandoahGC),
+           "No embedded oop fields, or GC does not care about the stores");
+    kit.access_store_at(base, ptr, adr_type, payload, Type::get_const_basic_type(payload_bt), payload_bt, _decorators | C2_MISMATCHED, true, value);
   }
   kit.insert_mem_bar(Op_MemBarCPUOrder);
 
