@@ -26,14 +26,17 @@
  * @library /test/lib /javax/net/ssl/templates
  * @summary Test that a New Session Ticket will be generated when a
  * SSLSessionBindingListener is set (boundValues)
- * @run main/othervm ResumptionUpdateBoundValues
+ * @run main/othervm -Djavax.net.debug=ssl ResumptionUpdateBoundValues
  */
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.Reference;
+import java.io.PrintStream;
 import java.lang.ref.WeakReference;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.*;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -44,29 +47,17 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class ResumptionUpdateBoundValues extends SSLContextTemplate {
 
-    static boolean separateServerThread = true;
+    final CountDownLatch serverReady = new CountDownLatch(1);
 
-    /*
-     * Where do we find the keystores?
-     */
-    static String pathToStores = "../../../../javax/net/ssl/etc/";
-    static String keyStoreFile = "keystore";
-    static String trustStoreFile = "truststore";
-    static String passwd = "passphrase";
+    ArrayBlockingQueue<SBListener> sbListeners = new ArrayBlockingQueue<>(100);
 
-    /*
-     * Is the server ready to serve?
-     */
-    volatile static boolean serverReady = false;
+    // use any free port by default
+    volatile int serverPort = 0;
 
-    /*
-     * Turn on SSL debugging?
-     */
-    static boolean debug = Boolean.getBoolean("test.debug");
+    volatile Exception clientException = null;
 
     /*
      * Define the server side of the test.
@@ -74,19 +65,21 @@ public class ResumptionUpdateBoundValues extends SSLContextTemplate {
      * If the server prematurely exits, serverReady will be set to true
      * to avoid infinite hangs.
      */
+
     void doServerSide() throws Exception {
+        SSLSocket sslSocket = null;
+
         SSLServerSocketFactory sslssf = createServerSSLContext().getServerSocketFactory();
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
-        serverPort = sslServerSocket.getLocalPort();
+        try (SSLServerSocket sslServerSocket =
+                     (SSLServerSocket) sslssf.createServerSocket(serverPort, -1, InetAddress.getLoopbackAddress())) {
+            serverPort = sslServerSocket.getLocalPort();
 
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        serverReady = true;
+            /*
+             * Signal Client, we're ready for his connect.
+             */
+            serverReady.countDown();
 
-        while (serverReady) {
-            SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
+            sslSocket = (SSLSocket) sslServerSocket.accept();
             InputStream sslIS = sslSocket.getInputStream();
             OutputStream sslOS = sslSocket.getOutputStream();
 
@@ -101,32 +94,37 @@ public class ResumptionUpdateBoundValues extends SSLContextTemplate {
             sslOS.write(85);
             sslOS.flush();
 
-            sslSocket.close();
+            sslIS.read();
+            sslOS.write(85);
+            sslOS.flush();
+        } finally {
+            if (sslSocket != null) {
+                sslSocket.close();
+            }
         }
     }
-
     /*
      * Define the client side of the test.
      *
      * If the server prematurely exits, serverReady will be set to true
      * to avoid infinite hangs.
      */
+
     SBListener doClientSide() throws Exception {
 
         /*
          * Wait for server to get started.
          */
-        while (!serverReady) {
-            Thread.sleep(50);
+        if (!serverReady.await(10, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Server not ready in 10 seconds.");
         }
 
         SSLSocketFactory sslsf = createClientSSLContext().getSocketFactory();
 
-        try {
-                SSLSocket sslSocket = (SSLSocket)
-                    sslsf.createSocket("localhost", serverPort);
-                InputStream sslIS = sslSocket.getInputStream();
-                OutputStream sslOS = sslSocket.getOutputStream();
+        try (SSLSocket sslSocket = (SSLSocket)
+                sslsf.createSocket(InetAddress.getLoopbackAddress(), serverPort)) {
+            InputStream sslIS = sslSocket.getInputStream();
+            OutputStream sslOS = sslSocket.getOutputStream();
 
             sslOS.write(280);
             sslOS.flush();
@@ -148,100 +146,37 @@ public class ResumptionUpdateBoundValues extends SSLContextTemplate {
             sslIS.close();
             sslSocket.close();
 
-            sslOS = null;
-            sslIS = null;
-            sslSession = null;
-            sslSocket = null;
-            Reference.reachabilityFence(sslOS);
-            Reference.reachabilityFence(sslIS);
-            Reference.reachabilityFence(sslSession);
-            Reference.reachabilityFence(sslSocket);
-
             return sbListener;
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw ex;
         }
     }
 
-    /*
-     * =============================================================
-     * The remainder is just support stuff
-     */
-
-    // use any free port by default
-    volatile int serverPort = 0;
-
-    volatile Exception serverException = null;
-    volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
+        PrintStream oldStderr = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
 
-        if (args.length == 0) {
-            System.setProperty("test.java.opts", System.getProperty("test.java.opts") +
-                    " -Dtest.src=" + System.getProperty("test.src") +
-                            " -Dtest.jdk=" + System.getProperty("test.jdk") +
-                            " -Djavax.net.debug=ssl");
-
-            System.out.println("test.java.opts: " +
-                    System.getProperty("test.java.opts"));
-
-            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                    "ResumptionUpdateBoundValues", "p");
-
-            OutputAnalyzer output = ProcessTools.executeProcess(pb);
+        try(PrintStream capturedStream = new PrintStream(captured, true, StandardCharsets.UTF_8)) {
+            System.setErr(capturedStream);
             try {
-                output.shouldContain("trigger new session ticket");
-                System.out.println("Found NST in debugging");
-            } catch (Exception e) {
-                throw e;
+                new ResumptionUpdateBoundValues().run();
             } finally {
-                System.out.println("-- BEGIN Stdout:");
-                System.out.println(output.getStdout());
-                System.out.println("-- END Stdout");
-                System.out.println("-- BEGIN Stderr:");
-                System.out.println(output.getStderr());
-                System.out.println("-- END Stderr");
+                captured.flush();
+                System.setErr(oldStderr);
+                oldStderr.print(captured.toString(StandardCharsets.UTF_8));
             }
-            return;
         }
 
-        if (debug)
-            System.setProperty("javax.net.debug", "all");
-
-        /*
-         * Start the tests.
-         */
-
-        new ResumptionUpdateBoundValues().run();
+        new OutputAnalyzer("", captured.toString(StandardCharsets.UTF_8))
+            .stderrShouldContain("trigger new session ticket");
     }
 
-    ArrayBlockingQueue<Thread> threads = new ArrayBlockingQueue<Thread>(100);
-
-    ArrayBlockingQueue<SBListener> sbListeners = new ArrayBlockingQueue<>(100);
-
     private void run() throws Exception {
-        final int count = 1;
-        if (separateServerThread) {
-            startServer(true);
-            startClients(true, count);
-        } else {
-            startClients(true, count);
-            startServer(true);
+        Thread clientThread = startClient();
+        try {
+            doServerSide();
+        } finally {
+            clientThread.join();
         }
-
-        /*
-         * Wait for other side to close down.
-         */
-        Thread t;
-        while ((t = threads.take()) != Thread.currentThread()) {
-            System.out.printf("  joining: %s%n", t);
-            t.join(4000L);
-        }
-        serverReady = false;
-        System.gc();
-        System.gc();
-
 
         SBListener listener = null;
         while ((listener = sbListeners.poll()) != null) {
@@ -258,72 +193,29 @@ public class ResumptionUpdateBoundValues extends SSLContextTemplate {
          * immediately.  If the other thread threw an exception, we
          * should report back.
          */
-        if (serverException != null) {
-            System.out.print("Server Exception:");
-            throw serverException;
-        }
         if (clientException != null) {
             System.out.print("Client Exception:");
             throw clientException;
         }
     }
 
-    void startServer(boolean newThread) throws Exception {
-        if (newThread) {
-            Thread t = new Thread("Server") {
-                public void run() {
-                    try {
-                        doServerSide();
-                    } catch (Exception e) {
-                        /*
-                         * Our server thread just died.
-                         *
-                         * Release the client, if not active already...
-                         */
-                        System.err.println("Server died..." + e);
-                        serverReady = true;
-                        serverException = e;
-                    }
+    Thread startClient() throws Exception {
+        Thread t = new Thread("Client") {
+            public void run() {
+                try {
+                    sbListeners.add(doClientSide());
+                } catch (Exception e) {
+                    /*
+                     * Our client thread just died.
+                     */
+                    System.err.println("Client died..." + e);
+                    clientException = e;
                 }
-            };
-            threads.add(t);
-            t.setDaemon(true);
-            t.start();
-        } else {
-            doServerSide();
-        }
-    }
-
-    void startClients(boolean newThread, int count) throws Exception {
-        for (int i = 0; i < count; i++) {
-            System.out.printf(" newClient: %d%n", i);
-            startClient(newThread);
-        }
-        serverReady = false;
-
-        threads.add(Thread.currentThread());    // add ourselves at the 'end'
-    }
-    void startClient(boolean newThread) throws Exception {
-        if (newThread) {
-            Thread t = new Thread("Client") {
-                public void run() {
-                    try {
-                        sbListeners.add(doClientSide());
-                    } catch (Exception e) {
-                        /*
-                         * Our client thread just died.
-                         */
-                        System.err.println("Client died..." + e);
-                        clientException = e;
-                    }
-                }
-            };
-            System.out.printf(" starting: %s%n", t);
-            threads.add(t);
-            t.start();
-        } else {
-            sbListeners.add(doClientSide());
-        }
+            }
+        };
+        System.out.printf(" starting: %s%n", t);
+        t.start();
+        return t;
     }
 
 
