@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,12 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
-import java.security.spec.AlgorithmParameterSpec;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.NamedParameterSpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.text.MessageFormat;
 import java.util.*;
 import javax.net.ssl.SSLProtocolException;
@@ -40,6 +44,7 @@ import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.util.HexDumpEncoder;
+import sun.security.util.KeyUtil;
 
 /**
  * Pack of the "key_share" extensions.
@@ -606,14 +611,24 @@ final class KeyShareExtension {
                                 && ng.equals(kcred.namedGroup)) {
                             String name = ((NamedParameterSpec)
                                     ng.keAlgParamSpec).getName();
-                            KAKeyDerivation handshakeKD = new KAKeyDerivation(
-                                    name, shc, null, null,
-                                    kcred.getKeyShare());
-                            var encaped = handshakeKD.encapsulate(
-                                    "TlsHandshakeSecret", xp.getRandom());
-                            xp.setKey(encaped.key());
-                            keyShare = new KeyShareEntry(ng.id,
-                                    encaped.encapsulation());
+
+                            byte[] incoming = kcred.getKeyShare();
+                            try {
+                                PublicKey pk = ng.requireRawPublicKey()
+                                        ? KeyUtil.newRawPublicKey(name, incoming)
+                                        : KeyFactory.getInstance(name).generatePublic(
+                                        new X509EncodedKeySpec(KeyUtil.rawToX509(name, incoming)));
+                                KAKeyDerivation handshakeKD = new KAKeyDerivation(
+                                        name, shc, null, pk);
+                                var encaped = handshakeKD.encapsulate(
+                                        "TlsHandshakeSecret", xp.getRandom());
+                                xp.setKey(encaped.key());
+                                keyShare = new KeyShareEntry(ng.id,
+                                        encaped.encapsulation());
+                            } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+                                throw shc.conContext.fatal(Alert.INTERNAL_ERROR, e);
+                            }
+
                         }
                     } else {
                         keyShare = new KeyShareEntry(ng.id, pos.encode());
@@ -739,11 +754,8 @@ final class KeyShareExtension {
         if (cred instanceof NamedGroupCredentials namedGroupCred) {
             if (namedGroupCred instanceof KEMKeyExchange.KEMCredentials
                     kemCred) {
-                AlgorithmParameterSpec paramSpec = kemCred.getNamedGroup().
-                        keAlgParamSpec;
-                String algName = (paramSpec instanceof NamedParameterSpec nps) ?
-                        nps.getName() : null;
-                return algName != null && constraints.permits(
+                String algName = kemCred.getNamedGroup().name;
+                return constraints.permits(
                         EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                         algName,
                         null);

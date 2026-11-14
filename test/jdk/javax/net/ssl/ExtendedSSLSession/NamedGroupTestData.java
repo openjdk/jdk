@@ -48,12 +48,14 @@ final class NamedGroupTestData {
             "secp256k1",
             "ffdhe6144",
             "ffdhe8192",
+            "MLKEM512",
+            "MLKEM768",
+            "MLKEM1024",
             "SecP256r1MLKEM768",
-            "SecP384r1MLKEM1024"
+            "SecP384r1MLKEM1024",
     };
 
-    // X25519MLKEM768, SecP256r1MLKEM768 and SecP384r1MLKEM1024 are not
-    // supported in DTLSv1.2
+    // PQC groups are not supported in DTLSv1.2
     static final String[] DTLS12_SUPPORTED_NG = new String[]{
             "x25519",
             "secp256r1",
