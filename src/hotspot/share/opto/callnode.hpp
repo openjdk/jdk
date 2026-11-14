@@ -961,6 +961,12 @@ public:
     return Compile::current()->eliminate_boxing() && (method() != nullptr) && method()->is_unboxing_method();
   }
 
+  // Boxing and unboxing calls may not have a safepoint on the fast path.
+  // Since the macro flag is cleared before matching, it has no effect on PcDesc emission.
+  virtual bool guaranteed_safepoint() {
+    return !(is_boxing_or_unboxing_call() && is_macro());
+  }
+
   // Late inlining modifies the JVMState, so we need to deep clone it
   // when the call node is cloned (because it is macro node).
   virtual bool needs_deep_clone_jvms(Compile* C) {
