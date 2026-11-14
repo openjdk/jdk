@@ -41,7 +41,7 @@ import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.StructuralName;
 import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
-import compiler.lib.template_framework.RendererException;
+import compiler.lib.template_framework.TemplateFrameworkException;
 
 import static compiler.lib.template_framework.DataName.Mutability.MUTABLE;
 import static compiler.lib.template_framework.DataName.Mutability.IMMUTABLE;
@@ -168,40 +168,40 @@ public class TestTemplate {
         testMapAndJoinIndexed();
 
         // The following tests should all fail, with an expected exception and message.
-        expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
-        expectRendererException(() -> $("name"),                          "A Template method such as");
-        expectRendererException(() -> fuel(),                             "A Template method such as");
-        expectRendererException(() -> testFailingDollarName1(), "Is not a valid '$' name: ''.");
-        expectRendererException(() -> testFailingDollarName2(), "Is not a valid '$' name: '#abc'.");
-        expectRendererException(() -> testFailingDollarName3(), "Is not a valid '$' name: 'abc#'.");
-        expectRendererException(() -> testFailingDollarName4(), "A '$' name should not be null.");
-        expectRendererException(() -> testFailingDollarName5(), "Is not a valid '$' replacement pattern: '$' in '$'.");
-        expectRendererException(() -> testFailingDollarName6(), "Is not a valid '$' replacement pattern: '$' in 'asdf$'.");
-        expectRendererException(() -> testFailingDollarName7(), "Is not a valid '$' replacement pattern: '$1' in 'asdf$1'.");
-        expectRendererException(() -> testFailingLetName1(), "A hashtag replacement should not be null.");
-        expectRendererException(() -> testFailingHashtagName1(), "Is not a valid hashtag replacement name: ''.");
-        expectRendererException(() -> testFailingHashtagName2(), "Is not a valid hashtag replacement name: 'abc#abc'.");
-        expectRendererException(() -> testFailingHashtagName3(), "Is not a valid hashtag replacement name: ''.");
-        expectRendererException(() -> testFailingHashtagName4(), "Is not a valid hashtag replacement name: 'xyz#xyz'.");
-        expectRendererException(() -> testFailingHashtagName5(), "Is not a valid '#' replacement pattern: '#' in '#'.");
-        expectRendererException(() -> testFailingHashtagName6(), "Is not a valid '#' replacement pattern: '#' in 'asdf#'.");
-        expectRendererException(() -> testFailingHashtagName7(), "Is not a valid '#' replacement pattern: '#1' in 'asdf#1'.");
-        expectRendererException(() -> testFailingDollarHashtagName1(), "Is not a valid '#' replacement pattern: '#' in '#$'.");
-        expectRendererException(() -> testFailingDollarHashtagName2(), "Is not a valid '$' replacement pattern: '$' in '$#'.");
-        expectRendererException(() -> testFailingDollarHashtagName3(), "Found zero sized replacement pattern '#$'.");
-        expectRendererException(() -> testFailingDollarHashtagName4(), "Found zero sized replacement pattern '$#'.");
-        expectRendererException(() -> testFailingDollarHashtagName5(), "Found zero sized replacement pattern '#$'.");
-        expectRendererException(() -> testFailingDollarHashtagName6(), "Found zero sized replacement pattern '$#'.");
-        expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
-        expectRendererException(() -> testFailingSample1a(),  "No Name found for DataName.FilterdSet(MUTABLE, subtypeOf(int), supertypeOf(int))");
-        expectRendererException(() -> testFailingSample1b(),  "No Name found for StructuralName.FilteredSet( subtypeOf(StructuralA) supertypeOf(StructuralA))");
-        expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
-        expectRendererException(() -> testFailingHashtag2(), "Duplicate hashtag replacement for #a");
-        expectRendererException(() -> testFailingHashtag3(), "Duplicate hashtag replacement for #a");
-        expectRendererException(() -> testFailingHashtag4(), "Missing hashtag replacement for #a");
-        expectRendererException(() -> testFailingHashtag5(), "Missing hashtag replacement for #a");
-        expectRendererException(() -> testFailingBinding1(), "Duplicate 'bind' not allowed.");
-        expectRendererException(() -> testFailingBinding2(), "Cannot 'get' before 'bind'.");
+        expectTemplateFrameworkException(() -> testFailingNestedRendering(), "Nested render not allowed.");
+        expectTemplateFrameworkException(() -> $("name"),                          "A Template method such as");
+        expectTemplateFrameworkException(() -> fuel(),                             "A Template method such as");
+        expectTemplateFrameworkException(() -> testFailingDollarName1(), "Is not a valid '$' name: ''.");
+        expectTemplateFrameworkException(() -> testFailingDollarName2(), "Is not a valid '$' name: '#abc'.");
+        expectTemplateFrameworkException(() -> testFailingDollarName3(), "Is not a valid '$' name: 'abc#'.");
+        expectTemplateFrameworkException(() -> testFailingDollarName4(), "A '$' name should not be null.");
+        expectTemplateFrameworkException(() -> testFailingDollarName5(), "Is not a valid '$' replacement pattern: '$' in '$'.");
+        expectTemplateFrameworkException(() -> testFailingDollarName6(), "Is not a valid '$' replacement pattern: '$' in 'asdf$'.");
+        expectTemplateFrameworkException(() -> testFailingDollarName7(), "Is not a valid '$' replacement pattern: '$1' in 'asdf$1'.");
+        expectTemplateFrameworkException(() -> testFailingLetName1(), "A hashtag replacement should not be null.");
+        expectTemplateFrameworkException(() -> testFailingHashtagName1(), "Is not a valid hashtag replacement name: ''.");
+        expectTemplateFrameworkException(() -> testFailingHashtagName2(), "Is not a valid hashtag replacement name: 'abc#abc'.");
+        expectTemplateFrameworkException(() -> testFailingHashtagName3(), "Is not a valid hashtag replacement name: ''.");
+        expectTemplateFrameworkException(() -> testFailingHashtagName4(), "Is not a valid hashtag replacement name: 'xyz#xyz'.");
+        expectTemplateFrameworkException(() -> testFailingHashtagName5(), "Is not a valid '#' replacement pattern: '#' in '#'.");
+        expectTemplateFrameworkException(() -> testFailingHashtagName6(), "Is not a valid '#' replacement pattern: '#' in 'asdf#'.");
+        expectTemplateFrameworkException(() -> testFailingHashtagName7(), "Is not a valid '#' replacement pattern: '#1' in 'asdf#1'.");
+        expectTemplateFrameworkException(() -> testFailingDollarHashtagName1(), "Is not a valid '#' replacement pattern: '#' in '#$'.");
+        expectTemplateFrameworkException(() -> testFailingDollarHashtagName2(), "Is not a valid '$' replacement pattern: '$' in '$#'.");
+        expectTemplateFrameworkException(() -> testFailingDollarHashtagName3(), "Found zero sized replacement pattern '#$'.");
+        expectTemplateFrameworkException(() -> testFailingDollarHashtagName4(), "Found zero sized replacement pattern '$#'.");
+        expectTemplateFrameworkException(() -> testFailingDollarHashtagName5(), "Found zero sized replacement pattern '#$'.");
+        expectTemplateFrameworkException(() -> testFailingDollarHashtagName6(), "Found zero sized replacement pattern '$#'.");
+        expectTemplateFrameworkException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
+        expectTemplateFrameworkException(() -> testFailingSample1a(),  "No Name found for DataName.FilterdSet(MUTABLE, subtypeOf(int), supertypeOf(int))");
+        expectTemplateFrameworkException(() -> testFailingSample1b(),  "No Name found for StructuralName.FilteredSet( subtypeOf(StructuralA) supertypeOf(StructuralA))");
+        expectTemplateFrameworkException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
+        expectTemplateFrameworkException(() -> testFailingHashtag2(), "Duplicate hashtag replacement for #a");
+        expectTemplateFrameworkException(() -> testFailingHashtag3(), "Duplicate hashtag replacement for #a");
+        expectTemplateFrameworkException(() -> testFailingHashtag4(), "Missing hashtag replacement for #a");
+        expectTemplateFrameworkException(() -> testFailingHashtag5(), "Missing hashtag replacement for #a");
+        expectTemplateFrameworkException(() -> testFailingBinding1(), "Duplicate 'bind' not allowed.");
+        expectTemplateFrameworkException(() -> testFailingBinding2(), "Cannot 'get' before 'bind'.");
         expectIllegalArgumentException(() -> scope(null),              "Unexpected tokens: null");
         expectIllegalArgumentException(() -> scope("x", null),         "Unexpected token: null");
         expectIllegalArgumentException(() -> scope(new Hook("Hook1")), "Unexpected token:");
@@ -227,21 +227,21 @@ public class TestTemplate {
         expectIllegalArgumentException(() -> testFailingAddStructuralName3(), "Unexpected weight: ");
         expectUnsupportedOperationException(() -> testFailingSample2a(), "Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
         expectUnsupportedOperationException(() -> testFailingSample2b(), "Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
-        expectRendererException(() -> testFailingAddNameDuplication1(), "Duplicate name:");
-        expectRendererException(() -> testFailingAddNameDuplication2(), "Duplicate name:");
-        expectRendererException(() -> testFailingAddNameDuplication3(), "Duplicate name:");
-        expectRendererException(() -> testFailingAddNameDuplication4(), "Duplicate name:");
-        expectRendererException(() -> testFailingAddNameDuplication5(), "Duplicate name:");
-        expectRendererException(() -> testFailingAddNameDuplication6(), "Duplicate name:");
-        expectRendererException(() -> testFailingAddNameDuplication7(), "Duplicate name:");
-        expectRendererException(() -> testFailingAddNameDuplication8(), "Duplicate name:");
-        expectRendererException(() -> testFailingScope1(), "Duplicate hashtag replacement for #x. previous: x1, new: x2");
-        expectRendererException(() -> testFailingScope2(), "Duplicate hashtag replacement for #x. previous: x1, new: x2");
-        expectRendererException(() -> testFailingScope3(), "Duplicate hashtag replacement for #x. previous: a, new: b");
-        expectRendererException(() -> testFailingScope4(), "Duplicate hashtag replacement for #x. previous: a, new: b");
-        expectRendererException(() -> testFailingScope5(), "Duplicate name:");
-        expectRendererException(() -> testFailingScope6(), "Duplicate name:");
-        expectRendererException(() -> testFailingScope7(), "Duplicate name:");
+        expectTemplateFrameworkException(() -> testFailingAddNameDuplication1(), "Duplicate name:");
+        expectTemplateFrameworkException(() -> testFailingAddNameDuplication2(), "Duplicate name:");
+        expectTemplateFrameworkException(() -> testFailingAddNameDuplication3(), "Duplicate name:");
+        expectTemplateFrameworkException(() -> testFailingAddNameDuplication4(), "Duplicate name:");
+        expectTemplateFrameworkException(() -> testFailingAddNameDuplication5(), "Duplicate name:");
+        expectTemplateFrameworkException(() -> testFailingAddNameDuplication6(), "Duplicate name:");
+        expectTemplateFrameworkException(() -> testFailingAddNameDuplication7(), "Duplicate name:");
+        expectTemplateFrameworkException(() -> testFailingAddNameDuplication8(), "Duplicate name:");
+        expectTemplateFrameworkException(() -> testFailingScope1(), "Duplicate hashtag replacement for #x. previous: x1, new: x2");
+        expectTemplateFrameworkException(() -> testFailingScope2(), "Duplicate hashtag replacement for #x. previous: x1, new: x2");
+        expectTemplateFrameworkException(() -> testFailingScope3(), "Duplicate hashtag replacement for #x. previous: a, new: b");
+        expectTemplateFrameworkException(() -> testFailingScope4(), "Duplicate hashtag replacement for #x. previous: a, new: b");
+        expectTemplateFrameworkException(() -> testFailingScope5(), "Duplicate name:");
+        expectTemplateFrameworkException(() -> testFailingScope6(), "Duplicate name:");
+        expectTemplateFrameworkException(() -> testFailingScope7(), "Duplicate name:");
     }
 
     public static void testSingleLine() {
@@ -3838,7 +3838,7 @@ public class TestTemplate {
         String code = template1.render();
     }
 
-    // Duplicate name in the same scope, name identical -> expect RendererException.
+    // Duplicate name in the same scope, name identical -> expect TemplateFrameworkException.
     public static void testFailingAddNameDuplication1() {
         var template1 = Template.make(() -> scope(
             addDataName("name", myInt, MUTABLE),
@@ -3847,7 +3847,7 @@ public class TestTemplate {
         String code = template1.render();
     }
 
-    // Duplicate name in the same scope, names have different mutability -> expect RendererException.
+    // Duplicate name in the same scope, names have different mutability -> expect TemplateFrameworkException.
     public static void testFailingAddNameDuplication2() {
         var template1 = Template.make(() -> scope(
             addDataName("name", myInt, MUTABLE),
@@ -3856,7 +3856,7 @@ public class TestTemplate {
         String code = template1.render();
     }
 
-    // Duplicate name in the same scope, names have different type -> expect RendererException.
+    // Duplicate name in the same scope, names have different type -> expect TemplateFrameworkException.
     public static void testFailingAddNameDuplication3() {
         var template1 = Template.make(() -> scope(
             addDataName("name", myInt, MUTABLE),
@@ -3865,7 +3865,7 @@ public class TestTemplate {
         String code = template1.render();
     }
 
-    // Duplicate name in the same scope, name identical -> expect RendererException.
+    // Duplicate name in the same scope, name identical -> expect TemplateFrameworkException.
     public static void testFailingAddNameDuplication4() {
         var template1 = Template.make(() -> scope(
             addStructuralName("name", myStructuralTypeA),
@@ -3874,7 +3874,7 @@ public class TestTemplate {
         String code = template1.render();
     }
 
-    // Duplicate name in the same scope, names have different type -> expect RendererException.
+    // Duplicate name in the same scope, names have different type -> expect TemplateFrameworkException.
     public static void testFailingAddNameDuplication5() {
         var template1 = Template.make(() -> scope(
             addStructuralName("name", myStructuralTypeA),
@@ -3883,7 +3883,7 @@ public class TestTemplate {
         String code = template1.render();
     }
 
-    // Duplicate name in inner Template, name identical -> expect RendererException.
+    // Duplicate name in inner Template, name identical -> expect TemplateFrameworkException.
     public static void testFailingAddNameDuplication6() {
         var template1 = Template.make(() -> scope(
             addDataName("name", myInt, MUTABLE)
@@ -3895,7 +3895,7 @@ public class TestTemplate {
         String code = template2.render();
     }
 
-    // Duplicate name in Hook scope, name identical -> expect RendererException.
+    // Duplicate name in Hook scope, name identical -> expect TemplateFrameworkException.
     public static void testFailingAddNameDuplication7() {
         var hook1 = new Hook("Hook1");
 
@@ -3908,7 +3908,7 @@ public class TestTemplate {
         String code = template1.render();
     }
 
-    // Duplicate name in Hook.insert, name identical -> expect RendererException.
+    // Duplicate name in Hook.insert, name identical -> expect TemplateFrameworkException.
     public static void testFailingAddNameDuplication8() {
         var hook1 = new Hook("Hook1");
 
@@ -4000,13 +4000,13 @@ public class TestTemplate {
         String code = template.render();
     }
 
-    public static void expectRendererException(FailingTest test, String errorPrefix) {
+    public static void expectTemplateFrameworkException(FailingTest test, String errorPrefix) {
         try {
             test.run();
-            System.out.println("Should have thrown RendererException with prefix: " + errorPrefix);
+            System.out.println("Should have thrown TemplateFrameworkException with prefix: " + errorPrefix);
             throw new RuntimeException("Should have thrown!");
-        } catch(RendererException e) {
-            if (!e.getMessage().startsWith(errorPrefix)) {
+        } catch(TemplateFrameworkException e) {
+            if (!e.getMessage().startsWith("Exception in Template Framework:" + System.lineSeparator() + errorPrefix)) {
                 System.out.println("Should have thrown with prefix: " + errorPrefix);
                 System.out.println("got: " + e.getMessage());
                 throw new RuntimeException("Prefix mismatch", e);
