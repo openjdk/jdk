@@ -2105,8 +2105,9 @@ private:
   void vpunpckhdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpunpckhqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
-  // Interleave Low Quadwords
+  // Interleave Low/High Quadwords
   void punpcklqdq(XMMRegister dst, XMMRegister src);
+  void punpckhqdq(XMMRegister dst, XMMRegister src);
 
   void evpunpcklqdq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void evpunpcklqdq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
