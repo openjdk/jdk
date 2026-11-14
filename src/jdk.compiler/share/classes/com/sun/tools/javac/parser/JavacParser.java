@@ -1093,10 +1093,10 @@ public class JavacParser implements Parser {
 
     public JCExpression unannotatedType(boolean allowVar, int newmode) {
         JCExpression result = term(newmode);
-        Name restrictedTypeName = restrictedTypeName(result, !allowVar);
+        JCIdent restrictedTypeTree = restrictedTypeName(result, !allowVar);
 
-        if (restrictedTypeName != null && (!allowVar || restrictedTypeName != names.var)) {
-            syntaxError(result.pos, Errors.RestrictedTypeNotAllowedHere(restrictedTypeName));
+        if (restrictedTypeTree != null && (!allowVar || restrictedTypeTree.name != names.var)) {
+            syntaxError(restrictedTypeTree.pos, Errors.RestrictedTypeNotAllowedHere(restrictedTypeTree.name));
         }
 
         if ((lastmode & TYPE) == 0) {
@@ -2162,13 +2162,14 @@ public class JavacParser implements Parser {
         if (explicitParams) {
             LambdaClassifier lambdaClassifier = new LambdaClassifier();
             for (JCVariableDecl param: params) {
-                Name restrictedTypeName;
+                JCIdent restrictedTypeTree;
                 if (param.vartype != null &&
-                        (restrictedTypeName = restrictedTypeName(param.vartype, false)) != null &&
+                        (restrictedTypeTree = restrictedTypeName(param.vartype, false)) != null &&
                         param.vartype.hasTag(TYPEARRAY)) {
                     log.error(DiagnosticFlag.SYNTAX, param.pos,
                         Feature.VAR_SYNTAX_IMPLICIT_LAMBDAS.allowedInSource(source)
-                            ? Errors.RestrictedTypeNotAllowedArray(restrictedTypeName) : Errors.RestrictedTypeNotAllowedHere(restrictedTypeName));
+                            ? Errors.RestrictedTypeNotAllowedArray(restrictedTypeTree.name)
+                            : Errors.RestrictedTypeNotAllowedHere(restrictedTypeTree.name));
                 }
                 lambdaClassifier.addParameter(param);
                 if (lambdaClassifier.result() == LambdaParameterKind.ERROR) {
@@ -3013,7 +3014,7 @@ public class JavacParser implements Parser {
                 }
             }
         }
-        if ((isValueModifier()) && allowValueClasses) {
+        if ((isValueModifier(true))) {
             checkSourceLevel(Feature.VALUE_CLASSES);
             dc = token.docComment();
             return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
@@ -3631,7 +3632,7 @@ public class JavacParser implements Parser {
                     flag = Flags.SEALED;
                     break;
                 }
-                if (isValueModifier()) {
+                if (isValueModifier(false)) {
                     checkSourceLevel(Feature.VALUE_CLASSES);
                     flag = Flags.VALUE_CLASS;
                     break;
@@ -3870,12 +3871,14 @@ public class JavacParser implements Parser {
         return varType;
     }
 
-    Name restrictedTypeName(JCExpression e, boolean shouldWarn) {
+    JCIdent restrictedTypeName(JCExpression e, boolean shouldWarn) {
         switch (e.getTag()) {
             case IDENT:
-                return restrictedTypeNameStartingAtSource(((JCIdent)e).name, e.pos, shouldWarn) != null ? ((JCIdent)e).name : null;
+                return restrictedTypeNameStartingAtSource(((JCIdent)e).name, e.pos, shouldWarn) != null ? (JCIdent)e : null;
             case TYPEARRAY:
                 return restrictedTypeName(((JCArrayTypeTree)e).elemtype, shouldWarn);
+            case ANNOTATED_TYPE:
+                return restrictedTypeName(((JCAnnotatedType)e).underlyingType, shouldWarn);
             default:
                 return null;
         }
@@ -5010,8 +5013,7 @@ public class JavacParser implements Parser {
 
     protected boolean isNonSealedClassStart(boolean local) {
         if (isNonSealedIdentifier(token, 0)) {
-            Token next = S.token(3);
-            return allowedAfterSealedOrNonSealed(next, local, true);
+            return allowedAfterSealedNonSealedOrValue(3, local);
         }
         return false;
     }
@@ -5030,25 +5032,10 @@ public class JavacParser implements Parser {
         return false;
     }
 
-    protected boolean isValueModifier() {
+    protected boolean isValueModifier(boolean local) {
         if (token.kind == IDENTIFIER && token.name() == names.value) {
-            boolean isValueModifier = false;
-            Token next = S.token(1);
-            switch (next.kind) {
-                case PRIVATE: case PROTECTED: case PUBLIC: case STATIC: case TRANSIENT:
-                case FINAL: case ABSTRACT: case NATIVE: case VOLATILE: case SYNCHRONIZED:
-                case STRICTFP: case MONKEYS_AT: case DEFAULT: case BYTE: case SHORT:
-                case CHAR: case INT: case LONG: case FLOAT: case DOUBLE: case BOOLEAN: case VOID:
-                case CLASS: case INTERFACE: case ENUM:
-                    isValueModifier = true;
-                    break;
-                case IDENTIFIER: // value record R || value value
-                    if (next.name() == names.record || next.name() == names.value
-                            || (mode & EXPR) != 0)
-                        isValueModifier = true;
-                    break;
-            }
-            if (isValueModifier) {
+            if (allowedAfterSealedNonSealedOrValue(1, local)) {
+                checkSourceLevel(Feature.SEALED_CLASSES);
                 return true;
             }
         }
@@ -5057,8 +5044,7 @@ public class JavacParser implements Parser {
 
     protected boolean isSealedClassStart(boolean local) {
         if (token.name() == names.sealed) {
-            Token next = S.token(1);
-            if (allowedAfterSealedOrNonSealed(next, local, false)) {
+            if (allowedAfterSealedNonSealedOrValue(1, local)) {
                 checkSourceLevel(Feature.SEALED_CLASSES);
                 return true;
             }
@@ -5066,27 +5052,42 @@ public class JavacParser implements Parser {
         return false;
     }
 
-    private boolean allowedAfterSealedOrNonSealed(Token next, boolean local, boolean currentIsNonSealed) {
-        return local ?
+    private boolean allowedAfterSealedNonSealedOrValue(int lookahead, boolean local) {
+        while (true) {
+            Token next = S.token(lookahead);
             switch (next.kind) {
                 case MONKEYS_AT -> {
-                    Token afterNext = S.token(2);
-                    yield afterNext.kind != INTERFACE || currentIsNonSealed;
+                    Token afterNext = S.token(lookahead + 1);
+                    if (afterNext.kind == INTERFACE) {
+                        return true;
+                    }
+                    lookahead = skipAnnotation(lookahead + 1);
                 }
-                case ABSTRACT, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> true;
-                default -> false;
-            } :
-            switch (next.kind) {
-                case MONKEYS_AT -> {
-                    Token afterNext = S.token(2);
-                    yield afterNext.kind != INTERFACE || currentIsNonSealed;
+                case ABSTRACT, STATIC, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> {return true;}
+                case PUBLIC, PROTECTED, PRIVATE -> {return !local;}
+                case VOID, BOOLEAN, BYTE, SHORT, CHAR, INT, LONG, FLOAT, DOUBLE -> {return true;}
+                case IDENTIFIER -> {
+                    if (next.name() == names.record && S.token(lookahead + 1).kind == IDENTIFIER) {
+                        return true;
+                    } else if (isNonSealedIdentifier(next, lookahead)) {
+                        lookahead += 3;
+                    } else if (next.name() == names.sealed ||
+                        next.name() == names.value) {
+                        lookahead++;
+                    } else {
+                        switch (S.token(lookahead + 1).kind) {
+                            case IDENTIFIER, DOT, LT, LBRACKET, MONKEYS_AT -> {
+                                return true;
+                            }
+                            default -> {
+                                return false;
+                            }
+                        }
+                    }
                 }
-                case PUBLIC, PROTECTED, PRIVATE, ABSTRACT, STATIC, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> true;
-                case IDENTIFIER -> isNonSealedIdentifier(next, currentIsNonSealed ? 3 : 1) ||
-                        next.name() == names.sealed ||
-                        allowValueClasses && next.name() == names.value;
-                default -> false;
+                default -> {return false;}
             };
+        }
     }
 
     /** MethodDeclaratorRest =
