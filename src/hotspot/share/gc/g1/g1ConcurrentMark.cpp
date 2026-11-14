@@ -52,7 +52,6 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/partialArraySplitter.inline.hpp"
-#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/partialArrayTaskStats.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
