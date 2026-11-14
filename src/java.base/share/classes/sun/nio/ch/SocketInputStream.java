@@ -80,9 +80,13 @@ class SocketInputStream extends InputStream {
         int timeout = timeoutSupplier.getAsInt();
         if (jfrTracing && SocketReadEvent.enabled()) {
             long start = SocketReadEvent.timestamp();
-            int n = implRead(b, off, len, timeout);
-            SocketReadEvent.offer(start, n, sc.remoteAddress(), timeout);
-            return n;
+            int nbytes = 0;
+            try {
+                nbytes = implRead(b, off, len, timeout);
+            } finally {
+                SocketReadEvent.offer(start, nbytes, sc.remoteAddress(), timeout);
+            }
+            return nbytes;
         }
         return implRead(b, off, len, timeout);
     }

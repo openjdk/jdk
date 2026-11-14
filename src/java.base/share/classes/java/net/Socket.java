@@ -977,8 +977,12 @@ public class Socket implements java.io.Closeable {
         public int read(byte[] b, int off, int len) throws IOException {
             if (jfrTracing && SocketReadEvent.enabled()) {
                 long start = SocketReadEvent.timestamp();
-                int nbytes = implRead(b, off, len);
-                SocketReadEvent.offer(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
+                int nbytes = 0;
+                try {
+                    nbytes = implRead(b, off, len);
+                } finally {
+                    SocketReadEvent.offer(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
+                }
                 return nbytes;
             }
             return implRead(b, off, len);
@@ -1090,8 +1094,13 @@ public class Socket implements java.io.Closeable {
         public void write(byte[] b, int off, int len) throws IOException {
             if (jfrTracing && SocketWriteEvent.enabled()) {
                 long start = SocketWriteEvent.timestamp();
-                implWrite(b, off, len);
-                SocketWriteEvent.offer(start, len, parent.getRemoteSocketAddress());
+                int nbytes = 0;
+                try {
+                    implWrite(b, off, len);
+                    nbytes = len;
+                } finally {
+                    SocketWriteEvent.offer(start, nbytes, parent.getRemoteSocketAddress());
+                }
                 return;
             }
             implWrite(b, off, len);

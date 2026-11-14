@@ -63,8 +63,13 @@ class SocketOutputStream extends OutputStream {
     public void write(byte[] b, int off, int len) throws IOException {
         if (jfrTracing && SocketWriteEvent.enabled()) {
             long start = SocketWriteEvent.timestamp();
-            sc.blockingWriteFully(b, off, len);
-            SocketWriteEvent.offer(start, len, sc.remoteAddress());
+            int nbytes = 0;
+            try {
+                sc.blockingWriteFully(b, off, len);
+                nbytes = len;
+            } finally {
+                SocketWriteEvent.offer(start, nbytes, sc.remoteAddress());
+            }
             return;
         }
         sc.blockingWriteFully(b, off, len);
