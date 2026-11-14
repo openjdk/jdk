@@ -53,9 +53,6 @@ class nmethod;
                 (_hr_)->get_short_type_str(), \
                 p2i((_hr_)->bottom()), p2i((_hr_)->top()), p2i((_hr_)->end())
 
-// sentinel value for hrm_index
-#define G1_NO_HRM_INDEX (UINT_MAX)
-
 // A G1HeapRegion is the smallest piece of a G1CollectedHeap that
 // can be collected independently.
 
@@ -87,6 +84,13 @@ class G1HeapRegion : public CHeapObj<mtGC> {
   HeapWord* _pre_dummy_top;
 
 public:
+  // Valid region indexes range from 0 .. MaxNumRegions-1.
+  // We restrict to INT_MAX because we internally need the NoRegionIdx sentinel internally.
+  // For simplicity, limit to 2^31 regions which allow more than enough maximum heap size.
+  static const uint MaxNumRegions = INT_MAX;
+  // Sentinel value for an invalid region index.
+  static const uint InvalidRegionIdx = UINT_MAX;
+
   HeapWord* bottom() const         { return _bottom; }
   HeapWord* end() const            { return _end;    }
 
