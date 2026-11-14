@@ -175,10 +175,10 @@
           "of regions that would be used, within min/max region size "      \
           "limits.")                                                        \
                                                                             \
-  product(ccstr, ShenandoahGCMode, "satb",                                  \
+  product(ccstr, ShenandoahGCMode, "generational",                          \
           "GC mode to use.  Among other things, this defines which "        \
           "barriers are in in use. Possible values are:"                    \
-          " satb - snapshot-at-the-beginning concurrent GC (three pass mark-evac-update);"  \
+          " satb - single generation, concurrent GCs"                       \
           " passive - stop the world full GC only (diagnostic mode);"       \
           " generational - generational concurrent GC")                     \
                                                                             \

@@ -54,7 +54,6 @@ public class TestExplicitGCNoConcurrent {
         };
 
         String[] opts = new String[] {
-                "",
                 "-XX:-ExplicitGCInvokesConcurrent",
                 "-XX:+ExplicitGCInvokesConcurrent"
         };
@@ -67,11 +66,14 @@ public class TestExplicitGCNoConcurrent {
                     "-Xlog:gc",
                     "-XX:+UnlockDiagnosticVMOptions",
                     opt,
+                    "-XX:ShenandoahGCMode=passive",
                     "-XX:ShenandoahGCHeuristics=passive",
                     TestExplicitGCNoConcurrent.class.getName(),
                     "test");
             for (String p : concurrent) {
+                output.shouldContain("Trigger");
                 output.shouldNotContain(p);
+                output.shouldHaveExitValue(0);
             }
         }
     }

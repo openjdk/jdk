@@ -39,10 +39,10 @@
  * @test id=aggressive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=aggressive
  *      -Dprecise=false
  *      TestChurnNotifications
  */
@@ -51,10 +51,10 @@
  * @test id=adaptive
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=adaptive
  *      -Dprecise=false
  *      TestChurnNotifications
  */
@@ -63,10 +63,10 @@
  * @test id=static
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=static
  *      -Dprecise=false
  *      TestChurnNotifications
  */
@@ -75,10 +75,10 @@
  * @test id=compact
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
- * @requires vm.gc.Shenandoah & vm.opt.ShenandoahGCMode != "generational"
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=compact
  *      -Dprecise=false
  *      TestChurnNotifications
  */
