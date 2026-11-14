@@ -703,7 +703,7 @@ void Metaspace::ergo_initialize() {
 
   // Set MetaspaceSize, MinMetaspaceExpansion and MaxMetaspaceExpansion
   if (MetaspaceSize > MaxMetaspaceSize) {
-    MetaspaceSize = MaxMetaspaceSize;
+    FLAG_SET_ERGO(MetaspaceSize, MaxMetaspaceSize);
   }
 
   MetaspaceSize = align_down_bounded(MetaspaceSize, commit_alignment());

@@ -407,18 +407,6 @@ JVMFlag::Error MetaspaceSizeConstraintFunc(size_t value, bool verbose) {
   }
 }
 
-JVMFlag::Error MaxMetaspaceSizeConstraintFunc(size_t value, bool verbose) {
-  if (value < MetaspaceSize) {
-    JVMFlag::printError(verbose,
-                        "MaxMetaspaceSize (%zu) must be "
-                        "greater than or equal to MetaspaceSize (%zu)\n",
-                        value, MaxMetaspaceSize);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
-  }
-}
-
 JVMFlag::Error GCCardSizeInBytesConstraintFunc(uint value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,

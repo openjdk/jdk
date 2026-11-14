@@ -1396,11 +1396,16 @@ const int ObjectAlignmentInBytes = 8;
   product(size_t, MetaspaceSize, NOT_LP64(16 * M) LP64_ONLY(21 * M),        \
           "Initial threshold (in bytes) at which a garbage collection "     \
           "is done to reduce Metaspace usage")                              \
-          constraint(MetaspaceSizeConstraintFunc,AfterErgo)                 \
+          constraint(MetaspaceSizeConstraintFunc,AtParse)                   \
                                                                             \
   product(size_t, MaxMetaspaceSize, max_uintx,                              \
           "Maximum size of Metaspaces (in bytes)")                          \
-          constraint(MaxMetaspaceSizeConstraintFunc,AfterErgo)              \
+          /* 0 is unreasonable; JEP-387 modified a negative test to */      \
+          /* use 4K to force an OutOfMemory condition. */                   \
+          range(4 * K, max_uintx)                                           \
+          /* Metaspace::ergo_initialize() will silently lower a */          \
+          /* default MetaspaceSize value that is higher than the */         \
+          /* specified MaxMetaspaceSize. */                                 \
                                                                             \
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \
