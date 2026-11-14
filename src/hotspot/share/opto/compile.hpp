@@ -738,7 +738,7 @@ public:
   void begin_method();
   void end_method();
 
-  void print_method(CompilerPhaseType compile_phase, int level, Node* n = nullptr);
+  void print_method(CompilerPhaseType compile_phase, int level, const Node* n = nullptr);
 
   Stress& stress() { return _stress; }
 
@@ -1176,7 +1176,7 @@ public:
   void remove_useless_nodes(GrowableArray<N*>& node_list, const Unique_Node_List<Node>& useful);
 
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, const Unique_Node_List<Node>& useful);
-  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead);
+  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, CallNode* dead);
 
   void remove_useless_coarsened_locks(const Unique_Node_List<Node>& useful);
 

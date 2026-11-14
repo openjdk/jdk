@@ -797,10 +797,10 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) cons
 }
 
 bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, ArrayCopyNode*& ac) {
-  if (n != nullptr &&
-      n->is_ArrayCopy() &&
-      n->as_ArrayCopy()->may_modify(t_oop, phase)) {
-    ac = n->as_ArrayCopy();
+  if (ArrayCopyNode* n_copy = isa<ArrayCopyNode>(n);
+      n_copy != nullptr &&
+      n_copy->may_modify(t_oop, phase)) {
+    ac = n_copy;
     return true;
   }
   return false;

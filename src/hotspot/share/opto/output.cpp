@@ -3135,7 +3135,7 @@ void Scheduling::garbage_collect_pinch_nodes() {
   int trace_cnt = 0;
   for (uint k = 0; k < _reg_node.max(); k++) {
     Node* pinch = _reg_node[k];
-    if ((pinch != nullptr) && pinch->Opcode() == Op_Node &&
+    if (Node::is<Op_Node>(pinch) &&
         // no predecence input edges
         (pinch->req() == pinch->len() || pinch->in(pinch->req()) == nullptr) ) {
       cleanup_pinch(pinch);
@@ -3160,7 +3160,7 @@ void Scheduling::garbage_collect_pinch_nodes() {
 
 // Clean up a pinch node for reuse.
 void Scheduling::cleanup_pinch( Node *pinch ) {
-  assert (pinch && pinch->Opcode() == Op_Node && pinch->req() == 1, "just checking");
+  assert(Node::is<Op_Node>(pinch) && pinch->req() == 1, "just checking");
 
   for (DUIterator_Last imin, i = pinch->last_outs(imin); i >= imin; ) {
     Node* use = pinch->last_out(i);

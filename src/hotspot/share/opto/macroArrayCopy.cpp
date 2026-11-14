@@ -881,7 +881,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
   }
 
   assert((*ctrl)->is_Proj(), "MemBar control projection");
-  assert((*ctrl)->in(0)->isa_MemBar(), "MemBar node");
+  assert((*ctrl)->in(0)->is_MemBar(), "MemBar node");
   (*ctrl)->in(0)->isa_MemBar()->set_trailing_expanded_array_copy();
 
   _igvn.replace_node(_callprojs->fallthrough_memproj, out_mem);

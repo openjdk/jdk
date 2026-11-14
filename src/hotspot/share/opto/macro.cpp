@@ -2649,7 +2649,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
   if (alock->is_Lock()) {
     // Search for MemBarAcquireLock node and delete it also.
     MemBarNode* membar = fallthroughproj->unique_ctrl_out()->as_MemBar();
-    assert(membar != nullptr && membar->Opcode() == Op_MemBarAcquireLock, "");
+    assert(Node::is<Op_MemBarAcquireLock>(membar), "");
     Node* ctrlproj = membar->proj_out(TypeFunc::Control);
     Node* memproj = membar->proj_out(TypeFunc::Memory);
     _igvn.replace_node(ctrlproj, fallthroughproj);

@@ -54,8 +54,7 @@
 //------------------------------is_loop_exit-----------------------------------
 // Given an IfNode, return the loop-exiting projection or null if both
 // arms remain in the loop.
-Node *IdealLoopTree::is_loop_exit(Node *iff) const {
-  assert(iff->is_If(), "not an If: %s", iff->Name());
+Node* IdealLoopTree::is_loop_exit(const IfNode* iff) const {
   assert(is_member(_phase->get_loop(iff)), "not related");
 
   if (iff->outcnt() != 2) {
@@ -84,8 +83,8 @@ IfFalseNode* IdealLoopTree::unique_loop_exit_proj_or_null() {
     assert(_phase->is_dominator(head(), tail()), "sanity");
     for (Node* ctrl = tail(); ctrl != head(); ctrl = ctrl->in(0)) {
       assert(is_member(_phase->get_loop(ctrl)), "sanity");
-      if (ctrl->is_If()) {
-        if (!is_loop_exit(ctrl->as_If())) {
+      if (IfNode* iff = ctrl->isa_If(); iff != nullptr) {
+        if (!is_loop_exit(iff)) {
           continue; // local branch
         } else if (ctrl != loop_end) {
           return nullptr; // multiple loop exits
@@ -247,7 +246,7 @@ float IdealLoopTree::compute_profile_trip_cnt_helper(Node* n) {
     IfNode *iff = n->as_If();
     if (iff->_fcnt != COUNT_UNKNOWN && iff->_prob != PROB_UNKNOWN) {
       Node *exit = is_loop_exit(iff);
-      if (exit) {
+      if (exit != nullptr) {
         float exit_prob = iff->_prob;
         if (exit->Opcode() == Op_IfFalse) {
           exit_prob = 1.0 - exit_prob;
@@ -288,22 +287,22 @@ void IdealLoopTree::compute_profile_trip_cnt(PhaseIdealLoop *phase) {
   float trip_cnt = (float)max_jint; // default is big
 
   Node* back = head->in(LoopNode::LoopBackControl);
+  IfNode* back_if = nullptr;
   while (back != head) {
-    if ((back->Opcode() == Op_IfTrue || back->Opcode() == Op_IfFalse) &&
-        back->in(0) &&
-        back->in(0)->is_If() &&
-        back->in(0)->as_If()->_fcnt != COUNT_UNKNOWN &&
-        back->in(0)->as_If()->_prob != PROB_UNKNOWN &&
-        (back->Opcode() == Op_IfTrue ? 1-back->in(0)->as_If()->_prob : back->in(0)->as_If()->_prob) > PROB_MIN) {
-      break;
+    if (back->Opcode() == Op_IfTrue || back->Opcode() == Op_IfFalse) {
+      back_if = Node::isa<IfNode>(back->in(0));
+      if (back_if != nullptr &&
+          back_if->_fcnt != COUNT_UNKNOWN &&
+          back_if->_prob != PROB_UNKNOWN &&
+          (back->Opcode() == Op_IfTrue ? 1 - back_if->_prob : back_if->_prob) > PROB_MIN) {
+        break;
+      }
     }
     back = phase->idom(back);
   }
   if (back != head) {
-    assert((back->Opcode() == Op_IfTrue || back->Opcode() == Op_IfFalse) &&
-           back->in(0), "if-projection exists");
-    IfNode* back_if = back->in(0)->as_If();
-    float loop_back_cnt = back_if->_fcnt * (back->Opcode() == Op_IfTrue ? back_if->_prob : (1 - back_if->_prob));
+    assert(back_if != nullptr, "if-projection exists");
+    float loop_back_cnt = back_if->_fcnt * (back->Opcode() == Op_IfTrue ? back_if->_prob : 1 - back_if->_prob);
 
     // Now compute a loop exit count
     float loop_exit_cnt = 0.0f;
@@ -640,7 +639,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
              test->Opcode() == Op_ParsePredicate,
              "Check this code when new subtype is added");
       // Condition is not a member of this loop?
-      if (!is_member(phase->get_loop(ctrl)) && is_loop_exit(test)) {
+      if (!is_member(phase->get_loop(ctrl)) && is_loop_exit(test->as_If())) {
         return estimate;    // Found reason to peel!
       }
     }
@@ -1521,7 +1520,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
       // Found a test like 'trip+off vs limit'. Test is an IfNode, has two (2)
       // projections. If BOTH are in the loop we need loop unswitching instead
       // of iteration splitting.
-      if (is_loop_exit(iff)) {
+      if (is_loop_exit(iff->as_If())) {
         // Found valid reason to split iterations (if there is room).
         // NOTE: Usually a gross overestimate.
         // Long range checks cause the loop to be transformed in a loop nest which only causes a fixed number of nodes
@@ -1620,12 +1619,12 @@ void PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNo
 void PhaseIdealLoop::ensure_zero_trip_guard_proj(Node* node, bool is_main_loop) {
   assert(node->is_IfProj(), "must be the zero trip guard If node");
   Node* zer_bol = node->in(0)->in(1);
-  assert(zer_bol != nullptr && zer_bol->is_Bool(), "must be Bool");
+  assert(Node::is<BoolNode>(zer_bol), "must be Bool");
   Node* zer_cmp = zer_bol->in(1);
-  assert(zer_cmp != nullptr && zer_cmp->Opcode() == Op_CmpI, "must be CmpI");
+  assert(Node::is<Op_CmpI>(zer_cmp), "must be CmpI");
   // For the main loop, the opaque node is the second input to zer_cmp, for the post loop it's the first input node
   Node* zer_opaq = zer_cmp->in(is_main_loop ? 2 : 1);
-  assert(zer_opaq != nullptr && zer_opaq->Opcode() == Op_OpaqueZeroTripGuard, "must be OpaqueZeroTripGuard");
+  assert(Node::is<Op_OpaqueZeroTripGuard>(zer_opaq), "must be OpaqueZeroTripGuard");
 }
 #endif
 
@@ -1906,7 +1905,7 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree* loop, Node_List<Node
 }
 
 Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop) {
-  assert(store != nullptr && store->is_Store(), "starting point should be a store node");
+  assert(Node::is<StoreNode>(store), "starting point should be a store node");
   // Follow the memory uses until we get out of the loop.
   // Store nodes in the outer loop body were moved by PhaseIdealLoop::try_move_store_after_loop.
   // Because of the conditions in try_move_store_after_loop (no other usage in the loop body
@@ -3192,13 +3191,13 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 
   // Check loop body for tests of trip-counter plus loop-invariant vs loop-variant.
   for (uint i = 0; i < loop->_body.size(); i++) {
-    Node *iff = loop->_body[i];
-    if (iff->Opcode() == Op_If ||
-        iff->Opcode() == Op_RangeCheck) { // Test?
+    if (IfNode* iff = Node::isa<IfNode>(loop->_body[i]);
+        iff != nullptr &&
+        (iff->Opcode() == Op_If || iff->Opcode() == Op_RangeCheck)) { // Test?
       // Test is an IfNode, has 2 projections.  If BOTH are in the loop
       // we need loop unswitching instead of iteration splitting.
-      Node *exit = loop->is_loop_exit(iff);
-      if (!exit) continue;
+      Node* exit = loop->is_loop_exit(iff);
+      if (exit == nullptr) continue;
       int flip = (exit->Opcode() == Op_IfTrue) ? 1 : 0;
 
       // Get boolean condition to test
@@ -3382,8 +3381,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       Node* kill_con = intcon(1-flip);
       _igvn.replace_input_of(iff, 1, kill_con);
       // Find surviving projection
-      assert(iff->is_If(), "");
-      ProjNode* dp = ((IfNode*)iff)->proj_out(1-flip);
+      ProjNode* dp = iff->proj_out(1-flip);
       // Find loads off the surviving projection; remove their control edge
       for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
         Node* cd = dp->fast_out(i); // Control-dependent node

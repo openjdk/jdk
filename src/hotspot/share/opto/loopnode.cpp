@@ -83,7 +83,7 @@ bool LoopNode::is_valid_counted_loop(BasicType bt) const {
         le->true_proj_or_null() == l->in(LoopNode::LoopBackControl)) {
       Node* phi  = l->phi();
       IfFalseNode* exit = le->false_proj_or_null();
-      if (exit != nullptr && phi != nullptr && phi->is_Phi() &&
+      if (exit != nullptr && is<PhiNode>(phi) &&
           phi->in(LoopNode::LoopBackControl) == l->incr() &&
           le->loopnode() == l && le->stride_is_con()) {
         return true;
@@ -179,7 +179,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
     // that doesn't branch to an UNC, we stop. The code that process
     // expensive nodes will notice the loop and skip over it to try to
     // move the node further up.
-    if (ctl->is_CountedLoop() && ctl->in(1) != nullptr && ctl->in(1)->in(0) != nullptr && ctl->in(1)->in(0)->is_If()) {
+    if (ctl->is_CountedLoop() && ctl->in(1) != nullptr && Node::is<IfNode>(ctl->in(1)->in(0))) {
       if (!ctl->in(1)->as_Proj()->is_uncommon_trap_if_pattern()) {
         break;
       }
@@ -3722,7 +3722,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
         outer_le->set_req(0, sfpt_clone);
 
         Node* polladdr = sfpt_clone->in(TypeFunc::Parms);
-        if (polladdr != nullptr && polladdr->is_Load()) {
+        if (Node::is<LoadNode>(polladdr)) {
           // Polling load should be pinned outside inner loop.
           Node* new_polladdr = polladdr->clone();
           new_polladdr->set_req(0, iffalse);
@@ -3807,7 +3807,7 @@ bool CountedLoopConverter::has_dominating_loop_limit_check(Node* init_trip, Node
   IfTrueNode* if_true = new IfTrueNode(iff);
   Node* dominated_iff = _igvn.transform(iff);
   // ConI node? Found dominating test (IfNode::dominated_by() returns a ConI node).
-  const bool found_dominating_test = dominated_iff != nullptr && dominated_iff->is_ConI();
+  const bool found_dominating_test = Node::is<ConINode>(dominated_iff);
 
   // Kill the If with its projections again in the next IGVN round by cutting it off from the graph.
   _igvn.replace_input_of(iff, 0, _phase->C->top());
@@ -4149,8 +4149,7 @@ void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
           break;
       }
     } else if (n1op == Op_RShiftI &&
-               n1->in(1) != nullptr &&
-               n1->in(1)->Opcode() == Op_LShiftI &&
+               Node::is<Op_LShiftI>(n1->in(1)) &&
                n1->in(2) == n1->in(1)->in(2) &&
                n1->in(2)->is_Con()) {
       jint shift = n1->in(2)->bottom_type()->as_int()->get_con();
@@ -4195,9 +4194,9 @@ IfNode* CountedLoopNode::find_multiversion_if_from_multiversion_fast_main_loop()
 }
 
 LoopNode* CountedLoopNode::skip_strip_mined(int expect_skeleton) {
-  if (is_strip_mined() && in(EntryControl) != nullptr && in(EntryControl)->is_OuterStripMinedLoop()) {
+  if (auto osmln = isa<OuterStripMinedLoopNode>(in(EntryControl)); osmln != nullptr && is_strip_mined()) {
     verify_strip_mined(expect_skeleton);
-    return in(EntryControl)->as_Loop();
+    return osmln;
   }
   return this;
 }
@@ -4205,7 +4204,7 @@ LoopNode* CountedLoopNode::skip_strip_mined(int expect_skeleton) {
 OuterStripMinedLoopNode* CountedLoopNode::outer_loop() const {
   assert(is_strip_mined(), "not a strip mined loop");
   Node* c = in(EntryControl);
-  if (c == nullptr || c->is_top() || !c->is_OuterStripMinedLoop()) {
+  if (!is<OuterStripMinedLoopNode>(c) || c->is_top()) {
     return nullptr;
   }
   return c->as_OuterStripMinedLoop();
@@ -4797,7 +4796,7 @@ bool OuterStripMinedLoopEndNode::is_expanded(PhaseGVN *phase) const {
     IfTrueNode* backedge = true_proj_or_null();
     if (backedge != nullptr) {
       Node* head = backedge->unique_ctrl_out_or_null();
-      if (head != nullptr && head->is_OuterStripMinedLoop()) {
+      if (is<OuterStripMinedLoopNode>(head)) {
         if (head->find_out_with(Op_Phi) != nullptr) {
           return true;
         }
@@ -4926,7 +4925,7 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
 // Dump special per-node info
 #ifndef PRODUCT
 void CountedLoopEndNode::dump_spec(outputStream *st) const {
-  if( in(TestValue) != nullptr && in(TestValue)->is_Bool() ) {
+  if (is<BoolNode>(in(TestValue))) {
     BoolTest bt( test_trip()); // Added this for g++.
 
     st->print("[");
@@ -7643,19 +7642,19 @@ OpaqueZeroTripGuardNode* CountedLoopNode::is_canonical_loop_entry() {
   }
   Node* ctrl = skip_assertion_predicates_with_halt();
 
-  if (ctrl == nullptr || (!ctrl->is_IfTrue() && !ctrl->is_IfFalse())) {
+  if (!is<IfTrueNode>(ctrl) && !is<IfFalseNode>(ctrl)) {
     return nullptr;
   }
   Node* iffm = ctrl->in(0);
-  if (iffm == nullptr || iffm->Opcode() != Op_If) {
+  if (!is<Op_If>(iffm)) {
     return nullptr;
   }
   Node* bolzm = iffm->in(1);
-  if (bolzm == nullptr || !bolzm->is_Bool()) {
+  if (!is<BoolNode>(bolzm)) {
     return nullptr;
   }
   Node* cmpzm = bolzm->in(1);
-  if (cmpzm == nullptr || !cmpzm->is_Cmp()) {
+  if (!is<CmpNode>(cmpzm)) {
     return nullptr;
   }
 
@@ -7668,7 +7667,7 @@ OpaqueZeroTripGuardNode* CountedLoopNode::is_canonical_loop_entry() {
   bool found_opaque = false;
   for (uint i = 1; i < cmpzm->req(); i++) {
     Node* opnd = cmpzm->in(i);
-    if (opnd && opnd->is_Opaque1()) {
+    if (is<Opaque1Node>(opnd)) {
       found_opaque = true;
       break;
     }
@@ -8166,7 +8165,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   // which can inhibit range check elimination.
   if (least != early) {
     Node* ctrl_out = least->unique_ctrl_out_or_null();
-    if (ctrl_out != nullptr && ctrl_out->is_Loop() &&
+    if (Node::is<LoopNode>(ctrl_out) &&
         least == ctrl_out->in(LoopNode::EntryControl) &&
         (ctrl_out->is_CountedLoop() || ctrl_out->is_OuterStripMinedLoop())) {
       Node* least_dom = idom(least);

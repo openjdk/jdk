@@ -1576,8 +1576,7 @@ public:
       _are_speculative_checks_possible(are_speculative_checks_possible)
       DEBUG_ONLY( COMMA _is_trace(is_trace) )
   {
-    assert(_mem_ref != nullptr &&
-           (_mem_ref->is_Load() || _mem_ref->is_Store()),
+    assert(Node::is<LoadNode>(_mem_ref) || Node::is<StoreNode>(_mem_ref),
            "only load or store vectors allowed");
   }
 

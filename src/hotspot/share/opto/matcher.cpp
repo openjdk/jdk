@@ -398,7 +398,7 @@ void Matcher::match( ) {
       // in find_base_for_derived().
       assert(_mach_null != nullptr || C->failure_is_artificial(), ""); // bailouts are handled below.
 
-      C->set_root(xroot->is_Root() ? xroot->as_Root() : nullptr);
+      C->set_root(xroot->isa_Root());
 
 #ifdef ASSERT
       verify_new_nodes_only(xroot);
@@ -1072,7 +1072,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
             if (C->failing())  return nullptr;
             if (m == nullptr) { Matcher::soft_match_failure(); return nullptr; }
           } else {                  // Nothing the matcher cares about
-            if (n->is_Proj() && n->in(0) != nullptr && n->in(0)->is_Multi()) {       // Projections?
+            if (n->is_Proj() && Node::is<MultiNode>(n->in(0))) {       // Projections?
               if (n->in(0)->is_Initialize() && n->as_Proj()->_con == TypeFunc::Memory) {
                 // Initialize may have multiple NarrowMem projections. They would all match to identical raw mem MachProjs.
                 // We don't need multiple MachProjs. Create one if none already exist, otherwise use existing one.
@@ -1318,7 +1318,7 @@ MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
   OptoReg::Name out_arg_limit_per_call = begin_out_arg_area;
   // Calls to C may hammer extra stack slots above and beyond any arguments.
   // These are usually backing store for register arguments for varargs.
-  if( call != nullptr && call->is_CallRuntime() )
+  if (Node::is<CallRuntimeNode>(call))
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call,C->varargs_C_out_slots_killed());
 
 
@@ -1801,7 +1801,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
         m = leaf;
       } else {
         m = _mem_node;
-        assert(m != nullptr && m->is_Mem(), "expecting memory node");
+        assert(Node::is<MemNode>(m), "expecting memory node");
       }
       const TypePtr* mach_at = mach->in_adr_type();
       // DecodeN node consumed by an address may have different type
@@ -2811,10 +2811,8 @@ bool Matcher::is_non_long_integral_vector(const Node* n) {
 }
 
 bool Matcher::is_encode_and_store_pattern(const Node* n, const Node* m) {
-  if (n == nullptr ||
-      m == nullptr ||
-      n->Opcode() != Op_StoreN ||
-      !m->is_EncodeP() ||
+  if (!Node::is<Op_StoreN>(n)   ||
+      !Node::is<EncodePNode>(m) ||
       n->as_Store()->barrier_data() == 0) {
     return false;
   }

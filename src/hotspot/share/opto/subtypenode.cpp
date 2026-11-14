@@ -119,8 +119,7 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   Node* addr = nullptr;
   if (obj_or_subklass->is_DecodeNKlass()) {
-    if (obj_or_subklass->in(1) != nullptr &&
-        obj_or_subklass->in(1)->Opcode() == Op_LoadNKlass) {
+    if (is<Op_LoadNKlass>(obj_or_subklass->in(1))) {
       addr = obj_or_subklass->in(1)->in(MemNode::Address);
     }
   } else if (obj_or_subklass->Opcode() == Op_LoadKlass) {

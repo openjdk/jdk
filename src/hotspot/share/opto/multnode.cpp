@@ -184,7 +184,7 @@ void ProjNode::check_con() const {
 
 //------------------------------Identity---------------------------------------
 Node* ProjNode::Identity(PhaseGVN* phase) {
-  if (in(0) != nullptr && in(0)->Opcode() == Op_Tuple) {
+  if (is<Op_Tuple>(in(0))) {
     // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
     return in(0)->in(_con);
   }

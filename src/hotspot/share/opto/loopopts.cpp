@@ -1188,7 +1188,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
     return n;
   }
 
-  if (n->isa_FlatArrayCheck()) {
+  if (n->is_FlatArrayCheck()) {
     move_flat_array_check_out_of_loop(n);
     return n;
   }
@@ -3028,14 +3028,13 @@ void PhaseIdealLoop::clone_loop_body(const Node_List<Node>& body, Node_List<Node
 // being a cycle involving an add and a phi,
 // with an optional truncation (left-shift followed by a right-shift)
 // of the add. Returns zero if not an iv.
-int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
-  const TypeInteger* ttype = nullptr;
-  if (!iff->is_If() || iff->in(1) == nullptr || !iff->in(1)->is_Bool()) {
+int PhaseIdealLoop::stride_of_possible_iv(IfNode* iff) {
+  BoolNode* bl = Node::isa<BoolNode>(iff->in(1));
+  if (bl == nullptr) {
     return 0;
   }
-  BoolNode* bl = iff->in(1)->as_Bool();
   Node* cmp = bl->in(1);
-  if (!cmp || (cmp->Opcode() != Op_CmpI && cmp->Opcode() != Op_CmpU)) {
+  if (!Node::is<Op_CmpI>(cmp) && !Node::is<Op_CmpU>(cmp)) {
     return 0;
   }
   // Must have an invariant operand
@@ -3999,25 +3998,25 @@ bool PhaseIdealLoop::partial_peel(IdealLoopTree* loop, Node_List<Node>& old_new)
   IfNode *peel_if = nullptr;
   IfNode *peel_if_cmpu = nullptr;
 
-  Node *iff = loop->tail();
-  while (iff != head) {
-    if (iff->is_If()) {
-      Node *ctrl = get_ctrl(iff->in(1));
+  Node* next = loop->tail();
+  while (next != head) {
+    if (IfNode* iff = next->isa_If(); iff != nullptr) {
+      Node *ctrl = get_ctrl(next->in(1));
       if (ctrl->is_top()) return false; // Dead test on live IF.
       // If loop-varying exit-test, check for induction variable
       if (loop->is_member(get_loop(ctrl)) &&
           loop->is_loop_exit(iff) &&
           is_possible_iv_test(iff)) {
-        Node* cmp = iff->in(1)->in(1);
+        Node* cmp = next->in(1)->in(1);
         if (cmp->Opcode() == Op_CmpI) {
-          peel_if = iff->as_If();
+          peel_if = iff;
         } else {
           assert(cmp->Opcode() == Op_CmpU, "must be CmpI or CmpU");
-          peel_if_cmpu = iff->as_If();
+          peel_if_cmpu = iff;
         }
       }
     }
-    iff = idom(iff);
+    next = idom(next);
   }
 
   // Prefer signed compare over unsigned compare.
