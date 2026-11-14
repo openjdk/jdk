@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,9 +98,9 @@ inline bool ClassLoaderData::try_claim(int claim) {
   }
 }
 
-inline void ClassLoaderData::oops_do(OopClosure* f, int claim_value, bool clear_mod_oops) {
+inline void ClassLoaderData::oops_do(OopClosure* f, int claim_value, bool should_clear_modified_or_humongous_oops) {
   if (claim_value == _claim_none || try_claim(claim_value)) {
-    oops_do_slow(f, clear_mod_oops);
+    oops_do_slow(f, should_clear_modified_or_humongous_oops);
   }
 }
 
