@@ -82,9 +82,9 @@ import jdk.test.whitebox.gc.GC;
 
 public class IncompatibleOptions {
     static final String OBJ_ALIGNMENT_MISMATCH =
-        "The shared archive file's ObjectAlignmentInBytes of .* does not equal the current ObjectAlignmentInBytes of";
+        "The shared archive file's ObjectAlignmentInBytes setting .* does not equal the current setting";
     static final String COMPACT_STRING_MISMATCH =
-        "The shared archive file's CompactStrings setting .* does not equal the current CompactStrings setting";
+        "The shared archive file's CompactStrings setting .* does not equal the current setting";
     static final String COMPRESSED_OOPS_NOT_CONSISTENT =
         "The saved state of UseCompressedOops \\(%d\\) is different from runtime \\(%d\\), CDS will be disabled.";
     static final String COMPRESSED_OOPS_NOT_CONSISTENT_10 = COMPRESSED_OOPS_NOT_CONSISTENT.formatted(1, 0);

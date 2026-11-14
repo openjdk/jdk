@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class CdsDifferentCompactStrings {
         CDSTestUtils.checkMappingFailure(out);
 
         out.shouldMatch("The shared archive file's CompactStrings " +
-                        "setting .* does not equal the current CompactStrings setting")
+                        "setting .* does not equal the current setting")
             .shouldHaveExitValue(1);
     }
 }
