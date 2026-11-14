@@ -215,10 +215,11 @@ public class Properties extends Hashtable<Object,Object> {
     }
 
     /**
-     * Calls the {@code Hashtable} method {@code put}. Provided for
-     * parallelism with the {@code getProperty} method. Enforces use of
-     * strings for property keys and values. The value returned is the
-     * result of the {@code Hashtable} call to {@code put}.
+     * Associates the specified value with the specified key in this property
+     * list. Neither the key nor the value can be null. Provided for parallelism
+     * with the {@code getProperty} method. Enforces use of {@code String}s for
+     * property keys and values. The value returned is the previous value
+     * associated with the given key, or {@code null} if it did not have one.
      *
      * @param key the key to be placed into this property list.
      * @param value the value corresponding to {@code key}.
@@ -235,6 +236,13 @@ public class Properties extends Hashtable<Object,Object> {
     /**
      * Reads a property list (key and element pairs) from the input
      * character stream in a simple line-oriented format.
+     * <p>
+     * If a key in the loaded property list already exists in this
+     * {@code Properties} object, the associated element is replaced with the
+     * value loaded from the list.
+     * <p>
+     * If a key occurs more than once in the loaded property list, the
+     * associated element is set to the value of the last occurrence.
      * <p>
      * Properties are processed in terms of lines. There are two
      * kinds of lines, <i>natural lines</i> and <i>logical lines</i>.
@@ -386,7 +394,16 @@ public class Properties extends Hashtable<Object,Object> {
 
     /**
      * Reads a property list (key and element pairs) from the input
-     * byte stream. The input stream is in a simple line-oriented
+     * byte stream.
+     * <p>
+     * If a key in the loaded property list already exists in this
+     * {@code Properties} object, the associated element is replaced with the
+     * value loaded from the list.
+     * <p>
+     * If a key occurs more than once in the loaded property list, the
+     * associated element is set to the value of the last occurrence.
+     * <p>
+     * The input stream is in a simple line-oriented
      * format as specified in
      * {@link #load(java.io.Reader) load(Reader)} and is assumed to use
      * the ISO 8859-1 character encoding; that is each byte is one Latin1
@@ -1154,7 +1171,7 @@ public class Properties extends Hashtable<Object,Object> {
      * and its defaults, recursively, are then checked. The method returns the
      * default value argument if the property is not found.
      *
-     * @param   key            the hashtable key.
+     * @param   key            the property key.
      * @param   defaultValue   a default value.
      *
      * @return  the value in this property list with the specified key value.
