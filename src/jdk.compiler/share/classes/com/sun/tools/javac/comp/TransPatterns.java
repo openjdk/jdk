@@ -495,9 +495,9 @@ public class TransPatterns extends TreeTranslator {
                 appendBreakIfNeeded(tree, cases, c.head);
             }
             cases = newCases.toList();
-            patchCompletingNormallyCases(cases);
-            cases = processCases(tree, cases);
             ListBuffer<JCStatement> statements = new ListBuffer<>();
+            statements.appendList(patchCompletingNormallyCases(tree, cases));
+            cases = processCases(tree, cases);
             VarSymbol temp = new VarSymbol(Flags.SYNTHETIC,
                     names.fromString("selector" + variableIndex++ + target.syntheticNameChar() + "temp"),
                     seltype,
@@ -579,7 +579,7 @@ public class TransPatterns extends TreeTranslator {
                 }
 
                 if ((validCaseLabelList && !previousCompletesNormally) ||
-                        c.guard != null) {
+                        (c.guard != null || hasSyntheticGuards(clearedPatterns))) {
                     List<JCPatternCaseLabel> labels = clearedPatterns.stream().map(cp -> (JCPatternCaseLabel)cp).collect(List.collector());
                     bindingContext = new BasicBindingContext();
                     VarSymbol prevCurrentValue = currentValue;
@@ -618,6 +618,11 @@ public class TransPatterns extends TreeTranslator {
                             c.guard = null;
                         } else {
                             test = accTest;
+                        }
+
+                        if (c.fallThroughGuardBypass != null) {
+                            test = makeBinary(Tag.OR, c.fallThroughGuardBypass, test);
+                            c.fallThroughGuardBypass = null;
                         }
 
                         c.stats = translate(c.stats);
@@ -696,8 +701,11 @@ public class TransPatterns extends TreeTranslator {
         }
     }
 
-    // Duplicates the block statement where needed.
-    // Processes cases in place, e.g.
+    // Processes cases where a fallthrough into a case with a guard happens
+    // the guards (both explicit and synthetic) need to be skipped in this case
+    // will inject a "boolean fallthrough" variable before the switch, and set
+    // it to true if the fallthrough is happening:
+    //
     // switch (obj) {
     //     case Integer _ when ((Integer) obj) > 0:
     //     case String _  when !((String) obj).isEmpty():
@@ -705,41 +713,46 @@ public class TransPatterns extends TreeTranslator {
     //     ...
     // }
     // =>
+    // boolean fallthrough = false;
     // switch (typeSwitch(...)) {
     //     case 0:
     //         if (!((Integer)obj) > 0) { ... }
-    //         return 1;
+    //         fallthrough = true;
     //     case 1:
-    //         if (!((String)obj).isEmpty()) { ... }
+    //         if (!(fallthrough || ((String)obj).isEmpty()) { ... }
     //         return 1;
     //     ...
     // }
-    private static void patchCompletingNormallyCases(List<JCCase> cases) {
+    private List<JCStatement> patchCompletingNormallyCases(JCTree swtch, List<JCCase> cases) {
+        VarSymbol fallthrough = new VarSymbol(Flags.SYNTHETIC,
+                names.fromString("fallthrough" + variableIndex++ + target.syntheticNameChar()),
+                syms.booleanType,
+                currentMethodSym);
+        boolean usedFallThroughToGuarded = false;
+        JCCase previous = null;
+
         while (cases.nonEmpty()) {
             var currentCase = cases.head;
 
-            if (currentCase.caseKind == CaseKind.STATEMENT &&
-                currentCase.completesNormally &&
-                cases.tail.nonEmpty() &&
-                (cases.tail.head.guard != null || cases.tail.head.labels.stream().anyMatch(cl -> cl instanceof JCPatternCaseLabel p && p.syntheticGuard != null))) {
-                ListBuffer<JCStatement> newStatements = new ListBuffer<>();
-                List<JCCase> copyFrom = cases;
-
-                while (copyFrom.nonEmpty()) {
-                    newStatements.appendList(copyFrom.head.stats);
-
-                    if (!copyFrom.head.completesNormally) {
-                        break;
-                    }
-
-                    copyFrom = copyFrom.tail;
-                };
-
-                currentCase.stats = newStatements.toList();
-                currentCase.completesNormally = false;
+            if ((currentCase.guard != null || hasSyntheticGuards(currentCase.labels)) &&
+                previous != null &&
+                previous.caseKind == CaseKind.STATEMENT &&
+                previous.completesNormally) {
+                usedFallThroughToGuarded = true;
+                previous.stats = previous.stats.append(make.Exec(make.Assign(make.Ident(fallthrough), makeLit(syms.booleanType, 1)).setType(syms.booleanType)));
+                currentCase.fallThroughGuardBypass = make.Ident(fallthrough);
             }
 
+            previous = currentCase;
+
             cases = cases.tail;
+        }
+        if (usedFallThroughToGuarded) {
+            return List.of(
+                make.at(swtch.pos).VarDef(fallthrough, makeLit(syms.booleanType, 0))
+            );
+        } else {
+            return List.nil();
         }
     }
 
@@ -759,6 +772,12 @@ public class TransPatterns extends TreeTranslator {
                     }
                 }
             }.scan(c.stats);
+        }
+
+        private boolean hasSyntheticGuards(List<JCCaseLabel> labels) {
+            return labels.stream()
+                         .anyMatch(cl -> cl instanceof JCPatternCaseLabel p &&
+                                         p.syntheticGuard != null);
         }
 
     void appendBreakIfNeeded(JCTree switchTree, List<JCCase> cases, JCCase c) {
@@ -986,6 +1005,7 @@ public class TransPatterns extends TreeTranslator {
         VarSymbol commonNestedBinding = null;
         boolean previousNullable = false;
         boolean previousCompletesNormally = false;
+        boolean previousHasFallThroughtTest = false;
 
         for (List<JCCase> c = inputCases; c.nonEmpty(); c = c.tail) {
             VarSymbol currentBinding = null;
@@ -1026,6 +1046,7 @@ public class TransPatterns extends TreeTranslator {
                        !previousNullable &&
                        !currentNullable &&
                        !previousCompletesNormally &&
+                       !previousHasFallThroughtTest &&
                        !currentCompletesNormally &&
                        new TreeDiffer(types, List.of(commonBinding), List.of(currentBinding))
                                .scan(commonNestedExpression, currentNestedExpression)) {
@@ -1043,6 +1064,7 @@ public class TransPatterns extends TreeTranslator {
             }
             previousNullable = currentNullable;
             previousCompletesNormally = currentCompletesNormally;
+            previousHasFallThroughtTest = c.head.fallThroughGuardBypass != null;
         }
         resolveAccummulator.resolve(commonBinding, commonNestedExpression, commonNestedBinding);
         return result.toList();
