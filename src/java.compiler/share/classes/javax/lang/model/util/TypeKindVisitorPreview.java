@@ -66,7 +66,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see TypeKindVisitor14
  * @since 23
  */
-@SupportedSourceVersion(RELEASE_28)
+@SupportedSourceVersion(RELEASE_29)
 @PreviewFeature(feature=PreviewFeature.Feature.PREVIEW_SUPPORT, reflective=true)
 public class TypeKindVisitorPreview<R, P> extends TypeKindVisitor14<R, P> {
     /**
