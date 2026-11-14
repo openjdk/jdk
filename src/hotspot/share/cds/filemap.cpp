@@ -2007,6 +2007,7 @@ int FileMapHeader::compute_crc() {
 bool FileMapHeader::validate() {
   const char* file_type = CDSConfig::type_of_archive_being_loaded();
 
+  // Check --enable-preview first, since it modifies many of the flags in _must_match.
   if (!FileMapHeader::check_enable_preview()) {
     return false;
   }
@@ -2111,23 +2112,21 @@ bool FileMapHeader::validate() {
 }
 
 bool FileMapHeader::check_enable_preview() const {
-  if (is_static() || is_aot_configuration()) {
-    const char* err = nullptr;
-    if (Arguments::is_valhalla_enabled()) {
-      if (!_has_valhalla_patched_classes) {
-        err = "not created";
-      }
-    } else {
-      if (_has_valhalla_patched_classes) {
-        err = "created";
-      }
+  const char* err = nullptr;
+  if (Arguments::is_valhalla_enabled()) {
+    if (!_has_valhalla_patched_classes) {
+      err = "not created";
     }
-    if (err != nullptr) {
-      AOTMetaspace::report_loading_error("This %s was %s with --enable-preview. It is "
-                                         "incompatible with the current JVM setting",
-                                         CDSConfig::type_of_archive_being_loaded(), err);
-      return false;
+  } else {
+    if (_has_valhalla_patched_classes) {
+      err = "created";
     }
+  }
+  if (err != nullptr) {
+    AOTMetaspace::report_loading_error("This %s was %s with --enable-preview. It is "
+                                       "incompatible with the current JVM setting",
+                                       CDSConfig::type_of_archive_being_loaded(), err);
+    return false;
   }
   return true;
 }
