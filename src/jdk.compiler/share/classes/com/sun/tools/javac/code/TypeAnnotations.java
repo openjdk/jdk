@@ -402,7 +402,8 @@ public class TypeAnnotations {
 
             if (sym.getKind() == ElementKind.METHOD) {
                 sym.type.asMethodType().restype = type;
-            } else if (sym.getKind() == ElementKind.PARAMETER && currentLambda == null) {
+            } else if (sym.getKind() == ElementKind.PARAMETER && currentLambda == null &&
+                       !(contextTree instanceof JCCatch c && c.param.sym == sym)) {
                 sym.type = type;
                 if (sym.getQualifiedName().equals(names._this)) {
                     sym.owner.type.asMethodType().recvtype = type;
