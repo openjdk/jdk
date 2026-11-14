@@ -26,6 +26,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "asm/register.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciValueKlass.hpp"
@@ -3664,6 +3665,10 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
                              enum atomic_memory_order order,
                              bool weak,
                              Register result) {
+  // Requirement for the !UseLSE branch
+  assert_different_registers(addr, rscratch1);
+  assert_different_registers(new_val, rscratch1);
+
   bool acquire, release;
 
   switch (order) {
@@ -3705,6 +3710,7 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
     load_exclusive(result, addr, size, acquire);
     compare_eq(result, expected, size);
     br(Assembler::NE, done);
+    // addr and new_val should not be rscratch1
     store_exclusive(rscratch1, new_val, addr, size, release);
     if (weak) {
       cmpw(rscratch1, 0u);  // If the store fails, return NE to our caller.
