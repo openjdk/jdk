@@ -129,29 +129,10 @@ public class FieldAccessModify {
                 public boolean valueClass_fld2_access;
             });
 
-        test("ValueClass (modify)", () ->  {
-                ValueClass obj = new ValueClass(1, 1);
-            }, new TestResult() {
-                public boolean valueClass_fld1_modify;
-                public boolean valueClass_fld2_modify;
-            });
-
         test("InstanceHolder (modify)", () ->  {
                 InstanceHolder obj = new InstanceHolder(10);
             }, new TestResult() {
                 public boolean instanceHolder_fld1_modify;
-                // ValueClass fields should be modified too
-                boolean valueClass_fld1_modify;
-                public boolean valueClass_fld2_modify;
-            });
-
-        test("ValueHolder (modify)", () ->  {
-                ValueHolder obj = new ValueHolder(11);
-            }, new TestResult() {
-                public boolean valueHolder_fld1_modify;
-                // ValueClass fields should be modified too
-                public boolean valueClass_fld1_modify;
-                public boolean valueClass_fld2_modify;
             });
 
     }

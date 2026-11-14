@@ -6629,6 +6629,36 @@ class C2 extends C1 implements I2 {
   <category id="fieldWatch" label="Watched Field">
 
     <intro>
+     When preview features are enabled, the following restrictions apply to
+     <eventlink id="FieldAccess"></eventlink> and
+     <eventlink id="FieldModification"></eventlink> events:
+     <ul>
+       <li>
+       An event for a watched instance field is not generated if the current
+       Java frame of the event thread is a constructor whose declaring class
+       or any of its superclasses has
+       <externallink id="../api/java.base/java/lang/reflect/Field.html#isStrictInit()">
+       strictly-initialized<sup>PREVIEW</sup></externallink> instance fields and
+       slot 0 of the local variable array contains a reference to the object
+       containing the watched field.
+       For this purpose, the VM identifies the object being constructed by the
+       reference in slot 0 of the current constructor frame's local variable array.
+       </li>
+       <li>
+       An event for a watched static field is not generated when the class
+       declaring the field is being initialized by the event thread and the
+       class declares
+       <externallink id="../api/java.base/java/lang/reflect/Field.html#isStrictInit()">
+       strictly-initialized<sup>PREVIEW</sup></externallink> static fields.
+       </li>
+      </ul>
+      <p/>
+      <b>API Note:</b>
+      The instance fields of
+      <externallink id="../api/java.base/java/lang/Class.html#isValue()">
+      value classes<sup>PREVIEW</sup></externallink> are strictly-initialized.
+      Consequently, events for watched instance fields of a value class are
+      not generated for accesses or modifications directly in its constructors.
     </intro>
 
     <function id="SetFieldAccessWatch" num="41">

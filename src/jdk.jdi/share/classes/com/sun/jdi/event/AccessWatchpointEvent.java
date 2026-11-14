@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,26 @@
 package com.sun.jdi.event;
 
 import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.request.AccessWatchpointRequest;
 
 /**
- * Notification of a field access in the target VM. Field modifications
- * are not considered field accesses.
+ * Notification of a field access in the target VM.
+ * <p>
+ * This notification is not generated for an instance field if the current
+ * frame of the event thread is a constructor for the object containing the
+ * field and the constructor's declaring class or any of its superclasses has
+ * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized}
+ * instance fields. It is also not generated for a static field when the class
+ * declaring the field is being initialized by the event thread and the class
+ * declares strictly-initialized static fields.
+ * <p>
+ * Field modifications are not considered field accesses.
  *
+ * @apiNote The instance fields of {@linkplain Class#isValue() value classes} are
+ * strictly-initialized. Consequently, events for watched instance fields of a value
+ * class are not generated for accesses or modifications directly in its constructors.
+ *
+ * @see AccessWatchpointRequest
  * @see EventQueue
  * @see VirtualMachine
  *
