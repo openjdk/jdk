@@ -31,7 +31,6 @@
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/partialArraySplitter.hpp"
-#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/partialArrayTaskStats.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/taskTerminator.hpp"

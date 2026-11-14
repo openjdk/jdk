@@ -35,7 +35,6 @@
 #include "gc/g1/g1YoungGCAllocationFailureInjector.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/partialArraySplitter.inline.hpp"
-#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/partialArrayTaskStats.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"

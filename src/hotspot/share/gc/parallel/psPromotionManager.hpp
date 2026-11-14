@@ -29,7 +29,6 @@
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/partialArraySplitter.hpp"
-#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/partialArrayTaskStats.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"

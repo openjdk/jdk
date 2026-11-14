@@ -22,18 +22,27 @@
  *
  */
 
-#include "gc/shared/partialArrayTaskStepper.inline.hpp"
+#include "gc/shared/partialArraySplitter.inline.hpp"
 #include "unittest.hpp"
 
+// Access to the splitter's task generation policy, which is otherwise private.
+class PartialArraySplitterTestAccess {
+public:
+  static uint continuation_tasks(const PartialArraySplitter& splitter,
+                                 size_t start, size_t length, size_t chunk_size) {
+    return splitter.continuation_tasks(start, length, chunk_size);
+  }
+};
+
 static void run_test(size_t length, size_t chunk_size, uint n_workers) {
-  const PartialArrayTaskStepper stepper(n_workers);
+  const PartialArraySplitter splitter(n_workers);
   size_t index = length % chunk_size;
   uint pending = index < length ? 1u : 0u;
   uint tasks = 0;
   while (pending > 0) {
     ASSERT_LT(index, length);
     --pending;
-    pending += stepper.continuation_tasks(index, length, chunk_size);
+    pending += PartialArraySplitterTestAccess::continuation_tasks(splitter, index, length, chunk_size);
     index += chunk_size;
     ++tasks;
     ASSERT_LE(pending, n_workers);
@@ -43,7 +52,7 @@ static void run_test(size_t length, size_t chunk_size, uint n_workers) {
   ASSERT_EQ(tasks, length / chunk_size);
 }
 
-TEST(PartialArrayTaskStepperTest, coverage_and_task_limit) {
+TEST_VM(PartialArraySplitterTest, coverage_and_task_limit) {
   for (size_t chunk_size = 50; chunk_size <= 500; chunk_size += 50) {
     for (uint n_workers = 1; n_workers <= 256; n_workers = (n_workers * 3 / 2 + 1)) {
       for (size_t length = 0; length <= 1000000; length = (length * 2 + 1)) {
@@ -57,14 +66,14 @@ TEST(PartialArrayTaskStepperTest, coverage_and_task_limit) {
   }
 }
 
-// Verifies that with below constants the stepper won't create tasks beyond the original array.
-TEST(PartialArrayTaskStepperTest, overflow_beyond_array) {
+// Verifies that with below constants the splitter won't create tasks beyond the original array.
+TEST_VM(PartialArraySplitterTest, overflow_beyond_array) {
   const size_t Length = INT32_MAX;
   const size_t ChunkSize = 1;
   const size_t Index = 1431655765;
   const uint NumWorkers = 16; // Fanout is 4.
 
-  const PartialArrayTaskStepper stepper(NumWorkers);
+  const PartialArraySplitter splitter(NumWorkers);
 
-  ASSERT_EQ(1u, stepper.continuation_tasks(Index, Length, ChunkSize));
+  ASSERT_EQ(1u, PartialArraySplitterTestAccess::continuation_tasks(splitter, Index, Length, ChunkSize));
 }

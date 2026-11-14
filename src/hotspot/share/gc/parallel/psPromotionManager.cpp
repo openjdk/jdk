@@ -32,7 +32,6 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/partialArraySplitter.inline.hpp"
-#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "logging/log.hpp"
