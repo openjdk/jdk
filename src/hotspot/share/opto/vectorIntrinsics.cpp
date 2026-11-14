@@ -1556,14 +1556,21 @@ bool LibraryCallKit::inline_vector_reduction() {
   }
 
   int num_elem = vlen->get_con();
-  int opc  = VectorSupport::vop2ideal(opr->get_con(), vltype);
-  int sopc = ReductionNode::opcode(opc, elem_bt);
+  int sopc = VectorSupport::vop2reduction(opr->get_con(), vltype);
 
-  // Ensure reduction operation for lanewise operation
-  // When using mask, mask use type needs to be VecMaskUseLoad.
-  if (sopc == opc || !arch_supports_vector(sopc, num_elem, elem_bt, is_masked_op ? VecMaskUseLoad : VecMaskNotUsed)) {
-    log_if_needed("  ** not supported: arity=1 op=%d/reduce vlen=%d etype=%s is_masked_op=%d",
-                    sopc, num_elem, type2name(elem_bt), is_masked_op ? 1 : 0);
+  // Ensure C2 has a reduction node for this operation and lane type.
+  if (sopc == 0) {
+    log_if_needed("  ** operation not supported by C2: op=%d/reduce lt=%s",
+                  opr->get_con(), VectorSupport::lanetype2name(vltype));
+    return false;
+  }
+
+  // Ensure the platform supports the reduction. When using mask, mask use type
+  // needs to be VecMaskUseLoad.
+  if (!arch_supports_vector(sopc, num_elem, elem_bt,
+                            is_masked_op ? VecMaskUseLoad : VecMaskNotUsed)) {
+    log_if_needed("  ** not supported by architecture: arity=1 op=%d/reduce vlen=%d etype=%s is_masked_op=%d",
+                  sopc, num_elem, type2name(elem_bt), is_masked_op ? 1 : 0);
     return false;
   }
 
@@ -1596,7 +1603,7 @@ bool LibraryCallKit::inline_vector_reduction() {
     }
   }
 
-  Node* init = ReductionNode::make_identity_con_scalar(gvn(), opc, elem_bt);
+  Node* init = ReductionNode::make_identity_con_scalar(gvn(), sopc, elem_bt);
   Node* value = opd;
 
   assert(mask != nullptr || !is_masked_op, "Masked op needs the mask value never null");
@@ -1607,7 +1614,7 @@ bool LibraryCallKit::inline_vector_reduction() {
 
   // Make an unordered Reduction node. This affects only AddReductionVF/VD and MulReductionVF/VD,
   // as these operations are allowed to be associative (not requiring strict order) in VectorAPI.
-  value = trace_vector(ReductionNode::make(opc, nullptr, init, value, elem_bt, /* requires_strict_order */ false));
+  value = trace_vector(ReductionNode::make(sopc, nullptr, init, value, /* requires_strict_order */ false));
 
   if (mask != nullptr && use_predicate) {
     value->add_req(mask);
