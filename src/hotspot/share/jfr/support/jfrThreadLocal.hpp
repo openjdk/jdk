@@ -84,9 +84,8 @@ class JfrThreadLocal {
   bool _sampling_critical_section;
 
 #ifdef LINUX
-  timer_t* _cpu_timer;
+  JfrCPUSamplerState _cpu_sampler_state;
   volatile bool _has_cpu_time_jfr_requests;
-  JfrCPUTimeTraceQueue _cpu_time_jfr_queue;
   volatile bool _do_async_processing_of_cpu_time_jfr_requests;
 #endif
 
@@ -358,14 +357,10 @@ class JfrThreadLocal {
 
   // CPU time sampling
 #ifdef LINUX
-  void set_cpu_timer(timer_t* timer);
-  void unset_cpu_timer();
-  timer_t* cpu_timer() const;
+  JfrCPUSamplerState& cpu_sampler_state();
 
   void set_has_cpu_time_jfr_requests(bool has_events);
   bool has_cpu_time_jfr_requests();
-
-  JfrCPUTimeTraceQueue& cpu_time_jfr_queue();
 
   void set_do_async_processing_of_cpu_time_jfr_requests(bool wants);
   bool wants_async_processing_of_cpu_time_jfr_requests();
