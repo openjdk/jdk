@@ -908,14 +908,65 @@ bool check_config(T saved, T current, const char* name) {
   }
 }
 
+// Helpers to output aot cache config and actual jvm config to make an easy diff between them.
+inline void print_config_prefix(outputStream* st, const char* name) {
+  st->print("- %s:%*s", name, MAX2(1, 41 - (int)strlen(name)), "");
+}
+
+inline void print_config_value(outputStream* st, const char* name, CollectedHeap::Name value) {
+  print_config_prefix(st, name);
+  st->print_cr("%s", GCConfig::hs_err_name(value));
+}
+
+inline void print_config_value(outputStream* st, const char* name, bool value) {
+  print_config_prefix(st, name);
+  st->print_cr("%s", value ? "true" : "false");
+}
+
+inline void print_config_value(outputStream* st, const char* name, int value) {
+  print_config_prefix(st, name);
+  st->print_cr("%d", value);
+}
+
+inline void print_config_value(outputStream* st, const char* name, uint value) {
+  print_config_prefix(st, name);
+  st->print_cr("%u", value);
+}
+
+#ifdef _LP64
+inline void print_config_value(outputStream* st, const char* name, intx value) {
+  print_config_prefix(st, name);
+  st->print_cr("%zd", value);
+}
+
+inline void print_config_value(outputStream* st, const char* name, uintx value) {
+  print_config_prefix(st, name);
+  st->print_cr("%zu", value);
+}
+#endif
+
+template <typename T>
+void log_config_values(T saved, T current, const char* name) {
+  if (log_is_enabled(Info, aot, verify, codecache)) {
+    LogStreamHandle(Info, aot, verify, codecache) cache_config_out;
+    print_config_value(&cache_config_out, name, saved);
+  }
+  if (log_is_enabled(Info, aot, verify, os)) {
+    LogStreamHandle(Info, aot, verify, os) os_config_out;
+    print_config_value(&os_config_out, name, current);
+  }
+}
+
 bool AOTCodeCache::Config::verify() const {
   // Tests for config options which might affect validity of adapters,
   // stubs or nmethods. Currently we take a pessemistic stand and
   // drop the whole cache if any of these are changed.
 
 #define AOTCODECACHE_CHECK_VAR(type, name) \
+  log_config_values(_saved_ ## name, name, #name); \
   if (!check_config(_saved_ ## name, name, #name)) { return false; }
 #define AOTCODECACHE_CHECK_FUN(type, name, fun) \
+  log_config_values(_saved_ ## name, fun, #name); \
   if (!check_config(_saved_ ## name, fun, #fun)) { return false; }
 
   AOTCODECACHE_CONFIGS_DO(AOTCODECACHE_CHECK_VAR, AOTCODECACHE_CHECK_FUN);

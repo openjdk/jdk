@@ -152,11 +152,11 @@ void CDSMustMatchFlags::print_info() const {
   }
 }
 
-void CDSMustMatchFlags::print(outputStream* st) const {
+void CDSMustMatchFlags::print(outputStream* st, bool actual_jvm_config) const {
 #define PRINT_CDS_MUST_MATCH_FLAG(n) \
   st->print("- %-s ", #n);                   \
   st->sp(int(_max_name_width - strlen(#n))); \
-  do_print(st, _v_##n);                      \
+  do_print(st, actual_jvm_config ? n : _v_##n); \
   st->cr();
   CDS_MUST_MATCH_FLAGS_DO(PRINT_CDS_MUST_MATCH_FLAG);
 #undef PRINT_CDS_MUST_MATCH_FLAG
@@ -364,73 +364,89 @@ void FileMapHeader::copy_base_archive_name(const char* archive) {
   memcpy((char*)this + base_archive_name_offset(), archive, base_archive_name_size());
 }
 
-void FileMapHeader::print(outputStream* st) {
+void FileMapHeader::print(outputStream* st, bool output_for_diff, bool actual_jvm_config) {
   ResourceMark rm;
 
-  st->print_cr("- magic:                          0x%08x", magic());
-  st->print_cr("- crc:                            0x%08x", crc());
-  st->print_cr("- version:                        0x%x", version());
-  st->print_cr("- header_size:                    " UINT32_FORMAT, header_size());
-  st->print_cr("- base_archive_name_offset:       " UINT32_FORMAT, base_archive_name_offset());
-  st->print_cr("- base_archive_name_size:         " UINT32_FORMAT, base_archive_name_size());
+  if (!output_for_diff) {
+    st->print_cr("- magic:                          0x%08x", magic());
+    st->print_cr("- crc:                            0x%08x", crc());
+    st->print_cr("- version:                        0x%x", version());
+    st->print_cr("- header_size:                    " UINT32_FORMAT, header_size());
+    st->print_cr("- base_archive_name_offset:       " UINT32_FORMAT, base_archive_name_offset());
+    st->print_cr("- base_archive_name_size:         " UINT32_FORMAT, base_archive_name_size());
 
-  for (int i = 0; i < NUM_CDS_REGIONS; i++) {
-    FileMapRegion* r = region_at(i);
-    r->print(st, i);
+    for (int i = 0; i < NUM_CDS_REGIONS; i++) {
+      FileMapRegion* r = region_at(i);
+      r->print(st, i);
+    }
+    st->print_cr("============ end regions ======== ");
   }
-  st->print_cr("============ end regions ======== ");
 
-  st->print_cr("- core_region_alignment:                    %zu", _core_region_alignment);
-  st->print_cr("- obj_alignment:                            %d", _obj_alignment);
-  st->print_cr("- narrow_oop_base:                          " INTPTR_FORMAT, p2i(_narrow_oop_base));
-  st->print_cr("- narrow_oop_shift                          %d", _narrow_oop_shift);
-  st->print_cr("- compact_strings:                          %d", _compact_strings);
-  st->print_cr("- compact_headers:                          %d", _compact_headers);
-  st->print_cr("- max_heap_size:                            %zu", _max_heap_size);
-  st->print_cr("- narrow_oop_mode:                          %d", _narrow_oop_mode);
-  st->print_cr("- compressed_oops:                          %d", _compressed_oops);
-  st->print_cr("- narrow_klass_pointer_bits:                %d", _narrow_klass_pointer_bits);
-  st->print_cr("- narrow_klass_shift:                       %d", _narrow_klass_shift);
-  st->print_cr("- cloned_vtables:                           %u", cast_to_u4(_cloned_vtables));
-  st->print_cr("- early_serialized_data:                    %u", cast_to_u4(_early_serialized_data));
-  st->print_cr("- serialized_data:                          %u", cast_to_u4(_serialized_data));
-  st->print_cr("- jvm_ident:                                %s", _jvm_ident);
-  st->print_cr("- class_location_config:                    %d", cast_to_u4(_class_location_config));
-  st->print_cr("- verify_local:                             %d", _verify_local);
-  st->print_cr("- verify_remote:                            %d", _verify_remote);
-  st->print_cr("- has_platform_or_app_classes:              %d", _has_platform_or_app_classes);
-  st->print_cr("- requested_base_address:                   " INTPTR_FORMAT, p2i(_requested_base_address));
-  st->print_cr("- mapped_base_address:                      " INTPTR_FORMAT, p2i(_mapped_base_address));
+  st->print_cr("- core_region_alignment:                    %zu", actual_jvm_config ? os::cds_core_region_alignment() : _core_region_alignment);
+  st->print_cr("- obj_alignment:                            %d", actual_jvm_config ? ObjectAlignmentInBytes : _obj_alignment);
+  st->print_cr("- narrow_oop_base:                          " INTPTR_FORMAT, p2i(actual_jvm_config ? CompressedOops::base() : _narrow_oop_base));
+  st->print_cr("- narrow_oop_shift                          %d", actual_jvm_config ? CompressedOops::shift() : _narrow_oop_shift);
+  st->print_cr("- compact_strings:                          %d", actual_jvm_config ? CompactStrings : _compact_strings);
+  st->print_cr("- compact_headers:                          %d", actual_jvm_config ? UseCompactObjectHeaders : _compact_headers);
+  st->print_cr("- max_heap_size:                            %zu", actual_jvm_config ? MaxHeapSize : _max_heap_size);
+  st->print_cr("- narrow_oop_mode:                          %d", actual_jvm_config ? CompressedOops::mode() : _narrow_oop_mode);
+  st->print_cr("- compressed_oops:                          %d", actual_jvm_config ? UseCompressedOops : _compressed_oops);
+  st->print_cr("- narrow_klass_pointer_bits:                %d", actual_jvm_config ? CompressedKlassPointers::narrow_klass_pointer_bits() : _narrow_klass_pointer_bits);
+  st->print_cr("- narrow_klass_shift:                       %d", actual_jvm_config ? ArchiveBuilder::precomputed_narrow_klass_shift() : _narrow_klass_shift);
+  if (!output_for_diff) {
+    st->print_cr("- cloned_vtables:                           %u", cast_to_u4(_cloned_vtables));
+    st->print_cr("- early_serialized_data:                    %u", cast_to_u4(_early_serialized_data));
+    st->print_cr("- serialized_data:                          %u", cast_to_u4(_serialized_data));
+  }
+  st->print_cr("- jvm_ident:                                %s", actual_jvm_config ? VM_Version::internal_vm_info_string() : _jvm_ident);
+  if (!output_for_diff) {
+    st->print_cr("- class_location_config:                    %d", cast_to_u4(_class_location_config));
+  }
+  st->print_cr("- verify_local:                             %d", actual_jvm_config ? BytecodeVerificationLocal : _verify_local);
+  st->print_cr("- verify_remote:                            %d", actual_jvm_config ? BytecodeVerificationRemote : _verify_remote);
+  if (!output_for_diff) {
+    st->print_cr("- has_platform_or_app_classes:              %d", _has_platform_or_app_classes);
+    st->print_cr("- requested_base_address:                   " INTPTR_FORMAT, p2i(_requested_base_address));
+    st->print_cr("- mapped_base_address:                      " INTPTR_FORMAT, p2i(_mapped_base_address));
+    st->print_cr("- object_streaming_mode:                    %d", _object_streaming_mode);
+    st->print_cr("- mapped_heap_header");
+    st->print_cr("  - root_segments");
+    st->print_cr("    - roots_count:                          %d", _mapped_heap_header.root_segments().roots_count());
+    st->print_cr("    - base_offset:                          0x%zx", _mapped_heap_header.root_segments().base_offset());
+    st->print_cr("    - count:                                %zu", _mapped_heap_header.root_segments().count());
+    st->print_cr("    - max_size_elems:                       %d", _mapped_heap_header.root_segments().max_size_in_elems());
+    st->print_cr("    - max_size_bytes:                       %zu", _mapped_heap_header.root_segments().max_size_in_bytes());
+    st->print_cr("  - oopmap_start_pos:                       %zu", _mapped_heap_header.oopmap_start_pos());
+    st->print_cr("  - oopmap_ptrmap_pos:                      %zu", _mapped_heap_header.ptrmap_start_pos());
+    st->print_cr("- streamed_heap_header");
+    st->print_cr("  - forwarding_offset:                      %zu", _streamed_heap_header.forwarding_offset());
+    st->print_cr("  - roots_offset:                           %zu", _streamed_heap_header.roots_offset());
+    st->print_cr("  - num_roots:                              %zu", _streamed_heap_header.num_roots());
+    st->print_cr("  - root_highest_object_index_table_offset: %zu", _streamed_heap_header.root_highest_object_index_table_offset());
+    st->print_cr("  - num_archived_objects:                   %zu", _streamed_heap_header.num_archived_objects());
 
-  st->print_cr("- object_streaming_mode:                    %d", _object_streaming_mode);
-  st->print_cr("- mapped_heap_header");
-  st->print_cr("  - root_segments");
-  st->print_cr("    - roots_count:                          %d", _mapped_heap_header.root_segments().roots_count());
-  st->print_cr("    - base_offset:                          0x%zx", _mapped_heap_header.root_segments().base_offset());
-  st->print_cr("    - count:                                %zu", _mapped_heap_header.root_segments().count());
-  st->print_cr("    - max_size_elems:                       %d", _mapped_heap_header.root_segments().max_size_in_elems());
-  st->print_cr("    - max_size_bytes:                       %zu", _mapped_heap_header.root_segments().max_size_in_bytes());
-  st->print_cr("  - oopmap_start_pos:                       %zu", _mapped_heap_header.oopmap_start_pos());
-  st->print_cr("  - oopmap_ptrmap_pos:                      %zu", _mapped_heap_header.ptrmap_start_pos());
-  st->print_cr("- streamed_heap_header");
-  st->print_cr("  - forwarding_offset:                      %zu", _streamed_heap_header.forwarding_offset());
-  st->print_cr("  - roots_offset:                           %zu", _streamed_heap_header.roots_offset());
-  st->print_cr("  - num_roots:                              %zu", _streamed_heap_header.num_roots());
-  st->print_cr("  - root_highest_object_index_table_offset: %zu", _streamed_heap_header.root_highest_object_index_table_offset());
-  st->print_cr("  - num_archived_objects:                   %zu", _streamed_heap_header.num_archived_objects());
-
-  st->print_cr("- _rw_ptrmap_start_pos:                     %zu", _rw_ptrmap_start_pos);
-  st->print_cr("- _ro_ptrmap_start_pos:                     %zu", _ro_ptrmap_start_pos);
-  st->print_cr("- has_full_module_graph                     %d", _has_full_module_graph);
-  st->print_cr("- has_valhalla_patched_classes              %d", _has_valhalla_patched_classes);
-  _must_match.print(st);
-  st->print_cr("- has_aot_linked_classes                    %d", _has_aot_linked_classes);
+    st->print_cr("- _rw_ptrmap_start_pos:                     %zu", _rw_ptrmap_start_pos);
+    st->print_cr("- _ro_ptrmap_start_pos:                     %zu", _ro_ptrmap_start_pos);
+  }
+  st->print_cr("- has_full_module_graph                     %d", actual_jvm_config ? CDSConfig::is_using_full_module_graph() : _has_full_module_graph);
+  st->print_cr("- has_valhalla_patched_classes              %d", actual_jvm_config ? Arguments::is_valhalla_enabled() : _has_valhalla_patched_classes);
+  _must_match.print(st, actual_jvm_config);
+  st->print_cr("- has_aot_linked_classes                    %d", actual_jvm_config ? AOTClassLinking : _has_aot_linked_classes);
   stringStream ss;
   void* cpu_features = archived_cpu_features();
   if (cpu_features != nullptr) {
     VM_Version::get_cpu_features_name(cpu_features, ss);
-    st->print_cr("- cpu features:                             %s", ss.as_string());
+    st->print_cr("- cpu features:                             %s", actual_jvm_config ? VM_Version::features_string() : ss.as_string());
   }
+  st->print_cr("- type_profile_level:                       %u", actual_jvm_config ? TypeProfileLevel : _type_profile_level);
+  st->print_cr("- type_profile_args_limit:                  %d", actual_jvm_config ? TypeProfileArgsLimit : _type_profile_args_limit);
+  st->print_cr("- type_profile_parms_limit:                 %d", actual_jvm_config ? TypeProfileParmsLimit : _type_profile_parms_limit);
+  st->print_cr("- type_profile_width:                       %zd", actual_jvm_config ? TypeProfileWidth : _type_profile_width);
+  st->print_cr("- bci_profile_width:                        %zd", actual_jvm_config ? BciProfileWidth : _bci_profile_width);
+  st->print_cr("- type_profile_casts:                       %d", actual_jvm_config ? TypeProfileCasts : _type_profile_casts);
+  st->print_cr("- profile_traps:                            %d", actual_jvm_config ? ProfileTraps : _profile_traps);
+  st->print_cr("- profile_exception_handlers:               %d", actual_jvm_config ? ProfileExceptionHandlers : _profile_exception_handlers);
+  st->print_cr("- spec_trap_limit_extra_entries:            %d", actual_jvm_config ? SpecTrapLimitExtraEntries : _spec_trap_limit_extra_entries);
 }
 
 bool FileMapInfo::validate_class_location() {
@@ -1932,6 +1948,18 @@ bool FileMapInfo::open_as_input() {
 }
 
 bool FileMapInfo::validate_aot_class_linking() {
+  // Output aot cache config and actual jvm config to compare
+  // this will allow you to create two files with the configuration
+  // and make an easy diff between them
+  if (log_is_enabled(Info, aot, verify, codecache)) {
+    LogStreamHandle(Info, aot, verify, codecache) cache_config_out;
+
+    print(&cache_config_out, true, false);
+  }
+  if (log_is_enabled(Info, aot, verify, os)) {
+    LogStreamHandle(Info, aot, verify, os) os_config_out;
+    print(&os_config_out, true, true);
+  }
   // These checks need to be done after FileMapInfo::initialize(), which gets called before Universe::heap()
   // is available.
   if (header()->has_aot_linked_classes()) {
@@ -1987,8 +2015,8 @@ FileMapRegion* FileMapInfo::last_core_region() const {
   return region_at(AOTMetaspace::ro);
 }
 
-void FileMapInfo::print(outputStream* st) const {
-  header()->print(st);
+void FileMapInfo::print(outputStream* st, bool output_for_diff,  bool actual_jvm_config) const {
+  header()->print(st, output_for_diff, actual_jvm_config);
   if (!is_static()) {
     dynamic_header()->print(st);
   }
