@@ -315,12 +315,6 @@ static traceid get_field_info_id(const EdgeField& field) {
   return field_infos->store(osfi);
 }
 
-// caller needs ResourceMark
-static traceid get_field_info_id(const Edge& edge) {
-  GrowableArray<EdgeField> fields(4);
-  return EdgeUtils::field_path(edge, &fields) ? get_field_info_id(fields.at(0)) : 0;
-}
-
 typedef JfrTypeWriterImplHost<const FieldTable::FieldInfoEntry*, __write_field_info__> FieldWriterImpl;
 typedef JfrTypeWriterHost<FieldWriterImpl, TYPE_OLDOBJECTFIELD> FieldWriter;
 
@@ -548,7 +542,7 @@ static void add_reference_info(const StoredEdge* current, traceid id, traceid pa
 
   ri->_id = id;
   ri->_data._array_info_id =  current->is_skip_edge() ? 0 : get_array_info_id(*current, id);
-  ri->_data._field_info_id = ri->_data._array_info_id != 0 || current->is_skip_edge() ? 0 : get_field_info_id(*current);
+  ri->_data._field_info_id = 0;
   ri->_data._old_object_sample_id = parent_id;
   ri->_data._skip = current->skip_length();
   ref_infos->store(ri);
