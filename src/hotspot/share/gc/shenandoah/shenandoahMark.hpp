@@ -97,8 +97,9 @@ private:
   ALWAYSINLINE
   static void mark_non_generational_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
 
+  template <class T>
   ALWAYSINLINE
-  static void mark_ref(ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak, oop obj);
+  static void mark_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak, oop obj);
 
   ALWAYSINLINE
   static void dedup_string(oop obj, StringDedup::Requests* const req);
