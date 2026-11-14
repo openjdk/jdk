@@ -68,7 +68,6 @@ import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.thread.VThreadRunner;
@@ -115,16 +114,13 @@ class BlockingChannelOps {
 
                 // write to sc1 when current thread blocks in sc2.read
                 ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                var unparker = runAfterParkedAsync(() -> sc1.write(bb1));
+                runAfterParkedAsync(sc2, () -> sc1.write(bb1));
 
                 // read from sc2 should block
                 ByteBuffer bb2 = ByteBuffer.allocate(10);
                 int n = sc2.read(bb2);
                 assertTrue(n > 0);
                 assertTrue(bb2.get(0) == 'X');
-
-                // check blocker object was set when thread parked
-                assertSame(sc2, unparker.parkBlocker());
             }
         });
     }
@@ -140,7 +136,7 @@ class BlockingChannelOps {
                 SocketChannel sc2 = connection.channel2();
 
                 // read from sc2 to EOF when current thread blocks in sc1.write
-                var unparker = runAfterParkedAsync(() -> readToEOF(sc2));
+                var unparker = runAfterParkedAsync(sc1, () -> readToEOF(sc2));
 
                 // write to sc1 should block
                 ByteBuffer bb = ByteBuffer.allocate(100*1024);
@@ -150,9 +146,6 @@ class BlockingChannelOps {
                     bb.clear();
                 }
                 sc1.close();
-
-                // check blocker object was set when thread parked
-                assertSame(sc1, unparker.parkBlocker());
 
                 // wait for reader to finish
                 unparker.join();
@@ -227,8 +220,8 @@ class BlockingChannelOps {
                 try (var connection = new Connection()) {
                     SocketChannel sc = connection.channel1();
 
-                    // close sc when current thread blocks in write
-                    runAfterParkedAsync(sc::close, true);
+                    // close sc when current thread blocks in sc.write
+                    runAfterParkedAsync(sc, sc::close);
 
                     // write until channel is closed
                     try {
@@ -288,9 +281,9 @@ class BlockingChannelOps {
                 try (var connection = new Connection()) {
                     SocketChannel sc = connection.channel1();
 
-                    // interrupt current thread when it blocks in write
+                    // interrupt current thread when it blocks in sc.write
                     Thread thisThread = Thread.currentThread();
-                    runAfterParkedAsync(thisThread::interrupt, true);
+                    runAfterParkedAsync(sc, thisThread::interrupt);
 
                     // write until channel is closed
                     try {
@@ -324,9 +317,9 @@ class BlockingChannelOps {
                 SocketChannel sc1 = connection.channel1();
                 SocketChannel sc2 = connection.channel2();
 
-                // write to sc1 when currnet thread blocks reading from sc2
+                // write to sc1 when currnet thread blocks in sc2.read
                 ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                var unparker = runAfterParkedAsync(() -> sc1.write(bb));
+                runAfterParkedAsync(sc2, () -> sc1.write(bb));
 
                 // read from sc2 should block
                 byte[] array = new byte[100];
@@ -335,9 +328,6 @@ class BlockingChannelOps {
                 int n = sc2.socket().getInputStream().read(array);
                 assertTrue(n > 0);
                 assertTrue(array[0] == 'X');
-
-                // check blocker object was set when thread parked
-                assertSame(sc2, unparker.parkBlocker());
             }
         });
     }
@@ -369,16 +359,13 @@ class BlockingChannelOps {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
                 var sc1 = SocketChannel.open();
 
-                // connect when current thread when it blocks in accept
-                var unparker = runAfterParkedAsync(() -> sc1.connect(ssc.getLocalAddress()));
+                // connect when current thread when it blocks in ssc.accept
+                runAfterParkedAsync(ssc, () -> sc1.connect(ssc.getLocalAddress()));
 
                 // accept should block
                 var sc2 = ssc.accept();
                 sc1.close();
                 sc2.close();
-
-                // check blocker object was set when thread parked
-                assertSame(ssc, unparker.parkBlocker());
             }
         });
     }
@@ -438,8 +425,8 @@ class BlockingChannelOps {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
                 var sc = SocketChannel.open();
 
-                // interrupt current thread when it blocks in accept
-                var unparker = runAfterParkedAsync(() -> sc.connect(ssc.getLocalAddress()));
+                // interrupt current thread when it blocks in ssc.accept
+                runAfterParkedAsync(ssc, () -> sc.connect(ssc.getLocalAddress()));
 
                 // accept should block
                 if (timeout > 0)
@@ -447,9 +434,6 @@ class BlockingChannelOps {
                 Socket s = ssc.socket().accept();
                 sc.close();
                 s.close();
-
-                // check blocker object was set when thread parked
-                assertSame(ssc, unparker.parkBlocker());
             }
         });
     }
@@ -493,15 +477,12 @@ class BlockingChannelOps {
 
                 // send from dc1 when current thread blocked in dc2.receive
                 ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                var unparker = runAfterParkedAsync(() -> dc1.send(bb1, dc2.getLocalAddress()));
+                runAfterParkedAsync(dc2, () -> dc1.send(bb1, dc2.getLocalAddress()));
 
                 // read from dc2 should block
                 ByteBuffer bb2 = ByteBuffer.allocate(10);
                 dc2.receive(bb2);
                 assertTrue(bb2.get(0) == 'X');
-
-                // check blocker object was set when thread parked
-                assertSame(dc2, unparker.parkBlocker());
             }
         });
     }
@@ -563,7 +544,7 @@ class BlockingChannelOps {
 
                 // send from dc1 when current thread blocks in dc2 receive
                 ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                var unparker = runAfterParkedAsync(() -> dc1.send(bb, dc2.getLocalAddress()));
+                runAfterParkedAsync(dc2, () -> dc1.send(bb, dc2.getLocalAddress()));
 
                 // receive should block
                 byte[] array = new byte[100];
@@ -572,9 +553,6 @@ class BlockingChannelOps {
                     dc2.socket().setSoTimeout(timeout);
                 dc2.socket().receive(p);
                 assertTrue(p.getLength() == 3 && array[0] == 'X');
-
-                // check blocker object was set when thread parked
-                assertSame(dc2, unparker.parkBlocker());
             }
         });
     }
@@ -669,16 +647,13 @@ class BlockingChannelOps {
 
                 // write from sink when current thread blocks reading from source
                 ByteBuffer bb1 = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
-                var unparker = runAfterParkedAsync(() -> sink.write(bb1));
+                runAfterParkedAsync(() -> sink.write(bb1));
 
                 // read should block
                 ByteBuffer bb2 = ByteBuffer.allocate(10);
                 int n = source.read(bb2);
                 assertTrue(n > 0);
                 assertTrue(bb2.get(0) == 'X');
-
-                // check blocker object was set when thread parked
-                assertNotNull(unparker.parkBlocker());
             }
         });
     }
@@ -694,7 +669,7 @@ class BlockingChannelOps {
                  Pipe.SourceChannel source = p.source()) {
 
                 // read from source to EOF when current thread blocking in write
-                var unparker = runAfterParkedAsync(() -> readToEOF(source));
+                Thread unparker = runAfterParkedAsync(() -> readToEOF(source));
 
                 // write to sink should block
                 ByteBuffer bb = ByteBuffer.allocate(100*1024);
@@ -704,9 +679,6 @@ class BlockingChannelOps {
                     bb.clear();
                 }
                 sink.close();
-
-                // check blocker object was set when thread parked
-                assertNotNull(unparker.parkBlocker());
 
                 // wait for reader to finish
                 unparker.join();
@@ -769,7 +741,7 @@ class BlockingChannelOps {
                      Pipe.SourceChannel source = p.source()) {
 
                     // close sink when current thread blocks in write
-                    runAfterParkedAsync(sink::close, true);
+                    runAfterParkedAsync(sink::close);
 
                     // write until channel is closed
                     try {
@@ -805,7 +777,7 @@ class BlockingChannelOps {
 
                     // interrupt current thread when it blocks in write
                     Thread thisThread = Thread.currentThread();
-                    runAfterParkedAsync(thisThread::interrupt, true);
+                    runAfterParkedAsync(thisThread::interrupt);
 
                     // write until channel is closed
                     try {
@@ -881,74 +853,52 @@ class BlockingChannelOps {
     }
 
     /**
-     * The unparker returned by runAfterParkedAsync.
+     * Runs the given task asynchronously after the current virtual thread parks with
+     * its parkBlocker set.
+     * @param parkBlocker non-null if the expected parkBlocker is known
+     * @param task the task to run when the thread parks
+     * @return the unparker thread
      */
-    private static class Unparker {
-        final Thread thread;
-        final AtomicReference<Object> parkBlockerRef;
-
-        Unparker(Thread thread, AtomicReference<Object> parkBlockerRef) {
-            this.thread = thread;
-            this.parkBlockerRef = parkBlockerRef;
-        }
-
-        Object parkBlocker() {
-            return parkBlockerRef.get();
-        }
-
-        void join() throws InterruptedException {
-            thread.join();
-        }
-    }
-
-    /**
-     * Runs the given task asynchronously after the current virtual thread parks.
-     * @param writing if the thread will block in write
-     * @return the unparker object
-     */
-    private static Unparker runAfterParkedAsync(ThrowingRunnable task, boolean writing) {
+    private static Thread runAfterParkedAsync(Object parkBlocker, ThrowingRunnable task) {
         Thread target = Thread.currentThread();
         if (!target.isVirtual())
             throw new WrongThreadException();
-        var parkBlockerRef = new AtomicReference<Object>();
-        Thread unparkerThread = Thread.ofPlatform().daemon().start(() -> {
+        return Thread.ofPlatform().daemon().start(() -> {
             try {
-                // wait for target thread to park
-                while (!isWaiting(target)) {
-                    Thread.sleep(20);
-                }
-
-                // if the target thread is parked in write then we nudge it a few times
-                // to avoid wakeup with some bytes written
-                if (writing) {
-                    for (int i = 0; i < 3; i++) {
-                        LockSupport.unpark(target);
-                        while (!isWaiting(target)) {
-                            Thread.sleep(20);
-                        }
-                    }
-                }
-
-                // capture the blocker object
-                parkBlockerRef.set(LockSupport.getBlocker(target));
-
+                // wait for target thread to park, then execute task
+                awaitParked(target, parkBlocker);
                 task.run();
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
-        return new Unparker(unparkerThread, parkBlockerRef);
     }
 
-    private static Unparker runAfterParkedAsync(ThrowingRunnable task) {
-        return runAfterParkedAsync(task, false);
+    private static Thread runAfterParkedAsync(ThrowingRunnable task) {
+        return runAfterParkedAsync(null, task);
+    }
+
+    /**
+     * Wait for the given Thread to park with its park blocker set.
+     * @param target the target thread
+     * @param parkBlocker non-null if the the expected park blocker is known
+     */
+    private static void awaitParked(Thread target, Object parkBlocker) throws Exception {
+        while (true) {
+            if (isParked(target)) {
+                Object b = LockSupport.getBlocker(target);
+                if (b != null && (parkBlocker == null || b == parkBlocker)) {
+                    return;
+                }
+            }
+            Thread.sleep(10);
+        }
     }
 
     /**
      * Return true if the given Thread is parked.
      */
-    private static boolean isWaiting(Thread target) {
+    private static boolean isParked(Thread target) {
         Thread.State state = target.getState();
         assertNotEquals(Thread.State.TERMINATED, state);
         return (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING);
