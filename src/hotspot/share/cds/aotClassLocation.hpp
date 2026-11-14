@@ -250,6 +250,8 @@ public:
     return _class_locations->length();
   }
 
+  static void init_boot_classpath();
+
   const AOTClassLocation* class_location_at(int index) const;
   int get_module_shared_path_index(Symbol* location) const;
 
