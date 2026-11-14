@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ const int64_t invalid_time = -1;
 const u4 STACK_DEPTH_DEFAULT = 64;
 const u4 MIN_STACK_DEPTH = 1;
 const u4 MAX_STACK_DEPTH = 2048;
+const u4 MAX_NATIVE_STACK_DEPTH = 128;
 
 enum ReservedEvent {
   EVENT_METADATA = 0,
