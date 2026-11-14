@@ -683,24 +683,11 @@ public class Types {
             }
 
             public Type getType(Type site) {
-                site = removeWildcards(site);
-                if (site.isIntersection()) {
-                    IntersectionClassType ict = (IntersectionClassType)site;
-                    for (Type component : ict.getExplicitComponents()) {
-                        if (!chk.checkValidGenericType(component)) {
-                            //if the inferred functional interface type is not well-formed,
-                            //or if it's not a subtype of the original target, issue an error
-                            throw failure(diags.fragment(Fragments.NoSuitableFunctionalIntfInst(site)));
-                        }
-                    }
-                } else {
-                    if (!chk.checkValidGenericType(site)) {
-                        //if the inferred functional interface type is not well-formed,
-                        //or if it's not a subtype of the original target, issue an error
-                        throw failure(diags.fragment(Fragments.NoSuitableFunctionalIntfInst(site)));
-                    }
+                Type newSite = removeWildcards(site);
+                if (newSite.isErroneous()) {
+                    throw descCache.failure(diags.fragment(Fragments.NoSuitableFunctionalIntfInst(site)));
                 }
-                return memberType(site, descSym);
+                return memberType(newSite, descSym);
             }
         }
 
@@ -869,7 +856,7 @@ public class Types {
                     WildcardType wt = (WildcardType)actual;
                     //check that bound does not contain other formals
                     if (bound.containsAny(formals)) {
-                        targs.add(wt.type);
+                        return new ErrorType(site, site.tsym);
                     } else {
                         //compute new type-argument based on declared bound and wildcard bound
                         switch (wt.kind) {
@@ -892,7 +879,9 @@ public class Types {
                 }
                 actuals = actuals.tail;
             }
-            return subst(site.tsym.type, formals, targs.toList());
+            site = subst(site.tsym.type, formals, targs.toList());
+            return !chk.checkValidGenericType(site) ?
+                    new ErrorType(site, site.tsym) : site;
         } else {
             return site;
         }
