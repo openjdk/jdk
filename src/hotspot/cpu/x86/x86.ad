@@ -10300,7 +10300,7 @@ instruct incL_rReg(rRegL dst, immL1 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct incL_rReg_ndd(rRegL dst, rRegI src, immL1 val, rFlagsReg cr)
+instruct incL_rReg_ndd(rRegL dst, rRegL src, immL1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL src val));
@@ -13587,7 +13587,7 @@ instruct orL_rReg_castP2X(rRegL dst, any_RegP src, rFlagsReg cr) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct orL_rReg_castP2X_ndd(rRegL dst, any_RegP src1, any_RegP src2, rFlagsReg cr) %{
+instruct orL_rReg_castP2X_ndd(rRegL dst, rRegL src1, any_RegP src2, rFlagsReg cr) %{
   predicate(UseAPX);
   match(Set dst (OrL src1 (CastP2X src2)));
   effect(KILL cr);
