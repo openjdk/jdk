@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,8 @@ public class SignatureUtil {
             }
         } else if (kAlg.toUpperCase(Locale.ENGLISH).startsWith("ML-DSA")) {
             // https://datatracker.ietf.org/doc/html/rfc9882#name-signerinfo-content
-            // Just use SHA-512
+            // Just use SHA-512. It is accepted by all parameter sets and mandated
+            // when signed without including signed attributes.
             digAlgID = DigestAlgHolder.sha512;
         } else if (sigalg.equalsIgnoreCase("RSASSA-PSS")) {
             try {
