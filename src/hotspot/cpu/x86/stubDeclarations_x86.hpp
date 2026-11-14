@@ -108,6 +108,10 @@
   do_stub(compiler, vector_byte_perm_mask)                              \
   do_arch_entry(x86, compiler,vector_byte_perm_mask,                    \
                 vector_byte_perm_mask, vector_byte_perm_mask)           \
+  do_stub(compiler, vector_byte_shift_gfni_matrix)                      \
+  do_arch_entry(x86, compiler, vector_byte_shift_gfni_matrix,           \
+                vector_byte_shift_gfni_matrix,                          \
+                vector_byte_shift_gfni_matrix)                          \
   do_stub(compiler, vector_int_to_byte_mask)                            \
   do_arch_entry(x86, compiler, vector_int_to_byte_mask,                 \
                 vector_int_to_byte_mask, vector_int_to_byte_mask)       \
