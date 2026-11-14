@@ -174,18 +174,20 @@ public class JPEGHuffmanTable {
             lengths.length > 16 || values.length > 256) {
             throw new IllegalArgumentException("Illegal lengths or values");
         }
-        for (int i = 0; i<lengths.length; i++) {
-            if (lengths[i] < 0) {
+        short[] lengths_copy = Arrays.copyOf(lengths, lengths.length);
+        for (int i = 0; i<lengths_copy.length; i++) {
+            if (lengths_copy[i] < 0) {
                 throw new IllegalArgumentException("lengths["+i+"] < 0");
             }
         }
-        for (int i = 0; i<values.length; i++) {
-            if (values[i] < 0) {
+        short[] values_copy = Arrays.copyOf(values, values.length);
+        for (int i = 0; i<values_copy.length; i++) {
+            if (values_copy[i] < 0) {
                 throw new IllegalArgumentException("values["+i+"] < 0");
             }
         }
-        this.lengths = Arrays.copyOf(lengths, lengths.length);
-        this.values = Arrays.copyOf(values, values.length);
+        this.lengths = lengths_copy;
+        this.values = values_copy;
         validate();
     }
 
