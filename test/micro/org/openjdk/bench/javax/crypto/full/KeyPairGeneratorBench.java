@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.security.Security;
 
 public class KeyPairGeneratorBench extends CryptoBase {
 
@@ -54,13 +55,13 @@ public class KeyPairGeneratorBench extends CryptoBase {
         }
     }
 
-    private static Provider getInternalJce() {
-        try {
-            Class<?> dhClazz = Class.forName("sun.security.ssl.HybridProvider");
-            return (Provider) dhClazz.getField("PROVIDER").get(null);
-        } catch (ReflectiveOperationException exc) {
-            throw new RuntimeException(exc);
+    private static Provider getSunJCE() {
+        Provider provider = Security.getProvider("SunJCE");
+        if (provider == null) {
+            throw new RuntimeException("SunJCE provider not found");
         }
+
+        return provider;
     }
 
     @Benchmark
@@ -137,7 +138,7 @@ public class KeyPairGeneratorBench extends CryptoBase {
         @Setup
         public void init() {
             try {
-                prov = getInternalJce();
+                prov = getSunJCE();
                 super.setup();
             } catch (GeneralSecurityException gse) {
                 throw new RuntimeException(gse);
