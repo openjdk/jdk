@@ -52,7 +52,9 @@ Node* CardTableBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& 
     vt = static_cast<C2ParseAccess&>(access).vt();
   }
 
-  if (vt == nullptr && (!access.is_oop() || tightly_coupled_alloc || (!in_heap && !anonymous))) {
+  // A parse-time store can omit the post barrier only when ReduceInitialCardMarks is enabled
+  const bool omit_for_tightly_coupled = tightly_coupled_alloc && (!access.is_parse_access() || use_ReduceInitialCardMarks());
+  if (vt == nullptr && (!access.is_oop() || omit_for_tightly_coupled || (!in_heap && !anonymous))) {
     return BarrierSetC2::store_at_resolved(access, val);
   }
 

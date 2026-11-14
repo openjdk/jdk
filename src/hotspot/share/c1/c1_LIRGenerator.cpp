@@ -2229,7 +2229,7 @@ void LIRGenerator::do_LoadField(LoadField* x) {
     // Copy the payload to the buffer
     assert(buffer != nullptr, "buffer required");
     LIRItem dest(buffer, this);
-    access_store_at(decorators, bt, dest, LIR_OprFact::intConst(vk->payload_offset()), payload);
+    access_store_at(decorators, bt, dest, LIR_OprFact::intConst(vk->payload_offset()), payload, nullptr, nullptr, vk);
 
     if (field->is_null_free()) {
       set_result(x, buffer->operand());
