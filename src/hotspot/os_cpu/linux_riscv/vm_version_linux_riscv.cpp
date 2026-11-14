@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,6 +26,7 @@
 
 #include "asm/register.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "os_linux.hpp"
 #include "riscv_hwprobe.hpp"
 #include "runtime/java.hpp"
@@ -120,6 +121,41 @@ void VM_Version::RVNonExtFeatureValue::log_enabled() {
   log_info(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
 }
 
+void VM_Version::apply_aot_cache_cpu_features() {
+  RVExtFeatures* archived_cpu_features = (RVExtFeatures*)get_aot_cache_cpu_features();
+  if (archived_cpu_features != nullptr) {
+    assert(is_aligned(archived_cpu_features, cpu_features_alignment()), "sanity check");
+    assert(UseAOTCacheCpuFeaturesOnly, "UseAOTCacheCpuFeaturesOnly must be true");
+    RVExtFeatures* runtime_cpu_features = RVExtFeatures::current();
+    if (!runtime_cpu_features->super_set_of(archived_cpu_features)) {
+      if (!FLAG_IS_DEFAULT(UseAOTCacheCpuFeaturesOnly)) {
+        warning("UseAOTCacheCpuFeaturesOnly is ignored: one or more cpu features recorded in AOT cache are not supported by this CPU");
+      }
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+      return;
+    }
+    _rv_ext_features_disabled_by_aot_cache = runtime_cpu_features->features_not_in(archived_cpu_features);
+    // Undetected extensions can still have flags enabled by command-line options or RVA profiles.
+    for (int i = 0; i < RVExtFeatures::MAX_CPU_FEATURE_INDEX; i++) {
+      if (!archived_cpu_features->support_feature(i)) {
+        _feature_list[i]->disable_feature();
+        // Normal flag initialization skips disabled extensions.
+        _feature_list[i]->update_flag();
+      }
+    }
+
+    LogTarget(Info, os, cpu) os_cpu_log;
+    if (os_cpu_log.is_enabled()) {
+      ResourceMark rm;
+      stringStream ss;
+      insert_features_names(&_rv_ext_features_disabled_by_aot_cache, ss);
+      if (!ss.is_empty()) {
+        os_cpu_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
+      }
+    }
+  }
+}
+
 void VM_Version::setup_cpu_available_features() {
 
   assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
@@ -138,6 +174,14 @@ void VM_Version::setup_cpu_available_features() {
 
   char* uarch = os_uarch_additional_features();
   vendor_features();
+
+  // Linux kernel require Zifencei
+  if (!ext_Zifencei.enabled()) {
+    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
+    ext_Zifencei.enable_feature();
+  }
+
+  apply_aot_cache_cpu_features();
 
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
@@ -189,12 +233,6 @@ void VM_Version::setup_cpu_available_features() {
       }
     }
     i++;
-  }
-
-  // Linux kernel require Zifencei
-  if (!ext_Zifencei.enabled()) {
-    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
-    ext_Zifencei.enable_feature();
   }
 
   if (UseCtxFencei) {
@@ -320,8 +358,6 @@ void VM_Version::vendor_features() {
 
 void VM_Version::rivos_features() {
   // Enable common features not dependent on marchid/mimpid.
-  ext_Zicbom.enable_feature();
-  ext_Zicboz.enable_feature();
   ext_Zicbop.enable_feature();
 
   // If we running on a pre-6.5 kernel
@@ -335,7 +371,6 @@ void VM_Version::rivos_features() {
 
   ext_Zicsr.enable_feature();
   ext_Zifencei.enable_feature();
-  ext_Zic64b.enable_feature();
   ext_Ztso.enable_feature();
 
   ext_Zvfh.enable_feature();
@@ -366,6 +401,8 @@ void VM_Version::xuantie_features() {
   ext_v.enable_feature();
   ext_Zabha.enable_feature();
   ext_Zacas.enable_feature();
+  // Zalasr will always be available. Note that hwprobe won't report Ztso on C925-C950 CPUs.
+  ext_Zalasr.enable_feature();
   ext_Zawrs.enable_feature();
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
@@ -375,13 +412,11 @@ void VM_Version::xuantie_features() {
   ext_Zfa.enable_feature();
   ext_Zfh.enable_feature();
   ext_Zfhmin.enable_feature();
-  ext_Zicbom.enable_feature();
   ext_Zicbop.enable_feature();
-  ext_Zicboz.enable_feature();
+  ext_Ziccid.enable_feature();
   ext_Zicond.enable_feature();
   ext_Zicntr.enable_feature();
   ext_Zicsr.enable_feature();
-  ext_Zic64b.enable_feature();
   ext_Zifencei.enable_feature();
   ext_Zihintpause.enable_feature();
   ext_Zvbb.enable_feature();
@@ -392,4 +427,8 @@ void VM_Version::xuantie_features() {
 
   unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
   unaligned_vector.enable_feature(MISALIGNED_VECTOR_FAST);
+
+  if (FLAG_IS_DEFAULT(CodeEntryAlignment)) {
+    FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
+  }
 }

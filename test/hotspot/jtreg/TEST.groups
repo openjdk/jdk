@@ -267,11 +267,6 @@ tier3_compiler = \
   -:tier1_compiler \
   -:tier2_compiler
 
-tier1_compiler_no_valhalla = \
-  :tier1_compiler_1 \
-  :tier1_compiler_2 \
-  :tier1_compiler_3_no_valhalla
-
 ctw_1 = \
   applications/ctw/modules/ \
   -:ctw_2 \
@@ -429,10 +424,6 @@ tier1_runtime = \
  -runtime/signal \
  -runtime/stack
 
-tier1_runtime_no_valhalla = \
-  :tier1_runtime \
-  -runtime/valhalla
-
 hotspot_cds = \
   runtime/cds/ \
   runtime/CompressedOops/
@@ -553,10 +544,15 @@ tier1_runtime_appcds = \
   runtime/cds/appcds/aotCache/HelloAOTCache.java \
   runtime/cds/appcds/aotCode \
   runtime/cds/appcds/HelloTest.java \
-  -runtime/cds/appcds/aotCode/AOTCodeFlags.java
+  -runtime/cds/appcds/aotCode/AOTCodeFlags.java \
+  -runtime/cds/appcds/aotCode/TestAOTCodeCounters.java \
+  -runtime/cds/appcds/aotCode/TestAOTCodeFeatures.java
 
 tier1_runtime_appcds_exclude = \
   runtime/cds/appcds/ \
+  runtime/cds/appcds/aotCode/AOTCodeFlags.java \
+  runtime/cds/appcds/aotCode/TestAOTCodeCounters.java \
+  runtime/cds/appcds/aotCode/TestAOTCodeFeatures.java \
   -:tier1_runtime_appcds
 
 tier1_runtime_no_cds = \
@@ -587,14 +583,11 @@ tier1_serviceability = \
   -serviceability/jvmti/RedefineClasses/RedefineRunningMethods.java \
   -serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java \
   -serviceability/jvmti/RedefineClasses/TestRedefineObject.java \
+  -serviceability/jvmti/SetBreakpoint/BreakpointMetaspaceOOM.java \
   -serviceability/sa/ClhsdbScanOops.java \
   -serviceability/sa/ClhsdbJstackXcompStress.java \
   -serviceability/sa/TestJmapCore.java \
   -serviceability/sa/TestJmapCoreMetaspace.java
-
-tier1_serviceability_no_valhalla = \
-  :tier1_serviceability \
-  -serviceability/jvmti/valhalla
 
 tier1 = \
   :tier1_common \

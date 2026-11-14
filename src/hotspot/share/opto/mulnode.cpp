@@ -454,7 +454,7 @@ const Type* IntegerTypeMultiplication<jlong>::create_type(jlong lo, jlong hi) co
 
 // Compute the product type of two integer ranges into this node.
 const Type* MulINode::mul_ring(const Type* type_left, const Type* type_right) const {
-  const IntegerTypeMultiplication<jint> integer_multiplication(type_left->is_int(), type_right->is_int());
+  const IntegerTypeMultiplication<jint> integer_multiplication(type_left->as_int(), type_right->as_int());
   return integer_multiplication.compute();
 }
 
@@ -465,7 +465,7 @@ bool MulINode::does_overflow(const TypeInt* type_left, const TypeInt* type_right
 
 // Compute the product type of two long ranges into this node.
 const Type* MulLNode::mul_ring(const Type* type_left, const Type* type_right) const {
-  const IntegerTypeMultiplication<jlong> integer_multiplication(type_left->is_long(), type_right->is_long());
+  const IntegerTypeMultiplication<jlong> integer_multiplication(type_left->as_long(), type_right->as_long());
   return integer_multiplication.compute();
 }
 
@@ -660,7 +660,7 @@ const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
 const Type* AndINode::mul_ring(const Type* t1, const Type* t2) const {
-  return RangeInference::infer_and(t1->is_int(), t2->is_int());
+  return RangeInference::infer_and(t1->as_int(), t2->as_int());
 }
 
 static bool AndIL_is_zero_element_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt);
@@ -683,8 +683,8 @@ Node* AndINode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
-  const TypeInt* t1 = phase->type(in(1))->is_int();
-  const TypeInt* t2 = phase->type(in(2))->is_int();
+  const TypeInt* t1 = phase->type(in(1))->as_int();
+  const TypeInt* t2 = phase->type(in(2))->as_int();
 
   if ((~t1->_bits._ones & ~t2->_bits._zeros) == 0) {
     // All bits that might be 0 in in1 are known to be 0 in in2
@@ -778,7 +778,7 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
 const Type* AndLNode::mul_ring(const Type* t1, const Type* t2) const {
-  return RangeInference::infer_and(t1->is_long(), t2->is_long());
+  return RangeInference::infer_and(t1->as_long(), t2->as_long());
 }
 
 const Type* AndLNode::Value(PhaseGVN* phase) const {
@@ -799,8 +799,8 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
-  const TypeLong* t1 = phase->type(in(1))->is_long();
-  const TypeLong* t2 = phase->type(in(2))->is_long();
+  const TypeLong* t1 = phase->type(in(1))->as_long();
+  const TypeLong* t2 = phase->type(in(2))->as_long();
 
   if ((~t1->_bits._ones & ~t2->_bits._zeros) == 0) {
     // All bits that might be 0 in in1 are known to be 0 in in2
@@ -838,13 +838,11 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* in1 = in(1);
   int op = in1->Opcode();
 
-  // Are we masking a long that was converted from an int with a mask
-  // that fits in 32-bits?  Commute them and use an AndINode.  Don't
-  // convert masks which would cause a sign extension of the integer
-  // value.  This check includes UI2L masks (0x00000000FFFFFFFF) which
-  // would be optimized away later in Identity.
-  if (op == Op_ConvI2L && (mask & UCONST64(0xFFFFFFFF80000000)) == 0) {
-    Node* andi = new AndINode(in1->in(1), phase->intcon(mask));
+  // If the mask is a sign extension of a 32-bit value, commute the AND
+  // with the conversion:
+  //   ConvI2L(x) & mask => ConvI2L(x & (jint)mask)
+  if (op == Op_ConvI2L && mask == (jlong)(jint)mask) {
+    Node* andi = new AndINode(in1->in(1), phase->intcon((jint)mask));
     andi = phase->transform(andi);
     return new ConvI2LNode(andi);
   }
@@ -869,7 +867,7 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Search for GraphKit::mark_word_test patterns and fold the test if the result is statically known
-  if (in1->is_Load() && phase->type(in1)->isa_long()) {
+  if (in1->is_Load() && phase->type(in1)->is_long()) {
     const TypePtr* adr_t = phase->type(in1->in(MemNode::Address))->isa_ptr();
     if (adr_t != nullptr && adr_t->offset() == oopDesc::mark_offset_in_bytes()) {
       if (mask == markWord::value_type_pattern) {
@@ -1143,13 +1141,29 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
-  // Check for ((x & ((1<<(32-c0))-1)) << c0) which ANDs off high bits
-  // before shifting them away.
-  const jlong bits_mask = max_unsigned_integer(bt) >> con;
-  assert(bt != T_INT || bits_mask == right_n_bits(num_bits - con), "inconsistent");
-  if (add1_op == Op_And(bt) &&
-      phase->type(add1->in(2)) == TypeInteger::make(bits_mask, bt)) {
-    return LShiftNode::make(add1->in(1), in(2), bt);
+  // (x & mask) << con => x << con, where mask is known to have all bits that
+  // survive the shift set; additional bits are shifted away.
+  const julong bits_mask = max_unsigned_integer(bt) >> con;
+  assert(bt != T_INT || bits_mask == right_n_bits<julong>(num_bits - con), "inconsistent");
+  if (add1_op == Op_And(bt)) {
+    // Either operand of the commutative And can be the mask.
+    for (uint i = 1; i <= 2; i++) {
+      const TypeInteger* mask_t = phase->type(add1->in(i))->isa_integer(bt);
+      if (mask_t == nullptr) {
+        // AND operands have the matching integer type unless they are TOP.
+        // Thus nullptr means TOP here; leave the dead AND for dead-code cleanup.
+        break;
+      }
+      uint64_t known_ones;
+      if (bt == T_INT) {
+        known_ones = mask_t->as_int()->_bits._ones;
+      } else {
+        known_ones = mask_t->as_long()->_bits._ones;
+      }
+      if ((known_ones & bits_mask) == bits_mask) {
+        return LShiftNode::make(add1->in(3 - i), in(2), bt);
+      }
+    }
   }
 
   // Collapse nested left-shifts with constant rhs:
@@ -1192,13 +1206,13 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
     return TypeInteger::bottom(bt);
   }
 
-  const TypeInteger* r1 = t1->is_integer(bt); // Handy access
+  const TypeInteger* r1 = t1->as_integer(bt); // Handy access
   // Since the shift semantics in Java take into account only the bottom five
   // bits for ints and the bottom six bits for longs, we can further constrain
   // the range of values of the shift amount by ANDing with the right mask based
   // on whether the type is int or long.
   const TypeInt* mask = TypeInt::make(bits_per_java_integer(bt) - 1);
-  const TypeInt* r2 = RangeInference::infer_and(t2->is_int(), mask);
+  const TypeInt* r2 = RangeInference::infer_and(t2->as_int(), mask);
 
   if (!r2->is_con()) {
     return TypeInteger::bottom(bt);
@@ -1216,17 +1230,17 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
 #ifdef ASSERT
     if (bt == T_INT) {
       jlong lo = r1->lo_as_long(), hi = r1->hi_as_long();
-      jint lo_int = r1->is_int()->_lo, hi_int = r1->is_int()->_hi;
+      jint lo_int = r1->as_int()->_lo, hi_int = r1->as_int()->_hi;
       assert((java_shift_right(java_shift_left(lo, shift, bt),  shift, bt) == lo) == (((lo_int << shift) >> shift) == lo_int), "inconsistent");
       assert((java_shift_right(java_shift_left(hi, shift, bt),  shift, bt) == hi) == (((hi_int << shift) >> shift) == hi_int), "inconsistent");
     }
 #endif
 
     if (bt == T_INT) {
-        return RangeInference::infer_lshift(r1->is_int(), shift);
+      return RangeInference::infer_lshift(r1->as_int(), shift);
     }
 
-    return RangeInference::infer_lshift(r1->is_long(), shift);
+    return RangeInference::infer_lshift(r1->as_long(), shift);
   }
 
   return TypeInteger::make(java_shift_left(r1->get_con_as_long(bt), shift, bt), bt);
@@ -1316,8 +1330,7 @@ Node* RShiftINode::Identity(PhaseGVN* phase) {
 
 Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   // Inputs may be TOP if they are dead.
-  const TypeInteger* t1 = phase->type(in(1))->isa_integer(bt);
-  if (t1 == nullptr) {
+  if (!phase->type(in(1))->is_integer(bt)) {
     return NodeSentinel;        // Left input is an integer
   }
 
@@ -1425,8 +1438,8 @@ const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
     return TypeInteger::bottom(bt);
   }
 
-  const TypeInteger* r1 = t1->isa_integer(bt);
-  const TypeInt* r2 = t2->isa_int();
+  const TypeInteger* r1 = t1->as_integer(bt);
+  const TypeInt* r2 = t2->as_int();
 
   // If the shift is a constant, just shift the bounds of the type.
   // For example, if the shift is 31/63, we just propagate sign bits.
@@ -1634,9 +1647,9 @@ Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if ( in1_op == Op_RShiftI ) {
     Node *in11 = shr->in(1);
     Node *in12 = shr->in(2);
-    const TypeInt *t11 = phase->type(in11)->isa_int();
-    const TypeInt *t12 = phase->type(in12)->isa_int();
-    if ( t11 && t2 && t2->is_con(31) && t12 && t12->is_con() ) {
+    bool in11_is_int = phase->type(in11)->is_int();
+    const TypeInt* t12 = phase->type(in12)->isa_int();
+    if (in11_is_int && t2 != nullptr && t2->is_con(31) && t12 != nullptr && t12->is_con()) {
       return new URShiftINode(in11, phase->intcon(31));
     }
   }
@@ -1666,8 +1679,8 @@ const Type* URShiftINode::Value(PhaseGVN* phase) const {
   if (t2 == TypeInt::INT)
     return TypeInt::INT;
 
-  const TypeInt *r1 = t1->is_int();     // Handy access
-  const TypeInt *r2 = t2->is_int();     // Handy access
+  const TypeInt* r1 = t1->as_int();  // Handy access
+  const TypeInt* r2 = t2->as_int();  // Handy access
 
   if (r2->is_con()) {
     uint shift = r2->get_con();
@@ -1705,12 +1718,12 @@ const Type* URShiftINode::Value(PhaseGVN* phase) const {
   //
   // else if( t1->base() == Type::InstPtr ) {
   //
-  //   const TypeInstPtr *o = t1->is_instptr();
+  //   const TypeInstPtr* o = t1->as_instptr();
   //   if( t1->singleton() )
   //     return TypeInt::make( ((uint32_t)o->const_oop() + o->_offset) >> shift );
   // }
   // else if( t1->base() == Type::KlassPtr ) {
-  //   const TypeKlassPtr *o = t1->is_klassptr();
+  //   const TypeKlassPtr* o = t1->as_klassptr();
   //   if( t1->singleton() )
   //     return TypeInt::make( ((uint32_t)o->const_oop() + o->_offset) >> shift );
   // }
@@ -1795,9 +1808,9 @@ Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if ( shr->Opcode() == Op_RShiftL ) {
     Node *in11 = shr->in(1);
     Node *in12 = shr->in(2);
-    const TypeLong *t11 = phase->type(in11)->isa_long();
-    const TypeInt *t12 = phase->type(in12)->isa_int();
-    if ( t11 && t2 && t2->is_con(63) && t12 && t12->is_con() ) {
+    bool in11_is_long = phase->type(in11)->is_long();
+    const TypeInt* t12 = phase->type(in12)->isa_int();
+    if (in11_is_long && t2 != nullptr && t2->is_con(63) && t12 != nullptr && t12->is_con()) {
       return new URShiftLNode(in11, phase->intcon(63));
     }
   }
@@ -1827,8 +1840,8 @@ const Type* URShiftLNode::Value(PhaseGVN* phase) const {
   if (t2 == TypeInt::INT)
     return TypeLong::LONG;
 
-  const TypeLong *r1 = t1->is_long(); // Handy access
-  const TypeInt  *r2 = t2->is_int (); // Handy access
+  const TypeLong* r1 = t1->as_long(); // Handy access
+  const TypeInt* r2 = t2->as_int(); // Handy access
 
   if (r2->is_con()) {
     uint shift = r2->get_con();
@@ -1962,8 +1975,8 @@ Node* RotateLeftNode::Identity(PhaseGVN* phase) {
     return this;
   }
   uint count;
-  assert(t1->isa_int() || t1->isa_long(), "Unexpected type");
-  uint num_bits = t1->isa_int() ? BitsPerJavaInteger : BitsPerJavaLong;
+  assert(t1->is_int() || t1->is_long(), "Unexpected type");
+  uint num_bits = t1->is_int() ? BitsPerJavaInteger : BitsPerJavaLong;
   if (mask_shift_amount(phase, this, num_bits, count) && count == 0) {
     // Rotate by a multiple of 32/64 does nothing
     return in(1);
@@ -1979,9 +1992,9 @@ const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
 
-  if (t1->isa_int()) {
-    const TypeInt* r1 = t1->is_int();
-    const TypeInt* r2 = t2->is_int();
+  if (t1->is_int()) {
+    const TypeInt* r1 = t1->as_int();
+    const TypeInt* r2 = t2->as_int();
 
     // Left input is ZERO ==> the result is ZERO.
     if (r1 == TypeInt::ZERO) {
@@ -1998,9 +2011,9 @@ const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
     }
     return TypeInt::INT;
   } else {
-    assert(t1->isa_long(), "Type must be a long");
-    const TypeLong* r1 = t1->is_long();
-    const TypeInt*  r2 = t2->is_int();
+    assert(t1->is_long(), "Type must be a long");
+    const TypeLong* r1 = t1->as_long();
+    const TypeInt*  r2 = t2->as_int();
 
     // Left input is ZERO ==> the result is ZERO.
     if (r1 == TypeLong::ZERO) {
@@ -2022,13 +2035,13 @@ const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
 Node* RotateLeftNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
-  if (t2->isa_int() && t2->is_int()->is_con()) {
-    if (t1->isa_int()) {
-      int lshift = t2->is_int()->get_con() & 31;
+  if (t2->is_int() && t2->as_int()->is_con()) {
+    if (t1->is_int()) {
+      int lshift = t2->as_int()->get_con() & 31;
       return new RotateRightNode(in(1), phase->intcon(32 - (lshift & 31)), TypeInt::INT);
     } else if (t1 != Type::TOP) {
-      assert(t1->isa_long(), "Type must be a long");
-      int lshift = t2->is_int()->get_con() & 63;
+      assert(t1->is_long(), "Type must be a long");
+      int lshift = t2->as_int()->get_con() & 63;
       return new RotateRightNode(in(1), phase->intcon(64 - (lshift & 63)), TypeLong::LONG);
     }
   }
@@ -2041,8 +2054,8 @@ Node* RotateRightNode::Identity(PhaseGVN* phase) {
     return this;
   }
   uint count;
-  assert(t1->isa_int() || t1->isa_long(), "Unexpected type");
-  uint num_bits = t1->isa_int() ? BitsPerJavaInteger : BitsPerJavaLong;
+  assert(t1->is_int() || t1->is_long(), "Unexpected type");
+  uint num_bits = t1->is_int() ? BitsPerJavaInteger : BitsPerJavaLong;
   if (mask_shift_amount(phase, this, num_bits, count) && count == 0) {
     // Rotate by a multiple of 32/64 does nothing
     return in(1);
@@ -2058,9 +2071,9 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
 
-  if (t1->isa_int()) {
-    const TypeInt* r1 = t1->is_int();
-    const TypeInt* r2 = t2->is_int();
+  if (t1->is_int()) {
+    const TypeInt* r1 = t1->as_int();
+    const TypeInt* r2 = t2->as_int();
 
     // Left input is ZERO ==> the result is ZERO.
     if (r1 == TypeInt::ZERO) {
@@ -2077,9 +2090,8 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
     }
     return TypeInt::INT;
   } else {
-    assert(t1->isa_long(), "Type must be a long");
-    const TypeLong* r1 = t1->is_long();
-    const TypeInt*  r2 = t2->is_int();
+    const TypeLong* r1 = t1->as_long();
+    const TypeInt*  r2 = t2->as_int();
     // Left input is ZERO ==> the result is ZERO.
     if (r1 == TypeLong::ZERO) {
       return TypeLong::ZERO;

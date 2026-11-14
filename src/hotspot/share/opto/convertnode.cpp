@@ -55,13 +55,12 @@ const Type* Conv2BNode::Value(PhaseGVN* phase) const {
   if( t == TypePtr::NULL_PTR ) return TypeInt::ZERO;
   const TypePtr *tp = t->isa_ptr();
   if(tp != nullptr) {
-    if( tp->ptr() == TypePtr::AnyNull ) return Type::TOP;
     if( tp->ptr() == TypePtr::Constant) return TypeInt::ONE;
     if (tp->ptr() == TypePtr::NotNull)  return TypeInt::ONE;
     return TypeInt::BOOL;
   }
   if (t->base() != Type::Int) return TypeInt::BOOL;
-  const TypeInt *ti = t->is_int();
+  const TypeInt* ti = t->as_int();
   if( ti->_hi < 0 || ti->_lo > 0 ) return TypeInt::ONE;
   return TypeInt::BOOL;
 }
@@ -78,9 +77,9 @@ Node* Conv2BNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       // Get type of comparison to make
       const Type* t = phase->type(in(1));
       Node* cmp = nullptr;
-      if (t->isa_int()) {
+      if (t->is_int()) {
         cmp = phase->transform(new CmpINode(in(1), phase->intcon(0)));
-      } else if (t->isa_ptr()) {
+      } else if (t->is_ptr()) {
         cmp = phase->transform(new CmpPNode(in(1), phase->zerocon(BasicType::T_OBJECT)));
       } else {
         assert(false, "Unrecognized comparison for Conv2B: %s", NodeClassNames[in(1)->Opcode()]);
@@ -157,7 +156,7 @@ const Type* ConvD2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
   if( t == Type::DOUBLE ) return Type::FLOAT;
-  const TypeD *td = t->is_double_constant();
+  const TypeD* td = t->as_double_constant();
   return TypeF::make( (float)td->getd() );
 }
 
@@ -189,7 +188,7 @@ const Type* ConvD2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
   if( t == Type::DOUBLE ) return TypeInt::INT;
-  const TypeD *td = t->is_double_constant();
+  const TypeD* td = t->as_double_constant();
   return TypeInt::make( SharedRuntime::d2i( td->getd() ) );
 }
 
@@ -206,7 +205,7 @@ const Type* ConvD2LNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
   if( t == Type::DOUBLE ) return TypeLong::LONG;
-  const TypeD *td = t->is_double_constant();
+  const TypeD* td = t->as_double_constant();
   return TypeLong::make( SharedRuntime::d2l( td->getd() ) );
 }
 
@@ -215,7 +214,7 @@ Node* ConvD2LNode::Identity(PhaseGVN* phase) {
   // Remove ConvD2L->ConvL2D->ConvD2L sequences.
   if( in(1)       ->Opcode() == Op_ConvL2D &&
      in(1)->in(1)->Opcode() == Op_ConvD2L )
-  return in(1)->in(1);
+    return in(1)->in(1);
   return this;
 }
 
@@ -225,7 +224,7 @@ const Type* ConvF2DNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
   if( t == Type::FLOAT ) return Type::DOUBLE;
-  const TypeF *tf = t->is_float_constant();
+  const TypeF* tf = t->as_float_constant();
   return TypeD::make( (double)tf->getf() );
 }
 
@@ -238,7 +237,7 @@ const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
     return TypeInt::SHORT;
   }
 
-  const TypeF *tf = t->is_float_constant();
+  const TypeF* tf = t->as_float_constant();
   return TypeInt::make( StubRoutines::f2hf(tf->getf()) );
 }
 
@@ -294,7 +293,7 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
     if (conF != nullptr &&
         varS != nullptr &&
-        conF->bottom_type()->isa_float_constant() != nullptr &&
+        conF->bottom_type()->is_float_constant() &&
         Matcher::match_rule_supported(Float16NodeFactory::get_float16_binary_oper(binopF->Opcode())) &&
         Matcher::match_rule_supported(Op_ReinterpretS2HF) &&
         Matcher::match_rule_supported(Op_ReinterpretHF2S) &&
@@ -339,7 +338,7 @@ const Type* ConvF2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP )       return Type::TOP;
   if( t == Type::FLOAT ) return TypeInt::INT;
-  const TypeF *tf = t->is_float_constant();
+  const TypeF* tf = t->as_float_constant();
   return TypeInt::make( SharedRuntime::f2i( tf->getf() ) );
 }
 
@@ -358,7 +357,7 @@ const Type* ConvF2LNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP )       return Type::TOP;
   if( t == Type::FLOAT ) return TypeLong::LONG;
-  const TypeF *tf = t->is_float_constant();
+  const TypeF* tf = t->as_float_constant();
   return TypeLong::make( SharedRuntime::f2l( tf->getf() ) );
 }
 
@@ -380,7 +379,7 @@ const Type* ConvHF2FNode::Value(PhaseGVN* phase) const {
     return Type::FLOAT;
   }
 
-  const TypeInt *ti = t->is_int();
+  const TypeInt* ti = t->as_int();
   if (ti->is_con()) {
     return TypeF::make( StubRoutines::hf2f(ti->get_con()) );
   }
@@ -392,7 +391,7 @@ const Type* ConvHF2FNode::Value(PhaseGVN* phase) const {
 const Type* ConvI2DNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
-  const TypeInt *ti = t->is_int();
+  const TypeInt* ti = t->as_int();
   if( ti->is_con() ) return TypeD::make( (double)ti->get_con() );
   return Type::DOUBLE;
 }
@@ -402,7 +401,7 @@ const Type* ConvI2DNode::Value(PhaseGVN* phase) const {
 const Type* ConvI2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
-  const TypeInt *ti = t->is_int();
+  const TypeInt* ti = t->as_int();
   if( ti->is_con() ) return TypeF::make( (float)ti->get_con() );
   return Type::FLOAT;
 }
@@ -423,14 +422,14 @@ const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
   if (t == Type::TOP) {
     return Type::TOP;
   }
-  const TypeInt *ti = t->is_int();
+  const TypeInt* ti = t->as_int();
   const Type* tl = TypeLong::make(ti->_lo, ti->_hi, ti->_widen);
   // Join my declared type against my incoming type.
   tl = tl->filter(_type);
-  if (!tl->isa_long()) {
+  if (!tl->is_long()) {
     return tl;
   }
-  const TypeLong* this_type = tl->is_long();
+  const TypeLong* this_type = tl->as_long();
   // Do NOT remove this node's type assertion until no more loop ops can happen.
   if (phase->C->post_loop_opts_phase()) {
     const TypeInt* in_type = phase->type(in(1))->isa_int();
@@ -725,12 +724,7 @@ static bool compute_updates_ranges(const TypeInteger* tx, const TypeInteger* ty,
 static Node* find_or_make_convI2L(PhaseIterGVN* igvn, Node* parent,
                                   const TypeLong* type) {
   Node* n = new ConvI2LNode(parent, type);
-  Node* existing = igvn->hash_find_insert(n);
-  if (existing != nullptr) {
-    n->destruct(igvn);
-    return existing;
-  }
-  return igvn->register_new_node_with_optimizer(n);
+  return igvn->find_node_or_register_new_node_with_optimizer(n);
 }
 #endif
 
@@ -747,8 +741,8 @@ bool Compile::push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, con
     if (phase->type(y) == Type::TOP) {
       return false;
     }
-    const TypeInteger* tx = phase->type(x)->is_integer(in_bt);
-    const TypeInteger* ty = phase->type(y)->is_integer(in_bt);
+    const TypeInteger* tx = phase->type(x)->as_integer(in_bt);
+    const TypeInteger* ty = phase->type(y)->as_integer(in_bt);
 
     if (ranges_overlap(tx, ty, tz, z, true, in_bt) ||
         ranges_overlap(tx, ty, tz, z, false, in_bt)) {
@@ -762,14 +756,7 @@ bool Compile::push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, con
 
 //------------------------------Ideal------------------------------------------
 Node* ConvI2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
-    Node* progress = TypeNode::Ideal(phase, can_reshape);
-    if (progress != nullptr) {
-      return progress;
-    }
-  }
-
-  const TypeLong* this_type = this->type()->is_long();
+  const TypeLong* this_type = this->type()->as_long();
   if (can_reshape && !phase->C->post_loop_opts_phase()) {
     // makes sure we run ::Value to potentially remove type assertion after loop opts
     phase->C->record_for_post_loop_opts_igvn(this);
@@ -811,8 +798,8 @@ Node* ConvI2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* x = z->in(1);
     Node* y = z->in(2);
 
-    Node* cx = find_or_make_convI2L(igvn, x, rx->is_long());
-    Node* cy = find_or_make_convI2L(igvn, y, ry->is_long());
+    Node* cx = find_or_make_convI2L(igvn, x, rx->as_long());
+    Node* cy = find_or_make_convI2L(igvn, y, ry->as_long());
     switch (op) {
       case Op_AddI:  return new AddLNode(cx, cy);
       case Op_SubI:  return new SubLNode(cx, cy);
@@ -829,7 +816,7 @@ Node* ConvI2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 const Type* ConvL2DNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
-  const TypeLong *tl = t->is_long();
+  const TypeLong* tl = t->as_long();
   if( tl->is_con() ) return TypeD::make( (double)tl->get_con() );
   return Type::DOUBLE;
 }
@@ -839,7 +826,7 @@ const Type* ConvL2DNode::Value(PhaseGVN* phase) const {
 const Type* ConvL2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
-  const TypeLong *tl = t->is_long();
+  const TypeLong* tl = t->as_long();
   if( tl->is_con() ) return TypeF::make( (float)tl->get_con() );
   return Type::FLOAT;
 }
@@ -856,7 +843,7 @@ Node* ConvL2INode::Identity(PhaseGVN* phase) {
 const Type* ConvL2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
-  const TypeLong *tl = t->is_long();
+  const TypeLong* tl = t->as_long();
   const TypeInt* ti = TypeInt::INT;
   if (tl->is_con()) {
     // Easy case.
@@ -871,13 +858,6 @@ const Type* ConvL2INode::Value(PhaseGVN* phase) const {
 // Return a node which is more "ideal" than the current node.
 // Blow off prior masking to int
 Node* ConvL2INode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
-    Node* progress = TypeNode::Ideal(phase, can_reshape);
-    if (progress != nullptr) {
-      return progress;
-    }
-  }
-
   Node *andl = in(1);
   uint andl_op = andl->Opcode();
   if( andl_op == Op_AndL ) {
@@ -933,8 +913,8 @@ const Type* RoundDoubleModeNode::Value(PhaseGVN* phase) const {
 const Type* ReinterpretS2HFNode::Value(PhaseGVN* phase) const {
   const Type* type = phase->type(in(1));
   // Convert short constant value to a Half Float constant value
-  if ((type->isa_int() && type->is_int()->is_con())) {
-     jshort hfval = type->is_int()->get_con();
+  if (type->is_int() && type->as_int()->is_con()) {
+     jshort hfval = type->as_int()->get_con();
      return TypeH::make(hfval);
   }
   return Type::HALF_FLOAT;
@@ -942,7 +922,7 @@ const Type* ReinterpretS2HFNode::Value(PhaseGVN* phase) const {
 
 Node* ReinterpretS2HFNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_ReinterpretHF2S) {
-     assert(in(1)->in(1)->bottom_type()->isa_half_float(), "");
+     assert(in(1)->in(1)->bottom_type()->is_half_float(), "");
      return in(1)->in(1);
   }
   return this;
@@ -951,8 +931,8 @@ Node* ReinterpretS2HFNode::Identity(PhaseGVN* phase) {
 const Type* ReinterpretHF2SNode::Value(PhaseGVN* phase) const {
   const Type* type = phase->type(in(1));
   // Convert Half float constant value to short constant value.
-  if (type->isa_half_float_constant()) {
-     jshort hfval = type->is_half_float_constant()->_f;
+  if (type->is_half_float_constant()) {
+     jshort hfval = type->as_half_float_constant()->_f;
      return TypeInt::make(hfval);
   }
   return TypeInt::SHORT;

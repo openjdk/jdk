@@ -1183,13 +1183,13 @@ class CallStubImpl {
   //--------------------------------------------------------------
 
  public:
-  // Size of call trampoline stub.
-  static uint size_call_trampoline() {
+  // Size of call stub.
+  static uint size_call_stub() {
     return MacroAssembler::max_trampoline_stub_size();
   }
 
-  // number of relocations needed by a call trampoline stub
-  static uint reloc_call_trampoline() {
+  // Number of relocations needed by a call stub.
+  static uint reloc_call_stub() {
     return 5; // metadata; call dest; trampoline address; trampoline destination; trampoline_owner_metadata
   }
 };
@@ -1701,6 +1701,34 @@ int MachCallRuntimeNode::ret_addr_offset() const {
 
 //=============================================================================
 
+void MachUncommonTrapNode::emit_impl(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
+  address entry_point = OptoRuntime::uncommon_trap_blob()->entry_point();
+  address runtime_call = __ trampoline_call(Address(entry_point, relocInfo::runtime_call_type));
+  if (runtime_call == nullptr) {
+    ciEnv::current()->record_failure("Failed to emit uncommon trap trampoline call");
+    return;
+  }
+
+  __ emit_int32(trap_request());
+}
+
+uint MachUncommonTrapNode::size_impl(PhaseRegAlloc* ra_) const {
+  // BL followed by 32-bit integer constant.
+  //
+  // If target address cannot be directly encoded into the BL,
+  // a trampoline in the stub code will be emitted and used to reach
+  // the uncommon trap blob, similarly to trampolines for static calls
+  // into compiled Java methods. The size of the trampoline is
+  // accounted for separately.
+  return NativeInstruction::instruction_size + sizeof(int32_t);
+}
+
+int MachUncommonTrapNode::ret_addr_offset_impl() const {
+  return NativeInstruction::instruction_size;
+}
+
+//=============================================================================
+
 #ifndef PRODUCT
 void MachBreakpointNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("BREAKPOINT");
@@ -1941,7 +1969,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
 
   assert(src_lo != OptoReg::Bad && dst_lo != OptoReg::Bad, "must move at least 1 register");
 
-  if (src_hi != OptoReg::Bad && !bottom_type()->isa_pvectmask()) {
+  if (src_hi != OptoReg::Bad && !bottom_type()->is_pvectmask()) {
     assert((src_lo&1)==0 && src_lo+1==src_hi &&
            (dst_lo&1)==0 && dst_lo+1==dst_hi,
            "expected aligned-adjacent pairs");
@@ -1956,7 +1984,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
   int src_offset = ra_->reg2offset(src_lo);
   int dst_offset = ra_->reg2offset(dst_lo);
 
-  if (bottom_type()->isa_vect() && !bottom_type()->isa_pvectmask()) {
+  if (bottom_type()->is_vect() && !bottom_type()->is_pvectmask()) {
     uint ireg = ideal_reg();
     DEBUG_ONLY(int algm = MIN2(RegMask::num_registers(ireg), (int)Matcher::stack_alignment_in_slots()) * VMRegImpl::stack_slot_size);
     assert((src_lo_rc != rc_stack) || is_aligned(src_offset, algm), "unaligned vector spill sp offset %d (src)", src_offset);
@@ -2104,7 +2132,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     } else {
       st->print("%s", Matcher::regName[dst_lo]);
     }
-    if (bottom_type()->isa_vect() && !bottom_type()->isa_pvectmask()) {
+    if (bottom_type()->is_vect() && !bottom_type()->is_pvectmask()) {
       int vsize = 0;
       switch (ideal_reg()) {
       case Op_VecD:
@@ -2612,7 +2640,7 @@ static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
   }
 
   const Type* t = imm_node->bottom_type();
-  if (!(t->isa_int() || t->isa_long())) {
+  if (!(t->is_int() || t->is_long())) {
     return false;
   }
 
@@ -2621,7 +2649,7 @@ static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
   case Op_OrV:
   case Op_XorV: {
     Assembler::SIMD_RegVariant T = Assembler::elemType_to_regVariant(Matcher::vector_element_basic_type(n));
-    uint64_t value = t->isa_long() ? (uint64_t)imm_node->get_long() : (uint64_t)imm_node->get_int();
+    uint64_t value = t->is_long() ? (uint64_t)imm_node->get_long() : (uint64_t)imm_node->get_int();
     return Assembler::operand_valid_for_sve_logical_immediate(Assembler::regVariant_to_elemBits(T), value);
   }
   case Op_AddVB:
@@ -3657,10 +3685,16 @@ encode %{
       }
     }
 
-    __ post_call_nop();
+    int trap_request;
+    bool is_trap = is_uncommon_trap(&trap_request);
+    if (is_trap) {
+      __ emit_int32(trap_request);
+    } else {
+      __ post_call_nop();
+    }
 
     // Only non uncommon_trap calls need to reinitialize ptrue.
-    if (Compile::current()->max_vector_size() > 0 && uncommon_trap_request() == 0) {
+    if (Compile::current()->max_vector_size() > 0 && !is_trap) {
       __ reinitialize_ptrue();
     }
   %}
@@ -8253,8 +8287,8 @@ instruct encodeHeapOop_not_null(iRegNNoSp dst, iRegP src, rFlagsReg cr) %{
 %}
 
 instruct decodeHeapOop(iRegPNoSp dst, iRegN src, rFlagsReg cr) %{
-  predicate(n->bottom_type()->is_ptr()->ptr() != TypePtr::NotNull &&
-            n->bottom_type()->is_ptr()->ptr() != TypePtr::Constant);
+  predicate(n->bottom_type()->as_ptr()->ptr() != TypePtr::NotNull &&
+            n->bottom_type()->as_ptr()->ptr() != TypePtr::Constant);
   match(Set dst (DecodeN src));
   ins_cost(INSN_COST * 3);
   format %{ "decode_heap_oop $dst, $src" %}
@@ -8267,8 +8301,8 @@ instruct decodeHeapOop(iRegPNoSp dst, iRegN src, rFlagsReg cr) %{
 %}
 
 instruct decodeHeapOop_not_null(iRegPNoSp dst, iRegN src, rFlagsReg cr) %{
-  predicate(n->bottom_type()->is_ptr()->ptr() == TypePtr::NotNull ||
-            n->bottom_type()->is_ptr()->ptr() == TypePtr::Constant);
+  predicate(n->bottom_type()->as_ptr()->ptr() == TypePtr::NotNull ||
+            n->bottom_type()->as_ptr()->ptr() == TypePtr::Constant);
   match(Set dst (DecodeN src));
   ins_cost(INSN_COST * 3);
   format %{ "decode_heap_oop_not_null $dst, $src" %}
@@ -8354,7 +8388,7 @@ instruct castII_checked(iRegI dst, rFlagsReg cr)
 
   format %{ "# castII_checked of $dst" %}
   ins_encode %{
-    __ verify_int_in_range(_idx, bottom_type()->is_int(), $dst$$Register, rscratch1);
+    __ verify_int_in_range(_idx, bottom_type()->as_int(), $dst$$Register, rscratch1);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -8382,7 +8416,7 @@ instruct castII_checked_nosp(iRegINoSp dst, rFlagsReg cr)
 
   format %{ "# castII_checked of $dst" %}
   ins_encode %{
-    __ verify_int_in_range(_idx, bottom_type()->is_int(), $dst$$Register, rscratch1);
+    __ verify_int_in_range(_idx, bottom_type()->as_int(), $dst$$Register, rscratch1);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -8407,7 +8441,7 @@ instruct castLL_checked(iRegL dst, rFlagsReg cr)
 
   format %{ "# castLL_checked of $dst" %}
   ins_encode %{
-    __ verify_long_in_range(_idx, bottom_type()->is_long(), $dst$$Register, rscratch1);
+    __ verify_long_in_range(_idx, bottom_type()->as_long(), $dst$$Register, rscratch1);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -9315,21 +9349,6 @@ instruct subI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-// Immediate Subtraction
-instruct subI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immIAddSub src2) %{
-  match(Set dst (SubI src1 src2));
-
-  ins_cost(INSN_COST);
-  format %{ "subw $dst, $src1, $src2" %}
-
-  // use opcode to indicate that this is a sub not an add
-  opcode(0x1);
-
-  ins_encode(aarch64_enc_addsubw_imm(dst, src1, src2));
-
-  ins_pipe(ialu_reg_imm);
-%}
-
 // Long Subtraction
 instruct subL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 
@@ -9345,21 +9364,6 @@ instruct subL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   %}
 
   ins_pipe(ialu_reg_reg);
-%}
-
-// No constant pool entries requiredLong Immediate Subtraction.
-instruct subL_reg_imm(iRegLNoSp dst, iRegL src1, immLAddSub src2) %{
-  match(Set dst (SubL src1 src2));
-
-  ins_cost(INSN_COST);
-  format %{ "sub$dst, $src1, $src2" %}
-
-  // use opcode to indicate that this is a sub not an add
-  opcode(0x1);
-
-  ins_encode( aarch64_enc_addsub_imm(dst, src1, src2) );
-
-  ins_pipe(ialu_reg_imm);
 %}
 
 // Integer Negation (special case for sub)
@@ -16518,7 +16522,7 @@ instruct expandBitsL_reg(iRegLNoSp dst, iRegL src, iRegL mask,
 %}
 
 
-instruct expandBitsL_memcon(iRegINoSp dst, memory8 mem, immL mask,
+instruct expandBitsL_memcon(iRegLNoSp dst, memory8 mem, immL mask,
                          vRegF tdst, vRegF tsrc, vRegF tmask) %{
   match(Set dst (ExpandBits (LoadL mem) mask));
   effect(TEMP tdst, TEMP tsrc, TEMP tmask);

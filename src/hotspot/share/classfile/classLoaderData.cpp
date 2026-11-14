@@ -46,7 +46,8 @@
 // The bootstrap loader (represented by null) also has a ClassLoaderData,
 // the singleton class the_null_class_loader_data().
 
-#include "cds/heapShared.hpp"
+#include "cds/aotHeap.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
@@ -55,7 +56,6 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -899,7 +899,7 @@ void ClassLoaderData::free_deallocate_list() {
       if (m->is_method()) {
         MetadataFactory::free_metadata(this, (Method*)m);
       } else if (m->is_constantPool()) {
-        HeapShared::remove_scratch_resolved_references((ConstantPool*)m);
+        AOTHeap::remove_scratch_resolved_references((ConstantPool*)m);
         MetadataFactory::free_metadata(this, (ConstantPool*)m);
       } else if (m->is_klass()) {
         JFR_ONLY(Jfr::on_deallocation(static_cast<Klass*>(m));)
@@ -948,7 +948,7 @@ void ClassLoaderData::free_deallocate_list_C_heap_structures() {
       // this class (scratch or error class) in do_unloading().
       remove_class(ik);
       // But still have to remove it from the dumptime_table.
-      SystemDictionaryShared::handle_class_unloading(ik);
+      AOTSystemDictionary::handle_class_unloading(ik);
     }
   }
 }

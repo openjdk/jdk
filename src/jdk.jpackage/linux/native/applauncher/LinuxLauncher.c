@@ -35,31 +35,40 @@
 #include <libgen.h>
 #include "JvmLauncher.h"
 #include "LinuxPackage.h"
+#include "ExecCommand.h"
 
 
 #define STATUS_FAILURE 1
 
-typedef JvmlLauncherHandle (*JvmlLauncherAPI_CreateFunType)(int argc, char *argv[]);
+typedef JvmlLauncherHandle (*JvmlLauncherAPI_CreateFunType)(
+        const PackageDesc*  pkg,
+        int                 argc,
+        char*               argv[]);
 
 static int appArgc;
 static char **appArgv;
 
 
 static JvmlLauncherData* initJvmlLauncherData(int* size) {
-    char* launcherLibPath = 0;
+    JvmLauncherDesc* jvmLauncherDesc = 0;
+    PackageDesc pkg;
     void* jvmLauncherLibHandle = 0;
     JvmlLauncherAPI_GetAPIFunc getApi = 0;
-    JvmlLauncherAPI_CreateFunType createJvmlLauncher = 0;
+    JvmlLauncherAPI_CreateFunType createJvmLauncher = 0;
     JvmlLauncherAPI* api = 0;
     JvmlLauncherHandle jvmLauncherHandle = 0;
     JvmlLauncherData* result = 0;
 
-    launcherLibPath = getJvmLauncherLibPath();
-    if (!launcherLibPath) {
+    jvmLauncherDesc = getJvmLauncherDesc();
+    if (!jvmLauncherDesc) {
         goto cleanup;
     }
 
-    jvmLauncherLibHandle = dlopen(launcherLibPath, RTLD_NOW | RTLD_LOCAL);
+    pkg.name = jvmLauncherDesc->packageName;
+    pkg.type = jvmLauncherDesc->packageType;
+
+    jvmLauncherLibHandle = dlopen(  jvmLauncherDesc->jvmLauncherLibPath,
+                                    RTLD_NOW | RTLD_LOCAL);
     if (!jvmLauncherLibHandle) {
         JP_LOG_ERRMSG(dlerror());
         goto cleanup;
@@ -77,13 +86,13 @@ static JvmlLauncherData* initJvmlLauncherData(int* size) {
         goto cleanup;
     }
 
-    createJvmlLauncher = dlsym(jvmLauncherLibHandle, "jvmLauncherCreate");
-    if (!createJvmlLauncher) {
+    createJvmLauncher = dlsym(jvmLauncherLibHandle, "jvmLauncherCreate");
+    if (!createJvmLauncher) {
         JP_LOG_ERRMSG(dlerror());
         goto cleanup;
     }
 
-    jvmLauncherHandle = (*createJvmlLauncher)(appArgc, appArgv);
+    jvmLauncherHandle = (*createJvmLauncher)(&pkg, appArgc, appArgv);
     if (!jvmLauncherHandle) {
         goto cleanup;
     }
@@ -99,7 +108,7 @@ cleanup:
     if (jvmLauncherLibHandle) {
         dlclose(jvmLauncherLibHandle);
     }
-    free(launcherLibPath);
+    freeJvmLauncherDesc(jvmLauncherDesc);
 
     return result;
 }
@@ -168,13 +177,6 @@ static ssize_t writeFully(const int fd, const void* buf, const size_t len) {
         nWritten += (size_t)n;
     }
     return (ssize_t)nWritten;
-}
-
-static void closePipeEnd(int* pipefd, int idx) {
-    if (pipefd[idx] >= 0) {
-        close(pipefd[idx]);
-        pipefd[idx] = -1;
-    }
 }
 
 

@@ -130,7 +130,7 @@ const Type* ProjNode::proj_type(const Type* t) const {
   if (t == Type::BOTTOM) {
     return Type::BOTTOM;
   }
-  t = t->is_tuple()->field_at(_con);
+  t = t->as_tuple()->field_at(_con);
   CallStaticJavaNode* call = in(0)->isa_CallStaticJava();
   if (call != nullptr && call->is_boxing_method()) {
     // The result of autoboxing is always non-null on normal path.
@@ -149,27 +149,6 @@ const Type* ProjNode::proj_type(const Type* t) const {
 const Type *ProjNode::bottom_type() const {
   if (in(0) == nullptr) return Type::TOP;
   return proj_type(in(0)->bottom_type());
-}
-
-const TypePtr* ProjNode::adr_type() const {
-  if (bottom_type() != Type::MEMORY) {
-    assert(bottom_type()->base() != Type::Memory, "no other memories?");
-    return nullptr;
-  }
-
-  Node* ctrl = in(0);
-  // node is dead or we are in the process of removing a dead subgraph
-  if (ctrl == nullptr || ctrl->is_top()) {
-    return nullptr;
-  }
-
-  const TypePtr* adr_type = ctrl->adr_type();
-#ifdef ASSERT
-  if (!VMError::is_error_reported() && !Node::in_dump()) {
-    assert(adr_type != nullptr, "source must have adr_type");
-  }
-#endif // ASSERT
-  return adr_type;
 }
 
 bool ProjNode::pinned() const { return in(0)->pinned(); }
@@ -200,7 +179,7 @@ void ProjNode::check_con() const {
   if (_con == SCMemProjNode::SCMEMPROJCON ) return;
   const Type* t = n->bottom_type();
   if (t == Type::TOP)  return;  // multi is dead
-  assert(_con < t->is_tuple()->cnt(), "ProjNode::_con must be in range");
+  assert(_con < t->as_tuple()->cnt(), "ProjNode::_con must be in range");
 }
 
 //------------------------------Identity---------------------------------------
@@ -299,6 +278,27 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_if_pattern(Deoptimization::DeoptR
     return nullptr;
   }
   return as_IfProj()->other_if_proj()->is_uncommon_trap_proj(reason);
+}
+
+const TypePtr* ProjNode::out_adr_type_impl() const {
+  if (bottom_type() != Type::MEMORY) {
+    assert(bottom_type()->base() != Type::Memory, "no other memories?");
+    return nullptr;
+  }
+
+  Node* ctrl = in(0);
+  // node is dead or we are in the process of removing a dead subgraph
+  if (ctrl == nullptr || ctrl->is_top()) {
+    return nullptr;
+  }
+
+  const TypePtr* adr_type = ctrl->out_adr_type();
+#ifdef ASSERT
+  if (!VMError::is_error_reported() && !Node::in_dump()) {
+    assert(adr_type != nullptr, "source must have adr_type");
+  }
+#endif // ASSERT
+  return adr_type;
 }
 
 NarrowMemProjNode::NarrowMemProjNode(InitializeNode* src, const TypePtr* adr_type)

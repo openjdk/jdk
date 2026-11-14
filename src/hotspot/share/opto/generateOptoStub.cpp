@@ -115,7 +115,7 @@ void GraphKit::gen_stub(address C_function,
   // extra argument. Not all calls need it, but it is cheap to add here.
   for (uint pcnt = cnt; pcnt < parm_cnt; pcnt++, cnt++) {
     const Type *f = jdomain->field_at(pcnt);
-    if (CCallingConventionRequiresIntsAsLongs && f->isa_int()) {
+    if (CCallingConventionRequiresIntsAsLongs && f->is_int()) {
       fields[cnt++] = TypeLong::LONG;
       fields[cnt] = Type::HALF; // Must add an additional half for a long.
     } else {
@@ -138,13 +138,13 @@ void GraphKit::gen_stub(address C_function,
   // Make a private copy of jrange->fields();
   const Type **rfields = TypeTuple::fields(jrange->cnt() - TypeFunc::Parms);
   // Fixup oop returns
-  int retval_ptr = retval->isa_oop_ptr();
+  int retval_ptr = retval->is_oopptr();
   if (retval_ptr) {
     assert( pass_tls, "Oop must be returned thru TLS" );
     // Fancy-jumps return address; others return void
     rfields[TypeFunc::Parms] = is_fancy_jump ? TypeRawPtr::BOTTOM : Type::TOP;
 
-  } else if (retval->isa_int()) { // Returning any integer subtype?
+  } else if (retval->is_int()) { // Returning any integer subtype?
     // "Fatten" byte, char & short return types to 'int' to show that
     // the native C code can return values with junk high order bits.
     // We'll sign-extend it below later.
@@ -163,7 +163,7 @@ void GraphKit::gen_stub(address C_function,
 
   //-----------------------------
   // Make the call node.
-  CallRuntimeNode* call = new CallRuntimeNode(c_sig, C_function, name, TypePtr::BOTTOM, new (C) JVMState(0));
+  CallRuntimeNode* call = new CallRuntimeNode(c_sig, C_function, name, TypePtr::BOTTOM, TypePtr::BOTTOM, new (C) JVMState(0));
   //-----------------------------
 
   // Fix-up the debug info for the call.
@@ -179,7 +179,7 @@ void GraphKit::gen_stub(address C_function,
   call->set_req(TypeFunc::ReturnAdr, top());
   for (; i < parm_cnt; i++) { // Regular input arguments.
     const Type *f = jdomain->field_at(i);
-    if (CCallingConventionRequiresIntsAsLongs && f->isa_int()) {
+    if (CCallingConventionRequiresIntsAsLongs && f->is_int()) {
       call->init_req(cnt++, _gvn.transform(new ConvI2LNode(map()->in(i))));
       call->init_req(cnt++, top());
     } else {

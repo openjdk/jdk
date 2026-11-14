@@ -713,6 +713,10 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_popframe_reexecute_entry() {
+  return nullptr;
+}
+
 address TemplateInterpreterGenerator::generate_safept_entry_for (TosState state,
                                                                 address runtime_entry) {
   address entry = __ pc();
@@ -1213,7 +1217,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // Get mirror and store it in the frame as GC root for this Method*.
   __ mem2reg_opt(Z_R1_scratch, Address(constants_addr, ConstantPool::pool_holder_offset()));
   __ mem2reg_opt(Z_R1_scratch, Address(Z_R1_scratch, Klass::java_mirror_offset()));
-  __ resolve_oop_handle(Z_R1_scratch, Z_R0_scratch, Z_R1_scratch);
+  Register mirror_tmp = Z_R4;
+  __ resolve_oop_handle(Z_R1_scratch, mirror_tmp, Z_R0_scratch);
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(mirror), fp);
 
   BLOCK_COMMENT("} generate_fixed_frame: initialize interpreter state");
@@ -1588,7 +1593,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Check for safepoint operation in progress and/or pending suspend requests.
   {
     Label Continue, do_safepoint;
-    __ safepoint_poll(do_safepoint, Z_R1);
+    __ safepoint_poll(do_safepoint, Z_R1, true /* at_return */, false /* in_nmethod */);
     // Check for suspend.
     __ load_and_test_int(Z_R0/*suspend_flags*/, thread_(suspend_flags));
     __ z_bre(Continue); // 0 -> no flag set -> not suspended
@@ -1889,7 +1894,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   Label    slow_path;
 
   // If we need a safepoint check, generate full interpreter entry.
-  __ safepoint_poll(slow_path, Z_R1);
+  __ safepoint_poll(slow_path, Z_R1, false /* at_return */, false /* in_nmethod */);
 
   BLOCK_COMMENT("CRC32_update {");
 
@@ -1938,7 +1943,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   Label    slow_path;
 
   // If we need a safepoint check, generate full interpreter entry.
-  __ safepoint_poll(slow_path, Z_R1);
+  __ safepoint_poll(slow_path, Z_R1, false /* at_return */, false /* in_nmethod */);
 
   // We don't generate local frame and don't align stack because
   // we call stub code and there is no safepoint on this path.
@@ -2078,7 +2083,7 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   uint64_t entry_off = __ offset();
 
   __ z_lg(Z_RET, Address(Z_thread, JavaThread::vthread_offset()));
-  __ resolve_oop_handle(Z_RET, Z_R0_scratch, Z_R1_scratch);
+  __ resolve_oop_handle(Z_RET, Z_R1_scratch, Z_R0_scratch);
 
   // Restore caller sp for c2i case.
   __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
@@ -2182,16 +2187,17 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ z_sty(Z_tmp_1, thread_(popframe_condition));
 
   {
-    // Check to see whether we are returning to a deoptimized frame.
-    // (The PopFrame call ensures that the caller of the popped frame is
-    // either interpreted or compiled and deoptimizes it if compiled.)
-    // In this case, we can't call dispatch_next() after the frame is
-    // popped, but instead must save the incoming arguments and restore
-    // them after deoptimization has occurred.
+    // Check to see whether we are returning to a deoptimized frame or
+    // into the continuation return barrier (the PopFrame call ensures that
+    // the caller of the popped frame is either interpreted or compiled and
+    // deoptimizes it if compiled). In both cases, we can't call dispatch_next()
+    // after the frame is popped, but instead must save the incoming arguments
+    // and restore them after deoptimization or thaw has occurred.
     //
     // Note that we don't compare the return PC against the
     // deoptimization blob's unpack entry because of the presence of
-    // adapter frames in C2.
+    // adapter frames in C2. Checking for an interpreter return PC covers
+    // the return barrier as well.
     NearLabel caller_not_deoptimized;
     __ z_lg(Z_ARG1, _z_parent_ijava_frame_abi(return_pc), Z_fp);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::interpreter_contains), Z_ARG1);

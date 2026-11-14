@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_FLATARRAYOOP_HPP
-#define SHARE_VM_OOPS_FLATARRAYOOP_HPP
+#ifndef SHARE_OOPS_FLATARRAYOOP_HPP
+#define SHARE_OOPS_FLATARRAYOOP_HPP
 
 #include "oops/klass.hpp"
 #include "oops/objArrayOop.hpp"
@@ -40,7 +40,7 @@ class flatArrayOopDesc : public objArrayOopDesc {
   inline FlatArrayKlass* klass() const;
 
   void* base() const;
-  static size_t base_offset_in_bytes();
+  static int base_offset_in_bytes();
   void* value_at_addr(int index, jint lh) const;
   size_t value_offset(int index, jint lh) const;
   size_t value_offset_from_base(int index, jint lh) const;
@@ -87,4 +87,4 @@ class flatArrayOopDesc : public objArrayOopDesc {
 // See similar requirement for oopDesc.
 static_assert(std::is_trivially_default_constructible<flatArrayOopDesc>::value);
 
-#endif // SHARE_VM_OOPS_FLATARRAYOOP_HPP
+#endif // SHARE_OOPS_FLATARRAYOOP_HPP

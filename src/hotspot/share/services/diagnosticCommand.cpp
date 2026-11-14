@@ -49,7 +49,6 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -892,16 +891,18 @@ EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
 }
 
 void EventLogDCmd::execute(DCmdSource source, TRAPS) {
-  int max = (int)_max.value();
-  if (max < 0) {
-    output()->print_cr("Invalid max option: \"%d\".", max);
+  jlong max = _max.value();
+  if (max < 0 || max > max_jint) {
+    output()->print_cr("Invalid max option: \"" JLONG_FORMAT "\".", max);
     return;
   }
+
+  int max_int = (int)max;
   const char* log_name = _log.value();
   if (log_name != nullptr) {
-    Events::print_one(output(), log_name, max);
+    Events::print_one(output(), log_name, max_int);
   } else {
-    Events::print_all(output(), max);
+    Events::print_all(output(), max_int);
   }
 }
 
@@ -1009,18 +1010,18 @@ void ClassesDCmd::execute(DCmdSource source, TRAPS) {
 
 #if INCLUDE_CDS
 void AOTEndRecordingDCmd::execute(DCmdSource source, TRAPS) {
-  if (!CDSConfig::is_dumping_preimage_static_archive()) {
+  if (!CDSConfig::is_dumping_aot_configuration()) {
     output()->print_cr("AOT.end_recording is unsupported when VM flags -XX:AOTMode=record or -XX:AOTCacheOutput=<file> are missing.");
     return;
   }
 
-  if (AOTMetaspace::preimage_static_archive_dumped()) {
+  if (AOTMetaspace::aot_configuration_dumped()) {
     output()->print_cr("Recording has already ended.");
     return;
   }
 
   AOTMetaspace::dump_static_archive(THREAD);
-  if (!AOTMetaspace::preimage_static_archive_dumped()) {
+  if (!AOTMetaspace::aot_configuration_dumped()) {
     output()->print_cr("Error: Failed to end recording.");
     return;
   }

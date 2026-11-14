@@ -33,7 +33,7 @@ template <class CardOrRangeVisitor>
 inline void G1CollectionSet::merge_collection_set_card_set_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
   uint offset = _selected_groups_inc_part_start;
   if (offset == 0) {
-    _g1h->young_regions_card_set_group()->iterate_for_merge(cl);
+    young_regions_card_set_group()->iterate_for_merge(cl);
   }
 
   const uint next_selected_group_increment = num_selected_groups_in_increment();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,20 @@
  * @run main/othervm compiler.stringopts.TestStackedConcatsAppendUncommonTrap
  * @run main/othervm -XX:-TieredCompilation -Xbatch
  *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsAppendUncommonTrap::*
+ *                   compiler.stringopts.TestStackedConcatsAppendUncommonTrap
+ */
+
+/*
+ * @test
+ * @bug 8357105
+ * @summary Test stacked string concatenations where the toString result
+ *          of the first StringBuilder chain is wired into an uncommon trap
+ *          located in the second one.
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-TieredCompilation -Xbatch
+ *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsAppendUncommonTrap::*
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
  *                   compiler.stringopts.TestStackedConcatsAppendUncommonTrap
  */
 

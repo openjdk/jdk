@@ -60,8 +60,12 @@ import jdk.internal.net.http.http3.frames.PushPromiseFrame;
 import jdk.internal.net.http.http3.streams.Http3Streams;
 import jdk.internal.net.http.qpack.Encoder;
 import jdk.internal.net.http.quic.QuicConnectionImpl;
+import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.http.quic.VariableLengthEncoder;
+import jdk.internal.net.http.quic.streams.QuicReceiverStream;
+import jdk.internal.net.http.quic.streams.QuicReceiverStream.ReceivingStreamState;
 import jdk.internal.net.http.quic.streams.QuicSenderStream;
+import jdk.internal.net.http.quic.streams.QuicSenderStream.SendingStreamState;
 import jdk.internal.net.http.quic.streams.QuicStreamReader;
 import jdk.internal.net.http.quic.streams.QuicStreamWriter;
 
@@ -149,6 +153,14 @@ public final class Http3ServerExchange implements Http2TestExchange {
     @Override
     public SSLSession getSSLSession() {
         return sslSession;
+    }
+
+    public SendingStreamState sendingStreamState() {
+        return serverStream.stream.sendingState();
+    }
+
+    public ReceivingStreamState receivingStreamState() {
+        return serverStream.stream.receivingState();
     }
 
     @Override
@@ -587,6 +599,15 @@ public final class Http3ServerExchange implements Http2TestExchange {
             return serverConn.getPushPromise(pushId);
         });
         return promise;
+    }
+
+    public void sendGoAway() throws IOException {
+        serverConn.sendGoAway();
+    }
+
+    public void sendConnectionClose() {
+        TerminationCause tc = TerminationCause.appLayerClose(Http3Error.H3_NO_ERROR.code());
+        serverConn.quicConnection().connectionTerminator().terminate(tc);
     }
 
     @Override

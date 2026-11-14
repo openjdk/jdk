@@ -982,6 +982,9 @@ public class JavacParser implements Parser {
         mods = mods != null ? mods : optFinal(0);
         JCExpression e;
         if (token.kind == UNDERSCORE && parsedType == null) {
+            if (!allowVar && Feature.UNNAMED_VARIABLES.allowedInSource(source)){
+                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UseOfUnderscoreNotAllowedNonVariable);
+            }
             nextToken();
             checkSourceLevel(Feature.UNNAMED_VARIABLES);
             pattern = toP(F.at(token.pos).AnyPattern());
@@ -1646,8 +1649,10 @@ public class JavacParser implements Parser {
                         }
 
                         List<JCAnnotation> tyannos = null;
-                        if (isMode(TYPE) && token.kind == MONKEYS_AT) {
-                            tyannos = typeAnnotationsOpt();
+                        if (token.kind == MONKEYS_AT) {
+                            if (isMode(TYPE) || isParameterizedTypePrefix()) {
+                                tyannos = typeAnnotationsOpt();
+                            }
                         }
                         // typeArgs saved for next loop iteration.
                         t = toP(F.at(pos).Select(t, ident()));
@@ -1688,7 +1693,14 @@ public class JavacParser implements Parser {
                             while (token.kind == DOT) {
                                 nextToken();
                                 selectTypeMode();
+                                tyannos = null;
+                                if (token.kind == MONKEYS_AT) {
+                                    tyannos = typeAnnotationsOpt();
+                                }
                                 t = toP(F.at(token.pos).Select(t, ident()));
+                                if (tyannos != null && tyannos.nonEmpty()) {
+                                    t = toP(F.at(tyannos.head.pos).AnnotatedType(tyannos, t));
+                                }
                                 t = typeApplyOpt(t);
                             }
                             t = bracketsOpt(t);
@@ -1926,28 +1938,10 @@ public class JavacParser implements Parser {
                 case DOT: case RBRACKET: case LBRACKET: case COMMA:
                 case BYTE: case SHORT: case INT: case LONG: case FLOAT:
                 case DOUBLE: case BOOLEAN: case CHAR:
-                case MONKEYS_AT:
                     break;
-
-                case LPAREN:
-                    // skip annotation values
-                    int nesting = 0;
-                    for (; ; pos++) {
-                        TokenKind tk2 = S.token(pos).kind;
-                        switch (tk2) {
-                            case EOF:
-                                return false;
-                            case LPAREN:
-                                nesting++;
-                                break;
-                            case RPAREN:
-                                nesting--;
-                                if (nesting == 0) {
-                                    continue outer;
-                                }
-                                break;
-                        }
-                    }
+                case MONKEYS_AT:
+                    pos = skipAnnotation(pos);
+                    break;
 
                 case LT:
                     depth++; break;
@@ -1958,13 +1952,19 @@ public class JavacParser implements Parser {
                 case GT:
                     depth--;
                     if (depth == 0) {
-                        TokenKind nextKind = S.token(pos + 1).kind;
+                        TokenKind nextKind = S.token(++pos).kind;
+                        while (nextKind == MONKEYS_AT) {
+                            pos = skipAnnotation(pos);
+                            nextKind = S.token(++pos).kind;
+                        }
                         return
                             nextKind == TokenKind.DOT ||
                             nextKind == TokenKind.LBRACKET ||
                             nextKind == TokenKind.COLCOL;
                     }
                     break;
+                case COLCOL:
+                    return true;
                 default:
                     return false;
             }

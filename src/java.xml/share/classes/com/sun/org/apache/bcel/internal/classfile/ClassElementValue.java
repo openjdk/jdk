@@ -25,6 +25,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 /**
+ * Represents a class element value in an annotation.
+ *
  * @since 6.0
  */
 public class ClassElementValue extends ElementValue {
@@ -33,6 +35,13 @@ public class ClassElementValue extends ElementValue {
     // For 'class' this points to the class entry in the cpool
     private final int idx;
 
+    /**
+     * Constructs a ClassElementValue.
+     *
+     * @param type The type.
+     * @param idx The index.
+     * @param cpool The constant pool.
+     */
     public ClassElementValue(final int type, final int idx, final ConstantPool cpool) {
         super(type, cpool);
         this.idx = idx;
@@ -44,10 +53,20 @@ public class ClassElementValue extends ElementValue {
         dos.writeShort(idx);
     }
 
+    /**
+     * Gets the class string.
+     *
+     * @return The class string.
+     */
     public String getClassString() {
         return super.getConstantPool().getConstantUtf8(idx).getBytes();
     }
 
+    /**
+     * Gets the index.
+     *
+     * @return The index.
+     */
     public int getIndex() {
         return idx;
     }

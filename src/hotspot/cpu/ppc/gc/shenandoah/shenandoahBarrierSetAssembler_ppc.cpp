@@ -763,7 +763,7 @@ void ShenandoahBarrierSetAssembler::keepalive_barrier_c1_stub(LIR_Assembler* ce,
 
   // If 'do_load()' returns false, the to-be-stored value is already available in 'obj'
   if (stub->do_load()) {
-    ce->mem2reg(stub->addr(), stub->obj(), T_OBJECT, lir_patch_none, nullptr, false);
+    ce->mem2reg(stub->addr(), stub->obj(), T_OBJECT, lir_patch_none, stub->info(), false);
   }
 
   // Fast path: reference is null.
@@ -945,7 +945,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
 }
 
 void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register preval, Register newval, Register addr, Register tmp1, Register tmp2) {
-  bool is_narrow = node->bottom_type()->isa_narrowoop();
+  bool is_narrow = node->bottom_type()->is_narrowoop();
 
   ShenandoahBarrierStubC2::load_store_pre(masm, node, addr, preval, tmp1, tmp2, is_narrow);
 

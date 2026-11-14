@@ -58,28 +58,53 @@ public final class Signature extends Attribute {
         }
     }
 
+    /**
+     * The maximum nesting depth of a signature accepted by {@link #translate(String)}. Guards against a
+     * {@link StackOverflowError} from deeply nested, attacker-supplied generic signatures.
+     */
+    private static final int MAX_NESTING_DEPTH = 512;
+
     private static boolean identStart(final int ch) {
         return ch == 'T' || ch == 'L';
     }
 
-    // @since 6.0 is no longer final
+    /**
+     * Tests if a string is an actual parameter list.
+     *
+     * @param s The string to test.
+     * @return true if the string is an actual parameter list.
+     * @since 6.0 is no longer final
+     */
     public static boolean isActualParameterList(final String s) {
         return s.startsWith("L") && s.endsWith(">;");
     }
 
-    // @since 6.0 is no longer final
+    /**
+     * Tests if a string is a formal parameter list.
+     *
+     * @param s The string to test.
+     * @return true if the string is a formal parameter list.
+     * @since 6.0 is no longer final
+     */
     public static boolean isFormalParameterList(final String s) {
         return s.startsWith("<") && s.indexOf(':') > 0;
     }
 
     private static void matchGJIdent(final MyByteArrayInputStream in, final StringBuilder buf) {
+        matchGJIdent(in, buf, 0);
+    }
+
+    private static void matchGJIdent(final MyByteArrayInputStream in, final StringBuilder buf, final int depth) {
+        if (depth > MAX_NESTING_DEPTH) {
+            throw new IllegalArgumentException("Illegal signature: " + in.getData() + " exceeds maximum nesting depth " + MAX_NESTING_DEPTH);
+        }
         int ch;
         matchIdent(in, buf);
         ch = in.read();
         if (ch == '<' || ch == '(') { // Parameterized or method
             // System.out.println("Enter <");
             buf.append((char) ch);
-            matchGJIdent(in, buf);
+            matchGJIdent(in, buf, depth + 1);
             while ((ch = in.read()) != '>' && ch != ')') { // List of parameters
                 if (ch == -1) {
                     throw new IllegalArgumentException("Illegal signature: " + in.getData() + " reaching EOF");
@@ -87,7 +112,7 @@ public final class Signature extends Attribute {
                 // System.out.println("Still no >");
                 buf.append(", ");
                 in.unread();
-                matchGJIdent(in, buf); // Recursive call
+                matchGJIdent(in, buf, depth + 1); // Recursive call
             }
             // System.out.println("Exit >");
             buf.append((char) ch);
@@ -97,7 +122,7 @@ public final class Signature extends Attribute {
         ch = in.read();
         if (identStart(ch)) {
             in.unread();
-            matchGJIdent(in, buf);
+            matchGJIdent(in, buf, depth + 1);
         } else if (ch == ')') {
             in.unread();
         } else if (ch != ';') {
@@ -150,6 +175,12 @@ public final class Signature extends Attribute {
         }
     }
 
+    /**
+     * Translates a signature string.
+     *
+     * @param s The signature string.
+     * @return The translated signature.
+     */
     public static String translate(final String s) {
         // System.out.println("Sig:" + s);
         final StringBuilder buf = new StringBuilder();
@@ -162,21 +193,23 @@ public final class Signature extends Attribute {
     /**
      * Constructs object from file stream.
      *
-     * @param nameIndex Index in constant pool to CONSTANT_Utf8
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constantPool Array of constants
-     * @throws IOException if an I/O error occurs.
+     * @param nameIndex Index in constant pool to CONSTANT_Utf8.
+     * @param length Content length in bytes.
+     * @param input Input stream.
+     * @param constantPool Array of constants.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     Signature(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
         this(nameIndex, length, input.readUnsignedShort(), constantPool);
     }
 
     /**
-     * @param nameIndex Index in constant pool to CONSTANT_Utf8
-     * @param length Content length in bytes
-     * @param signatureIndex Index in constant pool to CONSTANT_Utf8
-     * @param constantPool Array of constants
+     * Constructs a Signature.
+     *
+     * @param nameIndex Index in constant pool to CONSTANT_Utf8.
+     * @param length Content length in bytes.
+     * @param signatureIndex Index in constant pool to CONSTANT_Utf8.
+     * @param constantPool Array of constants.
      */
     public Signature(final int nameIndex, final int length, final int signatureIndex, final ConstantPool constantPool) {
         super(Const.ATTR_SIGNATURE, nameIndex, Args.require(length, 2, "Signature length attribute"), constantPool);
@@ -199,7 +232,7 @@ public final class Signature extends Attribute {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -208,7 +241,7 @@ public final class Signature extends Attribute {
     }
 
     /**
-     * @return deep copy of this attribute
+     * @return deep copy of this attribute.
      */
     @Override
     public Attribute copy(final ConstantPool constantPool) {
@@ -216,10 +249,10 @@ public final class Signature extends Attribute {
     }
 
     /**
-     * Dump source file attribute to file stream in binary format.
+     * Dumps source file attribute to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -228,6 +261,8 @@ public final class Signature extends Attribute {
     }
 
     /**
+     * Gets the GJ signature.
+     *
      * @return GJ signature.
      */
     public String getSignature() {
@@ -235,6 +270,8 @@ public final class Signature extends Attribute {
     }
 
     /**
+     * Gets the signature index.
+     *
      * @return Index in constant pool of source file name.
      */
     public int getSignatureIndex() {
@@ -242,14 +279,16 @@ public final class Signature extends Attribute {
     }
 
     /**
-     * @param signatureIndex the index info the constant pool of this signature
+     * Sets the signature index.
+     *
+     * @param signatureIndex The index info the constant pool of this signature.
      */
     public void setSignatureIndex(final int signatureIndex) {
         this.signatureIndex = signatureIndex;
     }
 
     /**
-     * @return String representation
+     * @return String representation.
      */
     @Override
     public String toString() {

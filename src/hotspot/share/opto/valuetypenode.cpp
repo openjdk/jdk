@@ -254,10 +254,6 @@ void ValueTypeNode::set_field_value(uint index, Node* value) {
   set_req(Values + index, value);
 }
 
-void ValueTypeNode::set_field_value_by_offset(int offset, Node* value) {
-  set_field_value(field_index(offset), value);
-}
-
 uint ValueTypeNode::field_index(int offset) const {
   uint i = 0;
   for (; i < field_count() && field(i)->offset_in_bytes() != offset; i++) { }
@@ -290,7 +286,7 @@ static uint add_top_to_safepoint(ciValueKlass* vk, SafePointNode* sfpt) {
   return cnt;
 }
 
-uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePointNode* sfpt) const {
+uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List<ValueTypeNode>& worklist, SafePointNode* sfpt) const {
   uint cnt = 0;
   for (uint i = 0; i < field_count(); ++i) {
     Node* value = field_value(i);
@@ -319,7 +315,7 @@ uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePoin
     }
     if (value->is_ValueType()) {
       // Add value type to the worklist to process later
-      worklist.push(value);
+      worklist.push(value->as_ValueType());
     }
     sfpt->add_req(value);
     cnt++;
@@ -327,7 +323,7 @@ uint ValueTypeNode::add_fields_to_safepoint(Unique_Node_List& worklist, SafePoin
   return cnt;
 }
 
-void ValueTypeNode::make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_List& worklist, SafePointNode* sfpt) const {
+void ValueTypeNode::make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_List<ValueTypeNode>& worklist, SafePointNode* sfpt) const {
   JVMState* jvms = sfpt->jvms();
   assert(jvms != nullptr, "missing JVMS");
   uint first_ind = (sfpt->req() - jvms->scloff());
@@ -339,7 +335,7 @@ void ValueTypeNode::make_scalar_in_safepoint(PhaseIterGVN* igvn, Unique_Node_Lis
   uint nfields = add_fields_to_safepoint(worklist, sfpt);
   jvms->set_endoff(sfpt->req());
   // Replace safepoint edge by SafePointScalarObjectNode
-  SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(type()->isa_instptr(),
+  SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(type()->as_instptr(),
                                                                   nullptr,
                                                                   first_ind,
                                                                   sfpt->jvms()->depth(),
@@ -365,17 +361,17 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   Node* oop = get_oop();
   bool use_oop = false;
   if (allow_oop && is_allocated(igvn) && oop->is_Phi()) {
-    Unique_Node_List worklist;
+    Unique_Node_List<const PhiNode> worklist;
     VectorSet visited;
     visited.set(oop->_idx);
-    worklist.push(oop);
+    worklist.push(oop->as_Phi());
     use_oop = true;
     while (worklist.size() > 0 && use_oop) {
-      Node* n = worklist.pop();
+      const PhiNode* n = worklist.pop();
       for (uint i = 1; i < n->req(); i++) {
         Node* in = n->in(i);
         if (in->is_Phi() && !visited.test_set(in->_idx)) {
-          worklist.push(in);
+          worklist.push(in->as_Phi());
         } else if (!(in->is_Con() || in->is_Parm())) {
           use_oop = false;
           break;
@@ -388,17 +384,17 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   }
 
   ResourceMark rm;
-  Unique_Node_List safepoints;
+  Unique_Node_List<SafePointNode> safepoints;
   if (safepoint == nullptr) {
     // Gathering all SafePoint users of `this`...
-    Unique_Node_List worklist;
+    Unique_Node_List<const Node> worklist;
     worklist.push(this);
     while (worklist.size() > 0) {
-      Node* n = worklist.pop();
+      const Node* n = worklist.pop();
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (use->is_SafePoint() && !use->is_CallLeaf() && (!use->is_Call() || use->as_Call()->has_debug_use(n))) {
-          safepoints.push(use);
+          safepoints.push(use->as_SafePoint());
         } else if (use->is_ConstraintCast()) {
           worklist.push(use);
         }
@@ -415,9 +411,9 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   if ((C->live_nodes() + safepoints.size() + NodeLimitFudgeFactor) > C->max_node_limit()) {
     return false;
   }
-  Unique_Node_List vt_worklist;
+  Unique_Node_List<ValueTypeNode> vt_worklist;
   while (safepoints.size() > 0) {
-    SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
+    SafePointNode* sfpt = safepoints.pop();
     if (use_oop) {
       for (uint i = sfpt->jvms()->debug_start(); i < sfpt->jvms()->debug_end(); i++) {
         Node* debug = sfpt->in(i);
@@ -432,7 +428,7 @@ bool ValueTypeNode::make_scalar_in_safepoints(PhaseIterGVN* igvn, bool allow_oop
   }
   // Now scalarize non-flat fields
   for (uint i = 0; i < vt_worklist.size(); ++i) {
-    ValueTypeNode* vt = vt_worklist.at(i)->isa_ValueType();
+    ValueTypeNode* vt = vt_worklist.at(i);
     if (!vt->make_scalar_in_safepoints(igvn)) {
       return false;
     }
@@ -469,7 +465,7 @@ void ValueTypeNode::load(GraphKit* kit, Node* base, Node* ptr, bool immutable_me
       if (trust_null_free_oop && field_null_free) {
         val_type = val_type->join_speculative(TypePtr::NOTNULL);
       }
-      const TypePtr* field_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(field_ptr)->is_ptr() : TypeRawPtr::BOTTOM;
+      const TypePtr* field_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(field_ptr)->as_ptr() : TypeRawPtr::BOTTOM;
       value = kit->access_load_at(base, field_ptr, field_ptr_type, val_type, bt, decorators);
     }
     set_field_value(i, value);
@@ -492,7 +488,7 @@ void ValueTypeNode::store_flat(GraphKit* kit, Node* base, Node* ptr, bool atomic
     if (!null_free) {
       int nm_offset = vk->null_marker_offset_in_payload();
       Node* nm_ptr = kit->basic_plus_adr(base, ptr, nm_offset);
-      const TypePtr* nm_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(nm_ptr)->is_ptr() : TypeRawPtr::BOTTOM;
+      const TypePtr* nm_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(nm_ptr)->as_ptr() : TypeRawPtr::BOTTOM;
       kit->access_store_at(base, nm_ptr, nm_ptr_type, get_null_marker(), TypeInt::BOOL, T_BOOLEAN, decorators);
     }
     store(kit, base, ptr, immutable_memory, decorators);
@@ -500,6 +496,59 @@ void ValueTypeNode::store_flat(GraphKit* kit, Node* base, Node* ptr, bool atomic
   }
 
   StoreFlatNode::store(kit, base, ptr, this, null_free, decorators);
+}
+
+struct FlatArrayAccessContext {
+  GraphKit* _kit;
+  ValueTypeNode* _node;
+  RegionNode* _region;
+  PhiNode* _mem;
+  PhiNode* _io;
+  Node* _base;
+  Node* _idx;
+  ciValueKlass* _element_klass;
+  DecoratorSet _decorators;
+  int _stack_adj;
+
+  FlatArrayAccessContext(GraphKit* kit, ValueTypeNode* node, RegionNode* region, PhiNode* mem,
+                         PhiNode* io, Node* base, Node* idx, ciValueKlass* element_klass,
+                         DecoratorSet decorators, int stack_adj) :
+    _kit(kit), _node(node), _region(region), _mem(mem), _io(io), _base(base), _idx(idx),
+    _element_klass(element_klass), _decorators(decorators), _stack_adj(stack_adj) {}
+};
+
+static ValueTypeNode* do_flat_array_access(const FlatArrayAccessContext& ctx, bool is_atomic, bool is_null_free,
+                                           int region_idx, bool is_read) {
+  ciObjArrayKlass* array_klass = ctx._kit->get_flat_array_klass_exact(ctx._element_klass,
+                                                                      is_null_free,
+                                                                      is_atomic);
+  if (!array_klass->is_loaded()) {
+    PreserveJVMState pjvms(ctx._kit);
+    ctx._kit->inc_sp(ctx._stack_adj);
+    ctx._kit->uncommon_trap(Deoptimization::Reason_unloaded,
+                            Deoptimization::Action_reinterpret,
+                            array_klass, "Flat array class meta-data unavailable");
+    return nullptr;
+  }
+  ValueTypeNode* res = nullptr;
+  Node* cast = ctx._kit->cast_to_flat_array(ctx._base, array_klass, true);
+  if (!cast->is_top()) {
+    Node* ptr = ctx._kit->array_element_address(cast, ctx._idx, T_FLAT_ELEMENT);
+    if (is_read) {
+      res = ValueTypeNode::make_from_flat(ctx._kit, ctx._element_klass, cast, ptr,
+                                          is_atomic, false, is_null_free,
+                                          ctx._decorators);
+    } else {
+      assert(ctx._node != nullptr, "Store to a flat array needs a ValueTypeNode");
+      ctx._node->store_flat(ctx._kit, cast, ptr, is_atomic, false,
+                            is_null_free, ctx._decorators);
+    }
+
+    ctx._region->init_req(region_idx, ctx._kit->control());
+    ctx._mem->set_req(region_idx, ctx._kit->reset_memory());
+    ctx._io->set_req(region_idx, ctx._kit->i_o());
+  }
+  return res;
 }
 
 void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
@@ -527,18 +576,14 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
   Node* bol_null_free = kit->null_free_array_test(base); // Argument evaluation order is undefined in C++ and since this sets control, it needs to come first
   IfNode* iff_null_free = kit->create_and_map_if(kit->control(), bol_null_free, PROB_FAIR, COUNT_UNKNOWN);
 
+  FlatArrayAccessContext faac(kit, this, region, mem, io, base, idx, vk, decorators, /* stack_adj */0);
+
   // Nullable
   kit->set_control(kit->IfFalse(iff_null_free));
   if (!kit->stopped()) {
     assert(vk->has_nullable_atomic_layout(), "element type %s does not have a nullable flat layout", vk->name()->as_utf8());
     kit->set_all_memory(input_memory_state);
-    Node* cast = kit->cast_to_flat_array_exact(base, vk, false, true);
-    Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-    store_flat(kit, cast, ptr, true, false, false, decorators);
-
-    region->init_req(1, kit->control());
-    mem->set_req(1, kit->reset_memory());
-    io->set_req(1, kit->i_o());
+    do_flat_array_access(faac, true, false, 1, false);
   }
 
   // Null-free
@@ -554,13 +599,7 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
     if (!kit->stopped()) {
       assert(vk->has_null_free_atomic_layout(), "element type %s does not have a null-free atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
-      Node* cast = kit->cast_to_flat_array_exact(base, vk, true, true);
-      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-      store_flat(kit, cast, ptr, true, false, true, decorators);
-
-      region->init_req(2, kit->control());
-      mem->set_req(2, kit->reset_memory());
-      io->set_req(2, kit->i_o());
+      do_flat_array_access(faac, true, true, 2, false);
     }
 
     // Non-atomic
@@ -568,19 +607,13 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
     if (!kit->stopped()) {
       assert(vk->has_null_free_non_atomic_layout(), "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
-      Node* cast = kit->cast_to_flat_array_exact(base, vk, true, false);
-      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-      store_flat(kit, cast, ptr, false, false, true, decorators);
-
-      region->init_req(3, kit->control());
-      mem->set_req(3, kit->reset_memory());
-      io->set_req(3, kit->i_o());
+      do_flat_array_access(faac, false, true, 3, false);
     }
   }
 
-  kit->set_control(gvn.transform(region));
-  kit->set_all_memory(gvn.transform(mem));
-  kit->set_i_o(gvn.transform(io));
+  kit->set_control(region);
+  kit->set_all_memory(mem);
+  kit->set_i_o(io);
 }
 
 void ValueTypeNode::store(GraphKit* kit, Node* base, Node* ptr, bool immutable_memory, DecoratorSet decorators) const {
@@ -601,7 +634,7 @@ void ValueTypeNode::store(GraphKit* kit, Node* base, Node* ptr, bool immutable_m
     } else {
       // Store field value to memory
       BasicType bt = type2field[ft->basic_type()];
-      const TypePtr* field_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(field_ptr)->is_ptr() : TypeRawPtr::BOTTOM;
+      const TypePtr* field_ptr_type = (decorators & C2_MISMATCHED) == 0 ? kit->gvn().type(field_ptr)->as_ptr() : TypeRawPtr::BOTTOM;
       const Type* val_type = Type::get_const_type(ft);
       kit->access_store_at(base, field_ptr, field_ptr_type, field_val, val_type, bt, decorators);
     }
@@ -657,8 +690,8 @@ bool ValueTypeNode::can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, 
     return false;
   }
 
-  if (!lhs->bottom_type()->isa_ptr() ||
-      (rhs != nullptr && !rhs->bottom_type()->isa_ptr())) {
+  if (!lhs->bottom_type()->is_ptr() ||
+      (rhs != nullptr && !rhs->bottom_type()->is_ptr())) {
     return false;
   }
 
@@ -666,8 +699,8 @@ bool ValueTypeNode::can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, 
     return true;
   }
 
-  if (!lhs->bottom_type()->is_ptr()->can_be_value_type() ||
-      (rhs != nullptr && !rhs->bottom_type()->is_ptr()->can_be_value_type())) {
+  if (!lhs->bottom_type()->as_ptr()->can_be_value_type() ||
+      (rhs != nullptr && !rhs->bottom_type()->as_ptr()->can_be_value_type())) {
     return true;
   }
 
@@ -755,10 +788,10 @@ static Node* emit_substitutability_check_pointer(GraphKit* kit, PhiNode* result,
   Node* cmp = nullptr;
   if (same_oop(&gvn, lhs, rhs)) {
     cmp = kit->intcon(0);
-  } else if (!lhs_type->is_ptr()->can_be_value_type() || !rhs_type->is_ptr()->can_be_value_type()) {
+  } else if (!lhs_type->as_ptr()->can_be_value_type() || !rhs_type->as_ptr()->can_be_value_type()) {
     // If one of the sides is not a value object, can only be substitutable if they are the same
     cmp = kit->CmpP(lhs, rhs);
-  } else if (lhs_type->is_instptr()->as_klass_type()->join(rhs_type->is_instptr()->as_klass_type())->empty()) {
+  } else if (lhs_type->as_instptr()->as_klass_type()->join(rhs_type->as_instptr()->as_klass_type())->empty()) {
     // Both belongs to provably different types, must be different unless both are null. Cannot
     // rely on the pointer independence alone because different pointers may still be
     // substitutable.
@@ -817,7 +850,7 @@ Node* ValueTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node*
   const Type* rhs_type = igvn.type(rhs);
   assert(!lhs_type->maybe_null() && !rhs_type->maybe_null(), "must check null beforehand");
   ciValueKlass* vk = lhs_type->is_valueklassptr() ? lhs_type->value_klass() : rhs_type->value_klass();
-  const TypeInstPtr* vk_type = TypeOopPtr::make_from_klass(vk)->join(TypePtr::NOTNULL)->is_instptr();
+  const TypeInstPtr* vk_type = TypeOopPtr::make_from_klass(vk)->join(TypePtr::NOTNULL)->as_instptr();
 
   if (!lhs->is_ValueType()) {
     if (!lhs_type->higher_equal(vk_type)) {
@@ -1580,7 +1613,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_impl(GraphKit* kit, ciValueKlass* v
     if (!null_free) {
       int nm_offset = vk->null_marker_offset_in_payload();
       Node* nm_ptr = kit->basic_plus_adr(base, ptr, nm_offset);
-      const TypePtr* nm_ptr_type = (decorators & C2_MISMATCHED) == 0 ? gvn.type(nm_ptr)->is_ptr() : TypeRawPtr::BOTTOM;
+      const TypePtr* nm_ptr_type = (decorators & C2_MISMATCHED) == 0 ? gvn.type(nm_ptr)->as_ptr() : TypeRawPtr::BOTTOM;
       Node* nm_value = kit->access_load_at(base, nm_ptr, nm_ptr_type, TypeInt::BOOL, T_BOOLEAN, decorators);
       vt->set_req(NullMarker, nm_value);
     }
@@ -1618,6 +1651,8 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
   gvn.set_type(io, Type::ABIO);
   kit->record_for_igvn(io);
 
+  FlatArrayAccessContext faac(kit, nullptr, region, mem, io, base, idx, vk, decorators, /* stack_adj */ 2);
+
   Node* bol_null_free = kit->null_free_array_test(base); // Argument evaluation order is undefined in C++ and since this sets control, it needs to come first
   IfNode* iff_null_free = kit->create_and_map_if(kit->control(), bol_null_free, PROB_FAIR, COUNT_UNKNOWN);
 
@@ -1626,13 +1661,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
   if (!kit->stopped()) {
     assert(vk->has_nullable_atomic_layout(), "element type %s does not have a nullable flat layout", vk->name()->as_utf8());
     kit->set_all_memory(input_memory_state);
-    Node* cast = kit->cast_to_flat_array_exact(base, vk, false, true);
-    Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-    vt_nullable = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, true, false, false, decorators);
-
-    region->init_req(1, kit->control());
-    mem->set_req(1, kit->reset_memory());
-    io->set_req(1, kit->i_o());
+    vt_nullable = do_flat_array_access(faac, true, false, 1, true);
   }
 
   // Null-free
@@ -1648,13 +1677,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     if (!kit->stopped()) {
       assert(vk->has_null_free_atomic_layout(), "element type %s does not have a null-free atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
-      Node* cast = kit->cast_to_flat_array_exact(base, vk, true, true);
-      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-      vt_null_free = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, true, false, true, decorators);
-
-      region->init_req(2, kit->control());
-      mem->set_req(2, kit->reset_memory());
-      io->set_req(2, kit->i_o());
+      vt_null_free = do_flat_array_access(faac, true, true, 2, true);
     }
 
     // Non-Atomic
@@ -1662,13 +1685,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     if (!kit->stopped()) {
       assert(vk->has_null_free_non_atomic_layout(), "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
-      Node* cast = kit->cast_to_flat_array_exact(base, vk, true, false);
-      Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-      vt_non_atomic = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, false, false, true, decorators);
-
-      region->init_req(3, kit->control());
-      mem->set_req(3, kit->reset_memory());
-      io->set_req(3, kit->i_o());
+      vt_non_atomic = do_flat_array_access(faac, false, true, 3, true);
     }
   }
 
@@ -1684,9 +1701,9 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     vt = vt_nullable;
   }
   if (vt != nullptr) {
-    kit->set_control(kit->gvn().transform(region));
-    kit->set_all_memory(kit->gvn().transform(mem));
-    kit->set_i_o(kit->gvn().transform(io));
+    kit->set_control(region);
+    kit->set_all_memory(mem);
+    kit->set_i_o(io);
     return vt;
   }
 
@@ -1702,9 +1719,9 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     vt = vt->merge_with(&gvn, vt_non_atomic, 3, false);
   }
 
-  kit->set_control(kit->gvn().transform(region));
-  kit->set_all_memory(kit->gvn().transform(mem));
-  kit->set_i_o(kit->gvn().transform(io));
+  kit->set_control(region);
+  kit->set_all_memory(mem);
+  kit->set_i_o(io);
   return gvn.transform(vt)->as_ValueType();
 }
 
@@ -1787,6 +1804,14 @@ Node* ValueTypeNode::is_loaded(PhaseGVN* phase, ciValueKlass* vk, Node* base, in
 
 Node* ValueTypeNode::tagged_klass(ciValueKlass* vk, PhaseGVN& gvn) {
   const TypeKlassPtr* tk = TypeKlassPtr::make(vk);
+#if INCLUDE_CDS
+  if (gvn.C->is_aot_compile()) {
+    // Keep klass as metadata to make it relocatable for AOT code.
+    Node* k_con = gvn.makecon(tk);
+    Node* bits  = gvn.transform(new CastP2XNode(nullptr, k_con));
+    return gvn.transform(new OrLNode(bits, gvn.longcon(1)));
+  }
+#endif
   intptr_t bits = tk->get_con();
   set_nth_bit(bits, 0);
   return gvn.longcon((jlong)bits);
@@ -1991,7 +2016,7 @@ const Type* ValueTypeNode::Value(PhaseGVN* phase) const {
   Node* oop = get_oop();
   const Type* toop = phase->type(oop);
 #ifdef ASSERT
-  if (oop->is_Con() && toop->is_zero_type() && _type->isa_oopptr()->is_known_instance()) {
+  if (oop->is_Con() && toop->is_zero_type() && _type->as_oopptr()->is_known_instance()) {
     // We are not allocated (anymore) and should therefore not have an instance id
     dump(1);
     assert(false, "Unbuffered value type should not have known instance id");
@@ -2015,7 +2040,7 @@ const Type* ValueTypeNode::Value(PhaseGVN* phase) const {
   if (tinit == Type::TOP) {
     return Type::TOP;
   }
-  if (tinit->isa_int() && tinit->is_int()->is_con(1)) {
+  if (tinit->is_int() && tinit->as_int()->is_con(1)) {
     t = t->join_speculative(TypePtr::NOTNULL);
   }
   return t;
@@ -2110,7 +2135,7 @@ bool LoadFlatNode::expand_non_atomic(PhaseIterGVN& igvn) const {
 
     ciField* field = _vk->nonstatic_field_at(i);
     Node* field_ptr = kit.basic_plus_adr(base, ptr, field->offset_in_bytes() - _vk->payload_offset());
-    const TypePtr* field_ptr_type = field_ptr->Value(&igvn)->is_ptr();
+    const TypePtr* field_ptr_type = field_ptr->Value(&igvn)->as_ptr();
     igvn.set_type(field_ptr, field_ptr_type);
 
     Node* field_value = kit.access_load_at(base, field_ptr, field_ptr_type, igvn.type(proj_out), field->type()->basic_type(), _decorators);
@@ -2121,7 +2146,7 @@ bool LoadFlatNode::expand_non_atomic(PhaseIterGVN& igvn) const {
     ProjNode* proj_out = proj_out_or_null(TypeFunc::Parms + _vk->nof_nonstatic_fields());
     if (proj_out != nullptr) {
       Node* null_marker_ptr = kit.basic_plus_adr(base, ptr, _vk->null_marker_offset_in_payload());
-      const TypePtr* null_marker_ptr_type = null_marker_ptr->Value(&igvn)->is_ptr();
+      const TypePtr* null_marker_ptr_type = null_marker_ptr->Value(&igvn)->as_ptr();
       igvn.set_type(null_marker_ptr, null_marker_ptr_type);
       Node* null_marker_value = kit.access_load_at(base, null_marker_ptr, null_marker_ptr_type, TypeInt::BOOL, T_BOOLEAN, _decorators);
       igvn.replace_node(proj_out, null_marker_value);
@@ -2318,7 +2343,7 @@ bool StoreFlatNode::expand_non_atomic(PhaseIterGVN& igvn) const {
   for (int i = 0; i < vk->nof_nonstatic_fields(); i++) {
     ciField* field = vk->nonstatic_field_at(i);
     Node* field_ptr = kit.basic_plus_adr(base, ptr, field->offset_in_bytes() - vk->payload_offset());
-    const TypePtr* field_ptr_type = field_ptr->Value(&igvn)->is_ptr();
+    const TypePtr* field_ptr_type = field_ptr->Value(&igvn)->as_ptr();
     igvn.set_type(field_ptr, field_ptr_type);
     Node* field_value = value->field_value_by_offset(field->offset_in_bytes(), true);
     kit.access_store_at(base, field_ptr, field_ptr_type, field_value, igvn.type(field_value), field->type()->basic_type(), _decorators);
@@ -2326,7 +2351,7 @@ bool StoreFlatNode::expand_non_atomic(PhaseIterGVN& igvn) const {
 
   if (!_null_free) {
     Node* null_marker_ptr = kit.basic_plus_adr(base, ptr, vk->null_marker_offset_in_payload());
-    const TypePtr* null_marker_ptr_type = null_marker_ptr->Value(&igvn)->is_ptr();
+    const TypePtr* null_marker_ptr_type = null_marker_ptr->Value(&igvn)->as_ptr();
     igvn.set_type(null_marker_ptr, null_marker_ptr_type);
     Node* null_marker_value = value->get_null_marker();
     kit.access_store_at(base, null_marker_ptr, null_marker_ptr_type, null_marker_value, TypeInt::BOOL, T_BOOLEAN, _decorators);
@@ -2361,8 +2386,14 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   Node* payload = convert_to_payload(igvn, kit.control(), value, _null_free, oop_off_1, oop_off_2);
 
   ciValueKlass* vk = igvn.type(value)->value_klass();
+  // convert_to_payload should give us the offsets of up to 2 oops of vk in oop_off_1 and oop_off_2. The following holds:
+  // - they must be valid offsets for oops (0 or 4) or -1 (no oop)
+  // - if there is at least one oop, oop_off_1 != oop_off_2, i.e. oop_off_1 == oop_off_2 only if they are both -1, i.e. offsets are distincts
+  // - in case there is only one oop, its offset is stored in oop_off_1, and oop_off_2 == -1
   assert(oop_off_1 == -1 || oop_off_1 == 0 || oop_off_1 == 4, "invalid layout for %s, first oop at offset %d", vk->name()->as_utf8(), oop_off_1);
-  assert(oop_off_2 == -1 || oop_off_2 == 4, "invalid layout for %s, second oop at offset %d", vk->name()->as_utf8(), oop_off_2);
+  assert(oop_off_2 == -1 || oop_off_2 == 0 || oop_off_2 == 4, "invalid layout for %s, second oop at offset %d", vk->name()->as_utf8(), oop_off_2);
+  assert(oop_off_1 != oop_off_2 || oop_off_1 == -1, "we should have: oop_off_1 == oop_off_2 => oop_off_1 == -1. But oop_off_1=oop_off_2=%d", oop_off_1);
+  assert(oop_off_1 != -1 || oop_off_2 == -1, "we should have: oop_off_1 == -1 => oop_off_2 == -1. But oop_off_1=%d, oop_off_2=%d", oop_off_1, oop_off_2);
   BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
   kit.insert_mem_bar(Op_MemBarCPUOrder);
   if (!UseG1GC || oop_off_1 == -1) {
@@ -2397,6 +2428,8 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
 
 // Convert the field values to a payload value of type 'bt'
 Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTypeNode* value, bool null_free, int& oop_off_1, int& oop_off_2) {
+  oop_off_1 = -1;
+  oop_off_2 = -1;
   ciValueKlass* vk = igvn.type(value)->value_klass();
   BasicType payload_bt = vk->atomic_size_to_basic_type(null_free);
   Node* payload = igvn.zerocon(payload_bt);
@@ -2415,11 +2448,13 @@ Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTyp
     if (!field_klass->is_primitive_type()) {
       // Narrow oop field
       assert(UseCompressedOops && payload_bt == T_LONG, "Naturally atomic");
+      assert(field_offset_in_payload == 0 || field_offset_in_payload == 4, "Unexpected oop offset. field_offset_in_payload=%d", field_offset_in_payload);
       if (oop_off_1 == -1) {
         oop_off_1 = field_offset_in_payload;
       } else {
         assert(oop_off_2 == -1, "already set");
         oop_off_2 = field_offset_in_payload;
+        assert(oop_off_1 != oop_off_2, "Found the same offset again?! oop_off_1=oop_off_2=%d", oop_off_1);
       }
 
       const Type* val_type = Type::get_const_type(field_klass)->make_narrowoop();
@@ -2434,6 +2469,8 @@ Node* StoreFlatNode::convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTyp
     }
     payload = set_payload_value(igvn, payload_bt, payload, field_bt, field_value, field_offset_in_payload);
   }
+
+  assert(oop_off_2 == -1 || oop_off_1 != -1, "oop_off_2 != -1 => oop_off_1 != -1 ie. oop_off_1 is filled first. But oop_off_1=%d, oop_off_2=%d.", oop_off_1, oop_off_2);
 
   return payload;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -36,7 +36,7 @@ import jdk.xml.internal.SecuritySupport;
  *
  * @see Code
  * @see LineNumber
- * @LastModified: Sept 2025
+ * @LastModified: Nov 2026
  */
 public final class LineNumberTable extends Attribute implements Iterable<LineNumber> {
 
@@ -46,11 +46,11 @@ public final class LineNumberTable extends Attribute implements Iterable<LineNum
     /**
      * Constructs a new instance from a data input stream.
      *
-     * @param nameIndex Index of name
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constantPool Array of constants
-     * @throws IOException if an I/O Exception occurs in readUnsignedShort
+     * @param nameIndex Index of name.
+     * @param length Content length in bytes.
+     * @param input Input stream.
+     * @param constantPool Array of constants.
+     * @throws IOException Thrown if an I/O Exception occurs in readUnsignedShort.
      */
     LineNumberTable(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
         this(nameIndex, length, (LineNumber[]) null, constantPool);
@@ -64,10 +64,10 @@ public final class LineNumberTable extends Attribute implements Iterable<LineNum
     /**
      * Constructs a new instance.
      *
-     * @param nameIndex Index of name
-     * @param length Content length in bytes
-     * @param lineNumberTable Table of line/numbers pairs
-     * @param constantPool Array of constants
+     * @param nameIndex Index of name.
+     * @param length Content length in bytes.
+     * @param lineNumberTable Table of line/numbers pairs.
+     * @param constantPool Array of constants.
      */
     public LineNumberTable(final int nameIndex, final int length, final LineNumber[] lineNumberTable, final ConstantPool constantPool) {
         super(Const.ATTR_LINE_NUMBER_TABLE, nameIndex, length, constantPool);
@@ -80,6 +80,8 @@ public final class LineNumberTable extends Attribute implements Iterable<LineNum
      * <p>
      * Note that both objects use the same references (shallow copy). Use copy() for a physical copy.
      * </p>
+     *
+     * @param c The instance to copy.
      */
     public LineNumberTable(final LineNumberTable c) {
         this(c.getNameIndex(), c.getLength(), c.getLineNumberTable(), c.getConstantPool());
@@ -89,7 +91,7 @@ public final class LineNumberTable extends Attribute implements Iterable<LineNum
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -97,7 +99,7 @@ public final class LineNumberTable extends Attribute implements Iterable<LineNum
     }
 
     /**
-     * @return deep copy of this attribute
+     * @return deep copy of this attribute.
      */
     @Override
     public Attribute copy(final ConstantPool constantPool) {
@@ -111,21 +113,23 @@ public final class LineNumberTable extends Attribute implements Iterable<LineNum
     }
 
     /**
-     * Dump line number table attribute to file stream in binary format.
+     * Dumps line number table attribute to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O Exception occurs in writeShort
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O Exception occurs in writeShort.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
         super.dump(file);
-        file.writeShort(lineNumberTable.length);
+        file.writeShort(Args.requireU2(lineNumberTable.length, "lineNumberTable.length"));
         for (final LineNumber lineNumber : lineNumberTable) {
             lineNumber.dump(file);
         }
     }
 
     /**
+     * Gets the line number table.
+     *
      * @return Array of (pc offset, line number) pairs.
      */
     public LineNumber[] getLineNumberTable() {
@@ -135,8 +139,8 @@ public final class LineNumberTable extends Attribute implements Iterable<LineNum
     /**
      * Map byte code positions to source code lines.
      *
-     * @param pos byte code offset
-     * @return corresponding line in source code
+     * @param pos byte code offset.
+     * @return corresponding line in source code.
      */
     public int getSourceLine(final int pos) {
         int l = 0;
@@ -178,8 +182,13 @@ public final class LineNumberTable extends Attribute implements Iterable<LineNum
         return lineNumberTable[minIndex].getLineNumber();
     }
 
+    /**
+     * Gets the length of the line number table.
+     *
+     * @return The length of the line number table.
+     */
     public int getTableLength() {
-        return lineNumberTable == null ? 0 : lineNumberTable.length;
+        return lineNumberTable.length;
     }
 
     @Override
@@ -188,7 +197,9 @@ public final class LineNumberTable extends Attribute implements Iterable<LineNum
     }
 
     /**
-     * @param lineNumberTable the line number entries for this table
+     * Sets the line number table.
+     *
+     * @param lineNumberTable The line number entries for this table.
      */
     public void setLineNumberTable(final LineNumber[] lineNumberTable) {
         this.lineNumberTable = lineNumberTable != null ? lineNumberTable : LineNumber.EMPTY_ARRAY;

@@ -29,10 +29,9 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * LDC - Push item from constant pool.
  *
- * <PRE>
+ * <pre>
  * Stack: ... -&gt; ..., item
- * </PRE>
- * @LastModified: May 2021
+ * </pre>
  */
 public class LDC extends CPInstruction implements PushInstruction, ExceptionThrower {
 
@@ -42,6 +41,11 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
     LDC() {
     }
 
+    /**
+     * Constructs an LDC instruction.
+     *
+     * @param index index into constant pool.
+     */
     public LDC(final int index) {
         super(com.sun.org.apache.bcel.internal.Const.LDC_W, index);
         setSize();
@@ -49,9 +53,9 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -64,9 +68,9 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {
@@ -101,6 +105,12 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
         }
     }
 
+    /**
+     * Gets the constant value from the constant pool.
+     *
+     * @param cpg constant pool generator.
+     * @return The constant value.
+     */
     public Object getValue(final ConstantPoolGen cpg) {
         com.sun.org.apache.bcel.internal.classfile.Constant c = cpg.getConstantPool().getConstant(super.getIndex());
         switch (c.getTag()) {
@@ -125,7 +135,7 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
     }
 
     /**
-     * Read needed data (e.g. index) from file.
+     * Reads needed data (for example index) from file.
      */
     @Override
     protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
@@ -142,7 +152,9 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
         setSize();
     }
 
-    // Adjust to proper size
+    /**
+     * Adjusts to proper size.
+     */
     protected final void setSize() {
         if (super.getIndex() <= com.sun.org.apache.bcel.internal.Const.MAX_BYTE) { // Fits in one byte?
             super.setOpcode(com.sun.org.apache.bcel.internal.Const.LDC);

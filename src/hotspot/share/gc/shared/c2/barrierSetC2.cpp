@@ -76,7 +76,7 @@ bool C2Access::needs_cpu_membar() const {
     // the barriers get omitted and the unsafe reference begins to "pollute"
     // the alias analysis of the rest of the graph, either Compile::can_alias
     // or Compile::must_alias will throw a diagnostic assert.)
-    if (is_mixed || !is_unordered || (mismatched && !_addr.type()->isa_aryptr())) {
+    if (is_mixed || !is_unordered || (mismatched && !_addr.type()->is_aryptr())) {
       return true;
     }
   } else {
@@ -419,12 +419,12 @@ void C2Access::fixup_decorators() {
     _decorators |= C2_UNKNOWN_CONTROL_LOAD;
     const TypePtr* adr_type = _addr.type();
     Node* adr = _addr.node();
-    if (!needs_cpu_membar() && adr_type->isa_instptr()) {
+    if (!needs_cpu_membar() && adr_type->is_instptr()) {
       assert(adr_type->meet(TypePtr::NULL_PTR) != adr_type->remove_speculative(), "should be not null");
       intptr_t offset = Type::OffsetBot;
       AddPNode::Ideal_base_and_offset(adr, &gvn(), offset);
       if (offset >= 0) {
-        int s = Klass::layout_helper_size_in_bytes(adr_type->isa_instptr()->instance_klass()->layout_helper());
+        int s = Klass::layout_helper_size_in_bytes(adr_type->as_instptr()->instance_klass()->layout_helper());
         if (offset < s) {
           // Guaranteed to be a valid access, no need to pin it
           _decorators ^= C2_CONTROL_DEPENDENT_LOAD;
@@ -475,7 +475,7 @@ Node* BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, 
     } else
 #endif
     {
-      load_store = new CompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->is_oopptr(), mo);
+      load_store = new CompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->as_oopptr(), mo);
     }
   } else {
     switch (access.type()) {
@@ -607,7 +607,7 @@ Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* n
     } else
 #endif
     {
-      load_store = new GetAndSetPNode(kit->control(), mem, adr, new_val, adr_type, value_type->is_oopptr());
+      load_store = new GetAndSetPNode(kit->control(), mem, adr, new_val, adr_type, value_type->as_oopptr());
     }
   } else  {
     switch (access.type()) {
@@ -747,7 +747,7 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   Node* n = kit->gvn().transform(ac);
   if (n == ac) {
     const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-    ac->set_adr_type(TypeRawPtr::BOTTOM);
+    ac->set_out_adr_type(TypeRawPtr::BOTTOM);
     kit->set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), raw_adr_type);
   } else {
     kit->set_all_memory(n);
@@ -1016,7 +1016,7 @@ static bool is_array_allocation(const Node* phi) {
       }
       const MachNode* succ = current->fast_out(i)->as_Mach();
       if (succ->ideal_Opcode() == Op_CheckCastPP) {
-        if (succ->get_ptr_type()->isa_aryptr()) {
+        if (succ->get_ptr_type()->is_aryptr()) {
           // Cast to Java array pointer: phi corresponds to an array allocation.
           return true;
         }
@@ -1063,12 +1063,12 @@ bool BarrierSetC2::is_allocation(const Node* node) {
   return offset == in_bytes(Thread::tlab_top_offset());
 }
 
-void BarrierSetC2::elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const {
+void BarrierSetC2::elide_dominated_barriers(const Node_List<MachNode>& accesses, const Node_List<Node>& access_dominators) const {
   Compile* const C = Compile::current();
   PhaseCFG* const cfg = C->cfg();
 
   for (uint i = 0; i < accesses.size(); i++) {
-    MachNode* const access = accesses.at(i)->as_Mach();
+    MachNode* const access = accesses.at(i);
     intptr_t access_offset;
     const Node* const access_obj = get_base_and_offset(access, access_offset);
     Block* const access_block = cfg->get_block_for_node(access);

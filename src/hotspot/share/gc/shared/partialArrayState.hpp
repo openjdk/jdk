@@ -26,14 +26,14 @@
 #define SHARE_GC_SHARED_PARTIALARRAYSTATE_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-class Arena;
 class PartialArrayStateAllocator;
-class PartialArrayStateManager;
 
 // Instances of this class are used to represent processing progress for an
 // array task in a taskqueue.  When a sufficiently large array needs to be
@@ -43,33 +43,36 @@ class PartialArrayStateManager;
 // for later processing, either by the current thread or by some other thread
 // that steals one of those tasks.
 //
-// Processing a state involves using the state to claim a segment of the
-// array, and processing that segment.  Claiming is done by atomically
-// incrementing the index, thereby claiming the segment from the old to new
-// index values.  New tasks should also be added as needed to ensure the
-// entire array will be processed.  A PartialArrayTaskStepper can be used to
-// help with this.
+// PartialArraySplitter atomically claims disjoint chunks and publishes enough
+// continuation tasks for parallel processing.  The state is only needed while
+// claiming a chunk, not while scanning it.
 //
 // States are allocated and released using a PartialArrayStateAllocator.
-// States are reference counted to aid in that management.  Each task
-// referring to a given state that is added to a taskqueue must increase the
-// reference count by one.  When the processing of a task referring to a state
-// is complete, the reference count must be decreased by one.  When the
-// reference count reaches zero the state is released to the allocator for
-// later reuse.
+// Each full-sized chunk reserves a reference to the state at allocation,
+// including chunks whose tasks have not yet been published.  After a task has
+// claimed its chunk, published any continuations, and captured everything needed
+// for scanning, decrement the remaining chunk count by one.  The worker that
+// decrements it to zero recycles the state on its own allocator for later reuse.
 class PartialArrayState {
-  oop _source;
-  oop _destination;
+  objArrayOop _array;
   size_t _length;
   size_t _chunk_size;
   Atomic<size_t> _index;
-  Atomic<size_t> _refcount;
+  Atomic<size_t> _num_remaining_chunks;
 
   friend class PartialArrayStateAllocator;
+  friend class PartialArraySplitter;
 
-  PartialArrayState(oop src, oop dst,
+  PartialArrayState(objArrayOop array,
                     size_t index, size_t length,
-                    size_t chunk_size, size_t initial_refcount);
+                    size_t chunk_size);
+
+  size_t claim_next() {
+    size_t start = _index.fetch_then_add(_chunk_size, memory_order_relaxed);
+    assert(start < _length, "every task must have a chunk to claim");
+    assert((_length - start) % _chunk_size == 0, "whole chunks remain");
+    return start;
+  }
 
 public:
   // Deleted to require management by allocator object.
@@ -77,133 +80,57 @@ public:
 
   NONCOPYABLE(PartialArrayState);
 
-  // Add count references, one per referring task being added to a taskqueue.
-  void add_references(size_t count);
-
-  // The source array oop.
-  oop source() const { return _source; }
-
-  // The destination array oop.  In some circumstances the source and
-  // destination may be the same.
-  oop destination() const { return _destination; }
-
-  // The length of the array oop.
-  size_t length() const { return _length; }
-
-  size_t chunk_size() const { return _chunk_size; }
-
-  // A pointer to the start index for the next segment to process, for atomic
-  // update.
-  Atomic<size_t>* index_addr() { return &_index; }
+  objArrayOop array() const { return _array; }
 };
 
 // This class provides memory management for PartialArrayStates.
 //
-// States are initially arena allocated from the manager, using a per-thread
-// allocator.  This allows the entire set of allocated states to be discarded
-// without the need to keep track of or find them under some circumstances.
+// Each per-thread allocator owns an arena for allocating states.  This allows
+// the entire set of allocated states to be discarded without the need to keep
+// track of or find them under some circumstances.
 // For example, if G1 concurrent marking is aborted and needs to restart
 // because of a full marking queue, the queue doesn't need to be searched for
 // tasks referring to states to allow releasing them.  Instead the queue
 // contents can just be discarded, and the memory for the no longer referenced
-// states will eventually be reclaimed when the arena is reset.
+// states will be reclaimed when the allocator is reset or destroyed.
 //
 // The allocators each provide a free-list of states.  When a state is
-// released and its reference count has reached zero, it is added to the
-// allocator's free-list, for use by future allocation requests.  This causes
-// the maximum number of allocated states to be based on the number of
-// in-progress arrays, rather than the total number of arrays that need to be
-// processed.
+// released and its remaining chunk count has reached zero, it is added to the
+// allocator's free-list, for use by future allocation requests.
+//
+// A state may be allocated from one allocator's arena and recycled on another
+// allocator's free-list after work stealing.  Reclamation follows the owning
+// splitter's lifetime contract and is coordinated by the collector.
+// Before reclaiming any arena, all workers that can exchange partial-array tasks
+// must have stopped using states.  All their allocators must be reset/destroyed
+// before processing resumes.  Cleanup does not traverse free-lists, whose
+// entries may belong to an already reclaimed arena.
 //
 // An allocator object is not thread-safe.
-class PartialArrayStateAllocator : public CHeapObj<mtGC> {
+class PartialArrayStateAllocator {
   class FreeListEntry;
 
-  PartialArrayStateManager* _manager;
   FreeListEntry* _free_list;
-  Arena* _arena;                // Obtained from _manager.
+  Arena _arena;
 
 public:
-  explicit PartialArrayStateAllocator(PartialArrayStateManager* manager);
-  ~PartialArrayStateAllocator();
+  PartialArrayStateAllocator();
+  ~PartialArrayStateAllocator() = default;
 
   NONCOPYABLE(PartialArrayStateAllocator);
 
-  // Create a new state, obtaining the memory for it from the free-list or
-  // from the associated manager.
-  PartialArrayState* allocate(oop src, oop dst,
-                              size_t index, size_t length,
-                              size_t chunk_size,
-                              size_t initial_refcount);
-
-  // Decrement the state's refcount.  If the new refcount is zero, add the
-  // state to the free-list associated with worker_id.  The state must have
-  // been allocated by this allocator, but that allocation doesn't need to
-  // have been associated with worker_id.
-  void release(PartialArrayState* state);
-};
-
-// This class provides memory management for PartialArrayStates.
-//
-// States are allocated using an allocator object. Those allocators in turn
-// may request memory for a state from their associated manager. The manager
-// is responsible for obtaining and releasing memory used for states by the
-// associated allocators.
-//
-// A state may be allocated by one allocator, but end up on the free-list of a
-// different allocator.  This can happen because a task referring to the state
-// may be stolen from the queue where it was initially added.  This is permitted
-// because a state's memory won't be reclaimed until all of the allocators
-// associated with the manager that is ultimately providing the memory have
-// been deleted and the manager is reset.
-//
-// A manager is used in two distinct and non-overlapping phases.
-//
-// - allocating: This is the initial phase.  During this phase, new allocators
-// may be created, and allocators may request memory from the manager.
-//
-// - releasing: When an allocator is destroyed the manager transitions to this
-// phase.  It remains in this phase until all extent allocators associated with
-// this manager have been destroyed.  During this phase, new allocators may not
-// be created, nor may extent allocators request memory from this manager.
-//
-// Once all the associated allocators have been destroyed the releasing phase
-// ends and the manager may be reset or deleted.  Resetting transitions back
-// to the allocating phase.
-class PartialArrayStateManager : public CHeapObj<mtGC> {
-  friend class PartialArrayStateAllocator;
-
-  // Use an arena for each allocator, for thread-safe concurrent allocation by
-  // different allocators.
-  Arena* _arenas;
-
-  // Limit on the number of allocators this manager supports.
-  uint _max_allocators;
-
-  // The number of allocators that have been registered/released.
-  // Atomic to support concurrent registration, and concurrent release.
-  // Phasing restriction forbids registration concurrent with release.
-  Atomic<uint> _registered_allocators;
-  DEBUG_ONLY(Atomic<uint> _released_allocators;)
-
-  // These are all for sole use of the befriended allocator class.
-  Arena* register_allocator();
-  void release_allocator() NOT_DEBUG_RETURN;
-
-public:
-  explicit PartialArrayStateManager(uint max_allocators);
-
-  // Release the memory that has been requested by allocators associated with
-  // this manager.
-  // precondition: all associated allocators have been deleted.
-  ~PartialArrayStateManager();
-
-  NONCOPYABLE(PartialArrayStateManager);
-
-  // Recycle the memory that has been requested by allocators associated with
-  // this manager.
-  // precondition: all associated allocators have been deleted.
+  // Reclaim states and reconstruct the arena.  Called only by the owning
+  // splitter after all workers have stopped using states.
   void reset();
+
+  PartialArrayState* allocate(objArrayOop array,
+                              size_t index, size_t length,
+                              size_t chunk_size);
+
+  // Decrement the state's remaining chunk count by one.  If it reaches zero,
+  // recycle on this allocator's free-list.  The caller must have finished
+  // accessing the state.
+  void release(PartialArrayState* state);
 };
 
 #endif // SHARE_GC_SHARED_PARTIALARRAYSTATE_HPP

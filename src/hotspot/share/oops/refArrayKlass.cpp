@@ -40,7 +40,6 @@
 #include "oops/markWord.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/refArrayKlass.inline.hpp"
 #include "oops/refArrayOop.inline.hpp"
 #include "oops/symbol.hpp"

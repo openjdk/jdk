@@ -68,7 +68,6 @@ class PhaseIdealLoop;
 class PhaseMacroExpand;
 class Type;
 class TypePtr;
-class Unique_Node_List;
 
 // This class wraps a node and a type.
 class C2AccessValue: public StackObj {
@@ -94,7 +93,7 @@ public:
   C2AccessValuePtr(Node* node, const TypePtr* type) :
     C2AccessValue(node, type) {}
 
-  const TypePtr* type() const { return _type->is_ptr(); }
+  const TypePtr* type() const { return _type->as_ptr(); }
 };
 
 // This class wraps a bunch of context parameters that are passed around in the
@@ -214,7 +213,7 @@ public:
 
 class BarrierSetC2State : public ArenaObj {
 protected:
-  Node_Array                      _live;
+  Node_Array<Node> _live;
 
 public:
   BarrierSetC2State(Arena* arena) : _live(arena) {}
@@ -360,7 +359,7 @@ public:
   // Elide GC barriers from instructions in 'accesses' if they are dominated by
   // instructions in 'access_dominators' (according to elide_mach_barrier()) and
   // there is no safepoint poll in between.
-  void elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const;
+  void elide_dominated_barriers(const Node_List<MachNode>& accesses, const Node_List<Node>& access_dominators) const;
   virtual void late_barrier_analysis() const { }
   virtual void compute_liveness_at_stubs() const;
   virtual int estimate_stub_size() const { return 0; }

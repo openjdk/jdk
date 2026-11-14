@@ -237,8 +237,8 @@ static void refine_barrier_by_new_val_type(const Node* n) {
   const Type* newval_bottom = newval->bottom_type();
   TypePtr::PTR newval_type = newval_bottom->make_ptr()->ptr();
   uint8_t barrier_data = store->barrier_data();
-  if (!newval_bottom->isa_oopptr() &&
-      !newval_bottom->isa_narrowoop() &&
+  if (!newval_bottom->is_oopptr() &&
+      !newval_bottom->is_narrowoop() &&
       newval_type != TypePtr::Null) {
     // newval is neither an OOP nor null, so there is no barrier to refine.
     assert(barrier_data == 0, "non-OOP stores should have no barrier data");
@@ -268,7 +268,7 @@ static void refine_barrier_by_new_val_type(const Node* n) {
 bool G1BarrierSetC2::expand_barriers(Compile* C, PhaseIterGVN& igvn) const {
   ResourceMark rm;
   VectorSet visited;
-  Node_List worklist;
+  Node_List<Node> worklist;
   worklist.push(C->root());
   while (worklist.size() > 0) {
     Node* n = worklist.pop();
@@ -519,8 +519,8 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
 
   // Find allocations and memory accesses (stores and atomic operations), and
   // track them in lists.
-  Node_List accesses;
-  Node_List allocations;
+  Node_List<MachNode> accesses;
+  Node_List<Node> allocations;
   for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
     const Block* const block = cfg->get_block(i);
     for (uint j = 0; j < block->number_of_nodes(); ++j) {

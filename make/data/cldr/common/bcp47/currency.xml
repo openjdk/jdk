@@ -80,7 +80,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="clf" description="Chilean Unit of Account (UF)" since="1.9"/>
             <type name="clp" description="Chilean Peso"/>
             <type name="cnh" description="Chinese Yuan (offshore)" since="32"/>
-            <type name="cnx" description="Chinese People’s Bank Dollar" since="1.9"/>
+            <type name="cnx" description="Chinese People’s Bank Dollar" since="1.9" deprecated="true"/>
             <type name="cny" description="Chinese Yuan"/>
             <type name="cop" description="Colombian Peso"/>
             <type name="cou" description="Colombian Real Value Unit" since="1.9"/>
