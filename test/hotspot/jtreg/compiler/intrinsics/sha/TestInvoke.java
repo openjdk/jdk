@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 8396624
- * @summary C2 support for SHA3 doubleKeccak/quadKeccak
+ * @bug 8386578
+ * @summary Return value checks for intrinsic capable methods
  *
  * @run main/othervm/timeout=600 -Xbatch
  *      -XX:CompileThreshold=500 -XX:+UnlockDiagnosticVMOptions

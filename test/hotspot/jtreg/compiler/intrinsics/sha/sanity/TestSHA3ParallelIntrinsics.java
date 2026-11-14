@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8396624
+ * @bug 8386578
  * @requires vm.opt.TieredCompilation != false
  * @summary Verify that SHA3 parallel intrinsics are invoked properly.
  *
