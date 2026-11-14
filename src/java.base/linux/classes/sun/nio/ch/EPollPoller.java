@@ -47,7 +47,6 @@ class EPollPoller extends Poller {
     private final Cleanable cleaner;
 
     EPollPoller(Poller.Mode mode, boolean subPoller, boolean read) throws IOException {
-        boolean closeable = (mode == Mode.POLLER_PER_CARRIER) && subPoller;
         int maxEvents = (subPoller) ? 16 : 64;
 
         int epfd = EPoll.create();
@@ -73,9 +72,9 @@ class EPollPoller extends Poller {
         this.address = address;
         this.eventfd = eventfd;
 
-        // create action to close epoll instance, register cleaner when wakeable
+        // create action to close kqueue, register cleaner for per-carrier sub-pollers
         this.closer = closer(epfd, address, eventfd);
-        if (closeable) {
+        if ((mode == Mode.POLLER_PER_CARRIER) && subPoller) {
             this.cleaner = CleanerFactory.cleaner().register(this, closer);
         } else {
             this.cleaner = null;

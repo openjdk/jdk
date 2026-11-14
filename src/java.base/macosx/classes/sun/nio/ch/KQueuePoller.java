@@ -47,7 +47,6 @@ class KQueuePoller extends Poller {
     private final Cleanable cleaner;
 
     KQueuePoller(Poller.Mode mode, boolean subPoller, boolean read) throws IOException {
-        boolean closeable = (mode == Mode.POLLER_PER_CARRIER) && subPoller;
         int maxEvents = (subPoller) ? 16 : 64;
 
         int kqfd = KQueue.create();
@@ -77,9 +76,9 @@ class KQueuePoller extends Poller {
         this.fd0 = fd0;
         this.fd1 = fd1;
 
-        // create action to close kqueue, register cleaner when wakeable
+        // create action to close kqueue, register cleaner for per-carrier sub-pollers
         this.closer = closer(kqfd, address, fd0, fd1);
-        if (closeable) {
+        if ((mode == Mode.POLLER_PER_CARRIER) && subPoller) {
             this.cleaner = CleanerFactory.cleaner().register(this, closer);
         } else {
             this.cleaner = null;

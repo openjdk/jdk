@@ -246,12 +246,20 @@ public abstract class Poller {
 
     /**
      * Parks the current thread until a file descriptor is ready.
+     *
+     * <p> In POLLER_PER_CARRIER mode, does not park if the poller has shut down
+     * because its carrier terminated. This allows the caller to retry with another
+     * poller.
+     *
+     * <p> During VM termination, this method parks if the channel/socket is
+     * open, even if the poller has shut down, to prevent the caller from
+     * spinning as it retries the I/O operation.
      */
     private void poll(Object blocker, int fdVal, long nanos,
                       BooleanSupplier isOpen) throws IOException {
         startPoll(fdVal);
         try {
-            if (isOpen.getAsBoolean() && !isShutdown()) {
+            if (isOpen.getAsBoolean() && (!isShutdown() || POLLER_GROUP.isShutdown())) {
                 if (nanos > 0) {
                     LockSupport.parkNanos(blocker, nanos);
                 } else {
@@ -352,8 +360,9 @@ public abstract class Poller {
     /**
      * A group of poller threads that support virtual threads polling file descriptors.
      */
-    private static abstract class PollerGroup {
+    static abstract class PollerGroup {
         private final PollerProvider provider;
+        private volatile boolean shutdown;
 
         PollerGroup(PollerProvider provider) {
             this.provider = provider;
@@ -369,10 +378,25 @@ public abstract class Poller {
         abstract void start();
 
         /**
-         * Initiates an orderly shutdown of the poller threads. This method does
-         * not wait for the threads to terminate.
+         * Prepares for VM termination by initiating an orderly shutdown of the
+         * system-wide pollers running in platform threads.
          */
-        abstract void shutdown();
+        abstract void prepareForTermination();
+
+        /**
+         * Marks the poller group as shutdown and prepares for VM termination.
+         */
+        final void shutdown() {
+            shutdown = true;
+            prepareForTermination();
+        }
+
+        /**
+         * Returns true if the poller group has been shutdown (VM termination).
+         */
+        final boolean isShutdown() {
+            return shutdown;
+        }
 
         /**
          * Parks the current thread until a file descriptor is ready for the given op.
@@ -472,7 +496,7 @@ public abstract class Poller {
         }
 
         @Override
-        void shutdown() {
+        void prepareForTermination() {
             Arrays.stream(readPollers).forEach(Poller::shutdown);
             Arrays.stream(writePollers).forEach(Poller::shutdown);
         }
@@ -584,7 +608,7 @@ public abstract class Poller {
         }
 
         @Override
-        void shutdown() {
+        void prepareForTermination() {
             masterPoller.shutdown();
         }
 
@@ -682,7 +706,7 @@ public abstract class Poller {
         }
 
         @Override
-        void shutdown() {
+        void prepareForTermination() {
             Arrays.stream(writePollers).forEach(Poller::shutdown);
             masterPoller.shutdown();
         }
