@@ -52,7 +52,7 @@
 //
 //---------------------------------------------------------------------------------
 //
-// Version 2.19
+// Version 2.20
 //
 
 #ifndef _lcms2_H
@@ -115,7 +115,9 @@
 
 #ifndef CMS_USE_CPP_API
 #   ifdef __cplusplus
-#       if __cplusplus >= 201703L
+        // MSVC keeps __cplusplus at 199711L unless /Zc:__cplusplus is passed, so also
+        // honor _MSVC_LANG; otherwise the C++17 'register' removal below never triggers.
+#       if (__cplusplus >= 201703L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 #            define CMS_NO_REGISTER_KEYWORD 1
 #       endif
 extern "C" {
@@ -123,7 +125,7 @@ extern "C" {
 #endif
 
 // Version/release
-#define LCMS_VERSION        2190
+#define LCMS_VERSION        2200
 
 // I will give the chance of redefining basic types for compilers that are not fully C99 compliant
 #ifndef CMS_BASIC_TYPES_ALREADY_DEFINED

@@ -949,7 +949,6 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
         // Get formatter function always return a valid union, but the contents of this union may be NULL.
         p ->FromInputFloat = _cmsGetFormatter(ContextID, *InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
         p ->ToOutputFloat  = _cmsGetFormatter(ContextID, *OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
-        *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
 
         if (p ->FromInputFloat == NULL || p ->ToOutputFloat == NULL) {
 
@@ -1184,7 +1183,7 @@ cmsHTRANSFORM CMSEXPORT cmsCreateExtendedTransform(cmsContext ContextID,
         if (hGamutProfile == NULL) dwFlags &= ~cmsFLAGS_GAMUTCHECK;
     }
 
-    if ((dwFlags & cmsFLAGS_GAMUTCHECK) && (nGamutPCSposition <= 0 || nGamutPCSposition >= nProfiles - 1)) {
+    if ((dwFlags & cmsFLAGS_GAMUTCHECK) && (nGamutPCSposition <= 0 || nGamutPCSposition > nProfiles - 1)) {
         cmsSignalError(ContextID, cmsERROR_RANGE, "Wrong gamut PCS position '%d'", nGamutPCSposition);
         return NULL;
     }
@@ -1252,12 +1251,20 @@ cmsHTRANSFORM CMSEXPORT cmsCreateExtendedTransform(cmsContext ContextID,
 
 
     // Create a gamut check LUT if requested
-    if (hGamutProfile != NULL && (dwFlags & cmsFLAGS_GAMUTCHECK))
+    if (hGamutProfile != NULL && (dwFlags & cmsFLAGS_GAMUTCHECK)) {
+
         xform ->GamutCheck  = _cmsCreateGamutCheckPipeline(ContextID, hProfiles,
                                                         BPC, Intents,
                                                         AdaptationStates,
                                                         nGamutPCSposition,
                                                         hGamutProfile);
+        if (xform->GamutCheck == NULL) {
+            cmsSignalError(ContextID, cmsERROR_NULL, "Could't create gamut check on transform");
+            cmsDeleteTransform(xform);
+            return NULL;
+        }
+
+    }
 
 
     // Try to read input and output colorant table
@@ -1498,7 +1505,7 @@ cmsBool CMSEXPORT cmsChangeBuffersFormat(cmsHTRANSFORM hTransform,
     // We only can afford to change formatters if previous transform is at least 16 bits
     if (!(xform ->dwOriginalFlags & cmsFLAGS_CAN_CHANGE_FORMATTER)) {
 
-        cmsSignalError(xform ->ContextID, cmsERROR_NOT_SUITABLE, "cmsChangeBuffersFormat works only on transforms created originally with at least 16 bits of precision");
+        cmsSignalError(xform ->ContextID, cmsERROR_NOT_SUITABLE, "cmsChangeBuffersFormat works only on transforms created originally with 16 bits of precision");
         return FALSE;
     }
 

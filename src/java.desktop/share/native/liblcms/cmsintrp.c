@@ -406,8 +406,8 @@ void BilinearInterpFloat(const cmsFloat32Number Input[],
     px = fclamp(Input[0]) * p->Domain[0];
     py = fclamp(Input[1]) * p->Domain[1];
 
-    x0 = (int) _cmsQuickFloor(px); fx = px - (cmsFloat32Number) x0;
-    y0 = (int) _cmsQuickFloor(py); fy = py - (cmsFloat32Number) y0;
+    x0 = (int) floor(px); fx = px - (cmsFloat32Number) x0;
+    y0 = (int) floor(py); fy = py - (cmsFloat32Number) y0;
 
     X0 = p -> opta[1] * x0;
     X1 = X0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[1]);
@@ -1079,7 +1079,7 @@ void Eval4InputsFloat(const cmsFloat32Number Input[],
        cmsInterpParams p1;
 
        pk = fclamp(Input[0]) * p->Domain[0];
-       k0 = _cmsQuickFloor(pk);
+       k0 = (int)floor(pk);
        rest = pk - (cmsFloat32Number) k0;
 
        K0 = p -> opta[3] * k0;
@@ -1158,7 +1158,7 @@ static void Eval##N##InputsFloat(const cmsFloat32Number Input[], \
        cmsInterpParams p1;\
 \
        pk = fclamp(Input[0]) * p->Domain[0];\
-       k0 = _cmsQuickFloor(pk);\
+       k0 = (int) floor(pk);\
        rest = pk - (cmsFloat32Number) k0;\
 \
        K0 = p -> opta[NM] * k0;\

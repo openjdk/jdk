@@ -74,6 +74,20 @@ ifeq ($(TOOLCHAIN_TYPE)+$(TOOLCHAIN_VERSION), clang+10.1)
   BUILD_LIBLCMS_cmsopt.c_CFLAGS := -O0
 endif
 
+ifeq ($(call isTargetOs, linux), true)
+  # Build fails on Linux because WCHAR_MAX is not defined and
+  # WCHAR_MAX is provided by wchar.h
+  BUILD_LIBLCMS_cmstypes.c_CFLAGS := -include wchar.h
+endif
+
+ifeq ($(call isTargetOs, windows), true)
+  # Build doesn't fail on Windows because we don't treat
+  # undefined WCHAR_MAX macro warning as error. But
+  # WCHAR_MAX value is treated as 0. So we explicitly
+  # include wchar.h
+  BUILD_LIBLCMS_cmstypes.c_CFLAGS := -FIwchar.h
+endif
+
 # We use CMS_DONT_USE_FAST_FLOOR and CMS_NO_HALF_SUPPORT since the fast floor
 # code loses precision.
 $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \

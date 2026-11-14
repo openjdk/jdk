@@ -156,8 +156,25 @@ cmsBool _cmsWriteWCharArray(cmsIOHANDLER* io, cmsUInt32Number n, const wchar_t* 
     _cmsAssert(io != NULL);
     _cmsAssert(!(Array == NULL && n > 0));
 
-    for (i=0; i < n; i++) {
-        if (!_cmsWriteUInt16Number(io, (cmsUInt16Number) Array[i])) return FALSE;
+    for (i = 0; i < n; i++) {
+
+        wchar_t v = Array[i];
+        cmsUInt16Number out;
+
+        #if (WCHAR_MAX > 0xFFFF)     // WCHAR_MAX support is required for C99
+                // UTF-32 wchar_t platforms
+                if (v <= 0xFFFF && !(v >= 0xD800 && v <= 0xDFFF))
+                    out = (cmsUInt16Number)v;
+                else
+                    out = (cmsUInt16Number)'?';
+        #else
+                // UTF-16 wchar_t platforms:
+                // preserve code units exactly, including surrogates.
+                out = (cmsUInt16Number)v;
+        #endif
+
+        if (!_cmsWriteUInt16Number(io, out))
+            return FALSE;
     }
 
     return TRUE;
@@ -1181,6 +1198,7 @@ void *Type_Text_Description_Read(struct _cms_typehandler_struct* self, cmsIOHAND
 
     if (!_cmsReadWCharArray(io, UnicodeCount, UnicodeString)) {
         _cmsFree(self->ContextID, (void*)UnicodeString);
+        UnicodeString = NULL;
         goto Done;
     }
 
@@ -1188,6 +1206,7 @@ void *Type_Text_Description_Read(struct _cms_typehandler_struct* self, cmsIOHAND
 
     if (!cmsMLUsetWide(mlu, cmsV2Unicode, cmsV2Unicode, UnicodeString)) {
         _cmsFree(self->ContextID, (void*)UnicodeString);
+        UnicodeString = NULL;
         goto Done;
     }
 
@@ -4814,6 +4833,7 @@ void *Type_MPE_Read(struct _cms_typehandler_struct* self, cmsIOHANDLER* io, cmsU
     if (NewLUT == NULL) return NULL;
 
     if (!_cmsReadUInt32Number(io, &ElementCount)) goto Error;
+    if (ElementCount > 50) goto Error;
     if (!ReadPositionTable(self, io, ElementCount, BaseOffset, NewLUT, ReadMPEElem)) goto Error;
 
     // Check channel count
@@ -5210,6 +5230,7 @@ cmsBool AllocElem(cmsContext ContextID, _cmsDICelem* e,  cmsUInt32Number Count)
     if (e->Sizes == NULL) {
 
         _cmsFree(ContextID, e -> Offsets);
+        e->Offsets = NULL;
         return FALSE;
     }
 
@@ -5374,6 +5395,7 @@ cmsBool ReadOneWChar(cmsIOHANDLER* io,  _cmsDICelem* e, cmsUInt32Number i, wchar
 
       if (!_cmsReadWCharArray(io, nChars, *wcstr)) {
           _cmsFree(e ->ContextID, *wcstr);
+          *wcstr = NULL;
           return FALSE;
       }
 
@@ -5527,10 +5549,25 @@ void *Type_Dictionary_Read(struct _cms_typehandler_struct* self, cmsIOHANDLER* i
             rc = cmsDictAddEntry(hDict, NameWCS, ValueWCS, DisplayNameMLU, DisplayValueMLU);
         }
 
-        if (NameWCS != NULL) _cmsFree(self ->ContextID, NameWCS);
-        if (ValueWCS != NULL) _cmsFree(self ->ContextID, ValueWCS);
-        if (DisplayNameMLU != NULL) cmsMLUfree(DisplayNameMLU);
-        if (DisplayValueMLU != NULL) cmsMLUfree(DisplayValueMLU);
+        if (NameWCS != NULL) {
+            _cmsFree(self->ContextID, NameWCS);
+            NameWCS = NULL;
+        }
+
+        if (ValueWCS != NULL) {
+            _cmsFree(self->ContextID, ValueWCS);
+            ValueWCS = NULL;
+        }
+
+        if (DisplayNameMLU != NULL) {
+            cmsMLUfree(DisplayNameMLU);
+            DisplayNameMLU = NULL;
+        }
+
+        if (DisplayValueMLU != NULL) {
+            cmsMLUfree(DisplayValueMLU);
+            DisplayValueMLU = NULL;
+        }
 
         if (!rc) goto Error;
     }
@@ -5542,6 +5579,10 @@ void *Type_Dictionary_Read(struct _cms_typehandler_struct* self, cmsIOHANDLER* i
 Error:
    FreeArray(&a);
    if (hDict != NULL) cmsDictFree(hDict);
+   if (NameWCS != NULL) _cmsFree(self->ContextID, NameWCS);
+   if (ValueWCS != NULL) _cmsFree(self->ContextID, ValueWCS);
+   if (DisplayNameMLU != NULL) cmsMLUfree(DisplayNameMLU);
+   if (DisplayValueMLU != NULL) cmsMLUfree(DisplayValueMLU);
    return NULL;
 }
 
