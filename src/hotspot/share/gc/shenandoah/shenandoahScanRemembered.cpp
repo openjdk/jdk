@@ -134,6 +134,9 @@ void ShenandoahDirectCardMarkRememberedSet::mark_range_as_clean(HeapWord* p, siz
 }
 
 void ShenandoahDirectCardMarkRememberedSet::mark_read_table_as_clean() {
+  if (_is_read_table_clean) {
+    return;
+  }
   CardValue* read_table = _card_table->read_byte_map();
   CardValue* bp = &(read_table)[0];
   CardValue* end_bp = &(read_table)[_card_table->last_valid_index()];
@@ -141,6 +144,8 @@ void ShenandoahDirectCardMarkRememberedSet::mark_read_table_as_clean() {
   while (bp <= end_bp) {
     *bp++ = CardTable::clean_card_val();
   }
+
+  _is_read_table_clean = true;
 
   log_develop_debug(gc, barrier)("Cleaned read_table from " PTR_FORMAT " to " PTR_FORMAT, p2i(&(read_table[0])), p2i(end_bp));
 }
@@ -714,6 +719,7 @@ ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(She
 
   _heap = ShenandoahHeap::heap();
   _card_table = card_table;
+  _is_read_table_clean = false;
   _total_card_count = total_card_count;
   _card_shift = CardTable::card_shift();
 
@@ -749,11 +755,14 @@ void ShenandoahDirectCardMarkRememberedSet::merge_write_table(HeapWord* start, s
     read_table[i] &= write_table[i];
   }
 
+  _is_read_table_clean = false;
+
   log_develop_debug(gc, remset)("Finished merging write_table into read_table.");
 }
 
 void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
   CardTable::CardValue* new_ptr = _card_table->swap_read_and_write_tables();
+  _is_read_table_clean = false;
 
 #ifdef ASSERT
   CardValue* start_bp = &(_card_table->write_byte_map())[0];
