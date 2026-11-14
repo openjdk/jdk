@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 class ShenandoahGeneration;
+class ShenandoahHeuristics;
 
 class ShenandoahControlThread: public ShenandoahController {
   typedef enum {
@@ -50,6 +51,8 @@ protected:
   void notify_alloc_stall(GCCause::Cause cause) override;
 
 private:
+  static bool should_start_gc(ShenandoahHeuristics* heuristics);
+
   void service_concurrent_normal_cycle(GCCause::Cause cause);
   void service_stw_full_cycle(GCCause::Cause cause);
 };

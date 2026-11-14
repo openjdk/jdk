@@ -53,6 +53,9 @@ ShenandoahHeuristics* ShenandoahMode::initialize_heuristics(ShenandoahSpaceInfo*
     case ShenandoahHeuristicsFlag::Heuristic::STATIC:
       return new ShenandoahStaticHeuristics(space_info);
     case ShenandoahHeuristicsFlag::Heuristic::ADAPTIVE:
+    case ShenandoahHeuristicsFlag::Heuristic::PASSIVE:
+      // Passive flag gets regular heuristics for collection set construction, but
+      // adaptive heuristic triggers will be suppressed.
       return new ShenandoahAdaptiveHeuristics(space_info);
     case ShenandoahHeuristicsFlag::Heuristic::COMPACT:
       return new ShenandoahCompactHeuristics(space_info);

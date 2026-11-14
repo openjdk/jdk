@@ -45,6 +45,16 @@ ShenandoahControlThread::ShenandoahControlThread() {
   create_and_start();
 }
 
+bool ShenandoahControlThread::should_start_gc(ShenandoahHeuristics* const heuristics) {
+  if (heuristics->has_metaspace_oom()) {
+    // metaspace oom bypasses passive heuristic trigger suppression
+    return heuristics->should_start_gc();
+  }
+
+  return ShenandoahHeuristicsFlag::value() != ShenandoahHeuristicsFlag::Heuristic::PASSIVE
+      && heuristics->should_start_gc();
+}
+
 void ShenandoahControlThread::run_service() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   constexpr GCMode default_mode = concurrent_normal;
@@ -81,7 +91,7 @@ void ShenandoahControlThread::run_service() {
         // Unload and clean up everything
         heap->set_unload_classes(heuristics->can_unload_classes());
       }
-    } else if (heuristics->should_start_gc()) {
+    } else if (should_start_gc(heuristics)) {
       // Nobody requested a cycle, but heuristics want to run one
       mode = default_mode;
       cause = default_cause;
