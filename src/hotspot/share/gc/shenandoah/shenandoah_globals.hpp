@@ -43,7 +43,7 @@
           "ShenandoahRecentAllocRateSampleWindow")                          \
           range(1, 1000)                                                    \
                                                                             \
-  product(uint, ShenandoahRecentAllocRateSampleWindow, 20, EXPERIMENTAL,    \
+  product(uint, ShenandoahRecentAllocRateSampleWindow, 50, EXPERIMENTAL,    \
           "The number of samples in the recent allocation rate moving "     \
           "average. These samples are analyzed to determine whether "       \
           "allocation rates are accelerating.  Acceleration may occur "     \
