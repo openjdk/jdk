@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA2::*
- *                   -XX:+UseSHA256Intrinsics -XX:-UseMD5Intrinsics
- *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA512Intrinsics
- *                   -Dalgorithm=SHA-224
+ *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA512Intrinsics -XX:-UseSHA3Intrinsics
+ *                   -XX:+UseSHA256Intrinsics -Dalgorithm=SHA-224
  *                   compiler.intrinsics.sha.sanity.TestSHA256MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -55,8 +54,8 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
- *                   -XX:CompileOnly=sun.security.provider.SHA2::* -XX:-UseSHA
- *                   -Dalgorithm=SHA-224
+ *                   -XX:CompileOnly=sun.security.provider.SHA2::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA-224
  *                   compiler.intrinsics.sha.sanity.TestSHA256MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -64,9 +63,8 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA2::*
- *                   -XX:+UseSHA256Intrinsics -XX:-UseMD5Intrinsics
- *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA512Intrinsics
- *                   -Dalgorithm=SHA-256
+ *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA512Intrinsics -XX:-UseSHA3Intrinsics
+ *                   -XX:+UseSHA256Intrinsics -Dalgorithm=SHA-256
  *                   compiler.intrinsics.sha.sanity.TestSHA256MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -81,8 +79,8 @@
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
- *                   -XX:CompileOnly=sun.security.provider.SHA::* -XX:-UseSHA
- *                   -Dalgorithm=SHA-256
+ *                   -XX:CompileOnly=sun.security.provider.SHA::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA-256
  *                   compiler.intrinsics.sha.sanity.TestSHA256MultiBlockIntrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
  *                   compiler.testlibrary.intrinsics.Verifier positive_224.log positive_256.log
@@ -91,11 +89,17 @@
  */
 
 package compiler.intrinsics.sha.sanity;
+
+import java.util.function.BooleanSupplier;
+
 import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
+import jdk.test.lib.cli.predicate.AndPredicate;
 
 public class TestSHA256MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
-        new DigestSanityTestBase(IntrinsicPredicates.isSHA256IntrinsicAvailable(),
-                DigestSanityTestBase.MB_INTRINSIC_ID).test();
+        BooleanSupplier pred
+                = new AndPredicate(IntrinsicPredicates.isSHA256MultiBlockIntrinsicAvailable(),
+                                   IntrinsicPredicates.isSHA256IntrinsicAvailable());
+        new DigestSanityTestBase(pred, DigestSanityTestBase.MB_INTRINSIC_ID).test();
     }
 }

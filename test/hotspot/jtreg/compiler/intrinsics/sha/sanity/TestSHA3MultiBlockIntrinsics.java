@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8252204
+ * @requires vm.cpu.features ~= ".*avx512.*"
  * @summary Verify that SHA3-224, SHA3-256, SHA3-384, SHA3-512 multi block intrinsic is actually used.
  *
  * @library /test/lib /
@@ -39,10 +40,9 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
- *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
- *                   -XX:-UseSHA512Intrinsics -Dalgorithm=SHA3-224
+ *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-224
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -50,16 +50,16 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_224_def.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-224
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-224
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
- *                   -XX:CompileOnly=sun.security.provider.SHA3::* -XX:-UseSHA
- *                   -Dalgorithm=SHA3-224
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA3-224
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -68,10 +68,9 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
- *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
- *                   -XX:-UseSHA512Intrinsics -Dalgorithm=SHA3-256
+ *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-256
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -79,16 +78,16 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_256_def.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-256
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-256
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
- *                   -XX:CompileOnly=sun.security.provider.SHA3::* -XX:-UseSHA
- *                   -Dalgorithm=SHA3-256
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA3-256
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -97,10 +96,9 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_384.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
- *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
- *                   -XX:-UseSHA512Intrinsics -Dalgorithm=SHA3-384
+ *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-384
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -108,16 +106,16 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_384_def.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-384
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-384
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_384.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
- *                   -XX:CompileOnly=sun.security.provider.SHA3::* -XX:-UseSHA
- *                   -Dalgorithm=SHA3-384
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA3-384
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -126,10 +124,9 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_512.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
- *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
- *                   -XX:-UseSHA512Intrinsics -Dalgorithm=SHA3-512
+ *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-512
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -137,16 +134,16 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_512_def.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-512
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseSIMDForSHA3Intrinsic
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-512
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_512.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
- *                   -XX:CompileOnly=sun.security.provider.SHA3::* -XX:-UseSHA
- *                   -Dalgorithm=SHA3-512
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
+ *                   -XX:-UseMD5Intrinsics -XX:-UseSHA -Dalgorithm=SHA3-512
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
  *                    compiler.testlibrary.intrinsics.Verifier positive_224.log positive_256.log
@@ -174,11 +171,10 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_224.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:-UseSIMDForSHA3Intrinsic -XX:-PreserveFramePointer
- *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
- *                   -XX:-UseSHA512Intrinsics -Dalgorithm=SHA3-224
+ *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-224
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -197,11 +193,10 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_256.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:-UseSIMDForSHA3Intrinsic -XX:-PreserveFramePointer
- *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
- *                   -XX:-UseSHA512Intrinsics -Dalgorithm=SHA3-256
+ *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-256
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -220,11 +215,10 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_384.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:-UseSIMDForSHA3Intrinsic -XX:-PreserveFramePointer
- *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
- *                   -XX:-UseSHA512Intrinsics -Dalgorithm=SHA3-384
+ *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-384
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -243,11 +237,10 @@
  *                   -XX:+LogCompilation -XX:LogFile=positive_512.log
  *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
  *                   -XX:CompileOnly=sun.security.provider.SHA3::*
- *                   -XX:+UseSHA3Intrinsics -XX:-UseMD5Intrinsics
  *                   -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:-UseSIMDForSHA3Intrinsic -XX:-PreserveFramePointer
- *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics
- *                   -XX:-UseSHA512Intrinsics -Dalgorithm=SHA3-512
+ *                   -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics
+ *                   -XX:+UseSHA3Intrinsics -Dalgorithm=SHA3-512
  *                   compiler.intrinsics.sha.sanity.TestSHA3MultiBlockIntrinsics
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
@@ -377,11 +370,16 @@
 
 package compiler.intrinsics.sha.sanity;
 
+import java.util.function.BooleanSupplier;
+
 import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
+import jdk.test.lib.cli.predicate.AndPredicate;
 
 public class TestSHA3MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
-        new DigestSanityTestBase(IntrinsicPredicates.isSHA3IntrinsicAvailable(),
-                DigestSanityTestBase.MB_INTRINSIC_ID).test();
+        BooleanSupplier pred
+                = new AndPredicate(IntrinsicPredicates.isSHA3MultiBlockIntrinsicAvailable(),
+                                   IntrinsicPredicates.isSHA3IntrinsicAvailable());
+        new DigestSanityTestBase(pred, DigestSanityTestBase.MB_INTRINSIC_ID).test();
     }
 }
