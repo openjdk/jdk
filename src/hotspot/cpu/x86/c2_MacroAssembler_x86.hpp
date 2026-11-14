@@ -488,6 +488,10 @@ public:
                                         XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, KRegister ktmp,
                                         Register rtmp, int vec_enc);
 
+  // ctz(x) = popcnt((x - 1) & ~x). Used when vpopcnt is available.
+  void vector_count_trailing_zeros_evex_popc(BasicType bt, XMMRegister dst, XMMRegister src,
+                                             XMMRegister xtmp, int vec_enc);
+
   void vector_swap_nbits(int nbits, int bitmask, XMMRegister dst, XMMRegister src,
                          XMMRegister xtmp1, Register rtmp, int vec_enc);
 

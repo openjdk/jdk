@@ -2878,6 +2878,14 @@ static inline bool is_clz_non_subword_predicate_evex(BasicType bt, int vlen_byte
            (VM_Version::supports_avx512vl() || vlen_bytes == 64);
 }
 
+static inline bool is_vector_ctz_popcnt_evex(BasicType bt, int vlen_bytes) {
+  if (!(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG)) {
+    return false;
+  }
+  return is_vector_popcount_predicate(bt) &&
+         (VM_Version::supports_avx512vl() || vlen_bytes == 64);
+}
+
 class Node::PD {
 public:
   enum NodeFlags : uint64_t {
@@ -23500,8 +23508,26 @@ instruct vpopcount_avx_reg(vec dst, vec src, vec xtmp1, vec xtmp2, rRegP rtmp) %
 
 // --------------------------------- Vector Trailing Zeros Count --------------------------------------
 
+instruct vcount_trailing_zeros_popcnt_evex(vec dst, vec src, vec xtmp) %{
+  predicate(is_vector_ctz_popcnt_evex(Matcher::vector_element_basic_type(n->in(1)),
+                                      Matcher::vector_length_in_bytes(n->in(1))));
+  match(Set dst (CountTrailingZerosV src));
+  effect(TEMP xtmp);
+  ins_cost(100);
+  format %{ "vector_count_trailing_zeros_popcnt $dst, $src\t! using $xtmp as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this, $src);
+    BasicType bt = Matcher::vector_element_basic_type(this, $src);
+    __ vector_count_trailing_zeros_evex_popc(bt, $dst$$XMMRegister, $src$$XMMRegister,
+                                             $xtmp$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vcount_trailing_zeros_reg_evex(vec dst, vec src, vec xtmp, rRegP rtmp) %{
-  predicate(is_clz_non_subword_predicate_evex(Matcher::vector_element_basic_type(n->in(1)),
+  predicate(!is_vector_ctz_popcnt_evex(Matcher::vector_element_basic_type(n->in(1)),
+                                       Matcher::vector_length_in_bytes(n->in(1))) &&
+            is_clz_non_subword_predicate_evex(Matcher::vector_element_basic_type(n->in(1)),
                                               Matcher::vector_length_in_bytes(n->in(1))));
   match(Set dst (CountTrailingZerosV src));
   effect(TEMP dst, TEMP xtmp, TEMP rtmp);
@@ -23517,7 +23543,9 @@ instruct vcount_trailing_zeros_reg_evex(vec dst, vec src, vec xtmp, rRegP rtmp) 
 %}
 
 instruct vcount_trailing_zeros_short_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, rRegP rtmp) %{
-  predicate(Matcher::vector_element_basic_type(n->in(1)) == T_SHORT &&
+  predicate(!is_vector_ctz_popcnt_evex(Matcher::vector_element_basic_type(n->in(1)),
+                                       Matcher::vector_length_in_bytes(n->in(1))) &&
+            Matcher::vector_element_basic_type(n->in(1)) == T_SHORT &&
             VM_Version::supports_avx512cd() &&
             (VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64));
   match(Set dst (CountTrailingZerosV src));
@@ -23534,7 +23562,9 @@ instruct vcount_trailing_zeros_short_reg_evex(vec dst, vec src, vec xtmp1, vec x
 %}
 
 instruct vcount_trailing_zeros_byte_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, kReg ktmp, rRegP rtmp) %{
-  predicate(Matcher::vector_element_basic_type(n->in(1)) == T_BYTE && VM_Version::supports_avx512vlbw());
+  predicate(!is_vector_ctz_popcnt_evex(Matcher::vector_element_basic_type(n->in(1)),
+                                       Matcher::vector_length_in_bytes(n->in(1))) &&
+            Matcher::vector_element_basic_type(n->in(1)) == T_BYTE && VM_Version::supports_avx512vlbw());
   match(Set dst (CountTrailingZerosV src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP xtmp4, TEMP ktmp, TEMP rtmp);
   ins_cost(400);
