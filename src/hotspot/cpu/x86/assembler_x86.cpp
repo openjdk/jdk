@@ -15636,10 +15636,6 @@ void Assembler::eincq(Register dst, Address src, bool no_flags) {
   emit_operand(rax, src, 0);
 }
 
-void Assembler::lea(Register dst, Address src) {
-  leaq(dst, src);
-}
-
 void Assembler::leaq(Register dst, Address src) {
   InstructionMark im(this);
   emit_prefix_and_int8(get_prefixq(src, dst), (unsigned char)0x8D);
