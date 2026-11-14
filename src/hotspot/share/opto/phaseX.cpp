@@ -2592,17 +2592,32 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_AndI || u->Opcode() == Op_AndL;
     });
   }
-  // OrI/LNode::Ideal converts shift/or patterns into rotates, which
-  // needs to trigger when x and y common.
-  // e.g. (x << 14) | (y >>> 18)
+  // OrI/LNode::Ideal and AddNode::IdealIL convert shift/or and shift/add
+  // patterns into rotates, which needs to trigger when x and y common.
+  // e.g. (x << 14) | (y >>> 18), (x >>> 16) + (y << 16)
   if (use_op == Op_LShiftI || use_op == Op_URShiftI) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
-      return u->Opcode() == Op_OrI;
+      return u->Opcode() == Op_OrI || u->Opcode() == Op_AddI;
     });
   } else if (use_op == Op_LShiftL || use_op == Op_URShiftL) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
-      return u->Opcode() == Op_OrL;
+      return u->Opcode() == Op_OrL || u->Opcode() == Op_AddL;
     });
+  }
+  // rotate_shift also matches a variable shift count of the form
+  // ({0|32|64} - s), so a changed SubI input can enable a rotate two hops up.
+  // pattern: n -> use=SubI -> shift (count input) -> or
+  if (use_op == Op_SubI) {
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* shift = use->fast_out(i);
+      const int shift_op = shift->Opcode();
+      if ((shift_op == Op_LShiftI || shift_op == Op_URShiftI ||
+           shift_op == Op_LShiftL || shift_op == Op_URShiftL) && shift->in(2) == use) {
+        add_users_to_worklist_if(worklist, shift, [](Node* u) {
+          return u->Opcode() == Op_OrI || u->Opcode() == Op_OrL;
+        });
+      }
+    }
   }
   // If changed LShift inputs, check CompressBits and ExpandBits users for
   // compress(x, 1 << n), compress(x, -1 << n),
