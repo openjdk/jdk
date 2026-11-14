@@ -1748,6 +1748,9 @@ public final class URL implements java.io.Serializable {
                     public URLStreamHandler getHandler(URL u) {
                         return u.handler;
                     }
+                    public String normalize(String path) {
+                        return URI.normalize(path, '/', true);
+                    }
                 }
         );
     }

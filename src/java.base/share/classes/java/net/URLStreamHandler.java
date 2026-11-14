@@ -289,43 +289,7 @@ public abstract class URLStreamHandler {
             path = "";
 
         if (isRelPath) {
-            // Remove embedded /./
-            while ((i = path.indexOf("/./")) >= 0) {
-                path = path.substring(0, i) + path.substring(i + 2);
-            }
-            // Remove embedded /../ if possible
-            i = 0;
-            while ((i = path.indexOf("/../", i)) >= 0) {
-                /*
-                 * A "/../" will cancel the previous segment and itself,
-                 * unless that segment is a "/../" itself
-                 * i.e. "/a/b/../c" becomes "/a/c"
-                 * but "/../../a" should stay unchanged
-                 */
-                if (i > 0 && (limit = path.lastIndexOf('/', i - 1)) >= 0 &&
-                    (path.indexOf("/../", limit) != 0)) {
-                    path = path.substring(0, limit).concat(path.substring(i + 3));
-                    i = 0;
-                } else {
-                    i = i + 3;
-                }
-            }
-            // Remove trailing .. if possible
-            while (path.endsWith("/..")) {
-                i = path.indexOf("/..");
-                if ((limit = path.lastIndexOf('/', i - 1)) >= 0) {
-                    path = path.substring(0, limit+1);
-                } else {
-                    break;
-                }
-            }
-            // Remove starting .
-            if (path.startsWith("./") && path.length() > 2)
-                path = path.substring(2);
-
-            // Remove trailing .
-            if (path.endsWith("/."))
-                path = path.substring(0, path.length() -1);
+            path = URI.normalize(path, '/', true);
         }
 
         setURL(u, protocol, host, port, authority, userInfo, path, query, ref);
