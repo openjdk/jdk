@@ -351,8 +351,6 @@ class ClassLoader: AllStatic {
                              const ClassFileStream* stream, bool redefined) NOT_CDS_RETURN;
 #if INCLUDE_CDS
   static char* uri_to_path(const char* uri);
-  static void record_result_for_builtin_loader(s2 classpath_index, InstanceKlass* result, bool redefined);
-  static void record_hidden_class(InstanceKlass* ik);
   static void append_boot_classpath(ClassPathEntry* new_entry);
 #endif
 

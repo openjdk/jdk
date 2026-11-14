@@ -24,12 +24,15 @@
 
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
-#include "cds/aotMetaspace.hpp"
+#include "cds/aotHeap.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/serializeClosure.hpp"
+#include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
@@ -851,6 +854,134 @@ bool AOTClassLocationConfig::is_valid_classpath_index(int classpath_index, Insta
 
   return true;
 }
+
+// Record the class_location_index and loader type for classes loaded
+// by the builtin loaders at dump time.
+void AOTClassLocationConfig::on_klass_creation(InstanceKlass* ik, const ClassFileStream* stream,
+                                               bool redefined) {
+  if (!CDSConfig::is_dumping_archive()) {
+    return;
+  }
+
+  assert(CDSConfig::is_dumping_archive(), "sanity");
+  assert(stream != nullptr, "sanity");
+  assert(dumptime_is_ready(), "sanity");
+  assert(ClassLoader::has_jrt_entry(), "CDS dumping does not support exploded JDK build");
+
+  if (ik->is_hidden()) {
+    record_hidden_class(ik);
+    return;
+  }
+
+  if (ik->shared_classpath_index() == 0 && ik->defined_by_boot_loader()) {
+    return;
+  }
+
+  if (!AOTSystemDictionary::is_builtin_loader(ik->class_loader_data())) {
+    // A class loaded by a user-defined classloader.
+    assert(ik->shared_classpath_index() < 0, "not assigned yet");
+    ik->set_shared_classpath_index(UNREGISTERED_INDEX);
+    AOTSystemDictionary::set_shared_class_misc_info(ik, (ClassFileStream*)stream);
+    return;
+  }
+
+  int classpath_index = dumptime_get_class_location_index(ik, stream);
+  if (CDSConfig::is_dumping_aot_configuration() || CDSConfig::is_dumping_dynamic_archive()) {
+    if (!dumptime()->is_valid_classpath_index(classpath_index, ik)) {
+      classpath_index = -1;
+    }
+  }
+
+  if (log_is_enabled(Debug, aot, path)) {
+    ResourceMark rm;
+    log_debug(aot, path)("classpath_index %s = %d", ik->external_name(), classpath_index);
+  }
+
+  update_shared_classpath_index(ik, classpath_index, redefined);
+}
+
+void AOTClassLocationConfig::update_shared_classpath_index(InstanceKlass* ik, int classpath_index, bool redefined) {
+  if (classpath_index < 0 || classpath_index > max_jshort) {
+    ik->set_shared_classpath_index(-1); // unsupported location
+  } else {
+    oop loader = ik->class_loader();
+    if (SystemDictionary::is_system_class_loader(loader)) {
+      dumptime_set_has_app_classes();
+    } else if (SystemDictionary::is_platform_class_loader(loader)) {
+      dumptime_set_has_platform_classes();
+    } else {
+      assert(loader == nullptr, "must be");
+    }
+
+    dumptime_update_max_used_index(classpath_index);
+    ik->set_shared_classpath_index(checked_cast<s2>(classpath_index));
+  }
+}
+
+void AOTClassLocationConfig::record_hidden_class(InstanceKlass* ik) {
+  assert(ik->is_hidden(), "must be");
+
+  if (ik->defined_by_other_loaders()) {
+    // We don't archive hidden classes for non-builtin loaders.
+    return;
+  }
+
+  if (AOTHeap::is_lambda_proxy_klass(ik)) {
+    InstanceKlass* nest_host = ik->nest_host_not_null();
+    ik->set_shared_classpath_index(nest_host->shared_classpath_index());
+  } else if (AOTHeap::is_lambda_form_klass(ik)) {
+    ik->set_shared_classpath_index(0);
+  } else {
+    // Generated invoker classes.
+    if (ik->defined_by_app_loader()) {
+      ik->set_shared_classpath_index(dumptime()->app_cp_start_index());
+    } else {
+      ik->set_shared_classpath_index(0);
+    }
+  }
+}
+
+int AOTClassLocationConfig::dumptime_get_class_location_index(InstanceKlass* ik, const ClassFileStream* stream) {
+  const char* src = stream->source();
+  if (src == nullptr) {
+    return -1;
+  }
+
+  if (stream->from_boot_loader_modules_image() || strncmp(src, "jrt:", 4) == 0) {
+    assert(dumptime()->class_location_at(0)->is_modules_image(), "sanity check");
+    return 0;
+  } else {
+    ResourceMark rm;
+    const char* path = ClassLoader::uri_to_path(src);
+    PackageEntry* pkg_entry = ik->package();
+    if ((pkg_entry != nullptr) && !pkg_entry->in_unnamed_module()) {
+      // A class in a named module from the --module-path. Note that classes from the modules image
+      // are handled above and get an index of 0.
+      return dumptime_get_class_location_index(path, /*is_named_module=*/ true);
+    } else {
+      // A class in an unnamed module
+      int i = dumptime_get_class_location_index(path, /*is_named_module=*/ false);
+      assert(i != 0, "must not be from module image");
+      if (i > 0) {
+        AOTClassLocation const* cl = dumptime()->class_location_at(i);
+        oop loader = ik->class_loader();
+        // null pkg_entry and pkg_entry in an unnamed module implies the class
+        // is from the -cp or boot loader append path which consists of -Xbootclasspath/a
+        // and jvmti appended entries.
+        if ((pkg_entry == nullptr) || (pkg_entry->in_unnamed_module())) {
+          if (SystemDictionary::is_system_class_loader(loader) && cl->from_app_classpath()) {
+            return i;
+          } else if (loader == nullptr && cl->from_boot_classpath()) {
+            return i;
+          }
+        }
+      }
+    }
+  }
+
+  return -1;
+}
+
 
 AOTClassLocationConfig* AOTClassLocationConfig::write_to_archive() const {
   log_locations(CDSConfig::output_archive_path(), /*is_write=*/true);

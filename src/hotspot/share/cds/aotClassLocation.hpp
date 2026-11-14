@@ -34,6 +34,7 @@
 #include "utilities/ostream.hpp"
 
 class AllClassLocationStreams;
+class ClassFileStream;
 class ClassLocationStream;
 class ClassPathZipEntry;
 class ModulePathClassLocationStream;
@@ -173,6 +174,10 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
                        Group group, bool parse_manifest, bool from_cpattr);
   void dumptime_init_helper(TRAPS);
 
+  static int dumptime_get_class_location_index(InstanceKlass* ik, const ClassFileStream* stream);
+  static void update_shared_classpath_index(InstanceKlass* ik, int classpath_index, bool redefined);
+  static void record_hidden_class(InstanceKlass* ik);
+
   bool validate_helper(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph, RuntimePathInfo& path_info) const;
   bool check_jrt(bool has_aot_linked_classes) const;
   bool check_classpaths(bool has_aot_linked_classes, AllClassLocationStreams& all_css, RuntimePathInfo& path_info) const;
@@ -255,6 +260,9 @@ public:
 
   // Functions used only during dumptime
   static void dumptime_init(JavaThread* current) NOT_CDS_RETURN;
+
+  static void on_klass_creation(InstanceKlass* ik, const ClassFileStream* stream,
+                                bool redefined) NOT_CDS_RETURN;
 
   static void dumptime_set_has_app_classes() {
     _dumptime_instance->_has_app_classes = true;
