@@ -195,7 +195,8 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
 
 // negative filter: should callee NOT be inlined?
 bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_method,
-                                   int caller_bci, bool& should_delay, ciCallProfile& profile) {
+                                   JVMState* jvms, bool& should_delay, ciCallProfile& profile) {
+  int caller_bci = jvms->bci();
   const char* fail_msg = nullptr;
 
   // First check all inlining restrictions which are required for correctness
@@ -218,9 +219,18 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     fail_msg = "method changes current thread";
   }
 
-  // one more inlining restriction
   if (fail_msg == nullptr && callee_method->has_unloaded_classes_in_signature()) {
-    fail_msg = "unloaded signature classes";
+    // Unloaded parameter types are safe when their arguments are known null.
+    // Parse::do_call() already handles unloaded return types.
+    int arg_slot = callee_method->is_static() ? 0 : 1;
+    for (ciSignatureStream str(callee_method->signature()); !str.at_return_type(); str.next()) {
+      ciType* type = str.type();
+      if (!type->is_loaded() && jvms->map()->argument(jvms, arg_slot)->bottom_type() != TypePtr::NULL_PTR) {
+        fail_msg = "unloaded signature classes";
+        break;
+      }
+      arg_slot += type->size();
+    }
   }
 
   if (fail_msg != nullptr) {
@@ -381,7 +391,7 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
     return false;
   }
   // 'should_delay' can be overridden during replay compilation
-  if (should_not_inline(callee_method, caller_method, caller_bci, should_delay, profile)) {
+  if (should_not_inline(callee_method, caller_method, jvms, should_delay, profile)) {
     return false;
   }
 
