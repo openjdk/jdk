@@ -1844,6 +1844,17 @@ ciTypeArray* PhaseStringOpts::get_constant_value(GraphKit& kit, Node* str) {
   return src_array->as_type_array();
 }
 
+// Expanding a concat with many arguments can exceed the node limit. Since the
+// graph is already partially transformed at this point, give up on the whole
+// compilation and retry it without string concat optimization.
+bool PhaseStringOpts::bailout_if_node_limit_reached() {
+  if (C->live_nodes() > C->max_node_limit() - NodeLimitFudgeFactor) {
+    C->record_failure(C2Compiler::retry_no_stringopts());
+    return true;
+  }
+  return false;
+}
+
 void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   // Log a little info about the transformation
   sc->maybe_log_transform();
@@ -1917,6 +1928,9 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   bool static_overflow = false;
 
   for (int argi = 0; argi < sc->num_arguments(); argi++) {
+    if (bailout_if_node_limit_reached()) {
+      return;
+    }
     Node* arg = sc->argument(argi);
     switch (sc->mode(argi)) {
       case StringConcat::NegativeIntCheckMode: {
@@ -2119,6 +2133,9 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     // Now copy the string representations into the final byte[]
     Node* start = __ intcon(0);
     for (int argi = 0; argi < sc->num_arguments(); argi++) {
+      if (bailout_if_node_limit_reached()) {
+        return;
+      }
       Node* arg = sc->argument(argi);
       switch (sc->mode(argi)) {
         case StringConcat::NegativeIntCheckMode:
