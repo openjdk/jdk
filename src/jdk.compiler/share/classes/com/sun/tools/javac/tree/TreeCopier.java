@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Position;
 
 /**
  * Creates a copy of a tree, using a given TreeMaker.
@@ -57,7 +58,11 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public <T extends JCTree> T copy(T tree, P p) {
         if (tree == null)
             return null;
-        return (T) (tree.accept(this, p));
+        T copied = (T) tree.accept(this, p);
+        if (tree.endpos != Position.NOPOS) {
+            copied.endpos = tree.endpos;
+        }
+        return copied;
     }
 
     public <T extends JCTree> List<T> copy(List<T> trees) {
