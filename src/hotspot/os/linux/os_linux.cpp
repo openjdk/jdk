@@ -42,6 +42,7 @@
 #include "osContainer_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
+#include "procMapsParser.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
@@ -4098,6 +4099,52 @@ static bool validate_thps_configured() {
   return true;
 }
 
+// Linux 6.8 (and the backported 6.7.6) map MAP_STACK to VM_NOHUGEPAGE. See the commit below:
+//   c4608d1bf7c6 ("mm: mmap: map MAP_STACK to VM_NOHUGEPAGE")
+//   Reference: https://github.com/torvalds/linux/commit/c4608d1bf7c6536d1a3d233eb21e50678681564e
+// glibc creates pthread stacks with MAP_STACK, so on these kernels khugepaged will not collapse
+// them into huge pages, making the THPStackMitigation redundant. Considering that the change might
+// be backported to older kernels, we use one probe to detect it at startup: map one page with
+// MAP_STACK and check the "nh" VmFlag of its VMA in /proc/self/smaps.
+static bool kernel_maps_map_stack_to_nohugepage() {
+  size_t size = os::vm_page_size();
+  void* addr = ::mmap(nullptr, size, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0);
+  if (addr == MAP_FAILED) {
+    log_info(pagesize)("MAP_STACK probe: mmap failed (%s).", os::strerror(errno));
+    return false;
+  }
+  bool has_nh = false;
+  bool found = false;
+  FILE* f = os::fopen("/proc/self/smaps", "r");
+  if (f == nullptr) {
+    log_info(pagesize)("MAP_STACK probe: cannot open /proc/self/smaps.");
+  } else {
+    ProcSmapsParser parser(f);
+    ProcSmapsInfo info;
+    uintptr_t start = reinterpret_cast<uintptr_t>(addr);
+    uintptr_t end = start + size;
+    uintptr_t from, to;
+    while (parser.parse_next(info)) {
+      from = reinterpret_cast<uintptr_t>(info.from);
+      to = reinterpret_cast<uintptr_t>(info.to);
+      if (from == start && to == end) {
+        found = true;
+        has_nh = info.nh;
+        break;
+      }
+      if (from > start) {
+        break;
+      }
+    }
+    ::fclose(f);
+    if (!found) {
+      log_info(pagesize)("MAP_STACK probe: cannot find the mapping from /proc/self/smaps.");
+    }
+  }
+  ::munmap(addr, size);
+  return has_nh;
+}
+
 void os::large_page_init() {
   Linux::large_page_init();
 }
@@ -4112,12 +4159,12 @@ void os::Linux::large_page_init() {
   // Query OS information first.
   HugePages::initialize();
 
-  // If THPs are unconditionally enabled (THP mode "always"), khugepaged may attempt to
-  // coalesce small pages in thread stacks to huge pages. That costs a lot of memory and
-  // is usually unwanted for thread stacks. Therefore we attempt to prevent THP formation in
-  // thread stacks unless the user explicitly allowed THP formation by manually disabling
-  // -XX:-THPStackMitigation.
-  if (HugePages::thp_mode() == THPMode::always) {
+  // If THPs are unconditionally enabled (THP mode "always") and MAP_STACK is not mapped to
+  // VM_NOHUGEPAGE in the kernel, khugepaged may attempt to coalesce small pages in thread stacks to
+  // huge pages. That costs a lot of memory and is usually unwanted for thread stacks. Therefore we
+  // attempt to prevent THP formation in thread stacks unless the user explicitly allowed THP
+  // formation by manually disabling -XX:-THPStackMitigation.
+  if (HugePages::thp_mode() == THPMode::always && !kernel_maps_map_stack_to_nohugepage()) {
     if (THPStackMitigation) {
       log_info(pagesize)("JVM will attempt to prevent THPs in thread stacks.");
     } else {
