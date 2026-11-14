@@ -28,102 +28,82 @@ package gc.z;
  * @bug 8394682
  * @summary Test that ZGC completes metaspace allocations with class unloading disabled
  * @requires vm.gc.Z
+ * @requires vm.opt.ClassUnloading == null | !vm.opt.ClassUnloading
  * @library /test/lib
- * @run main/othervm gc.z.TestMetaspaceWithClassUnloadingDisabled
+ * @run driver/timeout=120 gc.z.TestMetaspaceWithClassUnloadingDisabled
  */
 
-import java.io.InputStream;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.test.lib.Utils;
+import jdk.test.lib.classloader.GeneratingClassLoader;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.thread.TestThread;
 
 public class TestMetaspaceWithClassUnloadingDisabled {
-    static class Template {}
-
-    static class Loader extends ClassLoader {
-        Loader() {
-            super(null);
-        }
-
-        void define(byte[] bytes) {
-            defineClass(null, bytes, 0, bytes.length);
+    public static void main(String[] args) throws Exception {
+        // Keep jtreg outside the VM that exhausts metaspace.
+        Process process = ProcessTools.createTestJavaProcessBuilder(
+                "-XX:+UseZGC", "-XX:-ClassUnloading", "-Xms64m", "-Xmx128m",
+                "-XX:MaxMetaspaceSize=16m", "-Xlog:metaspace=info",
+                Test.class.getName()).start();
+        try {
+            OutputAnalyzer output = new OutputAnalyzer(process);
+            // Enforce the hang-detection timeout outside the exhausted VM.
+            if (!process.waitFor(Utils.adjustTimeout(60_000), TimeUnit.MILLISECONDS)) {
+                process.destroyForcibly().waitFor();
+                output.reportDiagnosticSummary();
+                throw new RuntimeException("Metaspace allocation workers did not complete");
+            }
+            output.shouldHaveExitValue(0)
+                  .shouldContain("All workers completed with metaspace OOME");
+        } finally {
+            process.destroyForcibly().waitFor();
         }
     }
 
-    public static void main(String[] args) throws Throwable {
-        if (args.length == 0) {
-            // Keep the test harness outside the VM that exhausts metaspace.
-            ProcessTools.executeLimitedTestJava(
-                    "-XX:+UseZGC", "-XX:-ClassUnloading", "-Xms64m", "-Xmx128m",
-                    "-XX:MaxMetaspaceSize=16m", "-Xlog:metaspace=info",
-                    TestMetaspaceWithClassUnloadingDisabled.class.getName(),
-                    Long.toString(Utils.adjustTimeout(60_000)))
-                    .shouldHaveExitValue(0)
-                    .shouldContain("All workers completed with metaspace OOME");
-            return;
-        }
-
-        byte[] bytes;
-        try (InputStream in = TestMetaspaceWithClassUnloadingDisabled.class.getResourceAsStream(
-                "TestMetaspaceWithClassUnloadingDisabled$Template.class")) {
-            if (in == null) {
-                throw new AssertionError("Template class not found");
+    public static class Test {
+        public static void main(String[] args) throws Throwable {
+            // Concurrent allocation failures can wait for another thread's GC.
+            // With class unloading disabled, those requests must still complete
+            // so that every worker gets OOME instead of remaining blocked.
+            int count = 8;
+            CyclicBarrier start = new CyclicBarrier(count);
+            TestThread[] workers = new TestThread[count];
+            for (int i = 0; i < count; i++) {
+                GeneratingClassLoader loader = new GeneratingClassLoader();
+                // Resolve the generator's setup before exhausting metaspace.
+                loader.loadClass(loader.getClassName(0));
+                workers[i] = new TestThread(() -> exhaustMetaspace(loader, start));
             }
-            bytes = in.readAllBytes();
+            for (TestThread worker : workers) {
+                worker.start();
+            }
+
+            // Successful runs finish as soon as all workers get OOME.
+            // The parent detects a worker stuck waiting for purge.
+            for (TestThread worker : workers) {
+                worker.joinAndThrow();
+            }
+            System.out.println("All workers completed with metaspace OOME");
         }
 
-        int count = 8;
-        CountDownLatch ready = new CountDownLatch(count);
-        CountDownLatch start = new CountDownLatch(1);
-        CountDownLatch done = new CountDownLatch(count);
-        AtomicReference<Throwable> failure = new AtomicReference<>();
-        long timeout = Long.parseLong(args[0]);
-
-        // Prepare failure reporting before exhausting metaspace.
-        AssertionError startupFailure = new AssertionError("Workers did not start");
-        AssertionError timeoutFailure = new AssertionError("Workers did not complete");
-        startupFailure.getStackTrace();
-        timeoutFailure.getStackTrace();
-
-        for (int i = 0; i < count; i++) {
-            Thread worker = new Thread(() -> {
-                try {
-                    ready.countDown();
-                    start.await();
-                    for (;;) {
-                        new Loader().define(bytes);
-                    }
-                } catch (OutOfMemoryError e) {
-                    String message = e.getMessage();
-                    if (!"Metaspace".equals(message) && !"Compressed class space".equals(message)) {
-                        failure.compareAndSet(null, e);
-                    }
-                } catch (Throwable t) {
-                    failure.compareAndSet(null, t);
-                } finally {
-                    done.countDown();
+        private static void exhaustMetaspace(GeneratingClassLoader loader, CyclicBarrier start) {
+            try {
+                start.await();
+                for (int i = 1; ; i++) {
+                    loader.loadClass(loader.getClassName(i));
                 }
-            });
-            // Allow a failed test to exit even if allocation requests remain blocked.
-            worker.setDaemon(true);
-            worker.start();
+            } catch (OutOfMemoryError e) {
+                String message = e.getMessage();
+                if (!"Metaspace".equals(message) && !"Compressed class space".equals(message)) {
+                    throw e;
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
-
-        if (!ready.await(timeout, TimeUnit.MILLISECONDS)) {
-            throw startupFailure;
-        }
-        System.out.println("Starting metaspace allocation workers");
-        start.countDown();
-        if (!done.await(timeout, TimeUnit.MILLISECONDS)) {
-            System.out.println("Workers did not complete");
-            throw timeoutFailure;
-        }
-        if (failure.get() != null) {
-            throw failure.get();
-        }
-        System.out.println("All workers completed with metaspace OOME");
     }
 }
