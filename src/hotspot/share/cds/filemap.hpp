@@ -30,6 +30,7 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotStreamedHeap.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "include/cds.h"
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
@@ -122,8 +123,10 @@ public:
 
 class CDSMustMatchFlags {
 private:
+
+// std::remove_const_t is necessary because UseCompactObjectHeaders is a const in 32-bit builds.
 #define DECLARE_CDS_MUST_MATCH_FLAG(n) \
-  decltype(n) _v_##n;
+  std::remove_const_t<decltype(n)> _v_##n;
   CDS_MUST_MATCH_FLAGS_DO(DECLARE_CDS_MUST_MATCH_FLAG);
 #undef DECLARE_CDS_MUST_MATCH_FLAG
 
