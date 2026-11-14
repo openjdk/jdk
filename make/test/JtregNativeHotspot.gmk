@@ -59,6 +59,8 @@ HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exedaemonDestroy := java.base:libjvm
 
 ifeq ($(call isTargetOs, linux), true)
   HOTSPOT_JTREG_LIBRARIES_CFLAGS_libNoFramePointer := -fomit-frame-pointer
+  HOTSPOT_JTREG_LIBRARIES_CFLAGS_libNoEhFrame := -fno-unwind-tables -fno-asynchronous-unwind-tables
+  HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libNoEhFrame := -nostartfiles
   HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rw := -z noexecstack
   HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
   HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeinvoke := java.base:libjvm
@@ -73,7 +75,7 @@ ifeq ($(call isTargetOs, linux), true)
     HOTSPOT_JTREG_LIBRARIES_LIBS_libSuspendInCritical += -latomic
   endif
 else
-  HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c \
+  HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c libNoEhFrame.c \
       exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp
 endif
 

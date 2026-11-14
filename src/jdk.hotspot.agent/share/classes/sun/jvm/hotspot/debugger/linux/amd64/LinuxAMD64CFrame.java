@@ -40,7 +40,15 @@ public final class LinuxAMD64CFrame extends DwarfCFrame {
       Address rsp = getreg.apply(AMD64ThreadContext.RSP);
       Address rbp = getreg.apply(AMD64ThreadContext.RBP);
       Address cfa = null;
-      DwarfParser dwarf = createDwarfParser(linuxDbg, rip);
+      DwarfParser dwarf;
+      try {
+        dwarf = createDwarfParser(linuxDbg, rip);
+      } catch (DebuggerException e) {
+        if (linuxDbg.findLibPtrByAddress(rip) != null) {
+           return new LinuxAMD64CFrame(linuxDbg, rsp, rbp, null /* no CFA */, rip, null /* no DWARF */);
+        }
+        throw e;
+      }
 
       if (dwarf != null) { // Native frame
         cfa = getreg.apply(dwarf.getCFARegister())
