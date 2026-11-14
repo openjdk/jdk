@@ -53,30 +53,157 @@ static void pd_zero_to_bytes(void* to, size_t count) {
   (void)memset(to, 0, count);
 }
 
+#define COPY_SMALL(from, to, count) do {                                       \
+  assert((count) <= 8, "small copy only");                                     \
+  julong tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;                       \
+  __asm__ volatile(                                                            \
+    "li %[t0], 4\n"                                                            \
+    "bgeu %[cnt], %[t0], 4f\n"                                                 \
+    "li %[t0], 2\n"                                                            \
+    "bgeu %[cnt], %[t0], 2f\n"                                                 \
+    "beqz %[cnt], 9f\n"                                                        \
+    "ld %[t0], 0(%[s])\n"                                                      \
+    "sd %[t0], 0(%[d])\n"                                                      \
+    "j 9f\n"                                                                   \
+    "2:\n"                                                                     \
+    "bne %[cnt], %[t0], 3f\n"                                                  \
+    "ld %[t0], 0(%[s])\n"                                                      \
+    "ld %[t1], 8(%[s])\n"                                                      \
+    "sd %[t0], 0(%[d])\n"                                                      \
+    "sd %[t1], 8(%[d])\n"                                                      \
+    "j 9f\n"                                                                   \
+    "3:\n"                                                                     \
+    "ld %[t0], 0(%[s])\n"                                                      \
+    "ld %[t1], 8(%[s])\n"                                                      \
+    "ld %[t2], 16(%[s])\n"                                                     \
+    "sd %[t0], 0(%[d])\n"                                                      \
+    "sd %[t1], 8(%[d])\n"                                                      \
+    "sd %[t2], 16(%[d])\n"                                                     \
+    "j 9f\n"                                                                   \
+    "4:\n"                                                                     \
+    "li %[t0], 6\n"                                                            \
+    "bgeu %[cnt], %[t0], 6f\n"                                                 \
+    "li %[t0], 4\n"                                                            \
+    "bne %[cnt], %[t0], 5f\n"                                                  \
+    "ld %[t0], 0(%[s])\n"                                                      \
+    "ld %[t1], 8(%[s])\n"                                                      \
+    "ld %[t2], 16(%[s])\n"                                                     \
+    "ld %[t3], 24(%[s])\n"                                                     \
+    "sd %[t0], 0(%[d])\n"                                                      \
+    "sd %[t1], 8(%[d])\n"                                                      \
+    "sd %[t2], 16(%[d])\n"                                                     \
+    "sd %[t3], 24(%[d])\n"                                                     \
+    "j 9f\n"                                                                   \
+    "5:\n"                                                                     \
+    "ld %[t0], 0(%[s])\n"                                                      \
+    "ld %[t1], 8(%[s])\n"                                                      \
+    "ld %[t2], 16(%[s])\n"                                                     \
+    "ld %[t3], 24(%[s])\n"                                                     \
+    "ld %[t4], 32(%[s])\n"                                                     \
+    "sd %[t0], 0(%[d])\n"                                                      \
+    "sd %[t1], 8(%[d])\n"                                                      \
+    "sd %[t2], 16(%[d])\n"                                                     \
+    "sd %[t3], 24(%[d])\n"                                                     \
+    "sd %[t4], 32(%[d])\n"                                                     \
+    "j 9f\n"                                                                   \
+    "6:\n"                                                                     \
+    "li %[t0], 8\n"                                                            \
+    "beq %[cnt], %[t0], 8f\n"                                                  \
+    "li %[t0], 6\n"                                                            \
+    "bne %[cnt], %[t0], 7f\n"                                                  \
+    "ld %[t0], 0(%[s])\n"                                                      \
+    "ld %[t1], 8(%[s])\n"                                                      \
+    "ld %[t2], 16(%[s])\n"                                                     \
+    "ld %[t3], 24(%[s])\n"                                                     \
+    "ld %[t4], 32(%[s])\n"                                                     \
+    "ld %[t5], 40(%[s])\n"                                                     \
+    "sd %[t0], 0(%[d])\n"                                                      \
+    "sd %[t1], 8(%[d])\n"                                                      \
+    "sd %[t2], 16(%[d])\n"                                                     \
+    "sd %[t3], 24(%[d])\n"                                                     \
+    "sd %[t4], 32(%[d])\n"                                                     \
+    "sd %[t5], 40(%[d])\n"                                                     \
+    "j 9f\n"                                                                   \
+    "7:\n"                                                                     \
+    "ld %[t0], 0(%[s])\n"                                                      \
+    "ld %[t1], 8(%[s])\n"                                                      \
+    "ld %[t2], 16(%[s])\n"                                                     \
+    "ld %[t3], 24(%[s])\n"                                                     \
+    "ld %[t4], 32(%[s])\n"                                                     \
+    "ld %[t5], 40(%[s])\n"                                                     \
+    "ld %[t6], 48(%[s])\n"                                                     \
+    "sd %[t0], 0(%[d])\n"                                                      \
+    "sd %[t1], 8(%[d])\n"                                                      \
+    "sd %[t2], 16(%[d])\n"                                                     \
+    "sd %[t3], 24(%[d])\n"                                                     \
+    "sd %[t4], 32(%[d])\n"                                                     \
+    "sd %[t5], 40(%[d])\n"                                                     \
+    "sd %[t6], 48(%[d])\n"                                                     \
+    "j 9f\n"                                                                   \
+    "8:\n"                                                                     \
+    "ld %[t0], 0(%[s])\n"                                                      \
+    "ld %[t1], 8(%[s])\n"                                                      \
+    "ld %[t2], 16(%[s])\n"                                                     \
+    "ld %[t3], 24(%[s])\n"                                                     \
+    "ld %[t4], 32(%[s])\n"                                                     \
+    "ld %[t5], 40(%[s])\n"                                                     \
+    "ld %[t6], 48(%[s])\n"                                                     \
+    "ld %[t7], 56(%[s])\n"                                                     \
+    "sd %[t0], 0(%[d])\n"                                                      \
+    "sd %[t1], 8(%[d])\n"                                                      \
+    "sd %[t2], 16(%[d])\n"                                                     \
+    "sd %[t3], 24(%[d])\n"                                                     \
+    "sd %[t4], 32(%[d])\n"                                                     \
+    "sd %[t5], 40(%[d])\n"                                                     \
+    "sd %[t6], 48(%[d])\n"                                                     \
+    "sd %[t7], 56(%[d])\n"                                                     \
+    "9:\n"                                                                     \
+    : [t0] "=&r" (tmp0), [t1] "=&r" (tmp1),                                    \
+      [t2] "=&r" (tmp2), [t3] "=&r" (tmp3),                                    \
+      [t4] "=&r" (tmp4), [t5] "=&r" (tmp5),                                    \
+      [t6] "=&r" (tmp6), [t7] "=&r" (tmp7)                                     \
+    : [s] "r" (from), [d] "r" (to), [cnt] "r" (count)                          \
+    : "memory");                                                               \
+} while (false)
+
+static void pd_prefetch_words(const HeapWord* from) {
+  // Encode prefetch.r as ORI for assemblers without Zicbop support.
+  // CPUs without Zicbop treat this HINT as a NOP.
+  __asm__ volatile("ori zero, %[s], 1" :: [s] "r" (from) : "memory");
+}
+
 static void pd_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
-  (void)memmove(to, from, count * HeapWordSize);
+  pd_prefetch_words(from);
+  if (__builtin_expect(count <= 8, 1)) {
+    COPY_SMALL(from, to, count);
+  } else {
+    _Copy_conjoint_words(from, to, count);
+  }
 }
 
 static void pd_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
-  switch (count) {
-    case 8:  to[7] = from[7];   // fall through
-    case 7:  to[6] = from[6];   // fall through
-    case 6:  to[5] = from[5];   // fall through
-    case 5:  to[4] = from[4];   // fall through
-    case 4:  to[3] = from[3];   // fall through
-    case 3:  to[2] = from[2];   // fall through
-    case 2:  to[1] = from[1];   // fall through
-    case 1:  to[0] = from[0];   // fall through
-    case 0:  break;
-    default:
-      memcpy(to, from, count * HeapWordSize);
-      break;
+  if (__builtin_constant_p(count)) {
+    memcpy(to, from, count * HeapWordSize);
+    return;
+  }
+  pd_prefetch_words(from);
+  if (__builtin_expect(count <= 8, 1)) {
+    COPY_SMALL(from, to, count);
+  } else {
+    _Copy_disjoint_words(from, to, count);
   }
 }
 
 static void pd_disjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t count) {
-  shared_disjoint_words_atomic(from, to, count);
+  pd_prefetch_words(from);
+  if (__builtin_expect(count <= 8, 1)) {
+    COPY_SMALL(from, to, count);
+  } else {
+    _Copy_disjoint_words(from, to, count);
+  }
 }
+
+#undef COPY_SMALL
 
 static void pd_aligned_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   pd_conjoint_words(from, to, count);
