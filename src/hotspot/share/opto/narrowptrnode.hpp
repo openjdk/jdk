@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,9 +94,10 @@ class DecodeNNode : public DecodeNarrowPtrNode {
   DecodeNarrowPtrNode(value, type) {
     init_class_id(Class_DecodeN);
   }
-  virtual int Opcode() const;
-  virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node* Identity(PhaseGVN* phase);
+  int Opcode() const final;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) final;
+  Node* Identity(PhaseGVN* phase) final;
+  const Type* Value(PhaseGVN* phase) const final;
 };
 
 //------------------------------DecodeNKlass--------------------------------

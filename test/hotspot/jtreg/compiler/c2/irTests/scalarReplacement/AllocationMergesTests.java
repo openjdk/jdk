@@ -799,11 +799,7 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "2" }, applyIf = {"UseCompressedOops", "true"} )
-    @IR(failOn = { IRNode.ALLOC }, applyIf = {"UseCompressedOops", "false"} )
-    // The two Picture objects will be removed. The nested Point objects won't
-    // be removed, if CompressedOops is enabled, because the Phi merging them will
-    // have a DecodeN user - which currently isn't supported.
+    @IR(failOn = { IRNode.ALLOC })
     int testNestedObjectsNoEscapeObject_C2(boolean cond, int x, int y) { return testNestedObjectsNoEscapeObject(cond, x, y); }
 
     @DontCompile

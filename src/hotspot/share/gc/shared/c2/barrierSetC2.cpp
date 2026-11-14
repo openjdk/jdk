@@ -236,7 +236,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
                           requires_atomic_access, unaligned, mismatched, unsafe, access.barrier_data());
     load = gvn.transform(load);
   }
-  access.set_raw_access(load);
+  access.set_raw_access(load->is_DecodeN() ? load->in(1) : load);
 
   return load;
 }
