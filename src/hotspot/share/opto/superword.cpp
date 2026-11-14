@@ -2207,9 +2207,8 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
         // in use pack have inputs of iv plus node index.
         Node* use_in = u_pk->at(i)->in(u_idx);
         if (!use_in->is_Add() || use_in->in(1) != n) return false;
-        const TypeInt* offset_t = use_in->in(2)->bottom_type()->is_int();
-        if (offset_t == nullptr || !offset_t->is_con() ||
-            offset_t->get_con() != (jint) i) return false;
+        const TypeInt* offset_t = use_in->in(2)->bottom_type()->as_int();
+        if (!offset_t->is_con() || offset_t->get_con() != (jint) i) return false;
       }
     } else {
       // check for scalar promotion
@@ -2493,7 +2492,7 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   }
 
   // Vector nodes should not truncate.
-  if (type->isa_vect() != nullptr || type->isa_pvectmask() != nullptr || in->is_Reduction()) {
+  if (type->is_vect() || type->is_pvectmask() || in->is_Reduction()) {
     return false;
   }
 
@@ -3052,7 +3051,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     Node* invar_variable = s.variable();
     jint  invar_scale    = s.scale().value();
     TRACE_ALIGN_VECTOR_NODE(invar_variable);
-    if (igvn().type(invar_variable)->isa_long()) {
+    if (igvn().type(invar_variable)->is_long()) {
       // Computations are done % (vector width/element size) so it's
       // safe to simply convert invar to an int and loose the upper 32
       // bit half.
@@ -3088,13 +3087,13 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     // bit half. The base could be ptr, long or int. We cast all
     // to int.
     Node* xbase = base;
-    if (igvn().type(xbase)->isa_ptr()) {
+    if (igvn().type(xbase)->is_ptr()) {
       // ptr -> int/long
       xbase = new CastP2XNode(nullptr, xbase);
       phase()->register_new_node(xbase, pre_ctrl);
       TRACE_ALIGN_VECTOR_NODE(xbase);
     }
-    if (igvn().type(xbase)->isa_long()) {
+    if (igvn().type(xbase)->is_long()) {
       // long -> int
       xbase  = new ConvL2INode(xbase);
       phase()->register_new_node(xbase, pre_ctrl);
