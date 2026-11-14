@@ -1035,97 +1035,112 @@ class StubGenerator: public StubCodeGenerator {
 
   typedef void (MacroAssembler::*copy_insn)(Register Rd, const Address &adr, Register temp);
 
-  void copy_memory_v(Register s, Register d, Register count, int step) {
-    bool is_backward = step < 0;
+  void copy_memory_v_forward(Register s, Register d, Register count, int step) {
     int granularity = g_uabs(step);
 
-    const Register src = x30;
-    const Register dst = x31;
-    const Register cnt = x15;
-    const Register saved_vl = x16;
-    const Register tmp = t0;
-
-    assert_different_registers(s, d, count, src, dst, cnt, saved_vl, tmp);
+    const Register src = x30, dst = x31, vl = x14, cnt = x15;
+    assert_different_registers(s, d, cnt, vl);
+    Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
     // Use a 128-byte tuning target for vector group capacity, with a minimum LMUL of m1.
     const int vector_length = static_cast<int>(VM_Version::initial_vector_length());
     const int lmul_multiplier = MAX2(128 / vector_length, 1);
     const Assembler::LMUL lmul = static_cast<Assembler::LMUL>(exact_log2(lmul_multiplier));
+    const int vlmax_m1 = vector_length / granularity;
+
+    Label loop_main, loop_tail, done;
 
     __ mv(dst, d);
     __ mv(src, s);
-    if (granularity > 1) {
-      __ slli(cnt, count, exact_log2(granularity));
-    } else {
-      __ mv(cnt, count);
+    __ mv(cnt, count);
+
+    // Hoist the m1 threshold into t0 so the main loop doesn't reload it.
+    if (vlmax_m1 > 0) {
+      __ li(t0, vlmax_m1);
+      __ bleu(cnt, t0, loop_tail);   // very small copy: skip wide LMUL entirely
     }
 
-    if (!is_backward) {
-      Label loop, tail, tail_loop, done;
-
-      // A copy that fits in one m1 vector does not need the wider LMUL setup.
-      __ li(tmp, vector_length);
-      __ bleu(cnt, tmp, tail);
-
-      // Use a fixed VL for the main loop. This keeps vsetvli and the byte
-      // stride calculation out of the hot loop. The count and VL are bytes.
-      __ vsetvli(saved_vl, cnt, Assembler::e8, lmul);
-
-      __ bind(loop);
-      __ vle8_v(v0, src);
-      __ vse8_v(v0, dst);
-      __ add(src, src, saved_vl);
-      __ add(dst, dst, saved_vl);
-      __ sub(cnt, cnt, saved_vl);
-      __ bgeu(cnt, saved_vl, loop);
-
-      // Drain the remainder with m1. The remainder can be larger than one
-      // m1 vector because the main loop may use a wider LMUL.
-      __ bind(tail);
-      __ beqz(cnt, done);
-      __ bind(tail_loop);
-      __ vsetvli(tmp, cnt, Assembler::e8, Assembler::m1);
-      __ vle8_v(v0, src);
-      __ vse8_v(v0, dst);
-      __ add(src, src, tmp);
-      __ add(dst, dst, tmp);
-      __ sub(cnt, cnt, tmp);
-      __ bnez(cnt, tail_loop);
-      __ bind(done);
-      return;
+    __ bind(loop_main);
+    __ vsetvli(vl, cnt, sew, lmul);
+    __ vlex_v(v0, src, sew);
+    __ sub(cnt, cnt, vl);
+    if (sew != Assembler::e8) {
+      // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
+      __ slli(vl, vl, sew);
     }
+    __ add(src, src, vl);
+    __ vsex_v(v0, dst, sew);
+    __ add(dst, dst, vl);
 
-    Label loop, tail, tail_loop, done;
-
-    // Start at one-past-end so both the main and tail loops can walk the
-    // source and destination backwards without recomputing base + offset.
-    __ add(src, src, cnt);
-    __ add(dst, dst, cnt);
-
-    // Small backward copies benefit from m1 for the same reason as small
-    // forward copies. The end pointers above are also used by the tail loop.
-    __ li(tmp, vector_length);
-    __ bleu(cnt, tmp, tail);
-
-    __ vsetvli(saved_vl, cnt, Assembler::e8, lmul);
-
-    __ bind(loop);
-    __ sub(src, src, saved_vl);
-    __ sub(dst, dst, saved_vl);
-    __ vle8_v(v0, src);
-    __ vse8_v(v0, dst);
-    __ sub(cnt, cnt, saved_vl);
-    __ bgeu(cnt, saved_vl, loop);
-
-    __ bind(tail);
+    // Once remaining elements fit in m1, drain with the m1 tail loop.
     __ beqz(cnt, done);
-    __ bind(tail_loop);
-    __ vsetvli(tmp, cnt, Assembler::e8, Assembler::m1);
-    __ sub(src, src, tmp);
-    __ sub(dst, dst, tmp);
-    __ vle8_v(v0, src);
-    __ vse8_v(v0, dst);
-    __ sub(cnt, cnt, tmp);
-    __ bnez(cnt, tail_loop);
+    if (vlmax_m1 > 0) {
+      __ bleu(cnt, t0, loop_tail);
+    }
+    __ j(loop_main);
+
+    __ bind(loop_tail);
+    __ beqz(cnt, done);
+    __ vsetvli(vl, cnt, sew, Assembler::m1);
+    __ vlex_v(v0, src, sew);
+    __ sub(cnt, cnt, vl);
+    if (sew != Assembler::e8) {
+      // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
+      __ slli(vl, vl, sew);
+    }
+    __ add(src, src, vl);
+    __ vsex_v(v0, dst, sew);
+    __ add(dst, dst, vl);
+    __ bnez(cnt, loop_tail);
+    __ bind(done);
+  }
+
+  void copy_memory_v_backward(Register s, Register d, Register count, int step) {
+    int granularity = g_uabs(step);
+
+    const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
+    assert_different_registers(s, d, cnt, vl, tmp1, tmp2);
+    Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
+    // Use a 128-byte tuning target for vector group capacity, with a minimum LMUL of m1.
+    const int vector_length = static_cast<int>(VM_Version::initial_vector_length());
+    const int lmul_multiplier = MAX2(128 / vector_length, 1);
+    const Assembler::LMUL lmul = static_cast<Assembler::LMUL>(exact_log2(lmul_multiplier));
+    Label loop_forward, loop_backward, done;
+
+    __ mv(dst, d);
+    __ mv(src, s);
+    __ mv(cnt, count);
+
+    __ bind(loop_forward);
+    __ vsetvli(vl, cnt, sew, lmul);
+    __ bne(vl, cnt, loop_backward);
+
+    // Last chunk (vl == cnt): copy forward from the beginning of the buffer.
+    __ vlex_v(v0, src, sew);
+    __ sub(cnt, cnt, vl);
+    if (sew != Assembler::e8) {
+      // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
+      __ slli(vl, vl, sew);
+    }
+    __ add(src, src, vl);
+    __ vsex_v(v0, dst, sew);
+    __ add(dst, dst, vl);
+    __ bnez(cnt, loop_forward);
+
+    __ j(done);
+
+    // Earlier chunks: copy backward from the end of the buffer.
+    __ bind(loop_backward);
+    __ sub(t0, cnt, vl);
+    if (sew != Assembler::e8) {
+      // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
+      __ slli(t0, t0, sew);
+    }
+    __ add(tmp1, s, t0);
+    __ vlex_v(v0, tmp1, sew);
+    __ add(tmp2, d, t0);
+    __ vsex_v(v0, tmp2, sew);
+    __ sub(cnt, cnt, vl);
+    __ bnez(cnt, loop_forward);
     __ bind(done);
   }
 
@@ -1139,7 +1154,11 @@ class StubGenerator: public StubCodeGenerator {
                    Register s, Register d, Register count, int step) {
     BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
     if (UseRVV && (!is_reference_type(type) || bs_asm->supports_rvv_arraycopy())) {
-      return copy_memory_v(s, d, count, step);
+      if (step > 0) {
+        return copy_memory_v_forward(s, d, count, step);
+      } else {
+        return copy_memory_v_backward(s, d, count, step);
+      }
     }
 
     bool is_backwards = step < 0;
