@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "gc/g1/g1ServiceThread.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "utilities/autoRestore.hpp"
 #include "unittest.hpp"
 
@@ -139,7 +140,7 @@ TEST_VM(G1ServiceTaskQueue, add_ordered) {
   // random multiplier.
   for (jlong now = 0; now < 1000000; now++) {
     // Random multiplier is at least 1 to ensure progress.
-    int multiplier = 1 + os::random() % 10;
+    int multiplier = 1 + GtestRandom::random() % 10;
     while (queue.front()->time() < now) {
       TestTask* task = (TestTask*) queue.front();
       queue.remove_front();
