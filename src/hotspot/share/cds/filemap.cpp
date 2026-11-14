@@ -115,11 +115,9 @@ inline void CDSMustMatchFlags::do_print(outputStream* st, double v) {
 
 void CDSMustMatchFlags::init() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  _max_name_width = 0;
 
 #define INIT_CDS_MUST_MATCH_FLAG(n) \
-  _v_##n = n; \
-  _max_name_width = MAX2(_max_name_width,strlen(#n));
+  _v_##n = n;
   CDS_MUST_MATCH_FLAGS_DO(INIT_CDS_MUST_MATCH_FLAG);
 #undef INIT_CDS_MUST_MATCH_FLAG
 }
@@ -131,7 +129,7 @@ bool CDSMustMatchFlags::check_flag(T saved, T actual, const char* name) {
     stringStream ss;
     ss.print("The %s's %s setting (", CDSConfig::type_of_archive_being_loaded(), name);
     do_print(&ss, saved);
-    ss.print(") does not equal the current %s setting (", name);
+    ss.print(") does not equal the current setting (");
     do_print(&ss, actual);
     ss.print(")");
     AOTMetaspace::report_loading_error("%s", ss.as_string());
@@ -163,9 +161,8 @@ void CDSMustMatchFlags::print_info() const {
 
 void CDSMustMatchFlags::print(outputStream* st) const {
 #define PRINT_CDS_MUST_MATCH_FLAG(n) \
-  st->print("- %-s ", #n);                   \
-  st->sp(int(_max_name_width - strlen(#n))); \
-  do_print(st, _v_##n);                      \
+  st->print("- %-41s ", #n ":");     \
+  do_print(st, _v_##n);              \
   st->cr();
   CDS_MUST_MATCH_FLAGS_DO(PRINT_CDS_MUST_MATCH_FLAG);
 #undef PRINT_CDS_MUST_MATCH_FLAG
@@ -313,9 +310,6 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
     copy_base_archive_name(CDSConfig::input_static_archive_path());
   }
   _core_region_alignment = core_region_alignment;
-  _obj_alignment = ObjectAlignmentInBytes;
-  _compact_strings = CompactStrings;
-  _compact_headers = UseCompactObjectHeaders;
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     _object_streaming_mode = AOTHeap::is_writing_streaming_mode();
@@ -390,11 +384,8 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("============ end regions ======== ");
 
   st->print_cr("- core_region_alignment:                    %zu", _core_region_alignment);
-  st->print_cr("- obj_alignment:                            %d", _obj_alignment);
   st->print_cr("- narrow_oop_base:                          " INTPTR_FORMAT, p2i(_narrow_oop_base));
   st->print_cr("- narrow_oop_shift                          %d", _narrow_oop_shift);
-  st->print_cr("- compact_strings:                          %d", _compact_strings);
-  st->print_cr("- compact_headers:                          %d", _compact_headers);
   st->print_cr("- max_heap_size:                            %zu", _max_heap_size);
   st->print_cr("- narrow_oop_mode:                          %d", _narrow_oop_mode);
   st->print_cr("- compressed_oops:                          %d", _compressed_oops);
@@ -2008,30 +1999,32 @@ int FileMapHeader::compute_crc() {
   return crc;
 }
 
-#define CHECK_MUST_MATCH_FLAG(saved, flag) \
+// This is for flags that are checked only under certain conditions.
+#define CHECK_OTHER_MUST_MATCH_FLAG(saved, flag) \
   if (!CDSMustMatchFlags::check_flag(saved, flag, #flag)) { return false; }
 
 // This function should only be called during run time with UseSharedSpaces enabled.
 bool FileMapHeader::validate() {
   const char* file_type = CDSConfig::type_of_archive_being_loaded();
 
+  if (!FileMapHeader::check_enable_preview()) {
+    return false;
+  }
+
   if (!_must_match.runtime_check()) {
     return false;
   }
 
-  CHECK_MUST_MATCH_FLAG(_obj_alignment, ObjectAlignmentInBytes);
-  CHECK_MUST_MATCH_FLAG(_compact_strings, CompactStrings);
-
   if (TrainingData::have_data()) {
-    CHECK_MUST_MATCH_FLAG(_type_profile_level,            TypeProfileLevel);
-    CHECK_MUST_MATCH_FLAG(_type_profile_args_limit,       TypeProfileArgsLimit);
-    CHECK_MUST_MATCH_FLAG(_type_profile_parms_limit,      TypeProfileParmsLimit);
-    CHECK_MUST_MATCH_FLAG(_type_profile_width,            TypeProfileWidth);
-    CHECK_MUST_MATCH_FLAG(_bci_profile_width,             BciProfileWidth);
-    CHECK_MUST_MATCH_FLAG(_type_profile_casts,            TypeProfileCasts);
-    CHECK_MUST_MATCH_FLAG(_profile_traps,                 ProfileTraps);
-    CHECK_MUST_MATCH_FLAG(_profile_exception_handlers,    ProfileExceptionHandlers);
-    CHECK_MUST_MATCH_FLAG(_spec_trap_limit_extra_entries, SpecTrapLimitExtraEntries);
+    CHECK_OTHER_MUST_MATCH_FLAG(_type_profile_level,            TypeProfileLevel);
+    CHECK_OTHER_MUST_MATCH_FLAG(_type_profile_args_limit,       TypeProfileArgsLimit);
+    CHECK_OTHER_MUST_MATCH_FLAG(_type_profile_parms_limit,      TypeProfileParmsLimit);
+    CHECK_OTHER_MUST_MATCH_FLAG(_type_profile_width,            TypeProfileWidth);
+    CHECK_OTHER_MUST_MATCH_FLAG(_bci_profile_width,             BciProfileWidth);
+    CHECK_OTHER_MUST_MATCH_FLAG(_type_profile_casts,            TypeProfileCasts);
+    CHECK_OTHER_MUST_MATCH_FLAG(_profile_traps,                 ProfileTraps);
+    CHECK_OTHER_MUST_MATCH_FLAG(_profile_exception_handlers,    ProfileExceptionHandlers);
+    CHECK_OTHER_MUST_MATCH_FLAG(_spec_trap_limit_extra_entries, SpecTrapLimitExtraEntries);
   }
 
   if (_cpu_features_offset != -1) {
@@ -2067,7 +2060,7 @@ bool FileMapHeader::validate() {
 
   if (!_verify_local) {
     // If we cannot load boot classes, there's no point of using the CDS archive
-    CHECK_MUST_MATCH_FLAG(_verify_local, BytecodeVerificationLocal);
+    CHECK_OTHER_MUST_MATCH_FLAG(_verify_local, BytecodeVerificationLocal);
   }
 
   // For backwards compatibility, we don't check the BytecodeVerificationRemote setting
@@ -2090,27 +2083,6 @@ bool FileMapHeader::validate() {
                                compressed_oops(), UseCompressedOops);
     return false;
   }
-
-  if (is_static() || is_aot_configuration()) {
-    const char* err = nullptr;
-    if (Arguments::is_valhalla_enabled()) {
-      if (!_has_valhalla_patched_classes) {
-        err = "not created";
-      }
-    } else {
-      if (_has_valhalla_patched_classes) {
-        err = "created";
-      }
-    }
-    if (err != nullptr) {
-      log_warning(cds)("This archive was %s with --enable-preview. It is "
-                         "incompatible with the current JVM setting", err);
-      return false;
-    }
-  }
-
-
-  CHECK_MUST_MATCH_FLAG(compact_headers(), UseCompactObjectHeaders);
 
   if (is_static()) {
     // Only the static archive can contain the full module graph.
@@ -2135,6 +2107,28 @@ bool FileMapHeader::validate() {
     }
   }
 
+  return true;
+}
+
+bool FileMapHeader::check_enable_preview() const {
+  if (is_static() || is_aot_configuration()) {
+    const char* err = nullptr;
+    if (Arguments::is_valhalla_enabled()) {
+      if (!_has_valhalla_patched_classes) {
+        err = "not created";
+      }
+    } else {
+      if (_has_valhalla_patched_classes) {
+        err = "created";
+      }
+    }
+    if (err != nullptr) {
+      AOTMetaspace::report_loading_error("This %s was %s with --enable-preview. It is "
+                                         "incompatible with the current JVM setting",
+                                         CDSConfig::type_of_archive_being_loaded(), err);
+      return false;
+    }
+  }
   return true;
 }
 
