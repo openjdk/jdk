@@ -429,6 +429,10 @@ void ZStatIterableValue<T>::sort() {
 //
 // Stat sampler
 //
+void ZStatSampler::initialize() {
+  sort();
+}
+
 ZStatSampler::ZStatSampler(const char* group, const char* name, ZStatUnitPrinter printer)
   : ZStatIterableValue<ZStatSampler>(group, name, sizeof(ZStatSamplerData)),
     _printer(printer) {}
@@ -1103,6 +1107,7 @@ void ZStatSystemMemoryUsage::sample_and_collect() {
 ZStat::ZStat()
   : _metronome(SampleHz) {
   set_name("ZStat");
+  ZStatSampler::initialize();
   create_and_start();
   ZStatMutatorAllocRate::initialize();
 }
@@ -1154,8 +1159,6 @@ void ZStat::print(LogTargetHandle log, const ZStatSamplerHistory* history) const
 void ZStat::run_thread() {
   ZStatSamplerHistory* const history = new ZStatSamplerHistory[ZStatSampler::count()];
   LogTarget(Debug, gc, stats) log;
-
-  ZStatSampler::sort();
 
   // Main loop
   while (_metronome.wait_for_tick()) {
