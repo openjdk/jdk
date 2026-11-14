@@ -28,7 +28,7 @@ package compiler.c2;
  * @bug 8391179
  * @summary dead Store to header after loop optimizations
  * @run main ${test.main.class}
- * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::test -XX:+StressLoopPeeling ${test.main.class}
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::test -XX:+IgnoreUnrecognizedVMOptions -XX:+StressLoopPeeling ${test.main.class}
  */
 
 public class TestDeadStoreToHeader {
