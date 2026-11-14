@@ -87,6 +87,9 @@ class ChunkPool {
   // Our four static pools
   static constexpr int _num_pools = 4;
   static ChunkPool _pools[_num_pools];
+#ifdef ASSERT
+  static bool _suspend_cleaning;
+#endif
 
   Chunk*       _first;
   const size_t _size;         // (inner payload) size of the chunks this pool serves
@@ -110,7 +113,6 @@ class ChunkPool {
   // Clear this pool of all contained chunks
   void prune() {
     // Free all chunks with ChunkPoolLocker lock
-    // so NMT adjustment is stable.
     ChunkPoolLocker lock;
     Chunk* cur = _first;
     Chunk* next = nullptr;
@@ -136,6 +138,9 @@ public:
   ChunkPool(size_t size) : _first(nullptr), _size(size) {}
 
   static void clean() {
+#ifdef ASSERT
+    if (_suspend_cleaning) return;
+#endif
     NativeHeapTrimmer::SuspendMark sm("chunk pool cleaner");
     for (int i = 0; i < _num_pools; i++) {
       _pools[i].prune();
@@ -145,6 +150,11 @@ public:
   // Returns an initialized and null-terminated Chunk of requested size
   static Chunk* allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode);
   static void deallocate_chunk(Chunk* p);
+#ifdef ASSERT
+  static void set_suspend_cleaning(bool suspend) {
+    _suspend_cleaning = suspend;
+  }
+#endif
 };
 
 static bool on_compiler_thread() {
@@ -188,12 +198,13 @@ Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType allo
   if (chunk == nullptr) {
     // Either the pool was empty, or this is a non-standard length. Allocate a new Chunk from C-heap.
     size_t bytes = ARENA_ALIGN(sizeof(Chunk)) + length;
-    void* p = os::malloc(bytes, mtChunk, CALLER_PC);
+    void* p = os::malloc(bytes, arena->get_mem_tag(), CALLER_PC);
     if (p == nullptr && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
       vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
     }
     chunk = (Chunk*)p;
   }
+  MemTracker::chunk_assigned_to_arena(chunk, arena->get_mem_tag(), CALLER_PC);
   ::new(chunk) Chunk(length);
   // We rely on arena alignment <= malloc alignment.
   assert(is_aligned(chunk, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
@@ -218,13 +229,13 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
     c->set_stamp(0);
   }
 
+  MemTracker::add_chunk_to_pool(c, CALLER_PC);
+
   // If this is a standard-sized chunk, return it to its pool; otherwise free it.
   ChunkPool* pool = ChunkPool::get_pool_for_size(c->length());
   if (pool != nullptr) {
     pool->return_to_pool(c);
   } else {
-    // Free chunks under a lock so that NMT adjustment is stable.
-    ChunkPoolLocker lock;
     os::free(c);
   }
 }
@@ -240,6 +251,14 @@ class ChunkPoolCleaner : public PeriodicTask {
      ChunkPool::clean();
    }
 };
+
+#ifdef ASSERT
+bool ChunkPool::_suspend_cleaning = false;
+
+void Arena::suspend_chunk_pool_cleaning(bool suspend) {
+  ChunkPool::set_suspend_cleaning(suspend);
+}
+#endif
 
 void Arena::start_chunk_pool_cleaner_task() {
 #ifdef ASSERT
