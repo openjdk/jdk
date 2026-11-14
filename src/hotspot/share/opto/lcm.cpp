@@ -111,8 +111,11 @@ void PhaseCFG::ensure_node_is_at_block_or_above(Node* n, Block* b) {
 // with suitable memory ops nearby.  Use the memory op to do the null check.
 // I can generate a memory op if there is not one nearby.
 // The proj is the control projection for the not-null case.
-// The val is the pointer being checked for nullness or
-// decodeHeapOop_not_null node if it did not fold into address.
+// The val is the value compared against null: either a full pointer or a
+// narrow oop.  A memory access may use a separately decoded full pointer
+// instead of the narrow oop itself; such a DecodeN is discovered here and, if
+// necessary, hoisted together with the memory access that is used as the null
+// check.
 void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allowed_reasons) {
   if (!ImplicitNullChecks) return;
 
@@ -169,254 +172,280 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     }
   }
 
-  // Check for decodeHeapOop_not_null node which did not fold into address
-  bool is_decoden = ((intptr_t)val) & 1;
-  val = (Node*)(((intptr_t)val) & ~1);
-
-  assert(!is_decoden ||
-         ((val->in(0) == nullptr) && val->is_Mach() &&
-          (val->as_Mach()->ideal_Opcode() == Op_DecodeN)), "sanity");
-
-  // Search the successor block for a load or store who's base value is also
-  // the tested value.  There may be several.
+  // A narrow oop can address memory directly or through an unpinned DecodeN.
+  // Since a direct use of the tested value always wins, it is searched first
+  // and the separately decoded pointers are only discovered on a miss.
   MachNode *best = nullptr;        // Best found so far
-  for (DUIterator i = val->outs(); val->has_out(i); i++) {
-    Node *m = val->out(i);
-    if( !m->is_Mach() ) continue;
-    MachNode *mach = m->as_Mach();
-    if (mach->barrier_data() != 0 &&
-        !mach->is_late_expanded_null_check_candidate()) {
-      // Using memory accesses with barriers to perform implicit null checks is
-      // only supported if these are explicit marked as emitting a candidate
-      // memory access instruction at their initial address. If not marked as
-      // such, barrier-tagged operations might expand into one or several memory
-      // access instructions located at arbitrary offsets from the initial
-      // address, which would invalidate the implicit null exception table.
-      continue;
-    }
-    was_store = false;
-    int iop = mach->ideal_Opcode();
-    switch( iop ) {
-    case Op_LoadB:
-    case Op_LoadUB:
-    case Op_LoadUS:
-    case Op_LoadD:
-    case Op_LoadF:
-    case Op_LoadI:
-    case Op_LoadL:
-    case Op_LoadP:
-    case Op_LoadN:
-    case Op_LoadS:
-    case Op_LoadKlass:
-    case Op_LoadNKlass:
-    case Op_LoadRange:
-    case Op_LoadD_unaligned:
-    case Op_LoadL_unaligned:
-    case Op_LoadLSpecial:
-      assert(mach->in(2) == val, "should be address");
-      break;
-    case Op_StoreB:
-    case Op_StoreC:
-    case Op_StoreD:
-    case Op_StoreF:
-    case Op_StoreI:
-    case Op_StoreL:
-    case Op_StoreLSpecial:
-    case Op_StoreP:
-    case Op_StoreN:
-    case Op_StoreNKlass:
-      was_store = true;         // Memory op is a store op
-      // Stores will have their address in slot 2 (memory in slot 1).
-      // If the value being nul-checked is in another slot, it means we
-      // are storing the checked value, which does NOT check the value!
-      if( mach->in(2) != val ) continue;
-      break;                    // Found a memory op?
-    case Op_StrComp:
-    case Op_StrEquals:
-    case Op_StrIndexOf:
-    case Op_StrIndexOfChar:
-    case Op_AryEq:
-    case Op_VectorizedHashCode:
-    case Op_StrInflatedCopy:
-    case Op_StrCompressedCopy:
-    case Op_EncodeISOArray:
-    case Op_CountPositives:
-      // Not a legit memory op for implicit null check regardless of
-      // embedded loads
-      continue;
-    default:                    // Also check for embedded loads
-      if( !mach->needs_anti_dependence_check() )
-        continue;               // Not an memory op; skip it
-      if( must_clone[iop] ) {
-        // Do not move nodes which produce flags because
-        // RA will try to clone it to place near branch and
-        // it will cause recompilation, see clone_node().
+  Node *decode_to_hoist = nullptr; // Decode that must be hoisted with best, if any
+  DUIterator decode_i = val->outs();
+  Node* root = val;
+  bool root_is_decode = false;     // A DecodeN root can be hoisted with the access
+  while (true) {
+    // Search the successor block for a load or store whose base value is root.
+    // There may be several.
+    for (DUIterator i = root->outs(); root->has_out(i); i++) {
+      Node *m = root->out(i);
+      if( !m->is_Mach() ) continue;
+      MachNode *mach = m->as_Mach();
+      if (mach->barrier_data() != 0 &&
+          !mach->is_late_expanded_null_check_candidate()) {
+        // Using memory accesses with barriers to perform implicit null checks is
+        // only supported if these are explicit marked as emitting a candidate
+        // memory access instruction at their initial address. If not marked as
+        // such, barrier-tagged operations might expand into one or several memory
+        // access instructions located at arbitrary offsets from the initial
+        // address, which would invalidate the implicit null exception table.
         continue;
       }
-      {
-        // Check that value is used in memory address in
-        // instructions with embedded load (CmpP val1,(val2+off)).
-        Node* base;
-        Node* index;
-        const MachOper* oper = mach->memory_inputs(base, index);
-        if (oper == nullptr || oper == (MachOper*)-1) {
-          continue;             // Not an memory op; skip it
-        }
-        if (val == base ||
-            (val == index && val->bottom_type()->is_narrowoop())) {
-          break;                // Found it
-        } else {
-          continue;             // Skip it
-        }
-      }
-      break;
-    }
-
-    // On some OSes (AIX) the page at address 0 is only write protected.
-    // If so, only Store operations will trap.
-    // But a read accessing the base of a heap-based compressed heap will trap.
-    if (!was_store && needs_explicit_null_check_for_read(val)) {
-      continue;
-    }
-
-    // Check that node's control edge dominates the not-null block,
-    // otherwise we can't hoist it because there are other control dependencies.
-    Node* ctrl = mach->in(0);
-    if (ctrl != nullptr && !get_block_for_node(ctrl)->dominates(not_null_block)) {
-      continue;
-    }
-
-    // check if the offset is not too high for implicit exception
-    {
-      intptr_t offset = 0;
-      const TypePtr *adr_type = nullptr;  // Do not need this return value here
-      const Node* base = mach->get_base_and_disp(offset, adr_type);
-      if (base == nullptr || base == NodeSentinel) {
-        // Narrow oop address doesn't have base, only index.
-        // Give up if offset is beyond page size or if heap base is not protected.
-        if (val->bottom_type()->is_narrowoop() &&
-            (MacroAssembler::needs_explicit_null_check(offset) ||
-             !CompressedOops::use_implicit_null_checks()))
-          continue;
-        // cannot reason about it; is probably not implicit null exception
-      } else {
-        const TypePtr* tptr;
-        if ((UseCompressedOops && CompressedOops::shift() == 0) || CompressedKlassPointers::shift() == 0) {
-          // 32-bits narrow oop can be the base of address expressions
-          tptr = base->get_ptr_type();
-        } else {
-          // only regular oops are expected here
-          tptr = base->bottom_type()->as_ptr();
-        }
-        // Give up if offset is not a compile-time constant.
-        if (offset == Type::OffsetBot || tptr->offset() == Type::OffsetBot)
-          continue;
-        offset += tptr->offset(); // correct if base is offsetted
-        // Give up if reference is beyond page size.
-        if (MacroAssembler::needs_explicit_null_check(offset))
-          continue;
-        // Give up if base is a decode node and the heap base is not protected.
-        if (base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_DecodeN &&
-            !CompressedOops::use_implicit_null_checks())
-          continue;
-      }
-    }
-
-    Block *cb = get_block_for_node(mach);
-
-    if (was_store) {
-      // A store can only be moved from the immediate non-null successor.
-      if (cb != not_null_block) {
-        continue;
-      }
-    } else {
-      // A load can be used here only if its block is dominated by the
-      // non-null successor. Check this explicitly because a candidate load
-      // may have been scheduled on the null path instead.
-      // For example, in JDK-8389578, loop opts did not recognize equivalent
-      // oop and value-type null_marker checks, leaving a redundant check.
-      // The load was protected by earlier null checks, but its only use
-      // was in the scalarized debug info of the redundant check's uncommon
-      // trap. This allowed the load to be scheduled on that check's null path.
-      if (!not_null_block->dominates(cb)) {
-        continue;
-      }
-    }
-
-    if (not_null_block->_idom != block) {
-      continue;
-    }
-
-    // Found a memory user; see if it can be hoisted to check-block
-    uint vidx = 0;              // Capture index of value into memop
-    uint j;
-    for( j = mach->req()-1; j > 0; j-- ) {
-      if( mach->in(j) == val ) {
-        vidx = j;
-        // Ignore DecodeN val which could be hoisted to where needed.
-        if( is_decoden ) continue;
-      }
-      if (mach->in(j)->is_MachTemp()) {
-        assert(mach->in(j)->outcnt() == 1, "MachTemp nodes should not be shared");
-        // Ignore MachTemp inputs, they can be safely hoisted with the candidate.
-        // MachTemp nodes have no inputs themselves and are only used to reserve
-        // a scratch register for the implementation of the node (e.g. in
-        // late-expanded GC barriers).
-        continue;
-      }
-      // Block of memory-op input
-      Block* inb = get_block_for_node(mach->in(j));
-      if (mach->in(j)->is_Con() && mach->in(j)->req() == 1 && inb == get_block_for_node(mach)) {
-        // Ignore constant loads scheduled in the same block (we can simply hoist them as well)
-        continue;
-      }
-      Block *b = block;          // Start from nul check
-      while( b != inb && b->_dom_depth > inb->_dom_depth )
-        b = b->_idom;           // search upwards for input
-      // See if input dominates null check
-      if( b != inb )
+      was_store = false;
+      int iop = mach->ideal_Opcode();
+      switch( iop ) {
+      case Op_LoadB:
+      case Op_LoadUB:
+      case Op_LoadUS:
+      case Op_LoadD:
+      case Op_LoadF:
+      case Op_LoadI:
+      case Op_LoadL:
+      case Op_LoadP:
+      case Op_LoadN:
+      case Op_LoadS:
+      case Op_LoadKlass:
+      case Op_LoadNKlass:
+      case Op_LoadRange:
+      case Op_LoadD_unaligned:
+      case Op_LoadL_unaligned:
+      case Op_LoadLSpecial:
+        assert(mach->in(2) == root, "should be address");
         break;
-    }
-    if( j > 0 )
-      continue;
-    Block *mb = get_block_for_node(mach);
-    // Hoisting stores requires more checks for the anti-dependence case.
-    // Give up hoisting if we have to move the store past any load.
-    if (was_store) {
-       // Make sure control does not do a merge (would have to check allpaths)
-       if (mb->num_preds() != 2) {
-         continue;
-       }
-       // mach is a store, hence block is the immediate dominator of mb.
-       // Due to the null-check shape of block (where its successors cannot re-join),
-       // block must be the direct predecessor of mb.
-       assert(get_block_for_node(mb->pred(1)) == block, "Unexpected predecessor block");
-       uint k;
-       uint num_nodes = mb->number_of_nodes();
-       for (k = 1; k < num_nodes; k++) {
-         Node *n = mb->get_node(k);
-         if (n->needs_anti_dependence_check() &&
-             n->in(LoadNode::Memory) == mach->in(StoreNode::Memory)) {
-           break;              // Found anti-dependent load
+      case Op_StoreB:
+      case Op_StoreC:
+      case Op_StoreD:
+      case Op_StoreF:
+      case Op_StoreI:
+      case Op_StoreL:
+      case Op_StoreLSpecial:
+      case Op_StoreP:
+      case Op_StoreN:
+      case Op_StoreNKlass:
+        was_store = true;         // Memory op is a store op
+        // Stores will have their address in slot 2 (memory in slot 1).
+        // If the value being nul-checked is in another slot, it means we
+        // are storing the checked value, which does NOT check the value!
+        if( mach->in(2) != root ) continue;
+        break;                    // Found a memory op?
+      case Op_StrComp:
+      case Op_StrEquals:
+      case Op_StrIndexOf:
+      case Op_StrIndexOfChar:
+      case Op_AryEq:
+      case Op_VectorizedHashCode:
+      case Op_StrInflatedCopy:
+      case Op_StrCompressedCopy:
+      case Op_EncodeISOArray:
+      case Op_CountPositives:
+        // Not a legit memory op for implicit null check regardless of
+        // embedded loads
+        continue;
+      default:                    // Also check for embedded loads
+        if( !mach->needs_anti_dependence_check() )
+          continue;               // Not an memory op; skip it
+        if( must_clone[iop] ) {
+          // Do not move nodes which produce flags because
+          // RA will try to clone it to place near branch and
+          // it will cause recompilation, see clone_node().
+          continue;
+        }
+        {
+          // Check that value is used in memory address in
+          // instructions with embedded load (CmpP val1,(val2+off)).
+          Node* base;
+          Node* index;
+          const MachOper* oper = mach->memory_inputs(base, index);
+          if (oper == nullptr || oper == (MachOper*)-1) {
+            continue;             // Not an memory op; skip it
+          }
+          if (root == base ||
+              (root == index && root->bottom_type()->is_narrowoop())) {
+            break;                // Found it
+          } else {
+            continue;             // Skip it
+          }
+        }
+        break;
+      }
+
+      // On some OSes (AIX) the page at address 0 is only write protected.
+      // If so, only Store operations will trap.
+      // But a read accessing the base of a heap-based compressed heap will trap.
+      if (!was_store && needs_explicit_null_check_for_read(root)) {
+        continue;
+      }
+
+      // Check that node's control edge dominates the not-null block,
+      // otherwise we can't hoist it because there are other control dependencies.
+      Node* ctrl = mach->in(0);
+      if (ctrl != nullptr && !get_block_for_node(ctrl)->dominates(not_null_block)) {
+        continue;
+      }
+
+      // check if the offset is not too high for implicit exception
+      {
+        intptr_t offset = 0;
+        const TypePtr *adr_type = nullptr;  // Do not need this return value here
+        const Node* base = mach->get_base_and_disp(offset, adr_type);
+        if (base == nullptr || base == NodeSentinel) {
+          // Narrow oop address doesn't have base, only index.
+          // Give up if offset is beyond page size or if heap base is not protected.
+          if (root->bottom_type()->is_narrowoop() &&
+              (MacroAssembler::needs_explicit_null_check(offset) ||
+               !CompressedOops::use_implicit_null_checks()))
+            continue;
+          // cannot reason about it; is probably not implicit null exception
+        } else {
+          const TypePtr* tptr;
+          if ((UseCompressedOops && CompressedOops::shift() == 0) || CompressedKlassPointers::shift() == 0) {
+            // 32-bits narrow oop can be the base of address expressions
+            tptr = base->get_ptr_type();
+          } else {
+            // only regular oops are expected here
+            tptr = base->bottom_type()->as_ptr();
+          }
+          // Give up if offset is not a compile-time constant.
+          if (offset == Type::OffsetBot || tptr->offset() == Type::OffsetBot)
+            continue;
+          offset += tptr->offset(); // correct if base is offsetted
+          // Give up if reference is beyond page size.
+          if (MacroAssembler::needs_explicit_null_check(offset))
+            continue;
+          // Give up if base is a decode node and the heap base is not protected.
+          if (base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_DecodeN &&
+              !CompressedOops::use_implicit_null_checks())
+            continue;
+        }
+      }
+
+      Block *cb = get_block_for_node(mach);
+
+      if (was_store) {
+        // A store can only be moved from the immediate non-null successor.
+        if (cb != not_null_block) {
+          continue;
+        }
+      } else {
+        // A load can be used here only if its block is dominated by the
+        // non-null successor. Check this explicitly because a candidate load
+        // may have been scheduled on the null path instead.
+        // For example, in JDK-8389578, loop opts did not recognize equivalent
+        // oop and value-type null_marker checks, leaving a redundant check.
+        // The load was protected by earlier null checks, but its only use
+        // was in the scalarized debug info of the redundant check's uncommon
+        // trap. This allowed the load to be scheduled on that check's null path.
+        if (!not_null_block->dominates(cb)) {
+          continue;
+        }
+      }
+
+      if (not_null_block->_idom != block) {
+        continue;
+      }
+
+      // Found a memory user; see if it can be hoisted to check-block
+      uint vidx = 0;              // Capture index of value into memop
+      uint j;
+      for( j = mach->req()-1; j > 0; j-- ) {
+        if( mach->in(j) == root ) {
+          vidx = j;
+          // A decode that did not fold into the address can be hoisted to
+          // where it is needed, no need to check its availability here.
+          if( root_is_decode ) continue;
+        }
+        if (mach->in(j)->is_MachTemp()) {
+          assert(mach->in(j)->outcnt() == 1, "MachTemp nodes should not be shared");
+          // Ignore MachTemp inputs, they can be safely hoisted with the candidate.
+          // MachTemp nodes have no inputs themselves and are only used to reserve
+          // a scratch register for the implementation of the node (e.g. in
+          // late-expanded GC barriers).
+          continue;
+        }
+        // Block of memory-op input
+        Block* inb = get_block_for_node(mach->in(j));
+        if (mach->in(j)->is_Con() && mach->in(j)->req() == 1 && inb == get_block_for_node(mach)) {
+          // Ignore constant loads scheduled in the same block (we can simply hoist them as well)
+          continue;
+        }
+        Block *b = block;          // Start from nul check
+        while( b != inb && b->_dom_depth > inb->_dom_depth )
+          b = b->_idom;           // search upwards for input
+        // See if input dominates null check
+        if( b != inb )
+          break;
+      }
+      if( j > 0 )
+        continue;
+      Block *mb = get_block_for_node(mach);
+      // Hoisting stores requires more checks for the anti-dependence case.
+      // Give up hoisting if we have to move the store past any load.
+      if (was_store) {
+         // Make sure control does not do a merge (would have to check allpaths)
+         if (mb->num_preds() != 2) {
+           continue;
          }
-       }
-       if (k < num_nodes) {
-         continue;             // Found anti-dependent load
-       }
+         // mach is a store, hence block is the immediate dominator of mb.
+         // Due to the null-check shape of block (where its successors cannot re-join),
+         // block must be the direct predecessor of mb.
+         assert(get_block_for_node(mb->pred(1)) == block, "Unexpected predecessor block");
+         uint k;
+         uint num_nodes = mb->number_of_nodes();
+         for (k = 1; k < num_nodes; k++) {
+           Node *n = mb->get_node(k);
+           if (n->needs_anti_dependence_check() &&
+               n->in(LoadNode::Memory) == mach->in(StoreNode::Memory)) {
+             break;              // Found anti-dependent load
+           }
+         }
+         if (k < num_nodes) {
+           continue;             // Found anti-dependent load
+         }
+      }
+
+      // Make sure this memory op is not already being used for a NullCheck
+      Node *e = mb->end();
+      if( e->is_MachNullCheck() && e->in(1) == mach )
+        continue;                 // Already being used as a null check
+
+      // Found a candidate!  Pick one with least dom depth - the highest
+      // in the dom tree should be closest to the null check.
+      if (best == nullptr || get_block_for_node(mach)->_dom_depth < get_block_for_node(best)->_dom_depth) {
+        best = mach;
+        bidx = vidx;
+        decode_to_hoist = root_is_decode ? root : nullptr;
+      }
     }
 
-    // Make sure this memory op is not already being used for a NullCheck
-    Node *e = mb->end();
-    if( e->is_MachNullCheck() && e->in(1) == mach )
-      continue;                 // Already being used as a null check
-
-    // Found a candidate!  Pick one with least dom depth - the highest
-    // in the dom tree should be closest to the null check.
-    if (best == nullptr || get_block_for_node(mach)->_dom_depth < get_block_for_node(best)->_dom_depth) {
-      best = mach;
-      bidx = vidx;
+    // No direct use is eligible. Move on to the next separately decoded
+    // pointer of the tested value, if there is one.
+    if (best != nullptr || !val->bottom_type()->is_narrowoop()) {
+      break;
     }
+    Node* next = nullptr;
+    while (val->has_out(decode_i)) {
+      Node* decode = val->out(decode_i);
+      decode_i++;
+      if (decode->is_Mach() &&
+          decode->as_Mach()->ideal_Opcode() == Op_DecodeN &&
+          decode->in(1) == val) {
+        next = decode;
+        break;
+      }
+    }
+    if (next == nullptr) {
+      break;
+    }
+    root = next;
+    root_is_decode = true;
   }
+
   // No candidate!
   if (best == nullptr) {
     return;
@@ -428,17 +457,18 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   implicit_null_checks++;
 #endif
 
-  if( is_decoden ) {
-    // Check if we need to hoist decodeHeapOop_not_null first.
-    Block *valb = get_block_for_node(val);
+  if( decode_to_hoist != nullptr ) {
+    // Check if we need to hoist the DecodeN first.
+    Block *valb = get_block_for_node(decode_to_hoist);
     if( block != valb && block->_dom_depth < valb->_dom_depth ) {
       // Hoist it up to the end of the test block together with its inputs if they exist.
-      for (uint i = 2; i < val->req(); i++) {
+      for (uint i = 2; i < decode_to_hoist->req(); i++) {
         // DecodeN has 2 regular inputs + optional MachTemp or load Base inputs.
-        // Inputs of val may already be early enough, but if not move them together with val.
-        ensure_node_is_at_block_or_above(val->in(i), block);
+        // Inputs of decode_to_hoist may already be early enough, but if not move
+        // them together with the decode.
+        ensure_node_is_at_block_or_above(decode_to_hoist->in(i), block);
       }
-      move_node_and_its_projections_to_block(val, block);
+      move_node_and_its_projections_to_block(decode_to_hoist, block);
     }
   }
 

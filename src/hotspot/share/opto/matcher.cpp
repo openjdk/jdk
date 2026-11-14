@@ -1089,7 +1089,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
                 NOT_PRODUCT(record_new2old(m, n);)
               }
               if (m->in(0) != nullptr) // m might be top
-                collect_null_checks(m, n);
+                collect_null_checks(m);
             } else {                // Else just a regular 'ol guy
               m = n->clone();       // So just clone into new-space
               NOT_PRODUCT(record_new2old(m, n);)
@@ -2531,7 +2531,7 @@ void Matcher::dump_old2new_map() {
 // it.  Used by later implicit-null-check handling.  Actually collects
 // either an IfTrue or IfFalse for the common NOT-null path, AND the ideal
 // value being tested.
-void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
+void Matcher::collect_null_checks( Node *proj ) {
   Node *iff = proj->in(0);
   if( iff->Opcode() == Op_If ) {
     // During matching If's have Bool & Cmp side-by-side
@@ -2561,34 +2561,7 @@ void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
       }
       if( push_it ) {
         _null_check_tests.push(proj);
-        Node* val = cmp->in(1);
-#ifdef _LP64
-        if (val->bottom_type()->is_narrowoop() &&
-            !Matcher::narrow_oop_use_complex_address()) {
-          //
-          // Look for DecodeN node which should be pinned to orig_proj.
-          // On platforms (Sparc) which can not handle 2 adds
-          // in addressing mode we have to keep a DecodeN node and
-          // use it to do implicit null check in address.
-          //
-          // DecodeN node was pinned to non-null path (orig_proj) during
-          // CastPP transformation in final_graph_reshaping_impl().
-          //
-          uint cnt = orig_proj->outcnt();
-          for (uint i = 0; i < orig_proj->outcnt(); i++) {
-            Node* d = orig_proj->raw_out(i);
-            if (d->is_DecodeN() && d->in(1) == val) {
-              val = d;
-              val->set_req(0, nullptr); // Unpin now.
-              // Mark this as special case to distinguish from
-              // a regular case: CmpP(DecodeN, null).
-              val = (Node*)(((intptr_t)val) | 1);
-              break;
-            }
-          }
-        }
-#endif
-        _null_check_tests.push(val);
+        _null_check_tests.push(cmp->in(1));
       }
     }
   }
@@ -2602,21 +2575,9 @@ void Matcher::validate_null_checks( ) {
   for( uint i=0; i < cnt; i+=2 ) {
     Node *test = _null_check_tests[i];
     Node *val = _null_check_tests[i+1];
-    bool is_decoden = ((intptr_t)val) & 1;
-    val = (Node*)(((intptr_t)val) & ~1);
     if (has_new_node(val)) {
-      Node* new_val = new_node(val);
-      if (is_decoden) {
-        assert(val->is_DecodeNarrowPtr() && val->in(0) == nullptr, "sanity");
-        // Note: new_val may have a control edge if
-        // the original ideal node DecodeN was matched before
-        // it was unpinned in Matcher::collect_null_checks().
-        // Unpin the mach node and mark it.
-        new_val->set_req(0, nullptr);
-        new_val = (Node*)(((intptr_t)new_val) | 1);
-      }
       // Is a match-tree root, so replace with the matched value
-      _null_check_tests.map(i+1, new_val);
+      _null_check_tests.map(i+1, new_node(val));
     } else {
       // Yank from candidate list
       _null_check_tests.map(i+1,_null_check_tests[--cnt]);

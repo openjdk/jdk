@@ -4396,31 +4396,13 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     if (is_LP64 && n->in(1)->is_DecodeN() && Matcher::gen_narrow_oop_implicit_null_checks()) {
       Node* in1 = n->in(1);
       const Type* t = n->bottom_type();
+
+      // See Op_CmpP below: when the null check can compare the narrow oop
+      // directly, give the CastPP's users a separate DecodeN that preserves
+      // the cast's type. PhaseCFG::implicit_null_check() can find this decode
+      // by following the uses of the narrow oop.
       Node* new_in1 = in1->clone();
       new_in1->as_DecodeN()->set_type(t);
-
-      if (!Matcher::narrow_oop_use_complex_address()) {
-        //
-        // x86, ARM and friends can handle 2 adds in addressing mode
-        // and Matcher can fold a DecodeN node into address by using
-        // a narrow oop directly and do implicit null check in address:
-        //
-        // [R12 + narrow_oop_reg<<3 + offset]
-        // NullCheck narrow_oop_reg
-        //
-        // On other platforms (Sparc) we have to keep new DecodeN node and
-        // use it to do implicit null check in address:
-        //
-        // decode_not_null narrow_oop_reg, base_reg
-        // [base_reg + offset]
-        // NullCheck base_reg
-        //
-        // Pin the new DecodeN node to non-null path on these platform (Sparc)
-        // to keep the information to which null check the new DecodeN node
-        // corresponds to use it as value in implicit_null_check().
-        //
-        new_in1->set_req(0, n->in(0));
-      }
 
       n->subsume_by(new_in1, this);
       if (in1->outcnt() == 0) {
@@ -4526,9 +4508,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_DecodeN:
   case Op_DecodeNKlass:
     assert(!n->in(1)->is_EncodeNarrowPtr(), "should be optimized out");
-    // DecodeN could be pinned when it can't be fold into
-    // an address expression, see the code for Op_CastPP above.
-    assert(n->in(0) == nullptr || (UseCompressedOops && !Matcher::narrow_oop_use_complex_address()), "no control");
+    assert(n->in(0) == nullptr, "no control");
     break;
 
   case Op_EncodeP:
