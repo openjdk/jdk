@@ -111,9 +111,11 @@ public class CheckFiles {
         if (Platform.isWindows()) {
             allowedEndingsLibDir.add(".lib");
             allowedEndingsLibDir.add("tzmappings");
+            allowedEndingsLibDir.add("revivalhelper.exe");
         } else {
             allowedEndingsLibDir.add("jexec");
             allowedEndingsLibDir.add("jspawnhelper");
+            allowedEndingsLibDir.add("revivalhelper");
             allowedEndingsLibDir.add(".jsa");
             if (Platform.isOSX()) {
                 allowedEndingsLibDir.add("shaders.metallib");

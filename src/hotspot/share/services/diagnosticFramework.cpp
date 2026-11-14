@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,6 +147,18 @@ bool DCmdInfo::name_equals(const char* name) const {
   return strcmp(name, this->name()) == 0;
 }
 
+JavaThread* get_thread() {
+  // For exception macros
+  JavaThread* thread = nullptr;
+  if (!Thread::is_revived()) {
+    thread = JavaThread::current();
+  } else {
+    thread = static_cast<JavaThread*>(Thread::current()); // avoid assert
+  }
+  return thread;
+}
+
+
 void DCmdParser::add_dcmd_option(GenDCmdArgument* arg) {
   assert(arg != nullptr, "Sanity");
   if (_options == nullptr) {
@@ -159,7 +171,8 @@ void DCmdParser::add_dcmd_option(GenDCmdArgument* arg) {
     o->set_next(arg);
   }
   arg->set_next(nullptr);
-  JavaThread* THREAD = JavaThread::current(); // For exception macros.
+
+  JavaThread* THREAD = get_thread();
   arg->init_value(THREAD);
   if (HAS_PENDING_EXCEPTION) {
     fatal("Initialization must be successful");
@@ -178,7 +191,8 @@ void DCmdParser::add_dcmd_argument(GenDCmdArgument* arg) {
     a->set_next(arg);
   }
   arg->set_next(nullptr);
-  JavaThread* THREAD = JavaThread::current(); // For exception macros.
+
+  JavaThread* THREAD = get_thread();
   arg->init_value(THREAD);
   if (HAS_PENDING_EXCEPTION) {
     fatal("Initialization must be successful");
@@ -186,6 +200,10 @@ void DCmdParser::add_dcmd_argument(GenDCmdArgument* arg) {
 }
 
 void DCmdParser::parse(CmdLine* line, char delim, TRAPS) {
+    parse(line, delim, nullptr, CHECK);
+}
+
+void DCmdParser::parse(CmdLine* line, char delim, outputStream* out, TRAPS) {
   GenDCmdArgument* next_argument = _arguments_list;
   DCmdArgIter iter(line->args_addr(), line->args_len(), delim);
   bool cont = iter.next(CHECK);
@@ -446,7 +464,7 @@ bool DCmd::reorder_help_cmd(CmdLine line, stringStream &updated_line) {
 }
 
 void DCmdWithParser::parse(CmdLine* line, char delim, TRAPS) {
-  _dcmdparser.parse(line, delim, CHECK);
+  _dcmdparser.parse(line, delim, output(), CHECK);
 }
 
 void DCmdWithParser::print_help(const char* name) const {
