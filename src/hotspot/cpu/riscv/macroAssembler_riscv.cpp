@@ -52,6 +52,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/integerCast.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -2937,6 +2938,12 @@ void MacroAssembler::kernel_crc32c(Register crc, Register buf, Register len,
 
   kernel_crc32c_clmul_fold(crc, buf, len, byte_table, clmul_table,
                            tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+}
+
+Assembler::LMUL MacroAssembler::select_lmul_for_main_loop() {
+  const int vector_length = static_cast<int>(VM_Version::initial_vector_length());
+  const int lmul_multiplier = MAX2(128 / vector_length, 1);
+  return static_cast<Assembler::LMUL>(exact_log2(lmul_multiplier));
 }
 
 #ifdef COMPILER2
