@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,47 +29,38 @@
 */
 
 import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
-import java.awt.Toolkit;
-import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
+import java.awt.event.MouseEvent;
 import javax.swing.JFrame;
-import javax.swing.plaf.basic.BasicTableHeaderUI;
-import javax.swing.table.JTableHeader;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
+import javax.swing.event.MouseInputListener;
+import javax.swing.plaf.basic.BasicTableHeaderUI;
+import javax.swing.table.JTableHeader;
 
 public class bug6889007 {
-
     static JFrame frame;
     static Robot robot;
-    static volatile Point point;
-    static volatile Point mouseLoc;
-    static volatile int width;
-    static volatile int height;
-    static volatile boolean ignoreFirst = false;
+    static JTableHeader header;
+    static MyTableHeaderUI ui;
+    static Point screenPoint;
+    static Point previousPoint;
 
     public static void main(String[] args) throws Exception {
         try {
             robot = new Robot();
             robot.mouseMove(100, 100);
-
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame();
                 frame.setUndecorated(true);
-
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-                JTableHeader th = new JTableHeader();
-                th.setColumnModel(new JTable(20, 5).getColumnModel());
-
-                th.setUI(new MyTableHeaderUI());
-
-                frame.add(th);
+                header = new JTableHeader();
+                header.setColumnModel(new JTable(20, 5).getColumnModel());
+                ui = new MyTableHeaderUI();
+                header.setUI(ui);
+                frame.add(header);
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setAlwaysOnTop(true);
@@ -77,31 +68,45 @@ public class bug6889007 {
             });
             robot.waitForIdle();
             robot.delay(1000);
+
+            // Start just outside the header, at the height used for the sweep.
             SwingUtilities.invokeAndWait(() -> {
-                mouseLoc = MouseInfo.getPointerInfo().getLocation();
-                point = frame.getLocationOnScreen();
-                width = frame.getWidth();
-                height = frame.getHeight();
+                previousPoint = header.getLocationOnScreen();
+                previousPoint.translate(-10, header.getHeight() / 2);
             });
-            if ((mouseLoc.x >= point.x) && (mouseLoc.x < point.x + width) &&
-                (mouseLoc.y >= point.y) && (mouseLoc.y < point.y + height)) {
-                 System.out.println("pointer is within window");
-                 ignoreFirst = true;
-                 MyTableHeaderUI.testValue = 0;
-            }
-            int shift = 10;
-            int x = point.x;
-            int y = point.y + height/2;
-            for (int i = -shift; i < width + 2*shift; i++) {
-                robot.mouseMove(x++, y);
-                robot.delay(100);
-            }
+            robot.mouseMove(previousPoint.x, previousPoint.y);
+            robot.delay(100);
             robot.waitForIdle();
-            // 9 is a magic test number
-            if (MyTableHeaderUI.getTestValue() != 9) {
-                throw new RuntimeException("Unexpected test number "
-                        + MyTableHeaderUI.getTestValue());
+
+            // Move to middle of column first, then move to the
+            // next column boundary
+            for (int column = 1; column < 5; column++) {
+                final int nextColumn = column;
+                SwingUtilities.invokeAndWait(() -> {
+                    Rectangle r = header.getHeaderRect(nextColumn - 1);
+                    ui.prepare(new Point(r.x + r.width / 2,
+                                     header.getHeight() / 2), false);
+                    screenPoint = header.getLocationOnScreen();
+                    screenPoint.translate(ui.target.x, ui.target.y);
+                });
+                moveAndCheck();
+                SwingUtilities.invokeAndWait(() -> {
+                    Rectangle r = header.getHeaderRect(nextColumn);
+                    ui.prepare(new Point(r.x, header.getHeight() / 2), true);
+                    screenPoint = header.getLocationOnScreen();
+                    screenPoint.translate(ui.target.x, ui.target.y);
+                });
+                moveAndCheck();
             }
+            // Also verify that the cursor is restored in the final column.
+            SwingUtilities.invokeAndWait(() -> {
+                Rectangle r = header.getHeaderRect(4);
+                ui.prepare(new Point(r.x + r.width / 2,
+                                 header.getHeight() / 2), false);
+                screenPoint = header.getLocationOnScreen();
+                screenPoint.translate(ui.target.x, ui.target.y);
+            });
+            moveAndCheck();
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
@@ -112,41 +117,90 @@ public class bug6889007 {
         System.out.println("ok");
     }
 
-    static class MyTableHeaderUI extends BasicTableHeaderUI {
-        private static volatile int testValue;
+    static void moveAndCheck() throws Exception {
+        while (previousPoint.x != screenPoint.x) {
+            previousPoint.x += Integer.compare(screenPoint.x, previousPoint.x);
+            robot.mouseMove(previousPoint.x, screenPoint.y);
+            robot.delay(100);
+        }
+        robot.waitForIdle();
+        SwingUtilities.invokeAndWait(ui::check);
+    }
 
+    static class MyTableHeaderUI extends BasicTableHeaderUI {
+        private Point target;
+        private Point eventPoint;
+        private boolean resize;
+        private boolean targetSeen;
+        private boolean rolloverSeen;
+        private RuntimeException failure;
+
+        // prepare the test for next mouse movement without moving the mouse
+        void prepare(Point point, boolean expectResize) {
+            target = point;
+            resize = expectResize;
+            targetSeen = false;
+            rolloverSeen = false;
+            failure = null;
+        }
+
+        @Override
+        protected MouseInputListener createMouseInputListener() {
+            return new MouseInputHandler() {
+                @Override
+                public void mouseMoved(MouseEvent e) {
+                    eventPoint = e.getPoint();
+                    System.out.println("mouseMoved e.getPoint()=" + eventPoint
+                            + " column=" + header.columnAtPoint(eventPoint)
+                            + " cursorBefore=" + header.getCursor());
+                    try {
+                        super.mouseMoved(e);
+                        if (eventPoint.equals(target)) {
+                            targetSeen = true;
+                        }
+                        System.out.println("mouseMoved e.getPoint()=" + eventPoint
+                                + " cursorAfter=" + header.getCursor());
+                    } finally {
+                        eventPoint = null;
+                    }
+                }
+            };
+        }
+
+        @Override
         protected void rolloverColumnUpdated(int oldColumn, int newColumn) {
-            increaseTestValue(newColumn);
-            Cursor cursor = Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR);
-            System.out.println("oldColumn " + oldColumn + " newColumn " + newColumn +
-                        " header.getCursor " + header.getCursor() + " cursor " + cursor);
-            if (ignoreFirst) {
-                ignoreFirst = false;
-                if (newColumn == 0) {
-                    return;
+            System.out.println("oldColumn=" + oldColumn + " newColumn=" + newColumn
+                    + " e.getPoint()=" + eventPoint
+                    + " header.getCursor()=" + header.getCursor());
+            // Intermediate native mouse positions need not be resize positions.
+            // Check ordering only for the exact boundary requested by the test.
+            if (resize && target != null && target.equals(eventPoint)
+                    && oldColumn >= 0 && newColumn >= 0) {
+                rolloverSeen = true;
+                if (header.getCursor().getType() != Cursor.E_RESIZE_CURSOR) {
+                    failure = new RuntimeException(
+                            "Cursor not updated before rollover at " + eventPoint
+                            + ": " + oldColumn + " -> " + newColumn
+                            + ", cursor=" + header.getCursor());
                 }
             }
-            if (oldColumn != -1 && newColumn != -1 &&
-                    header.getCursor() != cursor) {
-                try {
-                    Dimension screenSize =
-                               Toolkit.getDefaultToolkit().getScreenSize();
-                    Rectangle screen = new Rectangle(0, 0,
-                                               (int) screenSize.getWidth(),
-                                               (int) screenSize.getHeight());
-                    BufferedImage img = robot.createScreenCapture(screen);
-                    ImageIO.write(img, "png", new java.io.File("image.png"));
-                } catch (Exception e) {}
-                throw new RuntimeException("Wrong type of cursor!");
+        }
+
+        void check() {
+            if (failure != null) {
+                throw failure;
             }
-        }
-
-        private static synchronized void increaseTestValue(int increment) {
-            testValue += increment;
-        }
-
-        public static synchronized int getTestValue() {
-            return testValue;
+            if (!targetSeen) {
+                throw new RuntimeException("No mouseMoved event at " + target);
+            }
+            if (resize && !rolloverSeen) {
+                throw new RuntimeException("No rollover callback at " + target);
+            }
+            int expected = resize ? Cursor.E_RESIZE_CURSOR : Cursor.DEFAULT_CURSOR;
+            if (header.getCursor().getType() != expected) {
+                throw new RuntimeException("Wrong cursor at " + target
+                        + ": " + header.getCursor() + ", expected type=" + expected);
+            }
         }
     }
 }
