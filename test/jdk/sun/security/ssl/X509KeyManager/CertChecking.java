@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
@@ -62,10 +64,10 @@ import sun.security.x509.X500Name;
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  * @library /test/lib
- * @run main/othervm/timeout=480 CertChecking false SunX509
- * @run main/othervm/timeout=480 CertChecking true SunX509
- * @run main/othervm/timeout=480 CertChecking false PKIX
- * @run main/othervm/timeout=480 CertChecking true PKIX
+ * @run main/othervm/timeout=240 CertChecking false SunX509
+ * @run main/othervm/timeout=240 CertChecking true SunX509
+ * @run main/othervm/timeout=240 CertChecking false PKIX
+ * @run main/othervm/timeout=240 CertChecking true PKIX
  */
 
 /*
@@ -112,6 +114,14 @@ public class CertChecking {
     private static final boolean[] NO_KA_USAGE =
             new boolean[]{true, true, true, true, false, true};
 
+    // Key generation is fixture setup. Reuse keys across cases, but keep
+    // distinct keys for the valid, expired and usage-mismatch aliases.
+    private record EndpointKeys(KeyPair valid, KeyPair expired,
+                                KeyPair usageMismatch) { }
+
+    private static final Map<String, EndpointKeys> ENDPOINT_KEYS = new HashMap<>();
+    private static KeyPair caKeys;
+    private static X509Certificate trustedCert;
 
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {
@@ -122,6 +132,9 @@ public class CertChecking {
         String kmAlg = args[1];
 
         System.setProperty("jdk.tls.SunX509KeyManager.certChecking", enabled);
+
+        caKeys = KeyPairGenerator.getInstance(CA_KEY_TYPE).generateKeyPair();
+        trustedCert = createTrustedCert(caKeys);
 
         // --- Usage and expired test cases --
 
@@ -358,15 +371,13 @@ public class CertChecking {
         KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
 
-        // Generate and set the trusted cert.
-        KeyPair caKeys = KeyPairGenerator.getInstance(CA_KEY_TYPE)
-                .generateKeyPair();
-        X509Certificate trustedCert = createTrustedCert(caKeys);
+        // Reuse the CA and endpoint keys, but create fresh endpoint
+        // certificates, a key store and a key manager for each case.
         ks.setCertificateEntry("CA entry", trustedCert);
+        EndpointKeys keys = getEndpointKeys(keyAlg);
 
         // Generate valid certificate chain.
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(keyAlg);
-        KeyPair validEndpointKeys = kpg.generateKeyPair();
+        KeyPair validEndpointKeys = keys.valid();
 
         X509Certificate validEndpointCert = customCertificateBuilder(
                 EE_ISSUER_STRING,
@@ -380,7 +391,7 @@ public class CertChecking {
         validChain[1] = trustedCert;
 
         // Generate expired certificate chain.
-        KeyPair expiredEndpointKeys = kpg.generateKeyPair();
+        KeyPair expiredEndpointKeys = keys.expired();
 
         X509Certificate expiredEndpointCert = customCertificateBuilder(
                 EE_ISSUER_STRING,
@@ -394,7 +405,7 @@ public class CertChecking {
         expiredChain[1] = trustedCert;
 
         // Generate usage mismatch certificate chain.
-        KeyPair usageMismatchEndpointKeys = kpg.generateKeyPair();
+        KeyPair usageMismatchEndpointKeys = keys.usageMismatch();
 
         X509Certificate usageMismatchEndpointCert = customCertificateBuilder(
                 EE_ISSUER_STRING,
@@ -423,6 +434,17 @@ public class CertChecking {
         kmf.init(ks, passphrase);
 
         return (X509KeyManager) kmf.getKeyManagers()[0];
+    }
+
+    private static EndpointKeys getEndpointKeys(String keyAlg) throws Exception {
+        EndpointKeys keys = ENDPOINT_KEYS.get(keyAlg);
+        if (keys == null) {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(keyAlg);
+            keys = new EndpointKeys(kpg.generateKeyPair(), kpg.generateKeyPair(),
+                    kpg.generateKeyPair());
+            ENDPOINT_KEYS.put(keyAlg, keys);
+        }
+        return keys;
     }
 
     // Certificate-building helper methods.
