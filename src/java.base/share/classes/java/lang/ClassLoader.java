@@ -1957,7 +1957,7 @@ public abstract class ClassLoader {
      * This method does not throw IllegalArgumentException.
      */
     Package definePackage(Class<?> c) {
-        if (c.isPrimitive() || c.isArray()) {
+        if (!c.isClassOrInterface()) {
             return null;
         }
 
