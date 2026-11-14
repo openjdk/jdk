@@ -741,6 +741,9 @@ public class WhiteBox {
   // CPU features
   public native String getCPUFeatures();
 
+  // Whether ROP protection is both supported and enabled
+  public native boolean isReturnAddressProtectionEnabled();
+
   // VM flags
   public native boolean isConstantVMFlag(String name);
   public native boolean isDefaultVMFlag(String name);

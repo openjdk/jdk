@@ -7729,7 +7729,8 @@ void MacroAssembler::leave() {
 void MacroAssembler::protect_return_address() {
   if (VM_Version::use_rop_protection()) {
     check_return_address();
-    paciaz();
+    NOT_WINDOWS(paciaz();)
+    WINDOWS_ONLY(pacibz();)
   }
 }
 
@@ -7740,7 +7741,8 @@ void MacroAssembler::protect_return_address() {
 void MacroAssembler::protect_return_address(Register return_reg) {
   if (VM_Version::use_rop_protection()) {
     check_return_address(return_reg);
-    paciza(return_reg);
+    NOT_WINDOWS(paciza(return_reg);)
+    WINDOWS_ONLY(pacizb(return_reg);)
   }
 }
 
@@ -7749,7 +7751,8 @@ void MacroAssembler::protect_return_address(Register return_reg) {
 //
 void MacroAssembler::authenticate_return_address() {
   if (VM_Version::use_rop_protection()) {
-    autiaz();
+    NOT_WINDOWS(autiaz();)
+    WINDOWS_ONLY(autibz();)
     check_return_address();
   }
 }
@@ -7760,7 +7763,8 @@ void MacroAssembler::authenticate_return_address() {
 //
 void MacroAssembler::authenticate_return_address(Register return_reg) {
   if (VM_Version::use_rop_protection()) {
-    autiza(return_reg);
+    NOT_WINDOWS(autiza(return_reg);)
+    WINDOWS_ONLY(autizb(return_reg);)
     check_return_address(return_reg);
   }
 }
