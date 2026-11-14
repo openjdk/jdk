@@ -37,39 +37,39 @@
 
 
 // GET* macros defined in JavaAccessibilityUtilities.h, so they can be shared.
-static jclass sjc_CAccessibility = NULL;
+DECLARE_CLASS_ONLY(sjc_CAccessibility);
 
-static jmethodID sjm_getAccessibleName = NULL;
+DECLARE_METHOD_ONLY(sjm_getAccessibleName);
 #define GET_ACCESSIBLENAME_METHOD_RETURN(ret) \
     GET_CACCESSIBILITY_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(sjm_getAccessibleName, sjc_CAccessibility, "getAccessibleName", \
                      "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljava/lang/String;", ret);
 
-static jmethodID jm_getChildrenAndRoles = NULL;
+DECLARE_METHOD_ONLY(jm_getChildrenAndRoles);
 #define GET_CHILDRENANDROLES_METHOD_RETURN(ret) \
     GET_CACCESSIBILITY_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(jm_getChildrenAndRoles, sjc_CAccessibility, "getChildrenAndRoles",\
                       "(Ljavax/accessibility/Accessible;Ljava/awt/Component;IZ)[Ljava/lang/Object;", ret);
 
-static jmethodID jm_getChildrenAndRolesRecursive = NULL;
+DECLARE_METHOD_ONLY(jm_getChildrenAndRolesRecursive);
 #define GET_CHILDRENANDROLESRECURSIVE_METHOD_RETURN(ret) \
     GET_CACCESSIBILITY_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(jm_getChildrenAndRolesRecursive, sjc_CAccessibility, "getChildrenAndRolesRecursive",\
                       "(Ljavax/accessibility/Accessible;Ljava/awt/Component;IZI)[Ljava/lang/Object;", ret);
 
-static jmethodID sjm_getAccessibleComponent = NULL;
+DECLARE_METHOD_ONLY(sjm_getAccessibleComponent);
 #define GET_ACCESSIBLECOMPONENT_STATIC_METHOD_RETURN(ret) \
     GET_CACCESSIBILITY_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(sjm_getAccessibleComponent, sjc_CAccessibility, "getAccessibleComponent", \
            "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/AccessibleComponent;", ret);
 
-static jmethodID sjm_getAccessibleIndexInParent = NULL;
+DECLARE_METHOD_ONLY(sjm_getAccessibleIndexInParent);
 #define GET_ACCESSIBLEINDEXINPARENT_STATIC_METHOD_RETURN(ret) \
     GET_CACCESSIBILITY_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(sjm_getAccessibleIndexInParent, sjc_CAccessibility, "getAccessibleIndexInParent", \
                              "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)I", ret);
 
-static jclass sjc_CAccessible = NULL;
+DECLARE_CLASS_ONLY(sjc_CAccessible);
 #define GET_CACCESSIBLE_CLASS_RETURN(ret) \
     GET_CLASS_RETURN(sjc_CAccessible, "sun/lwawt/macosx/CAccessible", ret);
 
@@ -878,7 +878,7 @@ static jobject sAccessibilityClass = NULL;
         DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleRoleDisplayString, sjc_CAccessibility, "getAccessibleRoleDisplayString",
                                      "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljava/lang/String;", nil);
 
-        jobject axRole = (*env)->CallStaticObjectMethod(env, jm_getAccessibleRoleDisplayString, fAccessible, fComponent);
+        jobject axRole = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility, jm_getAccessibleRoleDisplayString, fAccessible, fComponent);
         CHECK_EXCEPTION();
         if (axRole != NULL) {
             value = JavaStringToNSString(env, axRole);
@@ -1072,6 +1072,7 @@ static jobject sAccessibilityClass = NULL;
                 GET_ACCESSIBLENAME_METHOD_RETURN(nil);
                 jobject itemValue =
                         (*env)->CallStaticObjectMethod( env,
+                                                   sjc_CAccessibility,
                                                    sjm_getAccessibleName,
                                                    selectedMenuItem->fAccessible,
                                                    selectedMenuItem->fComponent );

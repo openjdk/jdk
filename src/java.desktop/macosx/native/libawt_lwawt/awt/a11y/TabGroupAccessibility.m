@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,9 +31,9 @@
 #import "JNIUtilities.h"
 #import "sun_lwawt_macosx_CAccessibility.h"
 
-static jclass sjc_CAccessibility = NULL;
+DECLARE_CLASS_ONLY(sjc_CAccessibility);
 
-static jmethodID jm_getChildrenAndRoles = NULL;
+DECLARE_METHOD_ONLY(jm_getChildrenAndRoles);
 #define GET_CHILDRENANDROLES_METHOD_RETURN(ret) \
     GET_CACCESSIBILITY_CLASS_RETURN(ret); \
     GET_STATIC_METHOD_RETURN(jm_getChildrenAndRoles, sjc_CAccessibility, "getChildrenAndRoles",\
