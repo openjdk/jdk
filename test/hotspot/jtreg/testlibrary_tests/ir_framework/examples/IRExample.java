@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,18 @@ public class IRExample {
             a[i*16 + 7]++;
         }
         return a;
+    }
+
+    // If IR matching is currently failing and there is no fix available, we can use the @IR(skip = true) attribute
+    // instead of commenting the rule out to disable IR matching. This approach still allows us to perform IR matching
+    // on demand with -DIgnoreSkipIR=true to quickly check if an IR rule is still failing or not.
+    //
+    // Note: If there is also a problem executing the entire test, consider using @Skip instead.
+    @Test
+    @IR(skip = true, // Skip this IR rule to avoid the (obvious) IR rule matching failure
+        failOn = IRNode.STORE_I) // Normally skipped but could still be checked on demand by using -DIgnoreSkipIR=true
+    void testDisableIRMatching() {
+        iFld = 34;
     }
 }
 

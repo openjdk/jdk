@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -747,12 +747,13 @@ class TestMemorySegmentAliasingImpl {
     }
 
     @Test
-    // @IR(counts = {IRNode.STORE_VECTOR,  "> 0",
-    //               ".*multiversion.*",   "> 0"}, // AutoVectorization Predicate FAILS
-    //     phase = CompilePhase.PRINT_IDEAL,
-    //     applyIfPlatform = {"64-bit", "true"},
-    //     applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
-    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(skip = true,
+        counts = {IRNode.STORE_VECTOR,  "> 0",
+                  ".*multiversion.*",   "> 0"}, // AutoVectorization Predicate FAILS
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     //
     // FAILS: but only on "native" and "byte-buffer-direct"
     //        The issue is that one of the VPointers is invalid.
@@ -772,12 +773,13 @@ class TestMemorySegmentAliasingImpl {
     }
 
     @Test
-    // @IR(counts = {IRNode.STORE_VECTOR,  "> 0",
-    //               ".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
-    //     phase = CompilePhase.PRINT_IDEAL,
-    //     applyIfPlatform = {"64-bit", "true"},
-    //     applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
-    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(skip = true,
+        counts = {IRNode.STORE_VECTOR,  "> 0",
+                  ".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     //
     // FAILS: but only on "native" and "byte-buffer-direct"
     //        The issue is that one of the VPointers is invalid.
@@ -804,11 +806,12 @@ class TestMemorySegmentAliasingImpl {
     }
 
     @Test
-    // @IR(counts = {IRNode.STORE_VECTOR,  "> 0"},
-    //     phase = CompilePhase.PRINT_IDEAL,
-    //     applyIfPlatform = {"64-bit", "true"},
-    //     applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
-    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(skip = true,
+        counts = {IRNode.STORE_VECTOR,  "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     //
     // FAILS: but only on "native" and "byte-buffer-direct"
     //        The issue is that one of the VPointers is invalid.
@@ -830,12 +833,13 @@ class TestMemorySegmentAliasingImpl {
     }
 
     @Test
-    // @IR(counts = {IRNode.STORE_VECTOR,  "> 0",
-    //               ".*multiversion.*",   "> 0"}, // AutoVectorization Predicate FAILS
-    //     phase = CompilePhase.PRINT_IDEAL,
-    //     applyIfPlatform = {"64-bit", "true"},
-    //     applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
-    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(skip = true,
+        counts = {IRNode.STORE_VECTOR,  "> 0",
+                  ".*multiversion.*",   "> 0"}, // AutoVectorization Predicate FAILS
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     //
     // FAILS: but only on "native" and "byte-buffer-direct"
     //        The issue is that one of the VPointers is invalid.
@@ -855,12 +859,13 @@ class TestMemorySegmentAliasingImpl {
     }
 
     @Test
-    // @IR(counts = {IRNode.STORE_VECTOR,  "> 0",
-    //               ".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
-    //     phase = CompilePhase.PRINT_IDEAL,
-    //     applyIfPlatform = {"64-bit", "true"},
-    //     applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
-    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(skip = true,
+        counts = {IRNode.STORE_VECTOR,  "> 0",
+                  ".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     //
     // FAILS: but only on "native" and "byte-buffer-direct"
     //        The issue is that one of the VPointers is invalid.
@@ -887,11 +892,12 @@ class TestMemorySegmentAliasingImpl {
     }
 
     @Test
-    // @IR(counts = {IRNode.STORE_VECTOR,  "> 0"},
-    //     phase = CompilePhase.PRINT_IDEAL,
-    //     applyIfPlatform = {"64-bit", "true"},
-    //     applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
-    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(skip = true,
+        counts = {IRNode.STORE_VECTOR,  "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     //
     // FAILS: but only on "native" and "byte-buffer-direct"
     //        The issue is that one of the VPointers is invalid.

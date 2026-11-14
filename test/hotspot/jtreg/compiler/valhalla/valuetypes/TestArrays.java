@@ -797,8 +797,9 @@ public class TestArrays {
     // TODO 8252027: Make sure this is optimized with ZGC
     // TODO 8350865: Support flat arrays in LoadNode::find_previous_arraycopy
     @Test
-    // @IR(applyIf = {"UseZGC", "false"},
-    //     failOn = {ALLOC_ARRAY_OF_MYVALUE_KLASS, LOOP, LOAD_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
+    @IR(skip = true,
+        applyIf = {"UseZGC", "false"},
+        failOn = {ALLOC_ARRAY_OF_MYVALUE_KLASS, LOOP, LOAD_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
     public MyValue2 test28() {
         MyValue2[] src = (MyValue2[])ValueClass.newNullRestrictedNonAtomicArray(MyValue2.class, 10, MyValue2.DEFAULT);
         src[0] = MyValue2.createWithFieldsInline(rI, rD);
@@ -2783,7 +2784,8 @@ public class TestArrays {
     // Same as test102 but with MyValue2[] dst
     @Test
     // TODO 8350865 Re-enable
-    // @IR(failOn = INTRINSIC_SLOW_PATH)
+    @IR(skip = true,
+        failOn = INTRINSIC_TRAP)
     public void test103() {
         System.arraycopy(val_src, 0, val_dst, 0, 8);
     }
@@ -2912,10 +2914,12 @@ public class TestArrays {
     // Arrays.copyOf with constant source and destination arrays
     @Test
     // TODO 8251971 Re-enable
-    // @IR(applyIf = {"UseArrayFlattening", "true"},
-    //     counts = {INTRINSIC_TRAP, "= 1"})
-    // @IR(applyIf = {"UseArrayFlattening", "false"},
-    //     failOn = {INTRINSIC_TRAP, CLASS_CHECK_TRAP})
+    @IR(skip = true,
+        applyIf = {"UseArrayFlattening", "true"},
+        counts = {INTRINSIC_TRAP, "= 1"})
+    @IR(skip = true,
+        applyIf = {"UseArrayFlattening", "false"},
+        failOn = {INTRINSIC_TRAP, CLASS_CHECK_TRAP})
     public Object[] test110() {
         return Arrays.copyOf(val_src, 8, Object[].class);
     }
@@ -2983,10 +2987,12 @@ public class TestArrays {
 
     @Test
     // TODO 8251971 Re-enable
-    // @IR(applyIf = {"UseArrayFlattening", "true"},
-    //     counts = {INTRINSIC_TRAP, "= 1"})
-    // @IR(applyIf = {"UseArrayFlattening", "false"},
-    //     failOn = {INTRINSIC_TRAP, CLASS_CHECK_TRAP})
+    @IR(skip = true,
+        applyIf = {"UseArrayFlattening", "true"},
+        counts = {INTRINSIC_TRAP, "= 1"})
+    @IR(skip = true,
+        applyIf = {"UseArrayFlattening", "false"},
+        failOn = {INTRINSIC_TRAP, CLASS_CHECK_TRAP})
     public Object[] test114() {
         return Arrays.copyOf((Object[])get_val_src(), 8, get_obj_class());
     }
@@ -3001,8 +3007,9 @@ public class TestArrays {
     // at parse time it looks as if src could be flat and dst could be not flat
     @Test
     // TODO 8251971 Re-enable
-    // @IR(applyIf = {"UseArrayFlattening", "false"},
-    //    failOn = {INTRINSIC_TRAP, CLASS_CHECK_TRAP})
+    @IR(skip = true,
+        applyIf = {"UseArrayFlattening", "false"},
+        failOn = {INTRINSIC_TRAP, CLASS_CHECK_TRAP})
     public Object[] test115() {
         return Arrays.copyOf((Object[])get_val_src(), 8, get_val_class());
     }
@@ -3301,9 +3308,10 @@ public class TestArrays {
     // Verify that copyOf with known source and unknown destination class is optimized
     @Test
     // TODO 8251971 Re-enable
-    //@IR(applyIf = {"UseArrayFlattening", "true"},
-    //    counts = {JLONG_ARRAYCOPY, "= 1"},
-    //    failOn = CHECKCAST_ARRAYCOPY)
+    @IR(skip = true,
+        applyIf = {"UseArrayFlattening", "true"},
+        counts = {JLONG_ARRAYCOPY, "= 1"},
+        failOn = CHECKCAST_ARRAYCOPY)
     public Object[] test128(Class klass) {
         return Arrays.copyOf(val_src, 8, klass);
     }
@@ -3615,7 +3623,8 @@ public class TestArrays {
     // Test load from array that is only known to be not a value class array after parsing
     // TODO 8255938
     @Test
-    // @IR(failOn = {ALLOC_G, ALLOC_ARRAY, LOOP, LOAD_OF_ANY_KLASS, STORE_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP, LOAD_UNKNOWN_VALUE, STORE_UNKNOWN_VALUE, INLINE_ARRAY_NULL_GUARD})
+    @IR(skip = true,
+        failOn = {ALLOC, ALLOC_ARRAY, LOOP, LOAD_OF_ANY_KLASS, STORE_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP, LOAD_UNKNOWN_VALUE, STORE_UNKNOWN_VALUE, INLINE_ARRAY_NULL_GUARD})
     public Object test141() {
         Object[]  array = null;
         Object[] oarray = new NonValueClass[1];
@@ -3636,7 +3645,8 @@ public class TestArrays {
     // Test store to array that is only known to be not a value class array after parsing
     // TODO 8255938
     @Test
-    // @IR(failOn = {ALLOC_ARRAY_OF_MYVALUE_KLASS, ALLOC_G, LOOP, LOAD_OF_ANY_KLASS, STORE_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP, LOAD_UNKNOWN_VALUE, STORE_UNKNOWN_VALUE, INLINE_ARRAY_NULL_GUARD})
+    @IR(skip = true,
+        failOn = {ALLOC_ARRAY_OF_MYVALUE_KLASS, ALLOC, LOOP, LOAD_OF_ANY_KLASS, STORE_OF_ANY_KLASS, UNSTABLE_IF_TRAP, PREDICATE_TRAP, LOAD_UNKNOWN_VALUE, STORE_UNKNOWN_VALUE, INLINE_ARRAY_NULL_GUARD})
     public Object[] test142(Object val) {
         Object[]  array = null;
         Object[] oarray = new NonValueClass[1];
@@ -3899,8 +3909,9 @@ public class TestArrays {
     // Test that EA works for null-free arrays
     @Test
     // TODO 8350865 Scalar replacement does not work well for flat arrays
-    //@IR(applyIf = {"ValueTypeReturnedAsFields", "true"},
-    //    failOn = {ALLOC, ALLOCA})
+    @IR(skip = true,
+        applyIf = {"ValueTypeReturnedAsFields", "true"},
+        failOn = {ALLOC_OF_MYVALUE_KLASS, ALLOC_ARRAY_OF_MYVALUE_KLASS})
     public MyValue152 test152() {
         MyValue152[] array = (MyValue152[])ValueClass.newNullRestrictedNonAtomicArray(MyValue152.class, 1, new MyValue152());
         return array[0];
@@ -3920,8 +3931,9 @@ public class TestArrays {
     // Same as test152 but triggers a slightly different asserts
     @Test
     // TODO 8350865 Scalar replacement does not work well for flat arrays
-    //@IR(applyIf = {"ValueTypeReturnedAsFields", "true"},
-    //    failOn = {ALLOC, ALLOCA})
+    @IR(skip = true,
+        applyIf = {"ValueTypeReturnedAsFields", "true"},
+        failOn = {ALLOC_OF_MYVALUE_KLASS, ALLOC_ARRAY_OF_MYVALUE_KLASS})
     public MyValue153 test153() {
         MyValue153[] array = (MyValue153[])ValueClass.newNullRestrictedNonAtomicArray(MyValue153.class, 1, new MyValue153());
         return array[0];
@@ -3935,7 +3947,9 @@ public class TestArrays {
     // Same as test152 but triggers an incorrect result
     @Test
     // TODO 8350865 Scalar replacement does not work well for flat arrays
-    //@IR(failOn = {ALLOC, ALLOCA_G, LOAD, STORE, TRAP})
+    @IR(skip = true,
+        failOn = {ALLOC_OF_MYVALUE_KLASS, ALLOC_ARRAY, LOAD_OF_ANY_KLASS, STORE_OF_ANY_KLASS, PREDICATE_TRAP,
+                               UNSTABLE_IF_TRAP})
     public double test154() {
         MyValue152[] array = (MyValue152[])ValueClass.newNullRestrictedNonAtomicArray(MyValue152.class, 1, new MyValue152());
         return array[0].d;

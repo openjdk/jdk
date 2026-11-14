@@ -177,4 +177,16 @@ public @interface IR {
      * IR verifications checks are enforced if any of the specified feature constraint is met.
      */
     String[] applyIfCPUFeatureOr() default {};
+
+    /**
+     * Skip IR matching of this IR rule. This is useful when the {@link Test @Test}-method causes the VM to emit an
+     * unexpected graph shape with no immediately available fix. Note that this only restricts the IR matching and not
+     * the execution of the {@link Test @Test}-method itself. To skip the entire {@link Test @Test}-method execution,
+     * use the {@link Skip @Skip} annotation instead.
+     * <p>
+     * It is preferable to use this attribute over commenting an IR rule out because one can enable IR matching of the
+     * skipped IR rule by passing the property flag {@code -DIgnoreSkipIR=true}. This can be useful when trying to
+     * quickly verify if a disabled IR rule is still failing or not.
+     */
+    boolean skip() default false;
 }
