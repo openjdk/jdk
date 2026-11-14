@@ -42,14 +42,15 @@
 
 // Constants
 //
-ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512Consts[] = {
-    0xF301, 0xF301, 0xF301, 0xF301, // q^-1 mod montR
-    0x0D01, 0x0D01, 0x0D01, 0x0D01, // q
-    0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, // Barrett multiplier
-    0x0200, 0x0200, 0x0200, 0x0200, //(dim/2)^-1 mod q
-    0x0549, 0x0549, 0x0549, 0x0549, // montR^2 mod q
-    0x0F00, 0x0F00, 0x0F00, 0x0F00  // mask for kyber12to16
-  };
+ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvxConsts[] = {
+  0xF301, 0xF301, 0xF301, 0xF301, // q^-1 mod montR
+  0x0D01, 0x0D01, 0x0D01, 0x0D01, // q
+  0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, // Barrett multiplier
+  0x0200, 0x0200, 0x0200, 0x0200, //(dim/2)^-1 mod q
+  0x0549, 0x0549, 0x0549, 0x0549, // montR^2 mod q
+  0x0F00, 0x0F00, 0x0F00, 0x0F00, // mask for kyber12to16
+  0x0010, 0x0001, 0x0010, 0x0001, // multiplier for kyber12to16 variable shift
+};
 
 static int qInvModROffset = 0;
 static int qOffset = 8;
@@ -57,12 +58,82 @@ static int barretMultiplierOffset = 16;
 static int dimHalfInverseOffset = 24;
 static int montRSquareModqOffset = 32;
 static int f00Offset = 40;
+static int k12t16MultOffset = 48;
 
-static address kyberAvx512ConstsAddr(int offset) {
-  return ((address) kyberAvx512Consts) + offset;
+static address kyberAvxConstsAddr(int offset) {
+  return ((address) kyberAvxConsts) + offset;
 }
 
-const Register scratch = r10;
+ATTRIBUTE_ALIGNED(64) static const uint8_t kyberNttMultShuffle[] = {
+  2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
+  2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
+  2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13,
+  2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13
+};
+
+static address kyberNttMultShuffleAddr() {
+  return (address) kyberNttMultShuffle;
+}
+
+ATTRIBUTE_ALIGNED(64) static const uint8_t kyberAvx212To16Shuffle[] = {
+   0, 1,  1, 2,  3, 4,  4, 5,  6, 7,  7, 8,  9, 10, 10, 11,
+   4, 5,  5, 6,  7, 8,  8, 9, 10, 11, 11, 12, 13, 14, 14, 15,
+   4, 5,  5, 6,  7, 8,  8, 9, 10, 11, 11, 12, 13, 14, 14, 15,
+   4, 5,  5, 6,  7, 8,  8, 9, 10, 11, 11, 12, 13, 14, 14, 15
+};
+
+static address kyberAvx212To16ShuffleAddr() {
+  return (address) kyberAvx212To16Shuffle;
+}
+
+ATTRIBUTE_ALIGNED(64) static const uint32_t unshufflePerms[] = {
+  // Shuffle for the 128-bit element swap (uint64_t)
+  0, 0, 1,  0, 8,  0, 9, 0, 4, 0, 5, 0, 12, 0, 13, 0,
+  10, 0, 11, 0, 2, 0, 3, 0, 14, 0, 15, 0, 6, 0, 7, 0,
+
+  // Final shuffle for KyberNtt
+  0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23,
+  24, 8, 25, 9, 26, 10, 27, 11, 28, 12, 29, 13, 30, 14, 31, 15,
+
+  // Initial shuffle for KyberInverseNtt
+  0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30,
+  17, 19, 21, 23, 25, 27, 29, 31, 1, 3, 5, 7, 9, 11, 13, 15
+};
+
+static address unshufflePermsAddr(int offset) {
+  return ((address) unshufflePerms) + offset*64;
+}
+
+// Table from FIPS 203, Appendix A, converted to montgomery domain (x*2^16 %3329)
+// and biased around -q/2 to q/2 then rearranged to match generate_kyberNttMult_avx
+// order (for AVX512: interleave kyberNttMultZetas[0-15] and [16-31] and so on,
+// for AVX2: interleave kyberNttMultZetas[0-7] and [8-15] and so on)
+ATTRIBUTE_ALIGNED(64) static const int16_t kyberNttMultZetas[] = {
+  // AVX512
+  -1103, 422, 1103, -422, 430, 587, -430, -587, 555, 177, -555, -177, 843, -235, -843, 235,
+  -1251, -291, 1251, 291, 871, -460, -871, 460, 1550, 1574, -1550, -1574, 105, 1653, -105, -1653,
+  -246, -1590, 246, 1590, 778, 644, -778, -644, 1159, -872, -1159, 872, -147, 349, 147, -349,
+  -777, 418, 777, -418, 1483, 329, -1483, -329, -602, -156, 602, 156, 1119, -75, -1119, 75,
+  817, -1215, -817, 1215, 1097, -136, -1097, 136, 603, 1218, -603, -1218, 610, -1335, -610, 1335,
+  1322, -874, -1322, 874, -1285, 220, 1285, -220, -1465, -1187, 1465, 1187, 384, -1659, -384, 1659,
+  -1185, -108, 1185, 108, -1530, -308, 1530, 308, -1278, 996, 1278, -996, 794, 991, -794, -991,
+  -1510, 958, 1510, -958, -854, -1460, 854, 1460, -870, 1522, 870, -1522, 478, 1628, -478, -1628,
+
+  // AVX2
+  -1103, -1251, 1103, 1251, 430, 871, -430, -871, 555, 1550, -555, -1550, 843, 105, -843, -105,
+  422, -291, -422, 291, 587, -460, -587, 460, 177, 1574, -177, -1574, -235, 1653, 235, -1653,
+  -246, -777, 246, 777, 778, 1483, -778, -1483, 1159, -602, -1159, 602, -147, 1119, 147, -1119,
+  -1590, 418, 1590, -418, 644, 329, -644, -329, -872, -156, 872, 156, 349, -75, -349, 75,
+  817, 1322, -817, -1322, 1097, -1285, -1097, 1285, 603, -1465, -603, 1465, 610, 384, -610, -384,
+  -1215, -874, 1215, 874, -136, 220, 136, -220, 1218, -1187, -1218, 1187, -1335, -1659, 1335, 1659,
+  -1185, -1510, 1185, 1510, -1530, -854, 1530, 854, -1278, -870, 1278, 870, 794, 478, -794, -478,
+  -108, 958, 108, -958, -308, -1460, 308, 1460, 996, 1522, -996, -1522, 991, 1628, -991, -1628,
+};
+
+static address kyberNttMultZetasAddr(int offset, int vector_len) {
+  offset += vector_len == Assembler::AVX_512bit ? 0 : 256;
+  return ((address) kyberNttMultZetas) + offset;
+}
 
 ATTRIBUTE_ALIGNED(64) static const uint8_t kyberAvx512_12To16Dup[] = {
 // 0 - 63
@@ -95,136 +166,6 @@ ATTRIBUTE_ALIGNED(64) static const uint64_t kyberAvx512_12To16And[] = {
 
 static address kyberAvx512_12To16AndAddr() {
   return (address) kyberAvx512_12To16And;
-}
-
-ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512NttPerms[] = {
-// 0
-    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
-    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-    0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
-    0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F,
-// 128
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
-    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-    0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F,
-    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
-    0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
-// 256
-    0x00, 0x01, 0x02, 0x03, 0x20, 0x21, 0x22, 0x23,
-    0x08, 0x09, 0x0A, 0x0B, 0x28, 0x29, 0x2A, 0x2B,
-    0x10, 0x11, 0x12, 0x13, 0x30, 0x31, 0x32, 0x33,
-    0x18, 0x19, 0x1A, 0x1B, 0x38, 0x39, 0x3A, 0x3B,
-    0x04, 0x05, 0x06, 0x07, 0x24, 0x25, 0x26, 0x27,
-    0x0C, 0x0D, 0x0E, 0x0F, 0x2C, 0x2D, 0x2E, 0x2F,
-    0x14, 0x15, 0x16, 0x17, 0x34, 0x35, 0x36, 0x37,
-    0x1C, 0x1D, 0x1E, 0x1F, 0x3C, 0x3D, 0x3E, 0x3F,
-// 384
-    0x00, 0x01, 0x20, 0x21, 0x04, 0x05, 0x24, 0x25,
-    0x08, 0x09, 0x28, 0x29, 0x0C, 0x0D, 0x2C, 0x2D,
-    0x10, 0x11, 0x30, 0x31, 0x14, 0x15, 0x34, 0x35,
-    0x18, 0x19, 0x38, 0x39, 0x1C, 0x1D, 0x3C, 0x3D,
-    0x02, 0x03, 0x22, 0x23, 0x06, 0x07, 0x26, 0x27,
-    0x0A, 0x0B, 0x2A, 0x2B, 0x0E, 0x0F, 0x2E, 0x2F,
-    0x12, 0x13, 0x32, 0x33, 0x16, 0x17, 0x36, 0x37,
-    0x1A, 0x1B, 0x3A, 0x3B, 0x1E, 0x1F, 0x3E, 0x3F,
-// 512
-    0x10, 0x11, 0x30, 0x31, 0x12, 0x13, 0x32, 0x33,
-    0x14, 0x15, 0x34, 0x35, 0x16, 0x17, 0x36, 0x37,
-    0x18, 0x19, 0x38, 0x39, 0x1A, 0x1B, 0x3A, 0x3B,
-    0x1C, 0x1D, 0x3C, 0x3D, 0x1E, 0x1F, 0x3E, 0x3F,
-    0x00, 0x01, 0x20, 0x21, 0x02, 0x03, 0x22, 0x23,
-    0x04, 0x05, 0x24, 0x25, 0x06, 0x07, 0x26, 0x27,
-    0x08, 0x09, 0x28, 0x29, 0x0A, 0x0B, 0x2A, 0x2B,
-    0x0C, 0x0D, 0x2C, 0x2D, 0x0E, 0x0F, 0x2E, 0x2F
-  };
-
-static address kyberAvx512NttPermsAddr() {
-  return (address) kyberAvx512NttPerms;
-}
-
-ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512InverseNttPerms[] = {
-// 0
-    0x02, 0x03, 0x06, 0x07, 0x0A, 0x0B, 0x0E, 0x0F,
-    0x12, 0x13, 0x16, 0x17, 0x1A, 0x1B, 0x1E, 0x1F,
-    0x22, 0x23, 0x26, 0x27, 0x2A, 0x2B, 0x2E, 0x2F,
-    0x32, 0x33, 0x36, 0x37, 0x3A, 0x3B, 0x3E, 0x3F,
-    0x00, 0x01, 0x04, 0x05, 0x08, 0x09, 0x0C, 0x0D,
-    0x10, 0x11, 0x14, 0x15, 0x18, 0x19, 0x1C, 0x1D,
-    0x20, 0x21, 0x24, 0x25, 0x28, 0x29, 0x2C, 0x2D,
-    0x30, 0x31, 0x34, 0x35, 0x38, 0x39, 0x3C, 0x3D,
-// 128
-    0x00, 0x01, 0x20, 0x21, 0x04, 0x05, 0x24, 0x25,
-    0x08, 0x09, 0x28, 0x29, 0x0C, 0x0D, 0x2C, 0x2D,
-    0x10, 0x11, 0x30, 0x31, 0x14, 0x15, 0x34, 0x35,
-    0x18, 0x19, 0x38, 0x39, 0x1C, 0x1D, 0x3C, 0x3D,
-    0x02, 0x03, 0x22, 0x23, 0x06, 0x07, 0x26, 0x27,
-    0x0A, 0x0B, 0x2A, 0x2B, 0x0E, 0x0F, 0x2E, 0x2F,
-    0x12, 0x13, 0x32, 0x33, 0x16, 0x17, 0x36, 0x37,
-    0x1A, 0x1B, 0x3A, 0x3B, 0x1E, 0x1F, 0x3E, 0x3F,
-// 256
-    0x00, 0x01, 0x02, 0x03, 0x20, 0x21, 0x22, 0x23,
-    0x08, 0x09, 0x0A, 0x0B, 0x28, 0x29, 0x2A, 0x2B,
-    0x10, 0x11, 0x12, 0x13, 0x30, 0x31, 0x32, 0x33,
-    0x18, 0x19, 0x1A, 0x1B, 0x38, 0x39, 0x3A, 0x3B,
-    0x04, 0x05, 0x06, 0x07, 0x24, 0x25, 0x26, 0x27,
-    0x0C, 0x0D, 0x0E, 0x0F, 0x2C, 0x2D, 0x2E, 0x2F,
-    0x14, 0x15, 0x16, 0x17, 0x34, 0x35, 0x36, 0x37,
-    0x1C, 0x1D, 0x1E, 0x1F, 0x3C, 0x3D, 0x3E, 0x3F,
-// 384
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
-    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-    0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F,
-    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
-    0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
-// 512
-    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-    0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
-    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-    0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
-    0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F
-  };
-
-static address kyberAvx512InverseNttPermsAddr() {
-  return (address) kyberAvx512InverseNttPerms;
-}
-
-ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_nttMultPerms[] = {
-    0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0E,
-    0x10, 0x12, 0x14, 0x16, 0x18, 0x1A, 0x1C, 0x1E,
-    0x20, 0x22, 0x24, 0x26, 0x28, 0x2A, 0x2C, 0x2E,
-    0x30, 0x32, 0x34, 0x36, 0x38, 0x3A, 0x3C, 0x3E,
-
-    0x01, 0x03, 0x05, 0x07, 0x09, 0x0B, 0x0D, 0x0F,
-    0x11, 0x13, 0x15, 0x17, 0x19, 0x1B, 0x1D, 0x1F,
-    0x21, 0x23, 0x25, 0x27, 0x29, 0x2B, 0x2D, 0x2F,
-    0x31, 0x33, 0x35, 0x37, 0x39, 0x3B, 0x3D, 0x3F,
-
-    0x00, 0x20, 0x01, 0x21, 0x02, 0x22, 0x03, 0x23,
-    0x04, 0x24, 0x05, 0x25, 0x06, 0x26, 0x07, 0x27,
-    0x08, 0x28, 0x09, 0x29, 0x0A, 0x2A, 0x0B, 0x2B,
-    0x0C, 0x2C, 0x0D, 0x2D, 0x0E, 0x2E, 0x0F, 0x2F,
-
-    0x10, 0x30, 0x11, 0x31, 0x12, 0x32, 0x13, 0x33,
-    0x14, 0x34, 0x15, 0x35, 0x16, 0x36, 0x17, 0x37,
-    0x18, 0x38, 0x19, 0x39, 0x1A, 0x3A, 0x1B, 0x3B,
-    0x1C, 0x3C, 0x1D, 0x3D, 0x1E, 0x3E, 0x1F, 0x3F
-  };
-
-static address kyberAvx512_nttMultPermsAddr() {
-  return (address) kyberAvx512_nttMultPerms;
 }
 
   ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_12To16Perms[] = {
@@ -290,54 +231,234 @@ static void load4regs(int destRegs[], Register address, int offset,
 // For the intrinsics, we use R = 2^16, because this way we can do twice
 // as much work in parallel, the only drawback is that we should do some Barrett
 // reductions in kyberInverseNtt so that the numbers stay in the required range.
-static void montmul(int outputRegs[], int inputRegs1[], int inputRegs2[],
-             int scratchRegs1[], int scratchRegs2[], MacroAssembler *_masm) {
-   for (int i = 0; i < 4; i++) {
-     __ evpmullw(xmm(scratchRegs1[i]), k0, xmm(inputRegs1[i]),
-                 xmm(inputRegs2[i]), false, Assembler::AVX_512bit);
-   }
-   for (int i = 0; i < 4; i++) {
-     __ evpmulhw(xmm(scratchRegs2[i]), k0, xmm(inputRegs1[i]),
-                 xmm(inputRegs2[i]), false, Assembler::AVX_512bit);
-   }
-   for (int i = 0; i < 4; i++) {
-     __ evpmullw(xmm(scratchRegs1[i]), k0, xmm(scratchRegs1[i]),
-                 xmm31, false, Assembler::AVX_512bit);
-   }
-   for (int i = 0; i < 4; i++) {
-     __ evpmulhw(xmm(scratchRegs1[i]), k0, xmm(scratchRegs1[i]),
-                 xmm30, false, Assembler::AVX_512bit);
-   }
-   for (int i = 0; i < 4; i++) {
-     __ evpsubw(xmm(outputRegs[i]), k0, xmm(scratchRegs2[i]),
-                xmm(scratchRegs1[i]), false, Assembler::AVX_512bit);
-   }
-}
+static void montMul(const XMMRegister output[], const XMMRegister input1[], const XMMRegister input2[],
+  const XMMRegister scratch[], const XMMRegister qInvModR, const XMMRegister kyber_q, int vector_len, MacroAssembler *_masm, int regCnt = 4) {
+  // This function is on a path with most register pressure, so there are several 'clever'
+  // uses that deserve explanation
+  // - input1 and scratch might be the same
+  // - input2 and scratch might overlap
+  // since this function is internal to this file, we dont go out of the way to overly verify inputs
+  const XMMRegister* scratch1 = scratch == input1 ? output : scratch;
+  const XMMRegister* scratch2 = scratch == input1 ? scratch : output;
+  bool input2ScratchOverlap = input2[0] == scratch1[1];
 
-static void sub_add(int subResult[], int addResult[], int input1[], int input2[],
-                    MacroAssembler *_masm) {
-  for (int i = 0; i < 4; i++) {
-    __ evpsubw(xmm(subResult[i]), k0, xmm(input1[i]), xmm(input2[i]),
-               false, Assembler::AVX_512bit);
-    __ evpaddw(xmm(addResult[i]), k0, xmm(input1[i]), xmm(input2[i]),
-               false, Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    // input2 and scratch2|output might be partially overlapping, both instructions together
+    // (later loop iteration might overwrite input2 otherwise)
+    __ vpmullw(scratch1[i], input1[i], input2[i], vector_len);
+    if (input2ScratchOverlap) {
+      __ vpmulhw(scratch2[i], input1[i], input2[i], vector_len);
+    }
+  }
+  for (int i = 0; !input2ScratchOverlap && i < regCnt; i++) {
+    // the 'else' case of input2ScratchOverlap.. emit vpmulhw if it wasn't before
+    __ vpmulhw(scratch2[i], input1[i], input2[i], vector_len);
+  }
+  for (int i = 0; i < regCnt; i++) {
+    __ vpmullw(scratch1[i], scratch1[i], qInvModR, vector_len);
+  }
+  for (int i = 0; i < regCnt; i++) {
+    __ vpmulhw(scratch1[i], scratch1[i], kyber_q, vector_len);
+  }
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsubw(output[i], scratch2[i], scratch1[i], vector_len);
   }
 }
 
-// result2 also acts as input1
-// result1 also acts as perm1
-static void permute(int result1[], int result2[], int input2[], int perm2,
-                    MacroAssembler *_masm) {
+// The following function swaps elements A<->B, C<->D, and so forth.
+// input1[] is shuffled in place; shuffle of input2[] is copied to output2[].
+// Element size (in bits) is specified by size parameter.
+// +-----+-----+-----+-----+-----
+// |     |  A  |     |  C  | ...
+// +-----+-----+-----+-----+-----
+// +-----+-----+-----+-----+-----
+// |  B  |     |  D  |     | ...
+// +-----+-----+-----+-----+-----
+//
+// NOTE: size 0 and 1 are used for final and initial shuffles respectively of
+// kyberNtt and kyberInverseNtt. For size 0 and 1, input1[]
+// and input2[] are modified in-place (and output2 is used as a temporary)
+//
+// Using C++ lambdas for improved readability (to hide parameters that always repeat)
+static auto whole_shuffle(KRegister mergeMask1, KRegister mergeMask2,
+  const XMMRegister unshuffle1, const XMMRegister unshuffle2, int vector_len, MacroAssembler *_masm, int regCnt = 4) {
 
-  for (int i = 1; i < 4; i++) {
-    __ evmovdquw(xmm(result1[i]), xmm(result1[0]), Assembler::AVX_512bit);
+  return [=](const XMMRegister output2[], const XMMRegister input1[],
+    const XMMRegister input2[], int size) {
+    if (vector_len == Assembler::AVX_256bit) {
+      switch (size) {
+        case 128:
+          for (int i = 0; i < regCnt; i++) {
+            __ vperm2i128(output2[i], input1[i], input2[i], 0b110001);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vinserti128(input1[i], input1[i], input2[i], 1);
+          }
+          break;
+        case 64:
+          for (int i = 0; i < regCnt; i++) {
+            __ vshufpd(output2[i], input1[i], input2[i], 0b11111111, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vshufpd(input1[i], input1[i], input2[i], 0b00000000, vector_len);
+          }
+          break;
+        case 32:
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovshdup(output2[i], input1[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vpblendd(output2[i], output2[i], input2[i], 0b10101010, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovsldup(input2[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vpblendd(input1[i], input1[i], input2[i], 0b10101010, vector_len);
+          }
+          break;
+        case 16:
+          for (int i = 0; i < regCnt; i++) {
+            __ vpshufb(output2[i], input1[i], unshuffle1, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vpblendw(output2[i], output2[i], input2[i], 0b10101010, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vpshufb(input2[i], input2[i], unshuffle1, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vpblendw(input1[i], input1[i], input2[i], 0b10101010, vector_len);
+          }
+          break;
+        // Special cases
+        case 1: // initial shuffle for kyberInverseNtt
+          // shuffle all even 32bit columns to input1, and odd to input2
+          for (int i = 0; i < regCnt; i++) {
+            // 0b-3-1-3-1
+            __ vshufps(output2[i], input1[i], input2[i], 0b11011101, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            // 0b-2-0-2-0
+            __ vshufps(input1[i], input1[i], input2[i], 0b10001000, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vpermq(input2[i], output2[i], 0b11011000, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            // 0b-3-1-2-0
+            __ vpermq(input1[i], input1[i], 0b11011000, vector_len);
+          }
+          break;
+        case 0: // final unshuffle for kyberNtt
+          // reverse case 1: all even are in input1 and odd in input2, put back
+          for (int i = 0; i < regCnt; i++) {
+            __ vpunpckhdq(output2[i], input1[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vpunpckldq(input1[i], input1[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vperm2i128(input2[i], input1[i], output2[i], 0b110001);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vinserti128(input1[i], input1[i], output2[i], 1);
+          }
+          break;
+        default:
+          assert(false, "Don't call here");
+      }
+    } else {
+      switch (size) {
+        case 256:
+          for (int i = 0; i < regCnt; i++) {
+            // 0b-3-2-3-2
+            __ evshufi64x2(output2[i], input1[i], input2[i], 0b11101110, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vinserti64x4(input1[i], input1[i], input2[i], 1);
+          }
+          break;
+        case 128:
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovdqu(output2[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evpermt2q(output2[i], unshuffle2, input1[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evpermt2q(input1[i], unshuffle1, input2[i], vector_len);
+          }
+
+          break;
+        case 64:
+          for (int i = 0; i < regCnt; i++) {
+            __ vshufpd(output2[i], input1[i], input2[i], 0b11111111, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ vshufpd(input1[i], input1[i], input2[i], 0b00000000, vector_len);
+          }
+          break;
+        case 32:
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovdqu(output2[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evmovshdup(output2[i], mergeMask2, input1[i], true, vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evmovsldup(input1[i], mergeMask1, input2[i], true, vector_len);
+          }
+          break;
+        case 16:
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovdqu(output2[i], input2[i], vector_len);
+            __ evpshufb(output2[i], mergeMask1, input1[i], unshuffle1, true, vector_len);
+            __ evpshufb(input1[i], mergeMask2, input2[i], unshuffle1, true, vector_len);
+          }
+          break;
+        // Special cases
+        case 1: // initial shuffle for kyberInverseNtt
+          // shuffle all even 32bit columns to input1, and odd to input2
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovdqu(output2[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evpermt2d(input2[i], unshuffle2, input1[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evpermt2d(input1[i], unshuffle1, output2[i], vector_len);
+          }
+          break;
+        case 0: // final unshuffle for kyberNtt
+          // reverse case 1: all even are in input1 and odd in input2, put back
+          for (int i = 0; i < regCnt; i++) {
+            __ vmovdqu(output2[i], input2[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evpermt2d(input2[i], unshuffle2, input1[i], vector_len);
+          }
+          for (int i = 0; i < regCnt; i++) {
+            __ evpermt2d(input1[i], unshuffle1, output2[i], vector_len);
+          }
+          break;
+        default:
+          assert(false, "Don't call here");
+      }
+    }
+  }; // return
+}
+
+static void sub_add(const XMMRegister subResult[], const XMMRegister addResult[],
+                    const XMMRegister input1[], const XMMRegister input2[],
+                    int vector_len, MacroAssembler *_masm) {
+  int regCnt = 4;
+  for (int i = 0; i < regCnt; i++) {
+    __ vpsubw(subResult[i], input1[i], input2[i], vector_len);
   }
 
-  for (int i = 0; i < 4; i++) {
-    __ evpermi2w(xmm(result1[i]), xmm(result2[i]), xmm(input2[i]),
-                 Assembler::AVX_512bit);
-    __ evpermt2w(xmm(result2[i]), xmm(perm2), xmm(input2[i]),
-                 Assembler::AVX_512bit);
+  for (int i = 0; i < regCnt; i++) {
+    __ vpaddw(addResult[i], input1[i], input2[i], vector_len);
   }
 }
 
@@ -349,58 +470,48 @@ static void store4regs(Register address, int offset, int sourceRegs[],
   }
 }
 
-// This stub helper vectorizes the reduction in implKyberBarrettReduceJava.
-// In all invocations of this function we use the same registers:
-// Input:   xmm0-xmm7 (signed short coefficients)
-//          xmm16: Barrett multiplier
-//          xmm17: q
-// Scratch: xmm8-xmm15
-// Output:  xmm0-xmm7 (reduced coefficients each in [0, q])
-static void barrettReduce(MacroAssembler *_masm) {
-  for (int i = 0; i < 8; i++) {
-    __ evpmulhw(xmm(i + 8), k0, xmm(i), xmm16, false, Assembler::AVX_512bit);
+static void loadXmms(const XMMRegister destinationRegs[], Register source, int offset,
+                     int vector_len, MacroAssembler *_masm, int memStep = -1) {
+  if (memStep == -1) {
+    memStep = vector_len == Assembler::AVX_512bit ? 64 : 32;
   }
 
-  for (int i = 0; i < 8; i++) {
-    __ evpsraw(xmm(i + 8), k0, xmm(i + 8), 10, false, Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 8; i++) {
-    __ evpmullw(xmm(i + 8), k0, xmm(i + 8), xmm17, false, Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 8; i++) {
-    __ evpsubw(xmm(i), k0, xmm(i), xmm(i + 8), false, Assembler::AVX_512bit);
+  for (int i = 0; i < 4; i++) {
+    __ vmovdqu(destinationRegs[i], Address(source, offset + i * memStep), vector_len);
   }
 }
 
-static int xmm0_3[] = {0, 1, 2, 3};
-static int xmm0145[] = {0, 1, 4, 5};
-static int xmm0246[] = {0, 2, 4, 6};
-static int xmm0829[] = {0, 8, 2, 9};
-static int xmm1001[] = {1, 0, 0, 1};
-static int xmm1357[] = {1, 3, 5, 7};
-static int xmm2367[] = {2, 3, 6, 7};
-static int xmm2_0_10_8[] = {2, 0, 10, 8};
-static int xmm3223[] = {3, 2, 2, 3};
-static int xmm4_7[] = {4, 5, 6, 7};
-static int xmm5454[] = {5, 4, 5, 4};
-static int xmm7676[] = {7, 6, 7, 6};
-static int xmm8_11[] = {8, 9, 10, 11};
-static int xmm12_15[] = {12, 13, 14, 15};
-static int xmm16_19[] = {16, 17, 18, 19};
-static int xmm20_23[] = {20, 21, 22, 23};
-static int xmm23_23[] = {23, 23, 23, 23};
-static int xmm24_27[] = {24, 25, 26, 27};
-static int xmm26_29[] = {26, 27, 28, 29};
-static int xmm28_31[] = {28, 29, 30, 31};
-static int xmm29_29[] = {29, 29, 29, 29};
+static void storeXmms(Register destination, int offset, const XMMRegister xmmRegs[],
+                      int vector_len, MacroAssembler *_masm, int memStep = -1) {
+  if (memStep == -1) {
+    memStep = vector_len == Assembler::AVX_512bit ? 64 : 32;
+  }
 
-// Kyber NTT function.
-//
-// coeffs (short[256]) = c_rarg0
-// ntt_zetas (short[256]) = c_rarg1
-address generate_kyberNtt_avx512(StubGenerator *stubgen,
+  for (int i = 0; i < 4; i++) {
+    __ vmovdqu(Address(destination, offset + i * memStep), xmmRegs[i], vector_len);
+  }
+}
+
+static void barrettReduce(const XMMRegister output[], const XMMRegister scratch[],
+     const XMMRegister barretMultiplier, const XMMRegister kyber_q, int vector_len, MacroAssembler *_masm) {
+  for (int i = 0; i < 4; i++) {
+    __ vpmulhw(scratch[i], output[i], barretMultiplier, vector_len);
+  }
+
+  for (int i = 0; i < 4; i++) {
+    __ vpsraw(scratch[i], scratch[i], 10, vector_len);
+  }
+
+  for (int i = 0; i < 4; i++) {
+    __ vpmullw(scratch[i], scratch[i], kyber_q, vector_len);
+  }
+
+  for (int i = 0; i < 4; i++) {
+    __ vpsubw(output[i], output[i], scratch[i], vector_len);
+  }
+}
+
+address generate_kyberNtt_avx(StubGenerator *stubgen, int vector_len,
                                  MacroAssembler *_masm) {
   StubId stub_id = StubId::stubgen_kyberNtt_id;
   int entry_count = StubInfo::entry_count(stub_id);
@@ -416,80 +527,155 @@ address generate_kyberNtt_avx512(StubGenerator *stubgen,
 
   const Register coeffs = c_rarg0;
   const Register zetas = c_rarg1;
+  const Register scratch = r10;
 
-  const Register perms = r11;
+  const XMMRegister Coeffs1[] = {xmm0, xmm1, xmm2, xmm3};
+  const XMMRegister Coeffs2[] = {xmm4, xmm5, xmm6, xmm7};
+  const XMMRegister Zetas1[]  = {xmm12, xmm12, xmm12, xmm12};
+  const XMMRegister Zetas2[]  = {xmm12, xmm12, xmm13, xmm13};
+  const XMMRegister Zetas3[]   = {xmm9, xmm10, xmm11, xmm12};
 
-  __ lea(perms, ExternalAddress(kyberAvx512NttPermsAddr()));
+  // constants
+  const XMMRegister qInvModR = xmm14;
+  const XMMRegister kyber_q = xmm15;
 
-  load4regs(xmm4_7, coeffs, 256, _masm);
-  load4regs(xmm20_23, zetas, 0, _masm);
+  // register-level swaps
+  const XMMRegister Coeffs1_1[] = {xmm0, xmm1, xmm4, xmm5};
+  const XMMRegister Coeffs2_1[] = {xmm2, xmm3, xmm6, xmm7};
+  const XMMRegister Coeffs1_2[] = {xmm0, xmm2, xmm4, xmm6};
+  const XMMRegister Coeffs2_2[] = {xmm1, xmm3, xmm5, xmm7};
 
-  __ vpbroadcastq(xmm30,
-                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
-                  Assembler::AVX_512bit, scratch); // q
-  __ vpbroadcastq(xmm31,
-                  ExternalAddress(kyberAvx512ConstsAddr(qInvModROffset)),
-                  Assembler::AVX_512bit, scratch); // q^-1 mod montR
+  // AVX512-only constants
+  const XMMRegister unshuffle1 = xmm28;
+  const XMMRegister unshuffle2 = xmm29;
+  const XMMRegister unshuffle3 = xmm30;
+  const XMMRegister unshuffle4 = xmm31;
+  KRegister mergeMask1 = k1;
+  KRegister mergeMask2 = k2;
+  auto shuffle = whole_shuffle(mergeMask1, mergeMask2, unshuffle1, unshuffle2,
+                               vector_len, _masm);
 
-  load4regs(xmm0_3, coeffs, 0, _masm);
+  __ vpbroadcastq(qInvModR,
+                  ExternalAddress(kyberAvxConstsAddr(qInvModROffset)),
+                  vector_len, scratch); // q^-1 mod montR
+  __ vpbroadcastq(kyber_q,
+                  ExternalAddress(kyberAvxConstsAddr(qOffset)),
+                  vector_len, scratch); // q
 
-  // Each level represents one iteration of the outer for loop of the Java version.
-  // level 0
-  montmul(xmm8_11, xmm4_7, xmm20_23, xmm8_11, xmm4_7, _masm);
-  load4regs(xmm20_23, zetas, 256, _masm);
-  sub_add(xmm4_7, xmm0_3, xmm0_3, xmm8_11, _masm);
+  if (vector_len == Assembler::AVX_512bit) {
+    // have enough registers (unlike AVX2), so less careful reg-alloc
+    const XMMRegister Scratch[] =  {xmm16, xmm17, xmm18, xmm19};
+    const XMMRegister Scratch2[] = {xmm20, xmm21, xmm22, xmm23};
 
-  //level 1
-  montmul(xmm12_15, xmm2367, xmm20_23, xmm12_15, xmm8_11, _masm);
-  load4regs(xmm20_23, zetas, 512, _masm);
-  sub_add(xmm2367, xmm0145, xmm0145, xmm12_15, _masm);
+    // Constants for shuffle
+    __ vmovdqu(unshuffle1, ExternalAddress(unshufflePermsAddr(0)), vector_len, scratch);
+    __ vmovdqu(unshuffle2, ExternalAddress(unshufflePermsAddr(1)), vector_len, scratch);
+    __ vmovdqu(unshuffle3, ExternalAddress(unshufflePermsAddr(2)), vector_len, scratch);
+    __ vmovdqu(unshuffle4, ExternalAddress(unshufflePermsAddr(3)), vector_len, scratch);
+    __ mov64(scratch, 0b1010101010101010);
+    __ kmovwl(mergeMask1, scratch);
+    __ knotwl(mergeMask2, mergeMask1);
 
-  // level 2
-  montmul(xmm8_11, xmm1357, xmm20_23, xmm12_15, xmm8_11, _masm);
-  __ evmovdquw(xmm12, Address(perms, 0), Assembler::AVX_512bit);
-  __ evmovdquw(xmm16, Address(perms, 64), Assembler::AVX_512bit);
-  load4regs(xmm20_23, zetas, 768, _masm);
-  sub_add(xmm1357, xmm0246, xmm0246, xmm8_11, _masm);
+    int memStep = 4 * 64; // 4*64-byte registers
+    loadXmms(Coeffs1, coeffs, 0*memStep, vector_len, _masm);
+    loadXmms(Coeffs2, coeffs, 1*memStep, vector_len, _masm);
 
-  //level 3
-  permute(xmm12_15, xmm0246, xmm1357, 16, _masm);
-  montmul(xmm8_11, xmm12_15, xmm20_23, xmm16_19, xmm8_11, _masm);
-  __ evmovdquw(xmm16, Address(perms, 128), Assembler::AVX_512bit);
-  __ evmovdquw(xmm24, Address(perms, 192), Assembler::AVX_512bit);
-  load4regs(xmm20_23, zetas, 1024, _masm);
-  sub_add(xmm1357, xmm0246, xmm0246, xmm8_11, _masm);
+    // level 0
+    // coeffs2 = coeffs2 * zetas1
+    // coeffs2, coeffs1 = coeffs1 ± coeffs2
+    __ vmovdqu(Zetas1[0], Address(zetas, 0), vector_len);
+    montMul(Scratch, Coeffs2, Zetas1, Coeffs2, qInvModR, kyber_q, vector_len, _masm);
+    sub_add(Coeffs2, Coeffs1, Coeffs1, Scratch, vector_len, _masm);
 
-  // level 4
-  permute(xmm16_19, xmm0246, xmm1357, 24, _masm);
-  montmul(xmm8_11, xmm0246, xmm20_23, xmm24_27, xmm8_11, _masm);
-  __ evmovdquw(xmm1, Address(perms, 256), Assembler::AVX_512bit);
-  __ evmovdquw(xmm24, Address(perms, 320), Assembler::AVX_512bit);
-  load4regs(xmm20_23, zetas, 1280, _masm);
-  sub_add(xmm12_15, xmm0246, xmm16_19, xmm8_11, _masm);
+    // level 1
+    __ vmovdqu(Zetas2[0], Address(zetas,       256), vector_len);
+    __ vmovdqu(Zetas2[2], Address(zetas, 128 + 256), vector_len);
+    montMul(Scratch, Coeffs2_1, Zetas2, Coeffs2_1, qInvModR, kyber_q, vector_len, _masm);
+    sub_add(Coeffs2_1, Coeffs1_1, Coeffs1_1, Scratch, vector_len, _masm);
 
-  // level 5
-  permute(xmm1357, xmm0246, xmm12_15, 24, _masm);
-  montmul(xmm16_19, xmm0246, xmm20_23, xmm16_19, xmm8_11, _masm);
+    // level 2
+    loadXmms(Zetas3, zetas, 2 * 256, vector_len, _masm);
+    montMul(Scratch, Coeffs2_2, Zetas3, Coeffs2_2, qInvModR, kyber_q, vector_len, _masm);
+    sub_add(Coeffs2_2, Coeffs1_2, Coeffs1_2, Scratch, vector_len, _masm);
 
-  __ evmovdquw(xmm12, Address(perms, 384), Assembler::AVX_512bit);
-  __ evmovdquw(xmm8, Address(perms, 448), Assembler::AVX_512bit);
+    for (int level = 3, distance = 16; level<7; level++, distance /= 2) {
+      // coeffs1_2, scratch1 = shuffle(coeffs1_2, coeffs2_2)
+      // zetas = load(level * 256)
+      // scratch1 = scratch1 * zetas
+      // coeffs2_2 = coeffs1_2 - scratch1
+      // coeffs1_2 = coeffs1_2 + scratch1
+      shuffle(Scratch, Coeffs1_2, Coeffs2_2, distance * 16); // Coeffs2_2 freed
+      loadXmms(Coeffs2_2, zetas, level * 256, vector_len, _masm);
+      montMul(Scratch, Scratch, Coeffs2_2, Scratch2, qInvModR, kyber_q, vector_len, _masm);
+      sub_add(Coeffs2_2, Coeffs1_2, Coeffs1_2, Scratch, vector_len, _masm);
+    }
 
-  load4regs(xmm20_23, zetas, 1536, _masm);
-  sub_add(xmm24_27, xmm0246, xmm1357, xmm16_19, _masm);
+    __ vmovdqu(unshuffle1, unshuffle3, vector_len);
+    __ vmovdqu(unshuffle2, unshuffle4, vector_len);
+    shuffle(Scratch, Coeffs1_2, Coeffs2_2, 0);
 
-  // level 6
-  permute(xmm12_15, xmm0246, xmm24_27, 8, _masm);
+    storeXmms(coeffs, 0*memStep, Coeffs1, vector_len, _masm);
+    storeXmms(coeffs, 1*memStep, Coeffs2, vector_len, _masm);
+  } else {
+    // scratch registers for montMul; arranged carefully so not to clobber inputs
+    const XMMRegister Scratch[] = {xmm8, xmm9, xmm10, xmm11};  // pair to Zetas3
+    const XMMRegister Scratch2[] = {xmm12, xmm1, xmm3, xmm5};  // pair to Coeffs2_2
 
-  __ evmovdquw(xmm1, Address(perms, 512), Assembler::AVX_512bit);
-  __ evmovdquw(xmm24, Address(perms, 576), Assembler::AVX_512bit);
+    // Two batches of 4 registers each, 64 bytes apart
+    for (int i = 0; i < 2; i++) {
+      loadXmms(Coeffs1, coeffs, i*32 + 0*64, vector_len, _masm, 64);
+      loadXmms(Coeffs2, coeffs, i*32 + 4*64, vector_len, _masm, 64);
 
-  montmul(xmm16_19, xmm0246, xmm20_23, xmm16_19, xmm8_11, _masm);
-  sub_add(xmm20_23, xmm0246, xmm12_15, xmm16_19, _masm);
+      // level 0
+      // coeffs2 = coeffs2 * zetas1
+      // coeffs2, coeffs1 = coeffs1 ± coeffs2
+      __ vmovdqu(Zetas1[0], Address(zetas, 0), vector_len);
+      montMul(Scratch, Coeffs2, Zetas1, Coeffs2, qInvModR, kyber_q, vector_len, _masm);
+      sub_add(Coeffs2, Coeffs1, Coeffs1, Scratch, vector_len, _masm);
 
-  permute(xmm1357, xmm0246, xmm20_23, 24, _masm);
+      // level 1
+      __ vmovdqu(Zetas2[0], Address(zetas,       256), vector_len);
+      __ vmovdqu(Zetas2[2], Address(zetas, 128 + 256), vector_len);
+      montMul(Scratch, Coeffs2_1, Zetas2, Coeffs2_1, qInvModR, kyber_q, vector_len, _masm);
+      sub_add(Coeffs2_1, Coeffs1_1, Coeffs1_1, Scratch, vector_len, _masm);
 
-  store4regs(coeffs, 0, xmm0_3, _masm);
-  store4regs(coeffs, 256, xmm4_7, _masm);
+      // level 2
+      loadXmms(Zetas3, zetas, 2 * 256, vector_len, _masm, 64);
+      montMul(Scratch, Coeffs2_2, Zetas3, Coeffs2_2, qInvModR, kyber_q, vector_len, _masm);
+      sub_add(Coeffs2_2, Coeffs1_2, Coeffs1_2, Scratch, vector_len, _masm);
+
+      storeXmms(coeffs, i*32 + 0*64, Coeffs1, vector_len, _masm, 64);
+      storeXmms(coeffs, i*32 + 4*64, Coeffs2, vector_len, _masm, 64);
+    }
+
+    // Two batches of 8 registers, consecutive loads
+    for (int i=0; i<2; i++) {
+      loadXmms(Coeffs1, coeffs,       i*256, vector_len, _masm);
+      loadXmms(Coeffs2, coeffs, 128 + i*256, vector_len, _masm);
+
+      // level 3
+      loadXmms(Zetas3, zetas, i*128 + 3 * 256, vector_len, _masm);
+      montMul(Scratch, Coeffs2_2, Zetas3, Coeffs2_2, qInvModR, kyber_q, vector_len, _masm);
+      sub_add(Coeffs2_2, Coeffs1_2, Coeffs1_2, Scratch, vector_len, _masm);
+
+      for (int level = 4, distance = 8; level<7; level++, distance /= 2) {
+        // coeffs1_2, scratch1 = shuffle(coeffs1_2, coeffs2_2)
+        // zetas = load(level * 256)
+        // scratch1 = scratch1 * zetas
+        // coeffs2_2 = coeffs1_2 - scratch1
+        // coeffs1_2 = coeffs1_2 + scratch1
+        shuffle(Scratch, Coeffs1_2, Coeffs2_2, distance * 16); // Coeffs2_2 freed
+        loadXmms(Coeffs2_2, zetas, i*128 + level * 256, vector_len, _masm);
+        montMul(Scratch, Scratch, Coeffs2_2, Scratch2, qInvModR, kyber_q, vector_len, _masm);
+        sub_add(Coeffs2_2, Coeffs1_2, Coeffs1_2, Scratch, vector_len, _masm);
+      }
+
+      shuffle(Scratch, Coeffs1_2, Coeffs2_2, 0);
+
+      storeXmms(coeffs,       i*256, Coeffs1, vector_len, _masm);
+      storeXmms(coeffs, 128 + i*256, Coeffs2, vector_len, _masm);
+    }
+  }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
@@ -505,7 +691,7 @@ address generate_kyberNtt_avx512(StubGenerator *stubgen,
 //
 // coeffs (short[256]) = c_rarg0
 // ntt_zetas (short[256]) = c_rarg1
-address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
+address generate_kyberInverseNtt_avx(StubGenerator *stubgen, int vector_len,
                                         MacroAssembler *_masm) {
   StubId stub_id = StubId::stubgen_kyberInverseNtt_id;
   int entry_count = StubInfo::entry_count(stub_id);
@@ -521,106 +707,182 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
 
   const Register coeffs = c_rarg0;
   const Register zetas = c_rarg1;
+  const Register scratch = r10;
 
-  const Register perms = r11;
+  const XMMRegister Coeffs1[] = {xmm0, xmm1, xmm2, xmm3};
+  const XMMRegister Coeffs2[] = {xmm4, xmm5, xmm6, xmm7};
+  const XMMRegister Scratch[] = {xmm8, xmm9, xmm10, xmm11};
 
-  __ lea(perms, ExternalAddress(kyberAvx512InverseNttPermsAddr()));
-  __ evmovdquw(xmm12, Address(perms, 0), Assembler::AVX_512bit);
-  __ evmovdquw(xmm16, Address(perms, 64), Assembler::AVX_512bit);
+  // constants
+  const XMMRegister barretMultiplier = xmm13;
+  const XMMRegister qInvModR = xmm14;
+  const XMMRegister kyber_q = xmm15;
 
-  __ vpbroadcastq(xmm31,
-                  ExternalAddress(kyberAvx512ConstsAddr(qInvModROffset)),
-                  Assembler::AVX_512bit, scratch); // q^-1 mod montR
-  __ vpbroadcastq(xmm30,
-                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
-                  Assembler::AVX_512bit, scratch); // q
-  __ vpbroadcastq(xmm29,
-                  ExternalAddress(kyberAvx512ConstsAddr(dimHalfInverseOffset)),
-                  Assembler::AVX_512bit, scratch); // (dim/2)^-1 mod q
+  // register-level swaps
+  const XMMRegister Coeffs1_1[] = {xmm0, xmm1, xmm4, xmm5};
+  const XMMRegister Coeffs2_1[] = {xmm2, xmm3, xmm6, xmm7};
+  const XMMRegister Coeffs1_2[] = {xmm0, xmm2, xmm4, xmm6};
+  const XMMRegister Coeffs2_2[] = {xmm1, xmm3, xmm5, xmm7};
 
-  load4regs(xmm0_3, coeffs, 0, _masm);
-  load4regs(xmm4_7, coeffs, 256, _masm);
+  // AVX512-only constants
+  const XMMRegister unshuffle1 = xmm28;
+  const XMMRegister unshuffle2 = xmm29;
+  const XMMRegister unshuffle3 = xmm30;
+  const XMMRegister unshuffle4 = xmm31;
+  KRegister mergeMask1 = k1;
+  KRegister mergeMask2 = k2;
+  auto shuffle = whole_shuffle(mergeMask1, mergeMask2, unshuffle1, unshuffle2,
+                               vector_len, _masm);
 
-  // Each level represents one iteration of the outer for loop of the Java version.
-  // level 0
-  load4regs(xmm8_11, zetas, 0, _masm);
-  permute(xmm12_15, xmm0246, xmm1357, 16, _masm);
+  __ vpbroadcastq(qInvModR,
+                  ExternalAddress(kyberAvxConstsAddr(qInvModROffset)),
+                  vector_len, scratch); // q^-1 mod montR
+  __ vpbroadcastq(kyber_q,
+                  ExternalAddress(kyberAvxConstsAddr(qOffset)),
+                  vector_len, scratch); // q
+  __ vpbroadcastq(barretMultiplier,
+                  ExternalAddress(kyberAvxConstsAddr(barretMultiplierOffset)),
+                  vector_len, scratch); // Barret Multiplier
 
-  __ evmovdquw(xmm1, Address(perms, 128), Assembler::AVX_512bit);
-  __ evmovdquw(xmm20, Address(perms, 192), Assembler::AVX_512bit);
+  if (vector_len == Assembler::AVX_512bit) {
+    // Zetas
+    const XMMRegister Zetas1[] = {xmm12, xmm12, xmm12, xmm12};
+    const XMMRegister Zetas2[] = {xmm24, xmm24, xmm25, xmm25};
 
-  sub_add(xmm16_19, xmm0246, xmm0246, xmm12_15, _masm);
-  montmul(xmm12_15, xmm16_19, xmm8_11, xmm12_15, xmm8_11, _masm);
+    // have enough registers (unlike AVX2), so less careful reg-alloc
+    const XMMRegister Scratch2[] = {xmm16, xmm17, xmm18, xmm19};
+    const XMMRegister Scratch3[] = {xmm20, xmm21, xmm22, xmm23};
 
-  // level 1
-  load4regs(xmm8_11, zetas, 256, _masm);
-  permute(xmm1357, xmm0246, xmm12_15, 20, _masm);
-  sub_add(xmm16_19, xmm0246, xmm1357, xmm0246, _masm);
+    // Constants for shuffles
+    __ vmovdqu(unshuffle1, ExternalAddress(unshufflePermsAddr(4)), vector_len, scratch);
+    __ vmovdqu(unshuffle2, ExternalAddress(unshufflePermsAddr(5)), vector_len, scratch);
+    __ vmovdqu(unshuffle3, ExternalAddress(unshufflePermsAddr(0)), vector_len, scratch);
+    __ vmovdqu(unshuffle4, ExternalAddress(unshufflePermsAddr(1)), vector_len, scratch);
 
-  __ evmovdquw(xmm1, Address(perms, 256), Assembler::AVX_512bit);
-  __ evmovdquw(xmm20, Address(perms, 320), Assembler::AVX_512bit);
+    // Constants for shuffle
+    __ mov64(scratch, 0b1010101010101010);
+    __ kmovwl(mergeMask1, scratch);
+    __ knotwl(mergeMask2, mergeMask1);
 
-  montmul(xmm12_15, xmm16_19, xmm8_11, xmm12_15, xmm8_11, _masm);
+    int memStep = 4 * 64; // 4*64-byte registers
+    loadXmms(Coeffs1, coeffs, 0*memStep, vector_len, _masm);
+    loadXmms(Coeffs2, coeffs, 1*memStep, vector_len, _masm);
+    shuffle(Scratch, Coeffs1_2, Coeffs2_2, 1);
+    __ vmovdqu(unshuffle1, unshuffle3, vector_len);
+    __ vmovdqu(unshuffle2, unshuffle4, vector_len);
 
-  // level2
-  load4regs(xmm8_11, zetas, 512, _masm);
-  permute(xmm1357, xmm0246, xmm12_15, 20, _masm);
-  sub_add(xmm16_19, xmm0246, xmm1357,  xmm0246,_masm);
+    for (int level = 0, distance = 2; level < 4; level++, distance *= 2) {
+      // coeffs1_2, scratch1 = coeffs1_2 ± coeffs2_2
+      // coeffs2_2 = load(zetas, level * 256)
+      // scratch1 = scratch1 * coeffs2_2
+      // coeffs1_2, coeffs2_2 = shuffle(coeffs1_2, scratch1)
+      sub_add(Scratch, Coeffs1_2, Coeffs1_2, Coeffs2_2, vector_len, _masm); // Coeffs2_2 freed
+      loadXmms(Coeffs2_2, zetas, level * 256, vector_len, _masm);
+      montMul(Scratch, Scratch, Coeffs2_2, Scratch2, qInvModR, kyber_q, vector_len, _masm);
+      if (level == 2) {
+        barrettReduce(Coeffs1_2, Coeffs2_2, barretMultiplier, kyber_q, vector_len, _masm); // Coeffs2_2 as scratch
+      }
+      shuffle(Coeffs2_2, Coeffs1_2, Scratch, distance * 16);
+    }
 
-  __ evmovdquw(xmm1, Address(perms, 384), Assembler::AVX_512bit);
-  __ evmovdquw(xmm20, Address(perms, 448), Assembler::AVX_512bit);
+    // level 4
+    sub_add(Scratch, Coeffs1_2, Coeffs1_2, Coeffs2_2, vector_len, _masm); // Coeffs2_2 freed
+    loadXmms(Coeffs2_2, zetas, 4 * 256, vector_len, _masm);
+    montMul(Coeffs2_2, Coeffs2_2, Scratch, Scratch3, qInvModR, kyber_q, vector_len, _masm);
 
-  montmul(xmm12_15, xmm16_19, xmm8_11, xmm12_15, xmm8_11, _masm);
+    barrettReduce(Coeffs1_2, Scratch, barretMultiplier, kyber_q, vector_len, _masm);
 
-  __ vpbroadcastq(xmm16,
-                  ExternalAddress(kyberAvx512ConstsAddr(barretMultiplierOffset)),
-                  Assembler::AVX_512bit, scratch); // Barrett multiplier
-  __ vpbroadcastq(xmm17,
-                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
-                  Assembler::AVX_512bit, scratch); // q
+    // level 5
+    sub_add(Scratch, Coeffs1_1, Coeffs1_1, Coeffs2_1, vector_len, _masm); // Coeffs2_1 freed
+    __ vmovdqu(Zetas2[0], Address(zetas,       5 * 256), vector_len);
+    __ vmovdqu(Zetas2[2], Address(zetas, 128 + 5 * 256), vector_len);
+    montMul(Coeffs2_1, Zetas2, Scratch, Scratch3, qInvModR, kyber_q, vector_len, _masm);
 
-  permute(xmm1357, xmm0246, xmm12_15, 20, _masm);
-  barrettReduce(_masm);
+    // level 6
+    __ vmovdqu(Zetas1[0], Address(zetas,       6 * 256), vector_len);
+    sub_add(Scratch, Coeffs1, Coeffs1, Coeffs2, vector_len, _masm); // Coeffs2 freed
+    montMul(Coeffs2, Scratch, Zetas1, Scratch, qInvModR, kyber_q, vector_len, _masm);
 
-// level 3
-  load4regs(xmm8_11, zetas, 768, _masm);
-  sub_add(xmm16_19, xmm0246, xmm1357, xmm0246, _masm);
+    __ vpbroadcastq(Zetas1[0],
+                ExternalAddress(kyberAvxConstsAddr(dimHalfInverseOffset)),
+                vector_len, scratch); // (dim/2)^-1 mod q
+    montMul(Coeffs1, Coeffs1, Zetas1, Scratch, qInvModR, kyber_q, vector_len, _masm);
+    montMul(Coeffs2, Coeffs2, Zetas1, Scratch, qInvModR, kyber_q, vector_len, _masm);
 
-  __ evmovdquw(xmm1, Address(perms, 512), Assembler::AVX_512bit);
-  __ evmovdquw(xmm20, Address(perms, 576), Assembler::AVX_512bit);
+    storeXmms(coeffs, 0*memStep, Coeffs1, vector_len, _masm);
+    storeXmms(coeffs, 1*memStep, Coeffs2, vector_len, _masm);
+  } else {
+    // Zetas
+    const XMMRegister Zetas1[] = {xmm12, xmm12, xmm12, xmm12}; // NOT overloaded
+    const XMMRegister Zetas2[] = { xmm6,  xmm6,  xmm7,  xmm7}; // pair to Coeffs2_1
 
-  montmul(xmm12_15, xmm16_19, xmm8_11, xmm12_15, xmm8_11, _masm);
-  permute(xmm1357, xmm0246, xmm12_15, 20, _masm);
+    // scratch registers for montMul; arranged carefully so not to clobber inputs
+    const XMMRegister Scratch2[] = {xmm12, xmm1, xmm3, xmm5};  // pair to Coeffs2_2
+    const XMMRegister Scratch3[] = {xmm12, xmm8, xmm9, xmm10}; // pair to Scratch
 
-  // level 4
-  load4regs(xmm8_11, zetas, 1024, _masm);
+    // Two batches of 8 registers, consecutive loads
+    for (int i = 0; i < 2; i++) {
+      loadXmms(Coeffs1, coeffs,       i*256, vector_len, _masm);
+      loadXmms(Coeffs2, coeffs, 128 + i*256, vector_len, _masm);
 
-  __ vpbroadcastq(xmm16,
-                  ExternalAddress(kyberAvx512ConstsAddr(barretMultiplierOffset)),
-                  Assembler::AVX_512bit, scratch); // Barrett multiplier
-  __ vpbroadcastq(xmm17,
-                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
-                  Assembler::AVX_512bit, scratch); // q
+      shuffle(Scratch, Coeffs1_2, Coeffs2_2, 1);
 
-  sub_add(xmm12_15, xmm0246, xmm0246, xmm1357, _masm);
-  montmul(xmm1357, xmm12_15, xmm8_11, xmm1357, xmm8_11, _masm);
-  barrettReduce(_masm);
+      for (int level = 0, distance = 2; level < 3; level++, distance *= 2) {
+        // coeffs1_2, scratch1 = coeffs1_2 ± coeffs2_2
+        // coeffs2_2 = load(zetas, level * 256)
+        // scratch1 = scratch1 * coeffs2_2
+        // coeffs1_2, coeffs2_2 = shuffle(coeffs1_2, scratch1)
+        sub_add(Scratch, Coeffs1_2, Coeffs1_2, Coeffs2_2, vector_len, _masm); // Coeffs2_2 freed
+        loadXmms(Coeffs2_2, zetas, i*128 + level * 256, vector_len, _masm);
+        montMul(Scratch, Scratch, Coeffs2_2, Scratch2, qInvModR, kyber_q, vector_len, _masm);
+        if (level == 2) {
+          barrettReduce(Coeffs1_2, Coeffs2_2, barretMultiplier, kyber_q, vector_len, _masm); // Coeffs2_2 as scratch
+        }
+        shuffle(Coeffs2_2, Coeffs1_2, Scratch, distance * 16);
+      }
 
-  // level 5
-  load4regs(xmm8_11, zetas, 1280, _masm);
-  sub_add(xmm12_15, xmm0145, xmm0145, xmm2367, _masm);
-  montmul(xmm2367, xmm12_15, xmm8_11, xmm2367, xmm8_11, _masm);
+      // level 3
+      sub_add(Scratch, Coeffs1_2, Coeffs1_2, Coeffs2_2, vector_len, _masm); // Coeffs2_2 freed
+      loadXmms(Coeffs2_2, zetas, i*128 + 3 * 256, vector_len, _masm);
+      montMul(Coeffs2_2, Coeffs2_2, Scratch, Scratch3, qInvModR, kyber_q, vector_len, _masm);
 
-  // level 6
-  load4regs(xmm8_11, zetas, 1536, _masm);
-  sub_add(xmm12_15, xmm0_3, xmm0_3, xmm4_7, _masm);
-  montmul(xmm4_7, xmm12_15, xmm8_11, xmm4_7, xmm8_11, _masm);
+      storeXmms(coeffs,       i*256, Coeffs1, vector_len, _masm);
+      storeXmms(coeffs, 128 + i*256, Coeffs2, vector_len, _masm);
+    }
 
-  montmul(xmm8_11, xmm29_29, xmm0_3, xmm8_11, xmm0_3, _masm);
-  montmul(xmm12_15, xmm29_29, xmm4_7, xmm12_15, xmm4_7, _masm);
+    // Two batches of 4 registers each, 64 bytes apart
+    for (int i = 0; i < 2; i++) {
+      loadXmms(Coeffs1, coeffs, i*32 + 0*64, vector_len, _masm, 64);
+      loadXmms(Coeffs2, coeffs, i*32 + 4*64, vector_len, _masm, 64);
 
-  store4regs(coeffs, 0, xmm8_11, _masm);
-  store4regs(coeffs, 256, xmm12_15, _masm);
+      // level 4
+      sub_add(Scratch, Coeffs1_2, Coeffs1_2, Coeffs2_2, vector_len, _masm); // Coeffs2_2 freed
+      loadXmms(Coeffs2_2, zetas, 4 * 256, vector_len, _masm, 64);
+      montMul(Coeffs2_2, Coeffs2_2, Scratch, Scratch3, qInvModR, kyber_q, vector_len, _masm);
+
+      // level 5
+      sub_add(Scratch, Coeffs1_1, Coeffs1_1, Coeffs2_1, vector_len, _masm); // Coeffs2_1 freed
+      __ vmovdqu(Zetas2[0], Address(zetas,       5 * 256), vector_len);
+      __ vmovdqu(Zetas2[2], Address(zetas, 128 + 5 * 256), vector_len);
+      montMul(Coeffs2_1, Zetas2, Scratch, Scratch3, qInvModR, kyber_q, vector_len, _masm);
+
+      barrettReduce(Coeffs1_1, Scratch, barretMultiplier, kyber_q, vector_len, _masm);
+
+      // level 6
+      __ vmovdqu(Zetas1[0], Address(zetas,       6 * 256), vector_len);
+      sub_add(Scratch, Coeffs1, Coeffs1, Coeffs2, vector_len, _masm); // Coeffs2 freed
+      montMul(Coeffs2, Scratch, Zetas1, Scratch, qInvModR, kyber_q, vector_len, _masm);
+
+      __ vpbroadcastq(Zetas1[0],
+                  ExternalAddress(kyberAvxConstsAddr(dimHalfInverseOffset)),
+                  vector_len, scratch); // (dim/2)^-1 mod q
+      montMul(Coeffs1, Coeffs1, Zetas1, Scratch, qInvModR, kyber_q, vector_len, _masm);
+      montMul(Coeffs2, Coeffs2, Zetas1, Scratch, qInvModR, kyber_q, vector_len, _masm);
+
+      storeXmms(coeffs, i*32 + 0*64, Coeffs1, vector_len, _masm, 64);
+      storeXmms(coeffs, i*32 + 4*64, Coeffs2, vector_len, _masm, 64);
+    }
+  }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
@@ -659,7 +921,7 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
 // ntta (short[256]) = c_rarg1
 // nttb (short[256]) = c_rarg2
 // zetas (short[128]) = c_rarg3
-address generate_kyberNttMult_avx512(StubGenerator *stubgen,
+address generate_kyberNttMult_avx(StubGenerator *stubgen, int vector_len,
                                      MacroAssembler *_masm) {
   StubId stub_id = StubId::stubgen_kyberNttMult_id;
   int entry_count = StubInfo::entry_count(stub_id);
@@ -672,105 +934,92 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
   StubCodeMark mark(stubgen, stub_id);
   start = __ pc();
   __ enter();
+  // for each pair
+  //   res[i]   = Const2 * ( a[i]*b[i] + a[i+1]*b[i+1]*ZetaConst1[i] )
+  //   res[i+1] = Const2 * ( a[i]*b[i+1] + a[i+1]*b[i] )
+  // montMult(b, c) // High/Low split at 20 bit on java, 16 in intrinsic
+  //   a = b * c
+  //   aLow = aLow * Const1
+  //   r = aHigh - HighBits(aLow * Const2)
 
   const Register result = c_rarg0;
   const Register ntta = c_rarg1;
   const Register nttb = c_rarg2;
-  const Register zetas = c_rarg3;
+  const Register zetas = c_rarg3; // Unused: have own Zetas preshuffled for shuffle(16)
+  const Register scratch = r10;
+  int memStep = vector_len == Assembler::AVX_512bit ? 64 : 32;
+  int regCnt = vector_len == Assembler::AVX_512bit ? 4 : 2;
+  int itrCnt = vector_len == Assembler::AVX_512bit ? 1 : 4;
 
-  const Register perms = r11;
-  const Register loopCnt = r12;
+  const XMMRegister A[] = {xmm0, xmm8, xmm1, xmm9, xmm16, xmm24, xmm17, xmm25};
+  const XMMRegister A1[] = {xmm0, xmm1, xmm16, xmm17};
+  const XMMRegister A2[] = {xmm2, xmm3, xmm18, xmm19};
+  const XMMRegister T1[] = {xmm8, xmm9, xmm24, xmm25};
+  const XMMRegister B[] = {xmm4, xmm10, xmm5, xmm11, xmm20, xmm26, xmm21, xmm27};
+  const XMMRegister B1[] = {xmm4, xmm5, xmm20, xmm21};
+  const XMMRegister B2[] = {xmm6, xmm7, xmm22, xmm23};
+  const XMMRegister T2[] = {xmm10, xmm11, xmm26, xmm27};
+  const XMMRegister montRSquareModq[] = {xmm12, xmm12, xmm12, xmm12};
+  const XMMRegister shuffleWords = xmm13;
+  const XMMRegister qInvModR = xmm14;
+  const XMMRegister kyber_q = xmm15;
+  KRegister mergeMask1 = k1;
+  KRegister mergeMask2 = k2;
+  auto shuffle = whole_shuffle(mergeMask1, mergeMask2, shuffleWords, xnoreg,
+                               vector_len, _masm, regCnt);
 
-  __ push_ppx(r12);
-  __ movl(loopCnt, 2);
+  if (vector_len == Assembler::AVX_512bit) {
+    __ mov64(scratch, 0b0011001100110011001100110011001100110011001100110011001100110011);
+    __ kmovql(mergeMask1, scratch);
+    __ knotql(mergeMask2, mergeMask1);
+  }
 
-  Label Loop;
+  __ vpbroadcastq(montRSquareModq[0],
+                  ExternalAddress(kyberAvxConstsAddr(montRSquareModqOffset)),
+                  vector_len, scratch); // montR^2 mod q
+  __ vpbroadcastq(qInvModR,
+                  ExternalAddress(kyberAvxConstsAddr(qInvModROffset)),
+                  vector_len, scratch); // q^-1 mod montR
+  __ vpbroadcastq(kyber_q,
+                  ExternalAddress(kyberAvxConstsAddr(qOffset)),
+                  vector_len, scratch); // q
+  __ vmovdqu(shuffleWords,
+                  ExternalAddress(kyberNttMultShuffleAddr()),
+                  vector_len, scratch); // vpshufb table
 
-  __ lea(perms, ExternalAddress(kyberAvx512_nttMultPermsAddr()));
+  for (int iteration = 0; iteration < itrCnt; iteration++) {
+    int memOffset = iteration * memStep * regCnt;
+    for (int i = 0; i < 2 * regCnt; i++) {
+      __ vmovdqu(A[i], Address(ntta, 2 * memOffset + i * memStep), vector_len);
+      __ vmovdqu(B[i], Address(nttb, 2 * memOffset + i * memStep), vector_len);
+    }
 
+    shuffle(A2, A1, T1, 16);
+    shuffle(B2, B1, T2, 16);
+    montMul(T1, A1, B1, T2, qInvModR, kyber_q, vector_len, _masm, regCnt);
+    const XMMRegister* Scratch = A1;
+    montMul(T2, A1, B2, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
+    montMul(B1, B1, A2, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
 
-  load4regs(xmm26_29, perms, 0, _masm);
-  __ vpbroadcastq(xmm31,
-                  ExternalAddress(kyberAvx512ConstsAddr(qInvModROffset)),
-                  Assembler::AVX_512bit, scratch); // q^-1 mod montR
-  __ vpbroadcastq(xmm30,
-                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
-                  Assembler::AVX_512bit, scratch); // q
-  __ vpbroadcastq(xmm23,
-                  ExternalAddress(kyberAvx512ConstsAddr(montRSquareModqOffset)),
-                  Assembler::AVX_512bit, scratch); // montR^2 mod q
+    for (int i = 0; i < regCnt; i++) {
+      __ vpaddw(T2[i], T2[i], B1[i], vector_len);
+    }
+    for (int i = 0; i < regCnt; i++) {
+      __ vmovdqu(B1[i], ExternalAddress(kyberNttMultZetasAddr(memOffset + i * memStep, vector_len)), vector_len, scratch);
+    }
 
-  __ BIND(Loop);
-
-    __ evmovdquw(xmm1, Address(ntta, 0), Assembler::AVX_512bit);
-    __ evmovdquw(xmm8, Address(ntta, 64), Assembler::AVX_512bit);
-    __ evmovdquw(xmm3, Address(ntta, 128), Assembler::AVX_512bit);
-    __ evmovdquw(xmm9, Address(ntta, 192), Assembler::AVX_512bit);
-
-    __ evmovdquw(xmm5, Address(nttb, 0), Assembler::AVX_512bit);
-    __ evmovdquw(xmm10, Address(nttb, 64), Assembler::AVX_512bit);
-    __ evmovdquw(xmm7, Address(nttb, 128), Assembler::AVX_512bit);
-    __ evmovdquw(xmm11, Address(nttb, 192), Assembler::AVX_512bit);
-
-    __ evmovdquw(xmm0, xmm26, Assembler::AVX_512bit);
-    __ evmovdquw(xmm2, xmm26, Assembler::AVX_512bit);
-    __ evmovdquw(xmm4, xmm26, Assembler::AVX_512bit);
-    __ evmovdquw(xmm6, xmm26, Assembler::AVX_512bit);
-
-    __ evpermi2w(xmm0, xmm1, xmm8, Assembler::AVX_512bit);
-    __ evpermt2w(xmm1, xmm27, xmm8, Assembler::AVX_512bit);
-    __ evpermi2w(xmm2, xmm3, xmm9, Assembler::AVX_512bit);
-    __ evpermt2w(xmm3, xmm27, xmm9, Assembler::AVX_512bit);
-
-    __ evpermi2w(xmm4, xmm5, xmm10, Assembler::AVX_512bit);
-    __ evpermt2w(xmm5, xmm27, xmm10, Assembler::AVX_512bit);
-    __ evpermi2w(xmm6, xmm7, xmm11, Assembler::AVX_512bit);
-    __ evpermt2w(xmm7, xmm27, xmm11, Assembler::AVX_512bit);
-
-    __ evmovdquw(xmm24, Address(zetas, 0), Assembler::AVX_512bit);
-    __ evmovdquw(xmm25, Address(zetas, 64), Assembler::AVX_512bit);
-
-    montmul(xmm16_19, xmm1001, xmm5454, xmm16_19, xmm12_15, _masm);
-
-    montmul(xmm0145, xmm3223, xmm7676, xmm0145, xmm12_15, _masm);
-
-    __ evpmullw(xmm2, k0, xmm16, xmm24, false, Assembler::AVX_512bit);
-    __ evpmullw(xmm3, k0, xmm0, xmm25, false, Assembler::AVX_512bit);
-    __ evpmulhw(xmm12, k0, xmm16, xmm24, false, Assembler::AVX_512bit);
-    __ evpmulhw(xmm13, k0, xmm0, xmm25, false, Assembler::AVX_512bit);
-
-    __ evpmullw(xmm2, k0, xmm2, xmm31, false, Assembler::AVX_512bit);
-    __ evpmullw(xmm3, k0, xmm3, xmm31, false, Assembler::AVX_512bit);
-    __ evpmulhw(xmm2, k0, xmm30, xmm2, false, Assembler::AVX_512bit);
-    __ evpmulhw(xmm3, k0, xmm30, xmm3, false, Assembler::AVX_512bit);
-
-    __ evpsubw(xmm2, k0, xmm12, xmm2, false, Assembler::AVX_512bit);
-    __ evpsubw(xmm3, k0, xmm13, xmm3, false, Assembler::AVX_512bit);
-
-    __ evpaddw(xmm0, k0, xmm2, xmm17, false, Assembler::AVX_512bit);
-    __ evpaddw(xmm8, k0, xmm3, xmm1, false, Assembler::AVX_512bit);
-    __ evpaddw(xmm2, k0, xmm18, xmm19, false, Assembler::AVX_512bit);
-    __ evpaddw(xmm9, k0, xmm4, xmm5, false, Assembler::AVX_512bit);
-
-    montmul(xmm1357, xmm0829, xmm23_23, xmm1357, xmm0829, _masm);
-
-    __ evmovdquw(xmm0, xmm28, Assembler::AVX_512bit);
-    __ evmovdquw(xmm2, xmm28, Assembler::AVX_512bit);
-    __ evpermi2w(xmm0, xmm1, xmm5, Assembler::AVX_512bit);
-    __ evpermt2w(xmm1, xmm29, xmm5, Assembler::AVX_512bit);
-    __ evpermi2w(xmm2, xmm3, xmm7, Assembler::AVX_512bit);
-    __ evpermt2w(xmm3, xmm29, xmm7, Assembler::AVX_512bit);
-
-    store4regs(result, 0, xmm0_3, _masm);
-
-    __ addptr(ntta, 256);
-    __ addptr(nttb, 256);
-    __ addptr(result, 256);
-    __ addptr(zetas, 128);
-    __ subl(loopCnt, 1);
-    __ jcc(Assembler::greater, Loop);
-
-  __ pop_ppx(r12);
+    montMul(T2, T2, montRSquareModq, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
+    montMul(B2, B2, A2, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
+    montMul(B2, B2, B1, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
+    for (int i = 0; i < regCnt; i++) {
+      __ vpaddw(T1[i], T1[i], B2[i], vector_len);
+    }
+    montMul(A1, T1, montRSquareModq, T1, qInvModR, kyber_q, vector_len, _masm, regCnt);
+    shuffle(T1, A1, T2, 16);
+    for (int i = 0; i < 2 * regCnt; i++) {
+      __ vmovdqu(Address(result, 2 * memOffset + i * memStep), A[i], vector_len);
+    }
+  }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
@@ -787,7 +1036,7 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
 // result (short[256]) = c_rarg0
 // a (short[256]) = c_rarg1
 // b (short[256]) = c_rarg2
-address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
+address generate_kyberAddPoly_2_avx(StubGenerator *stubgen, int vector_len,
                                        MacroAssembler *_masm) {
   StubId stub_id = StubId::stubgen_kyberAddPoly_2_id;
   int entry_count = StubInfo::entry_count(stub_id);
@@ -804,26 +1053,49 @@ address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
   const Register result = c_rarg0;
   const Register a = c_rarg1;
   const Register b = c_rarg2;
+  const Register scratch = r10;
 
-  __ vpbroadcastq(xmm31,
-                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
-                  Assembler::AVX_512bit, scratch); // q
-
-  for (int i = 0; i < 8; i++) {
-    __ evmovdquw(xmm(i), Address(a, 64 * i), Assembler::AVX_512bit);
-    __ evmovdquw(xmm(i + 8), Address(b, 64 * i), Assembler::AVX_512bit);
+  int regCnt = 4;
+  int memStep = 32;
+  if (vector_len == Assembler::AVX_512bit) {
+    regCnt = 8;
+    memStep = 64;
   }
 
-  for (int i = 0; i < 8; i++) {
-    __ evpaddw(xmm(i), k0, xmm(i), xmm(i + 8), false, Assembler::AVX_512bit);
+  const XMMRegister kyber_q = xmm0;
+  XMMRegister A[8];
+  XMMRegister B[8];
+
+  XMMRegister _next = xmm1;
+  for (int i = 0; i < regCnt; i++) {
+    A[i] = _next;
+    _next = _next->successor();
+    B[i] = _next;
+    _next = _next->successor();
   }
 
-  for (int i = 0; i < 8; i++) {
-    __ evpaddw(xmm(i), k0, xmm(i), xmm31, false, Assembler::AVX_512bit);
-  }
+  __ vpbroadcastq(kyber_q,
+                  ExternalAddress(kyberAvxConstsAddr(qOffset)),
+                  vector_len, scratch); // q
 
-  store4regs(result, 0, xmm0_3, _masm);
-  store4regs(result, 256, xmm4_7, _masm);
+  for (int memOffset = 0; memOffset < 512; memOffset += regCnt * memStep) {
+    for (int i = 0; i < regCnt; i++) {
+      __ vmovdqu(A[i], Address(a, memOffset + memStep * i), vector_len);
+      __ vmovdqu(B[i], Address(b, memOffset + memStep * i), vector_len);
+    }
+
+    for (int i = 0; i < regCnt; i++) {
+      __ vpaddw(A[i], A[i], B[i], vector_len);
+    }
+
+    for (int i = 0; i < regCnt; i++) {
+      __ vpaddw(A[i], A[i], kyber_q, vector_len);
+    }
+
+    for (int i = 0; i < regCnt; i++) {
+      __ vmovdqu(Address(result, memOffset + memStep * i), A[i], vector_len);
+    }
+  }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
@@ -841,7 +1113,7 @@ address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
 // a (short[256]) = c_rarg1
 // b (short[256]) = c_rarg2
 // c (short[256]) = c_rarg3
-address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
+address generate_kyberAddPoly_3_avx(StubGenerator *stubgen, int vector_len,
                                        MacroAssembler *_masm) {
   StubId stub_id = StubId::stubgen_kyberAddPoly_3_id;
   int entry_count = StubInfo::entry_count(stub_id);
@@ -859,33 +1131,58 @@ address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
   const Register a = c_rarg1;
   const Register b = c_rarg2;
   const Register c = c_rarg3;
+  const Register scratch = r10;
 
-  __ vpbroadcastq(xmm31,
-                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
-                  Assembler::AVX_512bit, scratch); // q
-
-  for (int i = 0; i < 8; i++) {
-    __ evmovdquw(xmm(i), Address(a, 64 * i), Assembler::AVX_512bit);
-    __ evmovdquw(xmm(i + 8), Address(b, 64 * i), Assembler::AVX_512bit);
-    __ evmovdquw(xmm(i + 16), Address(c, 64 * i), Assembler::AVX_512bit);
+  int regCnt = 4;
+  int memStep = 32;
+  if (vector_len == Assembler::AVX_512bit) {
+    regCnt = 8;
+    memStep = 64;
   }
 
-  __ evpaddw(xmm31, k0, xmm31, xmm31, false, Assembler::AVX_512bit);
+  const XMMRegister kyber_q = xmm0;
+  XMMRegister A[8];
+  XMMRegister B[8];
+  XMMRegister C[8];
 
-  for (int i = 0; i < 8; i++) {
-    __ evpaddw(xmm(i), k0, xmm(i), xmm(i + 8), false, Assembler::AVX_512bit);
+  XMMRegister _next = xmm1;
+  for (int i = 0; i < regCnt; i++) {
+    A[i] = _next;
+    _next = _next->successor();
+    B[i] = _next;
+    _next = _next->successor();
+    C[i] = _next;
+    _next = _next->successor();
   }
 
-  for (int i = 0; i < 8; i++) {
-    __ evpaddw(xmm(i), k0, xmm(i), xmm(i + 16), false, Assembler::AVX_512bit);
-  }
+  __ vpbroadcastq(kyber_q,
+                  ExternalAddress(kyberAvxConstsAddr(qOffset)),
+                  vector_len, scratch); // q
+  __ vpaddw(kyber_q, kyber_q, kyber_q, vector_len);
 
-  for (int i = 0; i < 8; i++) {
-    __ evpaddw(xmm(i), k0, xmm(i), xmm31, false, Assembler::AVX_512bit);
-  }
+  for (int memOffset = 0; memOffset < 512; memOffset += regCnt * memStep) {
+    for (int i = 0; i < regCnt; i++) {
+      __ vmovdqu(A[i], Address(a, memOffset + memStep * i), vector_len);
+      __ vmovdqu(B[i], Address(b, memOffset + memStep * i), vector_len);
+      __ vmovdqu(C[i], Address(c, memOffset + memStep * i), vector_len);
+    }
 
-  store4regs(result, 0, xmm0_3, _masm);
-  store4regs(result, 256, xmm4_7, _masm);
+    for (int i = 0; i < regCnt; i++) {
+      __ vpaddw(A[i], A[i], B[i], vector_len);
+    }
+
+    for (int i = 0; i < regCnt; i++) {
+      __ vpaddw(A[i], A[i], C[i], vector_len);
+    }
+
+    for (int i = 0; i < regCnt; i++) {
+      __ vpaddw(A[i], A[i], kyber_q, vector_len);
+    }
+
+    for (int i = 0; i < regCnt; i++) {
+      __ vmovdqu(Address(result, memOffset + memStep * i), A[i], vector_len);
+    }
+  }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
@@ -903,7 +1200,7 @@ address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
 // condensedOffs (int) = c_rarg1
 // parsed (short[112]) = c_rarg2
 // parsedLength (int) = c_rarg3
-address generate_kyber12To16_avx512(StubGenerator *stubgen,
+address generate_kyber12To16_avx(StubGenerator *stubgen, int vector_len,
                                     MacroAssembler *_masm) {
   StubId stub_id = StubId::stubgen_kyber12To16_id;
   int entry_count = StubInfo::entry_count(stub_id);
@@ -922,11 +1219,77 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
   const Register parsed = c_rarg2;
   const Register parsedLength = c_rarg3;
 
+  const Register scratch = r10;
   const Register perms = r11;
 
   Label Loop, VBMILoop;
 
   __ addptr(condensed, condensedOffs);
+
+  if (vector_len == Assembler::AVX_256bit) {
+    const XMMRegister shuffleWords = xmm0;
+    const XMMRegister varShift = xmm1;
+    XMMRegister P[8];
+
+    int regCnt = 8;
+    int memStepBig = 32;
+    int memStepSmall = 24;
+
+    XMMRegister _next = xmm2;
+    for (int i = 0; i < 8; i++) {
+      P[i] = _next;
+      _next = _next->successor();
+    }
+
+    __ vpbroadcastq(varShift,
+                ExternalAddress(kyberAvxConstsAddr(k12t16MultOffset)),
+                vector_len, scratch); // {16, 1} repeated
+    __ vmovdqu(shuffleWords,
+                ExternalAddress(kyberAvx212To16ShuffleAddr()),
+                vector_len, scratch); // vpshufb table
+
+    __ align(OptoLoopAlignment);
+    __ BIND(Loop);
+
+    for (int i = 0; i < regCnt; i++) { //load 0-127 bits, stride 192|384 bits
+      __ vmovdqu(P[i], Address(condensed, i*memStepSmall), Assembler::AVX_128bit);
+    }
+    for (int i = 0; i < regCnt; i++) { //load 64-191 bits, stride 192|384 bits
+      __ vinserti128(P[i], P[i], Address(condensed, 8 + i*memStepSmall), 1);
+    }
+
+    for (int i = 0; i < regCnt; i++) {
+      __ vpshufb(P[i], P[i], shuffleWords, vector_len);
+    }
+    for (int i = 0; i < regCnt; i++) {
+      __ vpmullw(P[i], P[i], varShift, vector_len);
+    }
+    for (int i = 0; i < regCnt; i++) {
+      __ vpsrlw(P[i], P[i], 4, vector_len);
+    }
+    for (int i = 0; i < regCnt; i++) {
+      __ vmovdqu(Address(parsed, i*memStepBig), P[i], vector_len);
+    }
+
+    __ addptr(condensed, 192);
+    __ addptr(parsed, 256);
+    __ subl(parsedLength, 128);
+    __ jcc(Assembler::greater, Loop);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
+    __ ret(0);
+
+    // record the stub entry and end
+    stubgen->store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
+  int xmm0_3[] = {0, 1, 2, 3};
+  int xmm24_27[] = {24, 25, 26, 27};
+  int xmm28_31[] = {28, 29, 30, 31};
+  int xmm2_0_10_8[] = {2, 0, 10, 8};
 
   if (VM_Version::supports_avx512_vbmi()) {
     // mask load for the first 48 bytes of each vector
@@ -991,7 +1354,7 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
   load4regs(xmm24_27, perms, 0, _masm);
   load4regs(xmm28_31, perms, 256, _masm);
   __ vpbroadcastq(xmm23,
-                  ExternalAddress(kyberAvx512ConstsAddr(f00Offset)),
+                  ExternalAddress(kyberAvxConstsAddr(f00Offset)),
                   Assembler::AVX_512bit, scratch); // 0xF00
 
   __ BIND(Loop);
@@ -1062,11 +1425,10 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
   return start;
 }
 
-
 // Kyber barrett reduce function.
 //
 // coeffs (short[256]) = c_rarg0
-address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
+address generate_kyberBarrettReduce_avx(StubGenerator *stubgen, int vector_len,
                                            MacroAssembler *_masm) {
   StubId stub_id = StubId::stubgen_kyberBarrettReduce_id;
   int entry_count = StubInfo::entry_count(stub_id);
@@ -1081,21 +1443,30 @@ address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
   __ enter();
 
   const Register coeffs = c_rarg0;
+  const Register scratch = r10;
 
-  __ vpbroadcastq(xmm16,
-                  ExternalAddress(kyberAvx512ConstsAddr(barretMultiplierOffset)),
-                  Assembler::AVX_512bit, scratch); // Barrett multiplier
-  __ vpbroadcastq(xmm17,
-                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
-                  Assembler::AVX_512bit, scratch); // q
+  const XMMRegister barretMultiplier = xmm0;
+  const XMMRegister kyber_q = xmm1;
+  const XMMRegister Scratch[] = {xmm2, xmm3, xmm4, xmm5};
+  const XMMRegister Coeffs[] = {xmm6, xmm7, xmm8, xmm9};
 
-  load4regs(xmm0_3, coeffs, 0, _masm);
-  load4regs(xmm4_7, coeffs, 256, _masm);
+  __ vpbroadcastq(kyber_q,
+                  ExternalAddress(kyberAvxConstsAddr(qOffset)),
+                  vector_len, scratch); // q
+  __ vpbroadcastq(barretMultiplier,
+                  ExternalAddress(kyberAvxConstsAddr(barretMultiplierOffset)),
+                  vector_len, scratch); // Barret Multiplier
 
-  barrettReduce(_masm);
+  int memStep = 32;
+  if (vector_len == Assembler::AVX_512bit) {
+    memStep = 64;
+  }
 
-  store4regs(coeffs, 0, xmm0_3, _masm);
-  store4regs(coeffs, 256, xmm4_7, _masm);
+  for (int memOffset = 0; memOffset < 512; memOffset += 4 * memStep) {
+    loadXmms(Coeffs, coeffs, memOffset, vector_len, _masm);
+    barrettReduce(Coeffs, Scratch, barretMultiplier, kyber_q, vector_len, _masm);
+    storeXmms(coeffs, memOffset, Coeffs, vector_len, _masm);
+  }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
@@ -1108,15 +1479,20 @@ address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
 }
 
 void StubGenerator::generate_kyber_stubs() {
+  int vector_len = Assembler::AVX_256bit;
+  if (VM_Version::supports_evex() && VM_Version::supports_avx512bw()) {
+    vector_len = Assembler::AVX_512bit;
+  }
+
   // Generate Kyber intrinsics code
   if (UseKyberIntrinsics) {
-    StubRoutines::_kyberNtt = generate_kyberNtt_avx512(this, _masm);
-    StubRoutines::_kyberInverseNtt = generate_kyberInverseNtt_avx512(this, _masm);
-    StubRoutines::_kyberNttMult = generate_kyberNttMult_avx512(this, _masm);
-    StubRoutines::_kyberAddPoly_2 = generate_kyberAddPoly_2_avx512(this, _masm);
-    StubRoutines::_kyberAddPoly_3 = generate_kyberAddPoly_3_avx512(this, _masm);
-    StubRoutines::_kyber12To16 = generate_kyber12To16_avx512(this, _masm);
-    StubRoutines::_kyberBarrettReduce = generate_kyberBarrettReduce_avx512(this, _masm);
+    StubRoutines::_kyberNtt = generate_kyberNtt_avx(this, vector_len, _masm);
+    StubRoutines::_kyberNttMult = generate_kyberNttMult_avx(this, vector_len, _masm);
+    StubRoutines::_kyberInverseNtt = generate_kyberInverseNtt_avx(this, vector_len, _masm);
+    StubRoutines::_kyberAddPoly_2 = generate_kyberAddPoly_2_avx(this, vector_len, _masm);
+    StubRoutines::_kyberAddPoly_3 = generate_kyberAddPoly_3_avx(this, vector_len, _masm);
+    StubRoutines::_kyberBarrettReduce = generate_kyberBarrettReduce_avx(this, vector_len, _masm);
+    StubRoutines::_kyber12To16 = generate_kyber12To16_avx(this, vector_len, _masm);
   }
 }
 
@@ -1124,19 +1500,22 @@ void StubGenerator::generate_kyber_stubs() {
 void StubGenerator::init_AOTAddressTable_kyber(GrowableArray<address>& external_addresses) {
 #define ADD(addr) external_addresses.append((address)(addr))
   // use accessors to correctly identify the relevant addresses
-  ADD(kyberAvx512NttPermsAddr());
-  ADD(kyberAvx512InverseNttPermsAddr());
-  ADD(kyberAvx512_nttMultPermsAddr());
   ADD(kyberAvx512_12To16PermsAddr());
   ADD(kyberAvx512_12To16DupAddr());
   ADD(kyberAvx512_12To16ShiftAddr());
   ADD(kyberAvx512_12To16AndAddr());
-  ADD(kyberAvx512ConstsAddr(qOffset));
-  ADD(kyberAvx512ConstsAddr(qInvModROffset));
-  ADD(kyberAvx512ConstsAddr(dimHalfInverseOffset));
-  ADD(kyberAvx512ConstsAddr(barretMultiplierOffset));
-  ADD(kyberAvx512ConstsAddr(montRSquareModqOffset));
-  ADD(kyberAvx512ConstsAddr(f00Offset));
+  ADD(kyberNttMultShuffleAddr());
+  ADD(kyberAvx212To16ShuffleAddr());
+  for (int o = 0; o < 6; o++)       { ADD(unshufflePermsAddr(o)); }
+  for (int o = 0; o < 256; o += 64) { ADD(kyberNttMultZetasAddr(o, Assembler::AVX_512bit)); }
+  for (int o = 0; o < 256; o += 32) { ADD(kyberNttMultZetasAddr(o, Assembler::AVX_256bit)); }
+  ADD(kyberAvxConstsAddr(qOffset));
+  ADD(kyberAvxConstsAddr(qInvModROffset));
+  ADD(kyberAvxConstsAddr(dimHalfInverseOffset));
+  ADD(kyberAvxConstsAddr(barretMultiplierOffset));
+  ADD(kyberAvxConstsAddr(montRSquareModqOffset));
+  ADD(kyberAvxConstsAddr(f00Offset));
+  ADD(kyberAvxConstsAddr(k12t16MultOffset));
 #undef ADD
 }
 #endif // INCLUDE_CDS

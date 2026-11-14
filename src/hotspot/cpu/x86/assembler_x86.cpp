@@ -8850,6 +8850,13 @@ void Assembler::vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int v
   emit_int16((unsigned char)0xD5, (0xC0 | encode));
 }
 
+void Assembler::vpmulhw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(UseAVX > 0, "requires some form of AVX");
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ true, /* uses_vl */ true);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int16((unsigned char)0xE5, (0xC0 | encode));
+}
+
 void Assembler::vpmulld(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(UseAVX > 0, "requires some form of AVX");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
@@ -13602,6 +13609,15 @@ void Assembler::vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src, int 
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   emit_int24(0x02, (0xC0 | encode), (unsigned char)imm8);
+}
+
+void Assembler::vpblendw(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len) {
+  assert(vector_len <= AVX_256bit, "");
+  assert(vector_len == AVX_128bit ? VM_Version::supports_avx()
+                                  : VM_Version::supports_avx2(), "");
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ true);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int24(0x0E, (0xC0 | encode), (unsigned char)imm8);
 }
 
 void Assembler::vcmpps(XMMRegister dst, XMMRegister nds, XMMRegister src, int comparison, int vector_len) {
