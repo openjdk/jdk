@@ -72,7 +72,7 @@ class EPollPoller extends Poller {
         this.address = address;
         this.eventfd = eventfd;
 
-        // create action to close kqueue, register cleaner for per-carrier sub-pollers
+        // create action to close epoll, register cleaner for per-carrier sub-pollers
         this.closer = closer(epfd, address, eventfd);
         if ((mode == Mode.POLLER_PER_CARRIER) && subPoller) {
             this.cleaner = CleanerFactory.cleaner().register(this, closer);
