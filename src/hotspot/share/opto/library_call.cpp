@@ -1308,7 +1308,7 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   }
 
   if (call_opt_stub) {
-    Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
+    Node* call = make_runtime_call(RC_LEAF|RC_NO_EGPRS, OptoRuntime::string_IndexOf_Type(),
                                    StubRoutines::_string_indexof_array[ae],
                                    "stringIndexOf", TypePtr::BOTTOM, src_start,
                                    src_count, tgt_start, tgt_count);
@@ -1365,7 +1365,7 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   bool call_opt_stub = (StubRoutines::_string_indexof_array[ae] != nullptr);
 
   if (call_opt_stub) {
-    Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
+    Node* call = make_runtime_call(RC_LEAF|RC_NO_EGPRS, OptoRuntime::string_IndexOf_Type(),
                                    StubRoutines::_string_indexof_array[ae],
                                    "stringIndexOf", TypePtr::BOTTOM, src_start,
                                    src_count, tgt_start, tgt_count);
@@ -1846,7 +1846,7 @@ bool LibraryCallKit::inline_math(vmIntrinsics::ID id) {
 }
 
 //------------------------------runtime_math-----------------------------
-bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName) {
+bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName, bool is_stub) {
   assert(call_type == OptoRuntime::Math_DD_D_Type() || call_type == OptoRuntime::Math_D_D_Type(),
          "must be (DD)D or (D)D type");
 
@@ -1855,7 +1855,8 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
   Node* b = (call_type == OptoRuntime::Math_DD_D_Type()) ? argument(2) : nullptr;
 
   const TypePtr* no_memory_effects = nullptr;
-  Node* trig = make_runtime_call(RC_LEAF | RC_PURE, call_type, funcAddr, funcName,
+  int flags = RC_LEAF | RC_PURE | (is_stub ? RC_NO_EGPRS : 0);
+  Node* trig = make_runtime_call(flags, call_type, funcAddr, funcName,
                                  no_memory_effects,
                                  a, top(), b, b ? top() : nullptr);
   Node* value = _gvn.transform(new ProjNode(trig, TypeFunc::Parms+0));
@@ -1888,37 +1889,37 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_dsin:
     return StubRoutines::dsin() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dsin(), "dsin") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dsin),   "SIN");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dsin(), "dsin", true) :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dsin),   "SIN", false);
   case vmIntrinsics::_dcos:
     return StubRoutines::dcos() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcos(), "dcos") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dcos),   "COS");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcos(), "dcos", true) :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dcos),   "COS", false);
   case vmIntrinsics::_dtan:
     return StubRoutines::dtan() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtan(), "dtan") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dtan), "TAN");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtan(), "dtan", true) :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dtan), "TAN", false);
   case vmIntrinsics::_dsinh:
     return StubRoutines::dsinh() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dsinh(), "dsinh") : false;
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dsinh(), "dsinh", true) : false;
   case vmIntrinsics::_dtanh:
     return StubRoutines::dtanh() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtanh(), "dtanh") : false;
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtanh(), "dtanh", true) : false;
   case vmIntrinsics::_dcbrt:
     return StubRoutines::dcbrt() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcbrt(), "dcbrt") : false;
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcbrt(), "dcbrt", true) : false;
   case vmIntrinsics::_dexp:
     return StubRoutines::dexp() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp),  "EXP");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp", true) :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp),  "EXP", false);
   case vmIntrinsics::_dlog:
     return StubRoutines::dlog() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog(), "dlog") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog),   "LOG");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog(), "dlog", true) :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog),   "LOG", false);
   case vmIntrinsics::_dlog10:
     return StubRoutines::dlog10() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog10(), "dlog10") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), "LOG10");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog10(), "dlog10", true) :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), "LOG10", false);
 
   case vmIntrinsics::_roundD: return Matcher::match_rule_supported(Op_RoundD) ? inline_double_math(id) : false;
   case vmIntrinsics::_ceil:
@@ -6180,7 +6181,7 @@ bool LibraryCallKit::inline_unsafe_setMemory() {
   // update volatile field
   store_to_memory(control(), doing_unsafe_access_addr, intcon(1), doing_unsafe_access_bt, MemNode::unordered);
 
-  int flags = RC_LEAF | RC_NO_FP;
+  int flags = RC_LEAF | RC_NO_FP | RC_NO_EGPRS;
 
   const TypePtr* dst_type = TypePtr::BOTTOM;
 
@@ -7366,7 +7367,7 @@ bool LibraryCallKit::inline_multiplyToLen() {
 
   Node* z_start = array_element_address(z, intcon(0), T_INT);
 
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                  OptoRuntime::multiplyToLen_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  x_start, xlen, y_start, ylen, z_start);
@@ -7414,7 +7415,7 @@ bool LibraryCallKit::inline_squareToLen() {
   Node* x_start = array_element_address(x, intcon(0), x_elem);
   Node* z_start = array_element_address(z, intcon(0), z_elem);
 
-  Node*  call = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node*  call = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::squareToLen_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   x_start, len, z_start, zlen);
@@ -7463,7 +7464,7 @@ bool LibraryCallKit::inline_mulAdd() {
   Node* out_start = array_element_address(out, intcon(0), out_elem);
   Node* in_start = array_element_address(in, intcon(0), in_elem);
 
-  Node*  call = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node*  call = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::mulAdd_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   out_start,in_start, new_offset, len, k);
@@ -7617,7 +7618,7 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
     Node* newArr_start = array_element_address(newArr, intcon(0), newArr_elem);
     Node* oldArr_start = array_element_address(oldArr, intcon(0), oldArr_elem);
 
-    Node* call = make_runtime_call(RC_LEAF,
+    Node* call = make_runtime_call(RC_LEAF|RC_NO_EGPRS,
                                    OptoRuntime::bigIntegerShift_Type(),
                                    stubAddr,
                                    stubName,
@@ -7743,7 +7744,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   if (call_stub_path != nullptr) {
     set_control(call_stub_path);
 
-    Node* call = make_runtime_call(RC_LEAF,
+    Node* call = make_runtime_call(RC_LEAF|RC_NO_EGPRS,
                                    OptoRuntime::vectorizedMismatch_Type(),
                                    StubRoutines::vectorizedMismatch(), "vectorizedMismatch", TypePtr::BOTTOM,
                                    obja_adr, objb_adr, length, scale);
@@ -7879,7 +7880,7 @@ bool LibraryCallKit::inline_updateBytesCRC32() {
   address stubAddr = StubRoutines::updateBytesCRC32();
   const char *stubName = "updateBytesCRC32";
 
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::updateBytesCRC32_Type(),
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS, OptoRuntime::updateBytesCRC32_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  crc, src_start, length);
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
@@ -7911,7 +7912,7 @@ bool LibraryCallKit::inline_updateByteBufferCRC32() {
   address stubAddr = StubRoutines::updateBytesCRC32();
   const char *stubName = "updateBytesCRC32";
 
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::updateBytesCRC32_Type(),
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS, OptoRuntime::updateBytesCRC32_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  crc, src_start, length);
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
@@ -7972,7 +7973,7 @@ bool LibraryCallKit::inline_updateBytesCRC32C() {
   address stubAddr = StubRoutines::updateBytesCRC32C();
   const char *stubName = "updateBytesCRC32C";
 
-  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesCRC32C_Type(),
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_EGPRS, OptoRuntime::updateBytesCRC32C_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  crc, src_start, length, table_start);
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
@@ -8013,7 +8014,7 @@ bool LibraryCallKit::inline_updateDirectByteBufferCRC32C() {
   address stubAddr = StubRoutines::updateBytesCRC32C();
   const char *stubName = "updateBytesCRC32C";
 
-  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesCRC32C_Type(),
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_EGPRS, OptoRuntime::updateBytesCRC32C_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  crc, src_start, length, table_start);
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
@@ -8058,7 +8059,7 @@ bool LibraryCallKit::inline_updateBytesAdler32() {
   address stubAddr = StubRoutines::updateBytesAdler32();
   const char *stubName = "updateBytesAdler32";
 
-  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesAdler32_Type(),
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_EGPRS, OptoRuntime::updateBytesAdler32_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  crc, src_start, length);
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
@@ -8092,7 +8093,7 @@ bool LibraryCallKit::inline_updateByteBufferAdler32() {
   address stubAddr = StubRoutines::updateBytesAdler32();
   const char *stubName = "updateBytesAdler32";
 
-  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesAdler32_Type(),
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_EGPRS, OptoRuntime::updateBytesAdler32_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  crc, src_start, length);
 
@@ -8352,7 +8353,7 @@ bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
   if (k_start == nullptr) return false;
 
   // Call the stub.
-  make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::aescrypt_block_Type(),
+  make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS, OptoRuntime::aescrypt_block_Type(),
                     stubAddr, stubName, TypePtr::BOTTOM,
                     src_start, dest_start, k_start);
 
@@ -8437,7 +8438,7 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   Node* r_start = array_element_address(objRvec, intcon(0), T_BYTE);
 
   // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
-  Node* cbcCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* cbcCrypt = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                      OptoRuntime::cipherBlockChaining_aescrypt_Type(),
                                      stubAddr, stubName, TypePtr::BOTTOM,
                                      src_start, dest_start, k_start, r_start, len);
@@ -8519,7 +8520,7 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   if (k_start == nullptr) return false;
 
   // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
-  Node* ecbCrypt = make_runtime_call(RC_LEAF | RC_NO_FP,
+  Node* ecbCrypt = make_runtime_call(RC_LEAF | RC_NO_FP | RC_NO_EGPRS,
                                      OptoRuntime::electronicCodeBook_aescrypt_Type(),
                                      stubAddr, stubName, TypePtr::BOTTOM,
                                      src_start, dest_start, k_start, len);
@@ -8596,7 +8597,7 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   Node* used = field_address_from_object(counterMode_object, "used", "I", /*is_exact*/ false);
 
   // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
-  Node* ctrCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* ctrCrypt = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                      OptoRuntime::counterMode_aescrypt_Type(),
                                      stubAddr, stubName, TypePtr::BOTTOM,
                                      src_start, dest_start, k_start, cnt_start, len, saved_encCounter_start, used);
@@ -8820,7 +8821,7 @@ bool LibraryCallKit::inline_ghash_processBlocks() {
   Node* data_start  = array_element_address(data, offset, T_BYTE);
   assert(data_start, "data is null");
 
-  Node* ghash = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* ghash = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::ghash_processBlocks_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   state_start, subkeyH_start, data_start, len);
@@ -8847,7 +8848,7 @@ bool LibraryCallKit::inline_chacha20Block() {
   Node* result_start  = array_element_address(result, intcon(0), T_BYTE);
   assert(result_start, "result is null");
 
-  Node* cc20Blk = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* cc20Blk = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::chacha20Block_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   state_start, result_start);
@@ -8878,7 +8879,7 @@ bool LibraryCallKit::inline_kyberNtt() {
   assert(coeffs_start, "coeffs is null");
   Node* ntt_zetas_start  = array_element_address(ntt_zetas, intcon(0), T_SHORT);
   assert(ntt_zetas_start, "ntt_zetas is null");
-  Node* kyberNtt = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* kyberNtt = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::kyberNtt_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   coeffs_start, ntt_zetas_start);
@@ -8909,7 +8910,7 @@ bool LibraryCallKit::inline_kyberInverseNtt() {
   assert(coeffs_start, "coeffs is null");
   Node* zetas_start  = array_element_address(zetas, intcon(0), T_SHORT);
   assert(zetas_start, "inverseNtt_zetas is null");
-  Node* kyberInverseNtt = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* kyberInverseNtt = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::kyberInverseNtt_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   coeffs_start, zetas_start);
@@ -8949,7 +8950,7 @@ bool LibraryCallKit::inline_kyberNttMult() {
   assert(nttb_start, "nttb is null");
   Node* zetas_start  = array_element_address(zetas, intcon(0), T_SHORT);
   assert(zetas_start, "nttMult_zetas is null");
-  Node* kyberNttMult = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* kyberNttMult = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::kyberNttMult_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   result_start, ntta_start, nttb_start,
@@ -8987,7 +8988,7 @@ bool LibraryCallKit::inline_kyberAddPoly_2() {
   assert(a_start, "a is null");
   Node* b_start  = array_element_address(b, intcon(0), T_SHORT);
   assert(b_start, "b is null");
-  Node* kyberAddPoly_2 = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* kyberAddPoly_2 = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::kyberAddPoly_2_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   result_start, a_start, b_start);
@@ -9026,7 +9027,7 @@ bool LibraryCallKit::inline_kyberAddPoly_3() {
   assert(b_start, "b is null");
   Node* c_start  = array_element_address(c, intcon(0), T_SHORT);
   assert(c_start, "c is null");
-  Node* kyberAddPoly_3 = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* kyberAddPoly_3 = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::kyberAddPoly_3_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   result_start, a_start, b_start, c_start);
@@ -9059,7 +9060,7 @@ bool LibraryCallKit::inline_kyber12To16() {
   assert(condensed_start, "condensed is null");
   Node* parsed_start  = array_element_address(parsed, intcon(0), T_SHORT);
   assert(parsed_start, "parsed is null");
-  Node* kyber12To16 = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* kyber12To16 = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::kyber12To16_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   condensed_start, condensedOffs, parsed_start, parsedLength);
@@ -9087,7 +9088,7 @@ bool LibraryCallKit::inline_kyberBarrettReduce() {
 
   Node* coeffs_start  = array_element_address(coeffs, intcon(0), T_SHORT);
   assert(coeffs_start, "coeffs is null");
-  Node* kyberBarrettReduce = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* kyberBarrettReduce = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::kyberBarrettReduce_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   coeffs_start);
@@ -9118,7 +9119,7 @@ bool LibraryCallKit::inline_dilithiumAlmostNtt() {
   assert(coeffs_start, "coeffs is null");
   Node* ntt_zetas_start  = array_element_address(ntt_zetas, intcon(0), T_INT);
   assert(ntt_zetas_start, "ntt_zetas is null");
-  Node* dilithiumAlmostNtt = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* dilithiumAlmostNtt = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::dilithiumAlmostNtt_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   coeffs_start, ntt_zetas_start);
@@ -9149,7 +9150,7 @@ bool LibraryCallKit::inline_dilithiumAlmostInverseNtt() {
   assert(coeffs_start, "coeffs is null");
   Node* zetas_start  = array_element_address(zetas, intcon(0), T_INT);
   assert(zetas_start, "inverseNtt_zetas is null");
-  Node* dilithiumAlmostInverseNtt = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* dilithiumAlmostInverseNtt = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::dilithiumAlmostInverseNtt_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   coeffs_start, zetas_start);
@@ -9189,7 +9190,7 @@ bool LibraryCallKit::inline_dilithiumNttMult() {
   assert(ntta_start, "ntta is null");
   Node* nttb_start  = array_element_address(nttb, intcon(0), T_INT);
   assert(nttb_start, "nttb is null");
-  Node* dilithiumNttMult = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* dilithiumNttMult = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::dilithiumNttMult_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   result_start, ntta_start, nttb_start);
@@ -9219,7 +9220,7 @@ bool LibraryCallKit::inline_dilithiumMontMulByConstant() {
 
   Node* coeffs_start  = array_element_address(coeffs, intcon(0), T_INT);
   assert(coeffs_start, "coeffs is null");
-  Node* dilithiumMontMulByConstant = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* dilithiumMontMulByConstant = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::dilithiumMontMulByConstant_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   coeffs_start, constant);
@@ -9259,7 +9260,7 @@ bool LibraryCallKit::inline_dilithiumDecomposePoly() {
   Node* highPart_start  = array_element_address(highPart, intcon(0), T_INT);
   assert(highPart_start, "highPart is null");
 
-  Node* dilithiumDecomposePoly = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* dilithiumDecomposePoly = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::dilithiumDecomposePoly_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   input_start, lowPart_start, highPart_start,
@@ -9296,7 +9297,7 @@ bool LibraryCallKit::inline_base64_encodeBlock() {
   Node* dest_start = array_element_address(dest, intcon(0), T_BYTE);
   assert(dest_start, "destination array is null");
 
-  Node* base64 = make_runtime_call(RC_LEAF,
+  Node* base64 = make_runtime_call(RC_LEAF|RC_NO_EGPRS,
                                    OptoRuntime::base64_encodeBlock_Type(),
                                    stubAddr, stubName, TypePtr::BOTTOM,
                                    src_start, offset, len, dest_start, dp, isURL);
@@ -9329,7 +9330,7 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
   Node* dest_start = array_element_address(dest, intcon(0), T_BYTE);
   assert(dest_start, "destination array is null");
 
-  Node* call = make_runtime_call(RC_LEAF,
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_EGPRS,
                                  OptoRuntime::base64_decodeBlock_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  src_start, src_offset, len, dest_start, dest_offset, isURL, isMIME);
@@ -9367,7 +9368,7 @@ bool LibraryCallKit::inline_poly1305_processBlocks() {
   Node* r_start = array_element_address(rlimbs, intcon(0), T_LONG);
   assert(r_start, "r array is null");
 
-  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP | RC_NO_EGPRS,
                                  OptoRuntime::poly1305_processBlocks_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  input_start, len, acc_start, r_start);
@@ -9401,7 +9402,7 @@ bool LibraryCallKit::inline_intpoly_montgomeryMult_P256() {
   Node* r_start = array_element_address(r, intcon(0), T_LONG);
   assert(r_start, "r array is null");
 
-  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP | RC_NO_EGPRS,
                                  OptoRuntime::intpoly_montgomeryMult_P256_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  a_start, b_start, r_start);
@@ -9428,7 +9429,7 @@ bool LibraryCallKit::inline_intpoly_assign() {
   Node* b_start = array_element_address(b, intcon(0), T_LONG);
   assert(b_start, "b array is null");
 
-  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP | RC_NO_EGPRS,
                                  OptoRuntime::intpoly_assign_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  set, a_start, b_start, arr_length);
@@ -9462,7 +9463,7 @@ bool LibraryCallKit::inline_intpoly_mult_25519() {
   Node* r_start = array_element_address(r, intcon(0), T_LONG);
   assert(r_start, "r array is null");
 
-  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP | RC_NO_EGPRS,
                                  OptoRuntime::intpoly_mult_25519_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  a_start, b_start, r_start);
@@ -9492,7 +9493,7 @@ bool LibraryCallKit::inline_intpoly_square_25519() {
   Node* r_start = array_element_address(r, intcon(0), T_LONG);
   assert(r_start, "r array is null");
 
-  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP | RC_NO_EGPRS,
                                  OptoRuntime::intpoly_square_25519_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  a_start, r_start);
@@ -9586,11 +9587,11 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   // Call the stub.
   Node* call;
   if (block_size == nullptr) {
-    call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::digestBase_implCompress_Type(false),
+    call = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS, OptoRuntime::digestBase_implCompress_Type(false),
                              stubAddr, stubName, TypePtr::BOTTOM,
                              src_start, state);
   } else {
-    call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::digestBase_implCompress_Type(true),
+    call = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS, OptoRuntime::digestBase_implCompress_Type(true),
                              stubAddr, stubName, TypePtr::BOTTOM,
                              src_start, state, block_size);
   }
@@ -9635,13 +9636,13 @@ bool LibraryCallKit::inline_keccak(vmIntrinsics::ID id) {
   Node* keccak;
   switch (id) {
     case vmIntrinsics::_double_keccak:
-      keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
+      keccak = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::double_keccak_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   state[0], state[1]);
       break;
     case vmIntrinsics::_quad_keccak:
-      keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
+      keccak = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                   OptoRuntime::quad_keccak_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   state[0], state[1], state[2], state[3]);
@@ -9771,12 +9772,12 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
   // Call the stub.
   Node* call;
   if (block_size == nullptr) {
-    call = make_runtime_call(RC_LEAF|RC_NO_FP,
+    call = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                              OptoRuntime::digestBase_implCompressMB_Type(false),
                              stubAddr, stubName, TypePtr::BOTTOM,
                              src_start, state, ofs, limit);
   } else {
-     call = make_runtime_call(RC_LEAF|RC_NO_FP,
+     call = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                              OptoRuntime::digestBase_implCompressMB_Type(true),
                              stubAddr, stubName, TypePtr::BOTTOM,
                              src_start, state, block_size, ofs, limit);
@@ -9861,7 +9862,7 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
 
 
   // Call the stub, passing params
-  Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
+  Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP|RC_NO_EGPRS,
                                OptoRuntime::galoisCounterMode_aescrypt_Type(),
                                stubAddr, stubName, TypePtr::BOTTOM,
                                in_start, len, ct_start, out_start, k_start, state_start, subkeyHtbl_start, cnt_start);

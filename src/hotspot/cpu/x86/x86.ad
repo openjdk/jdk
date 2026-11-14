@@ -2650,6 +2650,16 @@ bool Matcher::supports_vector_calling_convention(void) {
   return EnableVectorSupport;
 }
 
+// Stubs called from no_egprs leaf calls must not clobber the APX EGPRs (r16-r31)
+bool Matcher::is_reg_preserved_by_stub(OptoReg::Name reg) {
+  if (!UseAPX || !OptoReg::is_reg(reg)) {
+    return false;
+  }
+  VMReg vmreg = OptoReg::as_VMReg(reg);
+  return vmreg->is_Register() &&
+         vmreg->as_Register()->encoding() >= Register::number_of_registers / 2;
+}
+
 static bool is_ndd_demotable_opr1(const MachNode* mdef) {
   return ((mdef->flags() & Node::PD::Flag_ndd_demotable_opr1) != 0);
 }

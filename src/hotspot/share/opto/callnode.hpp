@@ -1036,15 +1036,23 @@ public:
 // Make a direct subroutine call node into compiled C++ code, without
 // safepoints
 class CallLeafNode : public CallRuntimeNode {
+private:
+  // Callee is a stub that preserves registers the C ABI lets it clobber (see Matcher::is_reg_preserved_by_stub).
+  bool _no_egprs;
+protected:
+  virtual bool cmp( const Node &n ) const;
+  virtual uint size_of() const; // Size is bigger
 public:
   CallLeafNode(const TypeFunc* tf, address addr, const char* name,
                const TypePtr* out_adr_type, const TypePtr* in_adr_type)
-    : CallRuntimeNode(tf, addr, name, out_adr_type, in_adr_type)
+    : CallRuntimeNode(tf, addr, name, out_adr_type, in_adr_type), _no_egprs(false)
   {
     init_class_id(Class_CallLeaf);
   }
   virtual int   Opcode() const;
   virtual bool        guaranteed_safepoint()  { return false; }
+  bool no_egprs() const { return _no_egprs; }
+  void set_no_egprs();
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
 #endif

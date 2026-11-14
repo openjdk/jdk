@@ -4164,8 +4164,11 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     // If the pure call is not supported, then lower to a CallLeaf.
     if (!Matcher::match_rule_supported(Op_CallLeafPure)) {
       CallNode* call = n->as_Call();
-      CallNode* new_call = new CallLeafNode(call->tf(), call->entry_point(),
-                                            call->_name, nullptr, nullptr);
+      CallLeafNode* new_call = new CallLeafNode(call->tf(), call->entry_point(),
+                                                call->_name, nullptr, nullptr);
+      if (call->as_CallLeaf()->no_egprs()) {
+        new_call->set_no_egprs();
+      }
       new_call->init_req(TypeFunc::Control, call->in(TypeFunc::Control));
       new_call->init_req(TypeFunc::I_O, C->top());
       new_call->init_req(TypeFunc::Memory, C->top());

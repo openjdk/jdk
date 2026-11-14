@@ -1126,7 +1126,8 @@ public:
 
 class MachCallLeafNode: public MachCallRuntimeNode {
 public:
-  MachCallLeafNode() : MachCallRuntimeNode() {
+  bool _no_egprs; // See CallLeafNode::no_egprs()
+  MachCallLeafNode() : MachCallRuntimeNode(), _no_egprs(false) {
     init_class_id(Class_MachCallLeaf);
   }
 };

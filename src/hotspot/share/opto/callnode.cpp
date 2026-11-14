@@ -1694,6 +1694,9 @@ CallLeafPureNode* CallLeafPureNode::inline_call_leaf_pure_node(Node* control) co
   }
 
   CallLeafPureNode* call = new CallLeafPureNode(tf(), entry_point(), _name);
+  if (no_egprs()) {
+    call->set_no_egprs();
+  }
   call->init_req(TypeFunc::Control, control);
   call->init_req(TypeFunc::I_O, top);
   call->init_req(TypeFunc::Memory, top);
@@ -1722,10 +1725,26 @@ Node* CallLeafPureNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return CallRuntimeNode::Ideal(phase, can_reshape);
 }
 
+uint CallLeafNode::size_of() const {
+  return sizeof(*this);
+}
+
+bool CallLeafNode::cmp( const Node &n ) const {
+  CallLeafNode &call = (CallLeafNode&)n;
+  return CallRuntimeNode::cmp(call) && _no_egprs == call._no_egprs;
+}
+
+void CallLeafNode::set_no_egprs() {
+  _no_egprs = true;
+}
+
 #ifndef PRODUCT
 void CallLeafNode::dump_spec(outputStream *st) const {
   st->print("# ");
   st->print("%s", _name);
+  if (_no_egprs) {
+    st->print(" no_egprs");
+  }
   CallNode::dump_spec(st);
 }
 #endif
@@ -2775,6 +2794,9 @@ PowDNode::PowDNode(Compile* C, Node* base, Node* exp)
         StubRoutines::dpow() != nullptr ? StubRoutines::dpow() : CAST_FROM_FN_PTR(address, SharedRuntime::dpow),
         "pow") {
   C->add_macro_node(this);
+  if (StubRoutines::dpow() != nullptr) {
+    set_no_egprs();
+  }
 
   init_req(TypeFunc::Parms + 0, base);
   init_req(TypeFunc::Parms + 1, C->top());  // double slot padding

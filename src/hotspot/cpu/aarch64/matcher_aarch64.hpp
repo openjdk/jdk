@@ -211,4 +211,9 @@
     return false;
   }
 
+  // Return true if the stubs preserve the given register.
+  static constexpr bool is_reg_preserved_by_stub(OptoReg::Name reg) {
+    return false;
+  }
+
 #endif // CPU_AARCH64_MATCHER_AARCH64_HPP

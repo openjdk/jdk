@@ -816,6 +816,7 @@ class GraphKit : public Phase {
     RC_UNCOMMON = 32,           // freq. expected to be like uncommon trap
     RC_VECTOR = 64,             // CallLeafVectorNode
     RC_PURE = 128,              // CallLeaf is pure
+    RC_NO_EGPRS = 256,          // CallLeaf callee is a stub that preserves EGPRs
     RC_LEAF = 0                 // null value:  no flags set
   };
 

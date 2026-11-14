@@ -2912,6 +2912,11 @@ Node* GraphKit::make_runtime_call(int flags,
     call = new CallLeafNode(call_type, call_addr, call_name, out_adr_type, in_adr_type);
   }
 
+  if (flags & RC_NO_EGPRS) {
+    assert(is_leaf, "%s is not a leaf call", call_name);
+    call->as_CallLeaf()->set_no_egprs();
+  }
+
   // The following is similar to set_edges_for_java_call,
   // except that the memory effects of the call are restricted to AliasIdxRaw.
   Node* prev_mem = nullptr;
