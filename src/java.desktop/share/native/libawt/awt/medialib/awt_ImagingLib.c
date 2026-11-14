@@ -311,6 +311,10 @@ Java_sun_awt_image_ImagingLib_convolveBI(JNIEnv *env, jobject this,
     kheight = (*env)->GetIntField(env, jkernel, g_KernelHeightID);
     jdata = (*env)->GetObjectField(env, jkernel, g_KernelDataID);
     klen  = (*env)->GetArrayLength(env, jdata);
+    if (kwidth <= 0 || kheight <= 0 ||
+        kwidth > klen / kheight || kwidth * kheight != klen) {
+        return 0;
+    }
     kern  = (float *) (*env)->GetPrimitiveArrayCritical(env, jdata, NULL);
     if (kern == NULL) {
         /* out of memory exception already thrown */
@@ -552,6 +556,10 @@ Java_sun_awt_image_ImagingLib_convolveRaster(JNIEnv *env, jobject this,
     kheight = (*env)->GetIntField(env, jkernel, g_KernelHeightID);
     jdata = (*env)->GetObjectField(env, jkernel, g_KernelDataID);
     klen  = (*env)->GetArrayLength(env, jdata);
+    if (kwidth <= 0 || kheight <= 0 ||
+        kwidth > klen / kheight || kwidth * kheight != klen) {
+        return 0;
+    }
     kern  = (float *) (*env)->GetPrimitiveArrayCritical(env, jdata, NULL);
     if (kern == NULL) {
         /* out of memory exception already thrown */
