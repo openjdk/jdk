@@ -538,15 +538,15 @@ class GraphKit : public Phase {
   // Access unaliased memory
   Node* memory(uint alias_idx);
   Node* memory(const TypePtr *tp) { return memory(C->get_alias_index(tp)); }
-  Node* memory(Node* adr) { return memory(_gvn.type(adr)->is_ptr()); }
+  Node* memory(Node* adr) { return memory(_gvn.type(adr)->as_ptr()); }
 
   // Access immutable memory
   Node* immutable_memory() { return C->immutable_memory(); }
 
   // Set unaliased memory
   void set_memory(Node* c, uint alias_idx) { merged_memory()->set_memory_at(alias_idx, c); }
-  void set_memory(Node* c, const TypePtr *tp) { set_memory(c,C->get_alias_index(tp)); }
-  void set_memory(Node* c, Node* adr) { set_memory(c,_gvn.type(adr)->is_ptr()); }
+  void set_memory(Node* c, const TypePtr* tp) { set_memory(c, C->get_alias_index(tp)); }
+  void set_memory(Node* c, Node* adr) { set_memory(c, _gvn.type(adr)->as_ptr()); }
 
   // Get the entire memory state (probably a MergeMemNode), and reset it
   // (The resetting prevents somebody from using the dangling Node pointer.)
