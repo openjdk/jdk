@@ -141,6 +141,12 @@ define_pd_global(bool, ValueTypeReturnedAsFields, true);
   product(bool, UseFastStosb, false,                                        \
           "Use fast-string operation for zeroing: rep stosb")               \
                                                                             \
+  product(uint, ArrayCopyNonTemporalThreshold, 0, DIAGNOSTIC,               \
+          "Array copy size threshold (in bytes) to use non-temporal "       \
+          "stores. Copies >= this threshold use streaming (non-temporal) "  \
+          "stores to avoid write-allocate reads. Default 0 auto-detects "   \
+          "from CPUID L3 cache size. Explicitly set to 0 to disable.")      \
+                                                                            \
   /* assembler */                                                           \
   product(bool, UseCountLeadingZerosInstruction, false,                     \
           "Use count leading zeros instruction")                            \
