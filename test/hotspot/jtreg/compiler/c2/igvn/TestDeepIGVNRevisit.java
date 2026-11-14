@@ -30,6 +30,7 @@ import compiler.lib.ir_framework.*;
  * @summary Test deep IGVN revisit for RangeCheck elimination. Other deep-revisit node types
  *          (If, Load, CmpP, CountedLoopEnd, LongCountedLoopEnd) benefit in large methods
  *          but require graph complexity beyond this test.
+ * @requires vm.opt.StressDeepIGVNRevisit == null
  * @library /test/lib /
  * @run driver ${test.main.class}
  */
