@@ -1319,9 +1319,23 @@ public class Properties extends Hashtable<Object,Object> {
         return Collections.enumeration(map.values());
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated
+     * This method can be confusing because the method name does not indicate
+     * whether this method searches for a key or a value. Use {@link
+     * #containsValue(Object) containsValue} to search for a value, and
+     * {@link #containsKey(Object) containsKey} to search for a key.
+     *
+     * @param value {@inheritDoc}
+     * @return {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
+     */
     @Override
+    @Deprecated(since = "28")
     public boolean contains(Object value) {
-        return map.contains(value);
+        return map.containsValue(value);
     }
 
     @Override
