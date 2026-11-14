@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ public class Location {
     TYPE_LNG = db.lookupIntConstant("Location::lng").intValue();
     TYPE_FLOAT_IN_DBL = db.lookupIntConstant("Location::float_in_dbl").intValue();
     TYPE_DBL = db.lookupIntConstant("Location::dbl").intValue();
+    TYPE_VECTOR = db.lookupIntConstant("Location::vector").intValue();
     TYPE_ADDR = db.lookupIntConstant("Location::addr").intValue();
     TYPE_INVALID = db.lookupIntConstant("Location::invalid").intValue();
 
@@ -128,6 +129,8 @@ public class Location {
     public static final Type FLOAT_IN_DBL = new Type("float_in_dbl");
     /** Double held in one register */
     public static final Type DBL          = new Type("dbl");
+    /** Vector held in one register */
+    public static final Type VECTOR       = new Type("vector");
     /** JSR return address */
     public static final Type ADDR         = new Type("addr");
     /** Invalid location */
@@ -157,6 +160,8 @@ public class Location {
         return TYPE_FLOAT_IN_DBL;
       } else if (this == DBL) {
         return TYPE_DBL;
+      } else if (this == VECTOR) {
+        return TYPE_VECTOR;
       } else if (this == ADDR) {
         return TYPE_ADDR;
       } else if (this == INVALID) {
@@ -182,6 +187,7 @@ public class Location {
   private static int TYPE_LNG;
   private static int TYPE_FLOAT_IN_DBL;
   private static int TYPE_DBL;
+  private static int TYPE_VECTOR;
   private static int TYPE_ADDR;
   private static int TYPE_INVALID;
 
@@ -223,6 +229,8 @@ public class Location {
        return Type.FLOAT_IN_DBL;
     } else if (type == TYPE_DBL) {
        return Type.DBL;
+    } else if (type == TYPE_VECTOR) {
+       return Type.VECTOR;
     } else if (type == TYPE_ADDR) {
        return Type.ADDR;
     } else if (type == TYPE_INVALID) {
@@ -320,6 +328,8 @@ public class Location {
         tty.print(",float");
       } else if (type == Type.DBL) {
         tty.print(",double");
+      } else if (type == Type.VECTOR) {
+        tty.print(",vector");
       } else if (type == Type.ADDR) {
         tty.print(",address");
       } else if (type == Type.INVALID) {
