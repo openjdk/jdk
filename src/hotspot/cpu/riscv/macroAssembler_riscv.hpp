@@ -525,8 +525,8 @@ class MacroAssembler: public Assembler {
     return false;
   }
 
-  address emit_reloc_call_address_stub(int insts_call_instruction_offset, address target);
-  static int max_reloc_call_address_stub_size();
+  address emit_address_stub(int insts_call_instruction_offset, address target);
+  static int max_address_stub_size();
 
   void emit_static_call_stub();
   static int static_call_stub_size();
@@ -1402,8 +1402,8 @@ INSN(sd_release, sd, sd_rl);
   //     address stub:
   //       <64-bit destination address>
   //
-  //    To change the destination we simply atomically store the new
-  //    address in the stub section.
+  //    Retargeting atomically updates the address slot and may replace the final
+  //    jalr with jal, or vice versa, via optimize_call().
   //    There is a benign race in that the other thread might observe the old
   //    64-bit destination address before it observes the new address. That does
   //    not matter because the destination method has been invalidated, so there
@@ -1754,9 +1754,8 @@ public:
                    int* receiver_offset);
 
 #ifdef ASSERT
-  // Template short-hand support to clean-up after a failed call to trampoline
-  // call generation (see trampoline_call() below), when a set of Labels must
-  // be reset (before returning).
+  // Reset labels that would otherwise remain unbound when returning
+  // after a failed reloc_call().
   template<typename Label, typename... More>
   void reset_labels(Label& lbl, More&... more) {
     lbl.reset(); reset_labels(more...);

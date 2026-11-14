@@ -1174,7 +1174,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     method->print_short_name(&ss);
     tty->print_cr("%s", ss.freeze());
   }
-  LogStreamHandle(Debug, aot, codecache, compilation) log;
+  LogStreamHandle(Debug, aot, compilation) log;
   if (log.is_enabled() && (AOTCodeCache::is_using_code() || AOTCodeCache::is_dumping_code())) {
     ResourceMark rm;
     MethodTrainingData* mtd = MethodTrainingData::have_data() ? MethodTrainingData::find_fast(method) : nullptr;
@@ -2272,16 +2272,21 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     }
   }
 
+  LogStreamHandle(Debug, aot, compilation) aot_log;
+  bool aot_log_is_enabled = task->is_aot_compile() && aot_log.is_enabled();
   if (failure_reason != nullptr) {
     task->set_failure_reason(failure_reason, failure_reason_on_C_heap);
     if (CompilationLog::log() != nullptr) {
       CompilationLog::log()->log_failure(thread, task, failure_reason, retry_message);
     }
+    FormatBufferResource msg = retry_message != nullptr ?
+      FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
+      FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
     if (PrintCompilation || directive->PrintCompilationOption) {
-      FormatBufferResource msg = retry_message != nullptr ?
-        FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
-        FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
       task->print(tty, msg);
+    }
+    if (aot_log_is_enabled) {
+      task->print(&aot_log, msg);
     }
   }
 
@@ -2296,6 +2301,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   if (PrintCompilation2 || directive->PrintCompilation2Option) {
     ResourceMark rm;
     task->print_post(tty);
+  }
+  if (aot_log_is_enabled) {
+    ResourceMark rm;
+    task->print_post(&aot_log);
   }
 
   Log(compilation, codecache) log;
@@ -2457,10 +2466,10 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
 
   nmethod* code = is_osr ? method->lookup_osr_nmethod_for(task->osr_bci(), comp_level, true /* match_level */)
                          : method->code();
-  // With VerifyAOTCode AOT code is not installed.
-  bool verify_aot_code = task->is_aot_load() && VerifyAOTCode;
+  // AOT code is not published during assembly phase and with VerifyAOTCode during production.
+  bool not_used_aot_code = task->is_aot_compile() || (task->is_aot_load() && VerifyAOTCode);
   // Check if compiled code was invalidated already
-  bool invalidated = !verify_aot_code && (code == nullptr || code->compile_id() != compile_id);
+  bool invalidated = !not_used_aot_code && (code == nullptr || code->compile_id() != compile_id);
 
   CompilerCounters* counters = thread->counters();
 

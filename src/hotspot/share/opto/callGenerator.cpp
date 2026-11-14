@@ -1303,7 +1303,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
       Node* member_name = kit.argument(nargs - 1);
       if (member_name->Opcode() == Op_ConP) {
         input_not_const = false;
-        const TypeOopPtr* oop_ptr = member_name->bottom_type()->is_oopptr();
+        const TypeOopPtr* oop_ptr = member_name->bottom_type()->as_oopptr();
         ciMethod* target = oop_ptr->const_oop()->as_member_name()->get_vmtarget();
 
         if (!ciMethod::is_consistent_info(callee, target)) {

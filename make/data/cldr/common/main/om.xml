@@ -487,6 +487,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</characters>
 	<dates>
 		<calendars>
+			<calendar type="chinese">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="dangi">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="ethiopic">
 				<months>
 					<monthContext type="format">
@@ -890,6 +904,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">/</numericDateSeparator>
+						<numericTimeSeparator draft="provisional">:</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -922,6 +940,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, MMMM d, y G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
@@ -932,19 +951,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMMW" count="one">'torbee' W 'kan' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'torbee' W 'kan' MMMM</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
-						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
 						<dateFormatItem id="yMM">MM/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">MMMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, MMMM d, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'torbee' w 'kan' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'torbee' w 'kan' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">y G – y G</greatestDifference>
 							<greatestDifference id="y">y – y G</greatestDifference>
@@ -1015,7 +1041,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">M/d/y – M/d/y</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
 							<greatestDifference id="M">M/d/y – M/d/y</greatestDifference>
 							<greatestDifference id="y">M/d/y – M/d/y</greatestDifference>
 						</intervalFormatItem>
@@ -1655,16 +1681,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Sa’aatii Idil-Addunyaa Qindaa’e</standard>
 				</long>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Sa’aatii Bonaa Biritish</daylight>
-				</long>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Sa’aatii Istaandaardii Aayiriish</daylight>
-				</long>
-			</zone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Sa’aatii Afgaanistaan</standard>
@@ -1696,11 +1712,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Sa’aatii Istaandaardii Alaaskaa</standard>
 					<daylight>Sa’aatii Guyyaa Alaaskaa</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AKT</generic>
-					<standard draft="contributed">AKST</standard>
-					<daylight draft="contributed">AKDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Amazon">
 				<long>
@@ -1715,11 +1726,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Sa’aatii Istaandaardii Gidduugaleessaa</standard>
 					<daylight>Sa’aatii Guyyaa Gidduugaleessaa</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">CT</generic>
-					<standard draft="contributed">CST</standard>
-					<daylight draft="contributed">CDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
@@ -1727,11 +1733,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Sa’aatii Istaandaardii Bahaa</standard>
 					<daylight>Sa’aatii Guyyaa Bahaa</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ET</generic>
-					<standard draft="contributed">EST</standard>
-					<daylight draft="contributed">EDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
@@ -1739,11 +1740,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Sa’aatii Istaandaardii Maawonteen</standard>
 					<daylight>Sa’aatii Guyyaa Maawonteen</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">MT</generic>
-					<standard draft="contributed">MST</standard>
-					<daylight draft="contributed">MDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
@@ -1751,11 +1747,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Sa’aatii Istaandaardii Paasfiik</standard>
 					<daylight>Sa’aatii Guyyaa Paasfiik</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">PT</generic>
-					<standard draft="contributed">PST</standard>
-					<daylight draft="contributed">PDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Apia">
 				<long>
@@ -1798,11 +1789,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Sa’aatii Istaandaardii Atilaantiik</standard>
 					<daylight>Sa’aatii Guyyaa Atilaantiik</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AT</generic>
-					<standard draft="contributed">AST</standard>
-					<daylight draft="contributed">ADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
@@ -1868,6 +1854,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Sa’aatii Biraaziliyaa</generic>
 					<standard>Sa’aatii Istaandaardii Biraaziliyaa</standard>
 					<daylight>Sa’aatii Bonaa Biraaziliyaa</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Sa’aatii Biritish</generic>
+					<daylight>Sa’aatii Bonaa Biritish</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -2057,11 +2049,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Sa’aatii Bonaa Giriinlaand Dhihaa</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>Sa’aatii Istaandaardii Guwaam</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Sa’aatii Istaandaardii Gaalfii</standard>
@@ -2074,23 +2061,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Sa’aatii Istaandaardii Haawayi-Alewutiyan</standard>
+					<standard>Sa’aatii Istaandardii Hawaayi</standard>
 				</long>
-				<short>
-					<standard draft="contributed">HAS</standard>
-				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Sa’aatii Haawayi-Alewutiyan</generic>
-					<standard>Sa’aatii Istaandaardii Haawayi-Alewutiyan</standard>
+					<standard>Sa’aatii Istaandardii Hawaayi-Alushiyaa</standard>
 					<daylight>Sa’aatii Guyyaa Haawayi-Alewutiyan</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">HAT</generic>
-					<standard draft="contributed">HAS</standard>
-					<daylight draft="contributed">HADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
@@ -2141,6 +2120,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Sa’aatii Iraan</generic>
 					<standard>Sa’aatii Istaandaardii Iraan</standard>
 					<daylight>Sa’aatii Guyyaa Iraan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Sa’aatii Aayiriish</generic>
+					<daylight>Sa’aatii Istaandaardii Aayiriish</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -2201,11 +2186,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Kyrgystan">
 				<long>
 					<standard>Sa’aatii Kiyirigiyistan</standard>
-				</long>
-			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>Sa’aatii Laankaa</standard>
 				</long>
 			</metazone>
 			<metazone type="Line_Islands">
@@ -2335,11 +2315,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Sa’aatii Bonaa Fernando de Noronha</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>Sa’aatii Odoloota Maariyaanaa Kaabaa</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Sa’aatii Novosibirisk</generic>
@@ -2438,9 +2413,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Sa’aatii Saamowaa</generic>
 					<standard>Sa’aatii Istaandaardii Saamowaa</standard>
-					<daylight>Sa’aatii Guyyaa Saamowaa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

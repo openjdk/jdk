@@ -109,6 +109,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#include "utilities/zipLibrary.hpp"
 #ifdef COMPILER2
 #include "opto/idealGraphPrinter.hpp"
 #include "runtime/hotCodeCollector.hpp"
@@ -475,6 +476,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize the os module
   os::init();
+
+  // Initialize the ZipLibraryLoaderLock before we potentially start
+  // loading resources from jar/zip files.
+  ZipLibrary::initialize_loader_lock();
 
   // Initialize memory pools
   Arena::initialize_chunk_pool();

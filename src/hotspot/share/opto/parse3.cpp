@@ -183,7 +183,7 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
         if (con->is_null_object()) {
           type = TypePtr::NULL_PTR;
         } else {
-          type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
+          type = TypeOopPtr::make_from_constant(con);
         }
         assert(type != nullptr, "field singleton type must be consistent");
       } else {
@@ -408,7 +408,7 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
     guarantee(length_con >= 0, "non-constant multianewarray");
     ciArrayKlass* array_klass_1 = array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
     const TypePtr* adr_type = TypeAryPtr::OOPS;
-    const TypeOopPtr*    elemtype = _gvn.type(array)->is_aryptr()->elem()->make_oopptr();
+    const TypeOopPtr*    elemtype = _gvn.type(array)->as_aryptr()->elem()->make_oopptr();
     const intptr_t header   = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
     for (jint i = 0; i < length_con; i++) {
       Node*    elem   = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1, nargs);
@@ -534,12 +534,12 @@ void Parse::do_multianewarray() {
   const Type* type = TypeOopPtr::make_from_klass_raw(array_klass, Type::trust_interfaces);
 
   // Improve the type:  We know it's not null, exact, and of a given length.
-  type = type->is_ptr()->cast_to_ptr_type(TypePtr::NotNull);
-  type = type->is_aryptr()->cast_to_exactness(true);
+  type = type->as_ptr()->cast_to_ptr_type(TypePtr::NotNull);
+  type = type->as_aryptr()->cast_to_exactness(true);
 
   const TypeInt* ltype = _gvn.find_int_type(length[0]);
   if (ltype != nullptr)
-    type = type->is_aryptr()->cast_to_size(ltype);
+    type = type->as_aryptr()->cast_to_size(ltype);
 
     // We cannot sharpen the nested sub-arrays, since the top level is mutable.
 
