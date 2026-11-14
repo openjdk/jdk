@@ -3613,6 +3613,16 @@ public class IRNode {
         staticCallOfMethodNodes(CLONE_INTRINSIC_SLOW_PATH, "java.lang.Object::clone");
     }
 
+    public static final String SLOW_ARRAYCOPY = PREFIX + "SLOW_ARRAYCOPY" + POSTFIX;
+    static {
+        staticCallOfMethodNodes(SLOW_ARRAYCOPY, "slow_arraycopy");
+    }
+
+    public static final String JINT_ARRAYCOPY = PREFIX + "JINT_ARRAYCOPY" + POSTFIX;
+    static {
+        callLeafNoFpOfMethodNodes(JINT_ARRAYCOPY, "jint_disjoint_arraycopy");
+    }
+
     public static final String JLONG_ARRAYCOPY = PREFIX + "JLONG_ARRAYCOPY" + POSTFIX;
     static {
         callLeafNoFpOfMethodNodes(JLONG_ARRAYCOPY, "jlong_disjoint_arraycopy");

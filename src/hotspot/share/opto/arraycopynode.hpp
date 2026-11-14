@@ -129,6 +129,7 @@ private:
 
   static bool may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, ArrayCopyNode*& ac);
 public:
+  bool can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const TypeAryPtr* dest_ary) const;
   static Node* load(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* addr, const TypePtr* adr_type, const Type *type, BasicType bt);
 private:
   void store(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* addr, const TypePtr* adr_type, Node* val, const Type *type, BasicType bt);

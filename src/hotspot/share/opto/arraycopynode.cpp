@@ -417,6 +417,43 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
   return true;
 }
 
+// Check whether the fast path arraycopy can be used:
+// - Return false: We could not prove that the fast path is safe
+// - Return true:  We might use the fast path
+//
+// Note that we do not need to check atomicity for flat arrays. Atomic flat layouts can only have an element size of
+// 1, 2, 4, or 8 bytes. We can use the corresponding primitive arraycopy stubs which copy the elements atomically.
+// Flat arrays with elements larger than 8 bytes cannot have an atomic layout.
+bool ArrayCopyNode::can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const TypeAryPtr* dest_ary) const {
+  assert(src_ary != nullptr, "src must be an array pointer");
+  assert(dest_ary != nullptr, "dest must be an array pointer");
+
+  if (!src_ary->has_compatible_arraycopy_layout(dest_ary)) {
+    // We cannot prove that src and dest have compatible layouts.
+    return false;
+  }
+
+  if (!src_ary->is_flat()) {
+    return true;
+  }
+
+  // Additional checks for flat arrays.
+  assert(src_ary->exact_klass() == dest_ary->exact_klass(), "same layout");
+  assert(dest_ary->is_flat(), "same flatness");
+  assert(src_ary->is_null_free() == dest_ary->is_null_free(), "same nullness");
+  assert(src_ary->is_atomic() == dest_ary->is_atomic(), "same atomicity");
+  assert(is_reference_type(dest_ary->elem()->array_element_basic_type(), true), "must be for flat arrays");
+
+  if (src_ary->elem()->value_klass()->contains_oops()) {
+    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+    bool needs_barriers = bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), T_OBJECT, false, false,
+                                                              BarrierSetC2::Optimization);
+    // When a flat array contains oops, we require GC barriers which we cannot handle
+    return !needs_barriers;
+  }
+  return true;
+}
+
 const TypeAryPtr* ArrayCopyNode::get_address_type(PhaseGVN* phase, const TypePtr* atp, Node* n) {
   if (atp == TypeOopPtr::BOTTOM) {
     atp = phase->type(n)->isa_ptr();

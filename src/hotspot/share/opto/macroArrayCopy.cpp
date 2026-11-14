@@ -1480,36 +1480,10 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
 
   assert(!ac->is_arraycopy_validated() || (src_elem == dest_elem && dest_elem != T_VOID), "validated but different basic types");
 
-  // (2) src and dest arrays must have elements of the same BasicType
-  // Figure out the size and type of the elements we will be copying.
-  //
-  //
-  // Go to the slow path but avoid the native method wrapper to JVM_ArrayCopy when:
-  // 1) The component types are not the same or void.
-  // 2) src and dest do not have the same flatness.
-  // 3) src or dest is a flat abstract value class array (we don't know the exact layout and cannot use the stub).
-  // 4) src or dest is a flat value class array with oop fields and requires to emit barriers (we don't have such a stub).
-  // TODO 8251971: This does not handle atomicity. We should probably match on layouts which makes this code easier
-  //               and handles all cases.
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bool go_to_slow_path = false;
-  if (src_elem != dest_elem || top_src->is_flat() != top_dest->is_flat() || dest_elem == T_VOID) {
-    // 1) and 2)
-    go_to_slow_path = true;
-  } else if ((top_src->is_flat() && !top_src->elem()->is_valueklassptr()) ||
-             (top_dest->is_flat() && !top_dest->elem()->is_valueklassptr())) {
-    // 3)
-    go_to_slow_path = true;
-  } else if (top_dest->is_flat() &&
-             bs->array_copy_requires_gc_barriers(alloc != nullptr, T_OBJECT, false, false, BarrierSetC2::Optimization) &&
-             top_dest->elem()->value_klass()->contains_oops()) {
-    // 4)
-    assert(top_src->is_flat() && top_src->elem()->value_klass()->contains_oops(), "must match");
-    go_to_slow_path = true;
-  }
-
-  if (go_to_slow_path) {
-    // Avoid the native method wrapper to JVM_ArrayCopy.
+  // (2) src and dest array layouts need to be compatible. For flat arrays, we additionally check for unsupported
+  //     atomicity and GC-barrier requirements.
+  if (!ac->can_use_arraycopy_fast_path(top_src, top_dest)) {
+    // Go to the slow path but avoid the native method wrapper to JVM_ArrayCopy
     Node* mem = ac->in(TypeFunc::Memory);
     merge_mem = generate_slow_arraycopy(ac, &ctrl, mem, &io, TypePtr::BOTTOM, src, src_offset, dest, dest_offset, length, false);
 
@@ -1532,7 +1506,8 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   // (6) length must not be negative.
   // (7) src_offset + length must not exceed length of src.
   // (8) dest_offset + length must not exceed length of dest.
-  // (9) each element of an oop array must be assignable
+  // (9) each element of an oop array must be assignable.
+  // (10) cannot copy a nullable source to a null-free destination.
 
   Node* mem = ac->in(TypeFunc::Memory);
   if (top_dest->is_flat()) {
@@ -1589,14 +1564,9 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     // (9) each element of an oop array must be assignable
     // The generate_arraycopy subroutine checks this.
 
-    // TODO 8251971 This is too strong
-    // We need to be careful here because 'adjust_for_flat_array' will adjust offsets/length etc. which then does not work anymore for the slow call to SharedRuntime::slow_arraycopy_C.
-    assert(top_src->is_flat() == top_dest->is_flat(), "must have bailed out before");
-    if (Arguments::is_valhalla_enabled() && !flat_and_same_nullness) {
-      if (UseArrayFlattening) {
-        generate_flat_array_guard(&ctrl, src, merge_mem, slow_region);
-        generate_flat_array_guard(&ctrl, dest, merge_mem, slow_region);
-      }
+    // (10) we cannot directly copy a nullable source to a null-free destination, this requires per-element null checks
+    bool needs_null_free_guard = !top_src->is_null_free() && !top_dest->is_not_null_free();
+    if (Arguments::is_valhalla_enabled() && needs_null_free_guard) {
       generate_null_free_array_guard(&ctrl, dest, merge_mem, slow_region);
     }
   }
