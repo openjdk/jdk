@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -805,6 +805,43 @@ Node* ConvI2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       case Op_SubI:  return new SubLNode(cx, cy);
       default:       ShouldNotReachHere();
     }
+  }
+
+  // Convert ConvI2L(AndI(ConvL2I(x), mask)) to AndL(x, mask) if the mask is
+  // non-negative. The result of the AND is then in [0, mask] and hence
+  // non-negative, so ConvI2L only zero-extends it.
+  //   (long)((int)x & mask) == x & mask   if mask >= 0
+  if (z->Opcode() == Op_AndI) {
+    // Don't do this for nodes which have more than one user: the AndI would
+    // stay in the graph and we'd end up computing the mask twice.
+    if (z->outcnt() > 1) {
+      return nullptr;
+    }
+
+    Node* convl2i = nullptr;
+    Node* mask_node = nullptr;
+    if (z->in(1)->Opcode() == Op_ConvL2I) {
+      convl2i = z->in(1);
+      mask_node = z->in(2);
+    } else if (z->in(2)->Opcode() == Op_ConvL2I) {
+      convl2i = z->in(2);
+      mask_node = z->in(1);
+    } else {
+      return nullptr;
+    }
+    assert(convl2i != nullptr && mask_node != nullptr, "sanity");
+    Node* x = convl2i->in(1);
+    if (phase->type(x) == Type::TOP) {
+      return nullptr;
+    }
+    // Only a constant mask is folded. A non-constant mask would first have to
+    // be widened to a long, which typically costs an instruction, so the fold
+    // is not clearly profitable there.
+    const TypeInt* tmask = phase->type(mask_node)->isa_int();
+    if (tmask == nullptr || !tmask->is_con() || tmask->get_con() < 0) {
+      return nullptr;
+    }
+    return new AndLNode(x, phase->longcon(tmask->get_con()));
   }
 #endif //_LP64
 
