@@ -123,6 +123,10 @@ public abstract class Poller {
                 case POLLER_PER_CARRIER -> new PollerPerCarrierPollerGroup(provider, writePollers);
             };
             group.start();
+
+            // Register shutdown hook to initiate an orderly shutdown of the group
+            JLA.registerShutdownHook(2, true, group::shutdown);
+
             return group;
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
@@ -156,10 +160,11 @@ public abstract class Poller {
     }
 
     /**
-     * Marks this poller for shutdown.
+     * Initiates an orderly shutdown of this poller.
      */
-    private void setShutdown() {
+    void shutdown() {
         shutdown = true;
+        try { wakeupPoller(); } catch (IOException _) {}
     }
 
     /**
@@ -196,11 +201,8 @@ public abstract class Poller {
 
     /**
      * Wakeup the poller thread if blocked in poll so it can shutdown.
-     * @throws UnsupportedOperationException if not supported
      */
-    void wakeupPoller() throws IOException {
-        throw new UnsupportedOperationException();
-    }
+    abstract void wakeupPoller() throws IOException;
 
     /**
      * Callback by the poll method when a file descriptor is polled.
@@ -367,6 +369,12 @@ public abstract class Poller {
         abstract void start();
 
         /**
+         * Initiates an orderly shutdown of the poller threads. This method does
+         * not wait for the threads to terminate.
+         */
+        abstract void shutdown();
+
+        /**
          * Parks the current thread until a file descriptor is ready for the given op.
          */
         abstract void poll(Object blocker, int fdVal, int event, long nanos,
@@ -461,6 +469,12 @@ public abstract class Poller {
             Arrays.stream(writePollers).forEach(p -> {
                 startPlatformThread("Write-Poller", p::pollerLoop);
             });
+        }
+
+        @Override
+        void shutdown() {
+            Arrays.stream(readPollers).forEach(Poller::shutdown);
+            Arrays.stream(writePollers).forEach(Poller::shutdown);
         }
 
         private Poller readPoller(int fdVal) {
@@ -569,6 +583,11 @@ public abstract class Poller {
             });
         }
 
+        @Override
+        void shutdown() {
+            masterPoller.shutdown();
+        }
+
         private Poller readPoller(int fdVal) {
             int index = provider().fdValToIndex(fdVal, readPollers.length);
             return readPollers[index];
@@ -662,6 +681,12 @@ public abstract class Poller {
             });
         }
 
+        @Override
+        void shutdown() {
+            Arrays.stream(writePollers).forEach(Poller::shutdown);
+            masterPoller.shutdown();
+        }
+
         private Poller writePoller(int fdVal) {
             int index = provider().fdValToIndex(fdVal, writePollers.length);
             return writePollers[index];
@@ -752,12 +777,7 @@ public abstract class Poller {
          * Invoked by the carrier thread before it terminates.
          */
         private void carrierTerminated(Poller readPoller) {
-            readPoller.setShutdown();
-            try {
-                readPoller.wakeupPoller();
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
+            readPoller.shutdown();
         }
 
         @Override

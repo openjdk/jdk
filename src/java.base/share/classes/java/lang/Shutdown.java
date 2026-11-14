@@ -47,7 +47,8 @@ class Shutdown {
     // (0) Console restore hook
     // (1) ApplicationShutdownHooks that invokes all registered application
     //     shutdown hooks and waits until they finish
-    // (2) DeleteOnExit hook
+    // (2) I/O poller threads supporting virtual threads doing blocking I/O
+    // (3) DeleteOnExit hook
     private static final int MAX_SYSTEM_HOOKS = 10;
     private static final Runnable[] hooks = new Runnable[MAX_SYSTEM_HOOKS];
 

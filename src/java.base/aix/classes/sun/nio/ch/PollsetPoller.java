@@ -77,6 +77,11 @@ class PollsetPoller extends Poller {
         assert ret == 0;
     }
 
+    @Override
+    void wakeupPoller() throws IOException {
+        // nothing to do, poll wakes periodically
+    }
+
     /**
       * Main poll method. The AIX Pollset library does not appear to pick up changes to the pollset
       * (the set of fds being polled) while blocked on a call to this method. These changes happen
@@ -91,11 +96,17 @@ class PollsetPoller extends Poller {
                 n = pollInner(0);
                 break;
             case Pollset.PS_NO_TIMEOUT:
-                do { n = pollInner(100); } while (n == 0);
+                n = 0;
+                while (n == 0 && !isShutdown()) {
+                    n = pollInner(100);
+                }
                 break;
             default:
                 Instant end = Instant.now().plusMillis(timeout);
-                do { n = pollInner(100); } while (n == 0 && Instant.now().isBefore(end));
+                n = 0;
+                while (n == 0 && !isShutdown() && Instant.now().isBefore(end)) {
+                    n = pollInner(100);
+                }
                 break;
         }
         return n;
