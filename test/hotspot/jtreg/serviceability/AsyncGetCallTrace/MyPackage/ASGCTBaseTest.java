@@ -25,13 +25,26 @@
 package MyPackage;
 
 /**
- * @test
+ * @test id=platform
  * @summary Verifies that AsyncGetCallTrace is call-able and provides sane information.
  * @compile ASGCTBaseTest.java
  * @requires os.family == "linux"
  * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="arm" | os.arch=="aarch64" | os.arch=="ppc64" | os.arch=="ppc64le" | os.arch=="s390x" | os.arch=="riscv64"
  * @requires vm.jvmti
- * @run main/othervm/native -agentlib:AsyncGetCallTraceTest MyPackage.ASGCTBaseTest
+ * @requires test.thread.factory == null
+ * @run main/othervm/native -agentlib:AsyncGetCallTraceTest MyPackage.ASGCTBaseTest platform
+ */
+
+/**
+ * @test id=virtual
+ * @summary Verifies that AsyncGetCallTrace is call-able and provides sane information.
+ * @compile ASGCTBaseTest.java
+ * @requires os.family == "linux"
+ * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="arm" | os.arch=="aarch64" | os.arch=="ppc64" | os.arch=="ppc64le" | os.arch=="s390x" | os.arch=="riscv64"
+ * @requires vm.jvmti
+ * @requires vm.continuations
+ * @requires test.thread.factory == null
+ * @run main/othervm/native -agentlib:AsyncGetCallTraceTest MyPackage.ASGCTBaseTest virtual
  */
 
 public class ASGCTBaseTest {
@@ -47,8 +60,17 @@ public class ASGCTBaseTest {
 
   private static native boolean checkAsyncGetCallTraceCall();
 
-  public static void main(String[] args) {
-    if (!checkAsyncGetCallTraceCall()) {
+  private static boolean check(boolean virtual) throws InterruptedException {
+    boolean[] result = new boolean[1];
+    Thread.Builder builder = virtual ? Thread.ofVirtual() : Thread.ofPlatform();
+    Thread thread = builder.start(() -> result[0] = checkAsyncGetCallTraceCall());
+    thread.join();
+    return result[0];
+  }
+
+  public static void main(String[] args) throws InterruptedException {
+    boolean virtual = args.length > 0 && args[0].equals("virtual");
+    if (!check(virtual)) {
       throw new RuntimeException("AsyncGetCallTrace call failed.");
     }
   }
