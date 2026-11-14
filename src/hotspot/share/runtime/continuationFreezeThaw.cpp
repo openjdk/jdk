@@ -2525,7 +2525,9 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
         log_develop_trace(continuations, preempt)("Failed to acquire monitor, unmounting again");
         return push_cleanup_continuation();
       }
-      chunk = _cont.tail();  // reload oop in case of safepoint in resume_operation (if posting JVMTI events).
+      // Reload oop and _barriers in case of safepoint in resume_operation (if posting JVMTI events)
+      chunk = _cont.tail();
+      _barriers = chunk->requires_barriers();
       JVMTI_ONLY(assert(_thread->contended_entered_monitor() == nullptr || _thread->contended_entered_monitor() == mon, ""));
     } else {
       // Preemption cancelled on moniterenter or ObjectLocker case. We
@@ -2536,8 +2538,10 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
       preempt_kind = Continuation::monitorenter;
     }
 
-    // Call this first to avoid racing with GC threads later when modifying the chunk flags.
-    relativize_chunk_concurrently(chunk);
+    if (_barriers) {
+      // Call this first to avoid racing with GC threads later when modifying the chunk flags.
+      relativize_chunk_concurrently(chunk);
+    }
 
     if (chunk->at_klass_init()) {
       preempt_kind = Continuation::object_locker;
@@ -2552,7 +2556,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
     }
     chunk->set_preempted(false);
     retry_fast_path = true;
-  } else {
+  } else if (_barriers) {
     relativize_chunk_concurrently(chunk);
   }
 
