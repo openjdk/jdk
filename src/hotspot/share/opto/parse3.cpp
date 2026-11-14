@@ -157,8 +157,9 @@ void Parse::do_get_xxx(Node* obj, ciField* field) {
   Node* ld = nullptr;
   if (field_klass->is_value_klass()) { // could also have an abstract value class
     ciValueKlass* vk = field_klass->as_value_klass();
-    if (field->is_null_free() && vk->is_empty()) {
-      // Loading from a field of an empty value type. Just return the default instance.
+    if (field->is_null_free() && !field->is_volatile() && vk->is_empty()) {
+      // Loading from a null-free field of an empty value type. Just return the default instance.
+      // Skip volatile fields because their memory barriers need to remain.
       ld = ValueTypeNode::make_all_zero(_gvn, vk);
     } else if (field->is_flat()) {
       // Loading from a flat value type field.
