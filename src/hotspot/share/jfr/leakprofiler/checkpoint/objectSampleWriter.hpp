@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_JFR_LEAKPROFILER_CHECKPOINT_OBJECTSAMPLEWRITER_HPP
 #define SHARE_JFR_LEAKPROFILER_CHECKPOINT_OBJECTSAMPLEWRITER_HPP
 
+#include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allocation.hpp"
 
 class Edge;
@@ -37,6 +38,9 @@ class ObjectSampleWriter : public StackObj {
   JfrCheckpointWriter& _writer;
   EdgeStore* const _store;
   void write(const StoredEdge* edge);
+  void add_logical_reference_chain(const StoredEdge* edge,
+                                   traceid id,
+                                   traceid parent_id);
  public:
   ObjectSampleWriter(JfrCheckpointWriter& writer, EdgeStore* store);
   ~ObjectSampleWriter();
