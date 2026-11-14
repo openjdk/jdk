@@ -718,7 +718,7 @@ ciInstance* GraphKit::builtin_throw_exception(Deoptimization::DeoptReason reason
 GraphKit::SavedState::SavedState(GraphKit* kit) :
   _kit(kit),
   _sp(kit->sp()),
-  _jvms(kit->jvms()),
+  _jvms_sp(kit->jvms()->sp()),
   _map(kit->clone_map()),
   _discarded(false)
 {
@@ -736,7 +736,6 @@ GraphKit::SavedState::~SavedState() {
     return;
   }
   _kit->jvms()->set_map(_map);
-  _kit->jvms()->set_sp(_sp);
   _map->set_jvms(_kit->jvms());
   _kit->set_map(_map);
   _kit->set_sp(_sp);
@@ -750,6 +749,8 @@ GraphKit::SavedState::~SavedState() {
       _kit->_gvn.hash_find_insert(out);
     }
   }
+  assert(_jvms_sp == _kit->jvms()->sp(),
+         "mismatch: %d != %d", _jvms_sp, _kit->jvms()->sp());
 }
 
 void GraphKit::SavedState::discard() {
