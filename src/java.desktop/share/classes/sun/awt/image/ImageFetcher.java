@@ -239,6 +239,15 @@ class ImageFetcher extends Thread {
     }
 
     /**
+     * Stops the animator thread and returns back to service as
+     * an {@code ImageFetcher} if possible.
+     * @see #stoppingAnimation(Thread)
+     */
+    static void stoppingAnimation() {
+        stoppingAnimation(Thread.currentThread());
+    }
+
+    /**
       * Returns this image animator thread back to service as an ImageFetcher
       * if possible.  Puts it back into the array of ImageFetchers and sets
       * the thread name back to "Image Fetcher".  If there are already the
