@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @summary Regression test for G1 logging at OOME
  * @requires vm.gc.G1
  * @library /test/lib
- * @modules java.management
  * @build gc.g1.logging.TestG1LoggingFailure
  * @run main/timeout=300 gc.g1.logging.TestG1LoggingFailure
  */

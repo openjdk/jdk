@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package gc;
 /* @test TestAllocateHeapAtMultiple.java
  * @summary Test to check allocation of Java Heap with AllocateHeapAt option. Has multiple sub-tests to cover different code paths.
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @requires vm.bits == "64" & vm.gc != "Z" & os.family != "aix"
  * @run driver/timeout=360 gc.TestAllocateHeapAtMultiple
  */

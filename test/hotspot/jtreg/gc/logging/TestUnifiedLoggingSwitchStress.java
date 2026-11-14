@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.util.Random;
  * @requires vm.gc != "Z"
  * @requires vm.gc != "Shenandoah"
  * @library /test/lib /
- * @modules java.management java.base/jdk.internal.misc
+ * @modules java.management
  *
  * @run main/othervm -Xmx256M -Xms256M
  *                   gc.logging.TestUnifiedLoggingSwitchStress 60

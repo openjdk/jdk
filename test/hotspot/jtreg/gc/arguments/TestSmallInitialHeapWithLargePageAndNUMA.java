@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,7 @@ package gc.arguments;
  * @summary Check large pages and NUMA are working together via the output message.
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
+ * @modules java.management
  * @build TestSmallInitialHeapWithLargePageAndNUMA
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.arguments.TestSmallInitialHeapWithLargePageAndNUMA

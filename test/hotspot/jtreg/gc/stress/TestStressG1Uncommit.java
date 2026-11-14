@@ -29,7 +29,6 @@ package gc.stress;
  * @summary Stress uncommitting by allocating and releasing memory
  * @requires vm.gc.G1
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver/timeout=1300 gc.stress.TestStressG1Uncommit
  */
 

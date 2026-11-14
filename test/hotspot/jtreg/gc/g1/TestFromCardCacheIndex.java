@@ -31,8 +31,7 @@
  * @requires !vm.asan
  * @requires vm.bits != "32"
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -Xms20M -Xmx20M -XX:+UseCompressedOops -XX:G1HeapRegionSize=1M -XX:HeapBaseMinAddress=2199011721216 -XX:+UseG1GC -verbose:gc gc.g1.TestFromCardCacheIndex

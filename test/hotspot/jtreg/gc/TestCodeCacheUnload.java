@@ -32,8 +32,7 @@ package gc;
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
  * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -50,8 +49,7 @@ package gc;
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
  * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -68,8 +66,7 @@ package gc;
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
  * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -86,8 +83,7 @@ package gc;
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
  * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -104,8 +100,7 @@ package gc;
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.MethodFlushing != false
  * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

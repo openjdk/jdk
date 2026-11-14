@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@ package gc.class_unloading;
  * @requires vm.opt.ClassUnloading != true
  * @requires vm.gc.Serial
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -47,8 +46,7 @@ package gc.class_unloading;
  * @requires vm.opt.ClassUnloading != true
  * @requires vm.gc.Parallel
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -64,8 +62,7 @@ package gc.class_unloading;
  * @requires vm.opt.ClassUnloading != true
  * @requires vm.gc.G1
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
@@ -81,8 +78,7 @@ package gc.class_unloading;
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @requires vm.opt.ClassUnloading != true
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI

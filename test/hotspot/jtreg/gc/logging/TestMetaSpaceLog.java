@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,8 +42,7 @@ import jdk.test.whitebox.WhiteBox;
  * @bug 8211123
  * @summary Ensure that the Metaspace is updated in the log
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @requires vm.gc != "Epsilon"
  * @requires vm.gc != "Z"
  * @requires os.maxMemory >= 2G

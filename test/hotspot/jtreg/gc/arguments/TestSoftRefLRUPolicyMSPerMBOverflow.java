@@ -31,8 +31,6 @@ package gc.arguments;
  * @requires vm.bits == 64 & vm.opt.SoftRefLRUPolicyMSPerMB == null & vm.opt.AOTCache == null
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver gc.arguments.TestSoftRefLRUPolicyMSPerMBOverflow
  */
 

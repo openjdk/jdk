@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ package gc.stress;
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver/timeout=240 gc.stress.TestStressG1Humongous 4 3 1.1 120
  */
 
@@ -39,7 +38,6 @@ package gc.stress;
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver/timeout=240 gc.stress.TestStressG1Humongous 16 5 2.1 120
  */
 
@@ -48,7 +46,6 @@ package gc.stress;
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver/timeout=240 gc.stress.TestStressG1Humongous 32 4 0.6 120
  */
 
@@ -57,7 +54,6 @@ package gc.stress;
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver/timeout=1200 gc.stress.TestStressG1Humongous 1 7 0.6 600
  */
 

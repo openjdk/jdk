@@ -30,7 +30,6 @@ package gc.g1;
  * @requires vm.bits != "32"
  * @summary Test that the VM does not start with heaps exceeding maximum region indexes.
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver gc.g1.TestRegionIdxExceedsRepresentable
  */
 
