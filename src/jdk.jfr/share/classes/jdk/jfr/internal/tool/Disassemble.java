@@ -114,7 +114,7 @@ final class Disassemble extends Command {
                         throw new UserDataException("max chunks must be at least 1.");
                     }
                 } catch (NumberFormatException nfe) {
-                    throw new UserDataException("not a valid value for --max-size.");
+                    throw new UserDataException("not a valid value for --max-chunks.");
                 }
             }
             if (optionCount == options.size()) {
