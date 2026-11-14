@@ -266,6 +266,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set() {
     size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
     _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
+    _free_set->set_young_evac_reserve();
   }
 }
 
