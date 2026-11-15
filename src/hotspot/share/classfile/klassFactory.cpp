@@ -74,7 +74,6 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
       // Set new class file stream using JVMTI agent modified class file data.
       ClassLoaderData* loader_data =
         ClassLoaderData::class_loader_data(class_loader());
-      s2 path_index = ik->shared_classpath_index();
       ClassFileStream* stream = new ClassFileStream(ptr,
                                                     pointer_delta_as_int(end_ptr, ptr),
                                                     cfs->source(),
@@ -97,7 +96,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
       }
 
       if (class_loader.is_null()) {
-        new_ik->set_classpath_index(path_index);
+        new_ik->set_classpath_index(AOTClassLocationConfig::get_path_index(ik));
       }
 
 

@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -73,8 +74,8 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
       // We allow boot classes to be AOT-initialized, except for classes from
       // -Xbootclasspath (cp index >= 1) be AOT-initialized, as such classes may be
       // provided by the user application.
-      assert(ik->shared_classpath_index() <= 0,
-              "only boot classed loaded from the modules image can be AOT-initialized");
+      assert(AOTClassLocationConfig::is_modules_image(ik),
+             "only boot classed loaded from the modules image can be AOT-initialized");
     } else {
       assert(ik->defined_by_platform_loader() || ik->defined_by_app_loader(),
              "cannot AOT-initialized classed loaded by other loaders");

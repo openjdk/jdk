@@ -90,8 +90,8 @@
 
 [3] Identifying the category of archived classes
 
-    BUILTIN:              (C->shared_classpath_index() >= 0)
-    UNREGISTERED:         (C->shared_classpath_index() == UNREGISTERED_INDEX (-9999))
+    BUILTIN:              (C->aot_class_location_id() >= 0)
+    UNREGISTERED:         (C->aot_class_location_id() == UNREGISTERED_INDEX (-9999))
 
 [4] Lookup of archived classes at run time:
 
@@ -269,9 +269,7 @@ public:
   static bool check_linking_constraints(Thread* current, InstanceKlass* klass) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                      Handle loader1, Handle loader2) NOT_CDS_RETURN;
-  static bool is_builtin(const InstanceKlass* k) {
-    return (k->shared_classpath_index() != UNREGISTERED_INDEX);
-  }
+  static bool is_builtin(const InstanceKlass* k);
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
   static InstanceKlass* get_unregistered_class(Symbol* name);
   static void copy_unregistered_class_size_and_crc32(InstanceKlass* klass, DumpTimeClassInfo* dt_info);

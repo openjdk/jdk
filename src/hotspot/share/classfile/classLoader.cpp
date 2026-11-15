@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotClassLocation.hpp"
 #include "cds/aotSystemDictionary.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
@@ -1219,7 +1220,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
                                                            CHECK_NULL);
   result->set_classpath_index(classpath_index);
   if (is_patched) {
-    result->set_shared_classpath_index(0);
+    result->set_aot_class_location_id(AOTClassLocationID::MODULES_IMAGE);
   }
   return result;
 }

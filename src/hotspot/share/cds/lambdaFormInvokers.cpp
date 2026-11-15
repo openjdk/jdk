@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassFilter.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/aotCompressedPointers.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotSystemDictionary.hpp"
@@ -190,9 +191,9 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
       TempNewSymbol class_name_sym = SymbolTable::new_symbol(class_name);
       Klass* klass = SystemDictionary::resolve_or_null(class_name_sym, THREAD);
       assert(klass != nullptr, "must already be loaded");
-      if (!klass->in_aot_cache() && klass->shared_classpath_index() < 0) {
+      if (!klass->in_aot_cache() && klass->aot_class_location_id() == AOTClassLocationID::INVALID) {
         // Fake it, so that it will be included into the archive.
-        klass->set_shared_classpath_index(0);
+        klass->set_aot_class_location_id(AOTClassLocationID::MODULES_IMAGE);
         // Set the "generated" bit, so it won't interfere with JVMTI.
         // See AOTSystemDictionary::find_builtin_class().
         klass->set_is_aot_generated_class();

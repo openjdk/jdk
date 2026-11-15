@@ -994,7 +994,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
                                                     InstanceKlass* ik,
                                                     PackageEntry* pkg_entry,
                                                     Handle class_loader) {
-  int scp_index = ik->shared_classpath_index();
+  int scp_index = AOTClassLocationConfig::get_path_index(ik);
   assert(!ik->defined_by_other_loaders(), "this function should be called for built-in classes only");
   assert(scp_index >= 0, "must be");
   const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(scp_index);
@@ -1278,8 +1278,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // For boot loader, ensure that GetSystemPackage knows that a class in this
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
-    s2 path_index = ik->shared_classpath_index();
-    ik->set_classpath_index(path_index);
+    ik->set_classpath_index(AOTClassLocationConfig::get_path_index(ik));
   }
 
   // notify a class loaded from shared object
