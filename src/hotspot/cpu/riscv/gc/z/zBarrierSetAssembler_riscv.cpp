@@ -230,6 +230,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
                                      Address ref_addr,
                                      Register tmp1,
                                      Register tmp2,
+                                     bool is_nokeepalive,
                                      Label& slow_path) {
   Address buffer(xthread, ZThreadLocalData::store_barrier_buffer_offset());
   assert_different_registers(ref_addr.base(), tmp1, tmp2);
@@ -252,9 +253,13 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ la(tmp1, ref_addr);
   __ sd(tmp1, Address(tmp2, in_bytes(ZStoreBarrierEntry::p_offset())));
 
-  // Load and log the prev value
-  __ ld(tmp1, tmp1);
-  __ sd(tmp1, Address(tmp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
+  // No-keepalive stores only need to record the field address.
+  if (is_nokeepalive) {
+    __ sd(zr, Address(tmp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
+  } else {
+    __ ld(tmp1, tmp1);
+    __ sd(tmp1, Address(tmp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
+  }
 }
 
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
@@ -264,6 +269,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                                                 Register rtmp3,
                                                 bool is_native,
                                                 bool is_atomic,
+                                                bool is_nokeepalive,
                                                 Label& medium_path_continuation,
                                                 Label& slow_path,
                                                 Label& slow_path_continuation) const {
@@ -302,6 +308,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                              ref_addr,
                              rtmp1,
                              rtmp2,
+                             is_nokeepalive,
                              slow_path);
     __ bind(slow_path_continuation);
     __ j(medium_path_continuation);
@@ -352,6 +359,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                          noreg /* tmp3 */,
                          false /* is_native */,
                          false /* is_atomic */,
+                         false /* is_nokeepalive */,
                          medium_continuation,
                          slow,
                          slow_continuation);
@@ -467,7 +475,7 @@ static void copy_store_barrier(MacroAssembler* masm,
   __ andr(tmp1, pre_ref, tmp1);
   __ beqz(tmp1, done);
 
-  store_barrier_buffer_add(masm, src, tmp1, tmp2, slow);
+  store_barrier_buffer_add(masm, src, tmp1, tmp2, false /* is_nokeepalive */, slow);
   __ j(done);
 
   __ bind(slow);
@@ -765,19 +773,17 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
 
   Label slow;
   Label slow_continuation;
-  // No-keepalive barriers must not buffer the previous value.
-  if (!stub->is_nokeepalive()) {
-    store_barrier_medium(masm,
-                         stub->ref_addr(),
-                         stub->new_zpointer(),
-                         t1,
-                         t0,
-                         stub->is_native(),
-                         stub->is_atomic(),
-                         *stub->continuation(),
-                         slow,
-                         slow_continuation);
-  }
+  store_barrier_medium(masm,
+                       stub->ref_addr(),
+                       stub->new_zpointer(),
+                       t1,
+                       t0,
+                       stub->is_native(),
+                       stub->is_atomic(),
+                       stub->is_nokeepalive(),
+                       *stub->continuation(),
+                       slow,
+                       slow_continuation);
 
   __ bind(slow);
 
@@ -797,7 +803,7 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   }
 
   // Stub exit
-  __ j(*stub->continuation());
+  __ j(slow_continuation);
 }
 
 #undef __
@@ -983,6 +989,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
                        stub->tmp()->as_pointer_register(),
                        false /* is_native */,
                        stub->is_atomic(),
+                       false /* is_nokeepalive */,
                        *stub->continuation(),
                        slow,
                        slow_continuation);

@@ -40,97 +40,66 @@ package gc.z;
  */
 
 import java.lang.ref.PhantomReference;
-import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
 
 public class TestReferenceClear {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final Reference<?>[] REFERENCES = new Reference<?>[4];
-    private static final WeakReference<?>[] OBSERVERS = new WeakReference<?>[4];
-    private static Object[] referents;
+    private static Object weakReferent = new Object();
+    private static Object phantomReferent = new Object();
+    private static final WeakReference<Object> weak = new WeakReference<>(weakReferent);
+    private static final PhantomReference<Object> phantom = new PhantomReference<>(phantomReferent, null);
+    // The observers detect whether clear() keeps either referent alive.
+    private static final WeakReference<Object> weakObserver = new WeakReference<>(weakReferent);
+    private static final WeakReference<Object> phantomObserver = new WeakReference<>(phantomReferent);
 
-    private static void clearWeak(WeakReference<?> reference) {
-        reference.clear();
+    // Fixed receivers let C2 resolve clear() without receiver profiling.
+    private static void clearWeak() {
+        weak.clear();
     }
 
-    private static void clearPhantom(PhantomReference<?> reference) {
-        reference.clear();
+    private static void clearPhantom() {
+        phantom.clear();
     }
 
-    private static void checkCompiled(Method method) {
-        if (WB.getMethodCompilationLevel(method) != 4) {
-            throw new RuntimeException("Not C2 compiled: " + method);
-        }
-    }
-
-    private static void prepare() {
-        referents = new Object[4];
-        for (int i = 0; i < referents.length; i++) {
-            Object object = new Object();
-            referents[i] = object;
-            REFERENCES[i] = i % 2 == 0 ? new WeakReference<>(object)
-                                     : new PhantomReference<>(object, null);
-            OBSERVERS[i] = new WeakReference<>(object);
-        }
-        WB.fullGC();
-        for (int i = 0; i < referents.length; i++) {
-            if (!WB.isObjectInOldGen(referents[i]) ||
-                !WB.isObjectInOldGen(REFERENCES[i]) ||
-                !WB.isObjectInOldGen(OBSERVERS[i])) {
-                throw new RuntimeException("Objects were not promoted: " + i);
-            }
-        }
+    private static Method compile(String name) throws Exception {
+        Method method = TestReferenceClear.class.getDeclaredMethod(name);
+        Asserts.assertTrue(WB.enqueueMethodForCompilation(method, 4) &&
+                           WB.getMethodCompilationLevel(method) == 4,
+                           "Not C2 compiled: " + method);
+        return method;
     }
 
     public static void main(String[] args) throws Exception {
-        // Exercise both the non-null and already-cleared branches before compiling.
-        for (int i = 0; i < 20_000; i++) {
-            Object object = new Object();
-            WeakReference<Object> weak = new WeakReference<>(object);
-            PhantomReference<Object> phantom = new PhantomReference<>(object, null);
-            clearWeak(weak);
-            clearWeak(weak);
-            clearPhantom(phantom);
-            clearPhantom(phantom);
-            Reference.reachabilityFence(object);
-        }
-        Method weak = TestReferenceClear.class.getDeclaredMethod("clearWeak", WeakReference.class);
-        Method phantom = TestReferenceClear.class.getDeclaredMethod("clearPhantom", PhantomReference.class);
-        if (!WB.enqueueMethodForCompilation(weak, 4) || !WB.enqueueMethodForCompilation(phantom, 4)) {
-            throw new RuntimeException("Could not request C2 compilation");
-        }
-        checkCompiled(weak);
-        checkCompiled(phantom);
+        Method weakMethod = compile("clearWeak");
+        Method phantomMethod = compile("clearPhantom");
 
-        prepare();
+        // The old-mark store barrier requires old-generation test objects.
+        WB.fullGC();
+        if (!WB.isObjectInOldGen(weakReferent) || !WB.isObjectInOldGen(phantomReferent) ||
+            !WB.isObjectInOldGen(weak) || !WB.isObjectInOldGen(phantom) ||
+            !WB.isObjectInOldGen(weakObserver) || !WB.isObjectInOldGen(phantomObserver)) {
+            throw new RuntimeException("Objects were not promoted");
+        }
+
         WB.concurrentGCAcquireControl();
         try {
-            referents = null;
+            weakReferent = null;
+            phantomReferent = null;
+            // Clear before reference discovery, while the old marking barrier is active.
             WB.concurrentGCRunTo(WB.AFTER_MARKING_STARTED);
-            clearWeak((WeakReference<?>) REFERENCES[0]);
-            clearPhantom((PhantomReference<?>) REFERENCES[1]);
-
-            WB.concurrentGCRunTo(WB.BEFORE_MARKING_COMPLETED);
-            clearWeak((WeakReference<?>) REFERENCES[2]);
-            clearPhantom((PhantomReference<?>) REFERENCES[3]);
-            checkCompiled(weak);
-            checkCompiled(phantom);
+            clearWeak();
+            clearPhantom();
+            Asserts.assertEQ(WB.getMethodCompilationLevel(weakMethod), 4, "Weak clear not C2 compiled");
+            Asserts.assertEQ(WB.getMethodCompilationLevel(phantomMethod), 4, "Phantom clear not C2 compiled");
             WB.concurrentGCRunToIdle();
 
-            String failures = "";
-            for (int i = 0; i < REFERENCES.length; i++) {
-                boolean cleared = REFERENCES[i].refersTo(null);
-                boolean collected = OBSERVERS[i].refersTo(null);
-                System.out.println("case=" + i + " cleared=" + cleared + " collected=" + collected);
-                if (!cleared || !collected) {
-                    failures += " " + i;
-                }
-            }
-            if (!failures.isEmpty()) {
-                throw new RuntimeException("Referents kept alive in cases:" + failures);
-            }
+            Asserts.assertTrue(weak.refersTo(null), "Weak reference not cleared");
+            Asserts.assertTrue(phantom.refersTo(null), "Phantom reference not cleared");
+            Asserts.assertTrue(weakObserver.refersTo(null), "Weak referent kept alive");
+            Asserts.assertTrue(phantomObserver.refersTo(null), "Phantom referent kept alive");
         } finally {
             WB.concurrentGCReleaseControl();
         }

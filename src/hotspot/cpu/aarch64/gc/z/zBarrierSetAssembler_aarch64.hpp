@@ -80,6 +80,7 @@ public:
                             Register rtmp3,
                             bool is_native,
                             bool is_atomic,
+                            bool is_nokeepalive,
                             Label& medium_path_continuation,
                             Label& slow_path,
                             Label& slow_path_continuation) const;

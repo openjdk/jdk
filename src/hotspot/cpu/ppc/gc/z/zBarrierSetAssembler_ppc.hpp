@@ -128,6 +128,7 @@ public:
                             RegisterOrConstant ind_or_offs,
                             Register tmp,
                             bool is_atomic,
+                            bool is_nokeepalive,
                             Label& medium_path_continuation,
                             Label& slow_path) const;
 
