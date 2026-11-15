@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
             writeData(caller);
 
             endHeader();
+            writer.flush();
 
         } catch (java.io.IOException ex) {
             throw new SQLException(MessageFormat.format(resBundle.handleGetObject("wrsxmlwriter.ioex").toString(), ex.getMessage()));
@@ -321,12 +322,19 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
             caller.beforeFirst();
             caller.setShowDeleted(true);
             while (caller.next()) {
-                if (caller.rowDeleted() && caller.rowInserted()) {
+                boolean rowDeleted = caller.rowDeleted();
+                boolean rowInserted = caller.rowInserted();
+                boolean rowUpdated = caller.rowUpdated();
+                boolean writeUpdateValues = rowDeleted || rowUpdated;
+
+                if (rowDeleted && rowInserted) {
                     beginSection("modifyRow");
-                } else if (caller.rowDeleted()) {
+                } else if (rowDeleted) {
                     beginSection("deleteRow");
-                } else if (caller.rowInserted()) {
+                } else if (rowInserted) {
                     beginSection("insertRow");
+                } else if (rowUpdated) {
+                    beginSection("modifyRow");
                 } else {
                     beginSection("currentRow");
                 }
@@ -338,13 +346,17 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
                         beginTag("columnValue");
                         writeValue(i, (RowSet)rs);
                         endTag("columnValue");
-                        beginTag("updateRow");
+                        beginTag("updateValue");
                         writeValue(i, caller);
-                        endTag("updateRow");
+                        endTag("updateValue");
                     } else {
                         beginTag("columnValue");
                         writeValue(i, caller);
                         endTag("columnValue");
+                        if (writeUpdateValues) {
+                            beginTag("updateValue");
+                            endTag("updateValue");
+                        }
                     }
                 }
 
@@ -482,7 +494,6 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
         } else {
             ;
         }
-        writer.flush();
     }
 
     private void endSection() throws java.io.IOException {
@@ -492,7 +503,6 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
         String beginTag = getTag();
         writer.write("</" + beginTag + ">\n");
 
-        writer.flush();
     }
 
     private void beginTag(String tag) throws java.io.IOException {
@@ -513,7 +523,6 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
         } else {
             ;
         }
-        writer.flush();
     }
 
     private void emptyTag(String tag) throws java.io.IOException {
@@ -550,8 +559,6 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
     private void writeString(String s) throws java.io.IOException {
         if (s != null) {
             writer.write(s);
-        } else  {
-            writeNull();
         }
     }
 
@@ -595,9 +602,14 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
     }
 
     private void propString(String tag, String s) throws java.io.IOException {
-        beginTag(tag);
-        writeString(s);
-        endTag(tag);
+        if (s == null) {
+            writeIndent(stack.size());
+            writer.write("<" + tag + "/>\n");
+        } else {
+            beginTag(tag);
+            writeString(s);
+            endTag(tag);
+        }
     }
 
     private void propInteger(String tag, int i) throws java.io.IOException {

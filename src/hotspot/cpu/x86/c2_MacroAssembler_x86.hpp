@@ -115,6 +115,9 @@ public:
   void varshiftq(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vlen_enc, XMMRegister vtmp = xnoreg);
   void varshiftbw(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len, XMMRegister vtmp);
   void evarshiftb(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len, XMMRegister vtmp);
+  // Uniform byte shift via GFNI affine instruction. shift holds the scalar count.
+  void vshiftb_gfni(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift,
+                    Register rtmp, Register rbase, int vlen_enc);
 
   void insert(BasicType typ, XMMRegister dst, Register val, int idx);
   void vinsert(BasicType typ, XMMRegister dst, XMMRegister src, Register val, int idx);
@@ -508,15 +511,6 @@ public:
                                   XMMRegister src, int vlen_enc);
 
   void efp16sh(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
-
-  void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register mask,
-                       XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
-                       Register midx, Register length, int vector_len, int vlen_enc);
-
-  void vgather8b_masked(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                        Register mask, Register midx, Register rtmp, int vlen_enc);
-  void vgather8b(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                 Register rtmp, int vlen_enc);
 
   void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, bool is_unsigned, int vlen_enc);
 

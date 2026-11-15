@@ -562,6 +562,26 @@ private:
         ShouldNotReachHere();
     }
 
+    uint32_t start_index = r->humongous_start_region();
+    if (r->is_humongous()) {
+      verify(r, start_index != ShenandoahHeapRegion::UndefinedRegionIndex,
+             "Humongous region must have a valid start region index");
+
+      if (r->is_humongous_start()) {
+        verify(r, start_index == r->index(),
+               "Humongous start region must identify itself as its own start");
+      } else {
+        for (size_t i = start_index + 1; i <= r->index(); i++) {
+          ShenandoahHeapRegion* chain = _heap->get_region(i);
+          verify(chain, chain->is_humongous_continuation(),
+                 "Humongous start must belong to same humongous chain");
+        }
+      }
+    } else {
+      verify(r, start_index == ShenandoahHeapRegion::UndefinedRegionIndex,
+             "Non-humongous region should have an undefined region index");
+    }
+
     verify(r, r->capacity() == ShenandoahHeapRegion::region_size_bytes(),
            "Capacity should match region size");
 
@@ -835,6 +855,59 @@ public:
   }
 };
 
+class ShenandoahIsGCWorkerClosure : public ThreadClosure {
+private:
+  const Thread* _target;
+  bool _found;
+
+public:
+  ShenandoahIsGCWorkerClosure(const Thread* t) : _target(t), _found(false) {}
+
+  void do_thread(Thread* t) override {
+    if (_target == t) {
+      _found = true;
+    }
+  }
+
+  bool found() const { return _found; }
+};
+
+class ShenandoahVerifyThreadLabsClosure : public ThreadClosure {
+private:
+  const char* _label;
+  const bool _generational;
+  const WorkerThreads* _workers;
+
+  void verify_labs(Thread* t, bool expect_labs) const {
+    const PLAB* gclab = ShenandoahThreadLocalData::gclab(t);
+    const ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(t);
+    const bool expect_plab = _generational && expect_labs;
+
+    guarantee((gclab != nullptr) == expect_labs, "%s: GCLAB %s be initialized for thread: %s",
+              _label, expect_labs ? "should" : "shouldn't", t->name());
+    guarantee((plab != nullptr) == expect_plab, "%s: PLAB %s be initialized for thread: %s",
+              _label, expect_plab ? "should" : "shouldn't", t->name());
+  }
+
+public:
+  ShenandoahVerifyThreadLabsClosure(const char* label, bool generational, const WorkerThreads* workers) :
+    _label(label),
+    _generational(generational),
+    _workers(workers) {}
+
+  void do_thread(Thread* t) override {
+    if (t->is_Java_thread()) {
+      verify_labs(t, true);
+    } else if (t->is_Worker_thread()) {
+      ShenandoahIsGCWorkerClosure cl(t);
+      _workers->threads_do(&cl);
+      verify_labs(t, cl.found());
+    } else {
+      verify_labs(t, false);
+    }
+  }
+};
+
 void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
                                              const char* label,
                                              VerifyRememberedSet remembered,
@@ -904,6 +977,9 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
       Threads::java_threads_do(&vtgcs);
     }
   }
+
+  ShenandoahVerifyThreadLabsClosure labs_cl(label, _heap->mode()->is_generational(), _heap->workers());
+  Threads::threads_do(&labs_cl);
 
   // Deactivate barriers temporarily: Verifier wants plain heap accesses
   ShenandoahGCStateResetter resetter;
@@ -1055,7 +1131,7 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
       if (r->is_humongous()) {
         // For humongous objects, test if start region is marked live, and if so,
         // all humongous regions in that chain have live data equal to their "used".
-        juint start_live = ld[r->humongous_start_region()->index()].load_relaxed();
+        juint start_live = ld[r->humongous_start_region()].load_relaxed();
         if (start_live > 0) {
           verf_live = (juint)(r->used() / HeapWordSize);
         }
@@ -1196,7 +1272,7 @@ void ShenandoahVerifier::verify_after_update_refs(ShenandoahGeneration* generati
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
                                        // expect generation and heap sizes to match exactly, including trash
-          _verify_size_exact_including_trash,
+          _verify_size_exact,
           _verify_gcstate_stable       // update refs had cleaned up forwarded objects
   );
 }
@@ -1213,23 +1289,8 @@ void ShenandoahVerifier::verify_after_gc(ShenandoahGeneration* generation) {
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
                                        // expect generation and heap sizes to match exactly, including trash
-          _verify_size_exact_including_trash,
+          _verify_size_exact,
           _verify_gcstate_stable       // GC state was turned off
-  );
-}
-
-void ShenandoahVerifier::verify_after_degenerated(ShenandoahGeneration* generation) {
-  verify_at_safepoint(
-          generation,
-          "After Degenerated GC",
-          _verify_remembered_disable,  // do not verify remembered set
-          _verify_forwarded_none,      // all objects are non-forwarded
-          _verify_marked_disable,      // no need to check unreachable objects, end of cycle
-          _verify_cset_none,           // no cset references
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_notrash_nocset, // no trash, no cset
-          _verify_size_exact,          // expect generation and heap sizes to match exactly
-          _verify_gcstate_stable       // degenerated refs had cleaned up forwarded objects
   );
 }
 
@@ -1237,14 +1298,14 @@ void ShenandoahVerifier::verify_before_fullgc(ShenandoahGeneration* generation) 
   verify_at_safepoint(
           generation,
           "Before Full GC",
-          _verify_remembered_disable,  // do not verify remembered set
-          _verify_forwarded_allow,     // can have forwarded objects
-          _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
-          _verify_cset_disable,        // cset might be foobared
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_disable,     // no reliable region data here
-          _verify_size_disable,        // if we degenerate during evacuation, usage not valid: padding and deferred accounting
-          _verify_gcstate_disable      // no reliable gcstate data
+          _verify_remembered_disable,      // do not verify remembered set
+          _verify_forwarded_none,          // cannot have forwarded objects
+          _verify_marked_disable,          // do not verify marked: lots ot time wasted checking dead allocations
+          _verify_cset_none,               // cset should be empty
+          _verify_liveness_disable,        // no reliable liveness data anymore
+          _verify_regions_notrash_nocset,  // no reliable region data here
+          _verify_size_exact,              // expect generation and heap sizes to match exactly
+          _verify_gcstate_stable           // no forwarded objects
   );
 }
 
@@ -1300,12 +1361,12 @@ private:
                 "Verify Roots In To-Space", "Should be marked", __FILE__, __LINE__);
       }
 
-      if (heap->in_collection_set(obj)) {
+      if (heap->in_collection_set(obj) && !ShenandoahForwarding::is_self_forwarded(obj)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                 "Verify Roots In To-Space", "Should not be in collection set", __FILE__, __LINE__);
       }
 
-      if (ShenandoahForwarding::is_forwarded(obj)) {
+      if (ShenandoahForwarding::is_real_forwarded(obj)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                 "Verify Roots In To-Space", "Should not be forwarded", __FILE__, __LINE__);
       }

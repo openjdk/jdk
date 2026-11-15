@@ -34,9 +34,11 @@
 #include "memory/universe.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_arm.inline.hpp"
 
@@ -460,6 +462,10 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   } else {
     ShouldNotReachHere();
   }
+}
+
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  ShouldNotReachHere();
 }
 
 void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
@@ -2115,7 +2121,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   if (basic_type == T_ARRAY) basic_type = T_OBJECT;
 
   // If we don't know anything or it's an object array, just go through the generic arraycopy
-  if (default_type == nullptr) {
+  if (default_type == nullptr || !default_type->is_loaded()) {
 
     // save arguments, because they will be killed by a runtime call
     save_in_reserved_area(R0, R1, R2, R3);

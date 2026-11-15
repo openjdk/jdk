@@ -77,7 +77,7 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
 }
 
 void ShenandoahAdaptiveHeuristics::compute_headroom_adjustment() {
-  // The trigger threshold represents mutator available - "head room".
+  // The trigger threshold represents mutator available - "headroom".
   // We plan for GC to finish before the amount of allocated memory exceeds trigger threshold.  This is the same  as saying we
   // intend to finish GC before the amount of available memory is less than the allocation headroom.  Headroom is the planned
   // safety buffer to allow a small amount of additional allocation to take place in case we were overly optimistic in delaying
@@ -152,15 +152,8 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   }
 }
 
-void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time) {
-  // Conservatively add sample into linear model, if this time is above the predicted concurrent gc time
-  if (_cycles.predict_duration(time_at_start, _margin_of_error_sd) < gc_time) {
-    _cycles.record_duration(time_at_start, gc_time);
-  }
-}
-
-void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
-  ShenandoahHeuristics::record_success_concurrent();
+void ShenandoahAdaptiveHeuristics::record_concurrent_completion() {
+  ShenandoahHeuristics::record_concurrent_completion();
 
   // We add this time even if it is a shortened cycle. There is a risk that this pulls
   // the gc time trend down, but it is still a more accurate view than excluding times
@@ -213,26 +206,24 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_degenerated(bool is_generational_global) {
-  ShenandoahHeuristics::record_degenerated(is_generational_global);
-  if (!is_generational_global) {
-    add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
-  }
-}
-
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t available = _space_info->soft_mutator_available();
+  const size_t used = _space_info->used();
 
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT,
                       PROPERFMTARGS(available), PROPERFMTARGS(capacity));
 
-  if (_start_gc_is_pending) {
+  if (_start_gc_is_pending.load_relaxed()) {
     log_info(gc, ergo)("GC start is already pending");
     return true;
   }
 
   _last_trigger = OTHER;
+
+  if (trigger_allocation_threshold(used, capacity)) {
+    return true;
+  }
 
   if (trigger_min_free_threshold(available, capacity)) {
     return true;
@@ -258,17 +249,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   }
 
   return ShenandoahHeuristics::should_start_gc();
-}
-
-bool ShenandoahAdaptiveHeuristics::trigger_min_free_threshold(size_t available, size_t capacity) {
-  const size_t min_threshold = min_free_threshold(capacity);
-  if (available < min_threshold) {
-    log_trigger("Occupancy. " PROPERFMT " free, below " PROPERFMT " threshold",
-                PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
-    accept_trigger_with_type(OTHER);
-    return true;
-  }
-  return false;
 }
 
 bool ShenandoahAdaptiveHeuristics::trigger_learning(size_t available, size_t capacity) {
@@ -308,7 +288,7 @@ bool ShenandoahAdaptiveHeuristics::trigger_average_allocation_rate(const Shenand
 // The following trace represents an actual workload, with allocation rates sampled at 10 Hz, the default behavior before
 // introduction of accelerated allocation rate detection.  Though the allocation rate is seen to be increasing at times
 // 101.907 and 102.007 and 102.108, the newly sampled allocation rate is not enough to trigger GC because the headroom is
-// still quite large.  In fact, GC is not triggered until time 102.409s, and this GC degenerates.
+// still quite large.  In fact, GC is not triggered until time 102.409s, and this GC stalls.
 //
 //    Sample Time (s)      Allocation Rate (MB/s)       Headroom (GB)
 //       101.807                       0.0                  26.93
@@ -435,7 +415,7 @@ void ShenandoahAdaptiveHeuristics::adjust_margin_of_error(double amount) {
   log_debug(gc, ergo)("Margin of error now %.2f", _margin_of_error_sd);
 }
 
-size_t ShenandoahAdaptiveHeuristics::min_free_threshold(size_t capacity) const {
+size_t ShenandoahAdaptiveHeuristics::min_free_threshold(size_t capacity) {
   return capacity / 100 * ShenandoahMinFreeThreshold;
 }
 

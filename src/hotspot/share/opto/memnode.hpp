@@ -104,7 +104,6 @@ public:
   static bool detect_ptr_independence(Node* p1, AllocateNode* a1,
                                       Node* p2, AllocateNode* a2,
                                       PhaseGVN* phase);
-  static bool adr_phi_is_loop_invariant(Node* adr_phi, Node* cast);
 
   static Node *optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oop, Node *load, PhaseGVN *phase);
   static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *load, PhaseGVN *phase);
@@ -713,9 +712,6 @@ public:
   // Map a store opcode to its corresponding own opcode, trivially.
   virtual int store_Opcode() const { return Opcode(); }
 
-  // have all possible loads of the value stored been optimized away?
-  bool value_never_loaded(PhaseValues* phase) const;
-
   Node* convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt);
 
   MemBarNode* trailing_membar() const;
@@ -1167,7 +1163,7 @@ private:
 public:
   ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base, Node* val, bool is_large)
     : Node(ctrl, arymem, word_cnt, base, val), _is_large(is_large),
-      _requires_word_fill(val->bottom_type()->isa_long() && (!val->bottom_type()->is_long()->is_con() || val->bottom_type()->is_long()->get_con() != 0)) {
+      _requires_word_fill(val->bottom_type()->is_long() && (!val->bottom_type()->as_long()->is_con() || val->bottom_type()->as_long()->get_con() != 0)) {
     init_class_id(Class_ClearArray);
   }
   virtual int         Opcode() const;

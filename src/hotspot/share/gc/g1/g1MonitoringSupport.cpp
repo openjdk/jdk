@@ -187,6 +187,16 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
 }
 
 G1MonitoringSupport::~G1MonitoringSupport() {
+  delete _young_collection_counters;
+  delete _full_collection_counters;
+  delete _conc_collection_counters;
+  delete _young_gen_counters;
+  delete _old_gen_counters;
+  delete _old_space_counters;
+  delete _eden_space_counters;
+  delete _from_space_counters;
+  delete _to_space_counters;
+
   delete _eden_space_pool;
   delete _survivor_space_pool;
   delete _old_gen_pool;
@@ -367,6 +377,10 @@ G1MonitoringScope::~G1MonitoringScope() {
   MemoryService::track_memory_usage();
 }
 
+void G1MonitoringScope::set_all_memory_pools_affected() {
+  _tms.set_all_memory_pools_affected();
+}
+
 G1YoungGCMonitoringScope::G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support,
                                                    bool all_memory_pools_affected) :
   G1MonitoringScope(monitoring_support,
@@ -374,6 +388,14 @@ G1YoungGCMonitoringScope::G1YoungGCMonitoringScope(G1MonitoringSupport* monitori
                     &monitoring_support->_young_gc_memory_manager,
                     "end of minor GC",
                     all_memory_pools_affected) {
+}
+
+G1YoungGCMonitoringScope::~G1YoungGCMonitoringScope() {
+  G1GCPhaseTimes* phase_times = G1CollectedHeap::heap()->phase_times();
+  if (phase_times->sum_thread_work_items(G1GCPhaseTimes::EagerlyReclaimHumongousObjects,
+                                         G1GCPhaseTimes::EagerlyReclaimNumReclaimed) != 0) {
+    set_all_memory_pools_affected();
+  }
 }
 
 G1FullGCMonitoringScope::G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support) :

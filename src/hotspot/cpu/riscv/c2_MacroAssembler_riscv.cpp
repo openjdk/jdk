@@ -165,8 +165,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     srli(tmp2_hash, tmp2_hash, markWord::hash_shift);
 
     // Get the table and calculate the bucket's address.
-    la(tmp3_t, ExternalAddress(ObjectMonitorTable::current_table_address()));
-    ld(tmp3_t, Address(tmp3_t));
+    ld(tmp3_t, ExternalAddress(ObjectMonitorTable::current_table_address()));
     ld(tmp1, Address(tmp3_t, ObjectMonitorTable::table_capacity_mask_offset()));
     andr(tmp2_hash, tmp2_hash, tmp1);
     ld(tmp3_t, Address(tmp3_t, ObjectMonitorTable::table_buckets_offset()));
@@ -3616,5 +3615,17 @@ void C2_MacroAssembler::slidedown_v(VectorRegister dst, VectorRegister src,
   } else {
     mv(tmp, offset);
     vslidedown_vx(dst, src, tmp);
+  }
+}
+
+// Move elements up a vector register group.
+// Offset is the start index (offset) for the destination.
+void C2_MacroAssembler::slideup_v(VectorRegister dst, VectorRegister src,
+                                  uint32_t offset, Register tmp) {
+  if (is_uimm5(offset)) {
+    vslideup_vi(dst, src, offset);
+  } else {
+    mv(tmp, offset);
+    vslideup_vx(dst, src, tmp);
   }
 }

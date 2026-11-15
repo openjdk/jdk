@@ -25,7 +25,7 @@ package gc.g1;
 
 /*
  * @test TestEagerReclaimHumongousRegions
- * @bug 8051973
+ * @bug 8051973 8394667
  * @summary Test to make sure that eager reclaim of humongous objects correctly works.
  * @requires vm.gc.G1
  * @requires vm.debug
@@ -231,12 +231,12 @@ public class TestEagerReclaimHumongousRegions {
 }
 
 class TestEagerReclaimHumongousRegionsClearMarkBitsRunner {
-    value class RefValue {
+    static value class RefValue {
         Object o;
         RefValue() { o = null; }
     }
 
-    value class IntValue {
+    static value class IntValue {
         int i;
         IntValue() { i = 0; }
     }

@@ -22,13 +22,13 @@
  *
  */
 
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotModules.hpp"
 #include "cds/aotStreamedHeapLoader.hpp"
 #include "cds/aotThread.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -329,7 +329,7 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
     // A concurrent GC thread might racingly read the object payload after GC is enabled.
     InPlaceLinkingOopClosure cl(heap_object, linker);
     heap_object->oop_iterate(&cl);
-    HeapShared::remap_loaded_metadata(heap_object);
+    AOTHeap::remap_loaded_metadata(heap_object);
     return;
   }
 
@@ -353,7 +353,7 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
   // shady metadata fields from the archive that do not point at real metadata.
   // We deal with this by explicitly reading the requested address from the
   // archive and fixing it to real Metadata before writing it into the heap object.
-  HeapShared::do_metadata_offsets(heap_object, [&](int metadata_offset) {
+  AOTHeap::do_metadata_offsets(heap_object, [&](int metadata_offset) {
     BitMap::idx_t metadata_field_idx = header_bit + (size_t)metadata_offset / sizeof(RawElementT);
     BitMap::idx_t skip = word_scale;
     assert(metadata_field_idx >= start_bit && metadata_field_idx + skip <= end_bit,
@@ -802,8 +802,8 @@ void AOTStreamedHeapLoader::cleanup() {
   _roots_archive = nullptr;
 
   // Unmap regions
-  FileMapInfo::current_info()->unmap_region(AOTMetaspace::hp);
-  FileMapInfo::current_info()->unmap_region(AOTMetaspace::bm);
+  FileMapInfo::static_input_archive()->unmap_region(AOTMetaspace::hp);
+  FileMapInfo::static_input_archive()->unmap_region(AOTMetaspace::bm);
 
   _cleanup_materialization_time_ns = (Ticks::now() - start).nanoseconds();
 
@@ -973,21 +973,21 @@ void AOTStreamedHeapLoader::initialize() {
   EXCEPTION_MARK
 
   _materialization_start_ticks = Ticks::now();
+  FileMapInfo* mapinfo = FileMapInfo::static_input_archive();
+  mapinfo->map_bitmap_region();
 
-  FileMapInfo::current_info()->map_bitmap_region();
-
-  _heap_region = FileMapInfo::current_info()->region_at(AOTMetaspace::hp);
-  _bitmap_region = FileMapInfo::current_info()->region_at(AOTMetaspace::bm);
+  _heap_region = mapinfo->region_at(AOTMetaspace::hp);
+  _bitmap_region = mapinfo->region_at(AOTMetaspace::bm);
 
   assert(_heap_region->used() > 0, "empty heap archive?");
 
   _is_in_use = true;
 
   // archived roots are at this offset in the stream.
-  size_t roots_offset = FileMapInfo::current_info()->streamed_heap()->roots_offset();
-  size_t forwarding_offset = FileMapInfo::current_info()->streamed_heap()->forwarding_offset();
-  size_t root_highest_object_index_table_offset = FileMapInfo::current_info()->streamed_heap()->root_highest_object_index_table_offset();
-  _num_archived_objects = FileMapInfo::current_info()->streamed_heap()->num_archived_objects();
+  size_t roots_offset = mapinfo->streamed_heap()->roots_offset();
+  size_t forwarding_offset = mapinfo->streamed_heap()->forwarding_offset();
+  size_t root_highest_object_index_table_offset = mapinfo->streamed_heap()->root_highest_object_index_table_offset();
+  _num_archived_objects = mapinfo->streamed_heap()->num_archived_objects();
 
   // The first int is the length of the array
   _roots_archive = ((int*)(((address)_heap_region->mapped_base()) + roots_offset)) + 1;

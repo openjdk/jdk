@@ -37,7 +37,7 @@ import sun.jvm.hotspot.utilities.Observer;
 
 public class FlatArrayKlass extends ObjArrayKlass {
 
-  private static CIntegerField layoutKindField;
+  private static sun.jvm.hotspot.types.Field flatLayoutField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -50,15 +50,20 @@ public class FlatArrayKlass extends ObjArrayKlass {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type t = db.lookupType("FlatArrayKlass");
 
-    layoutKindField = t.getCIntegerField("_layout_kind");
+    flatLayoutField  = t.getField("_flat_layout");
   }
 
   public FlatArrayKlass(Address addr) {
     super(addr);
   }
 
+  public FlatLayout getFlatLayout() {
+    return new FlatLayout(addr.addOffsetTo(flatLayoutField.getOffset()));
+  }
+
   public LayoutKind getLayoutKind() {
-    return LayoutKind.valueOf((int)layoutKindField.getValue(addr));
+    FlatLayout fl = getFlatLayout();
+    return fl.getLayoutKind();
   }
 
   public void printValueOn(PrintStream tty) {

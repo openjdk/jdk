@@ -35,7 +35,7 @@ public interface InstructionTargeter {
     /**
      * Tests whether this targeter targets the specified instruction handle.
      *
-     * @param instructionHandle the instruction handle to test.
+     * @param instructionHandle The instruction handle to test.
      * @return whether this targeter targets the specified instruction handle.
      */
     boolean containsTarget(InstructionHandle instructionHandle);
@@ -43,9 +43,9 @@ public interface InstructionTargeter {
     /**
      * Replaces the target of this targeter from this old handle to the new handle.
      *
-     * @param oldIh the old handle
-     * @param newIh the new handle
-     * @throws ClassGenException if oldIh is not targeted by this object
+     * @param oldIh The old handle.
+     * @param newIh The new handle.
+     * @throws ClassGenException Thrown if oldIh is not targeted by this object
      */
     void updateTarget(InstructionHandle oldIh, InstructionHandle newIh) throws ClassGenException;
 }

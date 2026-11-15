@@ -35,14 +35,16 @@ public abstract class ArithmeticInstruction extends Instruction implements Typed
     }
 
     /**
-     * @param opcode of instruction
+     * Constructs an ArithmeticInstruction.
+     *
+     * @param opcode of instruction.
      */
     protected ArithmeticInstruction(final short opcode) {
         super(opcode, (short) 1);
     }
 
     /**
-     * @return type associated with the instruction
+     * @return type associated with the instruction.
      */
     @Override
     public Type getType(final ConstantPoolGen cp) {

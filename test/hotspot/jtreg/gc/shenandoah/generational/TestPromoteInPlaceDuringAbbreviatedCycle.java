@@ -118,9 +118,7 @@ public class TestPromoteInPlaceDuringAbbreviatedCycle {
 
     private static boolean isIllegalPause(GarbageCollectionNotificationInfo info) {
       return info.getGcName().equals("Shenandoah Pauses")
-          &&  (info.getGcAction().contains("Update Refs")
-            || info.getGcAction().contains("Degen")
-            || info.getGcAction().contains("Full"));
+          && (info.getGcAction().contains("Update Refs") || info.getGcAction().contains("Full"));
     }
 
     private static void subscribeToCollectorNotifications(NotificationListener listener) {
