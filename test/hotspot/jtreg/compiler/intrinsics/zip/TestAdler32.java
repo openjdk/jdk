@@ -29,9 +29,32 @@
  * @run main/othervm/timeout=600 -Xbatch compiler.intrinsics.zip.TestAdler32 -m
  */
 
+/**
+ * @test
+ * @bug 8394260
+ * @summary Verify the Adler32 AVX2 intrinsic with maximum byte values near LIMIT
+ * @requires vm.compiler2.enabled
+ * @requires os.simpleArch == "x64"
+ * @requires vm.cpu.features ~= ".*avx2.*"
+ *
+ * @run main/othervm/timeout=600 -Xbatch -XX:UseAVX=2 -DallFF=true compiler.intrinsics.zip.TestAdler32 -m
+ */
+
+/**
+ * @test
+ * @bug 8394260
+ * @summary Verify the Adler32 AVX2 intrinsic with a mixed byte pattern near LIMIT
+ * @requires vm.compiler2.enabled
+ * @requires os.simpleArch == "x64"
+ * @requires vm.cpu.features ~= ".*avx2.*"
+ *
+ * @run main/othervm/timeout=600 -Xbatch -XX:UseAVX=2 -Dtest.adler32.mixedPattern=true compiler.intrinsics.zip.TestAdler32 -m
+ */
+
 package compiler.intrinsics.zip;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.zip.Adler32;
 import java.util.zip.Checksum;
 
@@ -153,6 +176,16 @@ public class TestAdler32 {
 
     private static byte[] initializedBytes(int M, int offset) {
         byte[] bytes = new byte[M + offset];
+        if (Boolean.getBoolean("allFF")) {
+            Arrays.fill(bytes, (byte) 0xFF);
+            return bytes;
+        }
+        if (Boolean.getBoolean("test.adler32.mixedPattern")) {
+            for (int i = 0; i < bytes.length; i++) {
+                bytes[i] = (byte) ((i % 2 == 0) ? 0xFF : 0xF0);
+            }
+            return bytes;
+        }
         for (int i = 0; i < offset; i++) {
             bytes[i] = (byte) i;
         }
@@ -177,6 +210,7 @@ public class TestAdler32 {
                         len2*2, len2*4, len2*8, len2*16, len2*32, len2*64,
                         len3, len3+1, len3+3, len3+5, len3+7,
                         len3*2, len3*4, len3*8,
+                        len4-7, len4-5, len4-3, len4-1,
                         len4, len4+1, len4+3, len4+5, len4+7, len4+len1, len4+len2, len4+len3,
                         len4*2, len4*4, len4*2+1, len4*4+4,
                         len1+len2, len1+len2+1, len1+len2+3, len1+len2+5, len1+len2+7,

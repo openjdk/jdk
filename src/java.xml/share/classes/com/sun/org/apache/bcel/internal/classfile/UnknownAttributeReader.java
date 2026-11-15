@@ -40,7 +40,6 @@ public interface UnknownAttributeReader {
      *        agree with what the factory expects the length to be.
      * @param file This is the data input that the factory needs to read its data from.
      * @param constantPool This is the constant pool associated with the Attribute that we are constructing.
-     *
      * @return The user-defined AttributeReader should take this data and use it to construct an attribute. In the case of
      *         errors, a null can be returned which will cause the parsing of the class file to fail.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,26 @@
 
 package build.tools.cldrconverter;
 
+import static build.tools.cldrconverter.CLDRConverter.CURRENCY_NAME_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.CURRENCY_SYMBOL_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.EXEMPLAR_CITY_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.LDML_DTD_SYSTEM_ID;
+import static build.tools.cldrconverter.CLDRConverter.LOCALE_KEY_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.LOCALE_KEYTYPE;
+import static build.tools.cldrconverter.CLDRConverter.LOCALE_NAME_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.LOCALE_SEPARATOR;
+import static build.tools.cldrconverter.CLDRConverter.LOCALE_TYPE_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.METAZONE_ID_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.TIMEZONE_ID_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.ZONE_NAME_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.ZoneNameSlot;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -42,7 +57,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Handles parsing of files in Locale Data Markup Language and produces a map
+ * Handles parsing of files in Common Locale Data {@literal &} Rules and produces a map
  * that uses the keys and values of JRE locale data.
  */
 class LDMLParseHandler extends AbstractLDMLHandler<Object> {
@@ -63,7 +78,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
     @Override
     public InputSource resolveEntity(String publicID, String systemID) throws IOException, SAXException {
         // avoid HTTP traffic to unicode.org
-        if (systemID.startsWith(CLDRConverter.LDML_DTD_SYSTEM_ID)) {
+        if (systemID.startsWith(LDML_DTD_SYSTEM_ID)) {
             return new InputSource((new File(CLDRConverter.LOCAL_LDML_DTD)).toURI().toString());
         }
         return null;
@@ -87,11 +102,11 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         // copy string
         case "localeSeparator":
             pushStringEntry(qName, attributes,
-                CLDRConverter.LOCALE_SEPARATOR);
+                LOCALE_SEPARATOR);
             break;
         case "localeKeyTypePattern":
             pushStringEntry(qName, attributes,
-                CLDRConverter.LOCALE_KEYTYPE);
+                LOCALE_KEYTYPE);
             break;
 
         case "language":
@@ -101,7 +116,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             // for LocaleNames
             // copy string
             pushStringEntry(qName, attributes,
-                CLDRConverter.LOCALE_NAME_PREFIX +
+                LOCALE_NAME_PREFIX +
                 (qName.equals("variant") ? "%%" : "") +
                 attributes.getValue("type"));
             break;
@@ -113,7 +128,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 String key = convertOldKeyName(attributes.getValue("type"));
                 if (key.length() == 2) {
                     pushStringEntry(qName, attributes,
-                        CLDRConverter.LOCALE_KEY_PREFIX + key);
+                        LOCALE_KEY_PREFIX + key);
                 } else {
                     pushIgnoredContainer(qName);
                 }
@@ -129,7 +144,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 String scope = attributes.getValue("scope");
                 if (key.length() == 2 && scope == null) {
                     pushStringEntry(qName, attributes,
-                        CLDRConverter.LOCALE_TYPE_PREFIX + key + "." +
+                        LOCALE_TYPE_PREFIX + key + "." +
                         attributes.getValue("type"));
                 } else {
                     pushIgnoredContainer(qName);
@@ -148,7 +163,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "symbol":
             // for CurrencyNames
             // need to get the key from the containing <currency> element
-            pushStringEntry(qName, attributes, CLDRConverter.CURRENCY_SYMBOL_PREFIX
+            pushStringEntry(qName, attributes, CURRENCY_SYMBOL_PREFIX
                                                + getContainerKey());
             break;
 
@@ -166,7 +181,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     String containerKey = getContainerKey();
                     if (containerKey != null && attributes.getValue("count") == null) {
                         pushStringEntry(qName, attributes,
-                                        CLDRConverter.CURRENCY_NAME_PREFIX
+                                        CURRENCY_NAME_PREFIX
                                         + containerKey.toLowerCase(Locale.ROOT),
                                         attributes.getValue("type"));
                     } else {
@@ -505,7 +520,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "zone":
             {
                 String tzid = attributes.getValue("type"); // Olson tz id
-                zonePrefix = CLDRConverter.TIMEZONE_ID_PREFIX;
+                zonePrefix = TIMEZONE_ID_PREFIX;
                 put(zonePrefix + tzid, new HashMap<String, String>());
                 pushKeyContainer(qName, attributes, tzid);
             }
@@ -513,7 +528,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "metazone":
             {
                 String zone = attributes.getValue("type"); // LDML meta zone id
-                zonePrefix = CLDRConverter.METAZONE_ID_PREFIX;
+                zonePrefix = METAZONE_ID_PREFIX;
                 put(zonePrefix + zone, new HashMap<String, String>());
                 pushKeyContainer(qName, attributes, zone);
             }
@@ -529,10 +544,10 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "generic":  // generic name
         case "standard": // standard time name
         case "daylight": // daylight saving (summer) time name
-            pushStringEntry(qName, attributes, CLDRConverter.ZONE_NAME_PREFIX + qName + "." + zoneNameStyle);
+            pushStringEntry(qName, attributes, ZONE_NAME_PREFIX + qName + "." + zoneNameStyle);
             break;
         case "exemplarCity":
-            pushStringEntry(qName, attributes, CLDRConverter.EXEMPLAR_CITY_PREFIX);
+            pushStringEntry(qName, attributes, EXEMPLAR_CITY_PREFIX);
             break;
 
         //
@@ -812,6 +827,9 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "alias":
             {
                 if (id.equals("root") && !isIgnored(attributes)
+                        && registerMetazoneNameAlias(attributes.getValue("path"))) {
+                    pushIgnoredContainer(qName);
+                } else if (id.equals("root") && !isIgnored(attributes)
                         && ((currentContainer.getqName().equals("decimalFormatLength"))
                         || (currentContainer.getqName().equals("currencyFormat"))
                         || (currentContainer.getqName().equals("percentFormat"))
@@ -1022,6 +1040,9 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "listPattern":
             keyName = type;
             break;
+        case "metazone":
+            keyName = METAZONE_ID_PREFIX + type;
+            break;
         default:
             keyName = "";
             break;
@@ -1097,7 +1118,79 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             return toJDKKey(qName, "", style);
         }
 
+        // metazone
+        typeKey = "metazone[@type='";
+        start = path.indexOf(typeKey);
+        if (start != -1) {
+            return path.substring(start + typeKey.length(), path.indexOf("']", start));
+        }
+
         return calType + "." + toJDKKey(qName, context, width);
+    }
+
+    // Register a metazone name alias, limiting its scope to the name slots
+    // selected by the enclosing long/short and standard/daylight/generic elements.
+    private boolean registerMetazoneNameAlias(String path) {
+        Container container = currentContainer;
+        String style = null;
+        String nameType = null;
+        KeyContainer metazone = null;
+
+        while (container != null) {
+            switch (container.getqName()) {
+                case "long", "short" -> style = container.getqName();
+                case "generic", "standard", "daylight" -> nameType = container.getqName();
+                case "metazone" -> {
+                    if (container instanceof KeyContainer kc) {
+                        metazone = kc;
+                    }
+                }
+                default -> { }
+            }
+            if (metazone != null) {
+                break;
+            }
+            container = container.getParent();
+        }
+
+        if (metazone == null || !path.contains("metazone[@type='")) {
+            return false;
+        }
+
+        EnumSet<ZoneNameSlot> slots = zoneNameSlots(style, nameType);
+        if (slots.isEmpty()) {
+            return false;
+        }
+
+        CLDRConverter.addMetazoneNameAlias(
+                METAZONE_ID_PREFIX + metazone.getKey(),
+                METAZONE_ID_PREFIX + getTarget(path, "", "", ""),
+                slots);
+        return true;
+    }
+
+    // Map the alias's enclosing elements to the affected name slots.
+    // An unspecified style selects all slots.
+    private static EnumSet<ZoneNameSlot> zoneNameSlots(String style, String nameType) {
+        if (style == null) {
+            return EnumSet.allOf(ZoneNameSlot.class);
+        }
+
+        return switch (nameType == null ? style : nameType + '.' + style) {
+            case "long" -> EnumSet.of(ZoneNameSlot.STD_LONG,
+                    ZoneNameSlot.DST_LONG,
+                    ZoneNameSlot.GEN_LONG);
+            case "short" -> EnumSet.of(ZoneNameSlot.STD_SHORT,
+                    ZoneNameSlot.DST_SHORT,
+                    ZoneNameSlot.GEN_SHORT);
+            case "standard.long" -> EnumSet.of(ZoneNameSlot.STD_LONG);
+            case "standard.short" -> EnumSet.of(ZoneNameSlot.STD_SHORT);
+            case "daylight.long" -> EnumSet.of(ZoneNameSlot.DST_LONG);
+            case "daylight.short" -> EnumSet.of(ZoneNameSlot.DST_SHORT);
+            case "generic.long" -> EnumSet.of(ZoneNameSlot.GEN_LONG);
+            case "generic.short" -> EnumSet.of(ZoneNameSlot.GEN_SHORT);
+            default -> EnumSet.noneOf(ZoneNameSlot.class);
+        };
     }
 
     @Override
@@ -1130,7 +1223,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 Map<String, String> valmap = (Map<String, String>) get(zonePrefix + getContainerKey());
                 Entry<?> entry = (Entry<?>) currentContainer;
                 if (qName.equals("exemplarCity")) {
-                    put(CLDRConverter.EXEMPLAR_CITY_PREFIX + getContainerKey(), (String) entry.getValue());
+                    put(EXEMPLAR_CITY_PREFIX + getContainerKey(), (String) entry.getValue());
                 } else {
                     valmap.put(entry.getKey(), (String) entry.getValue());
                 }
@@ -1195,12 +1288,12 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 String targetKey = getTarget(entry.getKey(), "", "", "");
                 CLDRConverter.aliases.put(srcKey, targetKey);
             } else if (containerqName.equals("currencyFormat") ||
-                        containerqName.equals("percentFormat")) {
+                        containerqName.equals("percentFormat") ||
+                        containerqName.equals("metazone")) {
                 KeyContainer kc = (KeyContainer)entry.getParent();
                 CLDRConverter.aliases.put(
                         toJDKKey(containerqName, "", kc.getKey()),
-                        getTarget(entry.getKey(), "", "", "")
-                );
+                        getTarget(entry.getKey(), "", "", ""));
             } else if (containerqName.equals("listPattern")) {
                 var sae = (StringArrayEntry)entry.getParent();
                 CLDRConverter.aliases.put(

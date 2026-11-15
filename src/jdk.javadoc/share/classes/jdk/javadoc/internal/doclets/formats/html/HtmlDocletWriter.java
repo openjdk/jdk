@@ -516,7 +516,7 @@ public abstract class HtmlDocletWriter {
                 .addContent(extraHeadContent);
 
         HtmlDocument htmlDocument = new HtmlDocument(
-                HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body));
+                HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body));
         htmlDocument.write(DocFile.createFileForOutput(configuration, path));
     }
 

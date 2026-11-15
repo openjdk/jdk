@@ -1441,11 +1441,11 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
   TypePtr::PTR ptr = tj->ptr();
 
   // Known instance (scalarizable allocation) alias only with itself.
-  bool is_known_inst = tj->isa_oopptr() != nullptr &&
-                       tj->is_oopptr()->is_known_instance();
+  bool is_known_inst = tj->is_oopptr() &&
+                       tj->as_oopptr()->is_known_instance();
 
   // Process weird unsafe references.
-  if (offset == Type::OffsetBot && (tj->isa_instptr() /*|| tj->isa_klassptr()*/)) {
+  if (offset == Type::OffsetBot && (tj->is_instptr() /*|| tj->is_klassptr()*/)) {
     assert(InlineUnsafeOps || StressReflectiveCode || UseAcmpFastPath || UseHashcodeFastPath, "indeterminate pointers come only from unsafe ops");
     assert(!is_known_inst, "scalarizable allocation should not have unsafe references");
     tj = TypeOopPtr::BOTTOM;
@@ -1599,12 +1599,12 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
                                        TypePtr::MaybeFlat);
     }
 
-    if (tk->isa_aryklassptr() && tk->is_aryklassptr()->elem()->isa_klassptr()) {
+    if (const TypeAryKlassPtr* tk_ary = tk->isa_aryklassptr(); tk_ary != nullptr && tk_ary->elem()->is_klassptr()) {
       ciKlass* k = ciObjArrayKlass::make(env()->Object_klass());
       if (!k || !k->is_loaded()) {                  // Only fails for some -Xcomp runs
         tj = tk = TypeInstKlassPtr::make(TypePtr::NotNull, env()->Object_klass(), Type::Offset(offset), TypePtr::MaybeFlat);
       } else {
-        tj = tk = TypeAryKlassPtr::make(TypePtr::NotNull, tk->is_aryklassptr()->elem(), k, Type::Offset(offset), tk->is_not_flat(), tk->is_not_null_free(), tk->is_flat(), tk->is_null_free(), tk->is_atomic(), tk->is_aryklassptr()->is_refined_type());
+        tj = tk = TypeAryKlassPtr::make(TypePtr::NotNull, tk_ary->elem(), k, Type::Offset(offset), tk->is_not_flat(), tk->is_not_null_free(), tk->is_flat(), tk->is_null_free(), tk->is_atomic(), tk_ary->is_refined_type());
       }
     }
     // Check for precise loads from the primary supertype array and force them
@@ -1669,8 +1669,8 @@ void Compile::AliasType::Init(int i, const TypePtr* at) {
 
 BasicType Compile::AliasType::basic_type() const {
   if (element() != nullptr) {
-    const Type* element = adr_type()->is_aryptr()->elem();
-    return element->isa_narrowoop() ? T_OBJECT : element->array_element_basic_type();
+    const Type* element = adr_type()->as_aryptr()->elem();
+    return element->is_narrowoop() ? T_OBJECT : element->array_element_basic_type();
   } if (field() != nullptr) {
     return field()->layout_type();
   } else {
@@ -1693,7 +1693,7 @@ void Compile::AliasType::print_on(outputStream* st) {
   adr_type()->dump_on(st);
   const TypeOopPtr* tjp = adr_type()->isa_oopptr();
   if (field() != nullptr && tjp) {
-    if (tjp->is_instptr()->instance_klass()  != field()->holder() ||
+    if (tjp->as_instptr()->instance_klass() != field()->holder() ||
         tjp->offset() != field()->offset_in_bytes()) {
       st->print(" != ");
       field()->print();
@@ -1767,7 +1767,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
       // Try casting the type to the other exactness if possible
       if ((check_exact && finst->instance_klass()->is_loaded() && !finst->instance_klass()->is_abstract()) ||
           (!check_exact && !finst->is_known_instance())) {
-        const TypePtr* xinst = finst->cast_to_exactness(check_exact)->is_ptr();
+        const TypePtr* xinst = finst->cast_to_exactness(check_exact)->as_ptr();
         assert(finst == flatten_alias_type(xinst), "exactness must not affect alias type: finst = %s; xinst = %s",
                Type::str(finst), Type::str(xinst));
       }
@@ -1792,23 +1792,23 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
     _alias_types[idx]->Init(idx, flat);
     if (flat == TypeInstPtr::KLASS)  alias_type(idx)->set_rewritable(false);
     if (flat == TypeAryPtr::RANGE)   alias_type(idx)->set_rewritable(false);
-    if (flat->isa_instptr()) {
+    if (flat->is_instptr()) {
       if (flat->offset() == java_lang_Class::klass_offset()
-          && flat->is_instptr()->instance_klass() == env()->Class_klass())
+          && flat->as_instptr()->instance_klass() == env()->Class_klass())
         alias_type(idx)->set_rewritable(false);
     }
     ciField* field = nullptr;
-    if (flat->isa_aryptr()) {
+    if (flat->is_aryptr()) {
 #ifdef ASSERT
       const int header_size_min  = arrayOopDesc::base_offset_in_bytes(T_BYTE);
       // (T_BYTE has the weakest alignment and size restrictions...)
       assert(flat->offset() < header_size_min, "array body reference must be OffsetBot");
 #endif
-      const Type* elemtype = flat->is_aryptr()->elem();
+      const Type* elemtype = flat->as_aryptr()->elem();
       if (flat->offset() == TypePtr::OffsetBot) {
         alias_type(idx)->set_element(elemtype);
       }
-      int field_offset = flat->is_aryptr()->field_offset().get();
+      int field_offset = flat->as_aryptr()->field_offset().get();
       if (flat->is_flat() &&
           field_offset != Type::OffsetBot) {
         ciValueKlass* vk = elemtype->value_klass();
@@ -1816,7 +1816,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
         field = vk->get_field_by_offset(field_offset, false);
       }
     }
-    if (flat->isa_klassptr()) {
+    if (flat->is_klassptr()) {
       if (UseCompactObjectHeaders) {
         if (flat->offset() == in_bytes(Klass::prototype_header_offset()))
           alias_type(idx)->set_rewritable(false);
@@ -1833,7 +1833,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
         alias_type(idx)->set_rewritable(false);
     }
 
-    if (flat->isa_instklassptr()) {
+    if (flat->is_instklassptr()) {
       if (flat->offset() == in_bytes(InstanceKlass::access_flags_offset())) {
         alias_type(idx)->set_rewritable(false);
       }
@@ -1868,7 +1868,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
     // Set field() and is_rewritable() attributes.
     if (field != nullptr) {
       alias_type(idx)->set_field(field);
-      if (flat->isa_aryptr()) {
+      if (flat->is_aryptr()) {
         // Fields of flat arrays are rewritable although they are declared final
         assert(flat->is_flat(), "must be a flat array");
         alias_type(idx)->set_rewritable(true);
@@ -2143,7 +2143,7 @@ void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
     }
     if (ret != nullptr) {
       Node* ret_val = ret->in(TypeFunc::Parms);
-      if (igvn.type(ret_val)->isa_oopptr() &&
+      if (igvn.type(ret_val)->is_oopptr() &&
           return_val_keeps_allocations_alive(ret_val)) {
         igvn.replace_input_of(ret, TypeFunc::Parms, ValueTypeNode::tagged_klass(igvn.type(ret_val)->value_klass(), igvn));
         assert(ret_val->outcnt() == 0, "should be dead now");
@@ -2265,9 +2265,9 @@ void Compile::process_flat_accesses(PhaseIterGVN& igvn) {
       // object.
       ciInstance* loaded_from = nullptr;
       if (FoldStableValues) {
-        const TypeOopPtr* base_type = igvn.type(loadn->base())->is_oopptr();
+        const TypeOopPtr* base_type = igvn.type(loadn->base())->as_oopptr();
         ciObject* oop = base_type->const_oop();
-        int off = igvn.type(loadn->ptr())->isa_ptr()->offset();
+        int off = igvn.type(loadn->ptr())->as_ptr()->offset();
 
         if (oop != nullptr && oop->is_instance()) {
           ciInstance* holder = oop->as_instance();
@@ -2285,7 +2285,7 @@ void Compile::process_flat_accesses(PhaseIterGVN& igvn) {
         } else if (oop != nullptr && oop->is_array() && off != Type::OffsetBot) {
           ciArray* array = oop->as_array();
           ciConstant elt = array->element_value_by_offset(off);
-          const TypeAryPtr* aryptr = base_type->is_aryptr();
+          const TypeAryPtr* aryptr = base_type->as_aryptr();
           if (aryptr->is_stable() && aryptr->is_atomic() && is_reference_type(elt.basic_type()) && elt.as_object()->is_instance()) {
             loaded_from = elt.as_object()->as_instance();
           }
@@ -2464,7 +2464,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
           ciArrayKlass* klass = klass_type->exact_klass()->as_array_klass();
           assert(klass->is_flat_array_klass(), "must be a flat array");
           ciValueKlass* elem_klass = klass->element_klass()->as_value_klass();
-          const TypeAryPtr* oop_type = klass_type->as_exact_instance_type()->is_aryptr();
+          const TypeAryPtr* oop_type = klass_type->as_exact_instance_type()->as_aryptr();
           assert(oop_type->klass_is_exact(), "must be an exact klass");
 
           Node* base = alloc->in(TypeFunc::Memory);
@@ -2524,7 +2524,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
               Node* r = m->in(0);
               for (int j = start_alias; j < num_alias_types(); j++) {
                 const TypePtr* adr_type = get_adr_type(j);
-                if (!adr_type->isa_aryptr() || !adr_type->is_flat()) {
+                if (!adr_type->is_aryptr() || !adr_type->is_flat()) {
                   continue;
                 }
                 Node* phi = new PhiNode(r, Type::MEMORY, get_adr_type(j));
@@ -2554,7 +2554,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
             igvn.replace_input_of(m->in(0), TypeFunc::Control, top());
             for (int j = start_alias; j < num_alias_types(); j++) {
               const TypePtr* adr_type = get_adr_type(j);
-              if (!adr_type->isa_aryptr() || !adr_type->is_flat()) {
+              if (!adr_type->is_aryptr() || !adr_type->is_flat()) {
                 continue;
               }
               MemBarNode* mb = new MemBarCPUOrderNode(this, adr_type, adr_type, nullptr);
@@ -2597,7 +2597,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
     igvn.rehash_node_delayed(current);
     for (int j = start_alias; j < num_alias_types(); j++) {
       const TypePtr* adr_type = get_adr_type(j);
-      if (!adr_type->isa_aryptr() || !adr_type->is_flat()) {
+      if (!adr_type->is_aryptr() || !adr_type->is_flat()) {
         continue;
       }
       current->set_memory_at(j, mm);
@@ -3559,7 +3559,7 @@ static bool is_vector_bitwise_op(Node* n) {
 }
 
 static bool is_vector_bitwise_cone_root(Node* n) {
-  if (n->bottom_type()->isa_pvectmask() || !is_vector_bitwise_op(n)) {
+  if (n->bottom_type()->is_pvectmask() || !is_vector_bitwise_op(n)) {
     return false;
   }
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
@@ -3860,7 +3860,7 @@ void Compile::process_logic_cone_root(PhaseIterGVN &igvn, Node *n, VectorSet &vi
   Unique_Node_List<Node> partition;
   Unique_Node_List<Node> inputs;
   if (compute_logic_cone(n, partition, inputs)) {
-    const TypeVect* vt = n->bottom_type()->is_vect();
+    const TypeVect* vt = n->bottom_type()->as_vect();
     Node* pn = partition.at(partition.size() - 1);
     Node* mask = pn->is_predicated_vector() ? pn->in(pn->req()-1) : nullptr;
     if (mask == nullptr ||
@@ -3880,7 +3880,7 @@ void Compile::optimize_logic_cones(PhaseIterGVN &igvn) {
 
     while (list.size() > 0) {
       Node* n = list.pop();
-      const TypeVect* vt = n->bottom_type()->is_vect();
+      const TypeVect* vt = n->bottom_type()->as_vect();
       bool supported = Matcher::match_rule_supported_vector(Op_MacroLogicV, vt->length(), vt->element_basic_type());
       if (supported) {
         VectorSet visited(comp_arena());
@@ -4076,7 +4076,7 @@ void Compile::final_graph_reshaping_impl(Node* n, Final_Reshape_Counts& frc, Uni
     int alias_idx = get_alias_index(n->as_Mem()->in_adr_type());
     assert( n->in(0) != nullptr || alias_idx != Compile::AliasIdxRaw ||
             // oop will be recorded in oop map if load crosses safepoint
-            (n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
+            (n->is_Load() && (n->as_Load()->bottom_type()->is_oopptr() ||
                               LoadNode::is_immutable_value(n->in(MemNode::Address)))),
             "raw memory operations should have control edge");
   }
@@ -4283,12 +4283,12 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       // Some platforms can use the constant pool to load ConP.
       // Do this transformation here since IGVN will convert ConN back to ConP.
       const Type* t = addp->bottom_type();
-      bool is_oop   = t->isa_oopptr() != nullptr;
-      bool is_klass = t->isa_klassptr() != nullptr;
+      bool is_oop   = t->is_oopptr();
+      bool is_klass = t->is_klassptr();
 
       if ((is_oop   && UseCompressedOops          && Matcher::const_oop_prefer_decode()  ) ||
           (is_klass && Matcher::const_klass_prefer_decode() &&
-           t->isa_klassptr()->exact_klass()->is_in_encoding_range())) {
+           t->as_klassptr()->exact_klass()->is_in_encoding_range())) {
         Node* nn = nullptr;
 
         int op = is_oop ? Op_ConN : Op_ConNKlass;
@@ -4494,10 +4494,10 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
           //    Load [base_reg + offset], val_reg
           //    NullCheck base_reg
           //
-        } else if (t->isa_oopptr()) {
+        } else if (t->is_oopptr()) {
           new_in2 = ConNode::make(t->make_narrowoop());
-        } else if (t->isa_klassptr()) {
-          ciKlass* klass = t->is_klassptr()->exact_klass();
+        } else if (t->is_klassptr()) {
+          ciKlass* klass = t->as_klassptr()->exact_klass();
           if (klass->is_in_encoding_range()) {
             new_in2 = ConNode::make(t->make_narrowklass());
           }
@@ -4532,12 +4532,12 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     } else if (in1->Opcode() == Op_ConP) {
       const Type* t = in1->bottom_type();
       if (t == TypePtr::NULL_PTR) {
-        assert(t->isa_oopptr(), "null klass?");
+        assert(t->is_oopptr(), "null klass?");
         n->subsume_by(ConNode::make(TypeNarrowOop::NULL_PTR), this);
-      } else if (t->isa_oopptr()) {
+      } else if (t->is_oopptr()) {
         n->subsume_by(ConNode::make(t->make_narrowoop()), this);
-      } else if (t->isa_klassptr()) {
-        ciKlass* klass = t->is_klassptr()->exact_klass();
+      } else if (t->is_klassptr()) {
+        ciKlass* klass = t->as_klassptr()->exact_klass();
         if (klass->is_in_encoding_range()) {
           n->subsume_by(ConNode::make(t->make_narrowklass()), this);
         } else {
@@ -4571,7 +4571,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   }
 
   case Op_Phi:
-    if (n->as_Phi()->bottom_type()->isa_narrowoop() || n->as_Phi()->bottom_type()->isa_narrowklass()) {
+    if (n->as_Phi()->bottom_type()->is_narrowoop() || n->as_Phi()->bottom_type()->is_narrowklass()) {
       // The EncodeP optimization may create Phi with the same edges
       // for all paths. It is not handled well by Register Allocator.
       Node* unique_in = n->in(1);
@@ -4781,7 +4781,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   }
   case Op_ConNKlass: {
     const TypePtr* tp = n->as_Type()->type()->make_ptr();
-    ciKlass* klass = tp->is_klassptr()->exact_klass();
+    ciKlass* klass = tp->as_klassptr()->exact_klass();
     assert(klass->is_in_encoding_range(), "klass cannot be compressed");
     break;
   }
@@ -5409,20 +5409,20 @@ Compile::SubTypeCheckResult Compile::static_subtype_check(const TypeKlassPtr* su
   }
 
   const Type* superelem = superk;
-  if (superk->isa_aryklassptr()) {
+  if (const TypeAryKlassPtr* superk_ary = superk->isa_aryklassptr(); superk_ary != nullptr) {
     int ignored;
-    superelem = superk->is_aryklassptr()->base_element_type(ignored);
+    superelem = superk_ary->base_element_type(ignored);
 
     // Do not fold the subtype check to an array klass pointer comparison for null-able value type arrays
     // because null-free [LMyValue <: null-able [LMyValue but the klasses are different. Perform a full test.
-    if (!superk->is_aryklassptr()->is_null_free() && superk->is_aryklassptr()->elem()->isa_instklassptr() &&
-        superk->is_aryklassptr()->elem()->is_instklassptr()->instance_klass()->is_value_klass()) {
+    if (!superk_ary->is_null_free() && superk_ary->elem()->is_instklassptr() &&
+        superk_ary->elem()->as_instklassptr()->instance_klass()->is_value_klass()) {
       return SSC_full_test;
     }
   }
 
-  if (superelem->isa_instklassptr()) {
-    ciInstanceKlass* ik = superelem->is_instklassptr()->instance_klass();
+  if (superelem->is_instklassptr()) {
+    ciInstanceKlass* ik = superelem->as_instklassptr()->instance_klass();
     if (!ik->has_subklass()) {
       if (!ik->is_final()) {
         // Add a dependency if there is a chance of a later subclass.
