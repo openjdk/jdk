@@ -697,7 +697,7 @@ class BlockingSocketOps {
     /**
      * Runs the given task asynchronously after the current virtual thread parks
      * with its parkBlocker set.
-     * @return the unparker thread
+     * @return the thread that executes the task
      */
     private static Thread runAfterParkedAsync(ThrowingRunnable task) {
         Thread target = Thread.currentThread();
@@ -718,8 +718,7 @@ class BlockingSocketOps {
      * Wait for the given Thread to park with its parkBlocker set.
      */
     private static void awaitParked(Thread target) throws InterruptedException {
-        Object parkBlocker;
-        while (!isParked(target) || (parkBlocker = LockSupport.getBlocker(target)) == null) {
+        while (!isParked(target) || LockSupport.getBlocker(target) == null) {
             Thread.sleep(10);
         }
     }

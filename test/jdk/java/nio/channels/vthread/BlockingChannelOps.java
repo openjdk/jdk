@@ -317,7 +317,7 @@ class BlockingChannelOps {
                 SocketChannel sc1 = connection.channel1();
                 SocketChannel sc2 = connection.channel2();
 
-                // write to sc1 when currnet thread blocks in sc2.read
+                // write to sc1 when current thread blocks in sc2.read
                 ByteBuffer bb = ByteBuffer.wrap("XXX".getBytes("UTF-8"));
                 runAfterParkedAsync(sc2, () -> sc1.write(bb));
 
@@ -359,7 +359,7 @@ class BlockingChannelOps {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
                 var sc1 = SocketChannel.open();
 
-                // connect when current thread when it blocks in ssc.accept
+                // connect when current thread blocks in ssc.accept
                 runAfterParkedAsync(ssc, () -> sc1.connect(ssc.getLocalAddress()));
 
                 // accept should block
@@ -425,7 +425,7 @@ class BlockingChannelOps {
                 ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
                 var sc = SocketChannel.open();
 
-                // interrupt current thread when it blocks in ssc.accept
+                // connect when current thread blocks in ssc.accept
                 runAfterParkedAsync(ssc, () -> sc.connect(ssc.getLocalAddress()));
 
                 // accept should block
@@ -857,7 +857,7 @@ class BlockingChannelOps {
      * its parkBlocker set.
      * @param parkBlocker non-null if the expected parkBlocker is known
      * @param task the task to run when the thread parks
-     * @return the unparker thread
+     * @return the thread that executes the task
      */
     private static Thread runAfterParkedAsync(Object parkBlocker, ThrowingRunnable task) {
         Thread target = Thread.currentThread();
@@ -881,7 +881,7 @@ class BlockingChannelOps {
     /**
      * Wait for the given Thread to park with its park blocker set.
      * @param target the target thread
-     * @param parkBlocker non-null if the the expected park blocker is known
+     * @param parkBlocker non-null if the expected park blocker is known
      */
     private static void awaitParked(Thread target, Object parkBlocker) throws Exception {
         while (true) {
