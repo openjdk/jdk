@@ -618,7 +618,7 @@ public class Types {
 
         if (tUndet || sUndet) {
             return tUndet ?
-                    isSubtype(t, boxedTypeOrType(s)) :
+                    isSameType(t, boxedTypeOrType(s)) :
                     isSubtype(boxedTypeOrType(t), s);
         }
 
