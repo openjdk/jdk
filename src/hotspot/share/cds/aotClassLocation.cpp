@@ -602,9 +602,9 @@ void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
   _max_used_index = 0;
 }
 
-const char* AOTClassLocationConfig::get_runtime_path(int shared_path_index, const char* path) const {
+const char* AOTClassLocationConfig::get_runtime_path(int path_index, const char* path) const {
   const char* real_path = path;
-  if (_runtime_path_info.use_lcp_match && _dumptime_lcp_len > 0 && !class_location_at(shared_path_index)->from_module_path()) {
+  if (_runtime_path_info.use_lcp_match && _dumptime_lcp_len > 0 && !class_location_at(path_index)->from_module_path()) {
     // lcp match is not done for module paths
     real_path = AOTClassLocationConfig::substitute(path, _dumptime_lcp_len, _runtime_path_info.runtime_lcp, _runtime_path_info.runtime_lcp_len);
   }
@@ -766,6 +766,15 @@ AOTClassLocation const* AOTClassLocationConfig::class_location_at(int index) con
   return _class_locations->at(index);
 }
 
+AOTClassLocation const* AOTClassLocationConfig::class_location_at(AOTClassLocationID id) const {
+  int index = to_path_index(id);
+  if (index < 0) {
+    return nullptr;
+  } else {
+    return class_location_at(index);
+  }
+}
+
 int AOTClassLocationConfig::get_path_index(const InstanceKlass* ik) {
   return to_path_index(ik->aot_class_location_id());
 }
@@ -774,19 +783,19 @@ bool AOTClassLocationConfig::is_modules_image(InstanceKlass* ik) {
   return get_path_index(ik) == 0;
 }
 
-int AOTClassLocationConfig::get_module_shared_path_index(Symbol* location) const {
+AOTClassLocationID AOTClassLocationConfig::get_module_location_id(Symbol* location) const {
   if (location->starts_with("jrt:", 4)) {
     assert(class_location_at(0)->is_modules_image(), "sanity");
-    return 0;
+    return AOTClassLocationID::MODULES_IMAGE;
   }
 
   if (num_module_paths() == 0) {
     // The archive(s) were created without --module-path option
-    return -1;
+    return AOTClassLocationID::INVALID;
   }
 
   if (!location->starts_with("file:", 5)) {
-    return -1;
+    return AOTClassLocationID::INVALID;
   }
 
   // skip_uri_protocol was also called during dump time -- see ClassLoaderExt::process_module_table()
@@ -796,13 +805,13 @@ int AOTClassLocationConfig::get_module_shared_path_index(Symbol* location) const
     const AOTClassLocation* cs = class_location_at(i);
     assert(!cs->has_unnamed_module(), "must be");
     bool same = os::same_files(file, cs->path());
-    log_debug(class, path)("get_module_shared_path_index (%d) %s : %s = %s", i,
+    log_debug(class, path)("get_module_location_id (%d) %s : %s = %s", i,
                            location->as_C_string(), cs->path(), same ? "same" : "different");
     if (same) {
-      return i;
+      return to_aot_location_id(i);
     }
   }
-  return -1;
+  return AOTClassLocationID::INVALID;
 }
 
 // We allow non-empty dirs as long as no classes have been loaded from them.

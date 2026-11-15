@@ -252,7 +252,7 @@ public:
     return _runtime_instance;
   }
 
-  const char* get_runtime_path(int shared_path_index, const char* path) const;
+  const char* get_runtime_path(int path_index, const char* path) const;
 
   // Common accessors
   int boot_cp_start_index()          const { return 1; }
@@ -272,7 +272,8 @@ public:
   }
 
   const AOTClassLocation* class_location_at(int index) const;
-  int get_module_shared_path_index(Symbol* location) const;
+  const AOTClassLocation* class_location_at(AOTClassLocationID id) const;
+  AOTClassLocationID get_module_location_id(Symbol* location) const;
 
   // Functions used only during dumptime
   static void dumptime_init(JavaThread* current) NOT_CDS_RETURN;
