@@ -356,6 +356,7 @@ ClassPathZipEntry::~ClassPathZipEntry() {
   FREE_C_HEAP_ARRAY(_zip_name);
 }
 
+#if INCLUDE_CDS
 bool ClassPathZipEntry::has_entry(const char* name, Handle class_loader, bool is_multi_release_jar, TRAPS) {
   // check whether zip archive contains name
   jint name_len;
@@ -370,7 +371,6 @@ bool ClassPathZipEntry::has_entry(const char* name, Handle class_loader, bool is
     }
   }
 
-#if INCLUDE_CDS
   // Make an upcall to ClassLoader.getResource() if "name" is in a multi-release JAR
   // and was not found in the root of the JAR file. This will always be a built-in class
   // loader but CDS.getResource() will ensure the resource is retrieved from the correct
@@ -398,10 +398,10 @@ bool ClassPathZipEntry::has_entry(const char* name, Handle class_loader, bool is
       return true;
     }
   }
-#endif // INCLUDE_CDS
 
   return false;
 }
+#endif // INCLUDE_CDS
 
 u1* ClassPathZipEntry::open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate) {
   // enable call to C land

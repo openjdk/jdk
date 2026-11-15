@@ -23,11 +23,11 @@
  */
 
 #include "cds/aotClassLocation.hpp"
-#include "cds/aotLogging.hpp"
 #include "cds/aotHeap.hpp"
+#include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
@@ -512,7 +512,7 @@ public:
 static AOTClassLocationIndexHashtable* _named_module_table = nullptr;     // MODULE_PATH
 static AOTClassLocationIndexHashtable* _unnamed_module_table = nullptr;   // BOOT_CLASSPATH + APP_CLASSPATH
 
-int AOTClassLocationConfig::dumptime_get_class_location_index(const char* path, bool is_named_module) {
+int AOTClassLocationConfig::get_class_location_index_from_table(const char* path, bool is_named_module) {
   assert(CDSConfig::is_dumping_archive(), "");
 
   // The `ClassFileStream::source` computed by the Java class loader code may not have the exact same
@@ -885,7 +885,7 @@ void AOTClassLocationConfig::on_klass_creation(InstanceKlass* ik, const ClassFil
     return;
   }
 
-  int classpath_index = dumptime_get_class_location_index(ik, stream);
+  int classpath_index = get_class_location_index(ik, stream);
   if (CDSConfig::is_dumping_aot_configuration() || CDSConfig::is_dumping_dynamic_archive()) {
     if (!dumptime()->is_valid_classpath_index(classpath_index, ik)) {
       classpath_index = -1;
@@ -941,7 +941,8 @@ void AOTClassLocationConfig::record_hidden_class(InstanceKlass* ik) {
   }
 }
 
-int AOTClassLocationConfig::dumptime_get_class_location_index(InstanceKlass* ik, const ClassFileStream* stream) {
+int AOTClassLocationConfig::get_class_location_index(InstanceKlass* ik, const ClassFileStream* stream) {
+  assert(CDSConfig::is_dumping_archive(), "");
   const char* src = stream->source();
   if (src == nullptr) {
     return -1;
@@ -957,10 +958,10 @@ int AOTClassLocationConfig::dumptime_get_class_location_index(InstanceKlass* ik,
     if ((pkg_entry != nullptr) && !pkg_entry->in_unnamed_module()) {
       // A class in a named module from the --module-path. Note that classes from the modules image
       // are handled above and get an index of 0.
-      return dumptime_get_class_location_index(path, /*is_named_module=*/ true);
+      return get_class_location_index_from_table(path, /*is_named_module=*/ true);
     } else {
       // A class in an unnamed module
-      int i = dumptime_get_class_location_index(path, /*is_named_module=*/ false);
+      int i = get_class_location_index_from_table(path, /*is_named_module=*/ false);
       assert(i != 0, "must not be from module image");
       if (i > 0) {
         AOTClassLocation const* cl = dumptime()->class_location_at(i);

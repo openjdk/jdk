@@ -174,7 +174,8 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
                        Group group, bool parse_manifest, bool from_cpattr);
   void dumptime_init_helper(TRAPS);
 
-  static int dumptime_get_class_location_index(InstanceKlass* ik, const ClassFileStream* stream);
+  static int get_class_location_index_from_table(const char* path, bool is_named_module);
+  static int get_class_location_index(InstanceKlass* ik, const ClassFileStream* stream);
   static void update_shared_classpath_index(InstanceKlass* ik, int classpath_index, bool redefined);
   static void record_hidden_class(InstanceKlass* ik);
 
@@ -290,7 +291,6 @@ public:
   template <typename FUNC> static void dumptime_iterate(FUNC func) {
     _dumptime_instance->dumptime_iterate_helper(func);
   }
-  static int dumptime_get_class_location_index(const char* path, bool is_named_module);
 
   AOTClassLocationConfig* write_to_archive() const;
 
