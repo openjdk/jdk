@@ -76,46 +76,46 @@ public class DKSTest {
     private static final char[] KEYSTORE_PASSWORD = "test123".toCharArray();
     private static final Map<String, KeyStore.ProtectionParameter> PASSWORDS =
             new HashMap<>() {{
-                put("keystore",
-                        new KeyStore.PasswordProtection(KEYSTORE_PASSWORD));
-                put("policy_keystore",
-                        new KeyStore.PasswordProtection(
-                                "Alias.password".toCharArray()));
-                put("pw_keystore",
-                        new KeyStore.PasswordProtection("test12".toCharArray()));
-                put("eckeystore1",
-                        new KeyStore.PasswordProtection("password".toCharArray()));
-                put("truststore",
-                        new KeyStore.PasswordProtection("changeit".toCharArray()));
-                put("empty",
-                        new KeyStore.PasswordProtection("passphrase".toCharArray()));
-            }};
+        put("keystore",
+                new KeyStore.PasswordProtection(KEYSTORE_PASSWORD));
+        put("policy_keystore",
+                new KeyStore.PasswordProtection(
+                        "Alias.password".toCharArray()));
+        put("pw_keystore",
+                new KeyStore.PasswordProtection("test12".toCharArray()));
+        put("eckeystore1",
+                new KeyStore.PasswordProtection("password".toCharArray()));
+        put("truststore",
+                new KeyStore.PasswordProtection("changeit".toCharArray()));
+        put("empty",
+                new KeyStore.PasswordProtection("passphrase".toCharArray()));
+    }};
 
     private static final Map<String, KeyStore.ProtectionParameter>
             WRONG_PASSWORDS = new HashMap<>() {{
-                put("policy_keystore",
-                        new KeyStore.PasswordProtection(
-                                "wrong".toCharArray()));
-                put("pw_keystore",
-                        new KeyStore.PasswordProtection("wrong".toCharArray()));
-                put("eckeystore1",
-                        new KeyStore.PasswordProtection("wrong".toCharArray()));
-            }};
+        put("policy_keystore",
+                new KeyStore.PasswordProtection(
+                        "wrong".toCharArray()));
+        put("pw_keystore",
+                new KeyStore.PasswordProtection("wrong".toCharArray()));
+        put("eckeystore1",
+                new KeyStore.PasswordProtection("wrong".toCharArray()));
+    }};
 
     /*
      * domain keystore: keystores with wrong passwords
      */
     @Test
     public void wrongPasswordTest() throws Exception {
-            final URI config = new URI(CONFIG + "#keystores");
-            final KeyStore ks = KeyStore.getInstance("DKS");
+        final URI config = new URI(CONFIG + "#keystores");
+        final KeyStore ks = KeyStore.getInstance("DKS");
 
-            var e = assertThrows(IOException.class,
-                    () -> ks.load(new DomainLoadStoreParameter(
-                            config, WRONG_PASSWORDS)));
-            assertTrue(causedBy(e, UnrecoverableKeyException.class),
-                    "Unexpected cause");
-            System.out.println("Expected cause: " + e);
+        var e = assertThrows(IOException.class,
+                () -> ks.load(new DomainLoadStoreParameter(
+                        config, WRONG_PASSWORDS)));
+        assertTrue(causedBy(e, UnrecoverableKeyException.class),
+                "Unexpected cause");
+        System.out.println("Expected cause: " + e);
     }
 
     /*
@@ -177,7 +177,7 @@ public class DKSTest {
     public void multipleKeystoresTest() throws Exception {
 
         URI config = new URI(CONFIG + "#keystores");
-        int expected = 2 + 1 + 1;
+        int expected = 4;
         KeyStore keystore = KeyStore.getInstance("DKS");
         // load entries
         keystore.load(new DomainLoadStoreParameter(config, PASSWORDS));
@@ -221,14 +221,17 @@ public class DKSTest {
         SecretKey actual =
                 (SecretKey) dks.getKey("firstPkcs12 alias1",
                         KEYSTORE_PASSWORD);
-        assertNotNull(actual);
-        assertArrayEquals(expected.getEncoded(), actual.getEncoded());
+        assertNotNull(actual, "Key not found for 'firstPkcs12 alias1'");
+        assertArrayEquals(expected.getEncoded(), actual.getEncoded(),
+                "Unexpected key for 'firstPkcs12 alias1'");
 
         actual = (SecretKey) dks.getKey("alias2", KEYSTORE_PASSWORD);
-        assertNotNull(actual);
-        assertArrayEquals(expected2.getEncoded(), actual.getEncoded());
+        assertNotNull(actual, "Key not found for 'alias2'");
+        assertArrayEquals(expected2.getEncoded(), actual.getEncoded(),
+                "Unexpected key for 'alias2'");
 
-        assertNull(dks.getKey("missingAlias", KEYSTORE_PASSWORD));
+        assertNull(dks.getKey("missingAlias", KEYSTORE_PASSWORD),
+                "Unexpected key for 'missingAlias'");
     }
 
     @Test
@@ -238,10 +241,14 @@ public class DKSTest {
                 generateSecretKey(),
                 generateSecretKey());
 
-        assertTrue(dks.containsAlias("firstPkcs12 alias1"));
-        assertTrue(dks.containsAlias("alias2"));
-        assertFalse(dks.containsAlias("missingAlias"));
-        assertFalse(dks.containsAlias("unknown alias2"));
+        assertTrue(dks.containsAlias("firstPkcs12 alias1"),
+                "'firstPkcs12 alias1' should be present");
+        assertTrue(dks.containsAlias("alias2"),
+                "'alias2' should be present");
+        assertFalse(dks.containsAlias("missingAlias"),
+                "'missingAlias' should not be present");
+        assertFalse(dks.containsAlias("unknown alias2"),
+                "'unknown alias2' should not be present");
     }
 
     @Test
@@ -251,10 +258,14 @@ public class DKSTest {
                 generateSecretKey(),
                 generateSecretKey());
 
-        assertTrue(dks.isKeyEntry("firstPkcs12 alias1"));
-        assertTrue(dks.isKeyEntry("alias2"));
-        assertFalse(dks.isKeyEntry("missingAlias"));
-        assertFalse(dks.isKeyEntry("unknown alias2"));
+        assertTrue(dks.isKeyEntry("firstPkcs12 alias1"),
+                "'firstPkcs12 alias1' should be a key entry");
+        assertTrue(dks.isKeyEntry("alias2"),
+                "'alias2' should be a key entry");
+        assertFalse(dks.isKeyEntry("missingAlias"),
+                "'missingAlias' should not be a key entry");
+        assertFalse(dks.isKeyEntry("unknown alias2"),
+                "'unknown alias2' should not be a key entry");
     }
 
     @Test
@@ -263,9 +274,12 @@ public class DKSTest {
         final KeyStore dks = generateKeyStoreFromPKCS12(generateSecretKey(),
                 loadCertificate(CERT));
 
-        assertTrue(dks.isCertificateEntry("firstPkcs12 alias1"));
-        assertFalse(dks.isCertificateEntry("missingAlias"));
-        assertFalse(dks.isCertificateEntry("unknown alias2"));
+        assertTrue(dks.isCertificateEntry("firstPkcs12 alias1"),
+                "'firstPkcs12 alias1' should be a certificate entry");
+        assertFalse(dks.isCertificateEntry("missingAlias"),
+                "'missingAlias' should not be a certificate entry");
+        assertFalse(dks.isCertificateEntry("unknown alias2"),
+                "'unknown alias2' should not be a certificate entry");
     }
 
     @Test

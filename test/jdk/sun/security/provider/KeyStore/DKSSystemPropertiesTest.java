@@ -87,9 +87,9 @@ public class DKSSystemPropertiesTest {
             currCount++;
 
             // check creation date and instant
-            if (!keystore.getCreationDate(alias).equals(
-                    Date.from(keystore.getCreationInstant(alias)))
-            ) {
+            Date keystoreCreation =
+                    Date.from(keystore.getCreationInstant(alias));
+            if (!keystore.getCreationDate(alias).equals(keystoreCreation)) {
                 throw new RuntimeException(
                         "Creation Date is not the same as Instant timestamp");
             }
