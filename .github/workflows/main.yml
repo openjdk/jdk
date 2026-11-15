@@ -213,7 +213,6 @@ jobs:
       bootjdk-platform: linux-aarch64
       gcc-major-version: '14'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      extra-conf-options: '--enable-branch-protection'
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.linux-aarch64 == 'true'
