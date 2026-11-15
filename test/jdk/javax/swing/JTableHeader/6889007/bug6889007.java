@@ -45,8 +45,8 @@ public class bug6889007 {
     static Robot robot;
     static JTableHeader header;
     static MyTableHeaderUI ui;
-    static Point screenPoint;
-    static Point previousPoint;
+    static volatile Point screenPoint;
+    static volatile Point previousPoint;
 
     public static void main(String[] args) throws Exception {
         try {
