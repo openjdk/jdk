@@ -990,7 +990,7 @@ oop ClassLoader::get_system_package(const char* name, TRAPS) {
 
     // Return null if package does not exist or if no classes in that package
     // have been loaded.
-    if (package != nullptr && package->has_loaded_class()) {
+    if (package != nullptr && package->has_loaded_boot_class()) {
       ModuleEntry* module = package->module();
       if (module->location() != nullptr) {
         ResourceMark rm(THREAD);
@@ -1000,7 +1000,7 @@ oop ClassLoader::get_system_package(const char* name, TRAPS) {
       }
       // Return entry on boot loader class path.
       Handle cph = java_lang_String::create_from_str(
-        ClassLoader::classpath_entry(package->classpath_index())->name(), THREAD);
+        ClassLoader::classpath_entry(package->boot_classpath_index())->name(), THREAD);
       return cph();
     }
   }
@@ -1218,7 +1218,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
                                                            loader_data,
                                                            cl_info,
                                                            CHECK_NULL);
-  result->set_classpath_index(classpath_index);
+  PackageEntry::set_boot_classpath_index(result, classpath_index);
   if (is_patched) {
     result->set_aot_class_location_id(AOTClassLocationID::MODULES_IMAGE);
   }

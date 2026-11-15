@@ -96,7 +96,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
       }
 
       if (class_loader.is_null()) {
-        new_ik->set_classpath_index(AOTClassLocationConfig::get_path_index(ik));
+        PackageEntry::set_boot_classpath_index(new_ik, AOTClassLocationConfig::get_path_index(ik));
       }
 
 

@@ -991,7 +991,6 @@ int AOTClassLocationConfig::get_path_index(InstanceKlass* ik, const ClassFileStr
   return -1;
 }
 
-
 AOTClassLocationConfig* AOTClassLocationConfig::write_to_archive() const {
   log_locations(CDSConfig::output_archive_path(), /*is_write=*/true);
 

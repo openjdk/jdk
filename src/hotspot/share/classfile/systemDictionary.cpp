@@ -1278,7 +1278,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // For boot loader, ensure that GetSystemPackage knows that a class in this
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
-    ik->set_classpath_index(AOTClassLocationConfig::get_path_index(ik));
+    PackageEntry::set_boot_classpath_index(ik, AOTClassLocationConfig::get_path_index(ik));
   }
 
   // notify a class loaded from shared object

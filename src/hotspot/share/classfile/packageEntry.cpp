@@ -35,6 +35,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -47,7 +48,7 @@ PackageEntry::PackageEntry(Symbol* name, ModuleEntry* module) :
   _name(name),
   _module(module),
   _export_flags(0),
-  _classpath_index(-1),
+  _boot_classpath_index(-1),
   _must_walk_exports(false),
   _qualified_exports(nullptr),
   _defined_by_cds_in_class_path(0)
@@ -194,6 +195,31 @@ void PackageEntry::pack_qualified_exports() {
   if (_qualified_exports != nullptr) {
     _qualified_exports->shrink_to_fit();
   }
+}
+
+// Function set_classpath_index ensures that for a non-null _package_entry
+// of the InstanceKlass, the entry is in the boot loader's package entry table.
+// It then sets the classpath_index in the package entry record.
+//
+// The classpath_index field is used to find the entry on the boot loader class
+// path for packages with classes loaded by the boot loader from -Xbootclasspath/a
+// in an unnamed module.  It is also used to indicate (for all packages whose
+// classes are loaded by the boot loader) that at least one of the package's
+// classes has been loaded.
+void PackageEntry::set_boot_classpath_index(InstanceKlass* ik, s2 index) {
+  assert(ik->class_loader_data() == ClassLoaderData::the_null_class_loader_data(), "used only for boot loader");
+  PackageEntry* entry = ik->package();
+  if (entry != nullptr) {
+    DEBUG_ONLY(PackageEntryTable* pkg_entry_tbl = ClassLoaderData::the_null_class_loader_data()->packages();)
+    assert(pkg_entry_tbl->lookup_only(entry->name()) == entry, "Should be same");
+    assert(index != -1, "Unexpected boot_classpath_index");
+    entry->_boot_classpath_index = index;
+  }
+}
+
+s2 PackageEntry::boot_classpath_index() const {
+  assert(_module->loader_data() == ClassLoaderData::the_null_class_loader_data(), "used only for boot loader");
+  return _boot_classpath_index;
 }
 
 void PackageEntry::metaspace_pointers_do(MetaspaceClosure* it) {
@@ -396,11 +422,10 @@ void PackageEntryTable::packages_do(void f(PackageEntry*)) {
   _table.iterate_all(doit);
 }
 
-
 GrowableArray<PackageEntry*>*  PackageEntryTable::get_system_packages() {
   GrowableArray<PackageEntry*>* loaded_class_pkgs = new GrowableArray<PackageEntry*>(50);
   auto grab = [&] (const SymbolHandle& name, PackageEntry*& entry) {
-    if (entry->has_loaded_class()) {
+    if (entry->has_loaded_boot_class()) {
       loaded_class_pkgs->append(entry);
     }
   };
@@ -425,10 +450,10 @@ void PackageEntryTable::print(outputStream* st) {
 // getter methods.
 void PackageEntry::print(outputStream* st) {
   ResourceMark rm;
-  st->print_cr("package entry " PTR_FORMAT " name %s module %s classpath_index "
+  st->print_cr("package entry " PTR_FORMAT " name %s module %s boot_classpath_index "
                INT32_FORMAT " is_exported_unqualified %d is_exported_allUnnamed %d ",
                p2i(this), name()->as_C_string(),
                (module()->is_named() ? module()->name()->as_C_string() : UNNAMED_MODULE),
-               _classpath_index, _export_flags == PKG_EXP_UNQUALIFIED,
+               _boot_classpath_index, _export_flags == PKG_EXP_UNQUALIFIED,
                _export_flags == PKG_EXP_ALLUNNAMED);
 }
