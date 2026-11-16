@@ -173,12 +173,6 @@ void VM_Version::setup_cpu_feature_flags(char*& uarch) {
   uarch = os_uarch_additional_features();
   vendor_features();
 
-  // Prefer Ztso when both are detected; explicit flag combinations are handled below.
-  if (ext_Ztso.feature_enabled() && ext_Zalasr.feature_enabled()) {
-    ext_Zalasr.disable_feature();
-    log_info(os, cpu)("Ztso enabled, disabling Zalasr.");
-  }
-
   // Linux kernel require Zifencei
   if (!ext_Zifencei.feature_enabled()) {
     log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
