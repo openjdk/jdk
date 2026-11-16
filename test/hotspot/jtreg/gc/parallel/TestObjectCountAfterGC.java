@@ -34,7 +34,6 @@ package gc.parallel;
  * @requires vm.opt.final.ClassUnloading
  * @library /test/lib
  * @library /testlibrary/asm
- * @modules java.base/jdk.internal.misc
  * @run main/othervm -XX:+UseParallelGC -Xlog:gc=debug,metaspace=info -XX:StartFlightRecording:gc=all,duration=1s,filename=myrecording.jfr
  *                   gc.parallel.TestObjectCountAfterGC
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package gc.g1;
  * @test TestLargePageUseForHeap.java
  * @summary Test that Java heap is allocated using large pages of the appropriate size if available.
  * @bug 8221517
- * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires vm.gc.G1
  * @requires vm.opt.LargePageSizeInBytes == null

@@ -34,8 +34,7 @@ package gc.g1;
  * @requires vm.gc.G1
  * @requires vm.flagless
  * @library /test/lib /testlibrary /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xmx20M -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. gc.g1.TestCodeCacheWhiteBox

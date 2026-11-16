@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ package gc.stringdedup;
  * @requires vm.gc.Serial
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
  * @run driver gc.stringdedup.TestStringDeduplicationYoungGC Serial
@@ -43,7 +42,6 @@ package gc.stringdedup;
  * @requires vm.gc.G1
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
  * @run driver gc.stringdedup.TestStringDeduplicationYoungGC G1
@@ -56,7 +54,6 @@ package gc.stringdedup;
  * @requires vm.gc.Parallel
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
  * @run driver gc.stringdedup.TestStringDeduplicationYoungGC Parallel
@@ -69,7 +66,6 @@ package gc.stringdedup;
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
  * @run driver gc.stringdedup.TestStringDeduplicationYoungGC Shenandoah
@@ -82,7 +78,6 @@ package gc.stringdedup;
  * @requires vm.gc.Z
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
  * @run driver gc.stringdedup.TestStringDeduplicationYoungGC Z

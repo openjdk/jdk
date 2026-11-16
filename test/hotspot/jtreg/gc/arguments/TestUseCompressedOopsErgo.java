@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@ package gc.arguments;
  * @requires vm.gc.Serial
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management/sun.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.arguments.TestUseCompressedOopsErgo -XX:+UseSerialGC
@@ -44,8 +43,7 @@ package gc.arguments;
  * @requires vm.gc.Parallel
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management/sun.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.arguments.TestUseCompressedOopsErgo -XX:+UseParallelGC
@@ -58,8 +56,7 @@ package gc.arguments;
  * @requires vm.gc.G1
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management/sun.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.arguments.TestUseCompressedOopsErgo -XX:+UseG1GC
@@ -71,8 +68,7 @@ package gc.arguments;
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management/sun.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.arguments.TestUseCompressedOopsErgo -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC

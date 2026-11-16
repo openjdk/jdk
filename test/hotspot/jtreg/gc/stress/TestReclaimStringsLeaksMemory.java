@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ package gc.stress;
  * @requires vm.gc.Serial
  * @requires !vm.debug
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseSerialGC
  */
 
@@ -41,7 +40,6 @@ package gc.stress;
  * @requires vm.gc.Parallel
  * @requires !vm.debug
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseParallelGC
  */
 
@@ -52,7 +50,6 @@ package gc.stress;
  * @requires vm.gc.G1
  * @requires !vm.debug
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseG1GC
  */
 
@@ -63,7 +60,6 @@ package gc.stress;
  * @requires vm.gc.Shenandoah
  * @requires !vm.debug
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseShenandoahGC
  */
 
@@ -74,7 +70,6 @@ package gc.stress;
  * @requires vm.gc.Z
  * @requires !vm.debug
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @run driver/timeout=480 gc.stress.TestReclaimStringsLeaksMemory -XX:+UseZGC
  */
 

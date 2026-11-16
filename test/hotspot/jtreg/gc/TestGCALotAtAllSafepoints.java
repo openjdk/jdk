@@ -32,7 +32,6 @@ package gc;
  * @requires vm.flagless
  * @requires vm.debug
  * @requires vm.gc.Serial
- * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseSerialGC
  */
@@ -46,7 +45,6 @@ package gc;
  * @requires vm.flagless
  * @requires vm.debug
  * @requires vm.gc.Parallel
- * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseParallelGC
  */
@@ -60,7 +58,6 @@ package gc;
  * @requires vm.flagless
  * @requires vm.debug
  * @requires vm.gc.G1
- * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseG1GC
  */
@@ -74,7 +71,6 @@ package gc;
  * @requires vm.flagless
  * @requires vm.debug
  * @requires vm.gc.Z
- * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseZGC
  */
@@ -88,7 +84,6 @@ package gc;
  * @requires vm.flagless
  * @requires vm.debug
  * @requires vm.gc.Shenandoah
- * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver/timeout=60 gc.TestGCALotAtAllSafepoints -XX:+UseShenandoahGC
  */

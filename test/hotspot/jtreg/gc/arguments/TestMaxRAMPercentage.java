@@ -31,8 +31,7 @@ package gc.arguments;
  * @library /
  * @requires vm.bits == "64"
  * @requires vm.flagless
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm

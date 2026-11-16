@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import jdk.test.lib.management.DynamicVMOption;
  * @bug 8028391
  * @summary Verify that MaxHeapFreeRatio flag is manageable
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @run main gc.arguments.TestDynMaxHeapFreeRatio
  * @run main/othervm -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 gc.arguments.TestDynMaxHeapFreeRatio

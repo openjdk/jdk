@@ -29,8 +29,6 @@ package gc.g1;
  *          for regions with high survival ratio.
  * @requires vm.gc.G1
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run main/othervm -Xms256m -Xmx256m gc.g1.TestG1SkipCompaction
  */
 import java.util.regex.Matcher;

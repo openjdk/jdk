@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package gc.serial;
  * @bug 8027440
  * @requires vm.gc.Serial
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
  * @summary Allocate to get a promotion failure and verify that that heap change logging is present.
  * @run driver gc.serial.HeapChangeLogging
  */

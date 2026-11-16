@@ -29,8 +29,6 @@ package gc.g1;
  * @summary Consistency checks for marking flag related options.
  * @requires vm.gc.G1
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver gc.g1.TestMarkStackSizes
  */
 

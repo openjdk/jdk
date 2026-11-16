@@ -29,8 +29,7 @@ package gc.arguments;
  * @requires vm.gc == "Serial" | vm.gc == "G1"
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.arguments.TestSurvivorRatioFlag

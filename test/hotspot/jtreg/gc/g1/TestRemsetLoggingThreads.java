@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package gc.g1;
  * @requires vm.gc.G1
  * @bug 8025441 8145534
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management/sun.management
  * @summary Ensure that various values of worker threads/concurrent
  * refinement threads do not crash the VM.
  * @run driver gc.g1.TestRemsetLoggingThreads

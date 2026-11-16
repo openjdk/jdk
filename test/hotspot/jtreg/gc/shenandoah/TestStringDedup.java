@@ -29,9 +29,7 @@
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
- *          java.management
  *
  * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
@@ -46,7 +44,6 @@
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @modules java.base/java.lang:open
- *          java.management
  *
  * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
@@ -68,7 +65,6 @@
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @modules java.base/java.lang:open
- *          java.management
  *
  * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational

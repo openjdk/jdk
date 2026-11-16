@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ package gc.arguments;
  * @summary Tests handling unrecognized VM options
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver gc.arguments.TestUnrecognizedVMOptionsHandling
  */
 

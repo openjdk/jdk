@@ -44,8 +44,7 @@ import gc.testlibrary.PerfCounters;
  * @library /test/lib /
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
+ * @modules java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UseCompressedOops -XX:+UsePerfData -XX:+UseSerialGC gc.metaspace.TestMetaspacePerfCounters
@@ -58,8 +57,7 @@ import gc.testlibrary.PerfCounters;
  * @library /test/lib /
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
+ * @modules java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UseCompressedOops -XX:+UsePerfData -XX:+UseParallelGC gc.metaspace.TestMetaspacePerfCounters
@@ -72,8 +70,7 @@ import gc.testlibrary.PerfCounters;
  * @library /test/lib /
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
+ * @modules java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UseCompressedOops -XX:+UsePerfData -XX:+UseG1GC gc.metaspace.TestMetaspacePerfCounters
@@ -86,8 +83,7 @@ import gc.testlibrary.PerfCounters;
  * @library /test/lib /
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
+ * @modules java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UseCompressedOops -XX:+UsePerfData -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
@@ -100,8 +96,7 @@ import gc.testlibrary.PerfCounters;
  * @library /test/lib /
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
+ * @modules java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops  -XX:+UsePerfData -XX:+UseEpsilonGC gc.metaspace.TestMetaspacePerfCounters
@@ -114,8 +109,7 @@ import gc.testlibrary.PerfCounters;
  * @library /test/lib /
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
+ * @modules java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UseSerialGC gc.metaspace.TestMetaspacePerfCounters
@@ -128,8 +122,7 @@ import gc.testlibrary.PerfCounters;
  * @library /test/lib /
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
+ * @modules java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UseParallelGC gc.metaspace.TestMetaspacePerfCounters
@@ -142,8 +135,7 @@ import gc.testlibrary.PerfCounters;
  * @library /test/lib /
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
+ * @modules java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UseG1GC gc.metaspace.TestMetaspacePerfCounters
@@ -156,8 +148,7 @@ import gc.testlibrary.PerfCounters;
  * @library /test/lib /
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
+ * @modules java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
@@ -171,8 +162,7 @@ import gc.testlibrary.PerfCounters;
  * @library /test/lib /
  * @summary Tests that performance counters for metaspace and compressed class
  *          space exists and works.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
+ * @modules java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.metaspace.TestMetaspacePerfCounters

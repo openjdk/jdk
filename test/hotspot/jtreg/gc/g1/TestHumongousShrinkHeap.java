@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@ package gc.g1;
  * @summary Verify that heap shrinks after GC in the presence of fragmentation
  * due to humongous objects
  * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
+ * @modules java.management
  * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:MinHeapFreeRatio=10
  * -XX:MaxHeapFreeRatio=12 -XX:+UseG1GC -XX:G1HeapRegionSize=1M -verbose:gc
  * gc.g1.TestHumongousShrinkHeap

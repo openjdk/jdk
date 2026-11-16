@@ -30,8 +30,7 @@ package gc.g1;
  * @requires vm.gc.G1
  * @library /test/lib /
  * @build   jdk.test.whitebox.WhiteBox
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @run     driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UseG1GC -Xlog:gc -XX:G1HeapRegionSize=1m -Xms128m -Xmx128m
  *                   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ package gc.arguments;
  * @requires vm.gc.Serial & vm.opt.MaxNewSize == null & vm.opt.NewRatio == null & vm.opt.NewSize == null
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver gc.arguments.TestMaxNewSize -XX:+UseSerialGC
  * @author thomas.schatzl@oracle.com, jesper.wilhelmsson@oracle.com
  */
@@ -47,8 +45,6 @@ package gc.arguments;
  * @requires vm.gc.Parallel & vm.opt.MaxNewSize == null & vm.opt.NewRatio == null & vm.opt.NewSize == null
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver gc.arguments.TestMaxNewSize -XX:+UseParallelGC
  * @author thomas.schatzl@oracle.com, jesper.wilhelmsson@oracle.com
  */
@@ -62,8 +58,6 @@ package gc.arguments;
  * @requires vm.gc.G1 & vm.opt.MaxNewSize == null & vm.opt.NewRatio == null & vm.opt.NewSize == null
  * @library /test/lib
  * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver gc.arguments.TestMaxNewSize -XX:+UseG1GC
  * @author thomas.schatzl@oracle.com, jesper.wilhelmsson@oracle.com
  */

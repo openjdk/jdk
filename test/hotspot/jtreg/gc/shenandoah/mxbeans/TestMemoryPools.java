@@ -27,8 +27,7 @@
  * @test id=default
  * @summary Test JMX memory pools
  * @requires vm.gc.Shenandoah
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g TestMemoryPools
  */
 
@@ -36,8 +35,7 @@
  * @test id=generational
  * @summary Test JMX memory pools
  * @requires vm.gc.Shenandoah
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xmx1g -Xms1g TestMemoryPools
  */
 

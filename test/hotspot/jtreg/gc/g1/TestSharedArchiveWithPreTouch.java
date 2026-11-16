@@ -30,8 +30,6 @@ package gc.g1;
  * @requires vm.gc.G1
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver gc.g1.TestSharedArchiveWithPreTouch
  */
 

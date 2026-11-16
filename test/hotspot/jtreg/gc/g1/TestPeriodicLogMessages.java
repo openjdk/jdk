@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ package gc.g1;
  * @requires vm.gc.G1
  * @summary Verify that log messages are printed as expected
  * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
  * @run driver gc.g1.TestPeriodicLogMessages
  */
 

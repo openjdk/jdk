@@ -37,8 +37,7 @@ import gc.testlibrary.PerfCounters;
  * @requires vm.bits == "64"
  * @summary Tests that a MemoryPoolMXBeans and PerfCounters for metaspace
  *          report the same data.
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -Xlog:class+load,class+unload=trace -XX:+UseCompressedOops -XX:+UseSerialGC -XX:+UsePerfData -Xint gc.metaspace.TestPerfCountersAndMemoryPools
  */
@@ -50,8 +49,7 @@ import gc.testlibrary.PerfCounters;
  * @requires vm.bits == "32"
  * @summary Tests that a MemoryPoolMXBeans and PerfCounters for metaspace
  *          report the same data.
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -Xlog:class+load,class+unload=trace -XX:+UseSerialGC -XX:+UsePerfData -Xint gc.metaspace.TestPerfCountersAndMemoryPools
  */

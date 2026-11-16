@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,7 @@ import gc.testlibrary.PerfCounters;
  * @requires vm.gc.Serial
  * @library /test/lib /
  * @summary Tests that sun.gc.policy.name returns expected values for different GCs.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management/sun.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @modules jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UseSerialGC gc.TestPolicyNamePerfCounter Copy:MSC
  */
 
@@ -44,10 +41,7 @@ import gc.testlibrary.PerfCounters;
  * @requires vm.gc.Parallel
  * @library /test/lib /
  * @summary Tests that sun.gc.policy.name returns expected values for different GCs.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management/sun.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @modules jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UseParallelGC gc.TestPolicyNamePerfCounter ParScav:MSC
  */
 
@@ -56,10 +50,7 @@ import gc.testlibrary.PerfCounters;
  * @requires vm.gc.G1
  * @library /test/lib /
  * @summary Tests that sun.gc.policy.name returns expected values for different GCs.
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management/sun.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @modules jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UseG1GC gc.TestPolicyNamePerfCounter GarbageFirst
  */
 

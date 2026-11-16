@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@
  * @requires vm.opt.MaxGCPauseMillis == "null"
  * @requires vm.compMode != "Xcomp"
  * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- * @modules java.management
  * @run driver/timeout=1920 gc.g1.ihop.TestIHOPErgo
  */
 package gc.g1.ihop;

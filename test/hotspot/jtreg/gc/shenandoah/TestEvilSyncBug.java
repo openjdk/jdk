@@ -28,8 +28,6 @@
  * @summary Tests for crash/assert when attaching init thread during shutdown
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver/timeout=480 TestEvilSyncBug -XX:ShenandoahGCHeuristics=aggressive
  */
 
@@ -38,8 +36,6 @@
  * @summary Tests for crash/assert when attaching init thread during shutdown
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver/timeout=480 TestEvilSyncBug -XX:ShenandoahGCMode=generational
  */
 

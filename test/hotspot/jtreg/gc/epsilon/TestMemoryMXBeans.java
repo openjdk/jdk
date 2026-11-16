@@ -28,8 +28,7 @@ package gc.epsilon;
  * @test TestMemoryMXBeans
  * @requires vm.gc.Epsilon
  * @summary Test JMX memory beans
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.management
  *
  * @run main/othervm -Xmx256m
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC

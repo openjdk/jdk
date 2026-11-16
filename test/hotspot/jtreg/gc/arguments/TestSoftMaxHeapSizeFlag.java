@@ -26,8 +26,6 @@ package gc.arguments;
 /*
  * @test TestSoftMaxHeapSizeFlag
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver gc.arguments.TestSoftMaxHeapSizeFlag
  */
 

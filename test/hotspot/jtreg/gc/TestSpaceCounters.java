@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@ package gc;
  * @test id=Serial
  * @requires vm.gc.Serial
  * @summary Verify the expected space counters exist.
- * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
+ * @modules java.management
  * @modules jdk.internal.jvmstat/sun.jvmstat.monitor
  * @library /test/lib /
  * @run main/othervm -XX:+UseSerialGC -XX:+UsePerfData gc.TestSpaceCounters
@@ -38,8 +37,7 @@ package gc;
  * @test id=Parallel
  * @requires vm.gc.Parallel
  * @summary Verify the expected space counters exist.
- * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
+ * @modules java.management
  * @modules jdk.internal.jvmstat/sun.jvmstat.monitor
  * @library /test/lib /
  * @run main/othervm -XX:+UseParallelGC -XX:+UsePerfData gc.TestSpaceCounters
