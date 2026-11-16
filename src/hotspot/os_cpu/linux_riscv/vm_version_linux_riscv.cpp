@@ -174,10 +174,6 @@ void VM_Version::setup_cpu_feature_flags(char*& uarch) {
   vendor_features();
 
   // Prefer Ztso when both are detected; explicit flag combinations are handled below.
-  // Keep UseZalasr and UseZtso mutually exclusive; the hardware extensions can coexist.
-  // Under Ztso the acquire and release fences are elided anyway, see MacroAssembler::membar(),
-  // so all Zalasr would still buy is eliding the trailing StoreLoad fence of a volatile store,
-  // which is a separate optimization. Ztso takes precedence for now, so Zalasr is turned off.
   if (ext_Ztso.feature_enabled() && ext_Zalasr.feature_enabled()) {
     ext_Zalasr.disable_feature();
     log_info(os, cpu)("Ztso enabled, disabling Zalasr.");
@@ -259,7 +255,6 @@ void VM_Version::setup_cpu_feature_flags(char*& uarch) {
   }
 #endif
 
-  // Prefer Ztso when both are detected; explicit flag combinations are handled below.
   // Keep UseZalasr and UseZtso mutually exclusive; the hardware extensions can coexist.
   // Under Ztso the acquire and release fences are elided anyway, see MacroAssembler::membar(),
   // so all Zalasr would still buy is eliding the trailing StoreLoad fence of a volatile store,
