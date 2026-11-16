@@ -41,22 +41,30 @@
  */
 
 /*
- * @test id=default
+ * @test id=satb
  * @summary Tests that we pass at least one jcstress-like test with all verification turned on
  * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=adaptive
  *      -XX:+ShenandoahVerify
  *      TestVerifyJCStress
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=compact
  *      -XX:+ShenandoahVerify
  *      TestVerifyJCStress
- *
+ */
+
+ /*
+ . * @test id=generational
+ . * @summary Tests that we pass at least one jcstress-like test with all verification turned on
+ . * @requires vm.gc.Shenandoah
+ . * @modules java.base/jdk.internal.misc
+ . *          java.management
+ . *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
  *      -XX:+ShenandoahVerify

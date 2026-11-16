@@ -36,42 +36,42 @@
  */
 
 /**
- * @test id=default
+ * @test id=satb
  * @summary Test Shenandoah GC uses concurrent/parallel threads correctly
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
  *      -XX:ConcGCThreads=2 -XX:ParallelGCThreads=4
  *      -Dtarget=1000
  *      TestGCThreadGroups
  *
  * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
  *      -XX:-UseDynamicNumberOfGCThreads
  *      -Dtarget=1000
  *      TestGCThreadGroups
  *
  * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=adaptive
  *      -XX:ConcGCThreads=2 -XX:ParallelGCThreads=4
  *      -Dtarget=1000
  *      TestGCThreadGroups
  *
  * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=static
  *      -XX:ConcGCThreads=2 -XX:ParallelGCThreads=4
  *      -Dtarget=1000
  *      TestGCThreadGroups
  *
  * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=compact
  *      -XX:ConcGCThreads=2 -XX:ParallelGCThreads=4
  *      -Dtarget=100
  *      TestGCThreadGroups
  *
  * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+UseShenandoahGC  -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=aggressive
  *      -XX:ConcGCThreads=2 -XX:ParallelGCThreads=4
  *      -Dtarget=100
  *      TestGCThreadGroups

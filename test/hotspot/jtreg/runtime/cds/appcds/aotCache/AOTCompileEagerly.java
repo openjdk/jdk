@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
  * @run driver AOTCompileEagerly
  */
 
-import java.io.File;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -53,7 +52,7 @@ public class AOTCompileEagerly {
 
         //----------------------------------------------------------------------
         System.out.println("Training Run");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-cp", appJar, helloClass);
@@ -63,7 +62,7 @@ public class AOTCompileEagerly {
 
         //----------------------------------------------------------------------
         System.out.println("Assembly Phase");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
@@ -73,7 +72,7 @@ public class AOTCompileEagerly {
 
         //----------------------------------------------------------------------
         System.out.println("Production Run with AOTCache defaults");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod-default");
@@ -81,7 +80,7 @@ public class AOTCompileEagerly {
 
         //----------------------------------------------------------------------
         System.out.println("Production Run with AOTCache and eager compilation explicitly ON");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+AOTCompileEagerly",
@@ -91,7 +90,7 @@ public class AOTCompileEagerly {
 
         //----------------------------------------------------------------------
         System.out.println("Production Run with AOTCache and eager compilation explicitly OFF");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:-AOTCompileEagerly",

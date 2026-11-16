@@ -24,15 +24,15 @@
  */
 
  /*
- * @test id=default
+ * @test id=satb
  * @summary Test Shenandoah with different log levels
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms256M -Xmx1G -Xlog:gc*=error   TestWithLogLevel
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms256M -Xmx1G -Xlog:gc*=warning TestWithLogLevel
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms256M -Xmx1G -Xlog:gc*=info    TestWithLogLevel
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms256M -Xmx1G -Xlog:gc*=debug   TestWithLogLevel
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms256M -Xmx1G -Xlog:gc*=trace   TestWithLogLevel
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -Xms256M -Xmx1G -Xlog:gc*=error   TestWithLogLevel
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -Xms256M -Xmx1G -Xlog:gc*=warning TestWithLogLevel
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -Xms256M -Xmx1G -Xlog:gc*=info    TestWithLogLevel
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -Xms256M -Xmx1G -Xlog:gc*=debug   TestWithLogLevel
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -Xms256M -Xmx1G -Xlog:gc*=trace   TestWithLogLevel
  */
 
 /*
