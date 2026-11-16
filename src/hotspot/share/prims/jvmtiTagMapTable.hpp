@@ -58,7 +58,7 @@ public:
   inline bool is_value() const { return _value_klass != nullptr; }
   inline bool is_flat() const { return _offset != 0; }
 
-  inline oop holder() const { return _obj; }
+  inline oop holder_or_obj() const { return _obj; }
   inline oop obj() const {
     assert(!is_flat(), "flattened value does not have an oop");
     return _obj;
