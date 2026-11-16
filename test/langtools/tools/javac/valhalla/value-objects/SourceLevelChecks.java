@@ -84,6 +84,9 @@ public class SourceLevelChecks {
                               value value;
                               value sealed;
                               value @A1 [] f1;
+                              value f2[];
+                              value @A1 [] m1() {}
+                              value m2()[] {}
                               value @A1 abstract sealed @A2 class C {}
                           }
                           @interface A1 {}
@@ -102,25 +105,34 @@ public class SourceLevelChecks {
                          "Test.java:3:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
                          "Test.java:4:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
                          "Test.java:5:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:6:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                         "Test.java:6:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:7:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:8:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:9:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
                          "1 error",
-                         "4 warnings"),
+                         "7 warnings"),
             new TestCase(List.of("--release", currentVersion),
                          Task.Expect.FAIL,
                          "Test.java:2:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
                          "Test.java:3:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
                          "Test.java:4:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
                          "Test.java:5:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:6:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                         "Test.java:6:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:7:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:8:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:9:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
                          "1 error",
-                         "4 warnings"),
+                         "7 warnings"),
             new TestCase(List.of("--release", currentVersion, "--enable-preview"),
                          Task.Expect.FAIL,
                          "Test.java:2:5: compiler.err.restricted.type.not.allowed.here: value",
                          "Test.java:3:5: compiler.err.restricted.type.not.allowed.here: value",
                          "Test.java:4:5: compiler.err.restricted.type.not.allowed.here: value",
                          "Test.java:5:5: compiler.err.restricted.type.not.allowed.here: value",
-                         "4 errors")
+                         "Test.java:6:5: compiler.err.restricted.type.not.allowed.here: value",
+                         "Test.java:7:5: compiler.err.restricted.type.not.allowed.here: value",
+                         "Test.java:8:5: compiler.err.restricted.type.not.allowed.here: value",
+                         "7 errors")
         };
 
         for (TestCase testCase : testCases) {

@@ -136,13 +136,15 @@ class ValueObjectCompilationTests extends CompilationTestCase {
                     value List<String> foo();
                 }
                 """);
-        assertFail("compiler.err.mod.not.allowed.here",
+        assertFail("compiler.err.restricted.type.not.allowed.here",
+                   //better would be: "compiler.err.mod.not.allowed.here",
                 """
                 class Test {
                     value String[] x;
                 }
                 """);
-        assertFail("compiler.err.mod.not.allowed.here",
+        assertFail("compiler.err.restricted.type.not.allowed.here",
+                   //better would be: "compiler.err.mod.not.allowed.here",
                 """
                 class Test {
                     value String[] foo();
@@ -175,6 +177,20 @@ class ValueObjectCompilationTests extends CompilationTestCase {
         assertOK("""
                  abstract value sealed class A {}
                  abstract value non-sealed class B extends A {}
+                 """);
+        assertOK("""
+                 value @Ann(1) class Test {
+                 }
+                 @interface Ann {
+                     public int value();
+                 }
+                 """);
+        assertOK("""
+                 value @Ann(value = 1) class Test {
+                 }
+                 @interface Ann {
+                     public int value();
+                 }
                  """);
     }
 

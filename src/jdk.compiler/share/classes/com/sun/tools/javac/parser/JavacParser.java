@@ -2164,12 +2164,17 @@ public class JavacParser implements Parser {
             for (JCVariableDecl param: params) {
                 JCIdent restrictedTypeTree;
                 if (param.vartype != null &&
-                        (restrictedTypeTree = restrictedTypeName(param.vartype, false)) != null &&
-                        param.vartype.hasTag(TYPEARRAY)) {
-                    log.error(DiagnosticFlag.SYNTAX, param.pos,
-                        Feature.VAR_SYNTAX_IMPLICIT_LAMBDAS.allowedInSource(source)
-                            ? Errors.RestrictedTypeNotAllowedArray(restrictedTypeTree.name)
-                            : Errors.RestrictedTypeNotAllowedHere(restrictedTypeTree.name));
+                        (restrictedTypeTree = restrictedTypeName(param.vartype, false)) != null) {
+                    JCExpression vartype = param.vartype;
+                    if (vartype instanceof JCAnnotatedType at) {
+                        vartype = at.underlyingType;
+                    }
+                    if (vartype.hasTag(TYPEARRAY)) {
+                        log.error(DiagnosticFlag.SYNTAX, param.pos,
+                            Feature.VAR_SYNTAX_IMPLICIT_LAMBDAS.allowedInSource(source)
+                                ? Errors.RestrictedTypeNotAllowedArray(restrictedTypeTree.name)
+                                : Errors.RestrictedTypeNotAllowedHere(restrictedTypeTree.name));
+                    }
                 }
                 lambdaClassifier.addParameter(param);
                 if (lambdaClassifier.result() == LambdaParameterKind.ERROR) {
@@ -5035,7 +5040,7 @@ public class JavacParser implements Parser {
     protected boolean isValueModifier(boolean local) {
         if (token.kind == IDENTIFIER && token.name() == names.value) {
             if (allowedAfterSealedNonSealedOrValue(1, local)) {
-                checkSourceLevel(Feature.SEALED_CLASSES);
+                checkSourceLevel(Feature.SEALED_CLASSES); //XXX
                 return true;
             }
         }
@@ -5061,7 +5066,7 @@ public class JavacParser implements Parser {
                     if (afterNext.kind == INTERFACE) {
                         return true;
                     }
-                    lookahead = skipAnnotation(lookahead + 1);
+                    lookahead = skipAnnotation(lookahead) + 1;
                 }
                 case ABSTRACT, STATIC, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> {return true;}
                 case PUBLIC, PROTECTED, PRIVATE -> {return !local;}
@@ -5076,7 +5081,7 @@ public class JavacParser implements Parser {
                         lookahead++;
                     } else {
                         switch (S.token(lookahead + 1).kind) {
-                            case IDENTIFIER, DOT, LT, LBRACKET, MONKEYS_AT -> {
+                            case IDENTIFIER, DOT, LT, /*LBRACKET, */MONKEYS_AT -> {
                                 return true;
                             }
                             default -> {
