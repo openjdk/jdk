@@ -1260,6 +1260,7 @@ public:
                        enum operand_size sz, bool ordered) {
     assert_different_registers(status, new_val);
     assert_different_registers(status, addr);
+    guarantee(status != new_val && status != addr, "unpredictable instruction");
     load_store_exclusive(status, new_val, dummy_reg, addr,
                          sz, 0b000, ordered);
   }
