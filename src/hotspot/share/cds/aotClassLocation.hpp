@@ -282,6 +282,7 @@ public:
   template <typename FUNC> static void dumptime_iterate(FUNC func) {
     _dumptime_instance->dumptime_iterate_helper(func);
   }
+  static int dumptime_get_class_location_index(const char* path, bool is_named_module);
 
   AOTClassLocationConfig* write_to_archive() const;
 
