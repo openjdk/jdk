@@ -3112,6 +3112,11 @@ public class IRNode {
         machOnlyNameRegex(X86_VMULDQ_REG, "vmuldq_reg");
     }
 
+    public static final String X86_VSHIFT_B_GFNI = PREFIX + "X86_VSHIFT_B_GFNI" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VSHIFT_B_GFNI, "vshiftB_gfni");
+    }
+
     public static final String AARCH64_VMULL_UINT_SVE2 = PREFIX + "AARCH64_VMULL_UINT_SVE2" + POSTFIX;
     static {
         machOnlyNameRegex(AARCH64_VMULL_UINT_SVE2, "vmulL_uint_sve2");
@@ -3606,6 +3611,16 @@ public class IRNode {
     public static final String CLONE_INTRINSIC_SLOW_PATH = PREFIX + "CLONE_INTRINSIC_SLOW_PATH" + POSTFIX;
     static {
         staticCallOfMethodNodes(CLONE_INTRINSIC_SLOW_PATH, "java.lang.Object::clone");
+    }
+
+    public static final String SLOW_ARRAYCOPY = PREFIX + "SLOW_ARRAYCOPY" + POSTFIX;
+    static {
+        staticCallOfMethodNodes(SLOW_ARRAYCOPY, "slow_arraycopy");
+    }
+
+    public static final String JINT_ARRAYCOPY = PREFIX + "JINT_ARRAYCOPY" + POSTFIX;
+    static {
+        callLeafNoFpOfMethodNodes(JINT_ARRAYCOPY, "jint_disjoint_arraycopy");
     }
 
     public static final String JLONG_ARRAYCOPY = PREFIX + "JLONG_ARRAYCOPY" + POSTFIX;
