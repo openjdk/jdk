@@ -40,6 +40,23 @@
 #include <sys/auxv.h>
 #include <sys/prctl.h>
 
+// The Zalasr (Table A.7 / RCsc) sequences emitted by the JIT for volatile
+// accesses only interoperate with C++ code compiled using the psABI atomics
+// mapping (A6S: seq_cst stores carry a trailing full fence), i.e.
+// gcc >= 13.3 or clang >= 19. libjvm itself and the bundled JDK native
+// libraries are the closest such C++ code, so gate UseZalasr on the
+// toolchain that built this VM. See riscv-elf-psabi-doc,
+// "RISC-V Atomics Mappings" (note 3: do not combine with older mappings).
+static constexpr bool toolchain_uses_psabi_atomics() {
+#if defined(__clang_major__)
+  return __clang_major__ >= 19;
+#elif defined(__GNUC__)
+  return (__GNUC__ > 13) || (__GNUC__ == 13 && __GNUC_MINOR__ >= 3);
+#else
+  return false;
+#endif
+}
+
 static constexpr uint64_t feature_bit(int n) { return nth_bit<uint64_t>(n); }
 
 #ifndef HWCAP_ISA_I
