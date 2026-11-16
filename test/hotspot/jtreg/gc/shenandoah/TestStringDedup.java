@@ -40,7 +40,7 @@
  */
 
 /*
- * @test id=default
+ * @test id=satb
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness
  * @requires vm.gc.Shenandoah
@@ -49,15 +49,15 @@
  *          java.management
  *
  * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=aggressive
  *      TestStringDedup
  *
  * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
  *      TestStringDedup
  *
  * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=compact
  *      TestStringDedup
  */
 
