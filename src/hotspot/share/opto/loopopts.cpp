@@ -4947,12 +4947,14 @@ private:
       Node* n = chain_nodes.at(i);
       Node* cloned = cloned_nodes[n->_idx];
       if (phi == n->in(1) || phi == n->in(2)) {
-        int phiIndex = phi == n->in(1) ? 1 : 2;
-        int notPhiIndex = phi == n->in(1) ? 2 : 1;
+        int phi_index = phi == n->in(1) ? 1 : 2;
+        int not_phi_index = phi == n->in(1) ? 2 : 1;
 
-        Node* cloned_prev = cloned_nodes[chain_nodes.at(i - 1)->_idx];
-        cloned_prev->set_req(phiIndex, n->in(notPhiIndex));
-        cloned->set_req(notPhiIndex, cloned_nodes[chain_nodes.at(0)->_idx]);
+        Node* prev = chain_nodes.at(i - 1);
+        Node* cloned_prev = cloned_nodes[prev->_idx];
+        int prev_chain_index = prev->in(1)->Opcode() == opcode ? 1 : 2;
+        cloned_prev->set_req(prev_chain_index, n->in(not_phi_index));
+        cloned->set_req(not_phi_index, cloned_nodes[chain_nodes.at(0)->_idx]);
       } else {
         int index = n->in(1)->Opcode() == opcode ? 1 : 2;
         cloned->set_req(index, cloned_nodes[n->in(index)->_idx]);
