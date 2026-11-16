@@ -286,12 +286,6 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   nop();  // 4 bytes
 }
 
-int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes,
-                                        int sp_offset_for_orig_pc, Label& verified_value_entry_label, bool is_value_ro_entry) {
-  Unimplemented();
-  return 0;
-}
-
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
   //  fp + -2: link
   //     + -1: return address

@@ -220,10 +220,6 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register basic
   // Success: fall through
 }
 
-int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_value_entry_label, bool is_value_ro_entry) {
-  Unimplemented();
-}
-
 #ifndef PRODUCT
 
 void C1_MacroAssembler::verify_stack_oop(int stack_offset) {
