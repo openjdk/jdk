@@ -1480,8 +1480,8 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
 
   assert(!ac->is_arraycopy_validated() || (src_elem == dest_elem && dest_elem != T_VOID), "validated but different basic types");
 
-  // (2) src and dest array layouts need to be compatible. For flat arrays, we additionally check for unsupported
-  //     atomicity and GC-barrier requirements.
+  // (2) src and dest array layouts need to be compatible. For flat arrays, we additionally check for GC-barrier
+  //     requirements.
   if (!ac->can_use_arraycopy_fast_path(top_src, top_dest)) {
     // Go to the slow path but avoid the native method wrapper to JVM_ArrayCopy
     Node* mem = ac->in(TypeFunc::Memory);
