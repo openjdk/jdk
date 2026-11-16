@@ -2067,6 +2067,18 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
       Node* control_input = n->in(0);
       if (control_input != nullptr && !control_input->is_top()) {
         // record it in dead path to later insert a Halt node, if it doesn't die in the meantime
+        if (n->is_SafePoint()) {
+          if (n->in(0) != nullptr && n->in(0)->in(0) != nullptr && n->in(0)->in(0)->is_CountedLoopEnd()) {
+            CountedLoopEndNode* cle = n->in(0)->in(0)->as_CountedLoopEnd();
+            CountedLoopNode* cl = cle->loopnode();
+            if (cl != nullptr) {
+              SafePointNode* sfpt = cl->outer_safepoint();
+              if (sfpt == n) {
+                replace_input_of(cle, 1, intcon(0));
+              }
+            }
+          }
+        }
         dead_path()->add_req(control_input);
         _worklist.push(dead_path());
         replace_input_of(n, 0, C->top());
@@ -3598,10 +3610,7 @@ Node *PhaseCCP::transform( Node *n ) {
   if (KillPathsReachableByDeadDataNode) {
     for (uint i = 0; i < _maybe_top_type_or_div_mod_nodes.size(); ++i) {
       Node* data_node = _maybe_top_type_or_div_mod_nodes.at(i);
-      if (type(data_node) == Type::TOP) {
-        ResourceMark rm;
-        data_node->make_paths_from_here_dead(this, nullptr, "ccp");
-      }
+      make_dependent_paths_dead_if_top(data_node, type(data_node));
     }
   } else {
     assert(_maybe_top_type_or_div_mod_nodes.size() == 0, "we don't need type nodes");
