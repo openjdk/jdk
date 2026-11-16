@@ -78,6 +78,12 @@ public interface JavaLangAccess {
     ConstantPool getConstantPool(Class<?> klass);
 
     /**
+     * Returns whether the given class or any of its superclasses has been
+     * redefined or retransformed.
+     */
+    boolean hasBeenRedefined(Class<?> klass);
+
+    /**
      * Compare-And-Set the AnnotationType instance corresponding to this class.
      * (This method only applies to annotation types.)
      */
