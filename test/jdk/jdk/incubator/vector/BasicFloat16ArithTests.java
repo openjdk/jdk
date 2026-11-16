@@ -30,6 +30,7 @@
 
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 
@@ -627,6 +628,35 @@ public class BasicFloat16ArithTests {
             } catch (NumberFormatException nfe) {
                 ; // Expected
             }
+        }
+
+        // Test half-way rounding cases
+        for(int i = 0; i <= Short.MAX_VALUE; i++ ) {
+            boolean isEven = ((i & 0x1) == 0);
+            Float16 f16 = Float16.shortBitsToFloat16((short)i);
+            Float16 f16Neg = negate(f16);
+
+            if (!isFinite(f16))
+                continue;
+
+            Float16 ulp = ulp(f16);
+            float halfWay = f16.floatValue() + ulp.floatValue() * 0.5f;
+
+            // Under the round to nearest even rounding policy, the
+            // half-way case should round down to the starting value
+            // if the starting value is even; otherwise, it should round up.
+            float roundedBack    = valueOf( halfWay).floatValue();
+            float roundedBackNeg = valueOf(-halfWay).floatValue();
+
+            Float16 result    = Float16.valueOf((new BigDecimal( halfWay)).toString());
+            Float16 resultNeg = Float16.valueOf((new BigDecimal(-halfWay)).toString());
+
+            float expected = (isEven ?
+                              f16.floatValue() :
+                              add(f16, ulp).floatValue());
+
+            checkFloat16(result,     expected, "Half-way case");
+            checkFloat16(resultNeg, -expected, "Half-way case");
         }
 
         return;
