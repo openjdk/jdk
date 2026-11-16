@@ -8996,7 +8996,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Limb 5
     __ add(v, c[5], carry_add);
-    __ asr(v, vt, BPL_P384);
+    __ asr(v, v, BPL_P384);
     __ add(c[6], c[6], v);
     __ lsl(v, v, BPL_P384);
     __ sub(c[5], c[5], v);
