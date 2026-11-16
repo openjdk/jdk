@@ -732,34 +732,6 @@ ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(She
   assert(total_card_count > 0, "Card count cannot be zero.");
 }
 
-// Merge any dirty values from write table into the read table, while leaving
-// the write table unchanged.
-void ShenandoahDirectCardMarkRememberedSet::merge_write_table(HeapWord* start, size_t word_count) {
-  size_t start_index = card_index_for_addr(start);
-#ifdef ASSERT
-  // avoid querying card_index_for_addr() for an address past end of heap
-  size_t end_index = card_index_for_addr(start + word_count - 1) + 1;
-#endif
-  assert(start_index % ((size_t)1 << LogCardValsPerIntPtr) == 0, "Expected a multiple of CardValsPerIntPtr");
-  assert(end_index % ((size_t)1 << LogCardValsPerIntPtr) == 0, "Expected a multiple of CardValsPerIntPtr");
-
-  // We'll access in groups of intptr_t worth of card entries
-  intptr_t* const read_table  = (intptr_t*) &(_card_table->read_byte_map())[start_index];
-  intptr_t* const write_table = (intptr_t*) &(_card_table->write_byte_map())[start_index];
-
-  // Avoid division, use shift instead
-  assert(word_count % ((size_t)1 << (LogCardSizeInWords + LogCardValsPerIntPtr)) == 0, "Expected a multiple of CardSizeInWords*CardValsPerIntPtr");
-  size_t const num = word_count >> (LogCardSizeInWords + LogCardValsPerIntPtr);
-
-  for (size_t i = 0; i < num; i++) {
-    read_table[i] &= write_table[i];
-  }
-
-  _is_read_table_clean = false;
-
-  log_develop_debug(gc, remset)("Finished merging write_table into read_table.");
-}
-
 void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
   CardTable::CardValue* new_ptr = _card_table->swap_read_and_write_tables();
   _is_read_table_clean = false;
