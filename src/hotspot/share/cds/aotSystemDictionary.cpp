@@ -412,6 +412,10 @@ bool AOTSystemDictionary::check_self_exclusion(InstanceKlass* k) {
 
 const char* AOTSystemDictionary::check_self_exclusion_helper(InstanceKlass* k, bool& log_warning) {
   assert_lock_strong(DumpTimeTable_lock);
+  if (CDSConfig::using_alternate_system_loader() && !k->defined_by_boot_loader()) {
+    return "Not defined in boot class loader";
+  }
+
   if (CDSConfig::is_dumping_with_input_archive() && k->defined_by_other_loaders()
       && k->in_aot_cache()) {
     return nullptr; // Do not exclude: unregistered classes are passed from input archive to output archive..

@@ -160,6 +160,9 @@ void AOTMetaspaceRecipes::apply_recipes_for_constantpool(JavaThread* current) {
     int flags = _flags->at(i);
     if (cp_indices != nullptr) {
       InstanceKlass* ik = InstanceKlass::cast(_all_klasses->at(i));
+      if (CDSConfig::using_alternate_system_loader() && !ik->defined_by_boot_loader()) {
+        continue;
+      }
       if (ik->is_loaded()) {
         ResourceMark rm(current);
         ConstantPool* cp = ik->constants();
@@ -187,6 +190,11 @@ void AOTMetaspaceRecipes::load_all_classes(TRAPS) {
     Klass* k = _all_klasses->at(i);
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
+      if (CDSConfig::using_alternate_system_loader() && !ik->defined_by_boot_loader()) {
+        // Avoid loading unregistered classes when using an alternate system class loader
+        assert(!CDSConfig::is_dumping_aot_linked_classes(), "must be");
+        continue;
+      }
       if (ik->defined_by_other_loaders()) {
         AOTSystemDictionary::copy_unregistered_class(THREAD, ik);
       } else if (!ik->is_hidden()) {
@@ -210,6 +218,10 @@ void AOTMetaspaceRecipes::link_all_classes(TRAPS) {
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (!ik->defined_by_other_loaders() && !ik->is_hidden()) {
+        // Only classes defined by the boot loader can be loaded when using an alternate system loader.
+        if (CDSConfig::using_alternate_system_loader() && !ik->defined_by_boot_loader()) {
+          continue;
+        }
         assert(ik->is_loaded(), "must be");
         ik->link_class(CHECK);
       }
@@ -224,6 +236,9 @@ void AOTMetaspaceRecipes::initialize_all_safe_classes(TRAPS) {
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (!ik->defined_by_other_loaders() && !ik->is_hidden()) {
+        if (CDSConfig::using_alternate_system_loader() && !ik->defined_by_boot_loader()) {
+          continue;
+        }
         assert(ik->is_linked(), "must be");
         if (ik->has_aot_safe_initializer() && (flags & WAS_INITED) != 0) {
           assert(ik->class_loader() == nullptr, "supported only for boot classes for now");
