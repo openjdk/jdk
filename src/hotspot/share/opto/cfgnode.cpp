@@ -3047,7 +3047,7 @@ private:
     uint before_casts = 0;
     uint before_encode_decode = 0;
     for (uint i = 0; i < _nodes_from_phi.size(); ++i) {
-      Node *n = _nodes_from_phi.at(i);
+      Node* n = _nodes_from_phi.at(i);
       if (n->is_Phi()) {
         before_phis++;
       } else if (n->is_ConstraintCast()) {
@@ -3084,6 +3084,19 @@ private:
       Node* n = after.at(i);
       if (!n->is_ValueType()) {
         after.remove(i);
+      }
+    }
+    for (uint i = 0; i < _nodes_from_phi.size(); ++i) {
+      Node* n = _nodes_from_phi.at(i);
+      if (n->is_ValueType() && !after.member(n)) {
+        ValueTypeNode* value_type = n->as_ValueType();
+        for (uint j = 0; j < value_type->field_count(); ++j) {
+          Node* field = value_type->field_value(j);
+          const Type* field_type = _phase->type(field);
+          if (field_type->is_instptr() && !field_type->is_valueklassptr() && field_type->as_instptr()->can_be_value_type()) {
+            after.push(field);
+          }
+        }
       }
     }
     uint after_phis = 0;
