@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2026, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,7 @@ extern "C" {
 
 #endif
 
-#define TranslateError(err) "JVMTI error"
-
 #define PASSED 0
-#define FAILED 2
 
 static const char *EXC_CNAME = "java/lang/Exception";
 
