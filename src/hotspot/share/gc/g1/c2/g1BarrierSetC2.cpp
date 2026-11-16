@@ -251,8 +251,8 @@ static void refine_barrier_by_new_val_type(const Node* n) {
     assert(newval != nullptr, "");
     const Type* newval_bottom = newval->bottom_type();
     newval_type = newval_bottom->make_ptr()->ptr();
-    if (!newval_bottom->isa_oopptr() &&
-        !newval_bottom->isa_narrowoop() &&
+    if (!newval_bottom->is_oopptr() &&
+        !newval_bottom->is_narrowoop() &&
         newval_type != TypePtr::Null) {
       // newval is neither an OOP nor null, so there is no barrier to refine.
       assert(barrier_data == 0, "non-OOP stores should have no barrier data");

@@ -45,6 +45,7 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/resizableHashTable.hpp"
 #include "utilities/stringUtils.hpp"
 
 #include <errno.h>
@@ -467,6 +468,67 @@ bool AOTClassLocation::check(const char* runtime_path, bool has_aot_linked_class
   return true;
 }
 
+inline unsigned cstring_hash(const char* const& s) {
+  return java_lang_String::hash_code((const jbyte*)s, checked_cast<int>(strlen(s)));
+}
+
+inline bool cstring_equals(const char* const& a, const char* const& b) {
+  return strcmp(a, b) == 0;
+}
+
+typedef ResizeableHashTable<const char*, int, AnyObj::C_HEAP, MemTag::mtClassShared,
+                            &cstring_hash, &cstring_equals> AOTClassLocationIndexHashtableBase;
+
+class AOTClassLocationIndexHashtable: public AOTClassLocationIndexHashtableBase {
+public:
+  AOTClassLocationIndexHashtable(bool is_named_module) : AOTClassLocationIndexHashtableBase(/*min*/107, /*max*/4049) {
+    AOTClassLocationConfig::dumptime_iterate([&] (AOTClassLocation* cl) {
+      if (!cl->is_modules_image() && cl->from_module_path() == is_named_module) {
+        int i = cl->index();
+        assert(i > 0, "module image is always at index 0");
+        ResourceMark rm;
+        const char* canon_path = ClassLoader::get_canonical_path(cl->path(), JavaThread::current()); // resource allocated
+        if (canon_path != nullptr) { // invalid paths are ignored
+          const char* canon_path_dup = os::strdup(canon_path, mtClassShared);
+          bool created;
+          put_if_absent(canon_path_dup, i, &created);
+          if (!created) {
+            // If the exact same path appears more than once, only the first one is recorded.
+            os::free((void*)canon_path_dup);
+          }
+        }
+      }
+      return true; // Keep iterating
+    });
+  }
+};
+
+// We need to use two tables as the same pathname can appear in both Group::MODULE_PATH, and
+// Group::{BOOT_CLASSPATH,APP_CLASSPATH}. If a class is defined in a named module, we must use
+// its index from _named_module_table, and vice versa.
+static AOTClassLocationIndexHashtable* _named_module_table = nullptr;     // MODULE_PATH
+static AOTClassLocationIndexHashtable* _unnamed_module_table = nullptr;   // BOOT_CLASSPATH + APP_CLASSPATH
+
+int AOTClassLocationConfig::dumptime_get_class_location_index(const char* path, bool is_named_module) {
+  assert(CDSConfig::is_dumping_archive(), "");
+
+  // The `ClassFileStream::source` computed by the Java class loader code may not have the exact same
+  // output as ClassLoader::get_canonical_path(). E.g., when the source is a directory, the Java
+  // code would append a trailing "/" character, while the C code doesn't. To be safe, always
+  // canonicalize again with the C code.
+  ResourceMark rm;
+  const char* canon_path = ClassLoader::get_canonical_path(path, JavaThread::current());
+  if (canon_path != nullptr) {
+    int* saved = is_named_module ?
+      _named_module_table->get(canon_path) : _unnamed_module_table->get(canon_path);
+    if (saved != nullptr) {
+      return *saved;
+    }
+  }
+
+  return -1;
+}
+
 void AOTClassLocationConfig::dumptime_init(JavaThread* current) {
   assert(CDSConfig::is_dumping_archive(), "");
   _dumptime_instance = NEW_C_HEAP_OBJ(AOTClassLocationConfig, mtClassShared);
@@ -478,12 +540,15 @@ void AOTClassLocationConfig::dumptime_init(JavaThread* current) {
     vm_exit_during_initialization("AOTClassLocationConfig::dumptime_init_helper() failed unexpectedly");
   }
 
-  if (CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_dumping_aot_cache()) {
     // The _max_used_index is usually updated by ClassLoader::record_result(). However,
-    // when dumping the final archive, the classes are loaded from their images in
+    // when dumping the AOT cache, the classes are loaded from their images in
     // the AOT config file, so we don't go through ClassLoader::record_result().
     dumptime_update_max_used_index(runtime()->_max_used_index); // Same value as recorded in the training run.
   }
+
+  _named_module_table = new (mtClassShared)AOTClassLocationIndexHashtable(true);
+  _unnamed_module_table = new (mtClassShared)AOTClassLocationIndexHashtable(false);
 }
 
 void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
@@ -1110,7 +1175,7 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
     const char* hint_msg = log_is_enabled(Info, class, path) ?
         "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
     if (RequireSharedSpaces && !PrintSharedArchiveAndExit) {
-      if (CDSConfig::is_dumping_final_static_archive()) {
+      if (CDSConfig::is_dumping_aot_cache()) {
         aot_log_error(aot)("class path and/or module path are not compatible with the "
                        "ones specified when the AOTConfiguration file was recorded%s", hint_msg);
         AOTMetaspace::unrecoverable_writing_error("Unable to use create AOT cache.");

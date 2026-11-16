@@ -63,7 +63,8 @@ public class SearchWriter extends HtmlDocletWriter {
         body.add(new BodyContents()
                 .setHeader(getHeader(PageMode.SEARCH))
                 .addMainContent(searchFileContent)
-                .setFooter(getFooter()));
+                .setFooter(getFooter())
+                .toContent());
         printHtmlDocument(null, "search", body);
     }
 

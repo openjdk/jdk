@@ -5864,7 +5864,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
   address target = entry.target();
 
   if (!in_scratch_emit_size()) {
-    address stub = emit_reloc_call_address_stub(offset(), target);
+    address stub = emit_address_stub(offset(), target);
     if (stub == nullptr) {
       postcond(pc() == badAddress);
       return nullptr; // CodeCache is full
@@ -5878,8 +5878,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
   }
 #endif
 
-  // The relocation created while emitting the stub will ensure this
-  // call instruction is subsequently patched to call the stub.
+  // Relocation patches the auipc/ld pair to load the destination from the address stub.
   relocate(entry.rspec(), [&] {
     auipc(tmp, 0);
     ld(tmp, Address(tmp, 0));
@@ -5940,8 +5939,7 @@ int MacroAssembler::ic_check(int end_alignment) {
   return uep_offset;
 }
 
-// Emit an address stub for a call to a target which is too far away.
-// Note that we only put the target address of the call in the stub.
+// Emit an address-only stub holding the destination of a relocatable call.
 //
 // code sequences:
 //
@@ -5953,8 +5951,8 @@ int MacroAssembler::ic_check(int end_alignment) {
 //   alignment nop
 //   target address
 
-address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_offset, address dest) {
-  address stub = start_a_stub(max_reloc_call_address_stub_size());
+address MacroAssembler::emit_address_stub(int insts_call_instruction_offset, address dest) {
+  address stub = start_a_stub(max_address_stub_size());
   if (stub == nullptr) {
     return nullptr;  // CodeBuffer::expand failed
   }
@@ -5965,8 +5963,8 @@ address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_
   // Make sure the address of destination 8-byte aligned.
   align(wordSize, 0);
 
-  RelocationHolder rh = trampoline_stub_Relocation::spec(code()->insts()->start() +
-                                                         insts_call_instruction_offset);
+  RelocationHolder rh = address_stub_Relocation::spec(code()->insts()->start() +
+                                                      insts_call_instruction_offset);
   const int stub_start_offset = offset();
   relocate(rh, [&] {
     assert(offset() - stub_start_offset == 0,
@@ -5981,7 +5979,7 @@ address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_
   return stub_start_addr;
 }
 
-int MacroAssembler::max_reloc_call_address_stub_size() {
+int MacroAssembler::max_address_stub_size() {
   // Max stub size: alignment nop, target address.
   return 1 * MacroAssembler::instruction_size + wordSize;
 }
@@ -6164,6 +6162,7 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
   j(L_tail_loop);
 
   bind(L_end);
+  sext(out, out, 32);
 }
 
 // Multiply and multiply-accumulate unsigned 64-bit registers.
