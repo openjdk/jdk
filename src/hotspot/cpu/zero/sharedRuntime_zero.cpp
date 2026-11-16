@@ -149,6 +149,11 @@ RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
   return nullptr;
 }
 
+RuntimeStub* SharedRuntime::generate_buffer_value_args_stub(address destination, bool allocate_receiver) {
+  Unimplemented();
+  return nullptr;
+}
+
 #if INCLUDE_JFR
 RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
   return nullptr;
