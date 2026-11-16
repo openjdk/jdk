@@ -1775,17 +1775,18 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Change "bool lt/ge (cmpu (add x -1) x)" into "bool ne/eq (cmp x 0)"
+  // Change "bool lt/le (cmpu (add x -1) x)" into "bool ne (cmp x 0)"
+  // and "bool gt/ge (cmpu (add x -1) x)" into "bool eq (cmp x 0)"
   // for both int and long types.
   if (cop == Op_CmpU || cop == Op_CmpUL) {
     const BasicType bt = cop == Op_CmpU ? T_INT : T_LONG;
     if (cmp1_op == Op_Add(bt) &&
         phase->type(cmp1->in(2)) == TypeInteger::minus_1(bt) &&
         cmp1->in(1) == cmp2 &&
-        (_test._test == BoolTest::lt || _test._test == BoolTest::ge)) {
+        (_test.is_less() || _test.is_greater())) {
       Node* zero = phase->makecon(TypeInteger::zero(bt));
       Node* ncmp = phase->transform(CmpNode::make(cmp2, zero, bt));
-      return new BoolNode(ncmp, _test._test == BoolTest::lt ? BoolTest::ne : BoolTest::eq);
+      return new BoolNode(ncmp, _test.is_less() ? BoolTest::ne : BoolTest::eq);
     }
   }
 

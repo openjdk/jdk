@@ -216,8 +216,7 @@ public class TestUnsignedComparison {
     }
 
     /*
-     * The return type of the methods `testIntSubOneLT`, `testIntSubOneGE`, `testLongSubOneLT`
-     * and `testLongSubOneGE` is `int` instead of `boolean` in order to prevent further
+     * The decrement-and-compare methods return `int` instead of `boolean` to prevent further
      * optimization, such as `is_x2logic`, from changing the IR that needs to be checked.
      */
 
@@ -231,18 +230,39 @@ public class TestUnsignedComparison {
     @Test
     @IR(failOn = {CMP_U, ADD_I, SUB_I})
     @IR(counts = {CMP_I, "1"})
+    public int testIntSubOneLE(int x) {
+        return Integer.compareUnsigned(x - 1, x) <= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {CMP_U, ADD_I, SUB_I})
+    @IR(counts = {CMP_I, "1"})
+    public int testIntSubOneGT(int x) {
+        return Integer.compareUnsigned(x - 1, x) > 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {CMP_U, ADD_I, SUB_I})
+    @IR(counts = {CMP_I, "1"})
     public int testIntSubOneGE(int x) {
         return Integer.compareUnsigned(x - 1, x) >= 0 ? TRUE_RESULT : FALSE_RESULT;
     }
 
-    @Run(test = {"testIntSubOneLT", "testIntSubOneGE"})
+    @Run(test = {"testIntSubOneLT", "testIntSubOneLE", "testIntSubOneGT", "testIntSubOneGE"})
     public void checkTestIntSubOne() {
         for (int x : INT_DATA) {
-            Asserts.assertEquals(testIntSubOneLT(x), x != 0 ? TRUE_RESULT : FALSE_RESULT);
-            Asserts.assertEquals(testIntSubOneGE(x), x == 0 ? TRUE_RESULT : FALSE_RESULT);
+            assertTestIntSubOne(x);
         }
-        Asserts.assertEquals(testIntSubOneLT(INT_MAX), TRUE_RESULT);
-        Asserts.assertEquals(testIntSubOneGE(INT_MAX), FALSE_RESULT);
+        assertTestIntSubOne(INT_MAX);
+        assertTestIntSubOne(RunInfo.getRandom().nextInt());
+    }
+
+    @DontCompile
+    private void assertTestIntSubOne(int x) {
+        Asserts.assertEquals(testIntSubOneLT(x), x != 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubOneLE(x), x != 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubOneGT(x), x == 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testIntSubOneGE(x), x == 0 ? TRUE_RESULT : FALSE_RESULT);
     }
 
     @Test
@@ -255,18 +275,39 @@ public class TestUnsignedComparison {
     @Test
     @IR(failOn = {CMP_UL, ADD_L, SUB_L})
     @IR(counts = {CMP_L, "1"})
+    public int testLongSubOneLE(long x) {
+        return Long.compareUnsigned(x - 1, x) <= 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {CMP_UL, ADD_L, SUB_L})
+    @IR(counts = {CMP_L, "1"})
+    public int testLongSubOneGT(long x) {
+        return Long.compareUnsigned(x - 1, x) > 0 ? TRUE_RESULT : FALSE_RESULT;
+    }
+
+    @Test
+    @IR(failOn = {CMP_UL, ADD_L, SUB_L})
+    @IR(counts = {CMP_L, "1"})
     public int testLongSubOneGE(long x) {
         return Long.compareUnsigned(x - 1, x) >= 0 ? TRUE_RESULT : FALSE_RESULT;
     }
 
-    @Run(test = {"testLongSubOneLT", "testLongSubOneGE"})
+    @Run(test = {"testLongSubOneLT", "testLongSubOneLE", "testLongSubOneGT", "testLongSubOneGE"})
     public void checkTestLongSubOne() {
         for (long x : LONG_DATA) {
-            Asserts.assertEquals(testLongSubOneLT(x), x != 0 ? TRUE_RESULT : FALSE_RESULT);
-            Asserts.assertEquals(testLongSubOneGE(x), x == 0 ? TRUE_RESULT : FALSE_RESULT);
+            assertTestLongSubOne(x);
         }
-        Asserts.assertEquals(testLongSubOneLT(LONG_MAX), TRUE_RESULT);
-        Asserts.assertEquals(testLongSubOneGE(LONG_MAX), FALSE_RESULT);
+        assertTestLongSubOne(LONG_MAX);
+        assertTestLongSubOne(RunInfo.getRandom().nextLong());
+    }
+
+    @DontCompile
+    private void assertTestLongSubOne(long x) {
+        Asserts.assertEquals(testLongSubOneLT(x), x != 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubOneLE(x), x != 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubOneGT(x), x == 0 ? TRUE_RESULT : FALSE_RESULT);
+        Asserts.assertEquals(testLongSubOneGE(x), x == 0 ? TRUE_RESULT : FALSE_RESULT);
     }
 
     @Test
