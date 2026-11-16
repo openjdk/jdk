@@ -79,7 +79,7 @@ public class TestFlatArrayCheckCloneLoop {
     static boolean earlyReturn1;
     static boolean earlyReturn2;
     static Boolean alwaysFalse = false;
-    
+
     static void test1(int len, boolean flag1, boolean flag2) {
         if (flag2) {
             inlined(len, flag1, flag2);
