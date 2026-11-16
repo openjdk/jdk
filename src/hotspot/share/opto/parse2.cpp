@@ -91,14 +91,14 @@ private:
     // Compile-time detect of null-exception?
     if (_parse.stopped())  return true; // _kit.top();
 
-    const TypeAryPtr* arytype  = _gvn.type(_array)->is_aryptr();
+    const TypeAryPtr* arytype  = _gvn.type(_array)->as_aryptr();
     const TypeInt*    sizetype = arytype->size();
     _elemtype = arytype->elem();
 
     if (UseUniqueSubclasses) {
       const Type* el = _elemtype->make_ptr();
       if (el && el->isa_instptr()) {
-        const TypeInstPtr* toop = el->is_instptr();
+        const TypeInstPtr* toop = el->as_instptr();
         if (toop->instance_klass()->unique_concrete_subklass()) {
           // If we load from "AbstractClass[]" we must see "ConcreteSubClass".
           const Type* subklass = Type::get_const_type(toop->instance_klass());
@@ -173,7 +173,7 @@ public:
   }
 
   Node* emit_plain_load(Node* array, bool pin_if_range_check = false, bool safe_for_replace_in_map = false) {
-    const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr();
+    const TypeAryPtr* array_type = _gvn.type(array)->as_aryptr();
     const TypeOopPtr* element_ptr = _elemtype->make_oopptr();
     const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(_bt);
     DecoratorSet decorator_set = IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD;
@@ -211,7 +211,7 @@ public:
           }
           return _parse.C->top();
         }
-        const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr()->cast_to_null_free();
+        const TypeAryPtr* array_type = _gvn.type(array)->as_aryptr()->cast_to_null_free();
         array = _gvn.transform(new CheckCastPPNode(_parse.control(), array, array_type));
         if (_parse.needs_range_check(array_type->size(), _array_index)) {
           decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
@@ -234,7 +234,7 @@ public:
   }
 
   void test_non_flat_array_and_emit_reference_load(float p) {
-    const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
+    const TypeAryPtr* array_type = _gvn.type(_array)->as_aryptr();
     Node* test = _parse.flat_array_test(_array, /* flat = */ false);
     float this_prob = clamp(p, PROB_MIN, PROB_MAX);
     IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, this_prob, COUNT_UNKNOWN);
@@ -306,7 +306,7 @@ public:
         ciMegamorphicTypeData* megamorphic_type_data = array_load->megamorphic_type_data();
         for (uint i = 0; i < megamorphic_type_data->row_limit(); ++i) {
           ciKlass* receiver = megamorphic_type_data->receiver(i);
-          if (receiver != nullptr && receiver->is_subtype_of(element_ptr->is_instptr()->instance_klass())) {
+          if (receiver != nullptr && receiver->is_subtype_of(element_ptr->as_instptr()->instance_klass())) {
             ciFlatArrayKlass* flat_array_klass = receiver->as_flat_array_klass();
             if (!flat_array_klass->is_elem_null_free()) {
               flat_nullable_count = saturated_add(flat_nullable_count, megamorphic_type_data->receiver_count(i));
@@ -353,7 +353,7 @@ public:
       ld = vt;
     } else {
       ld = _parse.load_from_unknown_flat_array(array, _array_index, element_ptr);
-      const TypeAryPtr* array_type = _gvn.type(array)->is_aryptr();
+      const TypeAryPtr* array_type = _gvn.type(array)->as_aryptr();
       bool is_null_free = array_type->is_null_free() ||
         (!UseNullableAtomicValueFlattening && !UseNullableNonAtomicValueFlattening);
       if (is_null_free) {
@@ -385,7 +385,7 @@ public:
   void record_array_profile_for_speculation() {
     ciArrayLoadData* array_load = profile_data();
     if (UseTypeSpeculation && array_load != nullptr && array_load->nullable_count() > 0 && array_load->null_free_count() == 0) {
-      const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
+      const TypeAryPtr* array_type = _gvn.type(_array)->as_aryptr();
       if (!array_type->is_not_null_free() && array_type->speculative() == nullptr) {
         const TypeAryPtr* spec_array_type = TypeAryPtr::BOTTOM->cast_to_not_null_free();
         const TypeOopPtr* spec_type = TypeOopPtr::make(TypePtr::BotPTR, Type::Offset::bottom, TypeOopPtr::InstanceBot, spec_array_type);
@@ -467,7 +467,7 @@ public:
             _parse.uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
           }
           _parse.replace_in_map(_array, casted_array);
-          array_type = _gvn.type(casted_array)->is_aryptr();
+          array_type = _gvn.type(casted_array)->as_aryptr();
           _elemtype = array_type->elem();
           _array = casted_array;
         }
@@ -476,7 +476,7 @@ public:
     if (!array_type->is_flat() && !array_type->is_not_flat()) {
       Deoptimization::DeoptReason reason = Deoptimization::Reason_speculate_class_check;
       if (array_type->speculative() != nullptr &&
-          array_type->speculative()->is_aryptr()->is_not_flat() &&
+          array_type->speculative()->as_aryptr()->is_not_flat() &&
           !_parse.too_many_traps_or_recompiles(reason)) {
         { // Deoptimize if flat array
           BuildCutout unless(&_parse, _parse.flat_array_test(_array, /* flat = */ false), PROB_MAX);
@@ -485,7 +485,7 @@ public:
         assert(!_parse.stopped(), "flat array should have been caught earlier");
         Node* casted_array = _gvn.transform(new CheckCastPPNode(_parse.control(), _array, array_type->cast_to_not_flat()));
         _parse.replace_in_map(_array, casted_array);
-        array_type = _gvn.type(casted_array)->is_aryptr();
+        array_type = _gvn.type(casted_array)->as_aryptr();
         _elemtype = array_type->elem();
         _array = casted_array;
       }
@@ -498,7 +498,7 @@ public:
     // Check for always knowing you are throwing a range-check exception
     if (_parse.stopped())  return;
 
-    const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
+    const TypeAryPtr* array_type = _gvn.type(_array)->as_aryptr();
     const TypeOopPtr* element_ptr = _elemtype->make_oopptr();
 
     if (array_type->is_not_flat()) {
@@ -532,7 +532,7 @@ public:
       Deoptimization::DeoptReason not_flat_reason = Deoptimization::Reason_none;
       if (not_flat_count != 0) {
         if (array_type->speculative() != nullptr &&
-            array_type->speculative()->is_aryptr()->is_flat()) {
+            array_type->speculative()->as_aryptr()->is_flat()) {
           not_flat_count = 0;
           not_flat_reason = Deoptimization::Reason_speculate_class_check;
         }
@@ -560,7 +560,7 @@ public:
               done = true;
             } else if (profile.morphism() <= 0 && not_flat_count == 0 && !_parse.too_many_traps_or_recompiles(
                          not_flat_reason)) {
-              const TypeAryPtr* array_type = _gvn.type(_array)->is_aryptr();
+              const TypeAryPtr* array_type = _gvn.type(_array)->as_aryptr();
               Node* test = _parse.flat_array_test(_array, /* flat = */ false);
               IfNode* iff = _parse.create_and_xform_if(_parse.control(), test, PROB_MIN, COUNT_UNKNOWN);
               _parse.set_control(_gvn.transform(new IfTrueNode(iff)));
