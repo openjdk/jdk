@@ -308,7 +308,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 
   if (is_java_agent) {
     if (_option.value() == nullptr) {
-      JvmtiAgentSet::startup_agent("instrument", false, _libpath.value(), output());
+      JvmtiAgentSet::start_agent("instrument", false, _libpath.value(), output());
     } else {
       size_t opt_len = strlen(_libpath.value()) + strlen(_option.value()) + 2;
       if (opt_len > 4096) {
@@ -325,12 +325,12 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
       }
 
       jio_snprintf(opt, opt_len, "%s=%s", _libpath.value(), _option.value());
-      JvmtiAgentSet::startup_agent("instrument", false, opt, output());
+      JvmtiAgentSet::start_agent("instrument", false, opt, output());
 
       os::free(opt);
     }
   } else {
-    JvmtiAgentSet::startup_agent(_libpath.value(), true, _option.value(), output());
+    JvmtiAgentSet::start_agent(_libpath.value(), true, _option.value(), output());
   }
 }
 

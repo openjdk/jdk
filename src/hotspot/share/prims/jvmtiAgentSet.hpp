@@ -35,26 +35,27 @@ class outputStream;
 class JvmtiAgentSet : AllStatic {
   friend class JvmtiExport;
  private:
-
   static void initialization_begin();
   static void add(JvmtiAgent* agent);
   static void report_disposal(JvmtiAgent* agent);
   static JvmtiAgent* find(const jvmtiEnv* env);
   static JvmtiAgent* find_vm_init_agent(const jvmtiEnv* env);
-  static bool startup(JvmtiAgent* agent, outputStream* st = nullptr);
+  static void start();
+  static bool start(JvmtiAgent* agent, outputStream* st = nullptr);
+  static void start_xrun();
  public:
   static void on_argument_parse(const char* name,
                                 const char* options,
                                 bool is_absolute_path,
                                 bool xrun = false) NOT_JVMTI_RETURN;
 
-  static void startup_agent(const char* name,
+  static void start_agent(const char* name,
                             bool is_absolute_path,
                             const char* options,
                             outputStream* st) NOT_JVMTI_RETURN;
 
-  static void startup_agents() NOT_JVMTI_RETURN;
-  static void startup_xrun_agents() NOT_JVMTI_RETURN;
+  static void start_agents() NOT_JVMTI_RETURN;
+  static void start_xrun_agents() NOT_JVMTI_RETURN;
   static void disable_agent_list() NOT_JVMTI_RETURN;
   static void print(outputStream* st) NOT_JVMTI_RETURN;
 
@@ -94,10 +95,6 @@ class JvmtiAgentSet : AllStatic {
   static Iterator java_agents() NOT_JVMTI({ Iterator it; return it; });
   static Iterator native_agents() NOT_JVMTI({ Iterator it; return it; });
   static Iterator xrun_agents() NOT_JVMTI({ Iterator it; return it; });
-
- private:
-  static void startup();
-  static void startup_xrun();
 };
 
 #endif // SHARE_PRIMS_JVMTIAGENTSET_HPP

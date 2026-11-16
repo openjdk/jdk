@@ -547,7 +547,7 @@ bool JvmtiAgentLifecycle::invoke_JVM_OnLoad(JvmtiAgent* agent) {
   return true;
 }
 
-bool JvmtiAgentLifecycle::startup(JvmtiAgent* agent, outputStream* st) {
+bool JvmtiAgentLifecycle::start(JvmtiAgent* agent, outputStream* st) {
   assert(agent != nullptr, "invariant");
   if (agent->is_xrun()) {
     return invoke_JVM_OnLoad(agent);

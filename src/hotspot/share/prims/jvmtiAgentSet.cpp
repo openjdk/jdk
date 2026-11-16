@@ -405,11 +405,11 @@ void JvmtiAgentSet::disable_agent_list() {
 #endif
 }
 
-bool JvmtiAgentSet::startup(JvmtiAgent* agent, outputStream* st) {
+bool JvmtiAgentSet::start(JvmtiAgent* agent, outputStream* st) {
   assert(agent != nullptr, "invariant");
   assert(st == nullptr || agent->is_dynamic(), "invariant");
   JvmtiStartupRequestScope scope(agent);
-  const bool succeeded = JvmtiAgentLifecycle::startup(agent, st);
+  const bool succeeded = JvmtiAgentLifecycle::start(agent, st);
   ConditionalMutexLocker lock(Thread::current_or_null_safe(), JvmtiThreadState_lock, is_not_vm_bootstrap());
   if (succeeded && !agent->is_xrun()) {
     JvmtiAgentLifecycle::register_for_native_resolution(agent);
@@ -428,12 +428,12 @@ bool JvmtiAgentSet::startup(JvmtiAgent* agent, outputStream* st) {
   return true;
 }
 
-void JvmtiAgentSet::startup() {
+void JvmtiAgentSet::start() {
   assert(_on_load_phase_agent_list != nullptr, "invariant");
   while (_on_load_phase_agent_list->is_nonempty()) {
     JvmtiAgent* const agent = _on_load_phase_agent_list->at(0);
     assert(!agent->is_xrun(), "invariant");
-    const bool retained = startup(agent);
+    const bool retained = start(agent);
     assert(_on_load_phase_agent_list->at(0) == agent, "invariant");
     _on_load_phase_agent_list->remove_at(0);
     if (!retained) {
@@ -444,17 +444,17 @@ void JvmtiAgentSet::startup() {
   destroy(&_on_load_phase_agent_list);
 }
 
-void JvmtiAgentSet::startup_xrun() {
+void JvmtiAgentSet::start_xrun() {
   assert(_xrun_agent_list != nullptr, "invariant");
   for (int i = 0; i < _xrun_agent_list->length(); ++i) {
     JvmtiAgent* const agent = _xrun_agent_list->at(i);
     assert(agent->is_xrun(), "invariant");
-    startup(agent);
+    start(agent);
   }
 }
 
 // Launch -Xrun agents
-void JvmtiAgentSet::startup_xrun_agents() {
+void JvmtiAgentSet::start_xrun_agents() {
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_PRIMORDIAL, "invariant");
   assert(_startup_requests != nullptr, "invariant");
   assert(_on_load_phase_agent_list == nullptr, "invariant");
@@ -462,7 +462,7 @@ void JvmtiAgentSet::startup_xrun_agents() {
     // No xrun agents specified on the command-line.
     return;
   }
-  startup_xrun();
+  start_xrun();
 }
 
 static void add_to_xrun_list(JvmtiAgent* agent) {
@@ -506,7 +506,7 @@ public:
 
 // Invokes Agent_OnLoad for -agentlib:.. -agentpath:  and converted -Xrun agents.
 // Called very early -- before JavaThreads exist
-void JvmtiAgentSet::startup_agents() {
+void JvmtiAgentSet::start_agents() {
   assert(is_vm_bootstrap(), "invariant");
   initialize_startup_requests();
   if (_on_load_phase_agent_list == nullptr) {
@@ -515,14 +515,14 @@ void JvmtiAgentSet::startup_agents() {
   }
   convert_xrun_agents();
   JvmtiPhaseTransition transition;
-  startup();
+  start();
 }
 
 // Invokes Agent_OnAttach for agents loaded dynamically during runtime.
-void JvmtiAgentSet::startup_agent(const char* name,
-                                  bool is_absolute_path,
-                                  const char* options,
-                                  outputStream* st) {
+void JvmtiAgentSet::start_agent(const char* name,
+                                bool is_absolute_path,
+                                const char* options,
+                                outputStream* st) {
   assert(st != nullptr, "invariant");
   if (!is_live_phase()) {
     st->print_cr("Dynamic agent loading is only permitted in the live phase");
@@ -538,7 +538,7 @@ void JvmtiAgentSet::startup_agent(const char* name,
   JvmtiAgent* const agent = new JvmtiAgent(name, options, is_absolute_path);
   assert(agent->is_dynamic(), "invariant");
 
-  if (!startup(agent, st)) {
+  if (!start(agent, st)) {
     delete agent;
   }
 }

@@ -304,7 +304,7 @@ static jint load_agent(AttachOperation* op, attachStream* out) {
 
   // The abs parameter should be "true" or "false".
   const bool is_absolute_path = (absParam != nullptr) && (strcmp(absParam, "true") == 0);
-  JvmtiAgentSet::startup_agent(agent, is_absolute_path, options, out);
+  JvmtiAgentSet::start_agent(agent, is_absolute_path, options, out);
 
   // Agent_OnAttach result or error message is written to 'out'.
   return JNI_OK;

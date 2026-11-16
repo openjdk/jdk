@@ -50,7 +50,7 @@ class JvmtiAgentLifecycle : AllStatic {
  public:
   static bool is_static(const JvmtiAgent* agent) NOT_JVMTI_RETURN_(false);
   static void attempt_xrun_conversion(JvmtiAgent* agent) NOT_JVMTI_RETURN;
-  static bool startup(JvmtiAgent* agent, outputStream* st = nullptr) NOT_JVMTI_RETURN_(false);
+  static bool start(JvmtiAgent* agent, outputStream* st = nullptr) NOT_JVMTI_RETURN_(false);
   static void invoke_Agent_OnUnload_entry_points(JavaThread* jt) NOT_JVMTI_RETURN;
 };
 
