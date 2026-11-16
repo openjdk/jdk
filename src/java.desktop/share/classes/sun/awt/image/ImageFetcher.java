@@ -217,6 +217,10 @@ class ImageFetcher extends Thread {
       * Recycles this ImageFetcher thread as an image animator thread.
       * Removes this ImageFetcher from the array of ImageFetchers, and
       * resets the thread name to "ImageAnimator".
+     * <p>
+     * <b>Note:</b> This method must be called only from
+     * an {@code ImageFetcher} thread.
+     * @see #stoppingAnimation()
       */
     static void startingAnimation() {
         final FetcherInfo info = FetcherInfo.getFetcherInfo();
@@ -239,8 +243,12 @@ class ImageFetcher extends Thread {
     }
 
     /**
-     * Stops the animator thread and returns back to service as
+     * Returns the current animator thread into the pool as
      * an {@code ImageFetcher} if possible.
+     * <p>
+     * <b>Note:</b> This method must be called only from
+     * an {@code ImageFetcher} thread.
+     * @see #startingAnimation()
      * @see #stoppingAnimation(Thread)
      */
     static void stoppingAnimation() {
