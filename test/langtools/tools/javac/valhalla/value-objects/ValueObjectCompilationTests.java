@@ -150,14 +150,16 @@ class ValueObjectCompilationTests extends CompilationTestCase {
                     value String[] foo();
                 }
                 """);
-        assertFail("compiler.err.mod.not.allowed.here",
+        assertFail("compiler.err.restricted.type.not.allowed.here",
+                   //better would be: "compiler.err.mod.not.allowed.here",
                 """
                 class Test {
                     value String @TA [] x;
                 }
                 @interface TA {}
                 """);
-        assertFail("compiler.err.mod.not.allowed.here",
+        assertFail("compiler.err.restricted.type.not.allowed.here",
+                   //better would be: "compiler.err.mod.not.allowed.here",
                 """
                 class Test {
                     value String @TA []foo();
