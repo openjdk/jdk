@@ -940,6 +940,7 @@ class BlockingChannelOps {
                 task.run();
                 future.complete(null);
             } catch (Throwable ex) {
+                ex.printStackTrace();
                 future.completeExceptionally(ex);
             }
         });
