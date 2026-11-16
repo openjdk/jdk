@@ -5989,7 +5989,7 @@ bool TypeAryPtr::can_be_value_array() const {
   return elem()->make_ptr() && elem()->make_ptr()->isa_instptr() && elem()->make_ptr()->is_instptr()->_klass->can_be_value_klass();
 }
 
-// Does this array and 'other' have compatible layouts for applying arraycopy?
+// Does 'this' and 'other' array have compatible layouts for applying arraycopy?
 // - Return true : We know that the layouts are compatible.
 // - Return false: We either don't know or have shown that they are not compatible.
 bool TypeAryPtr::has_compatible_arraycopy_layout(const TypeAryPtr* other) const {
@@ -6011,9 +6011,18 @@ bool TypeAryPtr::has_compatible_arraycopy_layout(const TypeAryPtr* other) const 
     return true;
   }
 
-  // At least one array might be flat.
-  if (klass_is_exact() && other->klass_is_exact() && exact_klass() == other->exact_klass()) {
-    // Same refined layout -> compatible
+  // 'this' and 'other' could both be exact, but we might still not know all of their array properties. In this case,
+  // exact_klass() could return the same refined array klass even though we have different layouts at runtime. We can
+  // therefore not assume compatibility if the array properties are unknown to be matching.
+  // Note that we do not need to care about atomicity for flat arrays. Atomic flat layouts can only have an element size
+  // of 1, 2, 4, or 8 bytes. We can use the corresponding primitive arraycopy stubs which copy the elements atomically.
+  // Flat arrays with elements larger than 8 bytes cannot have an atomic layout.
+  bool same_known_nullness = (is_null_free() && other->is_null_free()) ||
+                             (is_not_null_free() && other->is_not_null_free());
+  if (is_flat() && other->is_flat() &&
+      same_known_nullness &&
+      klass_is_exact() && other->klass_is_exact() && exact_klass() == other->exact_klass()) {
+    // Same refined array klass and same flatness and nullness -> same physical layout -> compatible
     return true;
   }
   // Otherwise, we don't have more information and must assume incompatibility.
@@ -6167,7 +6176,7 @@ ciKlass* TypeAryPtr::exact_klass_helper() const {
       k = ciObjArrayKlass::make(k->as_array_klass()->element_klass(), false);
     }
     if (klass_is_exact()) {
-      return ciObjArrayKlass::make(k, true, is_null_free(), is_atomic());
+      return ciObjArrayKlass::make(k, true, is_null_free(), is_atomic(), is_not_flat());
     } else {
       // We may reach here if called recursively, must be an unrefined type then
       return ciObjArrayKlass::make(k, false);

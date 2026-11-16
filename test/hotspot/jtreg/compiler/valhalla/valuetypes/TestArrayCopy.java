@@ -886,15 +886,19 @@ public class TestArrayCopy {
      * array should remain unmodified.
      */
     static class SameClassDifferentLayout {
-        static final VTwoShorts[] SRC_NULL_FREE_ATOMIC = (VTwoShorts[]) ValueClass.newNullRestrictedAtomicArray(VTwoShorts.class, LEN, new VTwoShorts(0));
+        static final VTwoShorts[] SRC_REFERENCE = (VTwoShorts[]) ValueClass.newReferenceArray(VTwoShorts.class, LEN);
         static final VTwoShorts[] SRC_NULLABLE = (VTwoShorts[]) ValueClass.newNullableAtomicArray(VTwoShorts.class, LEN);
-        static final VTwoShorts[] DEST_NULLABLE = (VTwoShorts[]) ValueClass.newNullableAtomicArray(VTwoShorts.class, LEN);
-        static final VTwoShorts[] DEST_NULLABLE_UNMODIFIED = (VTwoShorts[]) ValueClass.newNullableAtomicArray(VTwoShorts.class, LEN);
-        static final VTwoShorts[] DEST_NULL_FREE_ATOMIC = (VTwoShorts[]) ValueClass.newNullRestrictedAtomicArray(VTwoShorts.class, LEN, new VTwoShorts(0));
-        static final VTwoShorts[] DEST_NULL_FREE_ATOMIC_UNMODIFIED = (VTwoShorts[]) ValueClass.newNullRestrictedAtomicArray(VTwoShorts.class, LEN, new VTwoShorts(0));
-
+        static final VTwoShorts[] SRC_NULL_FREE_ATOMIC = (VTwoShorts[]) ValueClass.newNullRestrictedAtomicArray(VTwoShorts.class, LEN, new VTwoShorts(0));
         static final VTwoShorts[] SRC_NULL_FREE_NON_ATOMIC = (VTwoShorts[]) ValueClass.newNullRestrictedNonAtomicArray(VTwoShorts.class, LEN, new VTwoShorts(0));
+
+        static final VTwoShorts[] DEST_REFERENCE = (VTwoShorts[]) ValueClass.newReferenceArray(VTwoShorts.class, LEN);
+        static final VTwoShorts[] DEST_NULLABLE = (VTwoShorts[]) ValueClass.newNullableAtomicArray(VTwoShorts.class, LEN);
+        static final VTwoShorts[] DEST_NULL_FREE_ATOMIC = (VTwoShorts[]) ValueClass.newNullRestrictedAtomicArray(VTwoShorts.class, LEN, new VTwoShorts(0));
         static final VTwoShorts[] DEST_NULL_FREE_NON_ATOMIC = (VTwoShorts[]) ValueClass.newNullRestrictedNonAtomicArray(VTwoShorts.class, LEN, new VTwoShorts(0));
+
+        static final VTwoShorts[] DEST_REFERENCE_UNMODIFIED = (VTwoShorts[]) ValueClass.newReferenceArray(VTwoShorts.class, LEN);
+        static final VTwoShorts[] DEST_NULLABLE_UNMODIFIED = (VTwoShorts[]) ValueClass.newNullableAtomicArray(VTwoShorts.class, LEN);
+        static final VTwoShorts[] DEST_NULL_FREE_ATOMIC_UNMODIFIED = (VTwoShorts[]) ValueClass.newNullRestrictedAtomicArray(VTwoShorts.class, LEN, new VTwoShorts(0));
         static final VTwoShorts[] DEST_NULL_FREE_NON_ATOMIC_UNMODIFIED = (VTwoShorts[]) ValueClass.newNullRestrictedNonAtomicArray(VTwoShorts.class, LEN, new VTwoShorts(0));
 
         static final VTwoShorts[] SRC_NULL_FREE_NON_ATOMIC_SIZE_10 = (VTwoShorts[]) ValueClass.newNullRestrictedNonAtomicArray(VTwoShorts.class, 10, new VTwoShorts(0));
@@ -904,10 +908,12 @@ public class TestArrayCopy {
         static final VTwoShorts2[] DEST_NULL_FREE_NON_ATOMIC2 = (VTwoShorts2[]) ValueClass.newNullRestrictedNonAtomicArray(VTwoShorts2.class, LEN, new VTwoShorts2(0));
 
         static {
-            initSrc(SRC_NULL_FREE_ATOMIC);
+            initSrc(SRC_REFERENCE);
             initSrc(SRC_NULLABLE);
+            initSrc(SRC_NULL_FREE_ATOMIC);
             initSrc(SRC_NULL_FREE_NON_ATOMIC);
 
+            initDest(DEST_REFERENCE);
             initDest(DEST_NULLABLE_UNMODIFIED);
             initDest(DEST_NULL_FREE_ATOMIC_UNMODIFIED);
             initDest(DEST_NULL_FREE_NON_ATOMIC_UNMODIFIED);
@@ -923,7 +929,19 @@ public class TestArrayCopy {
             init(arr, VTwoShorts::new, DEST_INIT);
         }
 
-        @Run(test = {"testNullFreeAtomicToNullable",
+        @Run(test = {"testRefToNullable",
+                     "testNullableToRef",
+                     "testRefToNullFreeAtomic",
+                     "testNullFreeAtomicToRef",
+                     "testRefToNullFreeNonAtomic",
+                     "testNullFreeNonAtomicToRef",
+                     "testRefToNullableExact",
+                     "testNullableToRefExact",
+                     "testRefToNullFreeAtomicExact",
+                     "testNullFreeAtomicToRefExact",
+                     "testRefToNullFreeNonAtomicExact",
+                     "testNullFreeNonAtomicToRefExact",
+                     "testNullFreeAtomicToNullable",
                      "testNullableToNullFreeAtomic",
                      "testNullFreeNonAtomicToNullable",
                      "testNullableToNullFreeNonAtomic",
@@ -937,6 +955,51 @@ public class TestArrayCopy {
         static void run() {
             boolean flag = RAND.nextBoolean();
             boolean flag2 = RAND.nextBoolean();
+            initDest(DEST_NULLABLE);
+            runTest(SameClassDifferentLayout::testRefToNullable, flag,
+                    SRC_REFERENCE, SRC_NULLABLE, DEST_NULLABLE);
+
+            initDest(DEST_REFERENCE);
+            initDest(DEST_NULLABLE);
+            runTest(SameClassDifferentLayout::testNullableToRef, flag,
+                    DEST_REFERENCE, DEST_NULLABLE, SRC_NULLABLE);
+
+            initDest(DEST_NULL_FREE_ATOMIC);
+            runTest(SameClassDifferentLayout::testRefToNullFreeAtomic, flag,
+                    SRC_REFERENCE, SRC_NULL_FREE_ATOMIC, DEST_NULL_FREE_ATOMIC);
+
+            initDest(DEST_REFERENCE);
+            initDest(DEST_NULL_FREE_ATOMIC);
+            runTest(SameClassDifferentLayout::testNullFreeAtomicToRef, flag,
+                    DEST_REFERENCE, DEST_NULL_FREE_ATOMIC, SRC_NULL_FREE_ATOMIC);
+
+            initDest(DEST_NULL_FREE_NON_ATOMIC);
+            runTest(SameClassDifferentLayout::testRefToNullFreeNonAtomic, flag,
+                    SRC_REFERENCE, SRC_NULL_FREE_NON_ATOMIC, DEST_NULL_FREE_NON_ATOMIC);
+
+            initDest(DEST_REFERENCE);
+            initDest(DEST_NULL_FREE_NON_ATOMIC);
+            runTest(SameClassDifferentLayout::testNullFreeNonAtomicToRef, flag,
+                    DEST_REFERENCE, DEST_NULL_FREE_NON_ATOMIC, SRC_NULL_FREE_NON_ATOMIC);
+
+            initDest(DEST_NULLABLE);
+            runTest(SameClassDifferentLayout::testRefToNullableExact, SRC_REFERENCE, DEST_NULLABLE);
+
+            initDest(DEST_REFERENCE);
+            runTest(SameClassDifferentLayout::testNullableToRefExact, SRC_NULLABLE, DEST_REFERENCE);
+
+            initDest(DEST_NULL_FREE_ATOMIC);
+            runTest(SameClassDifferentLayout::testRefToNullFreeAtomicExact, SRC_REFERENCE, DEST_NULL_FREE_ATOMIC);
+
+            initDest(DEST_REFERENCE);
+            runTest(SameClassDifferentLayout::testNullFreeAtomicToRefExact, SRC_NULL_FREE_ATOMIC, DEST_REFERENCE);
+
+            initDest(DEST_NULL_FREE_NON_ATOMIC);
+            runTest(SameClassDifferentLayout::testRefToNullFreeNonAtomicExact, SRC_REFERENCE, DEST_NULL_FREE_NON_ATOMIC);
+
+            initDest(DEST_REFERENCE);
+            runTest(SameClassDifferentLayout::testNullFreeNonAtomicToRefExact, SRC_NULL_FREE_NON_ATOMIC, DEST_REFERENCE);
+
             initDest(DEST_NULLABLE);
             runTest(SameClassDifferentLayout::testNullFreeAtomicToNullable, flag,
                     SRC_NULL_FREE_ATOMIC, SRC_NULLABLE, DEST_NULLABLE);
@@ -1011,6 +1074,11 @@ public class TestArrayCopy {
             verifySame(SRC_NULL_FREE_NON_ATOMIC2, DEST_NULL_FREE_NON_ATOMIC2);
         }
 
+        static void runTest(Runnable test, VTwoShorts[] src, VTwoShorts[] expected) {
+            test.run();
+            verifySame(src, expected);
+        }
+
         static void runTest(Consumer<Boolean> test, boolean flag,
                             VTwoShorts[] choice1, VTwoShorts[] choice2, VTwoShorts[] expected) {
             test.accept(flag);
@@ -1052,6 +1120,96 @@ public class TestArrayCopy {
                 // Null + postfix NOT copied
                 Asserts.assertEQ(dest[i], destUnmodified[i]);
             }
+        }
+
+        @Test
+        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Different layouts
+            failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
+        static void testRefToNullable(boolean flag) {
+            VTwoShorts[] vTwoShorts = flag ? SRC_REFERENCE : SRC_NULLABLE; // Type: nullable
+            System.arraycopy(vTwoShorts, 0, DEST_NULLABLE, 0, LEN);
+        }
+
+        @Test
+        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Different layouts
+                failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
+        static void testNullableToRef(boolean flag) {
+            VTwoShorts[] vTwoShorts = flag ? DEST_REFERENCE : DEST_NULLABLE; // Type: nullable
+            System.arraycopy(SRC_NULLABLE, 0, vTwoShorts, 0, LEN);
+        }
+
+        @Test
+        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Different layouts
+                failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
+        static void testRefToNullFreeAtomic(boolean flag) {
+            VTwoShorts[] vTwoShorts = flag ? SRC_REFERENCE : SRC_NULL_FREE_ATOMIC; // Type: nullable
+            System.arraycopy(vTwoShorts, 0, DEST_NULL_FREE_ATOMIC, 0, LEN);
+        }
+
+        @Test
+        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Different layouts
+                failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
+        static void testNullFreeAtomicToRef(boolean flag) {
+            VTwoShorts[] vTwoShorts = flag ? DEST_REFERENCE : DEST_NULL_FREE_ATOMIC; // Type: nullable
+            System.arraycopy(SRC_NULL_FREE_ATOMIC, 0, vTwoShorts, 0, LEN);
+        }
+
+        @Test
+        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Different layouts
+                failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
+        static void testRefToNullFreeNonAtomic(boolean flag) {
+            VTwoShorts[] vTwoShorts = flag ? SRC_REFERENCE : SRC_NULL_FREE_NON_ATOMIC; // Type: nullable
+            System.arraycopy(vTwoShorts, 0, DEST_NULL_FREE_NON_ATOMIC, 0, LEN);
+        }
+
+        @Test
+        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Different layouts
+                failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
+        static void testNullFreeNonAtomicToRef(boolean flag) {
+            VTwoShorts[] vTwoShorts = flag ? DEST_REFERENCE : DEST_NULL_FREE_NON_ATOMIC; // Type: nullable
+            System.arraycopy(SRC_NULL_FREE_NON_ATOMIC, 0, vTwoShorts, 0, LEN);
+        }
+
+        @Test
+        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Different layouts
+                failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
+        static void testRefToNullableExact() {
+            System.arraycopy(SRC_REFERENCE, 0, DEST_NULLABLE, 0, LEN);
+        }
+
+        @Test
+        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Different layouts
+                failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
+        static void testNullableToRefExact() {
+            System.arraycopy(SRC_NULLABLE, 0, DEST_REFERENCE, 0, LEN);
+        }
+
+        @Test
+        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Different layouts
+                failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
+        static void testRefToNullFreeAtomicExact() {
+            System.arraycopy(SRC_REFERENCE, 0, DEST_NULL_FREE_ATOMIC, 0, LEN);
+        }
+
+        @Test
+        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Different layouts
+                failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
+        static void testNullFreeAtomicToRefExact() {
+            System.arraycopy(SRC_NULL_FREE_ATOMIC, 0, DEST_REFERENCE, 0, LEN);
+        }
+
+        @Test
+        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Different layouts
+                failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
+        static void testRefToNullFreeNonAtomicExact() {
+            System.arraycopy(SRC_REFERENCE, 0, DEST_NULL_FREE_NON_ATOMIC, 0, LEN);
+        }
+
+        @Test
+        @IR(counts = { IRNode.SLOW_ARRAYCOPY, "1" }, // Different layouts
+                failOn = { IRNode.JINT_ARRAYCOPY, IRNode.JLONG_ARRAYCOPY }) // no fast path
+        static void testNullFreeNonAtomicToRefExact() {
+            System.arraycopy(SRC_NULL_FREE_NON_ATOMIC, 0, DEST_REFERENCE, 0, LEN);
         }
 
         @Test

@@ -433,7 +433,8 @@ bool ArrayCopyNode::can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const
     return false;
   }
 
-  if (!src_ary->is_flat()) {
+  if (src_ary->is_not_flat()) {
+    assert(dest_ary->is_not_flat(), "same reference layout");
     return true;
   }
 
@@ -441,7 +442,6 @@ bool ArrayCopyNode::can_use_arraycopy_fast_path(const TypeAryPtr* src_ary, const
   assert(src_ary->exact_klass() == dest_ary->exact_klass(), "same layout");
   assert(dest_ary->is_flat(), "same flatness");
   assert(src_ary->is_null_free() == dest_ary->is_null_free(), "same nullness");
-  assert(src_ary->is_atomic() == dest_ary->is_atomic(), "same atomicity");
   assert(is_reference_type(dest_ary->elem()->array_element_basic_type(), true), "must be for flat arrays");
 
   if (src_ary->elem()->value_klass()->contains_oops()) {
