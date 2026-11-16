@@ -170,7 +170,8 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     add_shared_secret_accessors();
   }
-  ClassLoaderDataGraph::classes_do(this);
+
+  ClassLoaderDataGraph::loaded_classes_do_keepalive(this);
 }
 
 // We allow only "stateless" accessors in the SharedSecrets class to be AOT-initialized, for example,
