@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * JBR-10592: measures {@code TextLayout} creation for text that HarfBuzz shapes in many runs.
+ * JDK-8396893: measures {@code TextLayout} creation for text that HarfBuzz shapes in many runs.
  * <p>
  * The text alternates Latin and Cyrillic words, so every word is a separate shaping run.
  * Kerning makes {@code Graphics2D.drawString} take the same {@code TextLayout} path.

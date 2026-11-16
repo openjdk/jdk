@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @summary JBR-10592 Checks that a shortened text is shaped the same way as a full text
+ * @bug 8396893
+ * @summary Checks that a shortened text is shaped the same way as a full text
  * @run junit/othervm -Dsun.font.layout.ffm=true ${test.main.class}
  * @run junit/othervm -Dsun.font.layout.ffm=false ${test.main.class}
  */
