@@ -168,6 +168,84 @@ public class SourceLevelChecks {
         }
     }
 
+    @Test
+    public void testValueNonSealedErrorCheck() throws Exception {
+        Path current = base.resolve(".");
+        Path lib = current.resolve("lib");
+
+        Path libSrc = lib.resolve("src");
+        Path libClasses = lib.resolve("classes");
+        tb.writeJavaFiles(libSrc,
+                          """
+                          class value {}
+                          """);
+
+        Files.createDirectories(libClasses);
+
+        new JavacTask(tb)
+            .outdir(libClasses)
+            .files(tb.findJavaFiles(libSrc))
+            .run()
+            .writeAll();
+
+        Path test = current.resolve("test");
+        Path src = test.resolve("src");
+        Path classes = test.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          class Test {
+                              value non-sealed class C2 extends C1 {}
+                              sealed class C1 {}
+                          }
+                          """);
+
+        Files.createDirectories(classes);
+
+        record TestCase(List<String> options, Task.Expect expected, String... expectedOutput) {}
+        String currentVersion = Integer.toString(Runtime.version().feature());
+
+        TestCase[] testCases = new TestCase[] {
+            new TestCase(List.of("--release", "16"),
+                         Task.Expect.FAIL,
+                         "Test.java:2:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                         "Test.java:2:11: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.sealed.classes), 16, 17",
+                         "2 errors"),
+            new TestCase(List.of("--release", "25"),
+                         Task.Expect.FAIL,
+                         "Test.java:2:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                         "1 error"),
+            new TestCase(List.of("--release", currentVersion),
+                         Task.Expect.FAIL,
+                         "Test.java:2:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                         "1 error"),
+            new TestCase(List.of("--release", currentVersion, "--enable-preview"),
+                         Task.Expect.FAIL,
+                         "Test.java:2:22: compiler.err.non.abstract.value.class.cant.be.sealed.or.non.sealed",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error")
+        };
+
+        for (TestCase testCase : testCases) {
+            List<String> options = new ArrayList<>();
+
+            options.addAll(testCase.options());
+            options.add("-XDrawDiagnostics");
+
+            var log =
+                    new JavacTask(tb)
+                        .options(options)
+                        .classpath(libClasses)
+                        .outdir(classes)
+                        .files(tb.findJavaFiles(src))
+                        .run(testCase.expected())
+                        .writeAll()
+                        .getOutputLines(Task.OutputKind.DIRECT);
+
+            assertEquals(List.of(testCase.expectedOutput()), log);
+        }
+    }
+
     @BeforeEach
     public void setUp(TestInfo info) throws IOException {
         base = Path.of(info.getTestMethod().orElseThrow().getName());

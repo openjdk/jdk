@@ -5016,7 +5016,10 @@ public class JavacParser implements Parser {
 
     protected boolean isNonSealedClassStart(boolean local) {
         if (isNonSealedIdentifier(token, 0)) {
-            return allowedAfterSealedNonSealedOrValue(3, local);
+            if (allowedAfterSealedNonSealedOrValue(3, local)) {
+                checkSourceLevel(Feature.SEALED_CLASSES);
+                return true;
+            }
         }
         return false;
     }
@@ -5028,7 +5031,6 @@ public class JavacParser implements Parser {
             if (someToken.endPos == tokenSub.pos &&
                     tokenSub.endPos == tokenSealed.pos &&
                     tokenSealed.name() == names.sealed) {
-                checkSourceLevel(Feature.SEALED_CLASSES);
                 return true;
             }
         }
