@@ -1107,8 +1107,8 @@ void ZStatSystemMemoryUsage::sample_and_collect() {
 ZStat::ZStat()
   : _metronome(SampleHz) {
   set_name("ZStat");
-  ZStatSampler::initialize();
   create_and_start();
+  ZStatSampler::initialize();
   ZStatMutatorAllocRate::initialize();
 }
 
