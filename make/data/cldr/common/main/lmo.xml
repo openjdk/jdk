@@ -72,14 +72,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="yMMMd" draft="contributed">d MMM y</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<timeZoneNames>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Temp Universàl Coordinàa</standard>
+				</long>
+			</zone>
 			<metazone type="GMT">
 				<long>
 					<standard draft="contributed">Temp Medi de Greenwich</standard>

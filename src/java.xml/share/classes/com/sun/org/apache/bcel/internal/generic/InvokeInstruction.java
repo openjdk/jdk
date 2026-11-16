@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import com.sun.org.apache.bcel.internal.classfile.Utility;
 /**
  * Super class for the INVOKExxx family of instructions.
  *
- * @LastModified: Feb 2023
+ * @LastModified: Nov 2026
  */
 public abstract class InvokeInstruction extends FieldOrMethod implements ExceptionThrower, StackConsumer, StackProducer {
 
@@ -42,7 +42,10 @@ public abstract class InvokeInstruction extends FieldOrMethod implements Excepti
     }
 
     /**
-     * @param index to constant pool
+     * Constructs an InvokeInstruction.
+     *
+     * @param opcode The opcode.
+     * @param index to constant pool.
      */
     protected InvokeInstruction(final short opcode, final int index) {
         super(opcode, index);
@@ -51,7 +54,7 @@ public abstract class InvokeInstruction extends FieldOrMethod implements Excepti
     /**
      * Also works for instructions whose stack effect depends on the constant pool entry they reference.
      *
-     * @return Number of words consumed from stack by this instruction
+     * @return Number of words consumed from stack by this instruction.
      */
     @Override
     public int consumeStack(final ConstantPoolGen cpg) {
@@ -68,6 +71,9 @@ public abstract class InvokeInstruction extends FieldOrMethod implements Excepti
     }
 
     /**
+     * Gets the argument types of referenced method.
+     *
+     * @param cpg The constant pool generator.
      * @return argument types of referenced method.
      */
     public Type[] getArgumentTypes(final ConstantPoolGen cpg) {
@@ -77,8 +83,8 @@ public abstract class InvokeInstruction extends FieldOrMethod implements Excepti
     /**
      * This overrides the deprecated version as we know here that the referenced class may legally be an array.
      *
-     * @return name of the referenced class/interface
-     * @throws IllegalArgumentException if the referenced class is an array (this should not happen)
+     * @return name of the referenced class/interface.
+     * @throws IllegalArgumentException Thrown if the referenced class is an array (this should not happen)
      */
     @Override
     @Deprecated
@@ -90,6 +96,9 @@ public abstract class InvokeInstruction extends FieldOrMethod implements Excepti
     }
 
     /**
+     * Gets the name of referenced method.
+     *
+     * @param cpg The constant pool generator.
      * @return name of referenced method.
      */
     public String getMethodName(final ConstantPoolGen cpg) {
@@ -97,6 +106,9 @@ public abstract class InvokeInstruction extends FieldOrMethod implements Excepti
     }
 
     /**
+     * Gets the return type of referenced method.
+     *
+     * @param cpg The constant pool generator.
      * @return return type of referenced method.
      */
     public Type getReturnType(final ConstantPoolGen cpg) {
@@ -104,6 +116,9 @@ public abstract class InvokeInstruction extends FieldOrMethod implements Excepti
     }
 
     /**
+     * Gets the return type of referenced method.
+     *
+     * @param cpg The constant pool generator.
      * @return return type of referenced method.
      */
     @Override
@@ -114,7 +129,7 @@ public abstract class InvokeInstruction extends FieldOrMethod implements Excepti
     /**
      * Also works for instructions whose stack effect depends on the constant pool entry they reference.
      *
-     * @return Number of words produced onto stack by this instruction
+     * @return Number of words produced onto stack by this instruction.
      */
     @Override
     public int produceStack(final ConstantPoolGen cpg) {
@@ -123,7 +138,7 @@ public abstract class InvokeInstruction extends FieldOrMethod implements Excepti
     }
 
     /**
-     * @return mnemonic for instruction with symbolic references resolved
+     * @return mnemonic for instruction with symbolic references resolved.
      */
     @Override
     public String toString(final ConstantPool cp) {

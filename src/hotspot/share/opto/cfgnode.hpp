@@ -408,7 +408,7 @@ public:
 
   bool can_be_value_type() const {
     const Type* type = _type->make_oopptr();
-    return Arguments::is_valhalla_enabled() && type != nullptr && type->isa_instptr() && type->is_instptr()->can_be_value_type();
+    return Arguments::is_valhalla_enabled() && type != nullptr && type->is_instptr() && type->as_instptr()->can_be_value_type();
   }
 
   Node* try_push_value_types_down(PhaseGVN* phase, bool can_reshape);
@@ -502,7 +502,8 @@ class IfNode : public MultiBranchNode {
   virtual uint size_of() const { return sizeof(*this); }
 
   // Helper methods for fold_compares
-  bool cmpi_folds(PhaseIterGVN* igvn, bool fold_ne = false);
+  static const TypeInteger* filtered_integer_type(PhaseGVN* phase, Node* val, Node* if_proj, BasicType bt);
+  bool cmp_folds(PhaseIterGVN* igvn, bool fold_ne = false);
   bool is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn);
   bool has_shared_region(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail) const;
   bool has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfProjNode*& fail, PhaseIterGVN* igvn) const;
@@ -518,7 +519,7 @@ class IfNode : public MultiBranchNode {
 protected:
   IfProjNode* range_check_trap_proj(int& flip, Node*& l, Node*& r) const;
   Node* Ideal_common(PhaseGVN *phase, bool can_reshape);
-  Node* search_identical(int dist, PhaseIterGVN* igvn);
+  Node* search_identical(int dist);
 
   Node* simple_subsuming(PhaseIterGVN* igvn);
 
@@ -641,8 +642,10 @@ public:
   virtual void dump_spec(outputStream *st) const;
 #endif
 
-  bool same_condition(const Node* dom, PhaseIterGVN* igvn) const;
+  bool has_same_non_constant_condition(const IfNode* other_if) const;
   void mark_projections_unsafe_for_fold_compare() const;
+
+  static void pin_nodes_dependent_on(Node* ctrl, int old_iff_opcode, PhaseIterGVN* igvn, PhaseIdealLoop* loop);
 };
 
 class RangeCheckNode : public IfNode {
@@ -810,17 +813,15 @@ class JumpProjNode : public JProjNode {
 
  private:
   const int  _dest_bci;
-  const int  _switch_val;
  public:
-  JumpProjNode(Node* jumpnode, uint proj_no, int dest_bci, int switch_val)
-    : JProjNode(jumpnode, proj_no), _dest_bci(dest_bci), _switch_val(switch_val) {
+  JumpProjNode(Node* jumpnode, uint proj_no, int dest_bci)
+    : JProjNode(jumpnode, proj_no), _dest_bci(dest_bci) {
     init_class_id(Class_JumpProj);
   }
 
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return Type::CONTROL; }
   int  dest_bci()    const { return _dest_bci; }
-  int  switch_val()  const { return _con; }
   uint proj_no()     const { return _con; }
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

@@ -1211,15 +1211,45 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
 // Helper function to match call instructions.  Calls match special.
 // They match alone with no children.  Their children, the incoming
 // arguments, match normally.
-MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
-  MachSafePointNode *msfpt = nullptr;
-  MachCallNode      *mcall = nullptr;
+MachNode* Matcher::match_sfpt(SafePointNode* sfpt) {
+  MachSafePointNode* msfpt = nullptr;
+  MachCallNode*      mcall = nullptr;
+  JVMState*          sfpt_jvms = nullptr;
   uint               cnt;
   // Split out case for SafePoint vs Call
-  CallNode *call;
-  const TypeTuple *domain;
+  CallNode* call = nullptr;
+  const TypeTuple* domain = nullptr;
   ciMethod*        method = nullptr;
-  if( sfpt->is_Call() ) {
+  if (Matcher::use_mach_uncommon_trap_node &&
+      !PreferCallBasedUncommonTraps &&
+      sfpt->is_CallStaticJava() &&
+      sfpt->as_CallStaticJava()->is_uncommon_trap()) {
+    const address entry_point = OptoRuntime::uncommon_trap_blob()->entry_point();
+    const CallStaticJavaNode* static_java_call = sfpt->as_CallStaticJava();
+    const int trap_request = static_java_call->uncommon_trap_request();
+
+    assert(trap_request != 0, "malformed uncommon trap");
+    assert(static_java_call->tf() == OptoRuntime::uncommon_trap_Type(), "unexpected uncommon trap call shape");
+    assert(static_java_call->entry_point() == entry_point, "unexpected uncommon trap entry point");
+    assert(static_java_call->jvms() != nullptr, "no map back into the interpreter state");
+    assert(static_java_call->req() > TypeFunc::Parms, "does not have the trap request input");
+    assert(static_java_call->in(TypeFunc::Parms) != nullptr, "missing trap request input edge");
+
+    MachUncommonTrapNode* mn = new MachUncommonTrapNode(trap_request);
+    for (uint i = 0; i < static_java_call->req(); i++) {
+      if (i == TypeFunc::Parms) {
+        // Remove the trap request input edge.
+        assert(static_java_call->in(i)->bottom_type()->is_int() &&
+               static_java_call->in(i)->bottom_type()->as_int()->is_con(), "incorrect trap request input");
+      } else {
+        mn->add_req(static_java_call->in(i));
+      }
+    }
+    msfpt = mn->as_MachSafePoint();
+    sfpt_jvms = sfpt->jvms()->clone_deep(C);
+    sfpt_jvms->adapt_position(-1);
+    cnt = TypeFunc::Parms;
+  } else if (sfpt->is_Call()) {
     call = sfpt->as_Call();
     domain = call->tf()->domain_cc();
     cnt = domain->cnt();
@@ -1258,14 +1288,14 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       mach_call_rt->_name = call->as_CallRuntime()->_name;
     }
     msfpt = mcall;
+    sfpt_jvms = sfpt->jvms();
   }
   // This is a non-call safepoint
   else {
-    call = nullptr;
-    domain = nullptr;
     MachNode *mn = match_tree(sfpt);
     if (C->failing())  return nullptr;
     msfpt = mn->as_MachSafePoint();
+    sfpt_jvms = sfpt->jvms();
     cnt = TypeFunc::Parms;
   }
   msfpt->_has_ea_local_in_scope = sfpt->has_ea_local_in_scope();
@@ -1351,7 +1381,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
         continue;               // Avoid Halves
       }
       // Handle case where arguments are in vector registers.
-      if(call->in(TypeFunc::Parms + i)->bottom_type()->isa_vect()) {
+      if (call->in(TypeFunc::Parms + i)->bottom_type()->is_vect()) {
         OptoReg::Name reg_fst = OptoReg::as_OptoReg(first);
         OptoReg::Name reg_snd = OptoReg::as_OptoReg(second);
         assert (reg_fst <= reg_snd, "fst=%d snd=%d", reg_fst, reg_snd);
@@ -1395,7 +1425,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   }
   // Transfer the safepoint information from the call to the mcall
   // Move the JVMState list
-  msfpt->set_jvms(sfpt->jvms());
+  msfpt->set_jvms(sfpt_jvms);
   for (JVMState* jvms = msfpt->jvms(); jvms; jvms = jvms->caller()) {
     jvms->set_map(sfpt);
   }
@@ -2531,7 +2561,7 @@ void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
         _null_check_tests.push(proj);
         Node* val = cmp->in(1);
 #ifdef _LP64
-        if (val->bottom_type()->isa_narrowoop() &&
+        if (val->bottom_type()->is_narrowoop() &&
             !Matcher::narrow_oop_use_complex_address()) {
           //
           // Look for DecodeN node which should be pinned to orig_proj.
@@ -2627,19 +2657,19 @@ const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
 
   Node* spill;
   switch (ideal_reg) {
-    case Op_RegN: spill = new LoadNNode(nullptr, mem, fp, atp, t->is_narrowoop(), mo); break;
-    case Op_RegI: spill = new LoadINode(nullptr, mem, fp, atp, t->is_int(),       mo); break;
-    case Op_RegP: spill = new LoadPNode(nullptr, mem, fp, atp, t->is_ptr(),       mo); break;
+    case Op_RegN: spill = new LoadNNode(nullptr, mem, fp, atp, t->as_narrowoop(), mo); break;
+    case Op_RegI: spill = new LoadINode(nullptr, mem, fp, atp, t->as_int(),       mo); break;
+    case Op_RegP: spill = new LoadPNode(nullptr, mem, fp, atp, t->as_ptr(),       mo); break;
     case Op_RegF: spill = new LoadFNode(nullptr, mem, fp, atp, t,                 mo); break;
     case Op_RegD: spill = new LoadDNode(nullptr, mem, fp, atp, t,                 mo); break;
-    case Op_RegL: spill = new LoadLNode(nullptr, mem, fp, atp, t->is_long(),      mo); break;
+    case Op_RegL: spill = new LoadLNode(nullptr, mem, fp, atp, t->as_long(),      mo); break;
 
     case Op_VecA: // fall-through
     case Op_VecS: // fall-through
     case Op_VecD: // fall-through
     case Op_VecX: // fall-through
     case Op_VecY: // fall-through
-    case Op_VecZ: spill = new LoadVectorNode(nullptr, mem, fp, atp, t->is_vect()); break;
+    case Op_VecZ: spill = new LoadVectorNode(nullptr, mem, fp, atp, t->as_vect()); break;
     case Op_RegVectMask: return Matcher::predicate_reg_mask();
 
     default: ShouldNotReachHere();
@@ -2650,7 +2680,7 @@ const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
     return nullptr;
   }
   // Handle generic vector operand case
-  if (Matcher::supports_generic_vector_operands && t->isa_vect()) {
+  if (Matcher::supports_generic_vector_operands && t->is_vect()) {
     specialize_mach_node(mspill);
   }
   return &mspill->out_RegMask();
@@ -2698,7 +2728,7 @@ MachOper* Matcher::specialize_vector_operand(MachNode* m, uint opnd_idx) {
       }
     }
   }
-  assert(def->bottom_type()->isa_vect(), "not a vector");
+  assert(def->bottom_type()->is_vect(), "not a vector");
   uint ideal_vreg = def->bottom_type()->ideal_reg();
   return Matcher::pd_specialize_generic_vector_operand(m->_opnds[opnd_idx], ideal_vreg, false /*is_temp*/);
 }
@@ -2742,36 +2772,36 @@ void Matcher::specialize_generic_vector_operands() {
 }
 
 uint Matcher::vector_length(const Node* n) {
-  const TypeVect* vt = n->bottom_type()->is_vect();
+  const TypeVect* vt = n->bottom_type()->as_vect();
   return vt->length();
 }
 
 uint Matcher::vector_length(const MachNode* use, const MachOper* opnd) {
   int def_idx = use->operand_index(opnd);
   Node* def = use->in(def_idx);
-  return def->bottom_type()->is_vect()->length();
+  return def->bottom_type()->as_vect()->length();
 }
 
 uint Matcher::vector_length_in_bytes(const Node* n) {
-  const TypeVect* vt = n->bottom_type()->is_vect();
+  const TypeVect* vt = n->bottom_type()->as_vect();
   return vt->length_in_bytes();
 }
 
 uint Matcher::vector_length_in_bytes(const MachNode* use, const MachOper* opnd) {
   uint def_idx = use->operand_index(opnd);
   Node* def = use->in(def_idx);
-  return def->bottom_type()->is_vect()->length_in_bytes();
+  return def->bottom_type()->as_vect()->length_in_bytes();
 }
 
 BasicType Matcher::vector_element_basic_type(const Node* n) {
-  const TypeVect* vt = n->bottom_type()->is_vect();
+  const TypeVect* vt = n->bottom_type()->as_vect();
   return vt->element_basic_type();
 }
 
 BasicType Matcher::vector_element_basic_type(const MachNode* use, const MachOper* opnd) {
   int def_idx = use->operand_index(opnd);
   Node* def = use->in(def_idx);
-  return def->bottom_type()->is_vect()->element_basic_type();
+  return def->bottom_type()->as_vect()->element_basic_type();
 }
 
 bool Matcher::is_non_long_integral_vector(const Node* n) {
@@ -2933,8 +2963,8 @@ bool Matcher::branches_to_uncommon_trap(const Node *n) {
     if (call &&
         call->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point()) {
       const Type* trtype = call->in(TypeFunc::Parms)->bottom_type();
-      if (trtype->isa_int() && trtype->is_int()->is_con()) {
-        jint tr_con = trtype->is_int()->get_con();
+      if (trtype->is_int() && trtype->as_int()->is_con()) {
+        jint tr_con = trtype->as_int()->get_con();
         Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(tr_con);
         Deoptimization::DeoptAction action = Deoptimization::trap_request_action(tr_con);
         assert((int)reason < (int)BitsPerInt, "recode bit map");

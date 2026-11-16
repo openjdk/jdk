@@ -115,6 +115,10 @@
   // C code as the Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
+  // Use MachUncommonTrapNode for representing uncommon trap sequences.
+  // This is an alternative to representing uncommon traps as runtime calls.
+  static const bool use_mach_uncommon_trap_node = true;
+
   // Are floats converted to double when stored to stack during
   // deoptimization?
   static constexpr bool float_in_double() { return false; }

@@ -322,7 +322,7 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       BasicType element_bt = p0->is_Convert() ? p0->in(1)->bottom_type()->basic_type() : _vloop_analyzer.types().velt_basic_type(p0);
       if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_bt == T_LONG) {
         // Scalar rotate has int rotation value, but the scalar rotate expects longs.
-        assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");
+        assert(same_input->bottom_type()->is_int(), "scalar rotate expects int rotation");
         VTransformNode* conv = new (_vtransform.arena()) VTransformConvI2LNode(_vtransform);
         conv->init_req(1, same_input_vtn);
         same_input_vtn = conv;

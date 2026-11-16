@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     private void park(FileDescriptor fd, int event, long nanos) throws IOException {
         Thread t = Thread.currentThread();
         if (t.isVirtual()) {
-            Poller.poll(fdVal(fd), event, nanos, this::isOpen);
+            Poller.poll(this, fdVal(fd), event, nanos, this::isOpen);
             if (t.isInterrupted()) {
                 throw new InterruptedIOException();
             }

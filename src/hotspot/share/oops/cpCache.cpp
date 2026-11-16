@@ -29,7 +29,6 @@
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -434,7 +433,7 @@ void ConstantPoolCache::iterate_resolved_field_entries_with_archivability_check(
       resolved = true;
     }
 
-    bool archivable = (resolved && !CDSConfig::is_dumping_preimage_static_archive() &&
+    bool archivable = (resolved && !CDSConfig::is_dumping_aot_configuration() &&
                        AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index));
 
     // The state of strict static field accesses is reset in InstanceKlass::remove_unshareable_info
@@ -500,7 +499,7 @@ void ConstantPoolCache::iterate_resolved_method_entries_with_archivability_check
                     (rme->is_resolved(Bytecodes::_invokestatic) && VM_Version::supports_fast_class_init_checks());
 
     const char* rejection_reason = nullptr;
-    bool archivable = (resolved && !CDSConfig::is_dumping_preimage_static_archive() &&
+    bool archivable = (resolved && !CDSConfig::is_dumping_aot_configuration() &&
                        can_archive_resolved_method(src_cp, rme, rejection_reason));
     f(cp, src_cp, cp_index, rme, resolved, archivable, rejection_reason);
   }
@@ -557,7 +556,7 @@ void ConstantPoolCache::iterate_resolved_indy_entries_with_archivability_check(F
     ResolvedIndyEntry* rie = _resolved_indy_entries->adr_at(i);
     int cp_index = rie->constant_pool_index();
     bool resolved = rie->is_resolved();
-    bool archivable = (resolved && !CDSConfig::is_dumping_preimage_static_archive() &&
+    bool archivable = (resolved && !CDSConfig::is_dumping_aot_configuration() &&
                        AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index));
     f(cp, src_cp, i, cp_index, rie, resolved, archivable);
   }

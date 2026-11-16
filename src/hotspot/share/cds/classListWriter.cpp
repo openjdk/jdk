@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
@@ -30,7 +31,6 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -107,7 +107,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
   assert_locked();
 
   ClassLoaderData* loader_data = k->class_loader_data();
-  bool is_builtin_loader = SystemDictionaryShared::is_builtin_loader(loader_data);
+  bool is_builtin_loader = AOTSystemDictionary::is_builtin_loader(loader_data);
   if (!is_builtin_loader) {
     // class may be loaded from shared archive
     if (!k->in_aot_cache()) {
@@ -122,7 +122,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
       // Shared unregistered classes are skipped since their real source are not recorded in shared space.
       return;
     }
-    if (!SystemDictionaryShared::add_unregistered_class(Thread::current(), (InstanceKlass*)k)) {
+    if (!AOTSystemDictionary::add_unregistered_class(Thread::current(), (InstanceKlass*)k)) {
       return;
     }
   }
@@ -224,7 +224,7 @@ void ClassListWriter::write_resolved_constants() {
 }
 
 void ClassListWriter::write_resolved_constants_for(InstanceKlass* ik) {
-  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data()) ||
+  if (!AOTSystemDictionary::is_builtin_loader(ik->class_loader_data()) ||
       ik->is_hidden()) {
     return;
   }

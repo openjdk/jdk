@@ -1371,24 +1371,24 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
 }
 
 
-bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
-  if (!n->is_If()) {
-    return false;
-  }
-  if (n->outcnt() != n->as_If()->required_outcnt()) {
-    assert(false, "malformed IfNode with %d outputs", n->outcnt());
-    return false;
-  }
-  if (n->is_BaseCountedLoopEnd()) {
-    return false;
-  }
-  if (!n->in(0)->is_Region()) {
+bool PhaseIdealLoop::has_identical_back_to_back_ifs(Node* n) {
+  if (n->Opcode() != Op_If && n->Opcode() != Op_RangeCheck) {
     return false;
   }
 
-  Node* region = n->in(0);
+  IfNode* if_node = n->as_If();
+  if (if_node->outcnt() != if_node->required_outcnt()) {
+    assert(false, "malformed IfNode with %d outputs", if_node->outcnt());
+    return false;
+  }
+
+  if (!if_node->in(0)->is_Region()) {
+    return false;
+  }
+
+  Node* region = if_node->in(0);
   Node* dom = idom(region);
-  if (!dom->is_If() ||  !n->as_If()->same_condition(dom, &_igvn)) {
+  if (!dom->is_If() || !if_node->has_same_non_constant_condition(dom->as_If())) {
     return false;
   }
   IfNode* dom_if = dom->as_If();
@@ -1540,27 +1540,25 @@ bool PhaseIdealLoop::flat_array_element_type_check(Node *n) {
       cast_clone->set_req(0, ctrl);
       cast_clone->set_req(1, in);
       register_new_node(cast_clone, ctrl);
-      const Type* tcast = cast_clone->Value(&_igvn);
-      _igvn.set_type(cast_clone, tcast);
-      cast_clone->as_Type()->set_type(tcast);
+      _igvn.set_type_and_raise_bottom_type(cast_clone, cast_clone->Value(&_igvn));
       in = cast_clone;
     }
     Node* addr_clone = addr->clone();
     addr_clone->set_req(AddPNode::Base, in);
     addr_clone->set_req(AddPNode::Address, in);
     register_new_node(addr_clone, ctrl);
-    _igvn.set_type(addr_clone, addr_clone->Value(&_igvn));
+    _igvn.set_type_and_raise_bottom_type(addr_clone, addr_clone->Value(&_igvn));
     Node* klassptr_clone = klassptr->clone();
     klassptr_clone->set_req(2, addr_clone);
     register_new_node(klassptr_clone, ctrl);
-    _igvn.set_type(klassptr_clone, klassptr_clone->Value(&_igvn));
+    _igvn.set_type_and_raise_bottom_type(klassptr_clone, klassptr_clone->Value(&_igvn));
     if (klassptr != n->in(1)) {
       Node* decode = n->in(1);
       assert(decode->is_DecodeNarrowPtr(), "inconsistent subgraph");
       Node* decode_clone = decode->clone();
       decode_clone->set_req(1, klassptr_clone);
       register_new_node(decode_clone, ctrl);
-      _igvn.set_type(decode_clone, decode_clone->Value(&_igvn));
+      _igvn.set_type_and_raise_bottom_type(decode_clone, decode_clone->Value(&_igvn));
       klassptr_clone = decode_clone;
     }
     phi->set_req(i, klassptr_clone);
@@ -1688,13 +1686,13 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
     if (bol->is_Bool() && (max > 1 || bol->in(1)->is_SubTypeCheck())) {
       // Search up IDOMs to see if this IF is dominated.
       Node* cmp = bol->in(1);
-      Node *cutoff = cmp->is_SubTypeCheck() ? dom_lca(get_ctrl(cmp->in(1)), get_ctrl(cmp->in(2))) : get_ctrl(bol);
+      Node* cutoff = cmp->is_SubTypeCheck() ? dom_lca(get_ctrl(cmp->in(1)), get_ctrl(cmp->in(2))) : get_ctrl(bol);
 
       // Now search up IDOMs till cutoff, looking for a dominating test
-      Node *prevdom = n;
-      Node *dom = idom(prevdom);
+      Node* prevdom = n;
+      Node* dom = idom(prevdom);
       while (dom != cutoff) {
-        if (dom->req() > 1 && n->as_If()->same_condition(dom, &_igvn) && prevdom->in(0) == dom &&
+        if (dom->is_If() && prevdom->in(0) == dom && n->as_If()->has_same_non_constant_condition(dom->as_If()) &&
             safe_for_if_replacement(dom)) {
           // It's invalid to move control dependent data nodes in the inner
           // strip-mined loop, because:
@@ -1764,7 +1762,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 //   // body 4
 // }
 bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
-  if (identical_backtoback_ifs(n) && can_split_if(n->in(0))) {
+  if (has_identical_back_to_back_ifs(n) && can_split_if(n->in(0))) {
     Node *n_ctrl = n->in(0);
     IfNode* dom_if = idom(n_ctrl)->as_If();
     if (n->in(1) != dom_if->in(1)) {
@@ -1888,8 +1886,8 @@ bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
   bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
-                            n->in(1)->bottom_type()->isa_rawptr() &&
-                            !n->bottom_type()->isa_rawptr();
+                            n->in(1)->bottom_type()->is_rawptr() &&
+                            !n->bottom_type()->is_rawptr();
 
   if (has_ctrl(n) &&
       !n->is_Phi() &&
@@ -3074,7 +3072,7 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
     }
   }
   if (add2 != nullptr) {
-    const TypeInt* add2t = _igvn.type(add2)->is_int();
+    const TypeInt* add2t = _igvn.type(add2)->as_int();
     if (add2t->is_con()) {
       return add2t->get_con();
     }
@@ -3382,7 +3380,7 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree* lo
   //   -3 >=u -2
   // is false.
   Node* limit = cmpu->in(2);
-  const TypeInt* type_limit = _igvn.type(limit)->is_int();
+  const TypeInt* type_limit = _igvn.type(limit)->as_int();
   if (type_limit->_lo < 0) {
     return nullptr;
   }

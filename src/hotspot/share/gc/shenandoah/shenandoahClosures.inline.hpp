@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/shenandoahClosures.hpp"
 
+#include "classfile/classLoaderData.inline.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -75,6 +76,15 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
         _old_queue(old_q),
         _mark_context(ShenandoahHeap::heap()->marking_context()),
         _weak(false) {}
+
+void ShenandoahMarkRefsSuperClosure::do_cld(ClassLoaderData* cld) {
+  cld->oops_do(this, _weak ? ClassLoaderData::_claim_finalizable
+                           : ClassLoaderData::_claim_strong);
+}
+
+void ShenandoahMarkRefsSuperClosure::do_klass(Klass* k) {
+  do_cld(k->class_loader_data());
+}
 
 template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
 ALWAYSINLINE

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static RegionTaskQueueSet*    _region_task_queues;
   static PSOldGen*              _old_gen;
 
-  static PartialArrayStateManager*  _partial_array_state_manager;
   PartialArraySplitter              _partial_array_splitter;
 
   PSMarkTaskQueue               _marking_stack;

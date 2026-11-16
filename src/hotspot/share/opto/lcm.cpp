@@ -47,7 +47,7 @@ static bool accesses_heap_base_zone(Node *val) {
       if (val->as_Mach()->ideal_Opcode() == Op_DecodeN) {
         // This assumes all Decodes with TypePtr::NotNull are matched to nodes that
         // decode null to point to the heap base (Decode_NN).
-        if (val->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull) {
+        if (val->bottom_type()->as_oopptr()->ptr() == TypePtr::NotNull) {
           return true;
         }
       }
@@ -147,21 +147,18 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     bool found_trap = false;
     for (uint i1 = 0; i1 < null_block->number_of_nodes(); i1++) {
       Node* nn = null_block->get_node(i1);
-      if (nn->is_MachCall() &&
-          nn->as_MachCall()->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point()) {
-        const Type* trtype = nn->in(TypeFunc::Parms)->bottom_type();
-        if (trtype->isa_int() && trtype->is_int()->is_con()) {
-          jint tr_con = trtype->is_int()->get_con();
-          Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(tr_con);
-          Deoptimization::DeoptAction action = Deoptimization::trap_request_action(tr_con);
-          assert((int)reason < (int)BitsPerInt, "recode bit map");
-          if (is_set_nth_bit(allowed_reasons, (int) reason)
-              && action != Deoptimization::Action_none) {
-            // This uncommon trap is sure to recompile, eventually.
-            // When that happens, C->too_many_traps will prevent
-            // this transformation from happening again.
-            found_trap = true;
-          }
+      jint trap_request;
+      if (nn->is_MachSafePoint() &&
+          nn->as_MachSafePoint()->is_uncommon_trap(&trap_request)) {
+        Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(trap_request);
+        Deoptimization::DeoptAction action = Deoptimization::trap_request_action(trap_request);
+        assert((int)reason < (int)BitsPerInt, "recode bit map");
+        if (is_set_nth_bit(allowed_reasons, (int) reason)
+            && action != Deoptimization::Action_none) {
+          // This uncommon trap is sure to recompile, eventually.
+          // When that happens, C->too_many_traps will prevent
+          // this transformation from happening again.
+          found_trap = true;
         }
         break;
       }
@@ -265,7 +262,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
           continue;             // Not an memory op; skip it
         }
         if (val == base ||
-            (val == index && val->bottom_type()->isa_narrowoop())) {
+            (val == index && val->bottom_type()->is_narrowoop())) {
           break;                // Found it
         } else {
           continue;             // Skip it
@@ -281,11 +278,10 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       continue;
     }
 
-    // Check that node's control edge is not-null block's head or dominates it,
+    // Check that node's control edge dominates the not-null block,
     // otherwise we can't hoist it because there are other control dependencies.
     Node* ctrl = mach->in(0);
-    if (ctrl != nullptr && !(ctrl == not_null_block->head() ||
-        get_block_for_node(ctrl)->dominates(not_null_block))) {
+    if (ctrl != nullptr && !get_block_for_node(ctrl)->dominates(not_null_block)) {
       continue;
     }
 
@@ -297,7 +293,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       if (base == nullptr || base == NodeSentinel) {
         // Narrow oop address doesn't have base, only index.
         // Give up if offset is beyond page size or if heap base is not protected.
-        if (val->bottom_type()->isa_narrowoop() &&
+        if (val->bottom_type()->is_narrowoop() &&
             (MacroAssembler::needs_explicit_null_check(offset) ||
              !CompressedOops::use_implicit_null_checks()))
           continue;
@@ -309,7 +305,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
           tptr = base->get_ptr_type();
         } else {
           // only regular oops are expected here
-          tptr = base->bottom_type()->is_ptr();
+          tptr = base->bottom_type()->as_ptr();
         }
         // Give up if offset is not a compile-time constant.
         if (offset == Type::OffsetBot || tptr->offset() == Type::OffsetBot)

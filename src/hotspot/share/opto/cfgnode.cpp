@@ -670,6 +670,8 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         if (outer_sfpt != nullptr && outer_out != nullptr) {
           Node* in = outer_sfpt->in(0);
           igvn->replace_node(outer_out, in);
+          // Now, in has 2 CFG outputs, disconnect outer_sfpt from it
+          igvn->replace_input_of(outer_sfpt, 0, igvn->C->top());
           LoopNode* outer = as_CountedLoop()->outer_loop();
           igvn->replace_input_of(outer, LoopNode::LoopBackControl, igvn->C->top());
         }
@@ -1243,9 +1245,9 @@ void PhiNode::verify_adr_type(bool recursive) const {
   // Flat array elements shouldn't get their own memory slice until flat_accesses_share_alias is cleared.
   // It could be the graph has no loads/stores and flat_accesses_share_alias is never cleared. EA could still
   // create per-element Phis but that wouldn't be a problem as there are no memory accesses for that array.
-  assert(_adr_type == nullptr || _adr_type->isa_aryptr() == nullptr ||
-         _adr_type->is_aryptr()->is_known_instance() ||
-         !_adr_type->is_aryptr()->is_flat() ||
+  assert(_adr_type == nullptr || !_adr_type->is_aryptr() ||
+         _adr_type->as_aryptr()->is_known_instance() ||
+         !_adr_type->as_aryptr()->is_flat() ||
          !Compile::current()->flat_accesses_share_alias() ||
          _adr_type == TypeAryPtr::INLINES, "flat array element shouldn't get its own slice yet");
 
@@ -1388,13 +1390,13 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   else {
 
     if (jt != ft && jt->base() == ft->base()) {
-      if (jt->isa_int() &&
-          jt->is_int()->_lo == ft->is_int()->_lo &&
-          jt->is_int()->_hi == ft->is_int()->_hi)
+      if (jt->is_int() &&
+          jt->as_int()->_lo == ft->as_int()->_lo &&
+          jt->as_int()->_hi == ft->as_int()->_hi)
         jt = ft;
-      if (jt->isa_long() &&
-          jt->is_long()->_lo == ft->is_long()->_lo &&
-          jt->is_long()->_hi == ft->is_long()->_hi)
+      if (jt->is_long() &&
+          jt->as_long()->_lo == ft->as_long()->_lo &&
+          jt->as_long()->_hi == ft->as_long()->_hi)
         jt = ft;
     }
     if (jt != ft) {
@@ -1650,7 +1652,7 @@ Node* PhiNode::unique_input(PhaseValues* phase, bool uncast) {
 #endif
       while (un != nullptr && un->req() == 2 && un->is_ConstraintCast()) {
         Node* next = un->in(1);
-        if (phase->type(next)->isa_rawptr() && phase->type(un)->isa_oopptr()) {
+        if (phase->type(next)->is_rawptr() && phase->type(un)->is_oopptr()) {
           // risk exposing raw ptr at safepoint
           break;
         }
@@ -2043,7 +2045,7 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
 // and from half float will return the SHORT basic type, as that wouldn't be returned typically from TypeInt.
 static BasicType get_convert_type(Node* convert, const Type* type) {
   int convert_op = convert->Opcode();
-  if (type->isa_int() && (convert_op == Op_ConvHF2F || convert_op == Op_ConvF2HF)) {
+  if (type->is_int() && (convert_op == Op_ConvHF2F || convert_op == Op_ConvF2HF)) {
     return T_SHORT;
   }
 
@@ -2484,9 +2486,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // going away
       Node* cast = nullptr;
       const TypeTuple* extra_types = collect_types(phase);
-      if (phi_type->isa_ptr()) {
+      if (phi_type->is_ptr()) {
         const Type* uin_type = phase->type(uin);
-        if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
+        if (!phi_type->is_oopptr() && !uin_type->is_oopptr()) {
           cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing, extra_types);
         } else {
           // Use a CastPP for a cast to not null and a CheckCastPP for
@@ -2765,9 +2767,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Make narrow type for new phi.
       const Type* narrow_t;
       if (is_decodeN) {
-        narrow_t = TypeNarrowOop::make(this->bottom_type()->is_ptr());
+        narrow_t = TypeNarrowOop::make(this->bottom_type()->as_ptr());
       } else {
-        narrow_t = TypeNarrowKlass::make(this->bottom_type()->is_ptr());
+        narrow_t = TypeNarrowKlass::make(this->bottom_type()->as_ptr());
       }
       PhiNode* new_phi = new PhiNode(r, narrow_t);
       uint orig_cnt = req();
@@ -2843,7 +2845,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Phi (VB ... VB) => VB (Phi ...) (Phi ...)
-  if (EnableVectorReboxing && can_reshape && progress == nullptr && type()->isa_oopptr()) {
+  if (EnableVectorReboxing && can_reshape && progress == nullptr && type()->is_oopptr()) {
     progress = merge_through_phi(this, phase->is_IterGVN());
   }
 
@@ -2946,7 +2948,7 @@ private:
         for (uint j = 0; j < value_type->field_count(); ++j) {
           Node* field = value_type->field_value(j);
           const Type* field_type = _phase->type(field);
-          if (field_type->isa_instptr() && !field_type->is_valueklassptr() && field_type->is_instptr()->can_be_value_type()) {
+          if (field_type->is_instptr() && !field_type->is_valueklassptr() && field_type->as_instptr()->can_be_value_type()) {
             _nodes_from_phi.push(field);
           }
         }
@@ -3121,7 +3123,7 @@ private:
         for (uint j = 0; j < value_type->field_count(); ++j) {
           Node* field = value_type->field_value(j);
           const Type* field_type = _phase->type(field);
-          if (field_type->isa_instptr() && !field_type->is_valueklassptr() && field_type->is_instptr()->can_be_value_type()) {
+          if (field_type->is_instptr() && !field_type->is_valueklassptr() && field_type->as_instptr()->can_be_value_type()) {
             after.push(field);
           }
         }
@@ -3149,7 +3151,7 @@ private:
     for (uint i = 1; i < phi->req(); ++i) {
       assert(casts.size() == 0, "must be cleared");
       Node* n = phi->in(i);
-      if (n == nullptr) {
+      if (n == nullptr || n->is_top()) {
         continue;
       }
       while (should_skip_over(n)) {
@@ -3172,11 +3174,13 @@ private:
       assert(n->is_top() || n->is_ValueType(), "Only InlineType or top at this point.");
       while (casts.size() != 0) {
         // Push the cast(s) through the ValueTypeNode
-        Node *cast = casts.pop()->clone();
-        cast->set_req_X(1, n->as_ValueType()->get_oop(), _phase);
-        n = n->clone();
-        n->as_ValueType()->set_oop(*_phase, _phase->transform(cast));
-        n = _phase->transform(n);
+        if (!n->is_top()) {
+          Node* cast = casts.pop()->clone();
+          cast->set_req_X(1, n->as_ValueType()->get_oop(), _phase);
+          n = n->clone();
+          n->as_ValueType()->set_oop(*_phase, _phase->transform(cast));
+          n = _phase->transform(n);
+        }
         if (n->is_top()) {
           if (casts.size() > 0) {
             // We could be skipping some unprocessed casts that are also dead. Clear the list for the next phi input.
@@ -3191,7 +3195,7 @@ private:
         vt->merge_with(_phase, n->as_ValueType(), i, transform);
       } // else nothing to do: phis above vt created by clone_with_phis are initialized to top already.
     }
-    if (phi == _root_phi && _root_phi->bottom_type()->isa_narrowoop()) {
+    if (phi == _root_phi && _root_phi->bottom_type()->is_narrowoop()) {
       return new EncodePNode(_phase->transform(vt), _root_phi->bottom_type());
     }
     return vt;
@@ -3221,6 +3225,9 @@ public:
 
     for (uint next = 0; next < _nodes_from_phi.size(); next++) {
       Node* n = _nodes_from_phi.at(next);
+      if (n->is_top()) {
+        continue;
+      }
       if (n->is_Phi()) {
         assert(n->bottom_type()->make_ptr() != nullptr, "broken graph");
         if (n != _root_phi && !_can_reshape) {
@@ -3336,7 +3343,7 @@ const TypeTuple* PhiNode::collect_types(PhaseGVN* phase) const {
     }
     while (in != nullptr && in->is_ConstraintCast()) {
       Node* next = in->in(1);
-      if (phase->type(next)->isa_rawptr() && phase->type(in)->isa_oopptr()) {
+      if (phase->type(next)->is_rawptr() && phase->type(in)->is_oopptr()) {
         break;
       }
       ConstraintCastNode* cast = in->as_ConstraintCast();
@@ -3605,7 +3612,7 @@ void JumpProjNode::dump_spec(outputStream *st) const {
 
 void JumpProjNode::dump_compact_spec(outputStream *st) const {
   ProjNode::dump_compact_spec(st);
-  st->print("(%d)%d@%d", _switch_val, _con, _dest_bci);
+  st->print("%d@%d", _con, _dest_bci);
 }
 #endif
 
@@ -3638,7 +3645,7 @@ const Type* CatchNode::Value(PhaseGVN* phase) const {
         Node* valid_length_test = call->in(AllocateNode::ValidLengthTest);
         const Type* valid_length_test_t = phase->type(valid_length_test);
         if (length_type == Type::TOP || klass_type == Type::TOP || valid_length_test_t == Type::TOP ||
-            valid_length_test_t->is_int()->is_con(0)) {
+            valid_length_test_t->as_int()->is_con(0)) {
           f[CatchProjNode::fall_through_index] = Type::TOP;
         }
       } else if( call->req() > TypeFunc::Parms ) {
@@ -3670,7 +3677,7 @@ bool CatchProjNode::cmp( const Node &n ) const {
 // If only 1 target is possible, choose it if it is the main control
 Node* CatchProjNode::Identity(PhaseGVN* phase) {
   // If my value is control and no other value is, then treat as ID
-  const TypeTuple *t = phase->type(in(0))->is_tuple();
+  const TypeTuple* t = phase->type(in(0))->as_tuple();
   if (t->field_at(_con) != Type::CONTROL)  return this;
   // If we remove the last CatchProj and elide the Catch/CatchProj, then we
   // also remove any exception table entry.  Thus we must know the call

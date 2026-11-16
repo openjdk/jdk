@@ -23,23 +23,50 @@
 
 package compiler.valhalla.valuetypes;
 
+import jdk.test.lib.Asserts;
+
 /*
  * @test
- * @bug 8394960
- * @summary [Valhalla] unitialized field when null value returned from the interpreter
+ * @bug 8394960 8395884
+ * @summary Test scalarized null value returns with uninitialized fields
  * @enablePreview
+ * @library /test/lib
  * @run main ${test.main.class}
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=exclude,${test.main.class}::get
+ * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:-PreloadClasses
+ *                   -XX:CompileCommand=exclude,${test.main.class}::getInterpreter*
+ *                   -XX:CompileCommand=exclude,${test.main.class}::getC1*,1000
+ *                   -XX:CompileCommand=exclude,${test.main.class}::run*
  *                   -XX:CompileCommand=dontinline,${test.main.class}::safepoint
  *                   -XX:CompileOnly=${test.main.class}::* ${test.main.class}
  */
-
 public class TestValueUnitializedFieldsAtSafepoint {
-    static value record V(Object o0, Object o1, Object o2,
-                          Object o3, Object o4, Object o5) {
+    // Six oop fields to use all scalarized return registers on x64
+    static value record V6(Object o0, Object o1, Object o2,
+                           Object o3, Object o4, Object o5) {
     }
 
-    static V get() {
+    // Seven oop fields to use all scalarized return registers on AArch64
+    static value record V7(Object o0, Object o1, Object o2, Object o3,
+                           Object o4, Object o5, Object o6) {
+    }
+
+    // This value is passed as argument to make sure the
+    // return register is initialized with garbage.
+    static final int INVALID_OOP = 0x12345678;
+
+    static V6 getInterpreterX64() {
+        return null;
+    }
+
+    static V7 getInterpreterAArch64() {
+        return null;
+    }
+
+    static V6 getC1X64(int value) {
+        return null;
+    }
+
+    static V7 getC1AArch64(int value) {
         return null;
     }
 
@@ -47,15 +74,48 @@ public class TestValueUnitializedFieldsAtSafepoint {
         System.gc();
     }
 
-    static int test() {
-        V v = get();
+    static int testInterpreterX64() {
+        V6 v = getInterpreterX64();
         safepoint();
         return v == null ? 42 : v.o0.hashCode();
     }
 
+    static int testInterpreterAArch64() {
+        V7 v = getInterpreterAArch64();
+        safepoint();
+        return v == null ? 42 : v.o0.hashCode();
+    }
+
+    static int testC1X64() {
+        V6 v = getC1X64(INVALID_OOP);
+        safepoint();
+        return v == null ? 42 : v.o5.hashCode();
+    }
+
+    static int testC1AArch64() {
+        V7 v = getC1AArch64(INVALID_OOP);
+        safepoint();
+        return v == null ? 42 : v.o6.hashCode();
+    }
+
+    static void runX64() {
+        getC1X64(INVALID_OOP);
+        V6 forceLoad = new V6(null, null, null, null, null, null);
+        Asserts.assertEQ(testC1X64(), 42); // Make sure the call is resolved
+        Asserts.assertEQ(testC1X64(), 42);
+        Asserts.assertEQ(testInterpreterX64(), 42);
+    }
+
+    static void runAArch64() {
+        getC1AArch64(INVALID_OOP);
+        V7 forceLoad = new V7(null, null, null, null, null, null, null);
+        Asserts.assertEQ(testC1AArch64(), 42); // Make sure the call is resolved
+        Asserts.assertEQ(testC1AArch64(), 42);
+        Asserts.assertEQ(testInterpreterAArch64(), 42);
+    }
+
     public static void main(String[] args) {
-        if (test() != 42) {
-            throw new RuntimeException("wrong result");
-        }
+        runX64();
+        runAArch64();
     }
 }
