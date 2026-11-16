@@ -2659,7 +2659,7 @@ class Assembler : public AbstractAssembler {
   // Tmp can be used to increase ILP. Set return_simm16_rest = true to get a
   // 16 bit immediate offset. This is useful if the offset can be encoded in
   // a succeeding instruction.
-  int load_const_optimized(Register d, long a,  Register tmp = noreg, bool return_simm16_rest = false);
+  int load_const_optimized(Register d, long a, Register tmp = noreg, bool return_simm16_rest = false);
   inline int load_const_optimized(Register d, void* a, Register tmp = noreg, bool return_simm16_rest = false) {
     return load_const_optimized(d, (long)(unsigned long)a, tmp, return_simm16_rest);
   }
