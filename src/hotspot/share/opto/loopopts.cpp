@@ -2337,32 +2337,25 @@ CmpNode* PhaseIdealLoop::clone_bool(PhiNode* phi) {
   Node *sample_cmp = phi->in(1);
 
   // Make Phis to merge the Cmp's inputs.
-  // The Cmp could be a FlatArrayCheck node: input 1 is then memory and a memory Phi needs to be created.
+  // The Cmp could be a FlatArrayCheck node: input 1 is then memory and a memory Phi with the right address type
+  // needs to be created.
   PhiNode* phi1 = nullptr;
   PhiNode* phi2 = new PhiNode(phi->in(0), Type::TOP);
   for (uint j = 1; j < phi->req(); j++) {
-    Node* cmp_top = phi->in(j); // Inputs are all Cmp or TOP
+    Node* cmp = phi->in(j); // Inputs are all Cmp
     Node* n1, *n2;
-    if (cmp_top->is_Cmp()) {
-      n1 = cmp_top->in(1);
-      n2 = cmp_top->in(2);
-    } else {
-      ShouldNotReachHere();
-      n1 = n2 = cmp_top;
-    }
+    assert(cmp->is_Cmp(), "");
+    n1 = cmp->in(1);
+    n2 = cmp->in(2);
+
     if (phi1 == nullptr) {
-      if (cmp_top->is_Cmp()) {
-        phi1 = PhiNode::make(phi->in(0), n1);
-        for (uint k = 1; k < j; k++) {
-          phi1->set_req(k, C->top());
-        }
-      }
+      phi1 = PhiNode::make(phi->in(0), n1);
     } else {
       phi1->set_req(j, n1);
       phi1->set_type(phi1->type()->meet_speculative(n1->bottom_type()));
     }
     phi2->set_req(j, n2);
-    assert(phi1->bottom_type() != Type::MEMORY || cmp_top->is_FlatArrayCheck(), "only FlatArrayCheck has a memory input");
+    assert(phi1->bottom_type() != Type::MEMORY || cmp->is_FlatArrayCheck(), "only FlatArrayCheck has a memory input");
     phi2->set_type(phi2->type()->meet_speculative(n2->bottom_type()));
     assert(phi2->bottom_type() != Type::MEMORY, "no memory input to a Cmp");
   }
