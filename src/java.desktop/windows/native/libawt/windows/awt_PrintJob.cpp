@@ -1739,7 +1739,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WEmbeddedFrame_isPrinterDC
         return JNI_FALSE;
     }
 
-    [[maybe_unused]] int technology = GetDeviceCaps(realHDC, TECHNOLOGY);
+    int technology = GetDeviceCaps(realHDC, TECHNOLOGY);
 #if DEBUG_PRINTING
      FILE *file = fopen("c:\\plog.txt", "a");
      fprintf(file,"tech is %d\n", technology);
@@ -1815,7 +1815,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WEmbeddedFrame_printBand
         bitMapHeader.bmiHeader.biBitCount = 24;
         bitMapHeader.bmiHeader.biCompression = BI_RGB;
 
-        [[maybe_unused]] int result =
+        int result =
             ::StretchDIBits(hDC,
                             destX,         // left of dest rect
                             destY,         // top of dest rect
@@ -2051,7 +2051,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_setGraphicsMode
         return;
     }
 
-    [[maybe_unused]] int oldGraphicsMode = ::SetGraphicsMode((HDC)printDC, mode);
+    int oldGraphicsMode = ::SetGraphicsMode((HDC)printDC, mode);
     DASSERT(oldGraphicsMode != 0);
 
     CATCH_BAD_ALLOC;
@@ -2079,7 +2079,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_scale
     xForm.eDx  = (FLOAT) 0;
     xForm.eDy  = (FLOAT) 0;
 
-    [[maybe_unused]] BOOL result = ::ModifyWorldTransform((HDC)printDC, &xForm, MWT_RIGHTMULTIPLY);
+    BOOL result = ::ModifyWorldTransform((HDC)printDC, &xForm, MWT_RIGHTMULTIPLY);
     DASSERT(result);
 
     CATCH_BAD_ALLOC;
@@ -2101,7 +2101,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_getWorldTransform
     double elems[6];
     XFORM xForm;
 
-    [[maybe_unused]] BOOL result = ::GetWorldTransform((HDC)printDC, &xForm);
+    BOOL result = ::GetWorldTransform((HDC)printDC, &xForm);
     DASSERT(result);
 
     elems[0] = (double) xForm.eM11;
@@ -2143,7 +2143,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_setWorldTransform
 
     env->ReleaseDoubleArrayElements(transform, elems, 0);
 
-    [[maybe_unused]] BOOL result = ::SetWorldTransform((HDC)printDC, &xForm);
+    BOOL result = ::SetWorldTransform((HDC)printDC, &xForm);
     DASSERT(result);
 
     CATCH_BAD_ALLOC;
