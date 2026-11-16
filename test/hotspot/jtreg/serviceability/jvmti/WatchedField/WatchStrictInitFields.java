@@ -238,8 +238,8 @@ class WatchStrictInitFields {
                 this(v1, v2);
                 x = v3;                // modification event not sent
                 y = v4;                // modification event not sent
-                assertEquals(v3, x);   // access event
-                assertEquals(v4, y);   // access event
+                assertEquals(v3, x);   // access event not sent
+                assertEquals(v4, y);   // access event not sent
             }
 
             TestClass(int v1, int v2, int v3, int v4, int v5, int v6) {
@@ -558,7 +558,7 @@ class WatchStrictInitFields {
                 // mutator method
                 obj.x(300);
                 assertEquals(5, modCount());       // putfield Box.value && obj.x
-                assertEquals(4, accessCount());    // getfield Box.value && obj.x
+                assertEquals(4, accessCount());    // getfield Box.value
 
                 // accessor method
                 assertEquals(300, obj.x());         // getfield Box.value && obj.x
@@ -876,6 +876,7 @@ class WatchStrictInitFields {
     }
 
     Watch watch(Class<?> clazz, String fieldName) {
+        var _ = clazz.getDeclaredFields(); // ensure class is prepared
         long fieldID = fieldID(clazz, fieldName);
         setFieldModificationWatch(clazz, fieldID);
         setFieldAccessWatch(clazz, fieldID);
