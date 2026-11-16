@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,11 +58,13 @@ public class B6393710 {
      */
     static String cmd =
         "POST /test/foo HTTP/1.1"+CRLF+
+        "Host: localhost"+CRLF+
         "Content-Length: 22"+CRLF+
         "Pragma: no-cache"+CRLF+
         "Cache-Control: no-cache"+CRLF+ CRLF+
         "<item desc=\"excuse\" />"+
         "POST /test/foo HTTP/1.1"+CRLF+
+        "Host: localhost"+CRLF+
         "Content-Length: 22"+CRLF+
         "Pragma: no-cache"+CRLF+
         "Authorization: Basic ZnJlZDpmcmVkcGFzc3dvcmQ="+CRLF+

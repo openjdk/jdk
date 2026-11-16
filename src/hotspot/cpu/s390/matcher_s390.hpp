@@ -107,6 +107,10 @@
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
+  // Use MachUncommonTrapNode for representing uncommon trap sequences.
+  // This is an alternative to representing uncommon traps as runtime calls.
+  static const bool use_mach_uncommon_trap_node = false;
+
   // Do floats take an entire double register or just half?
   //
   // A float in resides in a zarch double register. When storing it by
@@ -122,11 +126,6 @@
 
   // Does the CPU supports vector variable shift instructions?
   static constexpr bool supports_vector_variable_shifts(void) {
-    return false;
-  }
-
-  // Does target support predicated operation emulation.
-  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
     return false;
   }
 

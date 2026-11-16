@@ -511,7 +511,33 @@ protected:
       VM_Features copy = *this;
       // HT does not result in incompatibility of aot code cache
       copy.clear_feature(CPU_HT);
+      copy.clear_feature(CPU_HV);
       return copy;
+    }
+
+    // Is this VM_Feature a super set of features_to_test?
+    bool super_set_of(VM_Features* features_to_test) {
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        if ((_features_bitmap[i] | features_to_test->_features_bitmap[i]) != _features_bitmap[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Returns features present in this VM_Features but not in features_to_test
+    VM_Features features_not_in(VM_Features* features_to_test) {
+      VM_Features result;
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        result._features_bitmap[i] = _features_bitmap[i] & (~(features_to_test->_features_bitmap[i]));
+      }
+      return result;
+    }
+
+    void clear_features(VM_Features* features_to_clear) {
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        _features_bitmap[i] &= (~(features_to_clear->_features_bitmap[i]));
+      }
     }
   };
 
@@ -520,6 +546,8 @@ protected:
 
   // Original CPU feature flags vector, not affected by VM settings.
   static VM_Features _cpu_features;
+
+  static VM_Features _cpu_features_disabled_by_aot_cache;
 
   static const char* _features_names[];
 
@@ -737,6 +765,7 @@ private:
   static void zx_config();
   static void amd_config();
   static void intel_config();
+  static void apply_aot_cache_cpu_features();
 
 public:
   // Offsets for cpuid asm stub
@@ -1135,6 +1164,10 @@ public:
   static void store_cpu_features(void* buf);
 
   static bool verify_aot_code_cache_features(void* features_buffer);
+
+  static void get_cpu_features_disabled_by_aot_cache(void* buf);
+
+  static int cpu_features_alignment() { return alignof(VM_Features); }
 };
 
 #endif // CPU_X86_VM_VERSION_X86_HPP

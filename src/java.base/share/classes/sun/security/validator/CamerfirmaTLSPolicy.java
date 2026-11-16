@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,6 @@
 package sun.security.validator;
 
 import java.security.cert.X509Certificate;
-import java.time.LocalDate;
-import java.time.Month;
-import java.time.ZoneOffset;
-import java.util.Date;
-import java.util.Map;
-import java.util.Set;
 
 import sun.security.util.Debug;
 import sun.security.x509.X509CertImpl;
@@ -53,9 +47,7 @@ final class CamerfirmaTLSPolicy {
             "063E4AFAC491DFD332F3089B8542E94617D893D7FE944E10A7937EE29D9693C0";
 
     // Any TLS Server certificate that is anchored by one of the Camerfirma
-    // roots above and is issued after this date will be distrusted.
-    private static final LocalDate APRIL_15_2025 =
-        LocalDate.of(2025, Month.APRIL, 15);
+    // roots above will be distrusted.
 
     /**
      * This method assumes the eeCert is a TLS Server Cert and chains back to
@@ -74,28 +66,15 @@ final class CamerfirmaTLSPolicy {
                 + "trust anchor of TLS server certificate");
         }
         if (FINGERPRINT.equalsIgnoreCase(fp)) {
-            Date notBefore = chain[0].getNotBefore();
-            LocalDate ldNotBefore = LocalDate.ofInstant(notBefore.toInstant(),
-                                                        ZoneOffset.UTC);
-            // reject if certificate is issued after April 15, 2025
-            checkNotBefore(ldNotBefore, APRIL_15_2025, anchor);
+            throw new ValidatorException
+                ("TLS Server certificate anchored by a distrusted legacy " +
+                 "Camerfirma root CA: "+ anchor.getSubjectX500Principal(),
+                 ValidatorException.T_UNTRUSTED_CERT, anchor);
         }
     }
 
     private static String fingerprint(X509Certificate cert) {
         return X509CertImpl.getFingerprint("SHA-256", cert, debug);
-    }
-
-    private static void checkNotBefore(LocalDate notBeforeDate,
-            LocalDate distrustDate, X509Certificate anchor)
-            throws ValidatorException {
-        if (notBeforeDate.isAfter(distrustDate)) {
-            throw new ValidatorException
-                ("TLS Server certificate issued after " + distrustDate +
-                 " and anchored by a distrusted legacy Camerfirma root CA: "
-                 + anchor.getSubjectX500Principal(),
-                 ValidatorException.T_UNTRUSTED_CERT, anchor);
-        }
     }
 
     private CamerfirmaTLSPolicy() {}

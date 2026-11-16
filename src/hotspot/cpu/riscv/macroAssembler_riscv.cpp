@@ -5864,7 +5864,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
   address target = entry.target();
 
   if (!in_scratch_emit_size()) {
-    address stub = emit_reloc_call_address_stub(offset(), target);
+    address stub = emit_address_stub(offset(), target);
     if (stub == nullptr) {
       postcond(pc() == badAddress);
       return nullptr; // CodeCache is full
@@ -5878,8 +5878,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
   }
 #endif
 
-  // The relocation created while emitting the stub will ensure this
-  // call instruction is subsequently patched to call the stub.
+  // Relocation patches the auipc/ld pair to load the destination from the address stub.
   relocate(entry.rspec(), [&] {
     auipc(tmp, 0);
     ld(tmp, Address(tmp, 0));
@@ -5940,8 +5939,7 @@ int MacroAssembler::ic_check(int end_alignment) {
   return uep_offset;
 }
 
-// Emit an address stub for a call to a target which is too far away.
-// Note that we only put the target address of the call in the stub.
+// Emit an address-only stub holding the destination of a relocatable call.
 //
 // code sequences:
 //
@@ -5953,8 +5951,8 @@ int MacroAssembler::ic_check(int end_alignment) {
 //   alignment nop
 //   target address
 
-address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_offset, address dest) {
-  address stub = start_a_stub(max_reloc_call_address_stub_size());
+address MacroAssembler::emit_address_stub(int insts_call_instruction_offset, address dest) {
+  address stub = start_a_stub(max_address_stub_size());
   if (stub == nullptr) {
     return nullptr;  // CodeBuffer::expand failed
   }
@@ -5965,8 +5963,8 @@ address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_
   // Make sure the address of destination 8-byte aligned.
   align(wordSize, 0);
 
-  RelocationHolder rh = trampoline_stub_Relocation::spec(code()->insts()->start() +
-                                                         insts_call_instruction_offset);
+  RelocationHolder rh = address_stub_Relocation::spec(code()->insts()->start() +
+                                                      insts_call_instruction_offset);
   const int stub_start_offset = offset();
   relocate(rh, [&] {
     assert(offset() - stub_start_offset == 0,
@@ -5981,7 +5979,7 @@ address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_
   return stub_start_addr;
 }
 
-int MacroAssembler::max_reloc_call_address_stub_size() {
+int MacroAssembler::max_address_stub_size() {
   // Max stub size: alignment nop, target address.
   return 1 * MacroAssembler::instruction_size + wordSize;
 }
@@ -6164,6 +6162,7 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
   j(L_tail_loop);
 
   bind(L_end);
+  sext(out, out, 32);
 }
 
 // Multiply and multiply-accumulate unsigned 64-bit registers.
@@ -6738,44 +6737,6 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
   bgez(cnt, loop);
 
   bind(fini);
-}
-
-// Zero blocks of memory by using CBO.ZERO.
-//
-// Aligns the base address first sufficiently for CBO.ZERO, then uses
-// CBO.ZERO repeatedly for every full block.  cnt is the size to be
-// zeroed in HeapWords.  Returns the count of words left to be zeroed
-// in cnt.
-//
-// NOTE: This is intended to be used in the zero_blocks() stub.  If
-// you want to use it elsewhere, note that cnt must be >= zicboz_block_size.
-void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2) {
-  int zicboz_block_size = VM_Version::zicboz_block_size.value();
-  Label initial_table_end, loop;
-
-  // Align base with cache line size.
-  neg(tmp1, base);
-  andi(tmp1, tmp1, zicboz_block_size - 1);
-
-  // tmp1: the number of bytes to be filled to align the base with cache line size.
-  add(base, base, tmp1);
-  srai(tmp2, tmp1, 3);
-  sub(cnt, cnt, tmp2);
-  srli(tmp2, tmp1, 1);
-  la(tmp1, initial_table_end);
-  sub(tmp2, tmp1, tmp2);
-  jr(tmp2);
-  for (int i = -zicboz_block_size + wordSize; i < 0; i += wordSize) {
-    sd(zr, Address(base, i));
-  }
-  bind(initial_table_end);
-
-  mv(tmp1, zicboz_block_size / wordSize);
-  bind(loop);
-  cbo_zero(base);
-  sub(cnt, cnt, tmp1);
-  addi(base, base, zicboz_block_size);
-  bge(cnt, tmp1, loop);
 }
 
 // java.lang.Math.round(float a)

@@ -30,6 +30,7 @@ import sun.security.util.KnownOIDs;
 import sun.security.util.ObjectIdentifier;
 
 import java.io.IOException;
+import java.util.Locale;
 
 public class DerUtils {
     /**
@@ -37,9 +38,10 @@ public class DerUtils {
      * <p>
      * The location of the inner DerValue is expressed as a string, in which
      * each character is a step from the outer DerValue into the inner one.
-     * If it's a number n, the n'th element (starting from 0) of a sequence
-     * is the next step. If it's 'c', the content of an OctetString parsed
-     * as a DerValue is the next step. Note that n cannot be bigger than 9.
+     * If it's a number n (in uppercase HEX, from 0 to F), the n'th element
+     * of a sequence is the next step. If it's 'c', the content of an OCTET
+     * STRING parsed as a DerValue is the next step. Note that n cannot be
+     * bigger than 15 (HEX "F").
      * <p>
      * Attention: do not reuse the return value. DerValue is mutable and
      * reading it advances a pointer inside.
@@ -80,7 +82,7 @@ public class DerUtils {
             } else {
                 DerInputStream ins = v.getData();
                 // skip n DerValue in the sequence
-                for (int i = 0; i < step - '0'; i++) {
+                for (int i = 0; i < Integer.parseInt(step + "", 16); i++) {
                     ins.getDerValue();
                 }
                 if (ins.available() > 0) {
@@ -183,8 +185,8 @@ public class DerUtils {
         } else {
             for (int i = 0; ; i++) {
                 // We only support locations of one digit now
-                if (i > 9) throw new IllegalStateException("Too big " + i);
-                String pos = now + i;
+                if (i > 15) throw new IllegalStateException("Too big " + i);
+                String pos = now + Integer.toHexString(i).toUpperCase(Locale.ROOT);
                 var sub = DerUtils.innerDerValue(data, pos); // current value
                 if (sub == null) break; // at the end
                 if (target.equals(pos)) { // the one we want to change

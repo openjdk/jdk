@@ -1484,7 +1484,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
   unsigned      i;
 
   // Generate Expand function header
-  fprintf(fp, "MachNode* %sNode::Expand(State* state, Node_List& proj_list, Node* mem) {\n", node->_ident);
+  fprintf(fp, "MachNode* %sNode::Expand(State* state, Node_List<MachProjNode>& proj_list, Node* mem) {\n", node->_ident);
   fprintf(fp, "  Compile* C = Compile::current();\n");
   // Generate expand code
   if( node->expands() ) {
@@ -3751,11 +3751,11 @@ static void path_to_constant(FILE *fp, FormDict &globals,
     if (         strcmp(optype,"ConI") == 0 ) {
       fprintf(fp, "_leaf->get_int()");
     } else if ( (strcmp(optype,"ConP") == 0) ) {
-      fprintf(fp, "_leaf->bottom_type()->is_ptr()");
+      fprintf(fp, "_leaf->bottom_type()->as_ptr()");
     } else if ( (strcmp(optype,"ConN") == 0) ) {
-      fprintf(fp, "_leaf->bottom_type()->is_narrowoop()");
+      fprintf(fp, "_leaf->bottom_type()->as_narrowoop()");
     } else if ( (strcmp(optype,"ConNKlass") == 0) ) {
-      fprintf(fp, "_leaf->bottom_type()->is_narrowklass()");
+      fprintf(fp, "_leaf->bottom_type()->as_narrowklass()");
     } else if ( (strcmp(optype,"ConH") == 0) ) {
       fprintf(fp, "_leaf->geth()");
     } else if ( (strcmp(optype,"ConF") == 0) ) {

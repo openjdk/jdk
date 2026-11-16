@@ -860,18 +860,6 @@ void ShenandoahOldHeuristics::record_full_gc(GCCause::Cause cause) {
   this->ShenandoahHeuristics::record_full_gc(cause);
 }
 
-const char* ShenandoahOldHeuristics::name() {
-  return "Old";
-}
-
-bool ShenandoahOldHeuristics::is_diagnostic() {
-  return false;
-}
-
-bool ShenandoahOldHeuristics::is_experimental() {
-  return true;
-}
-
 void ShenandoahOldHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                                                     ShenandoahHeuristics::RegionData* data,
                                                                     size_t data_size, size_t free) {

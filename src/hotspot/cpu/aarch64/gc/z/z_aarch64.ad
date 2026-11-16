@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -281,24 +281,6 @@ instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iReg
   %}
 
   ins_pipe(pipe_slow);
-%}
-
-instruct zGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{
-  match(Set prev (GetAndSetP mem newv));
-  predicate(UseZGC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP prev, KILL cr);
-
-  ins_cost(2 * VOLATILE_REF_COST);
-
-  format %{ "atomic_xchg  $prev, $newv, [$mem]" %}
-
-  ins_encode %{
-    z_store_barrier(masm, this, Address($mem$$Register), $newv$$Register, $prev$$Register, rscratch2, true /* is_atomic */);
-    __ atomic_xchg($prev$$Register, $prev$$Register, $mem$$Register);
-    z_uncolor(masm, $prev$$Register);
-  %}
-
-  ins_pipe(pipe_serial);
 %}
 
 instruct zGetAndSetPAcq(indirect mem, iRegP newv, iRegPNoSp prev, rFlagsReg cr) %{

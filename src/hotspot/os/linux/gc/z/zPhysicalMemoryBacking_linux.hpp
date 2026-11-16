@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,14 @@ class ZErrno;
 class ZPhysicalMemoryBacking {
 private:
   int      _fd;
-  size_t   _size;
   uint64_t _filesystem;
   size_t   _block_size;
   size_t   _available;
   bool     _initialized;
 
   void warn_available_space(size_t max_capacity) const;
-  void warn_max_map_count(size_t max_capacity) const;
+  void compute_max_map_count() const;
+  void warn_max_map_count(size_t expected_capacity, size_t max_capacity) const;
 
   int create_mem_fd(const char* name) const;
   int create_file_fd(const char* name) const;
@@ -67,13 +67,15 @@ public:
 
   bool is_initialized() const;
 
-  void warn_commit_limits(size_t max_capacity) const;
+  void warn_commit_limits(size_t expected_capacity, size_t max_capacity) const;
 
   size_t commit(zbacking_offset offset, size_t length, uint32_t numa_id) const;
   size_t uncommit(zbacking_offset offset, size_t length) const;
 
   void map(zaddress_unsafe addr, size_t size, zbacking_offset offset) const;
   void unmap(zaddress_unsafe addr, size_t size) const;
+
+  void collapse(zaddress_unsafe addr, size_t size) const;
 };
 
 #endif // OS_LINUX_GC_Z_ZPHYSICALMEMORYBACKING_LINUX_HPP

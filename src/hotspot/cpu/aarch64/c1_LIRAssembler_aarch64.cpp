@@ -43,10 +43,12 @@
 #include "nativeInst_aarch64.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadIdentifier.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_aarch64.inline.hpp"
 
@@ -491,13 +493,29 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       if (vk->can_be_returned_as_fields()) {
         address unpack_handler = vk->unpack_handler();
         assert(unpack_handler != nullptr, "must be");
-        __ far_call(RuntimeAddress(unpack_handler));
+#if INCLUDE_CDS
+        if (AOTCodeCache::is_on_for_dump()) {
+          // in AOT compiled code call the unpack handler indirectly
+          // via the klass. The handler's blob does not currently get
+          // saved to the archive. So, a direct call to the handler
+          // address cannot be injected into a caller that is saved
+          // and restored.
+          __ mov_metadata(rscratch1, vk->constant_encoding());
+          __ ldr(rscratch1, Address(rscratch1, ValueKlass::adr_members_offset()));
+          __ ldr(rscratch1, Address(rscratch1, ValueKlass::unpack_handler_offset()));
+          __ blr(rscratch1);
+        } else
+#endif
+        {
+          __ far_call(RuntimeAddress(unpack_handler));
+        }
       }
     } else if (return_type->is_instance_klass() && (!return_type->is_loaded() || StressCallingConvention)) {
       Label skip;
       Label not_null;
       __ cbnz(r0, not_null);
       // Returned value is null, zero all return registers because they may belong to oop fields
+      __ mov(j_rarg0, zr);
       __ mov(j_rarg1, zr);
       __ mov(j_rarg2, zr);
       __ mov(j_rarg3, zr);
@@ -590,6 +608,12 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
           __ lea(dest->as_register_lo(), ExternalAddress(b));
           break;
         }
+#if INCLUDE_JVMTI
+        if (b == (address)&JvmtiExport::_should_notify_object_alloc) {
+          __ lea(dest->as_register_lo(), ExternalAddress(b));
+          break;
+        }
+#endif
         if (AOTRuntimeConstants::contains(b)) {
           __ load_aotrc_address(dest->as_register_lo(), b);
           break;
@@ -751,6 +775,11 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   } else {
     ShouldNotReachHere();
   }
+}
+
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  assert(UseCompressedOops, "should only be used with compressed oops");
+  __ decode_heap_oop(dest->as_pointer_register(), src->as_pointer_register());
 }
 
 void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
@@ -2415,7 +2444,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   // if we don't know anything, just go through the generic arraycopy
-  if (default_type == nullptr // || basic_type == T_OBJECT
+  if (default_type == nullptr || !default_type->is_loaded() // || basic_type == T_OBJECT
       ) {
     Label done;
     assert(src == r1 && src_pos == r2, "mismatch in calling convention");

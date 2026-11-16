@@ -148,7 +148,7 @@ public:
   static const char* collector_phase_to_string(ShenandoahCollectorPhase phase);
 
 protected:
-  void handle_requested_gc(GCCause::Cause cause);
+  virtual void handle_requested_gc(GCCause::Cause cause);
 
   // Used at the end of a cycle to clear allocation failure and notify alloc waiters
   virtual void clear_allocation_failure_and_notify_waiters();

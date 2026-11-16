@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,14 @@ private:
   void copy_to_stash(ZArraySlice<zbacking_index> stash, const ZVirtualMemory& vmem) const;
   void copy_from_stash(const ZArraySlice<const zbacking_index> stash, const ZVirtualMemory& vmem);
 
+  void try_enable_uncommit(size_t min_capacity, size_t max_capacity);
+
 public:
-  ZPhysicalMemoryManager(size_t max_capacity);
+  ZPhysicalMemoryManager(size_t min_capacity, size_t max_capacity);
 
   bool is_initialized() const;
 
-  void warn_commit_limits(size_t max_capacity) const;
-  void try_enable_uncommit(size_t min_capacity, size_t max_capacity);
+  void warn_commit_limits(size_t expected_capacity, size_t max_capacity) const;
 
   void alloc(const ZVirtualMemory& vmem, uint32_t numa_id);
   void free(const ZVirtualMemory& vmem, uint32_t numa_id);
@@ -74,6 +75,8 @@ public:
 
   void stash_segments(const ZArraySlice<const ZVirtualMemory>& vmems, ZArray<zbacking_index>* stash_out) const;
   void restore_segments(const ZArraySlice<const ZVirtualMemory>& vmems, const ZArray<zbacking_index>& stash);
+
+  void collapse(const ZVirtualMemory& vmem) const;
 };
 
 #endif // SHARE_GC_Z_ZPHYSICALMEMORYMANAGER_HPP
