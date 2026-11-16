@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2026, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1220,24 +1220,6 @@ public final class SunPKCS11 extends AuthProvider {
                 ("Token info for token in slot " + slotID + ":");
             System.out.println(token.tokenInfo);
         }
-        Set<Long> brokenMechanisms = Set.of();
-        if (P11Util.isNSS(token)) {
-            CK_VERSION nssVersion = slotInfo.hardwareVersion;
-            if (nssVersion.major < 3 ||
-                    nssVersion.major == 3 && nssVersion.minor < 65) {
-                // RSA-PSS is broken in NSS prior to 3.65
-                brokenMechanisms = Set.of(CKM_RSA_PKCS_PSS,
-                        CKM_SHA1_RSA_PKCS_PSS,
-                        CKM_SHA224_RSA_PKCS_PSS,
-                        CKM_SHA256_RSA_PKCS_PSS,
-                        CKM_SHA384_RSA_PKCS_PSS,
-                        CKM_SHA512_RSA_PKCS_PSS,
-                        CKM_SHA3_224_RSA_PKCS_PSS,
-                        CKM_SHA3_256_RSA_PKCS_PSS,
-                        CKM_SHA3_384_RSA_PKCS_PSS,
-                        CKM_SHA3_512_RSA_PKCS_PSS);
-            }
-        }
 
         long[] supportedMechanisms = p11.C_GetMechanismList(slotID);
         Set<Long> supportedMechSet =
@@ -1275,12 +1257,6 @@ public final class SunPKCS11 extends AuthProvider {
                 }
                 continue;
             }
-            if (brokenMechanisms.contains(longMech)) {
-                if (showInfo) {
-                    System.out.println("DISABLED due to known issue with NSS");
-                }
-                continue;
-            }
 
             // we do not know of mechs with the upper 32 bits set
             if (longMech >>> 32 != 0) {
@@ -1305,8 +1281,7 @@ public final class SunPKCS11 extends AuthProvider {
                         for (int reqMech : d.requiredMechs) {
                             long longReqMech = reqMech & 0xFFFFFFFFL;
                             if (!config.isEnabled(longReqMech) ||
-                                    !supportedMechSet.contains(longReqMech) ||
-                                    brokenMechanisms.contains(longReqMech)) {
+                                    !supportedMechSet.contains(longReqMech)) {
                                 if (showInfo) {
                                     System.out.println("DISABLED " + d.type +
                                         " " + d.algorithm +

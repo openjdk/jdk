@@ -1069,7 +1069,7 @@ float VTransformShiftCountNode::cost(const VLoopAnalyzer& vloop_analyzer) const 
 VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
   Node* shift_count_in = apply_state.transformed_node(in_req(1));
-  assert(shift_count_in->bottom_type()->isa_int(), "int type only for shift count");
+  assert(shift_count_in->bottom_type()->is_int(), "int type only for shift count");
   // The shift_count_in would be automatically truncated to the lowest _mask
   // bits in a scalar shift operation. But vector shift does not truncate, so
   // we must apply the mask now.

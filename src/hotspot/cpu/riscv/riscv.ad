@@ -1030,16 +1030,16 @@ class CallStubImpl {
   //--------------------------------------------------------------
 
  public:
-  // Size of call trampoline stub.
+  // Size of call stub.
   // This doesn't need to be accurate to the byte, but it
   // must be larger than or equal to the real size of the stub.
-  static uint size_call_trampoline() {
-    return MacroAssembler::max_reloc_call_address_stub_size();
+  static uint size_call_stub() {
+    return MacroAssembler::max_address_stub_size();
   }
 
-  // number of relocations needed by a call trampoline stub
-  static uint reloc_call_trampoline() {
-    return 5; // trampoline_stub_Relocation and its packed data, plus a safety margin
+  // Number of relocations needed by a call stub.
+  static uint reloc_call_stub() {
+    return 5; // Relocation record and packed owner, plus a safety margin.
   }
 };
 
@@ -1136,10 +1136,13 @@ void PhaseOutput::pd_perform_mach_node_analysis() {
 }
 
 int MachNode::pd_alignment_required() const {
-  return 1;
+  return is_MachUncommonTrap() ? sizeof(int32_t) : 1;
 }
 
 int MachNode::compute_padding(int current_offset) const {
+  if (is_MachUncommonTrap()) {
+    return align_up(current_offset, alignment_required()) - current_offset;
+  }
   return 0;
 }
 
@@ -1393,6 +1396,23 @@ int CallLeafNoFPDirectNode::compute_padding(int current_offset) const
 
 //=============================================================================
 
+void MachUncommonTrapNode::emit_impl(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
+  Assembler::IncompressibleScope scope(masm);
+  __ far_call(RuntimeAddress(OptoRuntime::uncommon_trap_blob()->entry_point()));
+  MacroAssembler::assert_alignment(__ pc());
+  __ emit_int32(trap_request());
+}
+
+uint MachUncommonTrapNode::size_impl(PhaseRegAlloc* ra_) const {
+  return MacroAssembler::far_branch_size() + sizeof(int32_t);
+}
+
+int MachUncommonTrapNode::ret_addr_offset_impl() const {
+  return MacroAssembler::far_branch_size();
+}
+
+//=============================================================================
+
 #ifndef PRODUCT
 void MachBreakpointNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   assert_cond(st != nullptr);
@@ -1628,7 +1648,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
 
   assert(src_lo != OptoReg::Bad && dst_lo != OptoReg::Bad, "must move at least 1 register");
 
-  if (src_hi != OptoReg::Bad && !bottom_type()->isa_pvectmask()) {
+  if (src_hi != OptoReg::Bad && !bottom_type()->is_pvectmask()) {
     assert((src_lo & 1) == 0 && src_lo + 1 == src_hi &&
            (dst_lo & 1) == 0 && dst_lo + 1 == dst_hi,
            "expected aligned-adjacent pairs");
@@ -1647,8 +1667,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
   // address also needs t0 to materialize an offset outside the 12-bit range.
   if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
     int last_dst_offset = dst_offset;
-    if (bottom_type()->isa_vect() != nullptr) {
-      if (!bottom_type()->isa_pvectmask()) {
+    if (bottom_type()->is_vect()) {
+      if (!bottom_type()->is_pvectmask()) {
         assert(ideal_reg() == Op_VecA, "Must be Op_VecA");
         int vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
         last_dst_offset += vector_reg_size_in_bytes - 8;
@@ -1668,8 +1688,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     }
   }
 
-  if (bottom_type()->isa_vect() != nullptr && masm != nullptr) {
-    if (!bottom_type()->isa_pvectmask()) {
+  if (bottom_type()->is_vect() && masm != nullptr) {
+    if (!bottom_type()->is_pvectmask()) {
       assert(ideal_reg() == Op_VecA, "Must be Op_VecA");
       int vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
@@ -1792,11 +1812,11 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     } else {
       st->print("%s", Matcher::regName[dst_lo]);
     }
-    if (bottom_type()->isa_vect() && !bottom_type()->isa_pvectmask()) {
+    if (bottom_type()->is_vect() && !bottom_type()->is_pvectmask()) {
       assert(ideal_reg() == Op_VecA, "Must be Op_VecA");
       int vsize = Matcher::scalable_vector_reg_size(T_BYTE) * 8;
       st->print("\t# vector spill size = %d", vsize);
-    } else if (bottom_type()->isa_pvectmask()) {
+    } else if (bottom_type()->is_pvectmask()) {
       assert(ideal_reg() == Op_RegVectMask, "Must be Op_RegVectMask");
       assert(Matcher::supports_scalable_vector(), "bad register type for spill");
       int vsize = Matcher::scalable_predicate_reg_slots() * 32;
@@ -2513,7 +2533,13 @@ encode %{
       }
     }
 
-    __ post_call_nop();
+    int trap_request;
+    if (is_uncommon_trap(&trap_request)) {
+      MacroAssembler::assert_alignment(__ pc());
+      __ emit_int32(trap_request);
+    } else {
+      __ post_call_nop();
+    }
   %}
 
   enc_class riscv_enc_java_dynamic_call(method meth) %{
@@ -9586,8 +9612,8 @@ instruct encodeHeapOop_not_null(iRegNNoSp dst, iRegP src) %{
 %}
 
 instruct decodeHeapOop(iRegPNoSp dst, iRegN src) %{
-  predicate(n->bottom_type()->is_ptr()->ptr() != TypePtr::NotNull &&
-            n->bottom_type()->is_ptr()->ptr() != TypePtr::Constant);
+  predicate(n->bottom_type()->as_ptr()->ptr() != TypePtr::NotNull &&
+            n->bottom_type()->as_ptr()->ptr() != TypePtr::Constant);
   match(Set dst (DecodeN src));
 
   ins_cost(ALU_COST);
@@ -9601,8 +9627,8 @@ instruct decodeHeapOop(iRegPNoSp dst, iRegN src) %{
 %}
 
 instruct decodeHeapOop_not_null(iRegPNoSp dst, iRegN src) %{
-  predicate(n->bottom_type()->is_ptr()->ptr() == TypePtr::NotNull ||
-            n->bottom_type()->is_ptr()->ptr() == TypePtr::Constant);
+  predicate(n->bottom_type()->as_ptr()->ptr() == TypePtr::NotNull ||
+            n->bottom_type()->as_ptr()->ptr() == TypePtr::Constant);
   match(Set dst (DecodeN src));
 
   ins_cost(ALU_COST);
