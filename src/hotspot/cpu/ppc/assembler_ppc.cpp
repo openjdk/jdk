@@ -544,7 +544,6 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp, bool retur
     return retval;
   }
 
-  assert(rem != 0, "simm32 should have been handled above");
   if (tmp != noreg  && (int)x != 0) { // opt 3: We have a temp reg.
     // No carry propagation between xc and higher chunks here (use logical instructions).
     xa = (x >> 48) & 0xffff;
