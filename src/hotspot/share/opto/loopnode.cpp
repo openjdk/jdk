@@ -686,7 +686,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, const Node* he
       // code that relies on mm. Clear that extra state here.
       if (mms.alias_idx() != Compile::AliasIdxBot &&
           (loop != get_loop(ctrl_or_self(mms.memory())) ||
-           (mms.adr_type()->is_ooptr() && mms.adr_type()->is_known_instance()))) {
+           (mms.adr_type()->is_oopptr() && mms.adr_type()->is_known_instance()))) {
         mm->set_memory_at(mms.alias_idx(), mem->as_MergeMem()->base_memory());
       }
     }
