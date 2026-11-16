@@ -150,8 +150,8 @@ class BlockingChannelOps {
                         assertTrue(n > 0);
                         bb.clear();
                     }
-                    sc1.close();
                 } finally {
+                    sc1.close();    // task will read EOF
                     reader.get();
                 }
             }
@@ -383,11 +383,14 @@ class BlockingChannelOps {
                 Future<?> connector = runAfterParkedAsync(ssc, () -> sc1.connect(ssc.getLocalAddress()));
                 try {
                     // accept should block
-                    var sc2 = ssc.accept();
-                    sc1.close();
+                    SocketChannel sc2 = ssc.accept();
                     sc2.close();
                 } finally {
-                    connector.get();
+                    try {
+                        connector.get();
+                    } finally {
+                        sc1.close();
+                    }
                 }
             }
         });
@@ -460,10 +463,13 @@ class BlockingChannelOps {
                     if (timeout > 0)
                         ssc.socket().setSoTimeout(timeout);
                     Socket s = ssc.socket().accept();
-                    sc.close();
                     s.close();
                 } finally {
-                    connector.get();
+                    try {
+                        connector.get();
+                    } finally {
+                        sc.close();
+                    }
                 }
             }
         });
@@ -727,8 +733,9 @@ class BlockingChannelOps {
                         assertTrue(n > 0);
                         bb.clear();
                     }
-                    sink.close();
+
                 } finally {
+                    sink.close();    // task will read EOF
                     reader.get();
                 }
             }

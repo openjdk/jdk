@@ -466,11 +466,14 @@ class BlockingSocketOps {
                     if (timeout > 0) {
                         listener.setSoTimeout(timeout);
                     }
-                    var socket2 = listener.accept();
-                    socket1.close();
+                    Socket socket2 = listener.accept();
                     socket2.close();
                 } finally {
-                    connector.get();
+                    try {
+                        connector.get();
+                    } finally {
+                        socket1.close();
+                    }
                 }
             }
         });
