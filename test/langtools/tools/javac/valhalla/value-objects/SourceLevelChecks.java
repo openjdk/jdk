@@ -99,6 +99,19 @@ public class SourceLevelChecks {
         String currentVersion = Integer.toString(Runtime.version().feature());
 
         TestCase[] testCases = new TestCase[] {
+            new TestCase(List.of("--release", "16"),
+                         Task.Expect.FAIL,
+                         "Test.java:2:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:3:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:4:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:5:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:6:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:7:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:8:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+                         "Test.java:9:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                         "Test.java:9:24: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.sealed.classes), 16, 17",
+                         "2 errors",
+                         "7 warnings"),
             new TestCase(List.of("--release", "25"),
                          Task.Expect.FAIL,
                          "Test.java:2:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",

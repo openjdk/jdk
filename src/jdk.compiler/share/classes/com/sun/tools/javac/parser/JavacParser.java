@@ -3019,8 +3019,7 @@ public class JavacParser implements Parser {
                 }
             }
         }
-        if ((isValueModifier(true))) {
-            checkSourceLevel(Feature.VALUE_CLASSES);
+        if (isValueModifier(true)) {
             dc = token.docComment();
             return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
         }
@@ -3638,7 +3637,6 @@ public class JavacParser implements Parser {
                     break;
                 }
                 if (isValueModifier(false)) {
-                    checkSourceLevel(Feature.VALUE_CLASSES);
                     flag = Flags.VALUE_CLASS;
                     break;
                 }
@@ -5040,7 +5038,7 @@ public class JavacParser implements Parser {
     protected boolean isValueModifier(boolean local) {
         if (token.kind == IDENTIFIER && token.name() == names.value) {
             if (allowedAfterSealedNonSealedOrValue(1, local)) {
-                checkSourceLevel(Feature.SEALED_CLASSES); //XXX
+                checkSourceLevel(Feature.VALUE_CLASSES);
                 return true;
             }
         }
