@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  * @bug 8028308
  * @summary rbp not restored when stack overflow is thrown from deopt/uncommon trap blobs
  *
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:-BackgroundCompilation -Xss512K -XX:-UseOnStackReplacement
  *      -XX:CompileCommand=dontinline,compiler.uncommontrap.TestStackBangRbp::m1

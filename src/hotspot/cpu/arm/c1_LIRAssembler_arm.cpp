@@ -34,9 +34,11 @@
 #include "memory/universe.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_arm.inline.hpp"
 

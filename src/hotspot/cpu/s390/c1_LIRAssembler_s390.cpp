@@ -36,6 +36,7 @@
 #include "memory/universe.hpp"
 #include "nativeInst_s390.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"

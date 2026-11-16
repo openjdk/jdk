@@ -30,13 +30,22 @@
 #include "logging/logTag.hpp"
 #include "runtime/os.hpp"
 
-ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info) :
-  ShenandoahHeuristics(space_info) {
+void ShenandoahAggressiveHeuristics::configure() {
+  if (!UnlockDiagnosticVMOptions) {
+    vm_exit_during_initialization(err_msg(
+      "Heuristics \"Aggressive\" is diagnostic, and must be enabled via -XX:+UnlockDiagnosticVMOptions."));
+  }
+
   // Do not shortcut evacuation
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahImmediateThreshold, 100);
 
   // Aggressive evacuates everything, so it needs as much evac space as it can get
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahEvacReserveOverflow);
+}
+
+ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info) :
+  ShenandoahHeuristics(space_info) {
+  configure();
 }
 
 void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,

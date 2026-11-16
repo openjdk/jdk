@@ -36,6 +36,7 @@
 #include "nativeInst_ppc.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"

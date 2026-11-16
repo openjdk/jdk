@@ -3112,6 +3112,11 @@ public class IRNode {
         machOnlyNameRegex(X86_VMULDQ_REG, "vmuldq_reg");
     }
 
+    public static final String X86_VSHIFT_B_GFNI = PREFIX + "X86_VSHIFT_B_GFNI" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VSHIFT_B_GFNI, "vshiftB_gfni");
+    }
+
     public static final String AARCH64_VMULL_UINT_SVE2 = PREFIX + "AARCH64_VMULL_UINT_SVE2" + POSTFIX;
     static {
         machOnlyNameRegex(AARCH64_VMULL_UINT_SVE2, "vmulL_uint_sve2");
@@ -3150,6 +3155,11 @@ public class IRNode {
     public static final String X86_SCONV_F2L = PREFIX + "X86_SCONV_F2L" + POSTFIX;
     static {
         machOnlyNameRegex(X86_SCONV_F2L, "convF2L_reg_reg");
+    }
+
+    public static final String X86_SCONV_I2L = PREFIX + "X86_SCONV_I2L" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_I2L, "convI2L_reg_reg");
     }
 
     public static final String X86_SCONV_D2I_AVX10_2 = PREFIX + "X86_SCONV_D2I_AVX10_2" + POSTFIX;

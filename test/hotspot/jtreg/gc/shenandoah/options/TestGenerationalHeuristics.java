@@ -25,7 +25,7 @@
 /*
  * @test id=generational
  * @bug 8381871
- * @summary Test that ShenandoahGCHeuristics is always adaptive in generational mode
+ * @summary Test that generational mode accepts same ShenandoahGCHeuristics as satb mode
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run driver TestGenerationalHeuristics
@@ -54,18 +54,19 @@ public class TestGenerationalHeuristics {
                 "-XX:ShenandoahGCHeuristics=static",
                 "-XX:+PrintFlagsFinal",
                 "-version");
-            output.shouldMatch("ShenandoahGCHeuristics(.*)= adaptive ");
+            output.shouldMatch("ShenandoahGCHeuristics(.*)= static ");
             output.shouldHaveExitValue(0);
         }
 
         {
             OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UseShenandoahGC",
                 "-XX:ShenandoahGCMode=generational",
                 "-XX:ShenandoahGCHeuristics=aggressive",
                 "-XX:+PrintFlagsFinal",
                 "-version");
-            output.shouldMatch("ShenandoahGCHeuristics(.*)= adaptive ");
+            output.shouldMatch("ShenandoahGCHeuristics(.*)= aggressive ");
             output.shouldHaveExitValue(0);
         }
 
@@ -76,7 +77,7 @@ public class TestGenerationalHeuristics {
                 "-XX:ShenandoahGCHeuristics=compact",
                 "-XX:+PrintFlagsFinal",
                 "-version");
-            output.shouldMatch("ShenandoahGCHeuristics(.*)= adaptive ");
+            output.shouldMatch("ShenandoahGCHeuristics(.*)= compact ");
             output.shouldHaveExitValue(0);
         }
     }

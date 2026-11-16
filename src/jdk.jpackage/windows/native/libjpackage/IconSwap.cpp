@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ bool ChangeIcon(HANDLE update, const wstring& iconTarget) {
 
     LPGRPICONDIR lpgid = (LPGRPICONDIR) malloc(
             sizeof (GRPICONDIR) + (sizeof (GRPICONDIRENTRY) * (idCount - 1)));
-    if (lpid == NULL) {
+    if (lpgid == NULL) {
         CloseHandle(icon);
         free(lpid);
         printf("Error: Failed to allocate memory\n");
@@ -156,6 +156,13 @@ bool ChangeIcon(HANDLE update, const wstring& iconTarget) {
     // Store images in .EXE
     for (int i = 0; i < lpid->idCount; i++) {
         LPBYTE lpBuffer = (LPBYTE) malloc(lpid->idEntries[i].dwBytesInRes);
+        if (lpBuffer == NULL) {
+            free(lpid);
+            free(lpgid);
+            CloseHandle(icon);
+            printf("Error: Failed to allocate memory\n");
+            return false;
+        }
         SetFilePointer(icon, lpid->idEntries[i].dwImageOffset,
                 NULL, FILE_BEGIN);
         ReadFile(icon, lpBuffer, lpid->idEntries[i].dwBytesInRes,
