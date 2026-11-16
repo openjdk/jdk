@@ -1345,26 +1345,16 @@ public class ForkJoinPool extends AbstractExecutorService
                     int d; Object t;
                     if ((d = p - (b & IDXMASK)) <= 0)
                         break;
-                    if (b < 0) {
-                        if (d == 1) {
-                            int s = (p - 1) & IDXMASK; long k;
-                            if (U.getReference(a, k = slotOffset(m & s)) != null &&
-                                (t = U.getAndSetReference(a, k, null)) != null) {
-                                top = s;
-                                return (ForkJoinTask<?>)t;
-                            }
-                            break;
+                    else if (d == 1) {
+                        int s = (p - 1) & IDXMASK; long k;
+                        if (U.getReference(a, k = slotOffset(m & s)) != null &&
+                            (t = U.getAndSetReference(a, k, null)) != null) {
+                            top = s;
+                            return (ForkJoinTask<?>)t;
                         }
-                        while (b == (b = base)) {
-                            if (++spins < SPIN_WAITS)
-                                Thread.onSpinWait();
-                            else {
-                                Thread.yield();
-                                spins = 0;
-                            }
-                        }
+                        break;
                     }
-                    else {
+                    else if (b >= 0) {
                         int nb = (b + 1) & IDXMASK;
                         long bp = slotOffset(m & b);
                         if (U.getReference(a, bp) == null)
@@ -1374,6 +1364,16 @@ public class ForkJoinPool extends AbstractExecutorService
                             base = (t == null) ? b : nb;
                             if (t != null)
                                 return (ForkJoinTask<?>)t;
+                        }
+                    }
+                    else {
+                        while (b == (b = base)) {
+                            if (++spins < SPIN_WAITS)
+                                Thread.onSpinWait();
+                            else {
+                                Thread.yield();
+                                spins = 0;
+                            }
                         }
                     }
                 }
@@ -1450,7 +1450,7 @@ public class ForkJoinPool extends AbstractExecutorService
             ForkJoinWorkerThread f = (config & CLEAR_TLS) == 0 ? null : owner;
             nsteals += taken;
             int s = U.getInt(this, SOURCE) & SMASK;
-            source = NOSOURCE;
+            U.putInt(this, SOURCE, NOSOURCE);
             if (f != null)
                 f.resetThreadLocals();
             return s;
@@ -2146,8 +2146,21 @@ public class ForkJoinPool extends AbstractExecutorService
                     if (U.getReferenceVolatile(a, slotOffset(m & (b + 1))) != null)
                         break;
                 }
-                if (--polls == 0)
+                if (--polls == 0) {
+                    if ((runState & STOP) != 0L)
+                        return IDLE;
+                    if (((phase = w.phase) & IDLE) == 0)
+                        return phase;
+                    Thread.yield();
+                    for (int spins = SPIN_WAITS;;) {
+                        if (((phase = w.phase) & IDLE) == 0)
+                            return phase;
+                        if (--spins == 0)
+                            break;
+                        Thread.onSpinWait();
+                    }
                     return awaitWork(w, phase);
+                }
             }
         }
     }
@@ -2161,12 +2174,10 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     private int awaitWork(WorkQueue w, int phase) {
         if (w != null) {                     // currently always true
-            boolean canTrim, parked = false;
+            boolean parked = false;
             long deadline = 0L;
             int activePhase = phase + IDLE;
-            if (canTrim = (w.source == TRIM_ON_EMPTY))
-                w.source = NOSOURCE;
-            outer: for (;;) {
+            for (;;) {
                 boolean trimmable; long d, c;
                 Thread.interrupted();        // clear status
                 if ((runState & STOP) != 0L) {
@@ -2175,9 +2186,15 @@ public class ForkJoinPool extends AbstractExecutorService
                 }
                 if (trimmable =
                     (((c = ctl) & RC_MASK) == 0L && (int)c == activePhase)) {
+                    boolean canTrim = false;
                     long now = System.currentTimeMillis();
-                    if (!parked)
+                    if (!parked) {
                         d = deadline = now + keepAlive;
+                        if (w.source == TRIM_ON_EMPTY) {
+                            w.source = NOSOURCE;
+                            canTrim = true;
+                        }
+                    }
                     else if ((d = deadline) - now <= TIMEOUT_SLOP)
                         canTrim = true;
                     if (canTrim && tryTrim(w, c, activePhase)) {
@@ -2187,20 +2204,14 @@ public class ForkJoinPool extends AbstractExecutorService
                 }
                 else
                     d = 0L;
-                for (int spins = 0; ; ++spins) {
+                if (((phase = w.phase) & IDLE) == 0)
+                    break;
+                if (!parked) {
+                    parked = true;
+                    LockSupport.setCurrentBlocker(this);
+                    w.parking = activePhase;
                     if (((phase = w.phase) & IDLE) == 0)
-                        break outer;
-                    else if (parked)
                         break;
-                    else if (spins == 0)
-                        Thread.yield();
-                    else if (spins != SPIN_WAITS)
-                        Thread.onSpinWait();
-                    else {
-                        LockSupport.setCurrentBlocker(this);
-                        w.parking = activePhase;
-                        parked = true;
-                    }
                 }
                 U.park(trimmable, d);
                 if (((phase = w.phase) & IDLE) == 0)
@@ -2800,11 +2811,10 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
-     * Shared code for lazySubmit and enabled delayed tasks. Finds a
-     * random available queue and submits task unless stopping
-     * @param delayed if true signals or cancels if stopping
+     * Finds a random available queue and submits task unless stopping
+     * @param lazy if false signals or cancels if stopping
      */
-    private void randomExternalSubmit(ForkJoinTask<?> task, boolean delayed) {
+    private void randomExternalSubmit(ForkJoinTask<?> task, boolean lazy) {
         if (task != null) {
             WorkQueue submissionQueue = null;
             for (;;) {
@@ -2837,12 +2847,12 @@ public class ForkJoinPool extends AbstractExecutorService
             }
             if (submissionQueue != null) {
                 if ((runState & STOP) == 0L) {
-                    submissionQueue.push(task, (delayed) ? this : null, false);
+                    submissionQueue.push(task, (lazy) ? null : this, false);
                     return;
                 }
                 submissionQueue.unlockPhase();
             }
-            if (delayed)
+            if (!lazy)
                 task.trySetCancelled();
             else
                 throw new RejectedExecutionException();
@@ -3489,7 +3499,14 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     public <T> ForkJoinTask<T> lazySubmit(ForkJoinTask<T> task) {
         Objects.requireNonNull(task);
-        randomExternalSubmit(task, false);
+        externalSubmissionQueue(true).push(task, null, false);
+        return task;
+    }
+
+    // non-public for now
+    final <T> ForkJoinTask<T> randomSubmit(ForkJoinTask<T> task, boolean lazy) {
+        Objects.requireNonNull(task);
+        randomExternalSubmit(task, lazy);
         return task;
     }
 
@@ -3692,7 +3709,12 @@ public class ForkJoinPool extends AbstractExecutorService
      * elapsed unless pool is stopping
      */
     final void executeEnabledScheduledTask(ScheduledForkJoinTask<?> task) {
-        randomExternalSubmit(task, true);
+        if (task != null) {
+            if ((runState & STOP) != 0L)
+                task.trySetCancelled();
+            else
+                externalSubmissionQueue(false).push(task, this, false);
+        }
     }
 
     /**
