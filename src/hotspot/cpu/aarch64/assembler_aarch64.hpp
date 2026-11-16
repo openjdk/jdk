@@ -1258,6 +1258,8 @@ public:
 
   void store_exclusive(Register status, Register new_val, Register addr,
                        enum operand_size sz, bool ordered) {
+    assert_different_registers(status, new_val);
+    assert_different_registers(status, addr);
     load_store_exclusive(status, new_val, dummy_reg, addr,
                          sz, 0b000, ordered);
   }
