@@ -71,7 +71,7 @@ public class LambdaClassUnloading {
         IntSupplier retainedCapturing = Host.capturing(123);
         IntSupplier retainedNonCapturing = Host.nonCapturing();
         track(classes, retainedCapturing, 123);
-        track(classes, retainedNonCapturing, 42);
+        track(classes, retainedNonCapturing, 4711);
 
         for (int generation = 0; generation < 10; generation++) {
             transform(retransform, originalBytes);
@@ -82,7 +82,7 @@ public class LambdaClassUnloading {
         Asserts.assertFalse(classes.get(0).refersTo(null), "Retained capturing lambda class reclaimed");
         Asserts.assertFalse(classes.get(1).refersTo(null), "Retained noncapturing lambda class reclaimed");
         Asserts.assertEquals(retainedCapturing.getAsInt(), 123);
-        Asserts.assertEquals(retainedNonCapturing.getAsInt(), 42);
+        Asserts.assertEquals(retainedNonCapturing.getAsInt(), 4711);
         Reference.reachabilityFence(retainedCapturing);
         Reference.reachabilityFence(retainedNonCapturing);
         return classes;
