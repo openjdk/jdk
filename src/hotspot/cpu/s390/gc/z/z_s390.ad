@@ -171,7 +171,7 @@ instruct zCompareAndExchangeP(iRegP res, iRegP mem, iRegP oldval, iRegP newval, 
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP oldval, iRegP newval, iRegP oldval_temp, iRegP newval_temp, flagsReg cr) %{
+instruct zCompareAndSwapP(iRegI res, iRegP mem, iRegP oldval, iRegP newval, iRegP oldval_temp, iRegP newval_temp, flagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);

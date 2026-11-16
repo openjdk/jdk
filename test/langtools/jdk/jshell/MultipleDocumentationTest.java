@@ -50,6 +50,7 @@ public class MultipleDocumentationTest {
         try (var state1 = JShell.builder()
                                 .out(new PrintStream(new ByteArrayOutputStream()))
                                 .err(new PrintStream(new ByteArrayOutputStream()))
+                                .executionEngine("local")
                                 .build()) {
             var sca1 = state1.sourceCodeAnalysis();
             List<String> javadocs1 =
@@ -61,6 +62,7 @@ public class MultipleDocumentationTest {
             try (var state2 = JShell.builder()
                                     .out(new PrintStream(new ByteArrayOutputStream()))
                                     .err(new PrintStream(new ByteArrayOutputStream()))
+                                    .executionEngine("local")
                                     .build()) {
                 var sca2 = state2.sourceCodeAnalysis();
                 List<String> javadocs2 = sca2.documentation(input, input.length(), true)

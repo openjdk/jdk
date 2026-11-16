@@ -460,7 +460,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
   C2FastUnlockStub* stub = nullptr;
 
   if (!Compile::current()->output()->in_scratch_emit_size()) {
-    stub = new (Compile::current()->comp_arena()) C2FastUnlockStub(obj, mark, reg_rax, thread);
+    stub = new (Compile::current()->comp_arena()) C2FastUnlockStub(obj, reg_rax, thread);
     Compile::current()->output()->add_stub(stub);
   }
 
@@ -588,7 +588,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
   // C2 uses the value of ZF to determine the continuation.
 }
 
-static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
+void C2_MacroAssembler::abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
   fatal("Invalid CastII, idx: %u, val: %d, lo: %d, hi: %d", idx, val, lo, hi);
 }
 
@@ -651,7 +651,7 @@ void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register
   BLOCK_COMMENT("} // CastII");
 }
 
-static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
+void C2_MacroAssembler::abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
   fatal("Invalid CastLL, idx: %u, val: " JLONG_FORMAT ", lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, val, lo, hi);
 }
 
@@ -1369,6 +1369,88 @@ void C2_MacroAssembler::varshiftbw(int opcode, XMMRegister dst, XMMRegister src,
   vpackusdw(dst, dst, vtmp, 0);
 }
 
+// vgf2p8affineqb with immediate 0 sets each result bit to the parity of
+// the source byte ANDed with one matrix byte. Nothing is added afterwards.
+// The most significant matrix byte builds result bit 0, and each following
+// byte builds the next higher result bit. A matrix byte equal to 1<<j has
+// parity equal to source bit j: every other source bit is cleared, so the
+// XOR of the surviving bits is that one bit.
+//
+// I = 0x0102040810204080 has bytes 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
+// 0x80 from the MSB. Those are 1<<0 through 1<<7, so result bit k is source
+// bit k and I is the identity.
+//
+// A shift of I by a whole number of bytes only moves those one-hot masks and
+// shifts zeros into the vacated bytes. Moving the qword left by 8*n carries
+// the mask that built result bit k+n onto result bit k. The n bytes that
+// leave the MSB are replaced by zeros at the LSB, and the LSB builds the
+// highest result bits:
+//
+//   A_srl(n) = I << (8*n)
+//   result bit k = source bit (k+n)  if k+n < 8, else 0
+//
+// That is a logical right shift by n. Moving the qword right by 8*n carries
+// the mask for result bit k-n onto result bit k, and zeros enter at the MSB,
+// which builds the lowest result bits:
+//
+//   A_sll(n) = I >> (8*n)
+//   result bit k = source bit (k-n)  if k >= n, else 0
+//
+// That is a logical left shift by n. An arithmetic right shift is A_srl(n)
+// with source bit 7 copied into the n result bits the logical shift clears.
+// Those are result bits (8-n)..7, built by the n least significant matrix
+// bytes, and source bit 7 is the mask 0x80. OR that mask into those n bytes:
+//
+//   A_sra(n) = A_srl(n) | (low n bytes each equal to 0x80)
+//
+// A count of 0 leaves I for all three. The stub holds one matrix per count in
+// 0..31, the Java int shift mask. A Vector API byte shift is already in 0..7.
+// Counts 8..31 empty a byte: the logical matrices are 0 and the arithmetic
+// right matrices fill the sign bit.
+//
+// Check A_srl(2). I << 16 = 0x0408102040800000, bytes 0x04, 0x08, 0x10, 0x20,
+// 0x40, 0x80, 0x00, 0x00 from the MSB: source bits 2, 3, 4, 5, 6, 7 and then
+// two zeros. AND the source with 0x04 and take the parity to write source
+// bit 2 into result bit 0. 0x08 writes source bit 3 into result bit 1, and
+// so on through 0x80, which writes source bit 7 into result bit 5. The two
+// 0x00 bytes write 0 into result bits 6 and 7. For source 0b10110000 the
+// result is 0b00101100.
+void C2_MacroAssembler::vshiftb_gfni(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift,
+                                     Register rtmp, Register rbase, int vlen_enc) {
+  assert(VM_Version::supports_gfni(), "required");
+  assert_different_registers(dst, src);
+  int kind = 0;
+  if (opcode == Op_URShiftVB) {
+    kind = 1;
+  } else if (opcode == Op_RShiftVB) {
+    kind = 2;
+  } else {
+    assert(opcode == Op_LShiftVB, "%s", NodeClassNames[opcode]);
+  }
+  movdl(rtmp, shift);
+#ifdef ASSERT
+  // Preserve flags so the rule does not need KILL cr.
+  Label count_in_range;
+  pushf();
+  cmpl(rtmp, 31);
+  jcc(Assembler::belowEqual, count_in_range);
+  popf();
+  stop("byte shift count out of 0..31");
+  bind(count_in_range);
+  popf();
+#endif
+  // One matrix per count in 0..31.
+  const int mats_per_kind = 32;
+  lea(rbase, ExternalAddress(StubRoutines::x86::vector_byte_shift_gfni_matrix()));
+  Address matrix(rbase, rtmp, Address::times_8, kind * mats_per_kind * BytesPerLong);
+  if (vlen_enc == Assembler::AVX_128bit) {
+    movddup(dst, matrix);
+  } else {
+    vpbroadcastq(dst, matrix, vlen_enc);
+  }
+  vgf2p8affineqb(dst, src, dst, 0, vlen_enc);
+}
+
 // Variable shift src by shift using vtmp and scratch as TEMPs giving byte result in dst
 void C2_MacroAssembler::evarshiftb(int opcode, XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len, XMMRegister vtmp) {
   assert(opcode == Op_LShiftVB ||
@@ -1428,112 +1510,6 @@ void C2_MacroAssembler::vinsert(BasicType typ, XMMRegister dst, XMMRegister src,
       assert(false,"Should not reach here.");
       break;
   }
-}
-
-void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst,
-                                         Register base, Register idx_base,
-                                         Register mask, Register mask_idx,
-                                         Register rtmp, int vlen_enc) {
-  vpxor(dst, dst, dst, vlen_enc);
-  if (elem_bt == T_SHORT) {
-    for (int i = 0; i < 4; i++) {
-      // dst[i] = mask[i] ? src[idx_base[i]] : 0
-      Label skip_load;
-      btq(mask, mask_idx);
-      jccb(Assembler::carryClear, skip_load);
-      movl(rtmp, Address(idx_base, i * 4));
-      pinsrw(dst, Address(base, rtmp, Address::times_2), i);
-      bind(skip_load);
-      incq(mask_idx);
-    }
-  } else {
-    assert(elem_bt == T_BYTE, "only handles short and byte");
-    for (int i = 0; i < 8; i++) {
-      // dst[i] = mask[i] ? src[idx_base[i]] : 0
-      Label skip_load;
-      btq(mask, mask_idx);
-      jccb(Assembler::carryClear, skip_load);
-      movl(rtmp, Address(idx_base, i * 4));
-      pinsrb(dst, Address(base, rtmp), i);
-      bind(skip_load);
-      incq(mask_idx);
-    }
-  }
-}
-
-void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst,
-                                  Register base, Register idx_base,
-                                  Register rtmp, int vlen_enc) {
-  vpxor(dst, dst, dst, vlen_enc);
-  if (elem_bt == T_SHORT) {
-    for (int i = 0; i < 4; i++) {
-      // dst[i] = src[idx_base[i]]
-      movl(rtmp, Address(idx_base, i * 4));
-      pinsrw(dst, Address(base, rtmp, Address::times_2), i);
-    }
-  } else {
-    assert(elem_bt == T_BYTE, "only handles short and byte");
-    for (int i = 0; i < 8; i++) {
-      // dst[i] = src[idx_base[i]]
-      movl(rtmp, Address(idx_base, i * 4));
-      pinsrb(dst, Address(base, rtmp), i);
-    }
-  }
-}
-
-/*
- * Gather using hybrid algorithm, first partially unroll scalar loop
- * to accumulate values from gather indices into a quad-word(64bit) slice.
- * A slice may hold 8 bytes or 4 short values. This is followed by a vector
- * permutation to place the slice into appropriate vector lane
- * locations in destination vector. Following pseudo code describes the
- * algorithm in detail:
- *
- * DST_VEC = ZERO_VEC
- * PERM_INDEX = {0, 1, 2, 3, 4, 5, 6, 7, 8..}
- * TWO_VEC    = {2, 2, 2, 2, 2, 2, 2, 2, 2..}
- * FOREACH_ITER:
- *     TMP_VEC_64 = PICK_SUB_WORDS_FROM_GATHER_INDICES
- *     TEMP_PERM_VEC = PERMUTE TMP_VEC_64 PERM_INDEX
- *     DST_VEC = DST_VEC OR TEMP_PERM_VEC
- *     PERM_INDEX = PERM_INDEX - TWO_VEC
- *
- * With each iteration, doubleword permute indices (0,1) corresponding
- * to gathered quadword gets right shifted by two lane positions.
- *
- */
-void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
-                                        Register base, Register idx_base,
-                                        Register mask, XMMRegister xtmp1,
-                                        XMMRegister xtmp2, XMMRegister temp_dst,
-                                        Register rtmp, Register mask_idx,
-                                        Register length, int vector_len, int vlen_enc) {
-  Label GATHER8_LOOP;
-  assert(is_signed_subword_type(elem_ty), "only handles short and byte");
-  movl(length, vector_len);
-  vpxor(xtmp1, xtmp1, xtmp1, vlen_enc); // xtmp1 = {0, ...}
-  vpxor(dst, dst, dst, vlen_enc); // dst = {0, ...}
-  vallones(xtmp2, vlen_enc);
-  vpsubd(xtmp2, xtmp1, xtmp2, vlen_enc);
-  vpslld(xtmp2, xtmp2, 1, vlen_enc); // xtmp2 = {2, 2, ...}
-  load_iota_indices(xtmp1, vector_len * type2aelembytes(elem_ty), T_INT); // xtmp1 = {0, 1, 2, ...}
-
-  bind(GATHER8_LOOP);
-    // TMP_VEC_64(temp_dst) = PICK_SUB_WORDS_FROM_GATHER_INDICES
-    if (mask == noreg) {
-      vgather8b(elem_ty, temp_dst, base, idx_base, rtmp, vlen_enc);
-    } else {
-      vgather8b_masked(elem_ty, temp_dst, base, idx_base, mask, mask_idx, rtmp, vlen_enc);
-    }
-    // TEMP_PERM_VEC(temp_dst) = PERMUTE TMP_VEC_64(temp_dst) PERM_INDEX(xtmp1)
-    vpermd(temp_dst, xtmp1, temp_dst, vlen_enc == Assembler::AVX_512bit ? vlen_enc : Assembler::AVX_256bit);
-    // PERM_INDEX(xtmp1) = PERM_INDEX(xtmp1) - TWO_VEC(xtmp2)
-    vpsubd(xtmp1, xtmp1, xtmp2, vlen_enc);
-    // DST_VEC = DST_VEC OR TEMP_PERM_VEC
-    vpor(dst, dst, temp_dst, vlen_enc);
-    addptr(idx_base,  32 >> (type2aelembytes(elem_ty) - 1));
-    subl(length, 8 >> (type2aelembytes(elem_ty) - 1));
-    jcc(Assembler::notEqual, GATHER8_LOOP);
 }
 
 void C2_MacroAssembler::vgather(BasicType typ, XMMRegister dst, Register base, XMMRegister idx, XMMRegister mask, int vector_len) {
@@ -3572,9 +3548,9 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   // release bound
 
   // vresult *= IntVector.fromArray(I256, power_of_31_backwards, 1);
+  lea(tmp2, ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + (0 * sizeof(jint))));
   for (int idx = 0; idx < 4; idx++) {
-    lea(tmp2, ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + ((8 * idx + 1) * sizeof(jint))));
-    arrays_hashcode_elvload(vcoef[idx], Address(tmp2, 0), T_INT);
+    arrays_hashcode_elvload(vcoef[idx], Address(tmp2, (int)((8 * idx + 1) * sizeof(jint))), T_INT);
     vpmulld(vresult[idx], vresult[idx], vcoef[idx], Assembler::AVX_256bit);
   }
   // result += vresult.reduceLanes(ADD);

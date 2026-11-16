@@ -52,7 +52,7 @@ import static java.util.stream.Collectors.*;
 // This is a larger set of classes than those stored in the JDK's default CDS archive.
 // This customized cache can also have additional optimizations that are not
 // enabled in the default CDS archive. For example, AOT-linked classes and lambda
-// expressions. In the future, it can also contain AOT profiles and AOT compiled methods.
+// expressions.
 //
 // We can use this customized AOT cache to run various HotSpot tests to improve
 // coverage on AOT.

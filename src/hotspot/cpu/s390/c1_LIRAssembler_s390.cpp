@@ -36,6 +36,7 @@
 #include "memory/universe.hpp"
 #include "nativeInst_s390.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1100,6 +1101,11 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
   }
 }
 
+void LIR_Assembler::decode_heap_oop(LIR_Opr src, LIR_Opr dest) {
+  assert(UseCompressedOops, "should only be used with compressed oops");
+  __ oop_decoder(dest->as_pointer_register(), src->as_pointer_register(), true /* maybenull */);
+}
+
 void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info,
                             bool wide) {
@@ -1994,7 +2000,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   // If we don't know anything, just go through the generic arraycopy.
-  if (default_type == nullptr) {
+  if (default_type == nullptr || !default_type->is_loaded()) {
     address copyfunc_addr = StubRoutines::generic_arraycopy();
 
     if (copyfunc_addr == nullptr) {
@@ -2063,11 +2069,13 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   // Handle value type arrays
-  if (flags & LIR_OpArrayCopy::src_valuetype_check) {
-    arraycopy_valuetype_check(src, tmp, stub, false, (flags & LIR_OpArrayCopy::src_null_check));
-  }
-  if (flags & LIR_OpArrayCopy::dst_valuetype_check) {
-    arraycopy_valuetype_check(dst, tmp, stub, true, (flags & LIR_OpArrayCopy::dst_null_check));
+  if (Arguments::is_valhalla_enabled()) {
+    if (flags & LIR_OpArrayCopy::src_valuetype_check) {
+      arraycopy_valuetype_check(src, tmp, stub, false, (flags & LIR_OpArrayCopy::src_null_check));
+    }
+    if (flags & LIR_OpArrayCopy::dst_valuetype_check) {
+      arraycopy_valuetype_check(dst, tmp, stub, true, (flags & LIR_OpArrayCopy::dst_null_check));
+    }
   }
 
   assert(default_type != nullptr && default_type->is_array_klass() && default_type->is_loaded(), "must be true at this point");
@@ -2379,7 +2387,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
   }
   if (dest->is_single_cpu()) {
     assert(code == lir_shl || left == dest, "left and dest must be equal for 2 operand form right shifts");
-    count = count & 0x1F; // Java spec
+    count &= right_n_bits(LogBitsPerInt); // Java spec
     switch (code) {
       case lir_shl:  __ z_sllg (dest->as_register(), left->as_register(), count); break;
       case lir_shr:  __ z_sra  (dest->as_register(), count); break;
@@ -2387,7 +2395,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
       default: ShouldNotReachHere();
     }
   } else if (dest->is_double_cpu()) {
-    count = count & 63; // Java spec
+    count &= right_n_bits(LogBitsPerLong); // Java spec
     Register l = left->as_pointer_register();
     Register d = dest->as_pointer_register();
     switch (code) {
@@ -3065,6 +3073,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 }
 
 void LIR_Assembler::emit_profile_value_type(LIR_OpProfileValueType* op) {
+  assert(Arguments::is_valhalla_enabled(), "Should not be called without value types enabled");
   Register obj = op->obj()->as_register();
   Register tmp = op->tmp()->as_pointer_register();
   LIR_Address* mdo_addr = op->mdp()->as_address_ptr();
@@ -3185,13 +3194,14 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
 }
 
 void LIR_Assembler::arraycopy_valuetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check) {
+  assert(Arguments::is_valhalla_enabled(), "Value types must be enabled");
   if (null_check) {
     __ compare64_and_branch(obj, (intptr_t)0, Assembler::bcondEqual, *slow_path->entry());
   }
   if (is_dest) {
     __ test_null_free_array_oop(obj, tmp, *slow_path->entry());
-    __ test_flat_array_oop(obj, tmp, *slow_path->entry());
-  } else {
+  }
+  if (UseArrayFlattening) {
     __ test_flat_array_oop(obj, tmp, *slow_path->entry());
   }
 }

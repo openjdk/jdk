@@ -66,7 +66,6 @@ void JfrFilterClassClosure::do_klass(Klass* k) {
       if (!_classes_to_modify->contains(klass_id)) {
         jclass mirror = mirror_as_local_jni_handle(ik, _thread);
         _classes_to_modify->put(klass_id, mirror);
-        _classes_to_modify->maybe_grow();
       }
     }
   }

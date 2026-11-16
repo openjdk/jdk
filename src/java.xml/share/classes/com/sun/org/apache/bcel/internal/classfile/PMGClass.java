@@ -26,6 +26,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 /**
  * This class is derived from <em>Attribute</em> and represents a reference to a PMG attribute.
@@ -40,25 +41,27 @@ public final class PMGClass extends Attribute {
     /**
      * Constructs object from input stream.
      *
-     * @param nameIndex Index in constant pool to CONSTANT_Utf8
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constantPool Array of constants
-     * @throws IOException if an I/O error occurs.
+     * @param nameIndex Index in constant pool to CONSTANT_Utf8.
+     * @param length Content length in bytes.
+     * @param input Input stream.
+     * @param constantPool Array of constants.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     PMGClass(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
         this(nameIndex, length, input.readUnsignedShort(), input.readUnsignedShort(), constantPool);
     }
 
     /**
-     * @param nameIndex Index in constant pool to CONSTANT_Utf8
-     * @param length Content length in bytes
-     * @param pmgIndex index in constant pool for source file name
-     * @param pmgClassIndex Index in constant pool to CONSTANT_Utf8
-     * @param constantPool Array of constants
+     * Constructs a PMGClass.
+     *
+     * @param nameIndex Index in constant pool to CONSTANT_Utf8.
+     * @param length Content length in bytes.
+     * @param pmgIndex index in constant pool for source file name.
+     * @param pmgClassIndex Index in constant pool to CONSTANT_Utf8.
+     * @param constantPool Array of constants.
      */
     public PMGClass(final int nameIndex, final int length, final int pmgIndex, final int pmgClassIndex, final ConstantPool constantPool) {
-        super(Const.ATTR_PMG, nameIndex, length, constantPool);
+        super(Const.ATTR_PMG, nameIndex, Args.require(length, 4, "PMG attribute length"), constantPool);
         this.pmgIndex = pmgIndex;
         this.pmgClassIndex = pmgClassIndex;
     }
@@ -77,7 +80,7 @@ public final class PMGClass extends Attribute {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -85,7 +88,7 @@ public final class PMGClass extends Attribute {
     }
 
     /**
-     * @return deep copy of this attribute
+     * @return deep copy of this attribute.
      */
     @Override
     public Attribute copy(final ConstantPool constantPool) {
@@ -93,10 +96,10 @@ public final class PMGClass extends Attribute {
     }
 
     /**
-     * Dump source file attribute to file stream in binary format.
+     * Dumps source file attribute to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -106,6 +109,8 @@ public final class PMGClass extends Attribute {
     }
 
     /**
+     * Gets the PMG class index.
+     *
      * @return Index in constant pool of source file name.
      */
     public int getPMGClassIndex() {
@@ -113,6 +118,8 @@ public final class PMGClass extends Attribute {
     }
 
     /**
+     * Gets the PMG class name.
+     *
      * @return PMG class name.
      */
     public String getPMGClassName() {
@@ -120,6 +127,8 @@ public final class PMGClass extends Attribute {
     }
 
     /**
+     * Gets the PMG index.
+     *
      * @return Index in constant pool of source file name.
      */
     public int getPMGIndex() {
@@ -127,6 +136,8 @@ public final class PMGClass extends Attribute {
     }
 
     /**
+     * Gets the PMG name.
+     *
      * @return PMG name.
      */
     public String getPMGName() {
@@ -134,21 +145,25 @@ public final class PMGClass extends Attribute {
     }
 
     /**
-     * @param pmgClassIndex
+     * Sets the PMG class index.
+     *
+     * @param pmgClassIndex The class index.
      */
     public void setPMGClassIndex(final int pmgClassIndex) {
         this.pmgClassIndex = pmgClassIndex;
     }
 
     /**
-     * @param pmgIndex
+     * Sets the PMG index.
+     *
+     * @param pmgIndex The index.
      */
     public void setPMGIndex(final int pmgIndex) {
         this.pmgIndex = pmgIndex;
     }
 
     /**
-     * @return String representation
+     * @return String representation.
      */
     @Override
     public String toString() {

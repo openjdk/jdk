@@ -421,6 +421,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">pálí</language>
 			<language type="pis">pidžin</language>
 			<language type="pl">poľština</language>
+			<language type="pms">piedmončina</language>
 			<language type="pon">pohnpeiština</language>
 			<language type="pqm">maliseet-passamaquoddy</language>
 			<language type="prg">pruština</language>
@@ -996,18 +997,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">zoradenie</key>
 			<key type="colNormalization">normálne radenie</key>
 			<key type="colNumeric">číselné radenie</key>
+			<key type="colReorder">skriptová/bloková zmena poradia</key>
 			<key type="colStrength">sila radenia</key>
 			<key type="currency">mena</key>
+			<key type="d0">transformačný cieľ</key>
+			<key type="dx">slovník výnimiek pri delení slov</key>
 			<key type="em">prezentácia emodži</key>
+			<key type="fw">prvý deň v týždni</key>
+			<key type="h0">zmiešané</key>
 			<key type="hc">hodinový cyklus (12 vs 24)</key>
+			<key type="i0">metóda vstupu</key>
+			<key type="k0">klávesnica</key>
+			<key type="kv">ignorovanie najvyššieho</key>
 			<key type="lb">štýl koncov riadka</key>
 			<key type="lw">zlom riadka v slovách</key>
+			<key type="m0">transformačné pravidlá</key>
 			<key type="ms">merná sústava</key>
+			<key type="mu">merná jednotka</key>
 			<key type="numbers">čísla</key>
+			<key type="rg">pole na doplňujúce údaje</key>
+			<key type="s0">transformačný zdroj</key>
+			<key type="sd">rozdelenie oblasti</key>
 			<key type="ss">veta po skrat.</key>
+			<key type="t">transformácia</key>
+			<key type="t0">strojovo preložené</key>
 			<key type="timezone">časové pásmo</key>
 			<key type="va">variant miestneho nastavenia</key>
 			<key type="x">súkromné použitie</key>
+			<key type="x0">súkromná transformácia</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">budhistický kalendár</type>
@@ -1027,13 +1044,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">židovský kalendár</type>
 			<type key="calendar" type="hebrew" scope="core">židovský</type>
 			<type key="calendar" type="indian" draft="contributed">Indický národný kalendár</type>
+			<type key="calendar" type="indian" scope="core">indický národný</type>
 			<type key="calendar" type="islamic">kalendár podľa hidžry</type>
 			<type key="calendar" type="islamic" scope="core">podľa hidžry</type>
 			<type key="calendar" type="islamic-civil">kalendár podľa hidžry (občiansky)</type>
 			<type key="calendar" type="islamic-civil" scope="core">podľa hidžry (občiansky)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">podľa hidžry, Saudská Arábia</type>
+			<type key="calendar" type="islamic-tbla" scope="core">podľa hidžry (tabuľkový, astronomická epocha)</type>
 			<type key="calendar" type="islamic-umalqura">kalendár podľa hidžry (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">podľa hidžry (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">kalendár ISO 8601</type>
+			<type key="calendar" type="iso8601" scope="core">gregoriánsky</type>
 			<type key="calendar" type="japanese">japonský kalendár</type>
 			<type key="calendar" type="japanese" scope="core">japonský</type>
 			<type key="calendar" type="persian">perzský kalendár</type>
@@ -1049,8 +1070,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no" draft="contributed">Normálne radenie akcentov</type>
 			<type key="colBackwards" type="yes" draft="contributed">Radiť akcenty opačne</type>
 			<type key="colCaseFirst" type="lower" draft="contributed">Najprv radiť malé písmená</type>
+			<type key="colCaseFirst" type="lower" scope="core">malé písmená</type>
 			<type key="colCaseFirst" type="no" draft="contributed">Normálne radenie veľkých a malých písmen</type>
+			<type key="colCaseFirst" type="no" scope="core">malé písmená</type>
 			<type key="colCaseFirst" type="upper" draft="contributed">Najprv radiť veľké písmená</type>
+			<type key="colCaseFirst" type="upper" scope="core">veľké písmená</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Pri radení nerozlišovať veľké a malé písmená</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Pri radení rozlišovať veľké a malé písmená</type>
 			<type key="collation" type="compat">predchádzajúce zoradenie, kompatibilita</type>
@@ -1059,7 +1083,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="dictionary" scope="core">slovníkové</type>
 			<type key="collation" type="ducet">predvolené zoradenie unicode</type>
 			<type key="collation" type="ducet" scope="core">predvolené, unicode</type>
+			<type key="collation" type="emoji" scope="core">emodži</type>
 			<type key="collation" type="eor" draft="contributed">európske zoradenie</type>
+			<type key="collation" type="eor" scope="core">európske pravidlá</type>
 			<type key="collation" type="phonebook">lexikografické zoradenie</type>
 			<type key="collation" type="phonebook" scope="core">lexikografické</type>
 			<type key="collation" type="phonetic">fonetické zoradenie</type>
@@ -1069,6 +1095,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="search">všeobecné vyhľadávanie</type>
 			<type key="collation" type="search" scope="core">vyhľadávanie</type>
 			<type key="collation" type="searchjl" draft="contributed">Hľadať podľa počiatočnej spoluhlásky písma Hangul</type>
+			<type key="collation" type="searchjl" scope="core">kórejská úvodná spoluhláska</type>
 			<type key="collation" type="standard">štandardné zoradenie</type>
 			<type key="collation" type="standard" scope="core">štandardné</type>
 			<type key="collation" type="stroke">zoradenie podľa ťahov</type>
@@ -1083,17 +1110,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colNormalization" type="yes" draft="contributed">Radenie podľa normalizovaného kódovania Unicode</type>
 			<type key="colNumeric" type="no" draft="contributed">Radiť číslice jednotlivo</type>
 			<type key="colNumeric" type="yes" draft="contributed">Numerické radenie číslic</type>
+			<type key="colReorder" type="currency" scope="core">mena</type>
+			<type key="colReorder" type="digit" scope="core">čísla</type>
+			<type key="colReorder" type="punct" scope="core">interpunkcia</type>
+			<type key="colReorder" type="space" scope="core">medzera</type>
+			<type key="colReorder" type="symbol" scope="core">symbol</type>
 			<type key="colStrength" type="identical" draft="contributed">Radiť všetko</type>
+			<type key="colStrength" type="identical" scope="core">všetky</type>
 			<type key="colStrength" type="primary" draft="contributed">Radiť iba základné písmená</type>
+			<type key="colStrength" type="primary" scope="core">iba základné písmená</type>
 			<type key="colStrength" type="quaternary" draft="contributed">Radiť akcenty/veľké a malé písmená/šírku/kana</type>
+			<type key="colStrength" type="quaternary" scope="core">základné, s prízvukmi, veľkosti, varianty, kana</type>
 			<type key="colStrength" type="secondary" draft="contributed">Radiť akcenty</type>
+			<type key="colStrength" type="secondary" scope="core">základné, s prízvukmi</type>
 			<type key="colStrength" type="tertiary" draft="contributed">Radiť akcenty/veľké a malé písmená/šírku</type>
+			<type key="colStrength" type="tertiary" scope="core">základné, s prízvukmi, veľkosti, varianty</type>
 			<type key="d0" type="fwidth">celá šírka</type>
 			<type key="d0" type="hwidth">polovičná šírka</type>
 			<type key="d0" type="npinyin" draft="contributed">Číslice</type>
 			<type key="em" type="default" scope="core">predvolené</type>
 			<type key="em" type="emoji" scope="core">emodži</type>
 			<type key="em" type="text" scope="core">text</type>
+			<type key="hc" type="c12">12-hodinový cyklus</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">24-hodinový cyklus</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">12-hodinový cyklus (0 – 11)</type>
 			<type key="hc" type="h11" scope="core">12 (0 – 11)</type>
 			<type key="hc" type="h12">12-hodinový cyklus (1 – 12)</type>
@@ -1102,6 +1143,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0 – 23)</type>
 			<type key="hc" type="h24">24-hodinový cyklus (1 – 24)</type>
 			<type key="hc" type="h24" scope="core">24 (1 – 24)</type>
+			<type key="kv" type="currency" scope="core">posuny, interpunkcia, všetky symboly</type>
+			<type key="kv" type="punct" scope="core">posuny, interpunkcia</type>
+			<type key="kv" type="space" scope="core">posuny, interpunkcia</type>
+			<type key="kv" type="symbol" scope="core">posuny, interpunkcia, iné symboly než meny</type>
 			<type key="lb" type="loose">voľný štýl koncov riadka</type>
 			<type key="lb" type="loose" scope="core">voľný</type>
 			<type key="lb" type="normal">bežný štýl koncov riadka</type>
@@ -1122,51 +1167,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">americká</type>
 			<type key="numbers" type="arab">arabsko-indické číslice</type>
 			<type key="numbers" type="arabext">rozšírené arabsko-indické číslice</type>
+			<type key="numbers" type="arabext" scope="core">rozšírené arabsko-indické</type>
 			<type key="numbers" type="armn">arménske číslice</type>
 			<type key="numbers" type="armnlow">malé arménske číslice</type>
+			<type key="numbers" type="armnlow" scope="core">malé arménske</type>
 			<type key="numbers" type="beng">bengálske číslice</type>
 			<type key="numbers" type="cakm">číslice chakma</type>
 			<type key="numbers" type="deva">číslice dévanágarí</type>
 			<type key="numbers" type="ethi">etiópske číslice</type>
 			<type key="numbers" type="finance" draft="contributed">Finančnícky zápis čísiel</type>
+			<type key="numbers" type="finance" scope="core">finančné znaky</type>
 			<type key="numbers" type="fullwide">číslice s celou šírkou</type>
+			<type key="numbers" type="fullwide" scope="core">celá šírka</type>
 			<type key="numbers" type="geor">gruzínske číslice</type>
 			<type key="numbers" type="grek">grécke číslice</type>
 			<type key="numbers" type="greklow">malé grécke číslice</type>
+			<type key="numbers" type="greklow" scope="core">malé grécke</type>
 			<type key="numbers" type="gujr">gudžarátske číslice</type>
 			<type key="numbers" type="guru">číslice gurumukhí</type>
+			<type key="numbers" type="hanidays" scope="core">číslovanie dňa v mesiaci znakom han v tradičnom kalendári</type>
 			<type key="numbers" type="hanidec">čínske desiatkové číslice</type>
+			<type key="numbers" type="hanidec" scope="core">pozičný desiatkový systém používajúci čínske číselné ideogramy ako číslice</type>
 			<type key="numbers" type="hans">číslice zjednodušenej čínštiny</type>
 			<type key="numbers" type="hansfin">finančné číslice zjednodušenej čínštiny</type>
+			<type key="numbers" type="hansfin" scope="core">finančné znaky zjednodušenej čínštiny</type>
 			<type key="numbers" type="hant">číslice tradičnej čínštiny</type>
 			<type key="numbers" type="hantfin">finančné číslice tradičnej čínštiny</type>
+			<type key="numbers" type="hantfin" scope="core">finančné znaky tradičnej čínštiny</type>
 			<type key="numbers" type="hebr">hebrejské číslice</type>
 			<type key="numbers" type="java">jávske číslice</type>
 			<type key="numbers" type="jpan">japonské číslice</type>
 			<type key="numbers" type="jpanfin">japonské finančné číslice</type>
+			<type key="numbers" type="jpanfin" scope="core">japonské finančné znaky</type>
+			<type key="numbers" type="jpanyear" scope="core">japonské číslovanie Gannen (najprv rok)</type>
 			<type key="numbers" type="khmr">khmérske číslice</type>
 			<type key="numbers" type="knda">kannadské číslice</type>
+			<type key="numbers" type="lanatham" scope="core">cirkevné tai tham tham</type>
 			<type key="numbers" type="laoo">laoské číslice</type>
 			<type key="numbers" type="latn">arabské číslice</type>
+			<type key="numbers" type="mathbold" scope="core">matematické znaky tučné</type>
+			<type key="numbers" type="mathdbl" scope="core">matematické znaky dvojité</type>
+			<type key="numbers" type="mathmono" scope="core">matematické znaky jednomiestne</type>
+			<type key="numbers" type="mathsanb" scope="core">matematické znaky bezpätkové, tučné</type>
+			<type key="numbers" type="mathsans" scope="core">matematické znaky bezpätkové</type>
 			<type key="numbers" type="mlym">malajálamske číslice</type>
 			<type key="numbers" type="mong" draft="contributed">Mongolské číslice</type>
 			<type key="numbers" type="mtei">číslice meetei mayek</type>
 			<type key="numbers" type="mymr">barmské číslice</type>
+			<type key="numbers" type="mymrepka" scope="core">mjanmarské východné pwo karen</type>
+			<type key="numbers" type="mymrpao" scope="core">mjanmarské pao</type>
+			<type key="numbers" type="mymrshan" scope="core">mjanmarské shan</type>
+			<type key="numbers" type="mymrtlng" scope="core">mjanmarské tai laing</type>
 			<type key="numbers" type="native">natívne číslice</type>
+			<type key="numbers" type="native" scope="core">natívne číslice</type>
 			<type key="numbers" type="olck">číslice ol chiki</type>
 			<type key="numbers" type="orya">uríjske číslice</type>
+			<type key="numbers" type="outlined" scope="core">obrysové</type>
 			<type key="numbers" type="roman">rímske číslice</type>
+			<type key="numbers" type="roman" scope="core">rímske veľké</type>
 			<type key="numbers" type="romanlow">malé rímske číslice</type>
+			<type key="numbers" type="romanlow" scope="core">rímske malé</type>
+			<type key="numbers" type="segment" scope="core">segmentované</type>
 			<type key="numbers" type="taml">číslice tradičnej tamilčiny</type>
 			<type key="numbers" type="tamldec">tamilské číslice</type>
+			<type key="numbers" type="tamldec" scope="core">moderné tamilské</type>
 			<type key="numbers" type="telu">telugské číslice</type>
 			<type key="numbers" type="thai">thajské číslice</type>
 			<type key="numbers" type="tibt">tibetské číslice</type>
 			<type key="numbers" type="traditional" draft="contributed">Tradičné číslovky</type>
+			<type key="numbers" type="traditional" scope="core">tradičné číslice</type>
 			<type key="numbers" type="vaii">vaiské číslice</type>
 			<type key="ss" type="none" scope="core">vypnuté</type>
 			<type key="ss" type="standard" scope="core">zapnuté</type>
+			<type key="t0" type="und">nešpecifikovaný strojový preklad</type>
+			<type key="va" type="posix" scope="core">variant POSIX</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">vypnuté</typeValue>
+			<typeValue type="yes">zapnuté</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">metrický</measurementSystemName>
 			<measurementSystemName type="UK">britský</measurementSystemName>
@@ -1358,6 +1437,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
@@ -1462,6 +1545,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL – LLLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d. – d. MM.</greatestDifference>
+							<greatestDifference id="M">d. MM. – d. MM.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y G</greatestDifference>
@@ -1736,6 +1823,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>.</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1772,7 +1862,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">LLLL y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. M. y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d. M. y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMMd">d. M. y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d. MMMM y G</dateFormatItem>
 						<dateFormatItem id="H">H</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">H:mm</dateFormatItem>
@@ -1803,6 +1895,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMEd">E d. M. y</dateFormatItem>
 						<dateFormatItem id="yMMMM">LLLL y</dateFormatItem>
 						<dateFormatItem id="yMMMMd">d. MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d. MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">w. 'týždeň' 'roka' Y</dateFormatItem>
@@ -1810,7 +1903,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yw" count="many">w. 'týždeň' 'roka' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">w. 'týždeň' 'roka' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{1}, {0}</appendItem>
+						<appendItem request="Era">{0} {1}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{1}, {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
@@ -1913,6 +2015,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL – LLLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d. – d. MMMM</greatestDifference>
+							<greatestDifference id="M">d. MMMM – d. MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y – y</greatestDifference>
@@ -2057,7 +2163,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<eras>
 					<eraAbbr>
 						<era type="0" draft="contributed">pred ROC</era>
-						<era type="1" draft="contributed">ROC</era>
 					</eraAbbr>
 				</eras>
 			</calendar>
@@ -2796,9 +2901,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Paríž</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>britský letný čas</daylight>
-				</long>
 				<exemplarCity>Londýn</exemplarCity>
 			</zone>
 			<zone type="Africa/Accra">
@@ -2824,11 +2926,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Budapest">
 				<exemplarCity>Budapešť</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>írsky štandardný čas</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>Jeruzalem</exemplarCity>
@@ -3093,9 +3190,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<metazone type="Acre">
 				<long>
-					<generic draft="contributed">acrejský čas</generic>
-					<standard draft="contributed">acrejský štandardný čas</standard>
-					<daylight draft="contributed">acrejský letný čas</daylight>
+					<generic>acrejský čas</generic>
+					<standard>acrejský štandardný čas</standard>
+					<daylight>acrejský letný čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Afghanistan">
@@ -3128,13 +3225,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>aljašský čas</generic>
 					<standard>aljašský štandardný čas</standard>
 					<daylight>aljašský letný čas</daylight>
-				</long>
-			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic draft="contributed">almaatský čas</generic>
-					<standard draft="contributed">almaatský štandardný čas</standard>
-					<daylight draft="contributed">almaatský letný čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
@@ -3184,20 +3274,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>apijský čas</generic>
 					<standard>apijský štandardný čas</standard>
 					<daylight>apijský letný čas</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic draft="contributed">aktauský čas</generic>
-					<standard draft="contributed">aktauský štandardný čas</standard>
-					<daylight draft="contributed">aktauský letný čas</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic draft="contributed">aktobský čas</generic>
-					<standard draft="contributed">aktobský štandardný čas</standard>
-					<daylight draft="contributed">aktobský letný čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3299,6 +3375,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>brazílsky čas</generic>
 					<standard>brazílsky štandardný čas</standard>
 					<daylight>brazílsky letný čas</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>britský čas</generic>
+					<daylight>britský letný čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3484,6 +3566,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>greenwichský čas</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>grónsky čas</generic>
+					<standard>grónsky štandardný čas</standard>
+					<daylight>grónsky letný čas</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>východogrónsky čas</generic>
@@ -3498,11 +3587,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>západogrónsky letný čas</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard draft="contributed">guamský čas</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>štandardný čas Perzského zálivu</standard>
@@ -3515,7 +3599,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>havajsko-aleutský štandardný čas</standard>
+					<standard>havajský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3576,6 +3660,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>iránsky letný čas</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>írsky čas</generic>
+					<daylight>írsky štandardný čas</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>irkutský čas</generic>
@@ -3599,9 +3689,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic draft="contributed">Petropavlovsk-Kamčatský čas</generic>
-					<standard draft="contributed">Petropavlovsk-Kamčatský štandardný čas</standard>
-					<daylight draft="contributed">Petropavlovsk-Kamčatskijský letný čas</daylight>
+					<generic>kamčatský čas</generic>
+					<standard>kamčatský štandardný čas</standard>
+					<daylight>kamčatský letný čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3643,11 +3733,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>kirgizský čas</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard draft="contributed">srílanský čas</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>čas Rovníkových ostrovov</standard>
@@ -3658,13 +3743,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>čas ostrova lorda Howa</generic>
 					<standard>štandardný čas ostrova lorda Howa</standard>
 					<daylight>letný čas ostrova lorda Howa</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic draft="contributed">macajský čas</generic>
-					<standard draft="contributed">macajský štandardný čas</standard>
-					<daylight draft="contributed">macajský letný čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -3782,11 +3860,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>letný čas súostrovia Fernando de Noronha</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard draft="contributed">severomariánsky čas</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>novosibirský čas</generic>
@@ -3866,13 +3939,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>pchjongjanský čas</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic draft="contributed">kyzylordský čas</generic>
-					<standard draft="contributed">kyzylordský štandardný čas</standard>
-					<daylight draft="contributed">kyzylordský letný čas</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>réunionský čas</standard>
@@ -3892,16 +3958,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samara">
 				<long>
-					<generic draft="contributed">Samarský čas</generic>
-					<standard draft="contributed">Samarský štandardný čas</standard>
-					<daylight draft="contributed">Samarský letný čas</daylight>
+					<generic>samarský čas</generic>
+					<standard>samarský štandardný čas</standard>
+					<daylight>samarský letný čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>samojský čas</generic>
 					<standard>samojský štandardný čas</standard>
-					<daylight>samojský letný čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3968,6 +4032,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>chuukský čas</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>turecký čas</generic>
+					<standard>turecký štandardný čas</standard>
+					<daylight>turecký letný čas</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>turkménsky čas</generic>
@@ -3985,6 +4056,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>uruguajský čas</generic>
 					<standard>uruguajský štandardný čas</standard>
 					<daylight>uruguajský letný čas</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>čas Urumči</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4118,28 +4194,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<decimalFormatLength type="short">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 tis'.'</pattern>
+					<pattern type="1000" count="few">0 tis'.'</pattern>
+					<pattern type="1000" count="many">0 tis'.'</pattern>
 					<pattern type="1000" count="other">0 tis'.'</pattern>
 					<pattern type="10000" count="one">00 tis'.'</pattern>
+					<pattern type="10000" count="few">00 tis'.'</pattern>
+					<pattern type="10000" count="many">00 tis'.'</pattern>
 					<pattern type="10000" count="other">00 tis'.'</pattern>
 					<pattern type="100000" count="one">000 tis'.'</pattern>
+					<pattern type="100000" count="few">000 tis'.'</pattern>
+					<pattern type="100000" count="many">000 tis'.'</pattern>
 					<pattern type="100000" count="other">000 tis'.'</pattern>
 					<pattern type="1000000" count="one">0 mil'.'</pattern>
+					<pattern type="1000000" count="few">0 mil'.'</pattern>
+					<pattern type="1000000" count="many">0 mil'.'</pattern>
 					<pattern type="1000000" count="other">0 mil'.'</pattern>
 					<pattern type="10000000" count="one">00 mil'.'</pattern>
+					<pattern type="10000000" count="few">00 mil'.'</pattern>
+					<pattern type="10000000" count="many">00 mil'.'</pattern>
 					<pattern type="10000000" count="other">00 mil'.'</pattern>
 					<pattern type="100000000" count="one">000 mil'.'</pattern>
+					<pattern type="100000000" count="few">000 mil'.'</pattern>
+					<pattern type="100000000" count="many">000 mil'.'</pattern>
 					<pattern type="100000000" count="other">000 mil'.'</pattern>
 					<pattern type="1000000000" count="one">0 mld'.'</pattern>
+					<pattern type="1000000000" count="few">0 mld'.'</pattern>
+					<pattern type="1000000000" count="many">0 mld'.'</pattern>
 					<pattern type="1000000000" count="other">0 mld'.'</pattern>
 					<pattern type="10000000000" count="one">00 mld'.'</pattern>
+					<pattern type="10000000000" count="few">00 mld'.'</pattern>
+					<pattern type="10000000000" count="many">00 mld'.'</pattern>
 					<pattern type="10000000000" count="other">00 mld'.'</pattern>
 					<pattern type="100000000000" count="one">000 mld'.'</pattern>
+					<pattern type="100000000000" count="few">000 mld'.'</pattern>
+					<pattern type="100000000000" count="many">000 mld'.'</pattern>
 					<pattern type="100000000000" count="other">000 mld'.'</pattern>
 					<pattern type="1000000000000" count="one">0 bil'.'</pattern>
+					<pattern type="1000000000000" count="few">0 bil'.'</pattern>
+					<pattern type="1000000000000" count="many">0 bil'.'</pattern>
 					<pattern type="1000000000000" count="other">0 bil'.'</pattern>
 					<pattern type="10000000000000" count="one">00 bil'.'</pattern>
+					<pattern type="10000000000000" count="few">00 bil'.'</pattern>
+					<pattern type="10000000000000" count="many">00 bil'.'</pattern>
 					<pattern type="10000000000000" count="other">00 bil'.'</pattern>
 					<pattern type="100000000000000" count="one">000 bil'.'</pattern>
+					<pattern type="100000000000000" count="few">000 bil'.'</pattern>
+					<pattern type="100000000000000" count="many">000 bil'.'</pattern>
 					<pattern type="100000000000000" count="other">000 bil'.'</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
@@ -4682,13 +4782,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">čínske jüany (pobrežné)</displayName>
 				<displayName count="many">čínskeho jüana (pobrežného)</displayName>
 				<displayName count="other">čínskych jüanov (pobrežných)</displayName>
-			</currency>
-			<currency type="CNX">
-				<displayName draft="contributed">čínsky dolár ČĽB</displayName>
-				<displayName count="one" draft="contributed">čínsky dolár ČĽB</displayName>
-				<displayName count="few" draft="contributed">čínske doláre ČĽB</displayName>
-				<displayName count="many" draft="contributed">čínskeho dolára ČĽB</displayName>
-				<displayName count="other" draft="contributed">čínskych dolárov ČĽB</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>čínsky jüan</displayName>
@@ -10922,9 +11015,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-acre">
 				<displayName>ac</displayName>
 			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
-			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km</displayName>
 			</unit>
@@ -10975,23 +11065,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} mb</unitPattern>
 				<unitPattern count="many">{0} mb</unitPattern>
 				<unitPattern count="other">{0} mb</unitPattern>
-			</unit>
-			<unit type="volume-fluid-ounce-metric">
-				<displayName>fl oz m</displayName>
-				<unitPattern count="one">{0} fl oz m</unitPattern>
-				<unitPattern count="few">{0} fl oz m</unitPattern>
-				<unitPattern count="many">{0} fl oz m</unitPattern>
-				<unitPattern count="other">{0} fl oz m</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>cal-IT</displayName>
-			</unit>
-			<unit type="force-kilogram-force">
-				<displayName>kp</displayName>
-				<unitPattern count="one">{0} kp</unitPattern>
-				<unitPattern count="few">{0} kp</unitPattern>
-				<unitPattern count="many">{0} kp</unitPattern>
-				<unitPattern count="other">{0} kp</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

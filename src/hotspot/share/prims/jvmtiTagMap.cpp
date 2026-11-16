@@ -22,6 +22,7 @@
  *
  */
 
+#include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
@@ -41,10 +42,10 @@
 #include "oops/flatArrayOop.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/layoutKind.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/valueKlass.inline.hpp"
 #include "oops/valuePayload.inline.hpp"
@@ -232,13 +233,17 @@ private:
     Handle holder;
     int offset;
     ValueKlass* value_klass;
-    LayoutKind layout_kind;
+    OptionalFlatLayout optional_flat_layout;
     // converted heap-allocated object
     Handle dst;
 
-    Entry(): holder(), offset(0), value_klass(nullptr), dst() {}
-    Entry(Handle holder, int offset, ValueKlass* value_klass, LayoutKind lk)
-      : holder(holder), offset(offset), value_klass(value_klass), layout_kind(lk), dst() {}
+    Entry(): holder(), offset(0), value_klass(nullptr), optional_flat_layout(), dst() {}
+    Entry(Handle holder, int offset, ValueKlass* value_klass, FlatLayout fl)
+      : holder(holder), offset(offset), value_klass(value_klass), optional_flat_layout(fl), dst() {}
+
+    FlatLayout flat_layout() const {
+      return optional_flat_layout.get();
+    }
   };
 
   int _batch_size;
@@ -256,15 +261,15 @@ public:
       return false;
     }
 
-    class Importer: public JvmtiFlatTagMapKeyClosure {
+    class Importer: public JvmtiValueTagMapKeyClosure {
     private:
       GrowableArray<Entry>& _entries;
       int _batch_size;
     public:
       Importer(GrowableArray<Entry>& entries, int batch_size): _entries(entries), _batch_size(batch_size) {}
 
-      bool do_entry(JvmtiFlatTagMapKey& key, jlong& tag) {
-        Entry entry(Handle(Thread::current(), key.holder()), key.offset(), key.value_klass(), key.layout_kind());
+      bool do_entry(JvmtiValueTagMapKey& key, jlong& tag) {
+        Entry entry(Handle(Thread::current(), key.holder()), key.offset(), key.value_klass(), key.flat_layout());
         _entries.append(entry);
 
         return _entries.length() < _batch_size;
@@ -280,7 +285,7 @@ public:
       EXCEPTION_MARK;
       Entry& entry = _entries.at(i);
       FlatValuePayload payload = FlatValuePayload::construct_from_parts(
-          entry.holder(), entry.offset, entry.value_klass, entry.layout_kind);
+          entry.holder(), entry.offset, entry.value_klass, entry.flat_layout());
       oop obj = payload.read(JavaThread::current());
 
       if (HAS_PENDING_EXCEPTION) {
@@ -305,7 +310,7 @@ public:
         // some error during conversion, skip the entry
         continue;
       }
-      JvmtiHeapwalkObject obj(entry.holder(), entry.offset, entry.value_klass, entry.layout_kind);
+      JvmtiHeapwalkObject obj(entry.holder(), entry.offset, entry.value_klass, entry.flat_layout());
       jlong tag = src_table->remove(obj);
 
       if (tag != 0) { // ensure the entry is still in the src_table
@@ -585,27 +590,49 @@ class ClassFieldDescriptor: public CHeapObj<mtServiceability> {
   int _field_offset;
   char _field_type;
   ValueKlass* _value_klass; // nullptr for heap object
-  LayoutKind _layout_kind;
- public:
-  ClassFieldDescriptor(int index, const FieldStreamBase& fld) :
-      _field_index(index), _field_offset(fld.offset()), _field_type(fld.signature()->char_at(0)) {
-    if (fld.is_flat()) {
-      const fieldDescriptor& fd = fld.field_descriptor();
-      InstanceKlass* holder_klass = fd.field_holder();
-      ValueFieldInfo* vfi = holder_klass->value_field_info_adr(fd.index());
-      _value_klass = vfi->klass();
-      _layout_kind = vfi->kind();
+  FlatLayoutSlot _flat_layout_slot;
+
+  static ValueFieldInfo* calc_value_field_info(const FieldStreamBase& field) {
+    precond(field.is_flat());
+    const fieldDescriptor& fd = field.field_descriptor();
+    InstanceKlass* holder_klass = fd.field_holder();
+    return holder_klass->value_field_info_adr(fd.index());
+  }
+
+  static ValueKlass* calc_value_klass(const FieldStreamBase& field) {
+    if (field.is_flat()) {
+      return calc_value_field_info(field)->klass();
     } else {
-      _value_klass = nullptr;
-      _layout_kind = LayoutKind::REFERENCE;
+      return nullptr;
     }
   }
+
+  static FlatLayoutSlot calc_flat_layout_slot(const FieldStreamBase& field) {
+    if (field.is_flat()) {
+      return FlatLayoutSlot(calc_value_field_info(field)->flat_layout());
+    } else {
+      return FlatLayoutSlot();
+    }
+  }
+
+ public:
+  ClassFieldDescriptor(int index, const FieldStreamBase& fld)
+   : _field_index(index),
+     _field_offset(fld.offset()),
+     _field_type(fld.signature()->char_at(0)),
+     _value_klass(calc_value_klass(fld)),
+     _flat_layout_slot(calc_flat_layout_slot(fld)) {}
+
   int field_index()  const  { return _field_index; }
   char field_type()  const  { return _field_type; }
   int field_offset() const  { return _field_offset; }
   bool is_flat()     const  { return _value_klass != nullptr; }
   ValueKlass* value_klass() const { return _value_klass; }
-  LayoutKind layout_kind() const { return _layout_kind; }
+  FlatLayout flat_layout() const { return _flat_layout_slot.get_if(is_flat()); }
+
+  bool is_nullable_flat() const {
+    return is_flat() && flat_layout().is_nullable();
+  }
 };
 
 class ClassFieldMap: public CHeapObj<mtServiceability> {
@@ -1276,78 +1303,74 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
 }
 
 void IterateThroughHeapObjectClosure::visit_object(const JvmtiHeapwalkObject& obj) {
-  // apply class filter
-  if (is_filtered_by_klass_filter(obj, klass())) return;
-
-  // prepare for callback
-  CallbackWrapper wrapper(tag_map(), obj);
-
-  // check if filtered by the heap filter
-  if (is_filtered_by_heap_filter(wrapper.obj_tag(), wrapper.klass_tag(), heap_filter())) {
-    return;
-  }
-
-  // for arrays we need the length, otherwise -1
   bool is_array = obj.klass()->is_array_klass();
-  int len = is_array ? arrayOop(obj.obj())->length() : -1;
 
-  // invoke the object callback (if callback is provided)
-  if (callbacks()->heap_iteration_callback != nullptr) {
-    jvmtiHeapIterationCallback cb = callbacks()->heap_iteration_callback;
-    jint res = (*cb)(wrapper.klass_tag(),
-                     wrapper.obj_size(),
-                     wrapper.obj_tag_p(),
-                     (jint)len,
-                     (void*)user_data());
-    if (check_flags_for_abort(res)) return;
-  }
+  if (!is_filtered_by_klass_filter(obj, klass())) { // apply class filter
+    // prepare for callback
+    CallbackWrapper wrapper(tag_map(), obj);
 
-  // for objects and classes we report primitive fields if callback provided
-  if (callbacks()->primitive_field_callback != nullptr && obj.klass()->is_instance_klass()) {
-    jint res;
-    jvmtiPrimitiveFieldCallback cb = callbacks()->primitive_field_callback;
-    if (obj.klass() == vmClasses::Class_klass()) {
-      assert(!obj.is_flat(), "Class object cannot be flattened");
-      res = invoke_primitive_field_callback_for_static_fields(&wrapper,
-                                                              obj.obj(),
-                                                              cb,
-                                                              (void*)user_data());
-    } else {
-      res = invoke_primitive_field_callback_for_instance_fields(&wrapper,
-                                                                obj,
-                                                                cb,
-                                                                (void*)user_data());
+    // check if filtered by the heap filter
+    if (!is_filtered_by_heap_filter(wrapper.obj_tag(), wrapper.klass_tag(), heap_filter())) {
+      // for arrays we need the length, otherwise -1
+      int len = is_array ? arrayOop(obj.obj())->length() : -1;
+
+      // invoke the object callback (if callback is provided)
+      if (callbacks()->heap_iteration_callback != nullptr) {
+        jvmtiHeapIterationCallback cb = callbacks()->heap_iteration_callback;
+        jint res = (*cb)(wrapper.klass_tag(),
+                         wrapper.obj_size(),
+                         wrapper.obj_tag_p(),
+                         (jint)len,
+                         (void*)user_data());
+        if (check_flags_for_abort(res)) return;
+      }
+
+      // for objects and classes we report primitive fields if callback provided
+      if (callbacks()->primitive_field_callback != nullptr && obj.klass()->is_instance_klass()) {
+        jint res;
+        jvmtiPrimitiveFieldCallback cb = callbacks()->primitive_field_callback;
+        if (obj.klass() == vmClasses::Class_klass()) {
+          assert(!obj.is_flat(), "Class object cannot be flattened");
+          res = invoke_primitive_field_callback_for_static_fields(&wrapper,
+                                                                  obj.obj(),
+                                                                  cb,
+                                                                  (void*)user_data());
+        } else {
+          res = invoke_primitive_field_callback_for_instance_fields(&wrapper,
+                                                                    obj,
+                                                                    cb,
+                                                                    (void*)user_data());
+        }
+        if (check_flags_for_abort(res)) return;
+      }
+
+      // string callback
+      if (!is_array &&
+          callbacks()->string_primitive_value_callback != nullptr &&
+          obj.klass() == vmClasses::String_klass()) {
+        jint res = invoke_string_value_callback(
+                    callbacks()->string_primitive_value_callback,
+                    &wrapper,
+                    obj,
+                    (void*)user_data());
+        if (check_flags_for_abort(res)) return;
+      }
+
+      // array callback
+      if (is_array &&
+          callbacks()->array_primitive_value_callback != nullptr &&
+          obj.klass()->is_typeArray_klass()) {
+        jint res = invoke_array_primitive_value_callback(
+                   callbacks()->array_primitive_value_callback,
+                   &wrapper,
+                   obj,
+                   (void*)user_data());
+        if (check_flags_for_abort(res)) return;
+      }
     }
-    if (check_flags_for_abort(res)) return;
   }
-
-  // string callback
-  if (!is_array &&
-      callbacks()->string_primitive_value_callback != nullptr &&
-      obj.klass() == vmClasses::String_klass()) {
-    jint res = invoke_string_value_callback(
-                callbacks()->string_primitive_value_callback,
-                &wrapper,
-                obj,
-                (void*)user_data());
-    if (check_flags_for_abort(res)) return;
-  }
-
-  // array callback
-  if (is_array &&
-      callbacks()->array_primitive_value_callback != nullptr &&
-      obj.klass()->is_typeArray_klass()) {
-    jint res = invoke_array_primitive_value_callback(
-               callbacks()->array_primitive_value_callback,
-               &wrapper,
-               obj,
-               (void*)user_data());
-    if (check_flags_for_abort(res)) return;
-  }
-
-  // All info for the object is reported.
-
-  // If the object has flat fields, report them as heap objects.
+  // If the object has flattened fields, report them as heap objects
+  // even though this object was not reported.
   if (obj.klass()->is_instance_klass()) {
     if (InstanceKlass::cast(obj.klass())->has_flat_fields()) {
       visit_flat_fields(obj);
@@ -1380,12 +1403,12 @@ void IterateThroughHeapObjectClosure::visit_flat_fields(const JvmtiHeapwalkObjec
       field_offset += obj.offset() - obj.value_klass()->payload_offset();
     }
     // check for possible nulls
-    if (LayoutKindHelper::is_nullable_flat(field->layout_kind())) {
+    if (field->is_nullable_flat()) {
       if (field->value_klass()->is_payload_marked_as_null(obj.obj(), field_offset)) {
         continue;
       }
     }
-    JvmtiHeapwalkObject field_obj(obj.obj(), field_offset, field->value_klass(), field->layout_kind());
+    JvmtiHeapwalkObject field_obj(obj.obj(), field_offset, field->value_klass(), field->flat_layout());
 
     visit_object(field_obj);
 
@@ -1401,7 +1424,7 @@ void IterateThroughHeapObjectClosure::visit_flat_array_elements(const JvmtiHeapw
   flatArrayOop array = flatArrayOop(obj.obj());
   FlatArrayKlass* fak = array->klass();
   ValueKlass* vk = fak->element_klass();
-  bool need_null_check = LayoutKindHelper::is_nullable_flat(fak->layout_kind());
+  bool need_null_check = fak->flat_layout().is_nullable();
 
   for (int index = 0; index < array->length(); index++) {
     address addr = (address)array->value_at_addr(index, fak->layout_helper());
@@ -1414,7 +1437,7 @@ void IterateThroughHeapObjectClosure::visit_flat_array_elements(const JvmtiHeapw
 
     // offset in the array oop
     int offset = (int)(addr - cast_from_oop<address>(array));
-    JvmtiHeapwalkObject elem(obj.obj(), offset, vk, fak->layout_kind());
+    JvmtiHeapwalkObject elem(obj.obj(), offset, vk, fak->flat_layout());
 
     visit_object(elem);
 
@@ -1861,6 +1884,7 @@ class CallbackInvoker : AllStatic {
 
   // functions to report references
   static inline bool report_array_element_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree, jint index);
+  static inline bool report_other_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
   static inline bool report_class_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
   static inline bool report_class_loader_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
   static inline bool report_signers_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
@@ -2464,6 +2488,15 @@ inline bool CallbackInvoker::report_field_reference(const JvmtiHeapwalkObject& r
   }
 }
 
+inline bool CallbackInvoker::report_other_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree) {
+  // Reporting classes from the class loader is not supported for old Heap 1.0 functions.
+  if (is_basic_heap_walk()) {
+    return true;
+  } else {
+    return invoke_advanced_object_reference_callback(JVMTI_HEAP_REFERENCE_OTHER, referrer, referree, -1);
+  }
+}
+
 // report an array referencing an element object
 inline bool CallbackInvoker::report_constant_pool_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree, jint index) {
   if (is_basic_heap_walk()) {
@@ -2790,7 +2823,10 @@ class VM_HeapWalkOperation: public VM_Operation {
   inline bool iterate_over_flat_array(const JvmtiHeapwalkObject& o);
   inline bool iterate_over_type_array(const JvmtiHeapwalkObject& o);
   inline bool iterate_over_class(const JvmtiHeapwalkObject& o);
+  inline bool iterate_over_class_loader(const JvmtiHeapwalkObject& o);
   inline bool iterate_over_object(const JvmtiHeapwalkObject& o);
+
+  class CollectDeclaredKlasses;
 
   // root collection
   inline bool collect_simple_roots();
@@ -2890,7 +2926,7 @@ inline bool VM_HeapWalkOperation::iterate_over_flat_array(const JvmtiHeapwalkObj
   flatArrayOop array = flatArrayOop(o.obj());
   FlatArrayKlass* fak = array->klass();
   ValueKlass* vk = fak->element_klass();
-  bool need_null_check = LayoutKindHelper::is_nullable_flat(fak->layout_kind());
+  bool need_null_check = fak->flat_layout().is_nullable();
 
   // array reference to its class
   oop mirror = fak->java_mirror();
@@ -2912,7 +2948,7 @@ inline bool VM_HeapWalkOperation::iterate_over_flat_array(const JvmtiHeapwalkObj
 
     // offset in the array oop
     int offset = (int)(addr - cast_from_oop<address>(array));
-    JvmtiHeapwalkObject elem(o.obj(), offset, vk, fak->layout_kind());
+    JvmtiHeapwalkObject elem(o.obj(), offset, vk, fak->flat_layout());
 
     // report the array reference
     if (!CallbackInvoker::report_array_element_reference(o, elem, index)) {
@@ -3091,6 +3127,43 @@ inline bool VM_HeapWalkOperation::iterate_over_class(const JvmtiHeapwalkObject& 
   return true;
 }
 
+class VM_HeapWalkOperation::CollectDeclaredKlasses : public KlassClosure {
+  GrowableArray<Klass*>* _klasses;
+ public:
+  CollectDeclaredKlasses(GrowableArray<Klass*>* klasses) : _klasses(klasses) {}
+  void do_klass(Klass* k) {
+    if (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded() && !k->is_hidden()) {
+      _klasses->push(k);
+    }
+  }
+};
+
+inline bool VM_HeapWalkOperation::iterate_over_class_loader(const JvmtiHeapwalkObject& o) {
+  assert(!o.is_flat(), "ClassLoaderKlass object cannot be flattened");
+  bool res = iterate_over_object(o);
+  // For a class loader, iterate over the loaded classes also to maintain compatibility
+  // for when ClassLoader had a vector of loaded classes.
+  ClassLoaderData* data = java_lang_ClassLoader::loader_data_acquire(o.obj());
+
+  if (res && data != nullptr) {
+    ResourceMark rm;
+    GrowableArray<Klass*>* klasses = new GrowableArray<Klass*>(10);
+    CollectDeclaredKlasses itr(klasses);
+    data->classes_do(&itr);
+
+    for (int i = 0; i < klasses->length(); i++) {
+      Klass* k = klasses->at(i);
+      JvmtiHeapwalkObject m(k->java_mirror());
+      // Pretend the classes are referred indirectly by the class loader. They are
+      // root objects, so make them other references.
+      if (!CallbackInvoker::report_other_reference(o, m)) {
+        return false;
+      }
+    }
+  }
+  return res;
+}
+
 // an object references a class and its instance fields
 // (static fields are ignored here as we report these as
 // references from the class).
@@ -3114,12 +3187,12 @@ inline bool VM_HeapWalkOperation::iterate_over_object(const JvmtiHeapwalkObject&
     if (!is_primitive_field_type(type)) {
       if (field->is_flat()) {
         // check for possible nulls
-        if (LayoutKindHelper::is_nullable_flat(field->layout_kind())) {
+        if (field->is_nullable_flat()) {
           if (field->value_klass()->is_payload_marked_as_null(o.obj(), field_offset)) {
             continue;
           }
         }
-        JvmtiHeapwalkObject field_obj(o.obj(), field_offset, field->value_klass(), field->layout_kind());
+        JvmtiHeapwalkObject field_obj(o.obj(), field_offset, field->value_klass(), field->flat_layout());
         if (!CallbackInvoker::report_field_reference(o, field_obj, slot)) {
           return false;
         }
@@ -3329,6 +3402,8 @@ bool VM_HeapWalkOperation::visit(const JvmtiHeapwalkObject& o) {
         // a java.lang.Class
         return iterate_over_class(o);
       }
+    } else if (java_lang_ClassLoader::is_instance(o.obj())) {
+      return iterate_over_class_loader(o);
     } else {
       // we report stack references only when initial object is not specified
       // (in the case we start from heap roots which include platform thread stack references)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,10 @@ public class AsyncShutdownNowInvokeAnyRace {
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         int falseAlarms = 0;
         for (int rep = 1; rep < reps; rep++) {
+
+            if (Thread.interrupted()) // Ensure that the test respects interruptions
+                throw new InterruptedException();
+
             ForkJoinPool pool = new ForkJoinPool(1);
             CountDownLatch pleaseShutdownNow = new CountDownLatch(1);
             int nTasks = rnd.nextInt(2, 5);
@@ -106,8 +110,9 @@ public class AsyncShutdownNowInvokeAnyRace {
                 } catch (Throwable t) { throw new AssertionError(t); }
             };
             Future<Void> shutdownResult = CompletableFuture.runAsync(shutdown);
-            try {
-                try {
+
+            try (pool) { // Ensure that the pool is terminated after each iteration
+                try { // Ensure that exceptions are handled prior to closing the pool
                     if (rnd.nextBoolean())
                         pool.invokeAny(tasks, 10L, SECONDS);
                     else
@@ -119,27 +124,25 @@ public class AsyncShutdownNowInvokeAnyRace {
                 } catch (ExecutionException ex) {
                     Throwable cause = ex.getCause();
                     if (!(cause instanceof InterruptedException) &&
-                        !(cause instanceof CancellationException))
+                            !(cause instanceof CancellationException))
                         throw ex;
                 } catch (TimeoutException ex) {
                     dumpTestThreads();
-                    int i = rep;
                     String detail = String.format(
-                        "invokeAny timed out, "
-                        + "nTasks=%d rep=%d threadsStarted=%d%n"
-                        + "poolAtShutdownNow=%s%n"
-                        + "poolAtTimeout=%s%n"
-                        + "queuedTaskCount=%d queuedSubmissionCount=%d",
-                        nTasks, i, threadsStarted.get(),
-                        poolAtShutdownNow,
-                        pool,
-                        pool.getQueuedTaskCount(),
-                        pool.getQueuedSubmissionCount());
+                            "invokeAny timed out, "
+                                    + "nTasks=%d rep=%d threadsStarted=%d%n"
+                                    + "poolAtShutdownNow=%s%n"
+                                    + "poolAtTimeout=%s%n"
+                                    + "queuedTaskCount=%d queuedSubmissionCount=%d",
+                            nTasks, rep, threadsStarted.get(),
+                            poolAtShutdownNow,
+                            pool,
+                            pool.getQueuedTaskCount(),
+                            pool.getQueuedSubmissionCount());
                     throw new AssertionError(detail, ex);
                 }
-            } finally {
-                pool.shutdown();
             }
+
             if (falseAlarms != 0)
                 System.out.println("Premature shutdowns = " + falseAlarms);
             shutdownResult.get();

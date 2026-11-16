@@ -27,7 +27,6 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/cdsConstants.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
@@ -123,6 +122,12 @@
 #if INCLUDE_SERIALGC
 #include "gc/serial/serialHeap.hpp"
 #endif // INCLUDE_SERIALGC
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#endif // INCLUDE_SHENANDOAHGC
 #if INCLUDE_ZGC
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -596,7 +601,7 @@ WB_END
 
 WB_ENTRY(jboolean, WB_G1HasRegionsToUncommit(JNIEnv* env, jobject o))
   if (UseG1GC) {
-    return G1CollectedHeap::heap()->has_uncommittable_regions();
+    return G1CollectedHeap::heap()->has_pending_uncommit_regions();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1HasRegionsToUncommit: G1 GC is not enabled");
 WB_END
@@ -694,6 +699,37 @@ WB_ENTRY(jlongArray, WB_G1GetMixedGCInfo(JNIEnv* env, jobject o, jint liveness))
 WB_END
 
 #endif // INCLUDE_G1GC
+
+#if INCLUDE_SHENANDOAHGC
+
+WB_ENTRY(jint, WB_ShenandoahRegionSize(JNIEnv* env, jobject o))
+  if (UseShenandoahGC) {
+    return ShenandoahHeapRegion::region_size_bytes_jint();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionSize: Shenandoah GC is not enabled");
+WB_END
+
+WB_ENTRY(jint, WB_ShenandoahRegionCount(JNIEnv* env, jobject o))
+  if (UseShenandoahGC) {
+    return static_cast<jint>(ShenandoahHeap::heap()->num_regions());
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahRegionCount: Shenandoah GC is not enabled");
+WB_END
+
+WB_ENTRY(jlong, WB_ShenandoahOldMarkGC(JNIEnv* env, jobject o, jint timeout_seconds))
+  if (UseShenandoahGC && ShenandoahHeap::heap()->mode()->is_generational()) {
+    if (timeout_seconds < 0) {
+      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "WB_ShenandoahOldMarkGC: Timeout must be non-negative");
+    }
+    if (ShenandoahGenerationalHeap::heap()->wait_for_old_collection(timeout_seconds)) {
+      return ShenandoahHeap::heap()->old_generation()->completed_gc_id();
+    }
+    THROW_MSG_0(vmSymbols::java_lang_IllegalStateException(), "WB_ShenandoahOldMarkGC: Could not complete old GC cycle");
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_ShenandoahOldMarkGC: Generational mode for Shenandoah GC is not enabled");
+WB_END
+
+#endif // INCLUDE_SHENANDOAHGC
 
 // Alloc memory using the test memory tag so that we can use that to see if
 // NMT picks it up correctly
@@ -1143,7 +1179,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   bool is_blocking = !matcher.directive_set()->BackgroundCompilationOption;
 
   // Compile method and check result
-  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
+  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh->invocation_count(), nullptr, CompileTask::Reason_Whitebox, CHECK_false);
   MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != nullptr) {
@@ -1628,7 +1664,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, nullptr);
-  result = env->NewObjectArray(5, clazz, nullptr);
+  result = env->NewObjectArray(6, clazz, nullptr);
   if (result == nullptr) {
     return result;
   }
@@ -1654,6 +1690,10 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   jobject entry_point = longBox(thread, env, (jlong) code->entry_point());
   CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 4, entry_point);
+
+  jobject has_scoped_access = booleanBox(thread, env, (jboolean) code->has_scoped_access());
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  env->SetObjectArrayElement(result, 5, has_scoped_access);
 
   return result;
 WB_END
@@ -2981,6 +3021,11 @@ static JNINativeMethod methods[] = {
   {CC"g1MemoryNodeIds",    CC"()[I",                  (void*)&WB_G1MemoryNodeIds },
   {CC"g1GetMixedGCInfo",   CC"(I)[J",                 (void*)&WB_G1GetMixedGCInfo },
 #endif // INCLUDE_G1GC
+#if INCLUDE_SHENANDOAHGC
+  {CC"shenandoahRegionSize",   CC"()I",                   (void*)&WB_ShenandoahRegionSize  },
+  {CC"shenandoahRegionCount",  CC"()I",                   (void*)&WB_ShenandoahRegionCount },
+  {CC"shenandoahOldMarkGC",    CC"(I)J",                  (void*)&WB_ShenandoahOldMarkGC   },
+#endif // INCLUDE_SHENANDOAHGC
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTMallocWithPseudoStack", CC"(JI)J",           (void*)&WB_NMTMallocWithPseudoStack},
   {CC"NMTMallocWithPseudoStackAndType", CC"(JII)J",   (void*)&WB_NMTMallocWithPseudoStackAndType},

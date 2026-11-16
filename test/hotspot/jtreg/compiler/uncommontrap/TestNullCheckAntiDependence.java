@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,18 @@ package compiler.uncommontrap;
  * @summary Test that no anti-dependence violation is reported between a store
  *          used as an implicit null check and a load placed in the null block.
  * @run main/othervm -XX:-BackgroundCompilation
+ *      compiler.uncommontrap.TestNullCheckAntiDependence
+ */
+
+/**
+ * @test
+ * @bug 8261730 8265132
+ * @summary Test that no anti-dependence violation is reported between a store
+ *          used as an implicit null check and a load placed in the null block.
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-BackgroundCompilation
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
  *      compiler.uncommontrap.TestNullCheckAntiDependence
  */
 

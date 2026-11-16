@@ -30,6 +30,7 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jni.h"
 #include "memory/iterator.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 class InstanceKlass;
 class JavaThread;
@@ -37,11 +38,6 @@ class JfrFilter;
 class Klass;
 
 template<typename T> class GrowableArray;
-
-template<typename K, typename V,
-         AnyObj::allocation_type, MemTag,
-         unsigned (*HASH)  (K const&),
-         bool (*EQUALS)(K const&, K const&)> class ResizeableHashTable;
 
 // Knuth multiplicative hashing.
 inline uint32_t knuth_hash(const traceid& id) {

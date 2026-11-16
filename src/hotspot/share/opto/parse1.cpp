@@ -26,9 +26,11 @@
 #include "ci/ciSignature.hpp"
 #include "ci/ciTypeFlow.hpp"
 #include "compiler/compileLog.hpp"
+#include "interpreter/invocationCounter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
+#include "oops/trainingData.hpp"
 #include "opto/addnode.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/castnode.hpp"
@@ -48,6 +50,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 // Static array so we can figure out which bytecodes stop us from compiling
 // the most. Some of the non-static variables are needed in bytecodeInfo.cpp
@@ -178,7 +181,7 @@ Node* Parse::check_interpreter_type(Node* l, ciType* ci_type, SafePointNode* &ba
   // are still in effect.
   if (unwrapped_ci_type->is_klass()) {
     // TypeFlow asserted a specific object type. Value must have that type.
-    assert(_gvn.type(l) == TypePtr::NULL_PTR || _gvn.type(l)->isa_oopptr(), "must be an oop");
+    assert(_gvn.type(l) == TypePtr::NULL_PTR || _gvn.type(l)->is_oopptr(), "must be an oop");
     if (ci_type->is_null_free()) {
       // Check value types for null here to prevent checkcast from adding an
       // exception state before the bytecode entry (use 'bad_type_ctrl' instead).
@@ -303,7 +306,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
 
     const Type *type = osr_block->local_type_at(index);
 
-    if (type->isa_oopptr() != nullptr) {
+    if (type->is_oopptr()) {
 
       // 6403625: Verify that the interpreter oopMap thinks that the oop is live
       // else we might load a stale oop if the MethodLiveness disagrees with the
@@ -388,12 +391,12 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       // value and the expected type is a constant.
       continue;
     }
-    if (StressReachabilityFences && type->isa_oopptr() != nullptr) {
+    if (StressReachabilityFences && type->is_oopptr()) {
       // Keep all oop locals alive until the method returns as if there are
       // reachability fences for them at the end of the method.
       Node* loc = local(index);
       if (!loc->is_ValueType() && loc->bottom_type() != TypePtr::NULL_PTR) {
-        assert(loc->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(loc->bottom_type()));
+        assert(loc->bottom_type()->is_oopptr(), "%s", Type::str(loc->bottom_type()));
         _stress_rf_hook->add_req(loc);
       }
     }
@@ -405,12 +408,12 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       break;
     }
     const Type *type = osr_block->local_type_at(index);
-    if (StressReachabilityFences && type->isa_oopptr() != nullptr) {
+    if (StressReachabilityFences && type->is_oopptr()) {
       // Keep all oops on stack alive until the method returns as if there are
       // reachability fences for them at the end of the method.
       Node* stk = stack(index);
       if (!stk->is_ValueType() && stk->bottom_type() != TypePtr::NULL_PTR) {
-        assert(stk->bottom_type()->isa_oopptr() != nullptr, "%s", Type::str(stk->bottom_type()));
+        assert(stk->bottom_type()->is_oopptr(), "%s", Type::str(stk->bottom_type()));
         _stress_rf_hook->add_req(stk);
       }
     }
@@ -592,9 +595,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 #endif
 
 #ifndef PRODUCT
-  if (_flow->has_irreducible_entry()) {
-    C->set_parsed_irreducible_loop(true);
-  }
 
   methods_parsed++;
   // add method size here to guarantee that inlined methods are added too
@@ -756,19 +756,26 @@ void Parse::do_all_blocks() {
         set_map(clone_map());
       }
 
-      if (control()->is_Region() && !block->is_loop_head() && !has_irreducible && !block->is_handler()) {
-        // In the absence of irreducible loops, the Region and Phis
-        // associated with a merge that doesn't involve a backedge can
-        // be simplified now since the RPO parsing order guarantees
-        // that any path which was supposed to reach here has already
-        // been parsed or must be dead.
-        Node* c = control();
-        Node* result = _gvn.transform(control());
-        if (c != result && TraceOptoParse) {
-          tty->print_cr("Block #%d replace %d with %d", block->rpo(), c->_idx, result->_idx);
+      if (control()->is_Region()) {
+        if (Arguments::is_valhalla_enabled()) {
+          // Canonicalize early larval aliases after creating merge Phis
+          canonicalize_early_larval_aliases();
         }
-        if (result != top()) {
-          record_for_igvn(result);
+
+        if (!block->is_loop_head() && !has_irreducible && !block->is_handler()) {
+          // In the absence of irreducible loops, the Region and Phis
+          // associated with a merge that doesn't involve a backedge can
+          // be simplified now since the RPO parsing order guarantees
+          // that any path which was supposed to reach here has already
+          // been parsed or must be dead.
+          Node* c = control();
+          Node* result = _gvn.transform(control());
+          if (c != result && TraceOptoParse) {
+            tty->print_cr("Block #%d replace %d with %d", block->rpo(), c->_idx, result->_idx);
+          }
+          if (result != top()) {
+            record_for_igvn(result);
+          }
         }
       }
 
@@ -848,7 +855,7 @@ void Parse::build_exits() {
   // Add a return value to the exit state.  (Do not push it yet.)
   if (tf()->range_sig()->cnt() > TypeFunc::Parms) {
     const Type* ret_type = tf()->range_sig()->field_at(TypeFunc::Parms);
-    if (ret_type->isa_int()) {
+    if (ret_type->is_int()) {
       BasicType ret_bt = method()->return_type()->basic_type();
       if (ret_bt == T_BOOLEAN ||
           ret_bt == T_CHAR ||
@@ -1146,7 +1153,7 @@ void Parse::do_exits() {
       C->record_method_not_compilable("Can't determine return type.");
       return;
     }
-    if (ret_type->isa_int()) {
+    if (ret_type->is_int()) {
       BasicType ret_bt = method()->return_type()->basic_type();
       ret_phi = mask_int_value(ret_phi, ret_bt, &_gvn);
     }
@@ -1226,9 +1233,11 @@ SafePointNode* Parse::create_entry_map() {
   _caller->map()->delete_replaced_nodes();
 
   // If this is an inlined method, we may have to do a receiver null check.
-  if (_caller->has_method() && is_normal_parse() && !method()->is_static()) {
+  if (_caller->has_method() && is_normal_parse()) {
     GraphKit kit(_caller);
-    kit.null_check_receiver_before_call(method());
+    if (!method()->is_static()) {
+      kit.null_check_receiver_before_call(method());
+    }
     _caller = kit.transfer_exceptions_into_jvms();
 
     if (kit.stopped()) {
@@ -1297,6 +1306,148 @@ static bool is_auto_boxed_primitive(Node* n) {
           n->in(0)->as_CallJava()->method()->is_boxing_method());
 }
 
+#if INCLUDE_CDS
+// Even the highest tier of AOT code (A4) incorporates an invocation
+// counter on entry to an AOT nmethod.  This is necessary because AOT
+// optimizations are performed on less accurate information than JIT
+// optimizations.  A long-running JVM is likely to eventually
+// recompile AOT code with the JIT compiler, so as to reoptimize with
+// the fullest possible information.  This helps AOT-assisted
+// workloads attain the same peak performance as pure JIT-based
+// workloads.
+//
+// One example of "less accurate" information for optimization is a
+// static final field value which the AOT compiler refuses to fold as
+// a constant, because many static finals cannot be predicted AOT.
+// Another is the exact configuration of block and type profiles; the
+// AOT compiler only sees profile information from the training run up
+// to the point at which the AOT cache was built, while a production
+// run may execute much longer, eventually adding very different
+// information to the profile.
+//
+// The counter helps decide when to reoptimize.  The counter limit
+// chosen depends on the invocation count observed during the training
+// run.  The limit is an approximately linear function of the observed
+// count, but at least about a hundred (see AOTCodeInvokeBase), and
+// saturating out to about a million (times AOTCodeInvokeScale).
+//
+// The diagnostic flag UseAOTCodeCounters can be used to determine
+// whether the counter overhead affected application performance.
+// Note that the counter is only on the root method of any given
+// nmethod.  Inlined method calls are not counted.  Counting overhead
+// is therefore expected to be small.
+//
+// After JDK-8380476 TODO: The interpreter also uses a backedge counter
+// to ensure eventual optimization of a method with a small invocation
+// count that sits in a long-running loop.  A4 methods could be given an
+// equivalent counter, if they contain loops which may turn out to be
+// long-running.  It is help to deoptimize a long-running loop to the
+// interpreter, without replacing the A4 method.  The interpreter
+// could be primed with a high backedge count, so that the loop will
+// be reoptimized quickly by an OSR compilation.  This whole concern
+// is a corner case of a corner case, since OSR assumes low invocation
+// count, while reoptimization to peak assumes a long-lived production
+// run.
+
+static int scale_limit(int64_t limit) {
+ // To scale invocation limit a hyperbolic saturation curve formula
+ // is used with upper limit 1M.
+ return (int)(AOTCodeInvokeBase + limit / (1.0 + limit / (1000000.0 * AOTCodeInvokeScale)));
+}
+
+void Parse::count_aot_code_calls() {
+  if (UseAOTCodeCounters && (depth() == 1) && C->is_aot_compile()) {
+    // Clear out dead values from the debug info in following runtime call
+    kill_dead_locals();
+
+    // Use method invocations count during training run and compare
+    // to invocations of AOT code during production run to trigger JIT
+    // compilation and replace AOT code with normal JITed code.
+    ciMetadata* mcp = method()->ensure_method_counters();
+    assert(mcp != nullptr, "CompileBroker should create MethodCounters if it is missing");
+    const TypePtr* mc_type = TypeMetadataPtr::make(TypePtr::Constant, mcp, Type::Offset(0));
+    Node* mc = makecon(mc_type);
+
+    assert(MethodTrainingData::have_data(), "TrainingData should be present for AOT compilation");
+    methodHandle mh(Thread::current(), method()->get_Method());
+    MethodTrainingData* mtd = MethodTrainingData::find_fast(mh);
+    assert(mtd != nullptr, "AOT compiled method should have MethodTrainingData");
+    int64_t limit = mtd->invocation_count();
+    int step = InvocationCounter::count_increment;
+    int scaled_limit = step * scale_limit(limit);
+
+    // Count AOT compiled code invocations (use 32 bits because scaled limit fits into 32 bits)
+    intptr_t offset = in_bytes(MethodCounters::invocation_counter_offset());
+    Node* cnt_adr = off_heap_plus_addr(mc, offset);
+    Node* ctrl = control();
+    Node* cnt  = make_load(ctrl, cnt_adr, TypeInt::INT, T_INT, MemNode::unordered);
+    Node* incr = _gvn.transform(new AddINode(cnt, intcon(step)));
+    store_to_memory(ctrl, cnt_adr, incr, T_INT, MemNode::unordered);
+    // Preserve memory for Phi node below
+    Node* st_mem = MergeMemNode::make(map()->memory());
+    _gvn.set_type_bottom(st_mem);
+
+    Node* lim = intcon(scaled_limit);
+    Node* chk = _gvn.transform( new CmpINode(incr, lim) );
+    Node* tst = _gvn.transform( new BoolNode(chk, BoolTest::lt) );
+    IfNode* iff = create_and_map_if(control(), tst, PROB_ALWAYS, (float)limit);
+
+    RegionNode* result_rgn = new RegionNode(4);
+    record_for_igvn(result_rgn);
+
+    Node*  skip_call = _gvn.transform(new IfTrueNode(iff));
+    result_rgn->init_req(1, skip_call);
+
+    Node* in1_io  = i_o();
+    Node* in1_mem = st_mem;
+    // These two phis are pre-filled with copies of the fast IO and Memory
+    Node* io_phi   = PhiNode::make(result_rgn, in1_io,  Type::ABIO);
+    Node* mem_phi  = PhiNode::make(result_rgn, in1_mem, Type::MEMORY, TypePtr::BOTTOM);
+
+    Node* needs_call = _gvn.transform(new IfFalseNode(iff));
+    set_control(needs_call);
+
+    // InvocationCounter::carry_mask is private, calculate it from step
+    int carry_bits = step - 1;
+    Node* recomp_bit = intcon(carry_bits);
+    Node* rbit = _gvn.transform( new AndINode(incr, recomp_bit) );
+    Node* chk2 = _gvn.transform( new CmpINode(rbit, intcon(0)) );
+    Node* tst2 = _gvn.transform( new BoolNode(chk2, BoolTest::ne) );
+    IfNode* iff2 = create_and_map_if(control(), tst2, PROB_FAIR, COUNT_UNKNOWN);
+
+    Node*  skip_call2 = _gvn.transform(new IfTrueNode(iff2));
+    result_rgn->init_req(2, skip_call2);
+
+    Node* needs_call2 = _gvn.transform(new IfFalseNode(iff2));
+    set_control(needs_call2);
+
+    Node* new_val = _gvn.transform(new OrINode(incr, recomp_bit));
+    store_to_memory(control(), cnt_adr, new_val, T_INT, MemNode::unordered);
+
+    const TypePtr* m_type = TypeMetadataPtr::make(method());
+    Node* m = makecon(m_type);
+    make_runtime_call(RC_NO_LEAF | RC_UNCOMMON,
+                      OptoRuntime::compile_method_Type(),
+                      OptoRuntime::compile_method_Java(),
+                      "compile_method", TypePtr::BOTTOM, m);
+
+    // State before call
+    io_phi ->init_req(2, in1_io);
+    mem_phi->init_req(2, in1_mem);
+
+    // State after call
+    result_rgn->init_req(3, control());
+    io_phi ->init_req(3, i_o());
+    mem_phi->init_req(3, reset_memory());
+
+    set_all_memory( _gvn.transform(mem_phi) );
+    set_i_o(        _gvn.transform(io_phi) );
+    set_control(    _gvn.transform(result_rgn) );
+  }
+}
+
+#endif // INCLUDE_CDS
+
 //-----------------------------do_method_entry--------------------------------
 // Emit any code needed in the pseudo-block before BCI zero.
 // The main thing to do is lock the receiver of a synchronized method.
@@ -1310,7 +1461,7 @@ void Parse::do_method_entry() {
   // constructor to satisfy the memory model for strict fields.
   if (Arguments::is_valhalla_enabled() && method()->intrinsic_id() == vmIntrinsics::_Object_init) {
     Node* receiver_obj = local(0);
-    const TypeInstPtr* receiver_type = _gvn.type(receiver_obj)->isa_instptr();
+    const TypeInstPtr* receiver_type = _gvn.type(receiver_obj)->as_instptr();
     // If there's no exact type, check if the declared type has no implementors and add a dependency
     const TypeKlassPtr* klass_ptr = receiver_type->as_klass_type(/* try_for_exact= */ true);
     ciType* klass = klass_ptr->klass_is_exact() ? klass_ptr->exact_klass() : nullptr;
@@ -1347,7 +1498,7 @@ void Parse::do_method_entry() {
     for (int idx = 0; idx < max_locals; idx++) {
       Node* loc = local(idx);
       if (!loc->is_ValueType() &&
-          loc->bottom_type()->isa_oopptr() != nullptr &&
+          loc->bottom_type()->is_oopptr() &&
           !is_auto_boxed_primitive(loc)) { // ignore auto-boxed primitives
         _stress_rf_hook->add_req(loc);
       }
@@ -1425,7 +1576,7 @@ void Parse::do_method_entry() {
         Node* vt = ValueTypeNode::make_from_oop(this, parm, t->value_klass());
         replace_in_map(parm, vt);
       }
-    } else if (UseTypeSpeculation && (i == (arg_size - 1)) && depth() == 1 && method()->is_varargs() && t->isa_aryptr()) {
+    } else if (UseTypeSpeculation && (i == (arg_size - 1)) && depth() == 1 && method()->is_varargs() && t->is_aryptr()) {
       // Speculate on varargs Object array being the default array refined type. The assumption is
       // that a vararg method test(Object... o) is often called as test(o1, o2, o3). javac will
       // translate the call so that the caller will create a new default array of Object, put o1,
@@ -1433,7 +1584,7 @@ void Parse::do_method_entry() {
       // the method we are parsing is the top-level method of the compilation unit. Otherwise, if
       // it is truly called according to our assumption, we must know the exact type of the
       // argument because the allocation happens inside the compilation unit.
-      const TypePtr* spec_type = (t->speculative() != nullptr) ? t->speculative() : t->remove_speculative()->is_aryptr();
+      const TypePtr* spec_type = (t->speculative() != nullptr) ? t->speculative() : t->remove_speculative()->as_aryptr();
       ciSignature* method_signature = method()->signature();
       ciType* parm_citype = method_signature->type_at(method_signature->count() - 1);
       if (!parm_citype->is_obj_array_klass()) {
@@ -1447,14 +1598,16 @@ void Parse::do_method_entry() {
         continue;
       }
 
-      const TypePtr* improved_type = TypeOopPtr::make(TypePtr::BotPTR, Type::Offset::bottom, TypeOopPtr::InstanceBot, improved_spec_type->is_ptr());
-      improved_type = improved_type->join_speculative(t)->is_ptr();
+      const TypePtr* improved_type = TypeOopPtr::make(TypePtr::BotPTR, Type::Offset::bottom, TypeOopPtr::InstanceBot, improved_spec_type->as_ptr());
+      improved_type = improved_type->join_speculative(t)->as_ptr();
       if (improved_type != t) {
         Node* cast = _gvn.transform(new CheckCastPPNode(control(), parm, improved_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
         replace_in_map(parm, cast);
       }
     }
   }
+
+  CDS_ONLY( count_aot_code_calls(); )
 }
 
 //------------------------------init_blocks------------------------------------
@@ -1685,6 +1838,62 @@ void Parse::load_state_from(Block* block) {
   set_sp( block->start_sp());
 }
 
+// Aliases of the same early larval object can end up as different Phi nodes at
+// a control-flow merge. Canonicalize all live aliases in locals and stack slots
+// by their ciWrapper identity, ensuring that scalarization after '<init>' is
+// applied consistently to every alias of the same allocation.
+void Parse::canonicalize_early_larval_aliases() {
+  ResourceMark rm;
+  const JVMState* state = jvms();
+  const uint first = state->locoff();
+  const uint limit = state->stkoff() + sp();
+  MethodLivenessResult liveness;
+  bool liveness_computed = false;
+  using AliasHashTable = ResizeableHashTable<uint, Node*, AnyObj::RESOURCE_AREA, mtCompiler>;
+  AliasHashTable* aliases = nullptr;
+
+  // Iterate over all early larvals in locals and stack in the parser map
+  for (uint i = first; i < limit; i++) {
+    Node* value = map()->in(i);
+    if (value == top()) {
+      continue;
+    }
+    ciType* type;
+    const bool is_local = state->is_loc(i);
+    const int idx = is_local ? i - state->locoff() : i - state->stkoff();
+    if (is_local) {
+      type = block()->flow()->local_type_at(idx);
+    } else {
+      assert(state->is_stk(i), "must be an active stack slot");
+      type = block()->flow()->stack_type_at(idx);
+    }
+    if (!type->is_early_larval()) {
+      continue;
+    }
+    if (is_local) {
+      if (!liveness_computed) {
+        liveness = method()->raw_liveness_at_bci(block()->start());
+        liveness_computed = true;
+      }
+      // Exclude dead locals which may contain stale nodes
+      // or Phis of unrelated allocations.
+      if (!liveness.is_valid() || !liveness.at(idx)) {
+        continue;
+      }
+    }
+    assert(!value->is_ValueType() && _gvn.type(value)->isa_oopptr() != nullptr, "unexpected early larval");
+
+    if (aliases == nullptr) {
+      aliases = new AliasHashTable(4, MAX2(4u, limit - i));
+    }
+    // Same ciWrapper identity -> aliases of the same early larval object
+    bool created;
+    Node** canonical_alias = aliases->put_if_absent(type->ident(), value, &created);
+    if (!created && value != *canonical_alias) {
+      map()->set_req(i, *canonical_alias);
+    }
+  }
+}
 
 //-----------------------------record_state------------------------------------
 void Parse::Block::record_state(Parse* p) {
@@ -1783,7 +1992,7 @@ void Parse::do_one_block() {
     if (failing()) return;
 
     assert(!have_se || stopped() || failing() || (sp() - pre_bc_sp) == depth,
-           "incorrect depth prediction: sp=%d, pre_bc_sp=%d, depth=%d", sp(), pre_bc_sp, depth);
+           "incorrect depth prediction: bc=%s bci=%d, sp=%d, pre_bc_sp=%d, depth=%d", Bytecodes::name(bc()), bci(), sp(), pre_bc_sp, depth);
 
     do_exceptions();
 
@@ -2296,7 +2505,7 @@ int Parse::Block::add_new_path() {
 // unsound, as we may replace a Phi which has a narrower Type with one of its input which has a
 // wider Type.
 Node* Parse::maybe_narrow_phi_input(Node* ctrl, Node* n, const Type* phi_type) {
-  if (phi_type->isa_oopptr() != nullptr && !_gvn.type(n)->higher_equal(phi_type)) {
+  if (phi_type->is_oopptr() && !_gvn.type(n)->higher_equal(phi_type)) {
     n = new CheckCastPPNode(ctrl, n, phi_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing);
     n = _gvn.transform(n);
   }
@@ -2422,7 +2631,7 @@ PhiNode *Parse::ensure_memory_phi(int idx, bool nocreate) {
 // class need finalization.
 void Parse::call_register_finalizer() {
   Node* receiver = local(0);
-  assert(receiver != nullptr && receiver->bottom_type()->isa_instptr() != nullptr,
+  assert(receiver != nullptr && receiver->bottom_type()->is_instptr(),
          "must have non-null instance type");
 
   const TypeInstPtr *tinst = receiver->bottom_type()->isa_instptr();
@@ -2489,6 +2698,9 @@ void Parse::call_register_finalizer() {
 
 // Add check to deoptimize once holder klass is fully initialized.
 void Parse::clinit_deopt() {
+  if (method()->holder()->is_initialized()) {
+    return; // in case do_clinit_barriers() is true
+  }
   assert(C->has_method(), "only for normal compilations");
   assert(depth() == 1, "only for main compiled method");
   assert(is_normal_parse(), "no barrier needed on osr entry");
@@ -2544,7 +2756,7 @@ void Parse::return_current(Node* value) {
     // Insert reachability fences for all oop arguments at the end of the method.
     for (uint i = 1; i < _stress_rf_hook->req(); i++) {
       Node* referent = _stress_rf_hook->in(i);
-      assert(referent->bottom_type()->isa_oopptr(), "%s", Type::str(referent->bottom_type()));
+      assert(referent->bottom_type()->is_oopptr(), "%s", Type::str(referent->bottom_type()));
       insert_reachability_fence(referent);
     }
   }

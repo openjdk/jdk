@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public:
 };
 
 void PrintProperties::print_alias_properties(Node* node) {
-  const TypePtr* adr_type = node->adr_type();
+  const TypePtr* adr_type = node->in_adr_type();
   Compile* C = _printer->C;
   if (adr_type != nullptr && C->have_alias_type(adr_type)) {
     Compile::AliasType* at = C->alias_type(adr_type);
@@ -611,10 +611,15 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         }
       }
     }
-    if (n->adr_type() != nullptr) {
+    if (const TypePtr* out = n->out_adr_type(); out != nullptr) {
       stringStream adr_type_stream;
-      n->adr_type()->dump_on(&adr_type_stream);
-      print_prop("adr_type", adr_type_stream.freeze());
+      out->dump_on(&adr_type_stream);
+      print_prop("out_adr_type", adr_type_stream.freeze());
+    }
+    if (const TypePtr* in = n->in_adr_type(); in != nullptr) {
+      stringStream adr_type_stream;
+      in->dump_on(&adr_type_stream);
+      print_prop("in_adr_type", adr_type_stream.freeze());
     }
 
     if (C->cfg() != nullptr) {
@@ -695,18 +700,15 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     stringStream s2(buffer, sizeof(buffer) - 1);
 
     node->dump_spec(&s2);
-    if (t != nullptr && (t->isa_instptr() || t->isa_instklassptr())) {
-      const TypeInstPtr  *toop = t->isa_instptr();
-      const TypeInstKlassPtr *tkls = t->isa_instklassptr();
-      if (toop) {
+    if (t != nullptr && (t->is_instptr() || t->is_instklassptr())) {
+      if (t->is_instptr()) {
         s2.print("  Oop:");
-      } else if (tkls) {
+      } else {
         s2.print("  Klass:");
       }
       t->dump_on(&s2);
     } else if( t == Type::MEMORY ) {
-      s2.print("  Memory:");
-      MemNode::dump_adr_type(node->adr_type(), &s2);
+      s2.print("  Memory");
     }
 
     assert(s2.size() < sizeof(buffer), "size in range");
@@ -725,8 +727,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       print_prop(short_name, "F");
     } else if ((node->is_Con() && node->is_Type()) || node->is_Proj()) {
 
-      if (t->base() == Type::Int && t->is_int()->is_con()) {
-        const TypeInt *typeInt = t->is_int();
+      if (t->base() == Type::Int && t->as_int()->is_con()) {
+        const TypeInt* typeInt = t->as_int();
         assert(typeInt->is_con(), "must be constant");
         jint value = typeInt->get_con();
 
@@ -739,8 +741,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         }
       } else if (t == Type::TOP) {
         print_prop(short_name, "^");
-      } else if (t->base() == Type::Long && t->is_long()->is_con()) {
-        const TypeLong *typeLong = t->is_long();
+      } else if (t->base() == Type::Long && t->as_long()->is_con()) {
+        const TypeLong* typeLong = t->as_long();
         assert(typeLong->is_con(), "must be constant");
         jlong value = typeLong->get_con();
 
@@ -752,7 +754,7 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
           print_prop(short_name, "L");
         }
       } else if (t->base() == Type::KlassPtr || t->base() == Type::InstKlassPtr || t->base() == Type::AryKlassPtr) {
-        const TypeKlassPtr *typeKlass = t->is_klassptr();
+        const TypeKlassPtr* typeKlass = t->as_klassptr();
         print_prop(short_name, "CP");
       } else if (t->base() == Type::Control) {
         print_prop(short_name, "C");
@@ -763,7 +765,7 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       } else if (t->base() == Type::Return_Address) {
         print_prop(short_name, "RA");
       } else if (t->base() == Type::AnyPtr) {
-        if (t->is_ptr()->ptr() == TypePtr::Null) {
+        if (t->as_ptr()->ptr() == TypePtr::Null) {
           print_prop(short_name, "Null");
         } else {
           print_prop(short_name, "P");
@@ -772,7 +774,7 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         print_prop(short_name, "RP");
       } else if (t->base() == Type::AryPtr) {
         print_prop(short_name, "AP");
-      } else if (t->base() == Type::NarrowOop && t->is_narrowoop() == TypeNarrowOop::NULL_PTR) {
+      } else if (t->base() == Type::NarrowOop && t->as_narrowoop() == TypeNarrowOop::NULL_PTR) {
         print_prop(short_name, "Null");
       }
     }
@@ -906,7 +908,7 @@ void IdealGraphPrinter::print_field(const Node* node) {
 }
 
 ciField* IdealGraphPrinter::get_field(const Node* node) {
-  const TypePtr* adr_type = node->adr_type();
+  const TypePtr* adr_type = node->in_adr_type();
   Compile::AliasType* atp = nullptr;
   if (C->have_alias_type(adr_type)) {
     atp = C->alias_type(adr_type);
@@ -929,7 +931,7 @@ ciField* IdealGraphPrinter::find_source_field_of_array_access(const Node* node, 
   }
 
   do {
-    if (node->adr_type() != nullptr && node->adr_type()->isa_aryptr()) {
+    if (const TypePtr* in = node->in_adr_type(); in != nullptr && in->is_aryptr()) {
       // Only process array accesses. Pattern match to find actual field source access.
       node = get_load_node(node);
       if (node != nullptr) {

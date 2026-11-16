@@ -33,23 +33,18 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-PartialArrayState::PartialArrayState(oop src, oop dst,
+PartialArrayState::PartialArrayState(objArrayOop array,
                                      size_t index, size_t length,
-                                     size_t chunk_size,
-                                     size_t initial_refcount)
-  : _source(src),
-    _destination(dst),
+                                     size_t chunk_size)
+  : _array(array),
     _length(length),
     _chunk_size(chunk_size),
     _index(index),
-    _refcount(initial_refcount)
+    _num_remaining_chunks((length - index) / chunk_size)
 {
-  assert(index <= length, "precondition");
-}
-
-void PartialArrayState::add_references(size_t count) {
-  size_t new_count = _refcount.add_then_fetch(count, memory_order_relaxed);
-  assert(new_count >= count, "reference count overflow");
+  assert(index < length, "precondition");
+  assert(chunk_size > 0, "precondition");
+  assert((length - index) % chunk_size == 0, "whole chunks remain");
 }
 
 class PartialArrayStateAllocator::FreeListEntry {
@@ -62,81 +57,42 @@ public:
   NONCOPYABLE(FreeListEntry);
 };
 
-PartialArrayStateAllocator::PartialArrayStateAllocator(PartialArrayStateManager* manager)
-  : _manager(manager),
-    _free_list(),
-    _arena(manager->register_allocator())
+PartialArrayStateAllocator::PartialArrayStateAllocator()
+  : _free_list(),
+    _arena(mtGC)
 {}
 
-PartialArrayStateAllocator::~PartialArrayStateAllocator() {
-  // We don't need to clean up the free list.  Deallocating the entries
-  // does nothing, since we're using arena allocation.  Instead, leave it
-  // to the manager to release the memory.
-  // Inform the manager that an allocator is no longer in use.
-  _manager->release_allocator();
+void PartialArrayStateAllocator::reset() {
+  _free_list = nullptr;
+  // Restore the arena to its freshly constructed state, i.e. destructor-then-constructor.
+  _arena.~Arena();
+  ::new (&_arena) Arena(mtGC);
 }
 
-PartialArrayState* PartialArrayStateAllocator::allocate(oop src, oop dst,
+PartialArrayState* PartialArrayStateAllocator::allocate(objArrayOop array,
                                                         size_t index,
                                                         size_t length,
-                                                        size_t chunk_size,
-                                                        size_t initial_refcount) {
+                                                        size_t chunk_size) {
   void* p;
   FreeListEntry* head = _free_list;
   if (head == nullptr) {
-    p = NEW_ARENA_OBJ(_arena, PartialArrayState);
+    p = NEW_ARENA_OBJ(&_arena, PartialArrayState);
   } else {
     _free_list = head->_next;
     head->~FreeListEntry();
     p = head;
   }
-  return ::new (p) PartialArrayState(src, dst, index, length, chunk_size, initial_refcount);
+  return ::new (p) PartialArrayState(array, index, length, chunk_size);
 }
 
 void PartialArrayStateAllocator::release(PartialArrayState* state) {
-  size_t refcount = state->_refcount.sub_then_fetch(1u, memory_order_release);
-  if (refcount != 0) {
-    assert(refcount + 1 != 0, "refcount underflow");
+  size_t num_remaining_chunks = state->_num_remaining_chunks.sub_then_fetch(1u, memory_order_release);
+  if (num_remaining_chunks != 0) {
+    assert(num_remaining_chunks + 1 != 0, "remaining chunk count underflow");
   } else {
     OrderAccess::acquire();
     // Don't need to call destructor; can't if not destructible.
     static_assert(!std::is_destructible<PartialArrayState>::value);
     _free_list = ::new (state) FreeListEntry(_free_list);
   }
-}
-
-PartialArrayStateManager::PartialArrayStateManager(uint max_allocators)
-  : _arenas(NEW_C_HEAP_ARRAY(Arena, max_allocators, mtGC)),
-    _max_allocators(max_allocators),
-    _registered_allocators(0)
-    DEBUG_ONLY(COMMA _released_allocators(0))
-{}
-
-PartialArrayStateManager::~PartialArrayStateManager() {
-  reset();
-  FREE_C_HEAP_ARRAY(_arenas);
-}
-
-Arena* PartialArrayStateManager::register_allocator() {
-  uint idx = _registered_allocators.fetch_then_add(1u, memory_order_relaxed);
-  assert(idx < _max_allocators, "exceeded configured max number of allocators");
-  return ::new (&_arenas[idx]) Arena(mtGC);
-}
-
-#ifdef ASSERT
-void PartialArrayStateManager::release_allocator() {
-  uint old = _released_allocators.fetch_then_add(1u, memory_order_relaxed);
-  assert(old < _registered_allocators.load_relaxed(), "too many releases");
-}
-#endif // ASSERT
-
-void PartialArrayStateManager::reset() {
-  uint count = _registered_allocators.load_relaxed();
-  assert(count == _released_allocators.load_relaxed(),
-         "some allocators still active");
-  for (uint i = 0; i < count; ++i) {
-    _arenas[i].~Arena();
-  }
-  _registered_allocators.store_relaxed(0u);
-  DEBUG_ONLY(_released_allocators.store_relaxed(0u);)
 }

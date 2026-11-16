@@ -34,12 +34,12 @@ import java.io.PrintStream;
  * @test
  * @key headful
  * @bug 4379403
- * @run main/othervm DumpOnKey false
- * @run main/othervm DumpOnKey -Dsun.awt.nativedebug=true true
- * @run main/othervm DumpOnKey -Dsun.awt.nativedebug=true -Dawtdebug.on=true true
- * @run main/othervm DumpOnKey -Dsun.awt.nativedebug=false -Dawtdebug.on=true false
- * @run main/othervm DumpOnKey -Dsun.awt.nativedebug=true -Dawtdebug.on=false false
- * @run main/othervm DumpOnKey -Dsun.awt.nativedebug=false -Dawtdebug.on=false false
+ * @run main/othervm ${test.main.class} false
+ * @run main/othervm -Dsun.awt.nativedebug=true ${test.main.class} true
+ * @run main/othervm -Dsun.awt.nativedebug=true -Dawtdebug.on=true ${test.main.class} true
+ * @run main/othervm -Dsun.awt.nativedebug=false -Dawtdebug.on=true ${test.main.class} false
+ * @run main/othervm -Dsun.awt.nativedebug=true -Dawtdebug.on=false ${test.main.class} false
+ * @run main/othervm -Dsun.awt.nativedebug=false -Dawtdebug.on=false ${test.main.class} false
  */
 public final class DumpOnKey {
 

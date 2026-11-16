@@ -41,15 +41,16 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/flatArrayKlass.hpp"
 #include "oops/flatArrayOop.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
+#include "runtime/fieldDescriptor.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -62,6 +63,7 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "services/diagnosticWorkers.hpp"
 #include "services/heapDumper.hpp"
 #include "services/heapDumperCompression.hpp"
 #include "services/threadService.hpp"
@@ -842,33 +844,51 @@ public:
   private:
     char _sigs_start;
     int _offset;
-    ValueKlass* _value_klass; // nullptr for heap object
-    LayoutKind _layout_kind;
+    ValueKlass* _value_klass; // nullptr for non-flat fields
+    FlatLayoutSlot _flat_layout_slot;
+
+    template<typename FieldStreamType>
+    static ValueFieldInfo* calc_value_field_info(const FieldStreamType& field) {
+      precond(field.is_flat());
+      const fieldDescriptor& fd = field.field_descriptor();
+      InstanceKlass* holder_klass = fd.field_holder();
+      return holder_klass->value_field_info_adr(fd.index());
+    }
+
+    template<typename FieldStreamType>
+    static ValueKlass* calc_value_klass(const FieldStreamType& field) {
+      if (field.is_flat()) {
+        return calc_value_field_info(field)->klass();
+      } else {
+        return nullptr;
+      }
+    }
+
+    template<typename FieldStreamType>
+    static FlatLayoutSlot calc_flat_layout_slot(const FieldStreamType& field) {
+      if (field.is_flat()) {
+        return FlatLayoutSlot(calc_value_field_info(field)->flat_layout());
+      } else {
+        return FlatLayoutSlot();
+      }
+    }
+
   public:
-    FieldDescriptor(): _sigs_start(0), _offset(0), _value_klass(nullptr), _layout_kind(LayoutKind::UNKNOWN) {}
+    FieldDescriptor(): _sigs_start(0), _offset(0), _value_klass(nullptr), _flat_layout_slot() {}
 
     template<typename FieldStreamType>
     FieldDescriptor(const FieldStreamType& field)
-      : _sigs_start(field.signature()->char_at(0)), _offset(field.offset())
-    {
-      if (field.is_flat()) {
-        const fieldDescriptor& fd = field.field_descriptor();
-        InstanceKlass* holder_klass = fd.field_holder();
-        ValueFieldInfo* vfi = holder_klass->value_field_info_adr(fd.index());
-        _value_klass = vfi->klass();
-        _layout_kind = vfi->kind();
-      } else {
-        _value_klass = nullptr;
-        _layout_kind = LayoutKind::REFERENCE;
-      }
-    }
+      : _sigs_start(field.signature()->char_at(0)),
+        _offset(field.offset()),
+        _value_klass(calc_value_klass(field)),
+        _flat_layout_slot(calc_flat_layout_slot(field)) {}
 
     char sig_start() const            { return _sigs_start; }
     int offset() const                { return _offset; }
     bool is_flat() const              { return _value_klass != nullptr; }
     ValueKlass* value_klass() const   { return _value_klass; }
-    LayoutKind layout_kind() const    { return _layout_kind; }
-    bool is_flat_nullable() const     { return LayoutKindHelper::is_nullable_flat(_layout_kind); }
+    FlatLayout flat_layout() const    { return _flat_layout_slot.get_if(is_flat()); }
+    bool is_flat_nullable() const     { return is_flat() && flat_layout().is_nullable(); }
   };
 
 private:
@@ -1482,7 +1502,7 @@ void DumperSupport::dump_object_array(AbstractDumpWriter* writer, objArrayOop ar
     FlatArrayKlass* fak = farray->klass();
 
     ValueKlass* vk = fak->element_klass();
-    bool need_null_check = LayoutKindHelper::is_nullable_flat(fak->layout_kind());
+    bool need_null_check = fak->flat_layout().is_nullable();
 
     for (int index = 0; index < length; index++) {
       address addr = (address)farray->value_at_addr(index, fak->layout_helper());
@@ -2254,7 +2274,7 @@ class DumperController : public CHeapObj<mtServiceability> {
 
  public:
    DumperController(uint number) :
-     // _lock and _global_writer_lock are used for synchronization between GC worker threads inside safepoint,
+     // _lock and _global_writer_lock are used for synchronization between diagnostic worker threads inside safepoint,
      // so we lock with _no_safepoint_check_flag.
      // signal_start() acquires _lock when global writer is locked,
      // its rank must be less than _global_writer_lock rank.
@@ -2558,7 +2578,8 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
   }
   int dump_seq()           { return _dump_seq; }
   bool is_parallel_dump()  { return _num_dumper_threads > 1; }
-  void prepare_parallel_dump(WorkerThreads* workers);
+  // Returns the worker pool for a parallel dump or nullptr for a serial dump.
+  WorkerThreads* prepare_parallel_dump();
 
   VMOp_Type type() const { return VMOp_HeapDumper; }
   virtual bool doit_prologue();
@@ -2601,14 +2622,21 @@ bool VM_HeapDumper::doit_prologue() {
   return VM_GC_Operation::doit_prologue();
 }
 
-void VM_HeapDumper::prepare_parallel_dump(WorkerThreads* workers) {
-  uint num_active_workers = workers != nullptr ? workers->active_workers() : 0;
-  uint num_requested_dump_threads = _num_dumper_threads;
-  // check if we can dump in parallel based on requested and active threads
-  if (num_active_workers <= 1 || num_requested_dump_threads <= 1) {
+WorkerThreads* VM_HeapDumper::prepare_parallel_dump() {
+  const uint num_requested_dump_threads = _num_dumper_threads;
+  uint num_active_workers = 0;
+  WorkerThreads* workers = nullptr;
+
+  if (Universe::heap()->supports_parallel_object_iteration() && _num_dumper_threads > 1) {
+    num_active_workers = DiagnosticWorkers::try_and_set_active_workers(_num_dumper_threads);
+  }
+
+  // check if we can dump in parallel based on active threads
+  if (num_active_workers <= 1) {
     _num_dumper_threads = 1;
   } else {
-    _num_dumper_threads = clamp(num_requested_dump_threads, 2U, num_active_workers);
+    workers = DiagnosticWorkers::workers();
+    _num_dumper_threads = num_active_workers;
   }
   _dumper_controller = new (std::nothrow) DumperController(_num_dumper_threads);
   bool can_parallel = _num_dumper_threads > 1;
@@ -2616,6 +2644,7 @@ void VM_HeapDumper::prepare_parallel_dump(WorkerThreads* workers) {
                      "actual dump threads %u, parallelism %s",
                      num_requested_dump_threads, num_active_workers,
                      _num_dumper_threads, can_parallel ? "true" : "false");
+  return workers;
 }
 
 // The VM operation that dumps the heap. The dump consists of the following
@@ -2657,8 +2686,7 @@ void VM_HeapDumper::doit() {
     }
   }
 
-  WorkerThreads* workers = ch->safepoint_workers();
-  prepare_parallel_dump(workers);
+  WorkerThreads* workers = prepare_parallel_dump();
 
   if (!is_parallel_dump()) {
     work(VMDumperId);

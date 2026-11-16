@@ -40,23 +40,46 @@ static inline uint rand_sampling_period_ms() {
 }
 
 class ThreadSampler;
+class nmethod;
+
+class Candidate : public StackObj {
+ private:
+  nmethod* _nm;
+  int _compile_id;
+  int _sample_count;
+
+ public:
+  Candidate() : _nm(nullptr), _compile_id(0), _sample_count(0) {}
+  Candidate(nmethod* nm, int compile_id, int samples_count) : _nm(nm),
+      _compile_id(compile_id), _sample_count(samples_count) {}
+
+  nmethod* get_nmethod() const {
+    return _nm;
+  }
+
+  int get_compile_id() const {
+    return _compile_id;
+  }
+
+  int get_sample_count() const {
+    return _sample_count;
+  }
+};
 
 class Candidates : public StackObj {
  private:
-  GrowableArray<Pair<nmethod*, int>> _candidates;
+  GrowableArray<Candidate> _candidates;
   int _hot_sample_count;
   int _non_profiled_sample_count;
 
  public:
   Candidates(ThreadSampler& sampler);
 
-  void add_candidate(nmethod* nm, int count);
-  void add_hot_sample_count(int count);
-  void add_non_profiled_sample_count(int count);
+  void move_samples_to_hot(int count);
   void sort();
 
   bool has_candidates();
-  nmethod* get_candidate();
+  Candidate get_candidate();
   double get_hot_sample_percent();
 };
 
@@ -85,10 +108,15 @@ class ThreadSampler : public StackObj {
   static const int INITIAL_TABLE_SIZE = 109;
 
   // Table of nmethods found during profiling with sample count
-  ResizeableHashTable<nmethod*, int, AnyObj::C_HEAP, mtInternal> _samples;
+  // hash table: key = compile_id, value = Pair<nmethod*, sample_count>
+  ResizeableHashTable<int, Pair<nmethod*, int>, AnyObj::C_HEAP, mtInternal> _samples;
+
+  int _hot_sample_count;
+  int _non_profiled_sample_count;
 
  public:
-  ThreadSampler() : _samples(INITIAL_TABLE_SIZE, HotCodeSampleSeconds * 1000 / HotCodeMaxSamplingMs) {}
+  ThreadSampler() : _samples(INITIAL_TABLE_SIZE, HotCodeSampleSeconds * 1000 / HotCodeMaxSamplingMs), _hot_sample_count(0),
+      _non_profiled_sample_count(0) {}
 
   // Iterate over and sample all Java threads. Return false if sampling was interrupted by JFR sampling.
   bool sample_all_java_threads();
@@ -97,6 +125,14 @@ class ThreadSampler : public StackObj {
   template<typename Function>
   void iterate_samples(Function func) {
     _samples.iterate_all(func);
+  }
+
+  int hot_sample_count() const {
+    return _hot_sample_count;
+  }
+
+  int non_profiled_sample_count() const {
+    return _non_profiled_sample_count;
   }
 };
 

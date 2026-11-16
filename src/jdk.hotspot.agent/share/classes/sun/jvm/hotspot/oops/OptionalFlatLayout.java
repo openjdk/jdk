@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+package sun.jvm.hotspot.oops;
+
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.types.Field;
+import sun.jvm.hotspot.utilities.*;
+
+public class OptionalFlatLayout extends VMObject {
+  private static CIntegerField isFlatField;
+  private static Field flatLayoutField;
+
+  static {
+    VM.registerVMInitializedObserver(new Observer() {
+      public void update(Observable o, Object data) {
+        initialize(VM.getVM().getTypeDataBase());
+      }
+    });
+  }
+
+  public OptionalFlatLayout(Address addr) {
+    super(addr);
+  }
+
+  private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
+    Type t = db.lookupType("OptionalFlatLayout");
+
+    isFlatField = t.getCIntegerField("_is_flat");
+    flatLayoutField = t.getField("_flat_layout");
+
+  }
+
+  public boolean getIsFlat() {
+    return isFlatField.getValue(addr) != 0;
+  }
+
+  public FlatLayoutSlot getFlatLayoutSlot() {
+    return new FlatLayoutSlot(addr.addOffsetTo(flatLayoutField.getOffset()));
+  }
+
+  public FlatLayout getFlatLayout() {
+    if (getIsFlat()) {
+      return getFlatLayoutSlot().getFlatLayout();
+    } else {
+      throw new RuntimeException("Layout is not flat");
+    }
+  }
+}

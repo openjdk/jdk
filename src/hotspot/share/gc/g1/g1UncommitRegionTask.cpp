@@ -122,7 +122,7 @@ void G1UncommitRegionTask::execute() {
 
   // Reschedule if there are more regions to uncommit, otherwise
   // change state to inactive.
-  if (g1h->has_uncommittable_regions()) {
+  if (g1h->has_pending_uncommit_regions()) {
     // Delay to avoid starving application.
     schedule(UncommitTaskDelayMs);
   } else {

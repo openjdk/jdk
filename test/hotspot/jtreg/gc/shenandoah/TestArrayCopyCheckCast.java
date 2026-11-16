@@ -24,17 +24,17 @@
  */
 
 /*
- * @test id=default
+ * @test id=satb
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:TieredStopAtLevel=0 -Xmx16m TestArrayCopyCheckCast
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:TieredStopAtLevel=0 -Xmx16m -XX:ShenandoahGCMode=satb ${test.main.class}
  */
 
 /*
  * @test id=generational
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:TieredStopAtLevel=0 -Xmx16m TestArrayCopyCheckCast -XX:ShenandoahGCMode=generational
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:TieredStopAtLevel=0 -Xmx16m -XX:ShenandoahGCMode=generational ${test.main.class}
  */
 public class TestArrayCopyCheckCast {
 

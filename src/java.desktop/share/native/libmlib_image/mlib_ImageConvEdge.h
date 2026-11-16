@@ -47,14 +47,6 @@ mlib_status mlib_ImageConvClearEdge(mlib_image     *dst,
                                     const mlib_s32 *color,
                                     mlib_s32       cmask);
 
-mlib_status mlib_ImageConvClearEdge_Fp(mlib_image     *img,
-                                       mlib_s32       dx_l,
-                                       mlib_s32       dx_r,
-                                       mlib_s32       dy_t,
-                                       mlib_s32       dy_b,
-                                       const mlib_d64 *color,
-                                       mlib_s32       cmask);
-
 mlib_status mlib_ImageConvZeroEdge(mlib_image *dst,
                                    mlib_s32   dx_l,
                                    mlib_s32   dx_r,

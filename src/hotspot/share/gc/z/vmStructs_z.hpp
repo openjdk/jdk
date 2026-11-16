@@ -90,7 +90,7 @@ typedef ZValue<ZPerNUMAStorage, ZPartition> ZPerNUMAZPartition;
   nonstatic_field(ZPage,                        _virtual,             const ZVirtualMemory)          \
   volatile_nonstatic_field(ZPage,               _top,                 zoffset_end)                   \
                                                                                                      \
-  nonstatic_field(ZPageAllocator,               _max_capacity,        const size_t)                  \
+  nonstatic_field(ZPageAllocator,               _static_max_capacity, const size_t)                  \
   nonstatic_field(ZPageAllocator,               _partitions,          ZPerNUMAZPartition)            \
                                                                                                      \
   static_field(ZNUMA,                           _count,               uint32_t)                      \

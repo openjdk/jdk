@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
+ * @modules java.base/jdk.internal.misc
  * @build AOTLinkedLambdas
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 AOTLinkedLambdasApp InitTracker
@@ -41,6 +42,7 @@
 
 import java.util.function.Supplier;
 import static java.util.stream.Collectors.*;
+import jdk.internal.misc.Unsafe;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.SimpleCDSAppTester;
@@ -56,6 +58,7 @@ public class AOTLinkedLambdas {
             .classpath(appJar)
             .addVmArgs("-esa", // see JDK-8340836
                        "-XX:+AOTClassLinking",
+                       "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                        "-Xlog:aot+resolve=trace",
                        "-Xlog:aot+class=debug",
                        "-Xlog:cds+class=debug")
@@ -206,6 +209,13 @@ class AOTLinkedLambdasApp {
         // ID2 - has <clinit>, but no default method
         ID2 id2 = () -> {};
         id2.doit();
+        // ID1 must be initialized even though the intervening ID2 is not.
+        if (Unsafe.getUnsafe().shouldBeInitialized(ID1.class)) {
+            throw new RuntimeException("ID1 should have been initialized");
+        }
+        if (!Unsafe.getUnsafe().shouldBeInitialized(ID2.class)) {
+            throw new RuntimeException("ID2 should not have been initialized");
+        }
         InitTracker.assertOrder("InitTracker, FooB, BarB, FooA, BarA, IA, IC");
         System.out.println(ID2._dummy);
         InitTracker.assertOrder("InitTracker, FooB, BarB, FooA, BarA, IA, IC, ID2");

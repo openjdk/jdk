@@ -31,7 +31,6 @@
 #include "oops/layoutKind.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -148,7 +147,7 @@ bool ciArray::is_null_free() const {
 bool ciArray::is_atomic() const {
   VM_ENTRY_MARK;
   arrayOop oop = get_arrayOop();
-  return !oop->is_flatArray() || LayoutKindHelper::is_atomic_flat(FlatArrayKlass::cast(oop->klass())->layout_kind());
+  return !oop->is_flatArray() || FlatArrayKlass::cast(oop->klass())->flat_layout().is_atomic();
 }
 
 // ------------------------------------------------------------------
