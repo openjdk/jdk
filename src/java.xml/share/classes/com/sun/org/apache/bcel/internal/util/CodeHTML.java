@@ -28,6 +28,7 @@ import java.util.BitSet;
 
 import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.classfile.Attribute;
+import com.sun.org.apache.bcel.internal.classfile.ClassFormatException;
 import com.sun.org.apache.bcel.internal.classfile.Code;
 import com.sun.org.apache.bcel.internal.classfile.CodeException;
 import com.sun.org.apache.bcel.internal.classfile.ConstantFieldref;
@@ -75,27 +76,27 @@ final class CodeHTML {
     /**
      * Disassemble a stream of byte codes and return the string representation.
      *
-     * @param stream data input stream
-     * @return String representation of byte code
+     * @param stream data input stream.
+     * @return String representation of byte code.
      */
     private String codeToHTML(final ByteSequence bytes, final int methodNumber) throws IOException {
         final short opcode = (short) bytes.readUnsignedByte();
         String name;
-        String signature;
+        final String signature;
         int defaultOffset = 0;
-        int low;
-        int high;
+        final int low;
+        final int high;
         int index;
-        int classIndex;
-        int vindex;
-        int constant;
-        int[] jumpTable;
+        final int classIndex;
+        final int vindex;
+        final int constant;
+        final int[] jumpTable;
         int noPadBytes = 0;
-        int offset;
+        final int offset;
         final StringBuilder buf = new StringBuilder(256); // CHECKSTYLE IGNORE MagicNumber
         buf.append("<TT>").append(Const.getOpcodeName(opcode)).append("</TT></TD><TD>");
         /*
-         * Special case: Skip (0-3) padding bytes, i.e., the following bytes are 4-byte-aligned
+         * Special case: Skip (0-3) padding bytes, that is, the following bytes are 4-byte-aligned
          */
         if (opcode == Const.TABLESWITCH || opcode == Const.LOOKUPSWITCH) {
             final int remainder = bytes.getIndex() % 4;
@@ -112,9 +113,16 @@ final class CodeHTML {
             high = bytes.readInt();
             offset = bytes.getIndex() - 12 - noPadBytes - 1;
             defaultOffset += offset;
+            // Each jump table entry is a 4 byte offset, so a well-formed table cannot declare more entries than fit
+            // into the remaining byte code; checking before allocating keeps a crafted low/high pair from forcing a
+            // huge allocation.
+            final long jumpTableLength = (long) high - low + 1;
+            if (jumpTableLength < 0 || jumpTableLength * 4 > bytes.available()) {
+                throw new ClassFormatException("Invalid TABLESWITCH: low = " + low + ", high = " + high + " but only " + bytes.available() + " bytes remain");
+            }
             buf.append("<TABLE BORDER=1><TR>");
             // Print switch indices in first row (and default)
-            jumpTable = new int[high - low + 1];
+            jumpTable = new int[(int) jumpTableLength];
             for (int i = 0; i < jumpTable.length; i++) {
                 jumpTable[i] = offset + bytes.readInt();
                 buf.append("<TH>").append(low + i).append("</TH>");
@@ -133,6 +141,10 @@ final class CodeHTML {
         case Const.LOOKUPSWITCH:
             final int npairs = bytes.readInt();
             offset = bytes.getIndex() - 8 - noPadBytes - 1;
+            // Each match-offset pair is 8 bytes, see the TABLESWITCH check above.
+            if (npairs < 0 || (long) npairs * 8 > bytes.available()) {
+                throw new ClassFormatException("Invalid LOOKUPSWITCH: npairs = " + npairs + " but only " + bytes.available() + " bytes remain");
+            }
             jumpTable = new int[npairs];
             defaultOffset += offset;
             buf.append("<TABLE BORDER=1><TR>");
@@ -198,7 +210,7 @@ final class CodeHTML {
         case Const.LSTORE:
         case Const.RET:
             if (wide) {
-                vindex = bytes.readShort();
+                vindex = bytes.readUnsignedShort();
                 wide = false; // Clear flag
             } else {
                 vindex = bytes.readUnsignedByte();
@@ -226,7 +238,7 @@ final class CodeHTML {
         case Const.GETSTATIC:
         case Const.PUTFIELD:
         case Const.PUTSTATIC:
-            index = bytes.readShort();
+            index = bytes.readUnsignedShort();
             final ConstantFieldref c1 = constantPool.getConstant(index, Const.CONSTANT_Fieldref, ConstantFieldref.class);
             classIndex = c1.getClassIndex();
             name = constantPool.getConstantString(classIndex, Const.CONSTANT_Class);
@@ -234,10 +246,10 @@ final class CodeHTML {
             index = c1.getNameAndTypeIndex();
             final String fieldName = constantPool.constantToString(index, Const.CONSTANT_NameAndType);
             if (name.equals(className)) { // Local field
-                buf.append("<A HREF=\"").append(className).append("_methods.html#field").append(fieldName).append("\" TARGET=Methods>").append(fieldName)
-                    .append("</A>\n");
+                buf.append("<A HREF=\"").append(className).append("_methods.html#field").append(Class2HTML.toHTML(fieldName)).append("\" TARGET=Methods>")
+                    .append(Class2HTML.toHTML(fieldName)).append("</A>\n");
             } else {
-                buf.append(constantHtml.referenceConstant(classIndex)).append(".").append(fieldName);
+                buf.append(constantHtml.referenceConstant(classIndex)).append(".").append(Class2HTML.toHTML(fieldName));
             }
             break;
         /*
@@ -246,7 +258,7 @@ final class CodeHTML {
         case Const.CHECKCAST:
         case Const.INSTANCEOF:
         case Const.NEW:
-            index = bytes.readShort();
+            index = bytes.readUnsignedShort();
             buf.append(constantHtml.referenceConstant(index));
             break;
         /*
@@ -257,8 +269,8 @@ final class CodeHTML {
         case Const.INVOKEVIRTUAL:
         case Const.INVOKEINTERFACE:
         case Const.INVOKEDYNAMIC:
-            final int mIndex = bytes.readShort();
-            String str;
+            final int mIndex = bytes.readUnsignedShort();
+            final String str;
             if (opcode == Const.INVOKEINTERFACE) { // Special treatment needed
                 bytes.readUnsignedByte(); // Redundant
                 bytes.readUnsignedByte(); // Reserved
@@ -284,7 +296,7 @@ final class CodeHTML {
                 name = Class2HTML.referenceClass(classIndex);
             }
             str = Class2HTML.toHTML(constantPool.constantToString(constantPool.getConstant(index, Const.CONSTANT_NameAndType)));
-            // Get signature, i.e., types
+            // Get signature, that is, types
             final ConstantNameAndType c2 = constantPool.getConstant(index, Const.CONSTANT_NameAndType, ConstantNameAndType.class);
             signature = constantPool.constantToString(c2.getSignatureIndex(), Const.CONSTANT_Utf8);
             final String[] args = Utility.methodSignatureArgumentTypes(signature, false);
@@ -306,7 +318,7 @@ final class CodeHTML {
          */
         case Const.LDC_W:
         case Const.LDC2_W:
-            index = bytes.readShort();
+            index = bytes.readUnsignedShort();
             buf.append("<A HREF=\"").append(className).append("_cp.html#cp").append(index).append("\" TARGET=\"ConstantPool\">")
                 .append(Class2HTML.toHTML(constantPool.constantToString(index, constantPool.getConstant(index).getTag()))).append("</a>");
             break;
@@ -319,15 +331,15 @@ final class CodeHTML {
          * Array of references.
          */
         case Const.ANEWARRAY:
-            index = bytes.readShort();
+            index = bytes.readUnsignedShort();
             buf.append(constantHtml.referenceConstant(index));
             break;
         /*
          * Multidimensional array of references.
          */
         case Const.MULTIANEWARRAY:
-            index = bytes.readShort();
-            final int dimensions = bytes.readByte();
+            index = bytes.readUnsignedShort();
+            final int dimensions = bytes.readUnsignedByte();
             buf.append(constantHtml.referenceConstant(index)).append(":").append(dimensions).append("-dimensional");
             break;
         /*
@@ -335,7 +347,7 @@ final class CodeHTML {
          */
         case Const.IINC:
             if (wide) {
-                vindex = bytes.readShort();
+                vindex = bytes.readUnsignedShort();
                 constant = bytes.readShort();
                 wide = false;
             } else {
@@ -377,7 +389,7 @@ final class CodeHTML {
         gotoSet = new BitSet(bytes.available());
         int opcode;
         /*
-         * First get Code attribute from method and the exceptions handled (try .. catch) in this method. We only need the line
+         * First get Code attribute from method and the exceptions handled (try-catch) in this method. We only need the line
          * number here.
          */
         if (code != null) {
@@ -411,7 +423,7 @@ final class CodeHTML {
                 final int remainder = bytes.getIndex() % 4;
                 final int noPadBytes = remainder == 0 ? 0 : 4 - remainder;
                 int defaultOffset;
-                int offset;
+                final int offset;
                 for (int j = 0; j < noPadBytes; j++) {
                     bytes.readByte();
                 }
@@ -476,7 +488,7 @@ final class CodeHTML {
     }
 
     /**
-     * Write a single method with the byte code associated with it.
+     * Writes a single method with the byte code associated with it.
      */
     private void writeMethod(final Method method, final int methodNumber) throws IOException {
         // Get raw signature
@@ -493,7 +505,7 @@ final class CodeHTML {
         access = Utility.replace(access, " ", "&nbsp;");
         // Get the method's attributes, the Code Attribute in particular
         final Attribute[] attributes = method.getAttributes();
-        printWriter.print("<P><B><FONT COLOR=\"#FF0000\">" + access + "</FONT>&nbsp;" + "<A NAME=method" + methodNumber + ">" + Class2HTML.referenceType(type)
+        printWriter.print("<P><B><FONT COLOR=\"#FF0000\">" + access + "</FONT>&nbsp;<A NAME=method" + methodNumber + ">" + Class2HTML.referenceType(type)
             + "</A>&nbsp<A HREF=\"" + className + "_methods.html#method" + methodNumber + "\" TARGET=Methods>" + htmlName + "</A>(");
         for (int i = 0; i < args.length; i++) {
             printWriter.print(Class2HTML.referenceType(args[i]));
@@ -521,7 +533,7 @@ final class CodeHTML {
                     printWriter.print("<UL>");
                     for (int j = 0; j < attributes2.length; j++) {
                         tag = attributes2[j].getTag();
-                        printWriter.print("<LI><A HREF=\"" + className + "_attributes.html#" + "method" + methodNumber + "@" + i + "@" + j
+                        printWriter.print("<LI><A HREF=\"" + className + "_attributes.html#method" + methodNumber + "@" + i + "@" + j
                             + "\" TARGET=Attributes>" + Const.getAttributeName(tag) + "</A></LI>\n");
                     }
                     printWriter.print("</UL>");
@@ -529,14 +541,14 @@ final class CodeHTML {
             }
             printWriter.println("</UL>");
         }
-        if (code != null) { // No code, an abstract method, e.g.
+        if (code != null) { // No code, an abstract method, for example
             // System.out.println(name + "\n" + Utility.codeToString(code, constantPool, 0, -1));
             // Print the byte code
             try (ByteSequence stream = new ByteSequence(code)) {
                 stream.mark(stream.available());
                 findGotos(stream, c);
                 stream.reset();
-                printWriter.println("<TABLE BORDER=0><TR><TH ALIGN=LEFT>Byte<BR>offset</TH>" + "<TH ALIGN=LEFT>Instruction</TH><TH ALIGN=LEFT>Argument</TH>");
+                printWriter.println("<TABLE BORDER=0><TR><TH ALIGN=LEFT>Byte<BR>offset</TH><TH ALIGN=LEFT>Instruction</TH><TH ALIGN=LEFT>Argument</TH>");
                 while (stream.available() > 0) {
                     final int offset = stream.getIndex();
                     final String str = codeToHTML(stream, methodNumber);
@@ -548,7 +560,7 @@ final class CodeHTML {
                     if (gotoSet.get(offset)) {
                         anchor = "<A NAME=code" + methodNumber + "@" + offset + "></A>";
                     }
-                    String anchor2;
+                    final String anchor2;
                     if (stream.getIndex() == code.length) {
                         anchor2 = "<A NAME=code" + methodNumber + "@" + code.length + ">" + offset + "</A>";
                     } else {

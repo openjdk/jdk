@@ -98,8 +98,8 @@ address Relocation::pd_call_destination(address orig_addr) {
 void Relocation::pd_set_call_destination(address x) {
   assert(is_call(), "should be a call here");
   if (NativeCall::is_at(addr())) {
-    // Nothing to do while code is still living in a CodeBuffer, where the call
-    // does not have an address stub yet. See NativeCall::stub_address().
+    // An unlinked CodeBuffer call's address stub cannot be found without
+    // nmethod relocation information. See NativeCall::stub_address().
     if (x != nullptr) {
       NativeCall* call = nativeCall_at(addr());
       call->set_destination(x);
