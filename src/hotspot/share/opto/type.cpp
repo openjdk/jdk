@@ -5989,7 +5989,7 @@ bool TypeAryPtr::can_be_value_array() const {
   return elem()->make_ptr() && elem()->make_ptr()->isa_instptr() && elem()->make_ptr()->is_instptr()->_klass->can_be_value_klass();
 }
 
-// Does 'this' and 'other' array have compatible layouts for applying arraycopy?
+// Does 'this' array and 'other' array have compatible layouts for applying arraycopy?
 // - Return true : We know that the layouts are compatible.
 // - Return false: We either don't know or have shown that they are not compatible.
 bool TypeAryPtr::has_compatible_arraycopy_layout(const TypeAryPtr* other) const {
