@@ -66,12 +66,14 @@ public class TestHybrid {
             throw new RuntimeException("SunJCE exposes internal KEM.DH");
         }
 
-        for (HybridGroup group : HYBRID_GROUPS) {
+        for (int i = 0; i < HYBRID_GROUPS.length; i++) {
+            HybridGroup group = HYBRID_GROUPS[i];
+            HybridGroup otherGroup = HYBRID_GROUPS[
+                    (i + 1) % HYBRID_GROUPS.length];
             testKPG(p, group);
             testRawKeyLen(p, group);
+            testKEM(p, group, otherGroup);
         }
-
-        testKEM(p, HYBRID_GROUPS[0]);
     }
 
     private static void testKPG(Provider provider,
@@ -115,8 +117,8 @@ public class TestHybrid {
         }
     }
 
-    private static void testKEM(Provider provider, HybridGroup group)
-            throws Exception {
+    private static void testKEM(Provider provider, HybridGroup group,
+            HybridGroup otherGroup) throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(group.name,
                 provider);
         KeyPair kp = kpg.generateKeyPair();
@@ -161,12 +163,14 @@ public class TestHybrid {
             System.out.println("Rejected KEM parameters");
         }
 
-        KEM otherKem = KEM.getInstance(HYBRID_GROUPS[1].name, provider);
+        KEM otherKem = KEM.getInstance(otherGroup.name, provider);
         try {
             otherKem.newEncapsulator(kp.getPublic());
-            throw new RuntimeException("Accepted a key for another hybrid group");
+            throw new RuntimeException("Accepted " + group.name +
+                    " key for " + otherGroup.name);
         } catch (InvalidKeyException expected) {
-            System.out.println("Rejected a key for another hybrid group");
+            System.out.println("Rejected " + group.name +
+                    " key for " + otherGroup.name);
         }
     }
 
