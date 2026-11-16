@@ -87,7 +87,7 @@ public:
   // Valid region indexes range from 0 .. MaxNumRegions-1.
   // We restrict to INT_MAX because we internally need the NoRegionIdx sentinel internally.
   // For simplicity, limit to 2^31 regions which allow more than enough maximum heap size.
-  static const uint MaxNumRegions = INT_MAX;
+  static const uint MaxNumRegions = 1u << 31;
   // Sentinel value for an invalid region index.
   static const uint InvalidRegionIdx = UINT_MAX;
 
