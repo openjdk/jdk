@@ -39,21 +39,18 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @SuppressWarnings("UnnecessaryUnicodeEscape")
 public class ShapingContextTest {
     // The shape of each letter depends on both neighbours
     private static final String DUAL_JOINING_LETTERS = "\u0628\u064a\u062a";
-    // This is used to add characters to the context without breaking the joining
-    private static final char FATHA = '\u064e';
 
     private static final FontRenderContext FRC = new FontRenderContext(null, true, true);
-    private static final char[] LONG_TEXT = DUAL_JOINING_LETTERS.repeat(20).toCharArray();
-    private static final int START = 30;
-    private static final int LIMIT = 36;
-    private static final int CONTEXT = 5;
+    private static final char[] LONG_TEXT = DUAL_JOINING_LETTERS.repeat(1000).toCharArray();
+    private static final int START = 1500;
+    private static final int LIMIT = 1506;
+    private static final int CONTEXT = 512;
     private static final char[] UNCUT_TEXT = Arrays.copyOfRange(LONG_TEXT, START - CONTEXT, LIMIT + CONTEXT);
 
     private static Font font;
@@ -79,16 +76,6 @@ public class ShapingContextTest {
         String uncut = glyphsUncut(font);
         String cut = glyphs(font, LONG_TEXT, START, LIMIT);
         assertEquals(uncut, cut, "Context should properly affect joining symbols");
-    }
-
-    @Test
-    void checkHarfBuzzContextLength() {
-        String oneCharLeft = String.valueOf(FATHA).repeat(CONTEXT - 1);
-        String noCharLeft = String.valueOf(FATHA).repeat(CONTEXT);
-        String errorMessage = "It seems that HarfBuzz context length is not " + CONTEXT + " code points. " +
-                "Update HB_CONTEXT_LENGTH in SunLayoutEngine and this test.";
-        assertNotEquals(glyphsWithPrefix(font, oneCharLeft), glyphsWithPrefix(font, "\u0628" + oneCharLeft), errorMessage);
-        assertEquals(glyphsWithPrefix(font, noCharLeft), glyphsWithPrefix(font, "\u0628" + noCharLeft), errorMessage);
     }
 
     private static String glyphsUncut(Font font) {

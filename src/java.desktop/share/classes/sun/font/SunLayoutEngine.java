@@ -68,8 +68,8 @@ public final class SunLayoutEngine {
 
     // HarfBuzz keeps up to 5 code points (at most 10 UTF-16 chars) of context on each side.
     // See hb_buffer_t::CONTEXT_LENGTH in hb-buffer.hh
-    // test/jdk/java/awt/font/TextLayout/ShapingContextTest.java checks the value in case of a future change.
-    private static final int HB_CONTEXT_LENGTH = 10;
+    // We use bigger margin to be on the safe side in case of a future change in HarfBuzz.
+    private static final int HB_CONTEXT_LENGTH = 1024;
 
     public static void layout(Font2D font, int script, FontStrikeDesc desc, float[] mat, int gmask,
                        int baseIndex, TextRecord tr, int typo_flags,
