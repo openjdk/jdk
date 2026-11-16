@@ -236,22 +236,22 @@ static void montMul(const XMMRegister output[], const XMMRegister input1[], cons
   // This function is on a path with most register pressure, so there are several 'clever'
   // uses that deserve explanation
   // - input1 and scratch might be the same
-  // - input2 and scratch might overlap
+  // - input2 might overlap (shifted by one) with either scratch or output
   // since this function is internal to this file, we dont go out of the way to overly verify inputs
   const XMMRegister* scratch1 = scratch == input1 ? output : scratch;
   const XMMRegister* scratch2 = scratch == input1 ? scratch : output;
-  bool input2ScratchOverlap = input2[0] == scratch1[1];
+  bool input2Overlap = input2[0] == scratch[1] || input2[0] == output[1];
 
   for (int i = 0; i < regCnt; i++) {
-    // input2 and scratch2|output might be partially overlapping, both instructions together
-    // (later loop iteration might overwrite input2 otherwise)
     __ vpmullw(scratch1[i], input1[i], input2[i], vector_len);
-    if (input2ScratchOverlap) {
+    if (input2Overlap) {
+      // when there is an overlap, need to use up input2[i], since the next
+      // iteration will clobber it
       __ vpmulhw(scratch2[i], input1[i], input2[i], vector_len);
     }
   }
-  for (int i = 0; !input2ScratchOverlap && i < regCnt; i++) {
-    // the 'else' case of input2ScratchOverlap.. emit vpmulhw if it wasn't before
+  for (int i = 0; !input2Overlap && i < regCnt; i++) {
+    // no overlap: emit vpmulhw as its own loop for better scheduling
     __ vpmulhw(scratch2[i], input1[i], input2[i], vector_len);
   }
   for (int i = 0; i < regCnt; i++) {
@@ -278,6 +278,7 @@ static void montMul(const XMMRegister output[], const XMMRegister input1[], cons
 // NOTE: size 0 and 1 are used for final and initial shuffles respectively of
 // kyberNtt and kyberInverseNtt. For size 0 and 1, input1[]
 // and input2[] are modified in-place (and output2 is used as a temporary)
+// NOTE 2: for AVX_256bit path, sizes 16 and 32 also modifies input2 in place
 //
 // Using C++ lambdas for improved readability (to hide parameters that always repeat)
 static auto whole_shuffle(KRegister mergeMask1, KRegister mergeMask2,
@@ -332,7 +333,8 @@ static auto whole_shuffle(KRegister mergeMask1, KRegister mergeMask2,
           }
           break;
         // Special cases
-        case 1: // initial shuffle for kyberInverseNtt
+        case 1:
+          // initial shuffle for kyberInverseNtt
           // shuffle all even 32bit columns to input1, and odd to input2
           for (int i = 0; i < regCnt; i++) {
             // 0b-3-1-3-1
@@ -350,8 +352,9 @@ static auto whole_shuffle(KRegister mergeMask1, KRegister mergeMask2,
             __ vpermq(input1[i], input1[i], 0b11011000, vector_len);
           }
           break;
-        case 0: // final unshuffle for kyberNtt
-          // reverse case 1: all even are in input1 and odd in input2, put back
+        case 0:
+          // final unshuffle for kyberNtt
+          // reverse case 1: all even 32bit columns in input1 and odd in input2, put back
           for (int i = 0; i < regCnt; i++) {
             __ vpunpckhdq(output2[i], input1[i], input2[i], vector_len);
           }
@@ -417,21 +420,13 @@ static auto whole_shuffle(KRegister mergeMask1, KRegister mergeMask2,
             __ evpshufb(input1[i], mergeMask2, input2[i], unshuffle1, true, vector_len);
           }
           break;
-        // Special cases
-        case 1: // initial shuffle for kyberInverseNtt
+        // Special cases have different unshuffle1 and unshuffle2, same instruction sequence
+        case 1:
+          // initial shuffle for kyberInverseNtt
           // shuffle all even 32bit columns to input1, and odd to input2
-          for (int i = 0; i < regCnt; i++) {
-            __ vmovdqu(output2[i], input2[i], vector_len);
-          }
-          for (int i = 0; i < regCnt; i++) {
-            __ evpermt2d(input2[i], unshuffle2, input1[i], vector_len);
-          }
-          for (int i = 0; i < regCnt; i++) {
-            __ evpermt2d(input1[i], unshuffle1, output2[i], vector_len);
-          }
-          break;
-        case 0: // final unshuffle for kyberNtt
-          // reverse case 1: all even are in input1 and odd in input2, put back
+        case 0:
+          // final unshuffle for kyberNtt
+          // reverse case 1: all even 32bit columns in input1 and odd in input2, put back
           for (int i = 0; i < regCnt; i++) {
             __ vmovdqu(output2[i], input2[i], vector_len);
           }
@@ -1196,10 +1191,10 @@ address generate_kyberAddPoly_3_avx(StubGenerator *stubgen, int vector_len,
 
 // Kyber parse XOF output to polynomial coefficient candidates.
 //
-// condensed (byte[168]) = c_rarg0
-// condensedOffs (int) = c_rarg1
-// parsed (short[112]) = c_rarg2
-// parsedLength (int) = c_rarg3
+// c_rarg0 - condensed (byte[], length multiple of 192 bytes)
+// c_rarg1 - condensedOffs (int)
+// c_rarg2 - parsed (short[], length multiple of 128 shorts)
+// c_rarg3 - parsedLength (int)
 address generate_kyber12To16_avx(StubGenerator *stubgen, int vector_len,
                                     MacroAssembler *_masm) {
   StubId stub_id = StubId::stubgen_kyber12To16_id;
@@ -1480,7 +1475,7 @@ address generate_kyberBarrettReduce_avx(StubGenerator *stubgen, int vector_len,
 
 void StubGenerator::generate_kyber_stubs() {
   int vector_len = Assembler::AVX_256bit;
-  if (VM_Version::supports_evex() && VM_Version::supports_avx512bw()) {
+  if (VM_Version::supports_avx512vlbw()) {
     vector_len = Assembler::AVX_512bit;
   }
 

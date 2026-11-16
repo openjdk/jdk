@@ -31,7 +31,7 @@ import java.util.HexFormat;
 
 /*
  * @test
- * @requires os.simpleArch == "x64"
+ * @requires os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib
  * @key randomness
  * @modules java.base/com.sun.crypto.provider:+open
