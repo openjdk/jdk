@@ -3632,6 +3632,13 @@ AdapterHandlerEntry::~AdapterHandlerEntry() {
   FreeHeap(this);
 }
 
+int AdapterHandlerEntry::fingerprint_size() const {
+  return fingerprint()->size();
+}
+
+bool AdapterHandlerEntry::fingerprint_equals(AdapterFingerPrint* fp) const {
+  return fingerprint()->equals(fp);
+}
 
 #ifdef ASSERT
 // Capture the code before relocation so that it can be compared

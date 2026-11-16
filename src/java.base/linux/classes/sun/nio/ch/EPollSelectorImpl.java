@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ class EPollSelectorImpl extends SelectorImpl {
         int numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, 0);
         if (block) {
             while (numEntries == 0 && !Thread.currentThread().isInterrupted()) {
-                Poller.pollSelector(epfd, 0);
+                Poller.pollSelector(this, epfd, 0);
                 numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, 0);
             }
         }
@@ -163,7 +163,7 @@ class EPollSelectorImpl extends SelectorImpl {
                 // timeout
                 break;
             }
-            Poller.pollSelector(epfd, remainingNanos);
+            Poller.pollSelector(this, epfd, remainingNanos);
             numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, 0);
         }
         return numEntries;

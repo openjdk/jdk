@@ -259,7 +259,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="inh">Tiếng Ingush</language>
 			<language type="io">Tiếng Ido</language>
 			<language type="is">Tiếng Iceland</language>
-			<language type="it">Tiếng Italy</language>
+			<language type="it">Tiếng Ý</language>
 			<language type="iu">Tiếng Inuktitut</language>
 			<language type="izh">Tiếng Ingria</language>
 			<language type="ja">Tiếng Nhật</language>
@@ -447,6 +447,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pi">Tiếng Pali</language>
 			<language type="pis">Tiếng Pijin</language>
 			<language type="pl">Tiếng Ba Lan</language>
+			<language type="pms">Tiếng Piemonte</language>
 			<language type="pon">Tiếng Pohnpeian</language>
 			<language type="pqm">Tiếng Maliseet-Passamaquoddy</language>
 			<language type="prg">Tiếng Prussia</language>
@@ -1167,18 +1168,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">Thứ tự sắp xếp</key>
 			<key type="colNormalization">Sắp xếp theo chuẩn hóa</key>
 			<key type="colNumeric">Sắp xếp theo số</key>
+			<key type="colReorder">Sắp xếp lại thứ tự hệ chữ viết/khối ký tự</key>
 			<key type="colStrength">Cường độ sắp xếp</key>
 			<key type="currency">Tiền tệ</key>
+			<key type="d0">Đích biến đổi</key>
+			<key type="dx">Ngoại lệ ngắt từ theo từ điển</key>
 			<key type="em">Trình bày emoji</key>
+			<key type="fw">Ngày đầu tuần</key>
+			<key type="h0">Kết hợp</key>
 			<key type="hc">Chu kỳ giờ (12 với 24)</key>
+			<key type="i0">Phương thức nhập liệu</key>
+			<key type="k0">Bàn phím</key>
+			<key type="kv">Ký tự cao nhất được bỏ qua</key>
 			<key type="lb">Kiểu xuống dòng</key>
 			<key type="lw">Ngắt dòng trong từ</key>
+			<key type="m0">Quy tắc chuyển đổi</key>
 			<key type="ms">Hệ thống đo lường</key>
+			<key type="mu">Đơn vị đo lường</key>
 			<key type="numbers">Số</key>
+			<key type="rg">Vùng cho dữ liệu bổ trợ</key>
+			<key type="s0">Nguồn biến đổi</key>
+			<key type="sd">Phân khu của vùng</key>
 			<key type="ss">Ngắt câu sau khi viết tắt.</key>
+			<key type="t">Chuyển đổi</key>
+			<key type="t0">Dịch máy</key>
 			<key type="timezone">Múi giờ</key>
 			<key type="va">Biến thể ngôn ngữ</key>
 			<key type="x">Sử dụng cá nhân</key>
+			<key type="x0">Chuyển đổi sử dụng riêng</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Lịch Phật Giáo</type>
@@ -1198,15 +1215,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">Lịch Do Thái</type>
 			<type key="calendar" type="hebrew" scope="core">Do Thái</type>
 			<type key="calendar" type="indian">Lịch Quốc gia Ấn Độ</type>
+			<type key="calendar" type="indian" scope="core">Lịch quốc gia Ấn Độ</type>
 			<type key="calendar" type="islamic">Lịch Hồi Giáo</type>
 			<type key="calendar" type="islamic" scope="core">Hồi giáo</type>
 			<type key="calendar" type="islamic-civil">Lịch Hồi Giáo (dạng bảng, kỷ nguyên dân sự)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Hồi giáo (dạng bảng, kỷ nguyên dân sự)</type>
 			<type key="calendar" type="islamic-rgsa" draft="provisional">Lịch Hồi Giáo - Ả Rập Xê-út</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Lịch Hồi giáo, Ả Rập Xê Út quan sát trăng non</type>
 			<type key="calendar" type="islamic-tbla" draft="provisional">Lịch Hồi Giáo - Thiên văn</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Lịch Hồi giáo (theo bảng, kỷ nguyên thiên văn)</type>
 			<type key="calendar" type="islamic-umalqura">Lịch Hồi Giáo (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hồi giáo (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Lịch ISO-8601</type>
+			<type key="calendar" type="iso8601" scope="core">Dương lịch</type>
 			<type key="calendar" type="japanese">Lịch Nhật Bản</type>
 			<type key="calendar" type="japanese" scope="core">Nhật Bản</type>
 			<type key="calendar" type="persian">Lịch Ba Tư</type>
@@ -1222,8 +1243,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no" draft="contributed">Sắp xếp dấu trọng âm bình thường</type>
 			<type key="colBackwards" type="yes" draft="contributed">Sắp xếp dấu trọng âm đảo ngược</type>
 			<type key="colCaseFirst" type="lower" draft="contributed">Sắp xếp chữ thường đầu tiên</type>
+			<type key="colCaseFirst" type="lower" scope="core">Chữ thường</type>
 			<type key="colCaseFirst" type="no" draft="contributed">Sắp xếp thứ tự chữ cái bình thường</type>
+			<type key="colCaseFirst" type="no" scope="core">Chữ thường</type>
 			<type key="colCaseFirst" type="upper" draft="contributed">Sắp xếp chữ hoa đầu tiên</type>
+			<type key="colCaseFirst" type="upper" scope="core">Chữ hoa</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Sắp xếp không phân biệt chữ hoa/chữ thường</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Sắp xếp phân biệt chữ hoa/chữ thường</type>
 			<type key="collation" type="compat">Thứ tự sắp xếp trước đây, để tương thích</type>
@@ -1233,7 +1257,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="ducet">Thứ tự sắp xếp unicode mặc định</type>
 			<type key="collation" type="ducet" scope="core">Unicode mặc định</type>
 			<type key="collation" type="emoji" draft="contributed">Thứ tự sắp xếp biểu tượng</type>
+			<type key="collation" type="emoji" scope="core">Biểu tượng cảm xúc</type>
 			<type key="collation" type="eor" draft="contributed">Quy tắc sắp xếp Châu Âu</type>
+			<type key="collation" type="eor" scope="core">quy tắc châu Âu</type>
 			<type key="collation" type="phonebook">Thứ tự sắp xếp theo danh bạ điện thoại</type>
 			<type key="collation" type="phonebook" scope="core">Danh bạ điện thoại</type>
 			<type key="collation" type="phonetic">Thứ tự sắp xếp theo ngữ âm</type>
@@ -1243,13 +1269,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="search">Tìm kiếm mục đích chung</type>
 			<type key="collation" type="search" scope="core">Tìm kiếm</type>
 			<type key="collation" type="searchjl" draft="contributed">Tìm kiếm theo Phụ âm Đầu Hangul</type>
+			<type key="collation" type="searchjl" scope="core">phụ âm đầu trong tiếng Hàn</type>
 			<type key="collation" type="standard">Thứ tự sắp xếp chuẩn</type>
 			<type key="collation" type="standard" scope="core">Chuẩn</type>
 			<type key="collation" type="stroke">Thứ tự sắp xếp theo nét chữ</type>
 			<type key="collation" type="stroke" scope="core">Nét chữ</type>
 			<type key="collation" type="traditional">Thứ tự sắp xếp truyền thống</type>
 			<type key="collation" type="traditional" scope="core">Truyền thống</type>
-			<type key="collation" type="unihan">Trình tự sắp xếp theo bộ-nét</type>
+			<type key="collation" type="unihan">Thứ tự sắp xếp theo bộ nét</type>
 			<type key="collation" type="unihan" scope="core">Bộ-nét</type>
 			<type key="collation" type="zhuyin">Thứ tự sắp xếp theo chú âm phù hiệu</type>
 			<type key="collation" type="zhuyin" scope="core">Chú âm phù hiệu</type>
@@ -1257,17 +1284,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colNormalization" type="yes" draft="contributed">Sắp xếp unicode được chuẩn hóa</type>
 			<type key="colNumeric" type="no" draft="contributed">Sắp xếp từng chữ số</type>
 			<type key="colNumeric" type="yes" draft="contributed">Sắp xếp chữ số theo số</type>
+			<type key="colReorder" type="currency" scope="core">Đơn vị tiền tệ</type>
+			<type key="colReorder" type="digit" scope="core">Chữ số</type>
+			<type key="colReorder" type="punct" scope="core">Dấu câu</type>
+			<type key="colReorder" type="space" scope="core">Khoảng trắng</type>
+			<type key="colReorder" type="symbol" scope="core">Ký hiệu</type>
 			<type key="colStrength" type="identical" draft="contributed">Sắp xếp tất cả</type>
+			<type key="colStrength" type="identical" scope="core">Tất cả</type>
 			<type key="colStrength" type="primary" draft="contributed">Chỉ sắp xếp chữ cái cơ sở</type>
+			<type key="colStrength" type="primary" scope="core">Chỉ các chữ cái cơ sở</type>
 			<type key="colStrength" type="quaternary" draft="contributed">Sắp xếp dấu trọng âm/chữ cái/độ rộng/chữ Kana</type>
+			<type key="colStrength" type="quaternary" scope="core">Chữ cơ bản, dấu thanh, chữ hoa chữ thường, biến thể, chữ Kana</type>
 			<type key="colStrength" type="secondary" draft="contributed">Sắp xếp dấu trọng âm</type>
+			<type key="colStrength" type="secondary" scope="core">Chữ cơ bản, dấu thanh</type>
 			<type key="colStrength" type="tertiary" draft="contributed">Sắp xếp dấu trọng âm/chữ cái/độ rộng</type>
+			<type key="colStrength" type="tertiary" scope="core">Chữ cơ bản, dấu thanh, chữ hoa chữ thường, biến thể</type>
 			<type key="d0" type="fwidth">Độ rộng tối đa</type>
 			<type key="d0" type="hwidth">Nửa độ rộng</type>
 			<type key="d0" type="npinyin" draft="contributed">Số</type>
 			<type key="em" type="default" scope="core">Mặc định</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
 			<type key="em" type="text" scope="core">Văn bản</type>
+			<type key="hc" type="c12">Hệ thống 12 giờ</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">Hệ thống 24 giờ</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">Hệ thống 12 giờ (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">Hệ thống 12 giờ (1–12)</type>
@@ -1276,6 +1317,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">Hệ thống 24 giờ (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Bỏ qua khoảng trắng, dấu câu, tất cả ký hiệu</type>
+			<type key="kv" type="punct" scope="core">Bỏ qua khoảng trắng, dấu câu</type>
+			<type key="kv" type="space" scope="core">Bỏ qua khoảng trắng, dấu câu</type>
+			<type key="kv" type="symbol" scope="core">Bỏ qua khoảng trắng, dấu câu, ký hiệu không phải tiền tệ</type>
 			<type key="lb" type="loose">Kiểu xuống dòng thoáng</type>
 			<type key="lb" type="loose" scope="core">Thoáng</type>
 			<type key="lb" type="normal">Kiểu xuống dòng thường</type>
@@ -1297,8 +1342,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="ahom" draft="contributed">Chữ số Ahom</type>
 			<type key="numbers" type="arab">Chữ số Ả Rập - Ấn Độ</type>
 			<type key="numbers" type="arabext">Chữ số Ả Rập - Ấn Độ mở rộng</type>
+			<type key="numbers" type="arabext" scope="core">Ả Rập-Ấn Độ mở rộng</type>
 			<type key="numbers" type="armn">Chữ số Armenia</type>
 			<type key="numbers" type="armnlow">Chữ số Armenia viết thường</type>
+			<type key="numbers" type="armnlow" scope="core">Armenia viết thường</type>
 			<type key="numbers" type="bali" draft="contributed">Chữ số Bali</type>
 			<type key="numbers" type="beng">Chữ số Bangladesh</type>
 			<type key="numbers" type="brah" draft="contributed">Chữ số Brahmi</type>
@@ -1308,56 +1355,80 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="deva">Chữ số Devanagari</type>
 			<type key="numbers" type="ethi">Chữ số Ethiopia</type>
 			<type key="numbers" type="finance" draft="contributed">Chữ số dùng trong tài chính</type>
+			<type key="numbers" type="finance" scope="core">Tài chính</type>
 			<type key="numbers" type="fullwide">Chữ số có độ rộng đầy đủ</type>
+			<type key="numbers" type="fullwide" scope="core">Độ rộng đầy đủ</type>
 			<type key="numbers" type="geor">Chữ số Georgia</type>
 			<type key="numbers" type="gong" draft="contributed">Chữ số Gong</type>
 			<type key="numbers" type="gonm" draft="contributed">Chữ số Gonm</type>
 			<type key="numbers" type="grek">Chữ số Hy Lạp</type>
 			<type key="numbers" type="greklow">Chữ số Hy Lạp viết thường</type>
+			<type key="numbers" type="greklow" scope="core">Hy Lạp viết thường</type>
 			<type key="numbers" type="gujr">Chữ số Gujarati</type>
 			<type key="numbers" type="guru">Chữ số Gurmukhi</type>
+			<type key="numbers" type="hanidays" scope="core">Cách đánh số ngày bằng Hán tự cho lịch truyền thống</type>
 			<type key="numbers" type="hanidec">Chữ số thập phân Trung Quốc</type>
+			<type key="numbers" type="hanidec" scope="core">Hệ thập phân vị trị sử dụng chữ số Trung Quốc làm chữ số</type>
 			<type key="numbers" type="hans">Chữ số của tiếng Trung giản thể</type>
 			<type key="numbers" type="hansfin">Chữ số dùng trong tài chính của tiếng Trung giản thể</type>
+			<type key="numbers" type="hansfin" scope="core">Tài chính tiếng Trung giản thể</type>
 			<type key="numbers" type="hant">Chữ số tiếng Trung phồn thể</type>
 			<type key="numbers" type="hantfin">Chữ số dùng trong tài chính của tiếng Trung phồn thể</type>
+			<type key="numbers" type="hantfin" scope="core">Tài chính tiếng Trung phồn thể</type>
 			<type key="numbers" type="hebr">Chữ số Do Thái</type>
 			<type key="numbers" type="hmng" draft="contributed">Chữ số Hmng</type>
 			<type key="numbers" type="hmnp" draft="contributed">Chữ số Hmnp</type>
 			<type key="numbers" type="java">Chữ số Java</type>
 			<type key="numbers" type="jpan">Chữ số Nhật Bản</type>
 			<type key="numbers" type="jpanfin">Chữ số dùng trong tài chính của tiếng Nhật</type>
+			<type key="numbers" type="jpanfin" scope="core">Tài chính tiếng Nhật</type>
+			<type key="numbers" type="jpanyear" scope="core">Cách đánh số năm đầu trong tiếng Nhật</type>
 			<type key="numbers" type="kali" draft="contributed">Chữ số Kayah Li</type>
 			<type key="numbers" type="khmr">Chữ số Khơ-me</type>
 			<type key="numbers" type="knda">Chữ số Kannada</type>
 			<type key="numbers" type="lana" draft="contributed">Chữ số Hora Thái Đam</type>
 			<type key="numbers" type="lanatham" draft="contributed">Chữ số Tham Thái Đam</type>
+			<type key="numbers" type="lanatham" scope="core">Chữ Tai Tham (giáo hội)</type>
 			<type key="numbers" type="laoo">Chữ số Lào</type>
 			<type key="numbers" type="latn">Chữ số phương Tây</type>
 			<type key="numbers" type="lepc" draft="contributed">Chữ số Lepcha</type>
 			<type key="numbers" type="limb" draft="contributed">Chữ số Limbu</type>
 			<type key="numbers" type="mathbold" draft="contributed">Chữ số Mathbold</type>
+			<type key="numbers" type="mathbold" scope="core">Chữ số toán học in đậm</type>
 			<type key="numbers" type="mathdbl" draft="contributed">Chữ số Mathdbl</type>
+			<type key="numbers" type="mathdbl" scope="core">Chữ số toán học nét đôi</type>
 			<type key="numbers" type="mathmono" draft="contributed">Chữ số Mathmono</type>
+			<type key="numbers" type="mathmono" scope="core">Chữ số toán học đơn cách</type>
 			<type key="numbers" type="mathsanb" draft="contributed">Chữ số Mathsanb</type>
+			<type key="numbers" type="mathsanb" scope="core">Chữ số toán học sans-serif đậm</type>
 			<type key="numbers" type="mathsans" draft="contributed">Chữ số Mathsans</type>
+			<type key="numbers" type="mathsans" scope="core">Chữ số toán học sans-serif</type>
 			<type key="numbers" type="mlym">Chữ số Malayalam</type>
 			<type key="numbers" type="modi" draft="contributed">Chữ số Modi</type>
 			<type key="numbers" type="mong">Chữ số Mông Cổ</type>
 			<type key="numbers" type="mroo" draft="contributed">Chữ số Mroo</type>
 			<type key="numbers" type="mtei">Chữ số Meetei Mayek</type>
 			<type key="numbers" type="mymr">Chữ số Myanma</type>
+			<type key="numbers" type="mymrepka" scope="core">Chữ số Pwo Karen Đông Myanmar</type>
+			<type key="numbers" type="mymrpao" scope="core">Chữ số Pao Myanmar</type>
 			<type key="numbers" type="mymrshan" draft="contributed">Chữ số Myanmar Shan</type>
+			<type key="numbers" type="mymrshan" scope="core">Chữ số Shan Myanmar</type>
 			<type key="numbers" type="mymrtlng" draft="contributed">Chữ số Mymrtlng</type>
+			<type key="numbers" type="mymrtlng" scope="core">Chữ số Tai Laing Myanmar</type>
 			<type key="numbers" type="native">Chữ số tự nhiên</type>
+			<type key="numbers" type="native" scope="core">Chữ số tự nhiên</type>
 			<type key="numbers" type="nkoo" draft="contributed">Chữ số N’Ko</type>
 			<type key="numbers" type="olck">Chữ số Ol Chiki</type>
 			<type key="numbers" type="orya">Chữ số Odia</type>
 			<type key="numbers" type="osma" draft="contributed">Chữ số Osmanya</type>
+			<type key="numbers" type="outlined" scope="core">Nét viền</type>
 			<type key="numbers" type="rohg" draft="contributed">Chữ số Rohg</type>
 			<type key="numbers" type="roman">Chữ số La mã</type>
+			<type key="numbers" type="roman" scope="core">La Mã viết hoa</type>
 			<type key="numbers" type="romanlow">Chữ số La Mã viết thường</type>
+			<type key="numbers" type="romanlow" scope="core">La Mã viết thường</type>
 			<type key="numbers" type="saur" draft="contributed">Chữ số Saurashtra</type>
+			<type key="numbers" type="segment" scope="core">Dạng đoạn</type>
 			<type key="numbers" type="shrd" draft="contributed">Chữ số Sharada</type>
 			<type key="numbers" type="sind" draft="contributed">Chữ số Sind</type>
 			<type key="numbers" type="sinh" draft="contributed">Chữ số Sinh</type>
@@ -1367,17 +1438,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="talu" draft="contributed">Chữ số Thái Lặc mới</type>
 			<type key="numbers" type="taml">Chữ số Tamil Truyền thống</type>
 			<type key="numbers" type="tamldec">Chữ số Tamil</type>
+			<type key="numbers" type="tamldec" scope="core">Tamil hiện đại</type>
 			<type key="numbers" type="telu">Chữ số Telugu</type>
 			<type key="numbers" type="thai">Chữ số Thái</type>
 			<type key="numbers" type="tibt">Chữ số Tây Tạng</type>
 			<type key="numbers" type="tirh" draft="contributed">Chữ số Tirh</type>
 			<type key="numbers" type="traditional" draft="contributed">Số truyền thống</type>
+			<type key="numbers" type="traditional" scope="core">Chữ số truyền thống</type>
 			<type key="numbers" type="vaii">Chữ số Vai</type>
 			<type key="numbers" type="wara" draft="contributed">Chữ số Wara</type>
 			<type key="numbers" type="wcho" draft="contributed">Chữ số Wancho</type>
 			<type key="ss" type="none" scope="core">Tắt</type>
 			<type key="ss" type="standard" scope="core">Bật</type>
+			<type key="t0" type="und">Bản dịch máy không xác định</type>
+			<type key="va" type="posix" scope="core">biến thể POSIX</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Tắt</typeValue>
+			<typeValue type="yes">Bật</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Hệ mét</measurementSystemName>
 			<measurementSystemName type="UK">Hệ Anh</measurementSystemName>
@@ -1892,6 +1971,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h 'giờ' B – h 'giờ' B</greatestDifference>
 							<greatestDifference id="h">h – h 'giờ' B</greatestDifference>
@@ -1983,6 +2066,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d – d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
@@ -2165,9 +2252,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">nửa đêm</dayPeriod>
-							<dayPeriod type="am">s</dayPeriod>
 							<dayPeriod type="noon">tr</dayPeriod>
-							<dayPeriod type="pm">c</dayPeriod>
 							<dayPeriod type="morning1">sáng</dayPeriod>
 							<dayPeriod type="afternoon1">chiều</dayPeriod>
 							<dayPeriod type="evening1">tối</dayPeriod>
@@ -2251,6 +2336,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{0} {1}</pattern>
@@ -2301,6 +2389,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d MMMM y G</dateFormatItem>
 						<dateFormatItem id="H">HH 'giờ'</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">H:mm</dateFormatItem>
@@ -2326,10 +2417,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM 'năm' y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ 'năm' y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'tuần' w 'của' 'năm' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{1}, {0}</appendItem>
+						<appendItem request="Era">{0} {1}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{1}, {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h 'giờ' B – h 'giờ' B</greatestDifference>
@@ -2411,6 +2509,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d – d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -2681,11 +2783,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="day">
 				<displayName>Ngày</displayName>
-				<relative type="-2">Hôm kia</relative>
-				<relative type="-1">Hôm qua</relative>
-				<relative type="0">Hôm nay</relative>
-				<relative type="1">Ngày mai</relative>
-				<relative type="2">Ngày kia</relative>
+				<relative type="-2">hôm kia</relative>
+				<relative type="-1">hôm qua</relative>
+				<relative type="0">hôm nay</relative>
+				<relative type="1">ngày mai</relative>
+				<relative type="2">ngày kia</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">sau {0} ngày nữa</relativeTimePattern>
 				</relativeTime>
@@ -2834,7 +2936,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</long>
 			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>Thành phố không xác định</exemplarCity>
+				<exemplarCity>Vị trí không xác định</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity>Đảo Phục Sinh</exemplarCity>
 			</zone>
 			<zone type="Asia/Shanghai">
 				<exemplarCity>Thượng Hải</exemplarCity>
@@ -2842,21 +2947,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Prague">
 				<exemplarCity>Praha</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Giờ Mùa Hè Anh</daylight>
-				</long>
-			</zone>
 			<zone type="Atlantic/South_Georgia">
 				<exemplarCity>Nam Georgia</exemplarCity>
 			</zone>
 			<zone type="Asia/Hong_Kong">
 				<exemplarCity>Hồng Kông</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Giờ chuẩn Ai-len</daylight>
-				</long>
 			</zone>
 			<zone type="Europe/Isle_of_Man">
 				<exemplarCity>Đảo Man</exemplarCity>
@@ -2914,9 +3009,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<metazone type="Acre">
 				<long>
-					<generic draft="contributed">Giờ Acre</generic>
-					<standard draft="contributed">Giờ Chuẩn Acre</standard>
-					<daylight draft="contributed">Giờ Mùa Hè Acre</daylight>
+					<generic>Giờ Acre</generic>
+					<standard>Giờ chuẩn Acre</standard>
+					<daylight>Giờ mùa hè Acre</daylight>
 				</long>
 			</metazone>
 			<metazone type="Afghanistan">
@@ -2936,7 +3031,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Southern">
 				<long>
-					<standard>Giờ Chuẩn Nam Phi</standard>
+					<standard>Giờ chuẩn Nam Phi</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Western">
@@ -2947,27 +3042,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Alaska">
 				<long>
 					<generic>Giờ Alaska</generic>
-					<standard>Giờ Chuẩn Alaska</standard>
-					<daylight>Giờ Mùa Hè Alaska</daylight>
-				</long>
-				<short>
-					<generic draft="contributed">AKT</generic>
-					<standard draft="contributed">AKST</standard>
-					<daylight draft="contributed">AKDT</daylight>
-				</short>
-			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic draft="contributed">Giờ Almaty</generic>
-					<standard draft="contributed">Giờ Chuẩn Almaty</standard>
-					<daylight draft="contributed">Giờ Mùa Hè Almaty</daylight>
+					<standard>Giờ chuẩn Alaska</standard>
+					<daylight>Giờ mùa hè Alaska</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>Giờ Amazon</generic>
-					<standard>Giờ Chuẩn Amazon</standard>
-					<daylight>Giờ Mùa Hè Amazon</daylight>
+					<standard>Giờ chuẩn Amazon</standard>
+					<daylight>Giờ mùa hè Amazon</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
@@ -2976,11 +3059,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Giờ chuẩn miền Trung</standard>
 					<daylight>Giờ mùa hè miền Trung</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">CT</generic>
-					<standard draft="contributed">CST</standard>
-					<daylight draft="contributed">CDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
@@ -2988,11 +3066,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Giờ chuẩn miền Đông</standard>
 					<daylight>Giờ mùa hè miền Đông</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">ET</generic>
-					<standard draft="contributed">EST</standard>
-					<daylight draft="contributed">EDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
@@ -3000,11 +3073,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Giờ chuẩn miền núi</standard>
 					<daylight>Giờ mùa hè miền núi</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">MT</generic>
-					<standard draft="contributed">MST</standard>
-					<daylight draft="contributed">MDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
@@ -3012,11 +3080,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Giờ chuẩn Thái Bình Dương</standard>
 					<daylight>Giờ mùa hè Thái Bình Dương</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">PT</generic>
-					<standard draft="contributed">PST</standard>
-					<daylight draft="contributed">PDT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Anadyr">
 				<long>
@@ -3028,36 +3091,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Apia">
 				<long>
 					<generic>Giờ Apia</generic>
-					<standard>Giờ Chuẩn Apia</standard>
-					<daylight>Giờ Mùa Hè Apia</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic draft="contributed">Giờ Aqtau</generic>
-					<standard draft="contributed">Giờ Chuẩn Aqtau</standard>
-					<daylight draft="contributed">Giờ Mùa Hè Aqtau</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic draft="contributed">Giờ Aqtobe</generic>
-					<standard draft="contributed">Giờ Chuẩn Aqtobe</standard>
-					<daylight draft="contributed">Giờ Mùa Hè Aqtobe</daylight>
+					<standard>Giờ chuẩn Apia</standard>
+					<daylight>Giờ mùa hè Apia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
 				<long>
 					<generic>Giờ Ả Rập</generic>
 					<standard>Giờ chuẩn Ả Rập</standard>
-					<daylight>Giờ Mùa Hè Ả Rập</daylight>
+					<daylight>Giờ mùa hè Ả Rập</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
 				<long>
 					<generic>Giờ Argentina</generic>
-					<standard>Giờ Chuẩn Argentina</standard>
-					<daylight>Giờ Mùa Hè Argentina</daylight>
+					<standard>Giờ chuẩn Argentina</standard>
+					<daylight>Giờ mùa hè Argentina</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina_Western">
@@ -3070,55 +3119,50 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Armenia">
 				<long>
 					<generic>Giờ Armenia</generic>
-					<standard>Giờ Chuẩn Armenia</standard>
-					<daylight>Giờ Mùa Hè Armenia</daylight>
+					<standard>Giờ chuẩn Armenia</standard>
+					<daylight>Giờ mùa hè Armenia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
 					<generic>Giờ Đại Tây Dương</generic>
-					<standard>Giờ Chuẩn Đại Tây Dương</standard>
+					<standard>Giờ chuẩn Đại Tây Dương</standard>
 					<daylight>Giờ mùa hè Đại Tây Dương</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">AT</generic>
-					<standard draft="contributed">AST</standard>
-					<daylight draft="contributed">ADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
 					<generic>Giờ Miền Trung Australia</generic>
-					<standard>Giờ Chuẩn Miền Trung Australia</standard>
-					<daylight>Giờ Mùa Hè Miền Trung Australia</daylight>
+					<standard>Giờ chuẩn Miền Trung Australia</standard>
+					<daylight>Giờ mùa hè Miền Trung Australia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
 					<generic>Giờ Miền Trung Tây Australia</generic>
-					<standard>Giờ Chuẩn Miền Trung Tây Australia</standard>
-					<daylight>Giờ Mùa Hè Miền Trung Tây Australia</daylight>
+					<standard>Giờ chuẩn Miền Trung Tây Australia</standard>
+					<daylight>Giờ mùa hè Miền Trung Tây Australia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
 					<generic>Giờ Miền Đông Australia</generic>
-					<standard>Giờ Chuẩn Miền Đông Australia</standard>
-					<daylight>Giờ Mùa Hè Miền Đông Australia</daylight>
+					<standard>Giờ chuẩn Miền Đông Australia</standard>
+					<daylight>Giờ mùa hè Miền Đông Australia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
 					<generic>Giờ Miền Tây Australia</generic>
-					<standard>Giờ Chuẩn Miền Tây Australia</standard>
-					<daylight>Giờ Mùa Hè Miền Tây Australia</daylight>
+					<standard>Giờ chuẩn Miền Tây Australia</standard>
+					<daylight>Giờ mùa hè Miền Tây Australia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
 				<long>
 					<generic>Giờ Azerbaijan</generic>
-					<standard>Giờ Chuẩn Azerbaijan</standard>
-					<daylight>Giờ Mùa Hè Azerbaijan</daylight>
+					<standard>Giờ chuẩn Azerbaijan</standard>
+					<daylight>Giờ mùa hè Azerbaijan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azores">
@@ -3131,8 +3175,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Bangladesh">
 				<long>
 					<generic>Giờ Bangladesh</generic>
-					<standard>Giờ Chuẩn Bangladesh</standard>
-					<daylight>Giờ Mùa Hè Bangladesh</daylight>
+					<standard>Giờ chuẩn Bangladesh</standard>
+					<daylight>Giờ mùa hè Bangladesh</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bhutan">
@@ -3148,8 +3192,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Brasilia">
 				<long>
 					<generic>Giờ Brasilia</generic>
-					<standard>Giờ Chuẩn Brasilia</standard>
-					<daylight>Giờ Mùa Hè Brasilia</daylight>
+					<standard>Giờ chuẩn Brasilia</standard>
+					<daylight>Giờ mùa hè Brasilia</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Giờ Vương quốc Anh</generic>
+					<daylight>Giờ mùa hè Vương quốc Anh</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3161,7 +3211,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<generic>Giờ Cape Verde</generic>
 					<standard>Giờ Chuẩn Cape Verde</standard>
-					<daylight>Giờ Mùa Hè Cape Verde</daylight>
+					<daylight>Giờ mùa hè Cape Verde</daylight>
 				</long>
 			</metazone>
 			<metazone type="Casey">
@@ -3177,22 +3227,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Chatham">
 				<long>
 					<generic>Giờ Chatham</generic>
-					<standard>Giờ Chuẩn Chatham</standard>
-					<daylight>Giờ Mùa Hè Chatham</daylight>
+					<standard>Giờ chuẩn Chatham</standard>
+					<daylight>Giờ mùa hè Chatham</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
 				<long>
 					<generic>Giờ Chile</generic>
-					<standard>Giờ Chuẩn Chile</standard>
-					<daylight>Giờ Mùa Hè Chile</daylight>
+					<standard>Giờ chuẩn Chile</standard>
+					<daylight>Giờ mùa hè Chile</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
 				<long>
 					<generic>Giờ Trung Quốc</generic>
-					<standard>Giờ Chuẩn Trung Quốc</standard>
-					<daylight>Giờ Mùa Hè Trung Quốc</daylight>
+					<standard>Giờ chuẩn Trung Quốc</standard>
+					<daylight>Giờ mùa hè Trung Quốc</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -3208,22 +3258,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Colombia">
 				<long>
 					<generic>Giờ Colombia</generic>
-					<standard>Giờ Chuẩn Colombia</standard>
-					<daylight>Giờ Mùa Hè Colombia</daylight>
+					<standard>Giờ chuẩn Colombia</standard>
+					<daylight>Giờ mùa hè Colombia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cook">
 				<long>
 					<generic>Giờ Quần Đảo Cook</generic>
-					<standard>Giờ Chuẩn Quần Đảo Cook</standard>
-					<daylight>Giờ Nửa Mùa Hè Quần Đảo Cook</daylight>
+					<standard>Giờ chuẩn Quần Đảo Cook</standard>
+					<daylight>Giờ mùa hè Quần Đảo Cook</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
 				<long>
 					<generic>Giờ Cuba</generic>
-					<standard>Giờ Chuẩn Cuba</standard>
-					<daylight>Giờ Mùa Hè Cuba</daylight>
+					<standard>Giờ chuẩn Cuba</standard>
+					<daylight>Giờ mùa hè Cuba</daylight>
 				</long>
 			</metazone>
 			<metazone type="Davis">
@@ -3244,8 +3294,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Easter">
 				<long>
 					<generic>Giờ Đảo Phục Sinh</generic>
-					<standard>Giờ Chuẩn Đảo Phục Sinh</standard>
-					<daylight>Giờ Mùa Hè Đảo Phục Sinh</daylight>
+					<standard>Giờ chuẩn Đảo Phục Sinh</standard>
+					<daylight>Giờ mùa hè Đảo Phục Sinh</daylight>
 				</long>
 			</metazone>
 			<metazone type="Ecuador">
@@ -3275,22 +3325,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Europe_Western">
 				<long>
 					<generic>Giờ Tây Âu</generic>
-					<standard>Giờ Chuẩn Tây Âu</standard>
+					<standard>Giờ chuẩn Tây Âu</standard>
 					<daylight>Giờ mùa hè Tây Âu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Falkland">
 				<long>
-					<generic>Giờ Quần Đảo Falkland</generic>
-					<standard>Giờ Chuẩn Quần Đảo Falkland</standard>
-					<daylight>Giờ Mùa Hè Quần Đảo Falkland</daylight>
+					<generic>Giờ Quần đảo Falkland</generic>
+					<standard>Giờ chuẩn Quần đảo Falkland</standard>
+					<daylight>Giờ mùa hè Quần đảo Falkland</daylight>
 				</long>
 			</metazone>
 			<metazone type="Fiji">
 				<long>
 					<generic>Giờ Fiji</generic>
-					<standard>Giờ Chuẩn Fiji</standard>
-					<daylight>Giờ Mùa Hè Fiji</daylight>
+					<standard>Giờ chuẩn Fiji</standard>
+					<daylight>Giờ mùa hè Fiji</daylight>
 				</long>
 			</metazone>
 			<metazone type="French_Guiana">
@@ -3316,8 +3366,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Georgia">
 				<long>
 					<generic>Giờ Georgia</generic>
-					<standard>Giờ Chuẩn Georgia</standard>
-					<daylight>Giờ Mùa Hè Georgia</daylight>
+					<standard>Giờ chuẩn Georgia</standard>
+					<daylight>Giờ mùa hè Georgia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gilbert_Islands">
@@ -3330,28 +3380,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Giờ Trung bình Greenwich</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Giờ Greenland</generic>
+					<standard>Giờ chuẩn Greenland</standard>
+					<daylight>Giờ mùa hè Greenland</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic>Giờ Miền Đông Greenland</generic>
-					<standard>Giờ Chuẩn Miền Đông Greenland</standard>
-					<daylight>Giờ Mùa Hè Miền Đông Greenland</daylight>
+					<generic>Giờ miền đông Greenland</generic>
+					<standard>Giờ chuẩn miền đông Greenland</standard>
+					<daylight>Giờ mùa hè miền đông Greenland</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>Giờ Miền Tây Greenland</generic>
-					<standard>Giờ Chuẩn Miền Tây Greenland</standard>
-					<daylight>Giờ Mùa Hè Miền Tây Greenland</daylight>
-				</long>
-			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard draft="contributed">Giờ Chuẩn Guam</standard>
+					<generic>Giờ miền tây Greenland</generic>
+					<standard>Giờ chuẩn miền tây Greenland</standard>
+					<daylight>Giờ mùa hè miền tây Greenland</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
 				<long>
-					<standard>Giờ Chuẩn Vùng Vịnh</standard>
+					<standard>Giờ chuẩn Vùng Vịnh</standard>
 				</long>
 			</metazone>
 			<metazone type="Guyana">
@@ -3361,41 +3413,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Giờ Chuẩn Hawaii-Aleut</standard>
+					<standard>Giờ Hawaii</standard>
 				</long>
-				<short>
-					<standard draft="contributed">HAST</standard>
-				</short>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Giờ Hawaii-Aleut</generic>
-					<standard>Giờ Chuẩn Hawaii-Aleut</standard>
-					<daylight>Giờ Mùa Hè Hawaii-Aleut</daylight>
+					<standard>Giờ chuẩn Hawaii-Aleut</standard>
+					<daylight>Giờ mùa hè Hawaii-Aleut</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">HAT</generic>
-					<standard draft="contributed">HAST</standard>
-					<daylight draft="contributed">HADT</daylight>
-				</short>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
 					<generic>Giờ Hồng Kông</generic>
-					<standard>Giờ Chuẩn Hồng Kông</standard>
-					<daylight>Giờ Mùa Hè Hồng Kông</daylight>
+					<standard>Giờ chuẩn Hồng Kông</standard>
+					<daylight>Giờ mùa hè Hồng Kông</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hovd">
 				<long>
 					<generic>Giờ Hovd</generic>
-					<standard>Giờ Chuẩn Hovd</standard>
-					<daylight>Giờ Mùa Hè Hovd</daylight>
+					<standard>Giờ chuẩn Hovd</standard>
+					<daylight>Giờ mùa hè Hovd</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
 				<long>
-					<standard>Giờ Chuẩn Ấn Độ</standard>
+					<standard>Giờ chuẩn Ấn Độ</standard>
 				</long>
 			</metazone>
 			<metazone type="Indian_Ocean">
@@ -3426,36 +3470,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Iran">
 				<long>
 					<generic>Giờ Iran</generic>
-					<standard>Giờ Chuẩn Iran</standard>
-					<daylight>Giờ Mùa Hè Iran</daylight>
+					<standard>Giờ chuẩn Iran</standard>
+					<daylight>Giờ mùa hè Iran</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Giờ Ireland</generic>
+					<daylight>Giờ chuẩn Ireland</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Giờ Irkutsk</generic>
-					<standard>Giờ Chuẩn Irkutsk</standard>
-					<daylight>Giờ Mùa Hè Irkutsk</daylight>
+					<standard>Giờ chuẩn Irkutsk</standard>
+					<daylight>Giờ mùa hè Irkutsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
 				<long>
 					<generic>Giờ Israel</generic>
-					<standard>Giờ Chuẩn Israel</standard>
-					<daylight>Giờ Mùa Hè Israel</daylight>
+					<standard>Giờ chuẩn Israel</standard>
+					<daylight>Giờ mùa hè Israel</daylight>
 				</long>
 			</metazone>
 			<metazone type="Japan">
 				<long>
 					<generic>Giờ Nhật Bản</generic>
-					<standard>Giờ Chuẩn Nhật Bản</standard>
-					<daylight>Giờ Mùa Hè Nhật Bản</daylight>
+					<standard>Giờ chuẩn Nhật Bản</standard>
+					<daylight>Giờ mùa hè Nhật Bản</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic draft="contributed">Giờ Petropavlovsk-Kamchatski</generic>
-					<standard draft="contributed">Giờ chuẩn Petropavlovsk-Kamchatski</standard>
-					<daylight draft="contributed">Giờ mùa hè Petropavlovsk-Kamchatski</daylight>
+					<generic>Giờ Petropavlovsk-Kamchatski</generic>
+					<standard>Giờ chuẩn Petropavlovsk-Kamchatski</standard>
+					<daylight>Giờ mùa hè Petropavlovsk-Kamchatski</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3476,8 +3526,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Korea">
 				<long>
 					<generic>Giờ Hàn Quốc</generic>
-					<standard>Giờ Chuẩn Hàn Quốc</standard>
-					<daylight>Giờ Mùa Hè Hàn Quốc</daylight>
+					<standard>Giờ chuẩn Hàn Quốc</standard>
+					<daylight>Giờ mùa hè Hàn Quốc</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kosrae">
@@ -3488,18 +3538,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Krasnoyarsk">
 				<long>
 					<generic>Giờ Krasnoyarsk</generic>
-					<standard>Giờ Chuẩn Krasnoyarsk</standard>
-					<daylight>Giờ Mùa Hè Krasnoyarsk</daylight>
+					<standard>Giờ chuẩn Krasnoyarsk</standard>
+					<daylight>Giờ mùa hè Krasnoyarsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kyrgystan">
 				<long>
 					<standard>Giờ Kyrgystan</standard>
-				</long>
-			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard draft="contributed">Giờ Lanka</standard>
 				</long>
 			</metazone>
 			<metazone type="Line_Islands">
@@ -3510,21 +3555,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Lord_Howe">
 				<long>
 					<generic>Giờ Lord Howe</generic>
-					<standard>Giờ Chuẩn Lord Howe</standard>
-					<daylight>Giờ Mùa Hè Lord Howe</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic draft="contributed">Giờ Ma Cao</generic>
-					<standard draft="contributed">Giờ Chuẩn Ma Cao</standard>
-					<daylight draft="contributed">Giờ Mùa Hè Ma Cao</daylight>
+					<standard>Giờ chuẩn Lord Howe</standard>
+					<daylight>Giờ mùa hè Lord Howe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Giờ Magadan</generic>
-					<standard>Giờ Chuẩn Magadan</standard>
+					<standard>Giờ chuẩn Magadan</standard>
 					<daylight>Giờ mùa hè Magadan</daylight>
 				</long>
 			</metazone>
@@ -3551,8 +3589,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mauritius">
 				<long>
 					<generic>Giờ Mauritius</generic>
-					<standard>Giờ Chuẩn Mauritius</standard>
-					<daylight>Giờ Mùa Hè Mauritius</daylight>
+					<standard>Giờ chuẩn Mauritius</standard>
+					<daylight>Giờ mùa hè Mauritius</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mawson">
@@ -3563,8 +3601,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mexico_Pacific">
 				<long>
 					<generic>Giờ Thái Bình Dương Mexico</generic>
-					<standard>Giờ Chuẩn Thái Bình Dương Mexico</standard>
-					<daylight>Giờ Mùa Hè Thái Bình Dương Mexico</daylight>
+					<standard>Giờ chuẩn Thái Bình Dương Mexico</standard>
+					<daylight>Giờ mùa hè Thái Bình Dương Mexico</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
@@ -3577,8 +3615,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Moscow">
 				<long>
 					<generic>Giờ Matxcơva</generic>
-					<standard>Giờ Chuẩn Matxcơva</standard>
-					<daylight>Giờ Mùa Hè Matxcơva</daylight>
+					<standard>Giờ chuẩn Matxcơva</standard>
+					<daylight>Giờ mùa hè Matxcơva</daylight>
 				</long>
 			</metazone>
 			<metazone type="Myanmar">
@@ -3599,22 +3637,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="New_Caledonia">
 				<long>
 					<generic>Giờ New Caledonia</generic>
-					<standard>Giờ Chuẩn New Caledonia</standard>
-					<daylight>Giờ Mùa Hè New Caledonia</daylight>
+					<standard>Giờ chuẩn New Caledonia</standard>
+					<daylight>Giờ mùa hè New Caledonia</daylight>
 				</long>
 			</metazone>
 			<metazone type="New_Zealand">
 				<long>
 					<generic>Giờ New Zealand</generic>
-					<standard>Giờ Chuẩn New Zealand</standard>
-					<daylight>Giờ Mùa Hè New Zealand</daylight>
+					<standard>Giờ chuẩn New Zealand</standard>
+					<daylight>Giờ mùa hè New Zealand</daylight>
 				</long>
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
 					<generic>Giờ Newfoundland</generic>
-					<standard>Giờ Chuẩn Newfoundland</standard>
-					<daylight>Giờ Mùa Hè Newfoundland</daylight>
+					<standard>Giờ chuẩn Newfoundland</standard>
+					<daylight>Giờ mùa hè Newfoundland</daylight>
 				</long>
 			</metazone>
 			<metazone type="Niue">
@@ -3625,20 +3663,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Norfolk">
 				<long>
 					<generic>Giờ Đảo Norfolk</generic>
-					<standard>Giờ Chuẩn Đảo Norfolk</standard>
-					<daylight>Giờ Mùa Hè Đảo Norfolk</daylight>
+					<standard>Giờ chuẩn Đảo Norfolk</standard>
+					<daylight>Giờ mùa hè Đảo Norfolk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
 				<long>
 					<generic>Giờ Fernando de Noronha</generic>
-					<standard>Giờ Chuẩn Fernando de Noronha</standard>
-					<daylight>Giờ Mùa Hè Fernando de Noronha</daylight>
-				</long>
-			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard draft="contributed">Giờ Quần Đảo Bắc Mariana</standard>
+					<standard>Giờ chuẩn Fernando de Noronha</standard>
+					<daylight>Giờ mùa hè Fernando de Noronha</daylight>
 				</long>
 			</metazone>
 			<metazone type="Novosibirsk">
@@ -3658,8 +3691,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Pakistan">
 				<long>
 					<generic>Giờ Pakistan</generic>
-					<standard>Giờ Chuẩn Pakistan</standard>
-					<daylight>Giờ Mùa Hè Pakistan</daylight>
+					<standard>Giờ chuẩn Pakistan</standard>
+					<daylight>Giờ mùa hè Pakistan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Palau">
@@ -3675,22 +3708,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Paraguay">
 				<long>
 					<generic>Giờ Paraguay</generic>
-					<standard>Giờ Chuẩn Paraguay</standard>
-					<daylight>Giờ Mùa Hè Paraguay</daylight>
+					<standard>Giờ chuẩn Paraguay</standard>
+					<daylight>Giờ mùa hè Paraguay</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
 				<long>
 					<generic>Giờ Peru</generic>
-					<standard>Giờ Chuẩn Peru</standard>
-					<daylight>Giờ Mùa Hè Peru</daylight>
+					<standard>Giờ chuẩn Peru</standard>
+					<daylight>Giờ mùa hè Peru</daylight>
 				</long>
 			</metazone>
 			<metazone type="Philippines">
 				<long>
 					<generic>Giờ Philippin</generic>
-					<standard>Giờ Chuẩn Philippin</standard>
-					<daylight>Giờ Mùa Hè Philippin</daylight>
+					<standard>Giờ chuẩn Philippin</standard>
+					<daylight>Giờ mùa hè Philippin</daylight>
 				</long>
 			</metazone>
 			<metazone type="Phoenix_Islands">
@@ -3701,7 +3734,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Pierre_Miquelon">
 				<long>
 					<generic>Giờ St. Pierre và Miquelon</generic>
-					<standard>Giờ Chuẩn St. Pierre và Miquelon</standard>
+					<standard>Giờ chuẩn St. Pierre và Miquelon</standard>
 					<daylight>Giờ Mùa Hè Saint Pierre và Miquelon</daylight>
 				</long>
 			</metazone>
@@ -3720,13 +3753,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Giờ Bình Nhưỡng</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic draft="contributed">Giờ Qyzylorda</generic>
-					<standard draft="contributed">Giờ Chuẩn Qyzylorda</standard>
-					<daylight draft="contributed">Giờ Mùa Hè Qyzylorda</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Giờ Reunion</standard>
@@ -3740,22 +3766,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Sakhalin">
 				<long>
 					<generic>Giờ Sakhalin</generic>
-					<standard>Giờ Chuẩn Sakhalin</standard>
+					<standard>Giờ chuẩn Sakhalin</standard>
 					<daylight>Giờ mùa hè Sakhalin</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samara">
 				<long>
-					<generic draft="contributed">Giờ Samara</generic>
-					<standard draft="contributed">Giờ Chuẩn Samara</standard>
-					<daylight draft="contributed">Giờ mùa hè Samara</daylight>
+					<generic>Giờ Samara</generic>
+					<standard>Giờ chuẩn Samara</standard>
+					<daylight>Giờ mùa hè Samara</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Giờ Samoa</generic>
-					<standard>Giờ Chuẩn Samoa</standard>
-					<daylight>Giờ ban ngày Samoa</daylight>
+					<standard>Giờ chuẩn Samoa</standard>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3796,8 +3820,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Taipei">
 				<long>
 					<generic>Giờ Đài Bắc</generic>
-					<standard>Giờ Chuẩn Đài Bắc</standard>
-					<daylight>Giờ Mùa Hè Đài Bắc</daylight>
+					<standard>Giờ chuẩn Đài Bắc</standard>
+					<daylight>Giờ mùa hè Đài Bắc</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
@@ -3813,8 +3837,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Tonga">
 				<long>
 					<generic>Giờ Tonga</generic>
-					<standard>Giờ Chuẩn Tonga</standard>
-					<daylight>Giờ Mùa Hè Tonga</daylight>
+					<standard>Giờ chuẩn Tonga</standard>
+					<daylight>Giờ mùa hè Tonga</daylight>
 				</long>
 			</metazone>
 			<metazone type="Truk">
@@ -3824,16 +3848,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Turkey">
 				<long>
-					<generic draft="contributed">Giờ Thổ Nhĩ Kỳ</generic>
-					<standard draft="contributed">Giờ Chuẩn Thổ Nhĩ Kỳ</standard>
-					<daylight draft="contributed">Giờ Mùa Hè Thổ Nhĩ Kỳ</daylight>
+					<generic>Giờ Thổ Nhĩ Kỳ</generic>
+					<standard>Giờ chuẩn Thổ Nhĩ Kỳ</standard>
+					<daylight>Giờ mùa hè Thổ Nhĩ Kỳ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Giờ Turkmenistan</generic>
-					<standard>Giờ Chuẩn Turkmenistan</standard>
-					<daylight>Giờ Mùa Hè Turkmenistan</daylight>
+					<standard>Giờ chuẩn Turkmenistan</standard>
+					<daylight>Giờ mùa hè Turkmenistan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tuvalu">
@@ -3844,22 +3868,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Uruguay">
 				<long>
 					<generic>Giờ Uruguay</generic>
-					<standard>Giờ Chuẩn Uruguay</standard>
-					<daylight>Giờ Mùa Hè Uruguay</daylight>
+					<standard>Giờ chuẩn Uruguay</standard>
+					<daylight>Giờ mùa hè Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Giờ Urumqi</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
 				<long>
 					<generic>Giờ Uzbekistan</generic>
-					<standard>Giờ Chuẩn Uzbekistan</standard>
-					<daylight>Giờ Mùa Hè Uzbekistan</daylight>
+					<standard>Giờ chuẩn Uzbekistan</standard>
+					<daylight>Giờ mùa hè Uzbekistan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vanuatu">
 				<long>
 					<generic>Giờ Vanuatu</generic>
-					<standard>Giờ Chuẩn Vanuatu</standard>
-					<daylight>Giờ Mùa Hè Vanuatu</daylight>
+					<standard>Giờ chuẩn Vanuatu</standard>
+					<daylight>Giờ mùa hè Vanuatu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Venezuela">
@@ -3870,15 +3899,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Vladivostok">
 				<long>
 					<generic>Giờ Vladivostok</generic>
-					<standard>Giờ Chuẩn Vladivostok</standard>
+					<standard>Giờ chuẩn Vladivostok</standard>
 					<daylight>Giờ mùa hè Vladivostok</daylight>
 				</long>
 			</metazone>
 			<metazone type="Volgograd">
 				<long>
 					<generic>Giờ Volgograd</generic>
-					<standard>Giờ Chuẩn Volgograd</standard>
-					<daylight>Giờ Mùa Hè Volgograd</daylight>
+					<standard>Giờ chuẩn Volgograd</standard>
+					<daylight>Giờ mùa hè Volgograd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vostok">
@@ -3899,14 +3928,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Yakutsk">
 				<long>
 					<generic>Giờ Yakutsk</generic>
-					<standard>Giờ Chuẩn Yakutsk</standard>
+					<standard>Giờ chuẩn Yakutsk</standard>
 					<daylight>Giờ mùa hè Yakutsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
 					<generic>Giờ Yekaterinburg</generic>
-					<standard>Giờ Chuẩn Yekaterinburg</standard>
+					<standard>Giờ chuẩn Yekaterinburg</standard>
 					<daylight>Giờ mùa hè Yekaterinburg</daylight>
 				</long>
 			</metazone>
@@ -3961,10 +3990,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
 					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
-				</currencyFormat>
-				<currencyFormat type="accounting">
-					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4044,10 +4069,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="AUD">
 				<displayName>Đô la Australia</displayName>
+				<displayName count="other">đô la Australia</displayName>
 				<symbol>AU$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>Florin Aruba</displayName>
+				<displayName count="other">florin Aruba</displayName>
 			</currency>
 			<currency type="AZM">
 				<displayName draft="contributed">Đồng Manat của Azerbaijan (1993–2006)</displayName>
@@ -4072,6 +4099,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BDT">
 				<displayName>Taka Bangladesh</displayName>
+				<displayName count="other">taka Bangladesh</displayName>
 			</currency>
 			<currency type="BEC">
 				<displayName draft="contributed">Đồng Franc Bỉ (có thể chuyển đổi)</displayName>
@@ -4152,6 +4180,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BTN">
 				<displayName>Ngultrum Bhutan</displayName>
+				<displayName count="other">ngultrum Bhutan</displayName>
 			</currency>
 			<currency type="BUK">
 				<displayName draft="contributed">Đồng Kyat Miến Điện</displayName>
@@ -4409,6 +4438,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="INR">
 				<displayName>Rupee Ấn Độ</displayName>
+				<displayName count="other">rupee Ấn Độ</displayName>
 			</currency>
 			<currency type="IQD">
 				<displayName>Dinar Iraq</displayName>
@@ -4416,6 +4446,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="IRR">
 				<displayName>Rial Iran</displayName>
+				<displayName count="other">rial Iran</displayName>
 			</currency>
 			<currency type="ISK">
 				<displayName>Króna Iceland</displayName>
@@ -4489,6 +4520,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="LKR">
 				<displayName>Rupee Sri Lanka</displayName>
+				<displayName count="other">rupee Sri Lanka</displayName>
 			</currency>
 			<currency type="LRD">
 				<displayName>Đô la Liberia</displayName>
@@ -4496,6 +4528,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="LSL">
 				<displayName>Loti Lesotho</displayName>
+				<displayName count="other">loti Lesotho</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>Litas Lít-va</displayName>
@@ -4515,7 +4548,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="LVL">
 				<displayName>Lats Latvia</displayName>
-				<displayName count="other">lats Lativia</displayName>
+				<displayName count="other">lats Latvia</displayName>
 			</currency>
 			<currency type="LVR">
 				<displayName draft="contributed">Đồng Rúp Latvia</displayName>
@@ -4592,6 +4625,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="MVR">
 				<displayName>Rufiyaa Maldives</displayName>
+				<displayName count="other">rufiyaa Maldives</displayName>
 			</currency>
 			<currency type="MWK">
 				<displayName>Kwacha Malawi</displayName>
@@ -4645,6 +4679,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="NPR">
 				<displayName>Rupee Nepal</displayName>
+				<displayName count="other">rupee Nepal</displayName>
 			</currency>
 			<currency type="NZD">
 				<displayName>Đô la New Zealand</displayName>
@@ -4679,6 +4714,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="PKR">
 				<displayName>Rupee Pakistan</displayName>
+				<displayName count="other">rupee Pakistan</displayName>
 			</currency>
 			<currency type="PLN">
 				<displayName>Zloty Ba Lan</displayName>
@@ -4765,9 +4801,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="SLE">
 				<displayName>Leone Sierra Leone</displayName>
+				<displayName count="other">leone Sierra Leone</displayName>
 			</currency>
 			<currency type="SLL">
 				<displayName>Leone Sierra Leone (1964—2022)</displayName>
+				<displayName count="other">leone Sierra Leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Shilling Somali</displayName>
@@ -4946,7 +4984,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>Guilder Caribe</displayName>
-				<displayName count="other">Guilder Caribe</displayName>
+				<displayName count="other">guilder Caribe</displayName>
 			</currency>
 			<currency type="XDR">
 				<displayName draft="contributed">Quyền Rút vốn Đặc biệt</displayName>
@@ -5028,8 +5066,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">Đồng Đô la Zimbabwe (1980–2008)</displayName>
 			</currency>
 			<currency type="ZWG">
-				<displayName>Zimbabwean Gold</displayName>
-				<displayName count="other">Zimbabwean Gold</displayName>
+				<displayName>Zimbabwe Gold</displayName>
+				<displayName count="other">Zimbabwe gold</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName draft="contributed">Đồng Đô la Zimbabwe (2009)</displayName>
@@ -5043,7 +5081,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="other">{0} ngày</pluralMinimalPairs>
+			<pluralMinimalPairs count="one">Bạn có {0} mặt hàng trong giỏ hàng; bạn có muốn mua nó?</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">Bạn có {0} mặt hàng trong giỏ hàng; bạn có muốn mua chúng?</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">Rẽ phải tại lối rẽ thứ {0}.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Theo lối rẽ thứ {0} bên phải.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
@@ -5210,18 +5250,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>carat</displayName>
 				<unitPattern count="other">{0} carat</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>phần</displayName>
-				<unitPattern count="other">{0} phần</unitPattern>
-			</unit>
-			<unit type="concentr-part-per-1e6">
-				<displayName>phần triệu</displayName>
-				<unitPattern count="other">{0} phần triệu</unitPattern>
-			</unit>
 			<unit type="concentr-permyriad">
 				<unitPattern count="other">{0} phần vạn</unitPattern>
 			</unit>
 			<unit type="concentr-ofglucose">
+				<displayName>glucose</displayName>
 				<unitPattern count="other">{0} glucose</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
@@ -5273,6 +5306,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="digital-kilobit">
 				<displayName>kilobit</displayName>
 				<unitPattern count="other">{0} kilobit</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>tiếng</displayName>
+				<unitPattern count="other">{0} tiếng</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>ampe</displayName>
@@ -5743,13 +5780,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>weber</displayName>
 				<unitPattern count="other">{0} weber</unitPattern>
 			</unit>
-			<unit type="speed-light-speed">
-				<displayName>ánh sáng</displayName>
-				<unitPattern count="other">{0} ánh sáng</unitPattern>
-			</unit>
-			<unit type="concentr-part-per-1e9">
-				<unitPattern count="other">{0} phần tỷ</unitPattern>
-			</unit>
 			<coordinateUnit>
 				<displayName>phương trời</displayName>
 				<coordinateUnitPattern type="east">{0} Đông</coordinateUnitPattern>
@@ -5850,8 +5880,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/ngày</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>giờ</displayName>
-				<unitPattern count="other">{0} giờ</unitPattern>
+				<displayName>tiếng</displayName>
+				<unitPattern count="other">{0} tiếng</unitPattern>
 				<perUnitPattern>{0}/giờ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
@@ -6126,20 +6156,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-hectare">
 				<unitPattern count="other">{0}ha</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>phần</displayName>
-				<unitPattern count="other">{0} phần</unitPattern>
-			</unit>
-			<unit type="concentr-part-per-1e6">
-				<displayName>phần triệu</displayName>
-				<unitPattern count="other">{0} phần triệu</unitPattern>
-			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
-				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName>PB</displayName>
@@ -6147,6 +6165,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="digital-byte">
 				<displayName>B</displayName>
 				<unitPattern count="other">{0} B</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>tiếng</displayName>
+				<unitPattern count="other">{0} tiếng</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>eV</displayName>
@@ -6212,10 +6234,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="power-horsepower">
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
-			<unit type="pressure-ofhg">
-				<displayName draft="contributed">of Hg</displayName>
-				<unitPattern count="other" draft="contributed">{0} of Hg</unitPattern>
-			</unit>
 			<unit type="pressure-inch-ofhg">
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>
 			</unit>
@@ -6232,61 +6250,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}L</unitPattern>
 				<perUnitPattern>{0}/l</perUnitPattern>
 			</unit>
-			<unit type="volume-fluid-ounce-metric">
-				<unitPattern count="other">{0} fl oz m.</unitPattern>
-			</unit>
 			<unit type="volume-gallon">
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<unitPattern count="other">{0} fl ozIm</unitPattern>
-			</unit>
-			<unit type="angle-steradian">
-				<unitPattern count="other">{0} sr</unitPattern>
-			</unit>
-			<unit type="concentr-katal">
-				<unitPattern count="other">{0} kat</unitPattern>
-			</unit>
-			<unit type="electric-coulomb">
-				<unitPattern count="other">{0} C</unitPattern>
-			</unit>
-			<unit type="electric-farad">
-				<unitPattern count="other">{0} F</unitPattern>
-			</unit>
-			<unit type="electric-henry">
-				<unitPattern count="other">{0} H</unitPattern>
-			</unit>
-			<unit type="electric-siemens">
-				<unitPattern count="other">{0} S</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>cal-IT</displayName>
-				<unitPattern count="other">{0} cal-IT</unitPattern>
-			</unit>
-			<unit type="energy-becquerel">
-				<unitPattern count="other">{0} Bq</unitPattern>
-			</unit>
-			<unit type="energy-sievert">
-				<unitPattern count="other">{0} Sv</unitPattern>
-			</unit>
-			<unit type="energy-gray">
-				<unitPattern count="other">{0} Gy</unitPattern>
-			</unit>
-			<unit type="force-kilogram-force">
-				<unitPattern count="other">{0} kgf</unitPattern>
-			</unit>
-			<unit type="magnetic-tesla">
-				<unitPattern count="other">{0} T</unitPattern>
-			</unit>
-			<unit type="magnetic-weber">
-				<unitPattern count="other">{0} Wb</unitPattern>
-			</unit>
-			<unit type="speed-light-speed">
-				<displayName>ánh sáng</displayName>
-				<unitPattern count="other">{0} ánh sáng</unitPattern>
-			</unit>
-			<unit type="concentr-part-per-1e9">
-				<unitPattern count="other">{0} phần tỷ</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

@@ -187,6 +187,16 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
 }
 
 G1MonitoringSupport::~G1MonitoringSupport() {
+  delete _young_collection_counters;
+  delete _full_collection_counters;
+  delete _conc_collection_counters;
+  delete _young_gen_counters;
+  delete _old_gen_counters;
+  delete _old_space_counters;
+  delete _eden_space_counters;
+  delete _from_space_counters;
+  delete _to_space_counters;
+
   delete _eden_space_pool;
   delete _survivor_space_pool;
   delete _old_gen_pool;

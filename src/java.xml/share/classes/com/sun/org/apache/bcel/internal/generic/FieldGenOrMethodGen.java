@@ -29,8 +29,6 @@ import com.sun.org.apache.bcel.internal.classfile.Attribute;
 
 /**
  * Super class for FieldGen and MethodGen objects, since they have some methods in common!
- *
- * @LastModified: Sept 2025
  */
 public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAndTyped, Cloneable {
 
@@ -57,16 +55,27 @@ public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAn
     // @since 6.0
     private final List<AnnotationEntryGen> annotationList = new ArrayList<>();
 
+    /**
+     * Constructs a FieldGenOrMethodGen.
+     */
     protected FieldGenOrMethodGen() {
     }
 
     /**
+     * Constructs a FieldGenOrMethodGen.
+     *
+     * @param accessFlags The access flags.
      * @since 6.0
      */
     protected FieldGenOrMethodGen(final int accessFlags) { // TODO could this be package protected?
         super(accessFlags);
     }
 
+    /**
+     * Adds all attributes from an array.
+     *
+     * @param attributes The attributes to add.
+     */
     protected void addAll(final Attribute[] attributes) {
         if (attributes != null) {
             Collections.addAll(attributeList, attributes);
@@ -74,6 +83,9 @@ public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAn
     }
 
     /**
+     * Adds an annotation entry.
+     *
+     * @param ag The annotation entry.
      * @since 6.0
      */
     public void addAnnotationEntry(final AnnotationEntryGen ag) {
@@ -84,7 +96,7 @@ public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAn
      * Add an attribute to this method. Currently, the JVM knows about the 'Code', 'ConstantValue', 'Synthetic' and
      * 'Exceptions' attributes. Other attributes will be ignored by the JVM but do no harm.
      *
-     * @param a attribute to be added
+     * @param a attribute to be added.
      */
     public void addAttribute(final Attribute a) {
         attributeList.add(a);
@@ -99,17 +111,29 @@ public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAn
         }
     }
 
+    /**
+     * Gets all annotation entries.
+     *
+     * @return all annotation entries.
+     */
     public AnnotationEntryGen[] getAnnotationEntries() {
         return annotationList.toArray(AnnotationEntryGen.EMPTY_ARRAY);
     }
 
     /**
+     * Gets all attributes of this method or field.
+     *
      * @return all attributes of this method.
      */
     public Attribute[] getAttributes() {
         return attributeList.toArray(Attribute.EMPTY_ARRAY);
     }
 
+    /**
+     * Gets the constant pool.
+     *
+     * @return The constant pool.
+     */
     public ConstantPoolGen getConstantPool() {
         return cp;
     }
@@ -123,6 +147,8 @@ public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAn
     }
 
     /**
+     * Gets the signature of method or field.
+     *
      * @return signature of method/field.
      */
     public abstract String getSignature();
@@ -133,6 +159,8 @@ public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAn
     }
 
     /**
+     * Removes all annotation entries.
+     *
      * @since 6.0
      */
     public void removeAnnotationEntries() {
@@ -140,6 +168,9 @@ public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAn
     }
 
     /**
+     * Removes an annotation entry.
+     *
+     * @param ag The annotation entry to remove.
      * @since 6.0
      */
     public void removeAnnotationEntry(final AnnotationEntryGen ag) {
@@ -147,19 +178,26 @@ public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAn
     }
 
     /**
-     * Remove an attribute.
+     * Removes an attribute.
+     *
+     * @param a The attribute to remove.
      */
     public void removeAttribute(final Attribute a) {
         attributeList.remove(a);
     }
 
     /**
-     * Remove all attributes.
+     * Removes all attributes.
      */
     public void removeAttributes() {
         attributeList.clear();
     }
 
+    /**
+     * Sets the constant pool.
+     *
+     * @param cp The constant pool.
+     */
     public void setConstantPool(final ConstantPoolGen cp) { // TODO could be package-protected?
         this.cp = cp;
     }
@@ -172,7 +210,7 @@ public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAn
     @Override
     public void setType(final Type type) { // TODO could be package-protected?
         if (type.getType() == Const.T_ADDRESS) {
-            throw new IllegalArgumentException("Type can not be " + type);
+            throw new IllegalArgumentException("Type cannot be " + type);
         }
         this.type = type;
     }

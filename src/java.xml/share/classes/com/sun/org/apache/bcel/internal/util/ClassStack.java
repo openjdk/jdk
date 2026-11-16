@@ -34,18 +34,44 @@ public class ClassStack {
 
     private final Stack<JavaClass> stack = new Stack<>();
 
+    /**
+     * Constructs a new ClassStack.
+     */
+    public ClassStack() {
+    }
+
+    /**
+     * Checks if the stack is empty.
+     *
+     * @return true if the stack is empty.
+     */
     public boolean empty() {
         return stack.empty();
     }
 
+    /**
+     * Pops a JavaClass from the stack.
+     *
+     * @return The JavaClass from the top of the stack.
+     */
     public JavaClass pop() {
         return stack.pop();
     }
 
+    /**
+     * Pushes a JavaClass onto the stack.
+     *
+     * @param clazz The JavaClass to push.
+     */
     public void push(final JavaClass clazz) {
         stack.push(clazz);
     }
 
+    /**
+     * Gets the top JavaClass from the stack without removing it.
+     *
+     * @return The JavaClass at the top of the stack.
+     */
     public JavaClass top() {
         return stack.peek();
     }
