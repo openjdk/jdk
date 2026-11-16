@@ -173,10 +173,17 @@ void VM_Version::initialize() {
 
   char* uarch = nullptr;
   setup_cpu_feature_flags(uarch);
+  // Validation may disable flags with unmet dependencies; synchronize only
+  // afterwards so AOT matching sees the resulting feature set.
   validate_cpu_feature_flags();
   sync_cpu_features();
 
+  // Check that the runtime features support the AOT cache, then restrict them
+  // to the archived feature set if compatible.
   apply_aot_cache_cpu_features();
+
+  // AOT restrictions may disable flags and invalidate their dependents; validate
+  // and synchronize again before deriving ergonomics and publishing features.
   validate_cpu_feature_flags();
   sync_cpu_features();
 
