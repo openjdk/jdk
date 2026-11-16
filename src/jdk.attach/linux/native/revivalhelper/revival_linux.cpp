@@ -635,7 +635,7 @@ int create_revival_cache_pd(const char* corename, const char* revival_dirname, c
     // Find JVM and its load address from core.
     Segment* jvm_mapping = core.get_file_mapping(JVM_FILENAME);
     if (jvm_mapping == nullptr) {
-        warn("JVM library not found in core.");
+        warn("JVM library from core not found.");
         error("For cores from other systems, or if JDK at path in core has changed, use -L to specify JVM location.");
     }
     logv("JVM = '%s'", jvm_mapping->name);

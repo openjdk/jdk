@@ -452,18 +452,11 @@ char* ELFFile::find_note_by_type(Elf64_Phdr* notes_ph, Elf64_Word type) {
 }
 
 // Return the filename to use in our sharedlib list, for a name from NT_FILE info.
-// Handle any name filtering, and return nullptr if file should not be included in library list.
-// Handle substitution from the libdirs list.
+// Filter on name, and return nullptr if file should not be included in library list,
+// or return the filename after any substitution using the libdirs list.
 char* ELFFile::file_name_for_nt_file(char* name, const char* libdirs) {
-    // Keep all files in NT_FILE list, not just ELF sharedlibs.
-    // Filter to remove classes.jsa or other ".jsa" files, we need the core file data for that.
-    // In a transported core actual files are not available, so cannot check file type.
-    char* p = strrchr(name, '.');
-    if (p != nullptr && strcmp(p, ".jsa") == 0) {
-        return nullptr;
-    }
-
-    // Ignore " (deleted)" which can be at the end of a path.
+    char* p;
+    // First, ignore " (deleted)" which can be at the end of a path.
     char* name2 = nullptr;
     int len = strlen(name);
     if (len > 10) {
@@ -474,6 +467,14 @@ char* ELFFile::file_name_for_nt_file(char* name, const char* libdirs) {
             strings.insert(name2);
             name = name2;
         }
+    }
+    // Recognise shared libraries, by name.
+    // In a transported core actual files are not available, so cannot check file type.
+    // This filters out classes.jsa or other ".jsa" files and aot cache files, so they are not
+    // considered a library clash, and will be mapped in from the core.
+    p = strrchr(name, '.');
+    if (p == nullptr || strcmp(p, ".so") != 0) {
+        return nullptr;
     }
 
     if (libdirs != nullptr) {

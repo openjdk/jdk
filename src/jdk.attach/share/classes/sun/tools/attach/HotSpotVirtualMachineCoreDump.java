@@ -120,6 +120,7 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
     }
 
     private static final int HELPER_TRIES = 100; // Default attempts to run helper
+    private static final int HELPER_TRIES_WARN = 10;
     private static final int HELPER_ERROR = 2;   // revivalhelper exit value for error
     private static final int HELPER_RETRY = 7;   // revivalhelper exit value hint to retry due to e.g. address space clash
     private static final int TIMEOUT_GET_OUTPUT = 10;
@@ -204,7 +205,7 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
                     } else {
                         // Other errors: we expect occasional requests to retry the helper.
                         // Always show other errors, or show if we are repeating ourself, or verbose is set:
-                        if (e != HELPER_RETRY || i > 1 || verbose) {
+                        if (e != HELPER_RETRY || i >= HELPER_TRIES_WARN || verbose) {
                             System.out.print(out);
                             System.err.println("jcmd: revivalhelper pid " + pid + " failed, exit with: " + e + ". try=" + i);
                             System.err.println("(Retrying process revival.)");
@@ -230,7 +231,7 @@ public abstract class HotSpotVirtualMachineCoreDump extends HotSpotVirtualMachin
             }
             break; // No retry except for explicit continue above.
         }
-        if (i > 1 || verbose) {
+        if (i >= HELPER_TRIES_WARN || verbose) {
             System.err.println("jcmd: revivalhelper tries=" + i);
         }
         if (!ok) {

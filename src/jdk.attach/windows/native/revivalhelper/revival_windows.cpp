@@ -834,7 +834,7 @@ int create_revival_cache_pd(const char* corename, const char* revival_dirname, c
     // Find JVM and its load address from dump.
     Segment* jvm_mapping = dump.get_library_mapping(JVM_FILENAME);
     if (jvm_mapping == nullptr) {
-        warn("JVM library not found in MiniDump.");
+        warn("JVM library from MiniDump not found.");
         error("For cores from other systems, or if JDK at path in core has changed, use -L to specify JVM location.");
     }
     logv("JVM = '%s' at address %p", jvm_mapping->name,  jvm_mapping->vaddr);
