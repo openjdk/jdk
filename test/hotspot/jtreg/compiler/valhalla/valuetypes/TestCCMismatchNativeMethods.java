@@ -24,6 +24,7 @@
 package compiler.valhalla.valuetypes;
 import java.util.Random;
 import jdk.test.lib.Utils;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test
@@ -31,9 +32,12 @@ import jdk.test.lib.Utils;
  * @summary native method calls are not scalarized and cause mismatches
  * @enablePreview
  * @library /test/lib
- * @requires vm.debug
- * @run main/othervm -Xbatch ${test.main.class}
- * @run main/othervm -Xbatch -XX:ThrowOOMEAtC2iC1NativeEntryPoints=3 ${test.main.class} oome
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ${test.main.class}
+ * @run main/othervm -Xbatch  -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:ThrowOOMEAtC2iC1NativeEntryPoints=3 ${test.main.class}
  */
 
 
@@ -41,6 +45,8 @@ public class TestCCMismatchNativeMethods {
     static {
         System.loadLibrary("TestCCMismatchNativeMethods");
     }
+
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     static public int test1(A1 a, V1 v) {
         return a.m1(v, v);
@@ -125,7 +131,7 @@ public class TestCCMismatchNativeMethods {
         } catch (OutOfMemoryError oome) {
             oom = true;
         }
-        if (oom != (args.length == 1)) {
+        if (oom != (WHITE_BOX.getIntVMFlag("ThrowOOMEAtC2iC1NativeEntryPoints").intValue() == 3)) {
             throw new RuntimeException(oom ? "unexpected OOME" : "no OOME");
         }
     }
