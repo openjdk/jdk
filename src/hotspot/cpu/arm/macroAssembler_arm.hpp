@@ -31,6 +31,7 @@
 class ciValueKlass;
 class SigEntry;
 class VMRegPair;
+class CompiledEntrySignature;
 
 // Introduced AddressLiteral and its subclasses to ease portability from
 // x86 and avoid relocation issues
