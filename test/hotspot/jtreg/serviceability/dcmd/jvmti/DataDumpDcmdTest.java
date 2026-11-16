@@ -21,16 +21,10 @@
  * questions.
  */
 
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import org.testng.annotations.Test;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /*
  * @test
@@ -48,19 +42,7 @@ import java.util.regex.Pattern;
  */
 public class DataDumpDcmdTest {
     public void run(CommandExecutor executor) {
-        OutputAnalyzer out = executor.execute("JVMTI.data_dump");
-
-        // stderr should be empty except for VM warnings.
-        if (!out.getStderr().isEmpty()) {
-            List<String> lines = Arrays.asList(out.getStderr().split("(\\r\\n|\\n|\\r)"));
-            Pattern p = Pattern.compile(".*VM warning.*");
-            for (String line : lines) {
-                Matcher m = p.matcher(line);
-                if (!m.matches()) {
-                    throw new RuntimeException("Stderr has output other than VM warnings");
-                }
-            }
-        }
+        executor.execute("JVMTI.data_dump").stderrShouldBeEmptyIgnoreVMWarnings();
     }
 
     @Test
