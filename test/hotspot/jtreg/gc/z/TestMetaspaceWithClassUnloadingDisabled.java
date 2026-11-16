@@ -28,7 +28,7 @@ package gc.z;
  * @bug 8394682
  * @summary Test that ZGC completes metaspace allocations with class unloading disabled
  * @requires vm.gc.Z
- * @requires vm.opt.ClassUnloading == null | !vm.opt.ClassUnloading
+ * @requires !vm.opt.final.ClassUnloading
  * @library /test/lib
  * @run driver/timeout=120 gc.z.TestMetaspaceWithClassUnloadingDisabled
  */
