@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,9 +86,13 @@ public class SourceLevelChecks {
                               value sealed;
                               value @A1 [] f1;
                               value f2[];
+                              value f2 @A1 [];
                               value @A1 [] m1() {}
                               value m2()[] {}
-                              value @A1 abstract sealed @A2 class C {}
+                              value m2() @A1 [] {}
+                              value @A1 abstract sealed @A2 class C1 {}
+                              sealed @A1 value abstract @A2 class C2 {}
+                              non-sealed @A1 value abstract @A2 class C3 {}
                           }
                           @interface A1 {}
                           @interface A2 {}
@@ -95,47 +100,44 @@ public class SourceLevelChecks {
 
         Files.createDirectories(classes);
 
-        record TestCase(List<String> options, Task.Expect expected, String... expectedOutput) {}
+        record TestCase(List<String> options, Task.Expect expected, List<String> expectedOutput) {
+            public TestCase(List<String> options, Task.Expect expected, String... expectedOutput) {
+                this(options, expected, List.of(expectedOutput));
+            }
+        }
         String currentVersion = Integer.toString(Runtime.version().feature());
+        List<String> expectedValueWarnings = new ArrayList<>(List.of(
+             "Test.java:2:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+             "Test.java:3:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+             "Test.java:4:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+             "Test.java:5:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+             "Test.java:6:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+             "Test.java:7:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+             "Test.java:8:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+             "Test.java:9:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
+             "Test.java:10:5: compiler.warn.restricted.type.not.allowed.preview: value, 28"
+        ));
 
         TestCase[] testCases = new TestCase[] {
             new TestCase(List.of("--release", "16"),
                          Task.Expect.FAIL,
-                         "Test.java:2:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:3:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:4:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:5:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:6:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:7:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:8:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:9:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
-                         "Test.java:9:24: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.sealed.classes), 16, 17",
-                         "2 errors",
-                         "7 warnings"),
+                         concat(expectedValueWarnings,
+                                "Test.java:11:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                                "Test.java:11:24: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.sealed.classes), 16, 17",
+                                "2 errors",
+                                "9 warnings")),
             new TestCase(List.of("--release", "25"),
                          Task.Expect.FAIL,
-                         "Test.java:2:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:3:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:4:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:5:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:6:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:7:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:8:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:9:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
-                         "1 error",
-                         "7 warnings"),
+                         concat(expectedValueWarnings,
+                                "Test.java:11:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                                "1 error",
+                                "9 warnings")),
             new TestCase(List.of("--release", currentVersion),
                          Task.Expect.FAIL,
-                         "Test.java:2:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:3:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:4:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:5:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:6:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:7:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:8:5: compiler.warn.restricted.type.not.allowed.preview: value, 28",
-                         "Test.java:9:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
-                         "1 error",
-                         "7 warnings"),
+                         concat(expectedValueWarnings,
+                                "Test.java:11:5: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                                "1 error",
+                                "9 warnings")),
             new TestCase(List.of("--release", currentVersion, "--enable-preview"),
                          Task.Expect.FAIL,
                          "Test.java:2:5: compiler.err.restricted.type.not.allowed.here: value",
@@ -145,7 +147,9 @@ public class SourceLevelChecks {
                          "Test.java:6:5: compiler.err.restricted.type.not.allowed.here: value",
                          "Test.java:7:5: compiler.err.restricted.type.not.allowed.here: value",
                          "Test.java:8:5: compiler.err.restricted.type.not.allowed.here: value",
-                         "7 errors")
+                         "Test.java:9:5: compiler.err.restricted.type.not.allowed.here: value",
+                         "Test.java:10:5: compiler.err.restricted.type.not.allowed.here: value",
+                         "9 errors")
         };
 
         for (TestCase testCase : testCases) {
@@ -164,8 +168,16 @@ public class SourceLevelChecks {
                         .writeAll()
                         .getOutputLines(Task.OutputKind.DIRECT);
 
-            assertEquals(List.of(testCase.expectedOutput()), log);
+            assertEquals(testCase.expectedOutput(), log);
         }
+    }
+
+    private List<String> concat(List<String> base, String... additional) {
+        List<String> result = new ArrayList<>();
+
+        result.addAll(base);
+        result.addAll(List.of(additional));
+        return result;
     }
 
     @Test
@@ -231,6 +243,117 @@ public class SourceLevelChecks {
 
             options.addAll(testCase.options());
             options.add("-XDrawDiagnostics");
+
+            var log =
+                    new JavacTask(tb)
+                        .options(options)
+                        .classpath(libClasses)
+                        .outdir(classes)
+                        .files(tb.findJavaFiles(src))
+                        .run(testCase.expected())
+                        .writeAll()
+                        .getOutputLines(Task.OutputKind.DIRECT);
+
+            assertEquals(List.of(testCase.expectedOutput()), log);
+        }
+    }
+
+    @Test
+    public void testLocalClassValue() throws Exception {
+        Path current = base.resolve(".");
+        Path lib = current.resolve("lib");
+
+        Path libSrc = lib.resolve("src");
+        Path libClasses = lib.resolve("classes");
+        tb.writeJavaFiles(libSrc,
+                          """
+                          class value {}
+                          """);
+
+        Files.createDirectories(libClasses);
+
+        new JavacTask(tb)
+            .outdir(libClasses)
+            .files(tb.findJavaFiles(libSrc))
+            .run()
+            .writeAll();
+
+        Path test = current.resolve("test");
+        Path src = test.resolve("src");
+        Path classes = test.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        record TestCase(List<String> options, String input, Task.Expect expected, String... expectedOutput) {}
+        String currentVersion = Integer.toString(Runtime.version().feature());
+
+        TestCase[] testCases = new TestCase[] {
+            new TestCase(List.of("--release", "25"),
+                         "value class VC {}",
+                         Task.Expect.FAIL,
+                         "Test.java:3:9: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                         "1 error"),
+            new TestCase(List.of("--release", currentVersion),
+                         "value class VC {}",
+                         Task.Expect.FAIL,
+                         "Test.java:3:9: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                         "1 error"),
+            new TestCase(List.of("--release", currentVersion, "--enable-preview"),
+                         "value class VC {}",
+                         Task.Expect.SUCCESS,
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile"),
+            new TestCase(List.of("--release", "25"),
+                         "value sealed class VC {}",
+                         Task.Expect.FAIL,
+                         "Test.java:3:9: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                         "1 error"),
+            new TestCase(List.of("--release", currentVersion),
+                         "value sealed class VC {}",
+                         Task.Expect.FAIL,
+                         "Test.java:3:9: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                         "1 error"),
+            new TestCase(List.of("--release", currentVersion, "--enable-preview"),
+                         "value sealed class VC {}",
+                         Task.Expect.FAIL,
+                         "Test.java:3:22: compiler.err.non.abstract.value.class.cant.be.sealed.or.non.sealed",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase(List.of("--release", "25"),
+                         "value non-sealed class VC {}",
+                         Task.Expect.FAIL,
+                         "Test.java:3:9: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                         "1 error"),
+            new TestCase(List.of("--release", currentVersion),
+                         "value non-sealed class VC {}",
+                         Task.Expect.FAIL,
+                         "Test.java:3:9: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                         "1 error"),
+            new TestCase(List.of("--release", currentVersion, "--enable-preview"),
+                         "value non-sealed class VC {}",
+                         Task.Expect.FAIL,
+                         "Test.java:3:26: compiler.err.non.abstract.value.class.cant.be.sealed.or.non.sealed",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+        };
+
+        String template = """
+                          class Test {
+                              void test() {
+                                  #TEST
+                              }
+                          }
+                          """;
+        for (TestCase testCase : testCases) {
+            List<String> options = new ArrayList<>();
+
+            options.addAll(testCase.options());
+            options.add("-XDrawDiagnostics");
+
+            tb.writeJavaFiles(src,
+                              template.replace("#TEST", testCase.input()));
 
             var log =
                     new JavacTask(tb)

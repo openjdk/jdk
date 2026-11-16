@@ -5081,8 +5081,12 @@ public class JavacParser implements Parser {
                         lookahead++;
                     } else {
                         switch (S.token(lookahead + 1).kind) {
-                            case IDENTIFIER, DOT, LT, /*LBRACKET, */MONKEYS_AT -> {
+                            case IDENTIFIER, DOT, LT -> {
                                 return true;
+                            }
+                            case MONKEYS_AT -> {
+                                //continue search
+                                lookahead++;
                             }
                             default -> {
                                 return false;
