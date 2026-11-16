@@ -40,6 +40,15 @@ void main() {
     assertEquals(100, test(obj, null));
     assertEquals(100, test(obj, obj));
     assertEquals(100, test(obj, 1_000));
+    assertEquals(111, testSwitchExpr(null, null));
+    assertEquals(111, testSwitchExpr(null, obj));
+    assertEquals(1_111, testSwitchExpr(null, 1_000));
+    assertEquals(100, testSwitchExpr("", null));
+    assertEquals(110, testSwitchExpr("", obj));
+    assertEquals(1_110, testSwitchExpr("", 1_000));
+    assertEquals(100, testSwitchExpr(obj, null));
+    assertEquals(100, testSwitchExpr(obj, obj));
+    assertEquals(100, testSwitchExpr(obj, 1_000));
     assertEquals(1_111_111, testRecord(null));
     assertEquals(1_111_110, testRecord(new R(1)));
     assertEquals(1_111_100, testRecord(new R(1f)));
@@ -47,10 +56,37 @@ void main() {
     assertEquals(1_110_000, testRecord(new R(new StringBuilder())));
     assertEquals(1_100_000, testRecord(new R(null)));
     assertEquals(1_000_000, testRecord(""));
-    assertEquals(1, testRecordFactorOut(null));
-    assertEquals(1, testRecordFactorOut(new R(1)));
-    assertEquals(2, testRecordFactorOut(new R(1f)));
-    assertEquals(4, testRecordFactorOut(""));
+    assertEquals(1_111_111, testRecordSwitchExpr(null));
+    assertEquals(1_111_110, testRecordSwitchExpr(new R(1)));
+    assertEquals(1_111_100, testRecordSwitchExpr(new R(1f)));
+    assertEquals(1_111_000, testRecordSwitchExpr(new R("")));
+    assertEquals(1_110_000, testRecordSwitchExpr(new R(new StringBuilder())));
+    assertEquals(1_100_000, testRecordSwitchExpr(new R(null)));
+    assertEquals(1_000_000, testRecordSwitchExpr(""));
+    assertEquals(15, testRecordFactorOut0(null));
+    assertEquals(14, testRecordFactorOut0(new R(1)));
+    assertEquals(12, testRecordFactorOut0(new R(1f)));
+    assertEquals(8, testRecordFactorOut0(""));
+    assertEquals(15, testRecordFactorOut0SwitchExpr(null));
+    assertEquals(14, testRecordFactorOut0SwitchExpr(new R(1)));
+    assertEquals(12, testRecordFactorOut0SwitchExpr(new R(1f)));
+    assertEquals(8, testRecordFactorOut0SwitchExpr(""));
+    assertEquals(1, testRecordFactorOut1(null));
+    assertEquals(1, testRecordFactorOut1(new R(1)));
+    assertEquals(2, testRecordFactorOut1(new R(1f)));
+    assertEquals(4, testRecordFactorOut1(""));
+    assertEquals(1, testRecordFactorOut1SwitchExpr(null));
+    assertEquals(1, testRecordFactorOut1SwitchExpr(new R(1)));
+    assertEquals(2, testRecordFactorOut1SwitchExpr(new R(1f)));
+    assertEquals(4, testRecordFactorOut1SwitchExpr(""));
+    assertEquals(1, testRecordFactorOut2(null));
+    assertEquals(1, testRecordFactorOut2(new R(1)));
+    assertEquals(1, testRecordFactorOut2(new R(1f)));
+    assertEquals(2, testRecordFactorOut2(""));
+    assertEquals(1, testRecordFactorOut2SwitchExpr(null));
+    assertEquals(1, testRecordFactorOut2SwitchExpr(new R(1)));
+    assertEquals(1, testRecordFactorOut2SwitchExpr(new R(1f)));
+    assertEquals(2, testRecordFactorOut2SwitchExpr(""));
 }
 
 int test(Object o1, Object o2) {
@@ -67,6 +103,22 @@ int test(Object o1, Object o2) {
             result += 100;
     }
     return result;
+}
+
+int testSwitchExpr(Object o1, Object o2) {
+    int result = 0;
+    return switch(o1) {
+        case null:
+            result += 1;
+        case String _ when o2 != null:
+            if (o2 instanceof Integer i) {
+                result += i;
+            }
+            result += 10;
+        default:
+            result += 100;
+            yield result;
+    };
 }
 
 int testRecord(Object o) {
@@ -90,7 +142,59 @@ int testRecord(Object o) {
     return result;
 }
 
-int testRecordFactorOut(Object o) {
+int testRecordSwitchExpr(Object o) {
+    int result = 0;
+    return switch(o) {
+        case null:
+            result += 1;
+        case R(Integer _):
+            result += 10;
+        case R(Number _):
+            result += 100;
+        case R(String _):
+            result += 1_000;
+        case R(CharSequence _):
+            result += 10_000;
+        case R(_):
+            result += 100_000;
+        default:
+            result += 1000_000;
+            yield result;
+    };
+}
+
+int testRecordFactorOut0(Object o) {
+    int result = 0;
+    switch(o) {
+        case null:
+            result += 1;
+        case R(Integer _):
+            result += 2;
+        case R(Number _):
+            result += 4;
+        default:
+            result += 8;
+            break;
+    }
+    return result;
+}
+
+int testRecordFactorOut0SwitchExpr(Object o) {
+    int result = 0;
+    return switch(o) {
+        case null:
+            result += 1;
+        case R(Integer _):
+            result += 2;
+        case R(Number _):
+            result += 4;
+        default:
+            result += 8;
+            yield result;
+    };
+}
+
+int testRecordFactorOut1(Object o) {
     int result = 0;
     switch(o) {
         case null:
@@ -105,6 +209,51 @@ int testRecordFactorOut(Object o) {
             break;
     }
     return result;
+}
+
+int testRecordFactorOut1SwitchExpr(Object o) {
+    int result = 0;
+    return switch(o) {
+        case null:
+        case R(Integer _):
+            result += 1;
+            yield result;
+        case R(Number _):
+            result += 2;
+            yield result;
+        default:
+            result += 4;
+            yield result;
+    };
+}
+
+int testRecordFactorOut2(Object o) {
+    int result = 0;
+    switch(o) {
+        case null:
+        case R(Integer _):
+        case R(Number _):
+            result += 1;
+            break;
+        default:
+            result += 2;
+            break;
+    }
+    return result;
+}
+
+int testRecordFactorOut2SwitchExpr(Object o) {
+    int result = 0;
+    return switch(o) {
+        case null:
+        case R(Integer _):
+        case R(Number _):
+            result += 1;
+            yield result;
+        default:
+            result += 2;
+            yield result;
+    };
 }
 
 void assertEquals(int expected, int actual) {
