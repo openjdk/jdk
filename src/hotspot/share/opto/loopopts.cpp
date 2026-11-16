@@ -4892,6 +4892,7 @@ private:
 //    _phase->register_new_node(new_chain_head, _loop->head());
 //    _phase->C->copy_node_notes_to(new_chain_head, chain_head);
     _phase->igvn().replace_in_uses(chain_head, new_chain_head);
+    _phase->igvn()._worklist.push(chain_head);
 
     if (UseNewCode) {
       tty->print_cr("ReassociateReductionChains: after reassociation:");
