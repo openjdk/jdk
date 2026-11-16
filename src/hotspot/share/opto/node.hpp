@@ -1618,7 +1618,7 @@ T* Node::isa(Node* n) {
     return n->isa_##type();                            \
   }
 NODE_METHODS(NODE_ISA_NONCONST_CASES)
-#undef NODE_ISA_CONST_CASES
+#undef NODE_ISA_NONCONST_CASES
   else {
     static_assert(DependentAlwaysFalse<T>, "Node::isa<T>(Node*) does not support this type.");
     return nullptr;

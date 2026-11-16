@@ -2839,7 +2839,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // notification like above.
   if (use_op == Op_AddI) {
     for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
-      if (Node* u2 = use->fast_out(i); u2 != nullptr && u2->is_MinMax()) {
+      if (Node* u2 = use->fast_out(i); Node::is<MinMaxNode>(u2)) {
         add_users_to_worklist_if(worklist, u2, [](Node* u1) {
           return u1->is_MinMax();
         });
