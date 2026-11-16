@@ -213,16 +213,6 @@ void VM_Version::setup_cpu_feature_flags(char*& uarch) {
     useRVA23U64Profile();
   }
 
-  if (UseRVC) {
-    warning("RVC is not supported on this CPU");
-    FLAG_SET_DEFAULT(UseRVC, false);
-
-    if (UseRVA20U64) {
-      warning("UseRVA20U64 is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseRVA20U64, false);
-    }
-  }
-
   if (UseRVV) {
     _initial_vector_length = cpu_vector_length();
 #ifdef COMPILER2
