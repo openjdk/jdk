@@ -143,13 +143,13 @@ public class InvalidModuleOptions {
                 assemblyCmds = concat(assemblyCmds, assemblyOpt);
             }
 
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(trainCmds);
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(trainCmds);
             OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "train" + i);
             out.shouldContain("Hello World");
             out.shouldContain("AOTConfiguration recorded: " + aotConfigFile);
             out.shouldHaveExitValue(0);
 
-            pb = ProcessTools.createLimitedTestJavaProcessBuilder(assemblyCmds);
+            pb = ProcessTools.createTestJavaProcessBuilder(assemblyCmds);
             out = CDSTestUtils.executeAndLog(pb, "asm" + i);
             out.shouldContain("An error has occurred while writing the AOT cache");
             for (int j = 2; j < testSpec.length; j++) {
