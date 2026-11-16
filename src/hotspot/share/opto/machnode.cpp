@@ -296,8 +296,8 @@ const Node* MachNode::get_base_and_disp(intptr_t &offset, const TypePtr* &adr_ty
     // See if it adds up to a base + offset.
     if (index != nullptr) {
       const Type* t_index = index->bottom_type();
-      if (t_index->isa_narrowoop() || t_index->isa_narrowklass()) { // EncodeN, LoadN, LoadConN, LoadNKlass,
-                                                                    // EncodeNKlass, LoadConNklass.
+      if (t_index->is_narrowoop() || t_index->is_narrowklass()) { // EncodeN, LoadN, LoadConN, LoadNKlass,
+                                                                  // EncodeNKlass, LoadConNklass.
         // Memory references through narrow oops have a
         // funny base so grab the type from the index:
         // [R12 + narrow_oop_reg<<3 + offset]
@@ -327,8 +327,8 @@ const Node* MachNode::get_base_and_disp(intptr_t &offset, const TypePtr* &adr_ty
       if (t_disp != nullptr) {
         offset = Type::OffsetBot;
         const Type* t_base = base->bottom_type();
-        if (t_base->isa_intptr_t()) {
-          const TypeX *t_offset = t_base->is_intptr_t();
+        if (t_base->is_intptr_t()) {
+          const TypeX* t_offset = t_base->as_intptr_t();
           if( t_offset->is_con() ) {
             offset = t_offset->get_con();
           }
@@ -430,7 +430,7 @@ const TypePtr* MachNode::compute_adr_type_from_inputs() const {
 #ifdef ASSERT
   if (base != nullptr && base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_VerifyVectorAlignment) {
     // For VerifyVectorAlignment we just pass the type through
-    return base->bottom_type()->is_ptr();
+    return base->bottom_type()->as_ptr();
   }
 #endif
 
@@ -457,16 +457,16 @@ const TypePtr* MachNode::compute_adr_type_from_inputs() const {
   if (base == NodeSentinel)  return TypePtr::BOTTOM;
 
   const Type* t = base->bottom_type();
-  if (t->isa_narrowoop() && CompressedOops::shift() == 0) {
+  if (t->is_narrowoop() && CompressedOops::shift() == 0) {
     // 32-bit unscaled narrow oop can be the base of any address expression
     t = t->make_ptr();
   }
-  if (t->isa_narrowklass() && CompressedKlassPointers::shift() == 0) {
+  if (t->is_narrowklass() && CompressedKlassPointers::shift() == 0) {
     // 32-bit unscaled narrow oop can be the base of any address expression
     t = t->make_ptr();
   }
 
-  if (t->isa_intptr_t() &&
+  if (t->is_intptr_t() &&
 #if !defined(AARCH64) && !defined(RISCV)
       // AArch64 and RISC-V support the addressing mode:
       // [base, 0], in which [base] is converted from a long value
@@ -490,7 +490,7 @@ const TypePtr* MachNode::compute_adr_type_from_inputs() const {
   }
   assert(tp->base() != Type::AnyPtr, "not a bare pointer");
 
-  if (tp->isa_aryptr()) {
+  if (tp->is_aryptr()) {
     // In the case of a flat value type array, each field has its
     // own slice so we need to extract the field being accessed from
     // the address computation
@@ -500,10 +500,10 @@ const TypePtr* MachNode::compute_adr_type_from_inputs() const {
       const MachOper* oper = memory_inputs(base, index);
       if (oper != (MachOper*)-1) {
         offset = oper->constant_disp();
-        return tp->is_aryptr()->add_field_offset_and_offset(offset)->add_offset(Type::OffsetBot);
+        return tp->as_aryptr()->add_field_offset_and_offset(offset)->add_offset(Type::OffsetBot);
       }
     }
-    return tp->is_aryptr()->add_field_offset_and_offset(offset);
+    return tp->as_aryptr()->add_field_offset_and_offset(offset);
   }
 
   return tp->add_offset(offset);
@@ -725,7 +725,7 @@ const Type *MachProjNode::bottom_type() const {
   // Try the normal mechanism first
   const Type *t = in(0)->bottom_type();
   if( t->base() == Type::Tuple ) {
-    const TypeTuple *tt = t->is_tuple();
+    const TypeTuple* tt = t->as_tuple();
     if (_con < tt->cnt())
       return tt->field_at(_con);
   }
@@ -903,7 +903,7 @@ bool MachCallNode::return_value_is_used() const {
 bool MachCallNode::returns_pointer() const {
   const TypeTuple *r = tf()->range_sig();
   return (r->cnt() > TypeFunc::Parms &&
-          r->field_at(TypeFunc::Parms)->isa_ptr());
+          r->field_at(TypeFunc::Parms)->is_ptr());
 }
 
 bool MachCallNode::returns_scalarized() const {

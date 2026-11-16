@@ -42,7 +42,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:regex/\$Revision.*\$-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "48" >
+<!ATTLIST version cldrVersion CDATA #FIXED "49" >
     <!--@MATCH:any-->
     <!--@VALUE-->
 <!ATTLIST version draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -120,7 +120,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
     <!--@DEPRECATED-->
 
-<!ELEMENT localeDisplayNames ( alias | ( localeDisplayPattern?, languages?, scripts?, territories?, subdivisions?, variants?, keys?, types?, transformNames?, measurementSystemNames?, codePatterns?, special* ) ) >
+<!ELEMENT localeDisplayNames ( alias | ( localeDisplayPattern?, languages?, scripts?, territories?, subdivisions?, variants?, keys?, types?, typeValues?, transformNames?, measurementSystemNames?, codePatterns?, special* ) ) >
 <!ATTLIST localeDisplayNames draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
@@ -289,6 +289,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST type references CDATA #IMPLIED >
     <!--@METADATA-->
 
+<!ELEMENT typeValues ( alias | ( typeValue | special )* ) >
+
+<!ELEMENT typeValue ( #PCDATA ) >
+<!ATTLIST typeValue type NMTOKEN #REQUIRED >
+    <!--@MATCH:literal/yes, no-->
+<!ATTLIST typeValue alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST typeValue draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
 <!ELEMENT transformNames ( alias | ( transformName | special )* ) >
     <!--@DEPRECATED-->
 <!ATTLIST transformNames draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
@@ -454,7 +464,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!-- ######################################################### -->
 
-<!ELEMENT characters ( alias | ( exemplarCharacters*, ellipsis*, nestedBracketReplacement*, moreInformation*, stopwords*, indexLabels*, mapping*, parseLenients*, special* ) ) >
+<!ELEMENT characters ( alias | ( exemplarCharacters*, ellipsis*, nestedBracketReplacement*, moreInformation*, stopwords*, indexLabels*, mapping*, parseLenients*, placeholderBoundarySpacing*, special* ) ) >
 <!ATTLIST characters draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
@@ -644,6 +654,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST parseLenient alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST parseLenient draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
+<!-- ######################################################### -->
+
+<!ELEMENT placeholderBoundarySpacing ( #PCDATA ) >
+<!ATTLIST placeholderBoundarySpacing type (digit-digit) #REQUIRED >
+<!ATTLIST placeholderBoundarySpacing scopes (datetime) #REQUIRED >
+<!ATTLIST placeholderBoundarySpacing xml:space (default | preserve) "preserve" >
+    <!--@METADATA-->
+<!ATTLIST placeholderBoundarySpacing alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST placeholderBoundarySpacing draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
 
 <!-- ######################################################### -->
@@ -867,7 +889,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
     <!--@DEPRECATED-->
 
-<!ELEMENT calendar ( alias | ( months?, monthNames?, monthAbbr?, monthPatterns?, days?, dayNames?, dayAbbr?, quarters?, week?, am*, pm*, dayPeriods?, eras?, cyclicNameSets?, dateFormats?, timeFormats?, dateTimeFormats?, fields*, special* ) ) >
+<!ELEMENT calendar ( alias | ( months?, monthNames?, monthAbbr?, monthPatterns?, dayOfMonths?, days?, dayNames?, dayAbbr?, quarters?, week?, am*, pm*, dayPeriods?, eras?, cyclicNameSets?, dateFormats?, timeFormats?, dateTimeFormats?, fields*, special* ) ) >
     <!-- use of fields is deprecated here -->
 <!ATTLIST calendar type NMTOKEN #REQUIRED >
     <!--@MATCH:bcp47/ca-->
@@ -999,6 +1021,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST monthPattern draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
 <!ATTLIST monthPattern references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT dayOfMonths ( alias | ( default*, dayOfMonthContext*, special* ) ) >
+    <!--@TECHPREVIEW-->
+<!ATTLIST dayOfMonths alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+
+<!ELEMENT dayOfMonthContext ( alias | ( default*, dayOfMonthWidth*, special* ) ) >
+    <!--@TECHPREVIEW-->
+<!ATTLIST dayOfMonthContext type (format) #REQUIRED >
+<!ATTLIST dayOfMonthContext alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+
+<!ELEMENT dayOfMonthWidth ( alias | ( dayOfMonth*, special* ) ) >
+    <!--@TECHPREVIEW-->
+<!ATTLIST dayOfMonthWidth type (abbreviated | wide) #REQUIRED >
+<!ATTLIST dayOfMonthWidth alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+
+<!ELEMENT dayOfMonth ( #PCDATA ) >
+    <!-- There must be at least one of type or ordinal, but that constraint can't be expressed in the DTD -->
+    <!--@TECHPREVIEW-->
+<!ATTLIST dayOfMonth type NMTOKEN #IMPLIED >
+    <!--@MATCH:literal/1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32-->
+<!ATTLIST dayOfMonth ordinal (zero | one | two | few | many | other) #IMPLIED >
+<!ATTLIST dayOfMonth alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST dayOfMonth draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
 
 <!ELEMENT days ( alias | ( default*, dayContext*, special* ) ) >
@@ -1516,13 +1566,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@VALUE-->
     <!--@DEPRECATED-->
 
-<!ELEMENT dateTimeFormats ( alias | ( default*, dateTimeFormatLength*, availableFormats*, appendItems*, intervalFormats*, special* ) ) >
+<!ELEMENT dateTimeFormats ( alias | ( default*, numericSeparators?, dateTimeFormatLength*, availableFormats*, appendItems*, intervalFormats*, special* ) ) >
 <!ATTLIST dateTimeFormats draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
 <!ATTLIST dateTimeFormats validSubLocales CDATA #IMPLIED >
     <!--@VALUE-->
     <!--@DEPRECATED-->
+
+<!ELEMENT numericSeparators ( alias | ( default*, numericDateSeparator*, numericTimeSeparator*, special* ) ) >
+    <!--@TECHPREVIEW-->
+
+<!ELEMENT numericDateSeparator ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
+<!ATTLIST numericDateSeparator alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST numericDateSeparator draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST numericDateSeparator references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT numericTimeSeparator ( #PCDATA ) >
+    <!--@TECHPREVIEW-->
+<!ATTLIST numericTimeSeparator alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST numericTimeSeparator draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST numericTimeSeparator references CDATA #IMPLIED >
+    <!--@METADATA-->
 
 <!ELEMENT dateTimeFormatLength ( alias | ( default*, dateTimeFormat*, special* ) ) >
 <!ATTLIST dateTimeFormatLength type (full | long | medium | short) #IMPLIED >
@@ -1571,7 +1642,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT dateFormatItem ( #PCDATA ) >
 <!ATTLIST dateFormatItem id CDATA #REQUIRED >
-    <!--@MATCH:regex/((E|EEEE)?(H|HH|h|hh|Bh)(m|ms|mm|mmss)?(Z|z|zzzz|v|vvvv)?)|(ms|mmss)|((G|GGGGG)?(y|yy|yyyy)((M{1,4}((E|EEEE|cccc)?(d|dd))?)|(w|Q|QQQ|QQQQ))?)|(U(M|MMM)d?)|(M{1,4}(((E|EEEE|cccc)?(d|dd))|W)?)|((E|EEEE)?d)|(E|EEEE)-->
+    <!--@MATCH:regex/((E|EEEE)?(H|HH|h|hh|Bh)(m|ms|mm|mmss)?(v|vvvv)?)|(ms|mmss)|((G|GGGGG)?(y|yy|yyyy)((M{1,4}((E|EEEE|cccc)?(d{1,3}))?)|(w|Q|QQQ|QQQQ))?)|(U(M|MMM)d?)|(M{1,4}(((E|EEEE|cccc)?(d{1,3}))|W)?)|((E|EEEE)?d)|(E|EEEE)-->
 <!ATTLIST dateFormatItem count (zero | one | two | few | many | other) #IMPLIED >
 <!ATTLIST dateFormatItem alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/ascii, variant-->
@@ -1595,7 +1666,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT appendItem ( #PCDATA ) >
 <!ATTLIST appendItem request CDATA #REQUIRED >
-    <!--@MATCH:literal/Day, Day-Of-Week, Era, Hour, Minute, Month, Quarter, Second, Timezone, Week, Year-->
+    <!--@MATCH:literal/Date-Timezone, Day, Time-Day-Of-Week, Day-Of-Week, Era, Hour, Minute, Month, Quarter, Second, Timezone, Week, Year-->
 <!ATTLIST appendItem alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST appendItem draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -1604,7 +1675,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST appendItem references CDATA #IMPLIED >
     <!--@METADATA-->
 
-<!ELEMENT intervalFormats ( alias | ( intervalFormatFallback*, intervalFormatItem*, special* ) ) >
+<!ELEMENT intervalFormats ( alias | ( intervalFormatRanges*, intervalFormatFallback*, intervalFormatItem*, special* ) ) >
 <!ATTLIST intervalFormats alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST intervalFormats draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
@@ -1615,6 +1686,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST intervalFormats validSubLocales CDATA #IMPLIED >
     <!--@VALUE-->
     <!--@DEPRECATED-->
+
+<!ELEMENT intervalFormatRanges ( alias | ( intervalFormatRange*, special* ) ) >
+
+<!ELEMENT intervalFormatRange ( #PCDATA ) >
+<!ATTLIST intervalFormatRange type NMTOKEN #REQUIRED >
+    <!--@MATCH:literal/numeric, non-numeric, mixed-->
+<!ATTLIST intervalFormatRange alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST intervalFormatRange draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST intervalFormatRange references CDATA #IMPLIED >
+    <!--@METADATA-->
 
 <!ELEMENT intervalFormatFallback ( #PCDATA ) >
 <!ATTLIST intervalFormatFallback alt NMTOKENS #IMPLIED >
@@ -1732,7 +1815,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST relativePeriod draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
 
-<!ELEMENT timeZoneNames ( alias | ( hourFormat*, hoursFormat*, gmtFormat*, gmtZeroFormat*, gmtUnknownFormat*, regionFormat*, fallbackFormat*, fallbackRegionFormat*, abbreviationFallback*, preferenceOrdering*, singleCountries*, default*, zone*, metazone*, special* ) ) >
+<!ELEMENT timeZoneNames ( alias | ( hourFormat*, hoursFormat*, gmtFormat*, gmtZeroFormat*, gmtUnknownFormat*, dualOffsetFormat*, regionFormat*, fallbackFormat*, fallbackRegionFormat*, abbreviationFallback*, preferenceOrdering*, singleCountries*, default*, zone*, metazone*, special* ) ) >
 <!ATTLIST timeZoneNames draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
@@ -1763,7 +1846,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT gmtFormat ( #PCDATA ) >
 <!ATTLIST gmtFormat alt NMTOKENS #IMPLIED >
-    <!--@MATCH:literal/variant-->
+    <!--@MATCH:literal/utc-->
 <!ATTLIST gmtFormat draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->
@@ -1778,14 +1861,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@DEPRECATED:true, false-->
 <!ATTLIST gmtZeroFormat references CDATA #IMPLIED >
     <!--@METADATA-->
+    <!--@DEPRECATED-->
 
 <!ELEMENT gmtUnknownFormat ( #PCDATA ) >
 <!ATTLIST gmtUnknownFormat alt NMTOKENS #IMPLIED >
-    <!--@MATCH:literal/variant-->
+    <!--@MATCH:literal/utc-->
 <!ATTLIST gmtUnknownFormat draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->
 <!ATTLIST gmtUnknownFormat references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT dualOffsetFormat ( #PCDATA ) >
+<!ATTLIST dualOffsetFormat alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+<!ATTLIST dualOffsetFormat draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST dualOffsetFormat references CDATA #IMPLIED >
     <!--@METADATA-->
 
 <!ELEMENT regionFormat ( #PCDATA ) >
@@ -2520,6 +2613,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST currency validSubLocales CDATA #IMPLIED >
     <!--@VALUE-->
     <!--@DEPRECATED-->
+<!ATTLIST currency numberSystem CDATA #IMPLIED >
+    <!--@MATCH:bcp47/nu-->
 
 <!ELEMENT symbol ( #PCDATA ) >
 <!ATTLIST symbol choice (true | false) #IMPLIED >

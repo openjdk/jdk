@@ -47,15 +47,21 @@ public class INVOKEDYNAMIC extends InvokeInstruction {
     INVOKEDYNAMIC() {
     }
 
+    /**
+     * Constructs an INVOKEDYNAMIC instruction.
+     *
+     * @param index index into constant pool.
+     */
     public INVOKEDYNAMIC(final int index) {
         super(Const.INVOKEDYNAMIC, index);
+        super.setLength(5);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -71,9 +77,9 @@ public class INVOKEDYNAMIC extends InvokeInstruction {
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {
@@ -107,8 +113,8 @@ public class INVOKEDYNAMIC extends InvokeInstruction {
      * Since InvokeDynamic doesn't refer to a reference type, just return {@link Object}, as that is the only type we can
      * say for sure the reference will be.
      *
-     * @param cpg the ConstantPoolGen used to create the instruction
-     * @return an ObjectType for {@link Object}
+     * @param cpg The ConstantPoolGen used to create the instruction.
+     * @return An ObjectType for {@link Object}.
      * @since 6.1
      */
     @Override
@@ -117,7 +123,7 @@ public class INVOKEDYNAMIC extends InvokeInstruction {
     }
 
     /**
-     * Read needed data (i.e., index) from file.
+     * Reads needed data (that is, index) from file.
      */
     @Override
     protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {

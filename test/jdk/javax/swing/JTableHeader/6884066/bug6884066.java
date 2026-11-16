@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 import java.awt.event.InputEvent;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import javax.swing.JFrame;
 import javax.swing.JTable;
@@ -43,7 +44,8 @@ import javax.swing.UIManager;
 public class bug6884066 {
     private static JFrame frame;
     private static JTableHeader header;
-    private static volatile Point point;
+    private static volatile Point start;
+    private static volatile Point end;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -68,13 +70,18 @@ public class bug6884066 {
             robot.waitForIdle();
             robot.delay(1000);
             SwingUtilities.invokeAndWait(() -> {
-                point = header.getLocationOnScreen();
+                Point location = header.getLocationOnScreen();
+                Rectangle first = header.getHeaderRect(0);
+                Rectangle last = header.getHeaderRect(header.getColumnModel().getColumnCount() - 1);
+                int y = location.y + header.getHeight() / 2;
+                start = new Point(location.x + first.x + first.width / 2, y);
+                end = new Point(location.x + last.x + last.width / 2, y);
             });
-            robot.mouseMove(point.x + 3, point.y + 3);
+            robot.mouseMove(start.x, start.y);
             robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            for (int i = 0; i < header.getWidth() - 3; i++) {
-                robot.mouseMove(point.x + i, point.y + 3);
+            for (int x = start.x + 1; x < end.x; x++) {
+                robot.mouseMove(x, start.y);
             }
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();

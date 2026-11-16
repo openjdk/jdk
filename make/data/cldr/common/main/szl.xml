@@ -1172,6 +1172,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other" draft="unconfirmed">Y, 'tydz'. w</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback draft="contributed">{0}–{1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B" draft="unconfirmed">h B – h B</greatestDifference>
@@ -1746,9 +1751,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">Paryż</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight draft="unconfirmed">Brytyjski latowy czas</daylight>
-				</long>
 				<exemplarCity draft="unconfirmed">Lōndyn</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -1795,11 +1797,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Asia/Jakarta">
 				<exemplarCity draft="unconfirmed">Dżakarta</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight draft="unconfirmed">Irlandyjo (latowy czas)</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity draft="unconfirmed">Jerozolima</exemplarCity>
@@ -2202,13 +2199,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">alaskański czas latowy</daylight>
 				</long>
 			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic draft="unconfirmed">czas ałmacki</generic>
-					<standard draft="unconfirmed">czas ałmacki sztandardowy</standard>
-					<daylight draft="unconfirmed">czas ałmacki latowy</daylight>
-				</long>
-			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic draft="unconfirmed">amazōński czas</generic>
@@ -2249,20 +2239,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="unconfirmed">czas Anadyr</generic>
 					<standard draft="unconfirmed">sztandardowy czas Anadyr</standard>
 					<daylight draft="unconfirmed">latowy czas Anadyr</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic draft="unconfirmed">czas auktaucki</generic>
-					<standard draft="unconfirmed">czas auktaucki sztandardowy</standard>
-					<daylight draft="unconfirmed">czas auktaucki latowy</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic draft="unconfirmed">czas aktiubiński</generic>
-					<standard draft="unconfirmed">czas aktiubiński sztandardowy</standard>
-					<daylight draft="unconfirmed">czas aktiubiński latowy</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -2359,6 +2335,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="unconfirmed">Brasília</generic>
 					<standard draft="unconfirmed">Brasília (sztandardowy czas)</standard>
 					<daylight draft="unconfirmed">Brasília (latowy czas)</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight draft="unconfirmed">Brytyjski latowy czas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cape_Verde">
@@ -2612,6 +2593,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">Indōnezyjo Zachodnio</standard>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight draft="unconfirmed">Irlandyjo (latowy czas)</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic draft="unconfirmed">Irkuck</generic>
@@ -2808,13 +2794,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Pyongyang">
 				<long>
 					<standard draft="unconfirmed">Pjōngjang</standard>
-				</long>
-			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic draft="unconfirmed">czas kyzyłordzki</generic>
-					<standard draft="unconfirmed">czas kyzyłordzki sztandardowy</standard>
-					<daylight draft="unconfirmed">czas kyzyłordzki latowy</daylight>
 				</long>
 			</metazone>
 			<metazone type="Sakhalin">

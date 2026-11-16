@@ -167,20 +167,13 @@ class FlatLayoutSlot {
     // This is only set when a flat layout is present.
     FlatLayout _flat_layout;
 
-    struct {
-      // This bool is set when the flat layout is not present.
-      //
-      // Its value is used to determine if this slot should be considered
-      // initialized
-      bool _initialized_non_flat;
-
-      // Paddings to ensure deterministic content in AOT cache. They prevent
-      // the C++ compiler from potentially inserting random values in unused gaps.
-      static_assert(sizeof(FlatLayout) == 4);
-      bool _padding1;
-      bool _padding2;
-      bool _padding3;
-    };
+    // This is set when the flat layout is not present.
+    // Conceptually a bool but wants deterministic padding for AOT.
+    //
+    // Its value is used to determine if this slot should be considered
+    // initialized
+    uint32_t _initialized_non_flat;
+    static_assert(sizeof(FlatLayout) == sizeof(uint32_t));
   };
 
 public:
@@ -188,8 +181,7 @@ public:
     : _flat_layout(flat_layout) {}
 
   explicit FlatLayoutSlot(bool initialized_non_flat = false)
-    : _initialized_non_flat(initialized_non_flat),
-      _padding1(0), _padding2(0), _padding3(0) {}
+    : _initialized_non_flat(initialized_non_flat) {}
 
   // Get the FlatLayout. The external has_flat_layout discriminator is used to
   // catch when code tries to fetch layout without having a flat layout.
@@ -199,7 +191,7 @@ public:
   }
 
   bool is_initialized(bool has_flat_layout) const {
-    return has_flat_layout || _initialized_non_flat;
+    return has_flat_layout || (_initialized_non_flat != 0);
   }
 };
 
@@ -212,7 +204,7 @@ public:
 class OptionalFlatLayout {
   friend class VMStructs;
 
-  bool           _is_flat;
+  uint32_t       _is_flat;  // Conceptually a bool but wants deterministic padding for AOT
   FlatLayoutSlot _flat_layout;
 
   OptionalFlatLayout(bool is_flat, FlatLayoutSlot flat_layout)
@@ -240,17 +232,17 @@ public:
   }
 
   bool is_initialized() const {
-    return _flat_layout.is_initialized(_is_flat);
+    return _flat_layout.is_initialized(_is_flat != 0);
   }
 
   bool is_flat() const {
     precond(is_initialized());
-    return _is_flat;
+    return _is_flat != 0;
   }
 
   // Get the FlatLayout, assert if it isn't present.
   FlatLayout get() const {
-    return _flat_layout.get_if(_is_flat);
+    return _flat_layout.get_if(is_flat());
   }
 
   bool is_nullable_flat() const {
@@ -265,15 +257,15 @@ public:
     precond(is_initialized());
     precond(other.is_initialized());
 
-    if (_is_flat) {
-      if (other._is_flat) {
+    if (is_flat()) {
+      if (other.is_flat()) {
         return get() == other.get();
       } else {
         return false;
       }
     } else {
       // No other data to check for non-flat field layouts
-      return !other._is_flat;
+      return !other.is_flat();
     }
   }
 };
