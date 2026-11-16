@@ -441,11 +441,10 @@ private:
   // Features removed by AOT cache restrictions, retained for diagnostics.
   static RVExtFeatureSet _rv_ext_features_disabled_by_aot_cache;
 
-  static void detect_cpu_features(char*& uarch);
+  static void setup_cpu_feature_flags(char*& uarch);
   static void sync_cpu_features();
   static void publish_cpu_features(char* uarch);
 
-  static void adjust_cpu_feature_flags();
   static void validate_cpu_feature_flags();
 
   static void apply_aot_cache_cpu_features();

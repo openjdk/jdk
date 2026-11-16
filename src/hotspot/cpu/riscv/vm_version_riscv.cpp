@@ -189,8 +189,7 @@ void VM_Version::initialize() {
   _supports_atomic_getadd8 = true;
 
   char* uarch = nullptr;
-  detect_cpu_features(uarch);
-  adjust_cpu_feature_flags();
+  setup_cpu_feature_flags(uarch);
   validate_cpu_feature_flags();
   sync_cpu_features();
 
@@ -204,71 +203,6 @@ void VM_Version::initialize() {
   c2_initialize();
 #endif // COMPILER2
   publish_cpu_features(uarch);
-}
-
-void VM_Version::adjust_cpu_feature_flags() {
-  if (UseRVA20U64) {
-    useRVA20U64Profile();
-  }
-  if (UseRVA22U64) {
-    useRVA22U64Profile();
-  }
-  if (UseRVA23U64) {
-    useRVA23U64Profile();
-  }
-
-  if (UseRVC && !ext_c.feature_enabled()) {
-    warning("RVC is not supported on this CPU");
-    FLAG_SET_DEFAULT(UseRVC, false);
-
-    if (UseRVA20U64) {
-      warning("UseRVA20U64 is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseRVA20U64, false);
-    }
-  }
-
-  if (UseZalasr && !toolchain_uses_psabi_atomics()) {
-    // A JVM built by a pre-psABI toolchain contains C++ atomics whose mapping
-    // is incompatible with the Zalasr sequences the JIT would emit; mixing them
-    // can break Java volatile semantics. Only warn when Zalasr was asked for
-    // explicitly: where the extension is detected it is enabled by default, and
-    // a plain start-up should stay quiet.
-    if (!FLAG_IS_DEFAULT(UseZalasr)) {
-      warning("UseZalasr requires a JVM built with a toolchain using the "
-              "psABI atomics mapping (gcc >= 13.3 or clang >= 19); "
-              "disabling Zalasr");
-    }
-    FLAG_SET_DEFAULT(UseZalasr, false);
-  }
-
-#ifdef __riscv_ztso
-  // Hotspot is compiled with TSO support, it will only run on hardware which
-  // supports Ztso
-  if (FLAG_IS_DEFAULT(UseZtso)) {
-    FLAG_SET_DEFAULT(UseZtso, true);
-  }
-#endif
-
-  // Zalasr and Ztso are mutually exclusive. Under Ztso the acquire and release fences
-  // are elided anyway, see MacroAssembler::membar(), so all Zalasr would still buy is
-  // eliding the trailing StoreLoad fence of a volatile store, which is a separate
-  // optimization. Ztso takes precedence for now, so Zalasr is turned off.
-  if (UseZtso && UseZalasr) {
-    if (!FLAG_IS_DEFAULT(UseZalasr)) {
-      warning("UseZalasr is not supported together with UseZtso, disabling Zalasr.");
-    }
-    FLAG_SET_DEFAULT(UseZalasr, false);
-  }
-
-  if (UseRVV) {
-    _initial_vector_length = cpu_vector_length();
-#ifdef COMPILER2
-    if (_initial_vector_length < 16) {
-      warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
-      FLAG_SET_DEFAULT(UseRVV, false);
-    }
-#endif // COMPILER2
-  }
 }
 
 void VM_Version::validate_cpu_feature_flags() {

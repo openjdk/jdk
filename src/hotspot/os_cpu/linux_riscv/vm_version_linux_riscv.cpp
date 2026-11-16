@@ -154,7 +154,7 @@ void VM_Version::apply_aot_cache_cpu_features() {
   }
 }
 
-void VM_Version::detect_cpu_features(char*& uarch) {
+void VM_Version::setup_cpu_feature_flags(char*& uarch) {
 
   assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
   assert(ext_m.feature_bit() == HWCAP_ISA_M, "Bit for M must follow Linux HWCAP");
@@ -172,6 +172,16 @@ void VM_Version::detect_cpu_features(char*& uarch) {
 
   uarch = os_uarch_additional_features();
   vendor_features();
+
+  // Prefer Ztso when both are detected; explicit flag combinations are handled below.
+  // Keep UseZalasr and UseZtso mutually exclusive; the hardware extensions can coexist.
+  // Under Ztso the acquire and release fences are elided anyway, see MacroAssembler::membar(),
+  // so all Zalasr would still buy is eliding the trailing StoreLoad fence of a volatile store,
+  // which is a separate optimization. Ztso takes precedence for now, so Zalasr is turned off.
+  if (ext_Ztso.feature_enabled() && ext_Zalasr.feature_enabled()) {
+    ext_Zalasr.disable_feature();
+    log_info(os, cpu)("Ztso enabled, disabling Zalasr.");
+  }
 
   // Linux kernel require Zifencei
   if (!ext_Zifencei.feature_enabled()) {
@@ -195,6 +205,70 @@ void VM_Version::detect_cpu_features(char*& uarch) {
       FLAG_SET_ERGO(UseCtxFencei, false);
       log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) disabled, unsupported by kernel.");
     }
+  }
+
+  if (UseRVA20U64) {
+    useRVA20U64Profile();
+  }
+  if (UseRVA22U64) {
+    useRVA22U64Profile();
+  }
+  if (UseRVA23U64) {
+    useRVA23U64Profile();
+  }
+
+  if (UseRVC) {
+    warning("RVC is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseRVC, false);
+
+    if (UseRVA20U64) {
+      warning("UseRVA20U64 is not supported on this CPU");
+      FLAG_SET_DEFAULT(UseRVA20U64, false);
+    }
+  }
+
+  if (UseRVV) {
+    _initial_vector_length = cpu_vector_length();
+#ifdef COMPILER2
+    if (_initial_vector_length < 16) {
+      warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
+      FLAG_SET_DEFAULT(UseRVV, false);
+    }
+#endif // COMPILER2
+  }
+
+  if (UseZalasr && !toolchain_uses_psabi_atomics()) {
+    // A JVM built by a pre-psABI toolchain contains C++ atomics whose mapping
+    // is incompatible with the Zalasr sequences the JIT would emit; mixing them
+    // can break Java volatile semantics. Only warn when Zalasr was asked for
+    // explicitly: where the extension is detected it is enabled by default, and
+    // a plain start-up should stay quiet.
+    if (!FLAG_IS_DEFAULT(UseZalasr)) {
+      warning("UseZalasr requires a JVM built with a toolchain using the "
+              "psABI atomics mapping (gcc >= 13.3 or clang >= 19); "
+              "disabling Zalasr");
+    }
+    FLAG_SET_DEFAULT(UseZalasr, false);
+  }
+
+#ifdef __riscv_ztso
+  // Hotspot is compiled with TSO support, it will only run on hardware which
+  // supports Ztso
+  if (FLAG_IS_DEFAULT(UseZtso)) {
+    FLAG_SET_DEFAULT(UseZtso, true);
+  }
+#endif
+
+  // Prefer Ztso when both are detected; explicit flag combinations are handled below.
+  // Keep UseZalasr and UseZtso mutually exclusive; the hardware extensions can coexist.
+  // Under Ztso the acquire and release fences are elided anyway, see MacroAssembler::membar(),
+  // so all Zalasr would still buy is eliding the trailing StoreLoad fence of a volatile store,
+  // which is a separate optimization. Ztso takes precedence for now, so Zalasr is turned off.
+  if (UseZtso && UseZalasr) {
+    if (!FLAG_IS_DEFAULT(UseZalasr)) {
+      warning("UseZalasr is not supported together with UseZtso, disabling Zalasr.");
+    }
+    FLAG_SET_DEFAULT(UseZalasr, false);
   }
 }
 
