@@ -182,16 +182,24 @@ instruct g1StoreLSpecialTwoOops(memory mem, rRegL src, rRegP tmp1, rRegP tmp2, r
                       $tmp2$$Register /* pre_val */,
                       $tmp3$$Register /* tmp */,
                       RegSet::of($tmp1$$Register, $src$$Register) /* preserve */);
-    // Adjust address to point to the second narrow oop in the long value
-    __ addq($tmp1$$Register, 4);
+    if ((barrier_data() & G1C2BarrierPre) != 0 || (barrier_data() & G1C2BarrierPost) != 0) {
+      // Adjust address to point to the second narrow oop in the long value, but only if we need to generate
+      // a barrier
+      __ addq($tmp1$$Register, 4);
+    }
     write_barrier_pre(masm, this,
                       $tmp1$$Register /* obj */,
                       $tmp2$$Register /* pre_val */,
                       $tmp3$$Register /* tmp */,
                       RegSet::of($tmp1$$Register, $src$$Register) /* preserve */);
 
-    // The address of the second oop is the address of the store plus the offset of the second oop
-    __ movq(Address($tmp1$$Register, -4), $src$$Register);
+    if ((barrier_data() & G1C2BarrierPre) != 0 || (barrier_data() & G1C2BarrierPost) != 0) {
+      // The address of the second oop is the address of the store plus the offset of the second oop
+      __ movq(Address($tmp1$$Register, -4), $src$$Register);
+    } else {
+      // If no barrier is needed, we didn't adjust tmp1, so we don't need to adjust it here again.
+      __ movq(Address($tmp1$$Register, 0), $src$$Register);
+    }
 
     // Do the post-barrier of the second oop first since we have its address in tmp1
     if ((barrier_data() & G1C2BarrierPost) != 0) {

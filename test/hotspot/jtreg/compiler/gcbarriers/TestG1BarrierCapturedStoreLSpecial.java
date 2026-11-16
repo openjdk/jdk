@@ -44,19 +44,24 @@ public class TestG1BarrierCapturedStoreLSpecial {
     static final String PRE_ONLY = "pre";
     static final String PRE_AND_POST = "pre post";
     static final String PRE_AND_POST_NOT_NULL = "pre post notnull";
+    static final String POST_ONLY = "post";
+    static final String POST_NOT_NULL_ONLY = "post notnull";
     static final String ANY = ".*";
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
-        Scenario[] scenarios = new Scenario[2];
+        Scenario[] scenarios = new Scenario[2 * 2];
         int scenarioIndex = 0;
         for (int i = 0; i < 2; i++) {
-            scenarios[scenarioIndex] =
-                new Scenario(scenarioIndex,
-                             "--enable-preview",
-                             "-XX:" + (i == 0 ? "-" : "+") + "UseCompressedOops"
+            for (int j = 0; j < 2; j++) {
+                scenarios[scenarioIndex] =
+                        new Scenario(scenarioIndex,
+                                "--enable-preview",
+                                "-XX:" + (i == 0 ? "-" : "+") + "UseCompressedOops",
+                                "-XX:" + (j == 0 ? "-" : "+") + "ReduceInitialCardMarks"
                         );
-            scenarioIndex++;
+                scenarioIndex++;
+            }
         }
         framework.addScenarios(scenarios)
                 .addFlags(
@@ -167,9 +172,13 @@ public class TestG1BarrierCapturedStoreLSpecial {
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
-    @IR(applyIf = {"UseCompressedOops", "true"},
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
         counts = {G1_STORE_L_SPECIAL, "2"},  // Should be 1 with store capturing
         failOn = {G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY})
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {G1_STORE_L_SPECIAL, "2",   // Should be 1 with store capturing
+                  G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY, "1",  // 1 with post only, one without barriers
+                  G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, POST_ONLY, "1"})
     static Holder test1(Integer i, MyValue v) {
         Holder t = new Holder();
         t.i = i;
@@ -212,9 +221,13 @@ public class TestG1BarrierCapturedStoreLSpecial {
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
-    @IR(applyIf = {"UseCompressedOops", "true"},
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
         counts = {G1_STORE_L_SPECIAL, "2"},  // Should be 1 with store capturing
         failOn = {G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY})
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {G1_STORE_L_SPECIAL, "2",   // Should be 1 with store capturing
+                  G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY, "1",  // 1 with post not null only, one without barriers
+                  G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, POST_NOT_NULL_ONLY, "1"})
     static Holder test2(Integer i) {
         MyValue v = new MyValue(new Object());
         Holder t = new Holder();
@@ -272,7 +285,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertEQ(h.v, v);
     }
 
-    // Assign 2 oops in a since StoreLSpecial. Both are known to be not-null.
+    // Assign 2 oops in a single StoreLSpecial. Both are known to be not-null.
     // We can use a not-null post-barrier.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
@@ -294,7 +307,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertNE(h2.v.v2, null);
     }
 
-    // Assign 2 oops in a since StoreLSpecial. Only left is known to be not-null.
+    // Assign 2 oops in a single StoreLSpecial. Only left is known to be not-null.
     // We cannot use a not-null post-barrier.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
@@ -338,7 +351,7 @@ public class TestG1BarrierCapturedStoreLSpecial {
         Asserts.assertNE(h2.v.v2, null);
     }
 
-    // Assign 2 null in a since StoreLSpecial.
+    // Assign 2 null in a single StoreLSpecial.
     // Not post barrier is needed.
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
@@ -464,9 +477,12 @@ public class TestG1BarrierCapturedStoreLSpecial {
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
-    @IR(applyIf = {"UseCompressedOops", "true"},
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
         counts = {G1_STORE_L_SPECIAL, "1"},
         failOn = {G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY})
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {G1_STORE_L_SPECIAL, "1",
+                  G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, POST_ONLY, "1"})
     static HolderWithTwoOops test11(MyValueWithTwoOops v) {
         var _ = v.v1;  // Force v != null
         HolderWithTwoOops h = new HolderWithTwoOops(v);
@@ -484,9 +500,12 @@ public class TestG1BarrierCapturedStoreLSpecial {
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         failOn = {G1_STORE_L_SPECIAL})
-    @IR(applyIf = {"UseCompressedOops", "true"},
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
         counts = {G1_STORE_L_SPECIAL, "1"},
         failOn = {G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, ANY})
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {G1_STORE_L_SPECIAL, "1",
+                  G1_STORE_L_SPECIAL_WITH_BARRIER_FLAG, POST_ONLY, "1"})
     static HolderWithTwoOops test12(Object first, Object second) {
         HolderWithTwoOops h = new HolderWithTwoOops(new MyValueWithTwoOops(first, second));
         return h;

@@ -118,7 +118,9 @@ instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegLNoSp src, immI_4 off, iReg
   format %{ "str  $src, $mem\t# g1StoreLSpecialOneOopOff4" %}
   ins_encode %{
     // Adjust address to point to narrow oop
-    __ add($tmp4$$Register, $mem$$Register, 4);
+    if ((barrier_data() & G1C2BarrierPre) != 0 || (barrier_data() & G1C2BarrierPost) != 0) {
+      __ add($tmp4$$Register, $mem$$Register, 4);
+    }
     write_barrier_pre(masm, this,
                       $tmp4$$Register /* obj */,
                       $tmp1$$Register /* pre_val */,
@@ -161,7 +163,9 @@ instruct g1StoreLSpecialTwoOops(indirect mem, iRegLNoSp src, iRegPNoSp tmp1, iRe
                       $tmp3$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $src$$Register) /* preserve */);
     // Adjust address to point to the second narrow oop in the long value
-    __ add($tmp4$$Register, $mem$$Register, 4);
+    if ((barrier_data() & G1C2BarrierPre) != 0 || (barrier_data() & G1C2BarrierPost) != 0) {
+      __ add($tmp4$$Register, $mem$$Register, 4);
+    }
     write_barrier_pre(masm, this,
                       $tmp4$$Register /* obj */,
                       $tmp1$$Register /* pre_val */,
