@@ -192,7 +192,7 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   if( t2 == Type::TOP ) return nullptr;
   // Convert "x-c0" into "x+ -c0".
   if( t2->base() == Type::Int ){        // Might be bottom or top...
-    const TypeInt *i = t2->is_int();
+    const TypeInt* i = t2->as_int();
     if( i->is_con() )
       return new AddINode(in1, phase->intcon(java_negate(i->get_con())));
   }
@@ -214,11 +214,11 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   if (op2 == Op_AddI
       && ok_to_convert(in2, in1)
       && in2->in(2)->Opcode() == Op_ConI) {
-    jint c0 = phase->type(in2->in(2))->isa_int()->get_con();
+    jint c0 = phase->type(in2->in(2))->as_int()->get_con();
     Node* in21 = in2->in(1);
     if (in1->Opcode() == Op_ConI) {
       // Match c1
-      jint c1 = phase->type(in1)->isa_int()->get_con();
+      jint c1 = phase->type(in1)->as_int()->get_con();
       Node* sub2 = phase->intcon(java_subtract(c1, c0));
       return new SubINode(sub2, in21);
     } else {
@@ -323,13 +323,13 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   }
 
   // Convert "0-(A>>31)" into "(A>>>31)"
-  if ( op2 == Op_RShiftI ) {
-    Node *in21 = in2->in(1);
-    Node *in22 = in2->in(2);
-    const TypeInt *zero = phase->type(in1)->isa_int();
-    const TypeInt *t21 = phase->type(in21)->isa_int();
-    const TypeInt *t22 = phase->type(in22)->isa_int();
-    if ( t21 && t22 && zero == TypeInt::ZERO && t22->is_con(31) ) {
+  if (op2 == Op_RShiftI) {
+    Node* in21 = in2->in(1);
+    Node* in22 = in2->in(2);
+    const TypeInt* zero = phase->type(in1)->isa_int();
+    bool in21_is_int = phase->type(in21)->is_int();
+    const TypeInt* t22 = phase->type(in22)->isa_int();
+    if (in21_is_int && t22 != nullptr && zero == TypeInt::ZERO && t22->is_con(31)) {
       return new URShiftINode(in21, in22);
     }
   }
@@ -339,8 +339,8 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
 
 // A subtract node computes the difference of its two inputs.
 const Type* SubINode::sub(const Type* t1, const Type* t2) const {
-  const TypeInt* range0 = t1->is_int();
-  const TypeInt* range1 = t2->is_int();
+  const TypeInt* range0 = t1->as_int();
+  const TypeInt* range1 = t2->as_int();
 
   jlong lo_sub = (jlong)range0->_lo - (jlong)range1->_hi;
   jlong hi_sub = (jlong)range0->_hi - (jlong)range1->_lo;
@@ -409,11 +409,11 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (op2 == Op_AddL
       && ok_to_convert(in2, in1)
       && in2->in(2)->Opcode() == Op_ConL) {
-    jlong c0 = phase->type(in2->in(2))->isa_long()->get_con();
+    jlong c0 = phase->type(in2->in(2))->as_long()->get_con();
     Node* in21 = in2->in(1);
     if (in1->Opcode() == Op_ConL) {
       // Match c1
-      jlong c1 = phase->type(in1)->isa_long()->get_con();
+      jlong c1 = phase->type(in1)->as_long()->get_con();
       Node* sub2 = phase->longcon(java_subtract(c1, c0));
       return new SubLNode(sub2, in21);
     } else {
@@ -510,13 +510,13 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Convert "0L-(A>>63)" into "(A>>>63)"
-  if ( op2 == Op_RShiftL ) {
-    Node *in21 = in2->in(1);
-    Node *in22 = in2->in(2);
-    const TypeLong *zero = phase->type(in1)->isa_long();
-    const TypeLong *t21 = phase->type(in21)->isa_long();
-    const TypeInt *t22 = phase->type(in22)->isa_int();
-    if ( t21 && t22 && zero == TypeLong::ZERO && t22->is_con(63) ) {
+  if (op2 == Op_RShiftL) {
+    Node* in21 = in2->in(1);
+    Node* in22 = in2->in(2);
+    const TypeLong* zero = phase->type(in1)->isa_long();
+    bool in21_is_long = phase->type(in21)->is_long();
+    const TypeInt* t22 = phase->type(in22)->isa_int();
+    if (in21_is_long && t22 != nullptr && zero == TypeLong::ZERO && t22->is_con(63)) {
       return new URShiftLNode(in21, in22);
     }
   }
@@ -527,8 +527,8 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //------------------------------sub--------------------------------------------
 // A subtract node differences it's two inputs.
 const Type *SubLNode::sub( const Type *t1, const Type *t2 ) const {
-  const TypeLong *r0 = t1->is_long(); // Handy access
-  const TypeLong *r1 = t2->is_long();
+  const TypeLong* r0 = t1->as_long(); // Handy access
+  const TypeLong* r1 = t2->as_long();
   jlong lo = java_subtract(r0->_lo, r1->_hi);
   jlong hi = java_subtract(r0->_hi, r1->_lo);
 
@@ -577,8 +577,8 @@ const Type* SubFPNode::Value(PhaseGVN* phase) const {
 const Type* SubHFNode::sub(const Type* t1, const Type* t2) const {
   // Half precision floating point subtraction follows the rules of IEEE 754
   // applicable to other floating point types.
-  if (t1->isa_half_float_constant() != nullptr &&
-      t2->isa_half_float_constant() != nullptr)  {
+  if (t1->is_half_float_constant() &&
+      t2->is_half_float_constant()) {
     return TypeH::make(t1->getf() - t2->getf());
   } else {
     return Type::HALF_FLOAT;
@@ -694,8 +694,8 @@ CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
 // Simplify a CmpI (compare 2 integers) node, based on local information.
 // If both inputs are constants, compare them.
 const Type *CmpINode::sub( const Type *t1, const Type *t2 ) const {
-  const TypeInt *r0 = t1->is_int(); // Handy access
-  const TypeInt *r1 = t2->is_int();
+  const TypeInt* r0 = t1->as_int(); // Handy access
+  const TypeInt* r1 = t2->as_int();
 
   if( r0->_hi < r1->_lo )       // Range is always low?
     return TypeInt::CC_LT;
@@ -761,8 +761,8 @@ const Type* CmpINode::Value(PhaseGVN* phase) const {
 // Simplify a CmpU (compare 2 integers) node, based on local information.
 // If both inputs are constants, compare them.
 const Type* CmpUNode::sub(const Type* t1, const Type* t2) const {
-  const TypeInt* r0 = t1->is_int();
-  const TypeInt* r1 = t2->is_int();
+  const TypeInt* r0 = t1->as_int();
+  const TypeInt* r1 = t2->as_int();
 
   // Check for special case in Hashtable::get - the hash index is
   // mod'ed to the table size so the following range check is useless.
@@ -805,7 +805,7 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
   const Node* in2 = in(2);
   const Type* t1 = phase->type(in1);
   const Type* t2 = phase->type(in2);
-  assert(t1->isa_int(), "CmpU has only Int type inputs");
+  assert(t1->is_int(), "CmpU has only Int type inputs");
   if (t2 == TypeInt::INT) { // Compare to bottom?
     return bottom_type();
   }
@@ -832,8 +832,8 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
     // Skip cases when input types are top or bottom.
     if ((t11 != Type::TOP) && (t11 != TypeInt::INT) &&
         (t12 != Type::TOP) && (t12 != TypeInt::INT)) {
-      const TypeInt *ti11 = t11->is_int();
-      const TypeInt *ti12 = t12->is_int();
+      const TypeInt* ti11 = t11->as_int();
+      const TypeInt* ti12 = t12->as_int();
       jlong lo_ti11_range = ti11->_lo;
       jlong hi_ti11_range = ti11->_hi;
       jlong lo_ti12_range = ti12->_lo;
@@ -860,8 +860,8 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
         int w = MAX2(ti11->_widen, ti12->_widen); // _widen does not matter here
         const TypeInt* wrapped_range1 = TypeInt::make(min_jint, hi_wrapped_range, w);
         const TypeInt* wrapped_range2 = TypeInt::make(lo_wrapped_range, max_jint, w);
-        const TypeInt* cmp1 = sub(wrapped_range1, t2)->is_int();
-        const TypeInt* cmp2 = sub(wrapped_range2, t2)->is_int();
+        const TypeInt* cmp1 = sub(wrapped_range1, t2)->as_int();
+        const TypeInt* cmp2 = sub(wrapped_range2, t2)->as_int();
         // Compute union, so that cmp handles all possible results from the two cases
         const Type* t_cmp = cmp1->meet(cmp2);
         // Pick narrowest type, based on overflow computation and on immediate inputs
@@ -942,8 +942,8 @@ Node* CmpLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 // Simplify a CmpL (compare 2 longs ) node, based on local information.
 // If both inputs are constants, compare them.
 const Type *CmpLNode::sub( const Type *t1, const Type *t2 ) const {
-  const TypeLong *r0 = t1->is_long(); // Handy access
-  const TypeLong *r1 = t2->is_long();
+  const TypeLong* r0 = t1->as_long(); // Handy access
+  const TypeLong* r1 = t2->as_long();
 
   if( r0->_hi < r1->_lo )       // Range is always low?
     return TypeInt::CC_LT;
@@ -970,8 +970,8 @@ const Type *CmpLNode::sub( const Type *t1, const Type *t2 ) const {
 // Simplify a CmpUL (compare 2 unsigned longs) node, based on local information.
 // If both inputs are constants, compare them.
 const Type* CmpULNode::sub(const Type* t1, const Type* t2) const {
-  const TypeLong* r0 = t1->is_long();
-  const TypeLong* r1 = t2->is_long();
+  const TypeLong* r0 = t1->as_long();
+  const TypeLong* r1 = t2->as_long();
 
   if (r0->_uhi < r1->_ulo) {
     return TypeInt::CC_LT;
@@ -1000,8 +1000,8 @@ const Type* CmpULNode::sub(const Type* t1, const Type* t2) const {
 // Simplify an CmpP (compare 2 pointers) node, based on local information.
 // If both inputs are constants, compare them.
 const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
-  const TypePtr *r0 = t1->is_ptr(); // Handy access
-  const TypePtr *r1 = t2->is_ptr();
+  const TypePtr* r0 = t1->as_ptr(); // Handy access
+  const TypePtr* r1 = t2->as_ptr();
 
   // Undefined inputs makes for an undefined result
   if (TypePtr::is_top(r0->_ptr) || TypePtr::is_top(r1->_ptr)) {
@@ -1085,7 +1085,7 @@ static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n, bool& might_b
 
   Node* adr = n->in(MemNode::Address);
   // First load from OopHandle: ((OopHandle)mirror)->resolve(); may need barrier.
-  if (adr->Opcode() != Op_LoadP || !phase->type(adr)->isa_rawptr()) return nullptr;
+  if (adr->Opcode() != Op_LoadP || !phase->type(adr)->is_rawptr()) return nullptr;
   adr = adr->in(MemNode::Address);
 
   intptr_t off = 0;
@@ -1093,7 +1093,7 @@ static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n, bool& might_b
   if (k == nullptr)  return nullptr;
   const TypeKlassPtr* tkp = phase->type(k)->isa_klassptr();
   if (!tkp || off != in_bytes(Klass::java_mirror_offset())) return nullptr;
-  might_be_an_array |= tkp->isa_aryklassptr() || tkp->is_instklassptr()->might_be_an_array();
+  might_be_an_array |= tkp->is_aryklassptr() || tkp->as_instklassptr()->might_be_an_array();
 
   // We've found the klass node of a Java mirror load.
   return k;
@@ -1288,7 +1288,7 @@ Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return nullptr;
     } else {
       // Special case for non-value arrays: They only have one (default) refined class, use it
-      set_req_X(2, phase->makecon(t2->is_aryklassptr()->cast_to_refined_array_klass_ptr()), phase);
+      set_req_X(2, phase->makecon(t2->as_aryklassptr()->cast_to_refined_array_klass_ptr()), phase);
     }
   }
 
@@ -1301,9 +1301,9 @@ Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 const Type* CmpPNode::Value(PhaseGVN* phase) const {
   const Type* res = CmpNode::Value(phase);
   if (res == TypeInt::CC) {
-    const TypeOopPtr* p0 = phase->type(in(1))->isa_oopptr();
-    const TypeOopPtr* p1 = phase->type(in(2))->isa_oopptr();
-    if (p0 != nullptr && p1 != nullptr) {
+    bool in0_is_oopptr = phase->type(in(1))->is_oopptr();
+    bool in1_is_oopptr = phase->type(in(2))->is_oopptr();
+    if (in0_is_oopptr && in1_is_oopptr) {
       Node* in1 = in(1)->uncast();
       Node* in2 = in(2)->uncast();
       AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1);
@@ -1407,7 +1407,7 @@ Node *CmpDNode::Ideal(PhaseGVN *phase, bool can_reshape){
   if( ConvertCmpD2CmpF &&
       in(idx_f2d)->Opcode() == Op_ConvF2D &&
       in(idx_con)->Opcode() == Op_ConD ) {
-    const TypeD *t2 = in(idx_con)->bottom_type()->is_double_constant();
+    const TypeD* t2 = in(idx_con)->bottom_type()->as_double_constant();
     double t2_value_as_double = t2->_d;
     float  t2_value_as_float  = (float)t2_value_as_double;
     if( t2_value_as_double == (double)t2_value_as_float ) {
@@ -1439,10 +1439,10 @@ const Type* FlatArrayCheckNode::Value(PhaseGVN* phase) const {
     if (t == Type::TOP) {
       return Type::TOP;
     }
-    if (t->is_ptr()->is_flat()) {
+    if (t->as_ptr()->is_flat()) {
       // One of the input arrays is flat, check always passes
       return TypeInt::CC_EQ;
-    } else if (!t->is_ptr()->is_not_flat()) {
+    } else if (!t->as_ptr()->is_not_flat()) {
       // One of the input arrays might be flat
       all_not_flat = false;
     }
@@ -1460,7 +1460,7 @@ Node* FlatArrayCheckNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Remove inputs that are known to be non-flat
   for (uint i = ArrayOrKlass; i < req(); ++i) {
     const Type* t = phase->type(in(i));
-    if (t->isa_ptr() && t->is_ptr()->is_not_flat()) {
+    if (t->is_ptr() && t->as_ptr()->is_not_flat()) {
       del_req(i--);
       changed = true;
     }
@@ -1474,7 +1474,7 @@ Node* FlatArrayCheckNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 const Type *BoolTest::cc2logical( const Type *CC ) const {
   if( CC == Type::TOP ) return Type::TOP;
   if( CC->base() != Type::Int ) return TypeInt::BOOL; // Bottom or worse
-  const TypeInt *ti = CC->is_int();
+  const TypeInt* ti = CC->as_int();
   if( ti->is_con() ) {          // Only 1 kind of condition codes set?
     // Match low order 2 bits
     int tmp = ((ti->get_con()&3) == (_test&3)) ? 1 : 0;
@@ -1831,9 +1831,9 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       cmp1_op == Op_Conv2B &&
       (_test._test == BoolTest::eq ||
        _test._test == BoolTest::ne) ) {
-    Node *ncmp = phase->transform(phase->type(c2b->in(1))->isa_int()
-       ? (Node*)new CmpINode(c2b->in(1),cmp2)
-       : (Node*)new CmpPNode(c2b->in(1),phase->makecon(TypePtr::NULL_PTR))
+    Node* ncmp = phase->transform(phase->type(c2b->in(1))->is_int()
+       ? (Node*)new CmpINode(c2b->in(1), cmp2)
+       : (Node*)new CmpPNode(c2b->in(1), phase->makecon(TypePtr::NULL_PTR))
     );
     return new BoolNode( ncmp, _test._test );
   }
@@ -1854,12 +1854,12 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       cop == Op_CmpI &&
       cmp1_op == Op_AddI &&
       cmp1->in(2) != nullptr &&
-      phase->type(cmp1->in(2))->isa_int() &&
-      phase->type(cmp1->in(2))->is_int()->is_con() &&
+      phase->type(cmp1->in(2))->is_int() &&
+      phase->type(cmp1->in(2))->as_int()->is_con() &&
       cmp2_type == TypeInt::ZERO &&
       !is_counted_loop_cmp(cmp) // modifying the exit test of a counted loop messes the counted loop shape
       ) {
-    const TypeInt* cmp1_in2 = phase->type(cmp1->in(2))->is_int();
+    const TypeInt* cmp1_in2 = phase->type(cmp1->in(2))->as_int();
     Node *ncmp = phase->transform( new CmpINode(cmp1->in(1),phase->intcon(-cmp1_in2->_hi)));
     return new BoolNode( ncmp, _test._test );
   }
@@ -2107,12 +2107,12 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
 
   switch (t1->base()) {
   case Type::Int: {
-    const TypeInt* ti = t1->is_int();
+    const TypeInt* ti = t1->as_int();
 
     return integral_abs_value(ti);
   }
   case Type::Long: {
-    const TypeLong* tl = t1->is_long();
+    const TypeLong* tl = t1->as_long();
 
     return integral_abs_value(tl);
   }
@@ -2132,8 +2132,8 @@ Node* AbsNode::Identity(PhaseGVN* phase) {
   Node* in1 = in(1);
   // No need to do abs for non-negative values
   const Type* in_type = phase->type(in1);
-  if ((in_type->isa_int() && in_type->is_int()->_lo >= 0) ||
-      (in_type->isa_long() && in_type->is_long()->_lo >= 0)) {
+  if ((in_type->is_int() && in_type->as_int()->_lo >= 0) ||
+      (in_type->is_long() && in_type->as_long()->_lo >= 0)) {
     return in1;
   }
   // Convert "abs(abs(x))" into "abs(x)"
@@ -2188,10 +2188,10 @@ static const Type* reverse_bytes(int opcode, const Type* con) {
   switch (opcode) {
     // It is valid in bytecode to load any int and pass it to a method that expects a smaller type (i.e., short, char).
     // Let's cast the value to match the Java behavior.
-    case Op_ReverseBytesS:  return TypeInt::make(byteswap(static_cast<jshort>(con->is_int()->get_con())));
-    case Op_ReverseBytesUS: return TypeInt::make(byteswap(static_cast<jchar>(con->is_int()->get_con())));
-    case Op_ReverseBytesI:  return TypeInt::make(byteswap(con->is_int()->get_con()));
-    case Op_ReverseBytesL:  return TypeLong::make(byteswap(con->is_long()->get_con()));
+    case Op_ReverseBytesS:  return TypeInt::make(byteswap(static_cast<jshort>(con->as_int()->get_con())));
+    case Op_ReverseBytesUS: return TypeInt::make(byteswap(static_cast<jchar>(con->as_int()->get_con())));
+    case Op_ReverseBytesI:  return TypeInt::make(byteswap(con->as_int()->get_con()));
+    case Op_ReverseBytesL:  return TypeLong::make(byteswap(con->as_long()->get_con()));
     default: ShouldNotReachHere();
   }
 }
@@ -2240,7 +2240,7 @@ static Node* simplify_involution(PhaseGVN* phase, Node* involution) {
     // Operations on sub-int types might not be "real" involutions for values outside their type range,
     // for example, a ReverseBytesS node with an input larger than short.
     // Make sure not to drop potential truncations.
-    if (type == nullptr || involution->bottom_type()->is_int()->contains(type)) {
+    if (type == nullptr || involution->bottom_type()->as_int()->contains(type)) {
       return original;
     }
   }

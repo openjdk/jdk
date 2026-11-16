@@ -1886,8 +1886,8 @@ bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
   bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
-                            n->in(1)->bottom_type()->isa_rawptr() &&
-                            !n->bottom_type()->isa_rawptr();
+                            n->in(1)->bottom_type()->is_rawptr() &&
+                            !n->bottom_type()->is_rawptr();
 
   if (has_ctrl(n) &&
       !n->is_Phi() &&
@@ -3072,7 +3072,7 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
     }
   }
   if (add2 != nullptr) {
-    const TypeInt* add2t = _igvn.type(add2)->is_int();
+    const TypeInt* add2t = _igvn.type(add2)->as_int();
     if (add2t->is_con()) {
       return add2t->get_con();
     }
@@ -3380,7 +3380,7 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree* lo
   //   -3 >=u -2
   // is false.
   Node* limit = cmpu->in(2);
-  const TypeInt* type_limit = _igvn.type(limit)->is_int();
+  const TypeInt* type_limit = _igvn.type(limit)->as_int();
   if (type_limit->_lo < 0) {
     return nullptr;
   }
