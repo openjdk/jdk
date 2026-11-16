@@ -75,7 +75,7 @@ static void write_barrier_post(MacroAssembler* masm,
 
 instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLNoSp src, immI0 off, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
 %{
-  predicate(UseG1GC);
+  predicate(UseG1GC && !needs_releasing_store(n));
   match(Set mem (StoreLSpecial mem (Binary src off)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
   ins_cost(INSN_COST);
@@ -111,7 +111,7 @@ instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLNoSp src, immI0 off, iRegP
 
 instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegLNoSp src, immI_4 off, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4, rFlagsReg cr)
 %{
-  predicate(UseG1GC);
+  predicate(UseG1GC && !needs_releasing_store(n));
   match(Set mem (StoreLSpecial mem (Binary src off)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
   ins_cost(INSN_COST);
@@ -150,7 +150,7 @@ instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegLNoSp src, immI_4 off, iReg
 
 instruct g1StoreLSpecialTwoOops(indirect mem, iRegLNoSp src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4, rFlagsReg cr)
 %{
-  predicate(UseG1GC);
+  predicate(UseG1GC && !needs_releasing_store(n));
   match(Set mem (StoreLSpecial mem src));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
   ins_cost(INSN_COST);

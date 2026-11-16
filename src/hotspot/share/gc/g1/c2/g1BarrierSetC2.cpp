@@ -206,6 +206,7 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   // mechanism. Also we need to add a memory barrier to prevent commoning reads
   // from this field across safepoints, since GC can change its value.
   bool need_read_barrier = ((on_weak || on_phantom) && !no_keepalive);
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (access.is_oop() && need_read_barrier) {
     access.set_barrier_data(G1C2BarrierPre);
   }
@@ -372,6 +373,7 @@ Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) co
 
 Node* G1BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                      Node* new_val, const Type* value_type) const {
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
   }
@@ -381,6 +383,7 @@ Node* G1BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access
 
 Node* G1BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
                                                       Node* new_val, const Type* value_type) const {
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
   }
@@ -389,6 +392,7 @@ Node* G1BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& acces
 }
 
 Node* G1BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const {
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_xchg_at_resolved(access, new_val, value_type);
   }

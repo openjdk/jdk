@@ -467,6 +467,7 @@ Node* BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, 
 
   Node* load_store = nullptr;
 
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (access.is_oop()) {
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
@@ -508,6 +509,7 @@ Node* BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, 
   pin_atomic_op(access);
 
 #ifdef _LP64
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (access.is_oop() && adr->bottom_type()->is_ptr_to_narrowoop()) {
     return kit->gvn().transform(new DecodeNNode(load_store, load_store->get_ptr_type()));
   }
@@ -526,6 +528,7 @@ Node* BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access,
   Node* load_store = nullptr;
   Node* adr = access.addr().node();
 
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (access.is_oop()) {
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
@@ -600,6 +603,7 @@ Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* n
   const TypePtr* adr_type = access.addr().type();
   Node* load_store = nullptr;
 
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (access.is_oop()) {
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
@@ -636,6 +640,7 @@ Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* n
   pin_atomic_op(access);
 
 #ifdef _LP64
+  assert((access.decorators() & C2_SPECIAL_ACCESS) == 0, "access shouldn't be special");
   if (access.is_oop() && adr->bottom_type()->is_ptr_to_narrowoop()) {
     return kit->gvn().transform(new DecodeNNode(load_store, load_store->get_ptr_type()));
   }

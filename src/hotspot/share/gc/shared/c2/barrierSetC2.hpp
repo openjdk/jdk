@@ -57,7 +57,7 @@ const DecoratorSet C2_TIGHTLY_COUPLED_ALLOC  = DECORATOR_LAST << 9;
 const DecoratorSet C2_ARRAY_COPY             = DECORATOR_LAST << 10;
 // Loads from immutable memory
 const DecoratorSet C2_IMMUTABLE_MEMORY       = DECORATOR_LAST << 11;
-// We are building a special memory access, that contains at least one oop, but is not reduced to one oop. At the moment, it's only StoreLSpecial.
+// Accesses two narrow oops, or one narrow oop along with some primitive data at once.
 const DecoratorSet C2_SPECIAL_ACCESS         = DECORATOR_LAST << 12;
 
 class Compile;
