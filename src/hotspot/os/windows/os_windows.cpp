@@ -5041,6 +5041,7 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
   if (::CloseHandle(hFile) == 0) {
     DWORD errcode = ::GetLastError();
     log_debug(os)("get_path_to_target() failed to CloseHandle: GetLastError->%lu.", errcode);
+    FREE_C_HEAP_ARRAY(path_to_target);
     return nullptr;
   }
 
