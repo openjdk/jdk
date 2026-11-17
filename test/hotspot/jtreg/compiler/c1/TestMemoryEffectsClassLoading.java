@@ -23,7 +23,7 @@
 
 /*
  * @test id=c1
- * @bug 8391181
+ * @bug 8391181 8397423
  * @summary Tests that memory state is killed appropriately for class loaders that might have side-effects.
  * @requires vm.compiler1.enabled
  * @library /test/lib
@@ -34,7 +34,7 @@
 
 /*
  * @test id=c2
- * @bug 8391181
+ * @bug 8391181 8397423
  * @summary Tests that memory state is killed appropriately for class loaders that might have side-effects.
  * @requires vm.compiler2.enabled
  * @library /test/lib
@@ -57,12 +57,14 @@ public class TestMemoryEffectsClassLoading {
     }
     public static final Victim VICTIM = new Victim();
 
-    public static Object SOME_OBJECT = new Object();
+    public static Object SOME_OBJECT_FOR_INSTANCEOF = new Object();
+    public static Object SOME_OBJECT_FOR_CHECKCAST = new LoadTargetCheckCast();
     private static final String TEST_CLASS = "compiler.c1.TestMemoryEffectsClassLoading";
 
     public static final void main(String[] args) throws Exception {
         final SideEffectingClassLoader loader = new SideEffectingClassLoader();
-        var tests = List.of("TestClassConstant", "TestInstanceOf", "TestObjectArray", "TestMultiArray");
+        var tests = List.of("TestClassConstant", "TestInstanceOf", "TestCheckCast", "TestObjectArray",
+                            "TestMultiArray");
         for (final String className : tests) {
             final Class<?> klass = Class.forName(TEST_CLASS + "$" + className, false, loader);
             int result = (int) klass.getMethod("test").invoke(null);
@@ -82,7 +84,15 @@ public class TestMemoryEffectsClassLoading {
         public static int test() {
             VICTIM.field = 0xdead;
             IO.println("before");
-            boolean unused = SOME_OBJECT instanceof LoadTargetInstanceOf;
+            boolean unused = SOME_OBJECT_FOR_INSTANCEOF instanceof LoadTargetInstanceOf;
+            return VICTIM.field;
+        }
+    }
+
+    public static class TestCheckCast {
+        public static int test() {
+            VICTIM.field = 0xdead;
+            Object unused = (LoadTargetCheckCast) SOME_OBJECT_FOR_CHECKCAST;
             return VICTIM.field;
         }
     }
@@ -106,6 +116,7 @@ public class TestMemoryEffectsClassLoading {
     // Classes that trigger the side effect when loaded with the custom class loader below.
     public static class LoadTargetClassConstant {}
     public static class LoadTargetInstanceOf {}
+    public static class LoadTargetCheckCast {}
     public static class LoadTargetObjectArray {}
     public static class LoadTargetMultiArray {}
 
