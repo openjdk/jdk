@@ -65,10 +65,10 @@ class Shutdown {
      * Add a new system shutdown hook.  Checks the shutdown state and
      * the hook itself, but does not do any security checks.
      *
-     * The registerShutdownInProgress parameter should be false except
-     * registering the DeleteOnExitHook since the first file may
-     * be added to the delete on exit list by the application shutdown
-     * hooks.
+     * It is expected that registerShutdownInProgress is false for the hook
+     * that runs application shutdown hooks. It may be true for other hooks,
+     * e.g. DeleteOnExitHook, as the first invocation of File.deleteOnExit
+     * may occur in an application shutdown hook.
      *
      * @param slot  the slot in the shutdown hook array, whose element
      *              will be invoked in order during shutdown

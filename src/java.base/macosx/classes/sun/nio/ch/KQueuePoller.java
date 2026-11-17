@@ -60,7 +60,10 @@ class KQueuePoller extends Poller {
             long fds = IOUtil.makePipe(false);
             fd0 = (int) (fds >>> 32);
             fd1 = (int) fds;
-            KQueue.register(kqfd, fd0, EVFILT_READ, EV_ADD);
+            int err = KQueue.register(kqfd, fd0, EVFILT_READ, EV_ADD);
+            if (err != 0) {
+                throw new IOException("kevent failed: " + err);
+            }
         } catch (Throwable e) {
             FileDispatcherImpl.closeIntFD(kqfd);
             if (address != 0L) KQueue.freePollArray(address);

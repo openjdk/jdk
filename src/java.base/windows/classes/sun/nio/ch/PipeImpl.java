@@ -37,7 +37,6 @@ import java.net.UnixDomainSocketAddress;
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.channels.spi.*;
 import java.security.SecureRandom;
 import java.util.Random;
@@ -134,9 +133,10 @@ class PipeImpl
                             } while (!sc1.finishConnect());
                         }
                         RANDOM_NUMBER_GENERATOR.nextBytes(secret.array());
-                        do {
-                            sc1.write(secret);
-                        } while (secret.hasRemaining());
+                        sc1.write(secret);
+                        if (secret.hasRemaining()) {
+                            throw new IOException("Short write during handshake");
+                        }
                         secret.rewind();
                         sc1.configureBlocking(true);
 

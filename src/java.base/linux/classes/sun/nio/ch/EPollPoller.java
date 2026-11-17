@@ -58,7 +58,10 @@ class EPollPoller extends Poller {
             // register one end of the pipe with epoll to allow for wakeup
             eventfd = new EventFD();
             IOUtil.configureBlocking(eventfd.efd(), false);
-            EPoll.ctl(epfd, EPOLL_CTL_ADD, eventfd.efd(), EPOLLIN);
+            int err = EPoll.ctl(epfd, EPOLL_CTL_ADD, eventfd.efd(), EPOLLIN);
+            if (err != 0) {
+                throw new IOException("epoll_ctl failed: " + err);
+            }
         } catch (Throwable e) {
             FileDispatcherImpl.closeIntFD(epfd);
             if (address != 0L) EPoll.freePollArray(address);
@@ -139,7 +142,7 @@ class EPollPoller extends Poller {
         while (i < n) {
             long eventAddress = EPoll.getEvent(address, i);
             int fd = EPoll.getDescriptor(eventAddress);
-            if (eventfd == null || fd != eventfd.efd()) {
+            if (fd != eventfd.efd()) {
                 polled(fd);
                 polled++;
             }
