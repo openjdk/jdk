@@ -30,6 +30,7 @@ import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -102,13 +103,15 @@ public final class XMLSecurityManager implements Cloneable {
     private static final IntegerMapper INTMAPPER = new IntegerMapper();
 
     // DTD value mapper
-    private static final StringMapper DTDMAPPER = new StringMapper(DTD_MAP);
+    private static final StringMapper DTDMAPPER = new StringMapper(JdkConstants.DTD_PROPNAME, DTD_MAP);
 
     // Catalog Resolve value mapper
-    private static final StringMapper CRMAPPER = new StringMapper(CR_MAP);
+    private static final StringMapper CRMAPPER = new StringMapper(JdkConstants.JDKCATALOG_RESOLVE, CR_MAP);
 
-    // Resource Access value mapper
-    private static final StringMapper RAMAPPER = new StringMapper(RA_MAP);
+    // Resource Access rules are validated by AccessRule. Rules not in the map
+    // use ALLOW as their integer representation.
+    private static final StringMapper RAMAPPER = new StringMapper(
+            JdkConstants.RESOURCE_ACCESS, RA_MAP, JdkConstants.ALLOW);
 
     /**
      * Limits managed by the security manager
@@ -851,7 +854,7 @@ public final class XMLSecurityManager implements Cloneable {
     }
 
     private boolean isPropertyValuePresent(Limit limit, String value) {
-        return value != null && (!value.isEmpty() || limit == Limit.RESOURCE_ACCESS);
+        return value != null && (!value.isEmpty() || limit.mapper() instanceof StringMapper);
     }
 
     /**
@@ -892,11 +895,29 @@ public final class XMLSecurityManager implements Cloneable {
      * keys and values within the map.
      */
     public static class StringMapper extends ValueMapper {
+        private final String propertyName;
         private final Map<String, Integer> map;
         private final Map<Integer, String> reverseMap;
+        private final Integer unmappedValue;
 
-        public StringMapper(Map<String, Integer> map) {
+        public StringMapper(String propertyName, Map<String, Integer> map) {
+            this(propertyName, map, null);
+        }
+
+        /**
+         * Creates a mapper with an optional integer representation for values
+         * not in the map. Properties such as {@link Limit#RESOURCE_ACCESS} use
+         * a dedicated validator ({@link AccessRule}) to validate those values.
+         *
+         * @param propertyName the name of the property
+         * @param map the value mappings, or null for numeric conversion
+         * @param unmappedValue the integer representation for unmapped values,
+         * or null to require a mapping
+         */
+        public StringMapper(String propertyName, Map<String, Integer> map, Integer unmappedValue) {
+            this.propertyName = propertyName;
             this.map = map;
+            this.unmappedValue = unmappedValue;
             if (map != null) {
                 reverseMap = map.entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
@@ -907,18 +928,26 @@ public final class XMLSecurityManager implements Cloneable {
 
         /**
          * Finds the mapping int value with the specified property value. This
-         * method will try to convert the provided value to an integer if no
-         * mapping is found.
+         * method trims surrounding whitespace before looking up the value,
+         * or converts the value to an integer if no map is supplied.
          * @param value the property value
-         * @return the mapping int value if found, null otherwise
+         * @return the mapped integer, or the configured integer representation
+         * for unmapped values
+         * @throws IllegalArgumentException if the value is not in the provided map
+         * @throws NumberFormatException if numeric conversion is required and
+         * the value cannot be parsed as a number
          */
         @Override
         public int toInt(Object value) {
             Objects.requireNonNull(value);
             Integer iVal;
             if (map != null) {
-                iVal = map.get(((String)value).toLowerCase());
-                iVal = (iVal == null) ? 0 : iVal;
+                String stringValue = ((String)value).trim();
+                iVal = map.getOrDefault(stringValue.toLowerCase(Locale.ROOT), unmappedValue);
+                if (iVal == null) {
+                    throw new IllegalArgumentException("Invalid setting '" + value
+                            + "' for property '" + propertyName + "'.");
+                }
             } else {
                 try {
                     iVal = (int)Double.parseDouble((String)value);
