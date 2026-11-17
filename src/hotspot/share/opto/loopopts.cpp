@@ -4734,9 +4734,9 @@ private:
     return n->Opcode() == Op_MinL || n->Opcode() == Op_MaxL;
   }
 
-  bool try_reassociate_chain(Node* n, PhiNode* phi) {
+  void try_reassociate_chain(Node* n, PhiNode* phi) {
     if (!is_associative(n)) {
-      return false;
+      return;
     }
 
     Node* chain_head = nullptr;
@@ -4758,12 +4758,12 @@ private:
       if (use != nullptr) {
         if (!_phase->ctrl_is_member(_loop, use)) {
           // Only interested in commutative add nodes that are in use in the loop
-          return false;
+          return;
         }
         if (use->in(1)->Opcode() == opcode && use->in(2)->Opcode() == opcode) {
           // A chain to reassociate cannot be constructed
           // when the chain can have multiple paths
-          return false;
+          return;
         }
 
         chain_length++;
@@ -4775,18 +4775,12 @@ private:
 
     if (chain_length < 2) {
       // Only reassociate long enough chains
-      return false;
+      return;
     }
 
     Node* new_chain_head = do_reassociate_chain(chain_head, opcode, phi, chain_length);
-
-//    Node* new_chain_head = MinMaxNode::build_min_max_long(&_phase->igvn(), phi, reassociated, opcode == Op_MaxL);
-//    _phase->register_new_node(new_chain_head, _loop->head());
-//    _phase->C->copy_node_notes_to(new_chain_head, chain_head);
     _phase->igvn().replace_in_uses(chain_head, new_chain_head);
     _phase->igvn()._worklist.push(chain_head);
-
-    return true;
   }
 
   Node* do_reassociate_chain(Node* node, int opcode, PhiNode* phi, uint chain_length) {
@@ -4801,15 +4795,6 @@ private:
         n = n->in(2);
       }
     }
-    // Node* n = node;
-    // do {
-    //   chain_nodes.push(n);
-    //   if (n->in(1)->Opcode() == opcode) {
-    //     n = n->in(1);
-    //   } else {
-    //     n = n->in(2);
-    //   }
-    // } while (n != phi);
 
     // Clone nodes ahead of transformation
     Node_List<Node> cloned_nodes(chain_length);
@@ -4822,25 +4807,22 @@ private:
 
     // Update edges
     for (uint i = 0; i < chain_nodes.size(); i++) {
-      Node* n = chain_nodes.at(i);
-      Node* cloned = cloned_nodes[n->_idx];
-      if (phi == n->in(1) || phi == n->in(2)) {
-        int phi_index = phi == n->in(1) ? 1 : 2;
-        int not_phi_index = phi == n->in(1) ? 2 : 1;
-
+      Node* chain_node = chain_nodes.at(i);
+      Node* cloned = cloned_nodes[chain_node->_idx];
+      if (phi == chain_node->in(1) || phi == chain_node->in(2)) {
+        int not_phi_index = phi == chain_node->in(1) ? 2 : 1;
         Node* prev = chain_nodes.at(i - 1);
-        Node* cloned_prev = cloned_nodes[prev->_idx];
         int prev_chain_index = prev->in(1)->Opcode() == opcode ? 1 : 2;
-        cloned_prev->set_req(prev_chain_index, n->in(not_phi_index));
+        Node* cloned_prev = cloned_nodes[prev->_idx];
+        cloned_prev->set_req(prev_chain_index, chain_node->in(not_phi_index));
         cloned->set_req(not_phi_index, cloned_nodes[chain_nodes.at(0)->_idx]);
       } else {
-        int index = n->in(1)->Opcode() == opcode ? 1 : 2;
-        cloned->set_req(index, cloned_nodes[n->in(index)->_idx]);
+        int index = chain_node->in(1)->Opcode() == opcode ? 1 : 2;
+        cloned->set_req(index, cloned_nodes[chain_node->in(index)->_idx]);
       }
     }
 
     return cloned_nodes[chain_nodes.at(chain_length - 1)->_idx];
-    // return cloned_nodes[node->_idx];
   }
 };
 
