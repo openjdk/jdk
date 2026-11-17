@@ -32,6 +32,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,6 +98,15 @@ public class TestSocketEvents {
                             readInt = is.read();
                             assertEquals(readInt, -1, "Wrong readInt at EOF");
                             addExpectedEvent(IOEvent.createSocketReadEvent(-1, s));
+
+                            OutputStream os = s.getOutputStream();
+                            os.close();
+                            try {
+                                os.write(42);
+                                throw new AssertionError("Missing SocketException for os.write(42)");
+                            } catch (SocketException cce) {
+                                addExpectedEvent(IOEvent.createSocketWriteEvent(0, s));
+                            }
                         }
                     }
                 });
@@ -105,12 +115,20 @@ public class TestSocketEvents {
                 try (Socket s = new Socket()) {
                     s.connect(ss.getLocalSocketAddress());
                     try (OutputStream os = s.getOutputStream()) {
+                        InputStream is = s.getInputStream();
                         os.write(writeInt);
                         addExpectedEvent(IOEvent.createSocketWriteEvent(1, s));
                         os.write(writeBuf, 0, 3);
                         addExpectedEvent(IOEvent.createSocketWriteEvent(3, s));
                         os.write(writeBuf);
                         addExpectedEvent(IOEvent.createSocketWriteEvent(writeBuf.length, s));
+                        is.close();
+                        try {
+                            is.read();
+                            throw new AssertionError("Missing SocketException for is.read()");
+                        } catch (SocketException cce) {
+                            addExpectedEvent(IOEvent.createSocketReadEvent(0, s));
+                        }
                     }
                 }
 
