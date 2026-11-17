@@ -46,7 +46,7 @@ public class TestCPUTimeSamplingStop {
     private static final int MAX_THREADS = 64;
 
     public static void main(String[] args) throws Exception {
-        int threads = Math.min(Math.max(Runtime.getRuntime().availableProcessors() - 1, 2), MAX_THREADS);
+        int threads = Math.clamp(Runtime.getRuntime().availableProcessors() - 1, 2, MAX_THREADS);
         for (int i = 0; i < threads; i++) {
             Thread t = new Thread(TestCPUTimeSamplingStop::nativeBurner, "Native CPU burner " + i);
             t.setDaemon(true);
