@@ -407,6 +407,23 @@ JVMFlag::Error MetaspaceSizeConstraintFunc(size_t value, bool verbose) {
   }
 }
 
+JVMFlag::Error MaxMetaspaceSizeConstraintFunc(size_t value, bool verbose) {
+  if (value < MetaspaceSize && !FLAG_IS_DEFAULT(MetaspaceSize)) {
+    // The new MaxMetaspaceSize value is < a non-default MetaspaceSize so
+    // we need to complain about that mis-configuration. If MetaspaceSize
+    // is still the default, then we accept the new MaxMetaspaceSize and
+    // Metaspace::ergo_initialize() will silently trim MetaspaceSize down
+    // to fit.
+    JVMFlag::printError(verbose,
+                        "MaxMetaspaceSize (%zu) must be "
+                        "greater than or equal to MetaspaceSize (%zu)\n",
+                        value, MetaspaceSize);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  } else {
+    return JVMFlag::SUCCESS;
+  }
+}
+
 JVMFlag::Error GCCardSizeInBytesConstraintFunc(uint value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,

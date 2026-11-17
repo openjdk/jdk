@@ -1406,6 +1406,7 @@ const int ObjectAlignmentInBytes = 8;
           /* Metaspace::ergo_initialize() will silently lower a */          \
           /* default MetaspaceSize value that is higher than the */         \
           /* specified MaxMetaspaceSize. */                                 \
+          constraint(MaxMetaspaceSizeConstraintFunc,AtParse)                \
                                                                             \
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \
