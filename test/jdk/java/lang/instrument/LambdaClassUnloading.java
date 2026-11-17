@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8392362
- * @summary Obsolete lambda implementation classes can unload after redefinition or retransformation
+ * @summary Obsolete lambda, record, and switch helpers can unload after redefinition or retransformation
  * @requires vm.jvmti & (vm.gc != "Epsilon")
  * @library /test/lib
  * @modules java.instrument
@@ -65,6 +65,18 @@ public class LambdaClassUnloading {
         }
     }
 
+    public record RecordHost(Object value) {}
+
+    public static class SwitchHost {
+        public static int typeSwitch(Object value) {
+            return switch (value) {
+                case String text -> text.length();
+                case Integer number -> number.intValue();
+                default -> -1;
+            };
+        }
+    }
+
     public static void premain(String arguments, Instrumentation agent) {
         instrumentation = agent;
     }
@@ -75,6 +87,10 @@ public class LambdaClassUnloading {
             case "redefine" -> false;
             default -> throw new IllegalArgumentException(arguments[0]);
         };
+        if (arguments.length == 2) {
+            testHelpers(retransform, arguments[1]);
+            return;
+        }
         byte[] originalBytes;
         try (InputStream stream = Host.class.getResourceAsStream("LambdaClassUnloading$Host.class")) {
             originalBytes = stream.readAllBytes();
@@ -86,6 +102,15 @@ public class LambdaClassUnloading {
         Reference.reachabilityFence(Host.class);
         Reference.reachabilityFence(loader);
         System.out.println(arguments[0] + ": all " + classes.size() + " implementation classes reclaimed");
+
+        // The lambda test covers both redefinition and retransformation.
+        // Test unloading of the generated classes for record equals/hashCode
+        // and type switches using only retransformation.
+        if (retransform) {
+            testHelpers(retransform, "recordEquals");
+            testHelpers(retransform, "recordHashCode");
+            testHelpers(retransform, "typeSwitch");
+        }
     }
 
     private static List<WeakReference<Class<?>>> exercise(boolean retransform, byte[] originalBytes) throws Exception {
@@ -112,11 +137,98 @@ public class LambdaClassUnloading {
     }
 
     private static void transform(boolean retransform, byte[] originalBytes) throws Exception {
+        transform(retransform, Host.class, originalBytes);
+    }
+
+    private static void transform(boolean retransform, Class<?> host, byte[] originalBytes) throws Exception {
         if (retransform) {
-            instrumentation.retransformClasses(Host.class);
+            instrumentation.retransformClasses(host);
         } else {
-            instrumentation.redefineClasses(new ClassDefinition(Host.class, originalBytes));
+            instrumentation.redefineClasses(new ClassDefinition(host, originalBytes));
         }
+    }
+
+    private static void testHelpers(boolean retransform, String kind) throws Exception {
+        Class<?> host = switch (kind) {
+            case "recordEquals", "recordHashCode" -> RecordHost.class;
+            case "typeSwitch" -> SwitchHost.class;
+            default -> throw new IllegalArgumentException(kind);
+        };
+        String suffix = switch (kind) {
+            case "recordEquals" -> "$$EqualatorSpecializer/";
+            case "recordHashCode" -> "$$HasherSpecializer/";
+            case "typeSwitch" -> "$$TypeSwitch/";
+            default -> throw new IllegalArgumentException(kind);
+        };
+        byte[] originalBytes;
+        try (InputStream stream = host.getResourceAsStream(host.getName() + ".class")) {
+            originalBytes = stream.readAllBytes();
+        }
+        ClassLoader loader = host.getClassLoader();
+        Asserts.assertTrue(instrumentation.isModifiableClass(host));
+        List<WeakReference<Class<?>>> classes = new ArrayList<>();
+        for (int generation = 0; generation <= 10; generation++) {
+            // Transform before the first link too, avoiding an initial STRONG helper.
+            transform(retransform, host, originalBytes);
+            runHelperWorkload(kind);
+            trackNewHelper(classes, host.getName() + suffix);
+        }
+
+        // The current call site must keep its helper alive while obsolete
+        // generations unload. The weak references themselves retain no classes.
+        awaitUnloading(classes.subList(0, classes.size() - 1), kind + ": obsolete helper classes remain reachable");
+        Asserts.assertFalse(classes.getLast().refersTo(null), kind + ": current call site's helper reclaimed");
+        runHelperWorkload(kind);
+
+        // Unlink the final site without invoking it again.
+        transform(retransform, host, originalBytes);
+        awaitUnloading(classes, kind + ": released helper classes remain reachable");
+        Reference.reachabilityFence(host);
+        Reference.reachabilityFence(loader);
+        System.out.println(kind + ": all " + classes.size() + " helper classes reclaimed");
+    }
+
+    private static void runHelperWorkload(String kind) {
+        switch (kind) {
+            case "recordEquals" -> {
+                RecordHost value = new RecordHost("payload");
+                Asserts.assertTrue(value.equals(new RecordHost("payload")));
+                Asserts.assertFalse(value.equals(new RecordHost("different")));
+            }
+            case "recordHashCode" ->
+                Asserts.assertEquals(new RecordHost("payload").hashCode(), "payload".hashCode());
+            case "typeSwitch" -> {
+                Asserts.assertEquals(SwitchHost.typeSwitch("payload"), 7);
+                Asserts.assertEquals(SwitchHost.typeSwitch(Integer.valueOf(42)), 42);
+                Asserts.assertEquals(SwitchHost.typeSwitch(Boolean.TRUE), -1);
+            }
+            default -> throw new IllegalArgumentException(kind);
+        }
+    }
+
+    private static void trackNewHelper(List<WeakReference<Class<?>>> classes, String prefix) {
+        Class<?> found = null;
+        // Keep the enumeration's strong Class references inside this method,
+        // so none survives into the unloading checks.
+        for (Class<?> candidate : instrumentation.getAllLoadedClasses()) {
+            if (!candidate.getName().startsWith(prefix) || alreadyTracked(classes, candidate)) {
+                continue;
+            }
+            Asserts.assertTrue(candidate.isHidden(), "Expected a hidden helper class");
+            Asserts.assertNull(found, "More than one new helper for " + prefix);
+            found = candidate;
+        }
+        Asserts.assertNotNull(found, "No new helper for " + prefix);
+        classes.add(new WeakReference<>(found));
+    }
+
+    private static boolean alreadyTracked(List<WeakReference<Class<?>>> classes, Class<?> candidate) {
+        for (WeakReference<Class<?>> reference : classes) {
+            if (reference.refersTo(candidate)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void generate(List<WeakReference<Class<?>>> classes, int value) {
