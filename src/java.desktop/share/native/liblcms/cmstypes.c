@@ -161,17 +161,20 @@ cmsBool _cmsWriteWCharArray(cmsIOHANDLER* io, cmsUInt32Number n, const wchar_t* 
         wchar_t v = Array[i];
         cmsUInt16Number out;
 
-        #if (WCHAR_MAX > 0xFFFF)     // WCHAR_MAX support is required for C99
-                // UTF-32 wchar_t platforms
-                if (v <= 0xFFFF && !(v >= 0xD800 && v <= 0xDFFF))
-                    out = (cmsUInt16Number)v;
-                else
-                    out = (cmsUInt16Number)'?';
-        #else
-                // UTF-16 wchar_t platforms:
-                // preserve code units exactly, including surrogates.
+        if (sizeof(wchar_t) == 4) {    // WCHAR_MAX support is required for C99
+
+            // UTF-32 wchar_t platforms
+            if (v <= 0xFFFF && !(v >= 0xD800 && v <= 0xDFFF))
                 out = (cmsUInt16Number)v;
-        #endif
+            else
+                out = (cmsUInt16Number)'?';
+        }
+        else {
+
+            // UTF-16 wchar_t platforms:
+            // preserve code units exactly, including surrogates.
+            out = (cmsUInt16Number)v;
+        }
 
         if (!_cmsWriteUInt16Number(io, out))
             return FALSE;
