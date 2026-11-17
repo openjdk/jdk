@@ -4700,106 +4700,6 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree* loop, Node_List<Node
 }
 
 
-// ---- ASCII-art helpers for print_chain_art (used by try_reassociate_chain) ----
-//
-// Nodes whose Opcode matches the chain's opcode are drawn as internal nodes;
-// everything else (Phi, LoadL, …) is drawn as a leaf terminal.
-//
-// Layout convention: in(1) is placed to the left, in(2) to the right,
-// each OP node is centred above its two children, and a single-character
-// '/' / '\' connector row sits between parent and children.
-//
-// Example for OP(A, OP(B, OP(C, Phi)))  (chain at in(1) every level):
-//
-//          MinL(0)
-//         /       \
-//     MinL(1)   LoadL(a)
-//     /      \
-// MinL(2)   LoadL(b)
-//  /    \
-// Phi   LoadL(c)
-
-// Total character-column width of the subtree rooted at node.
-static int chain_art_width(Node* node, int opcode) {
-  if (node->Opcode() != opcode) {
-    char lbl[32];
-    int lw = jio_snprintf(lbl, 32, "%s(%d)", node->Name(), node->_idx);
-    return (lw > 0 && lw < 32) ? lw : 10;
-  }
-  // gap of 2 spaces between the two child subtrees
-  return chain_art_width(node->in(1), opcode) + 2 +
-         chain_art_width(node->in(2), opcode);
-}
-
-// Recursively place every node of the subtree into a row-major char buffer.
-// Returns the center column of the subtree just placed.
-static int chain_art_place(Node* node, int opcode, int row, int x,
-                            char* buf, int buf_h, int buf_w, int& max_row) {
-  char lbl[32];
-  int lw = jio_snprintf(lbl, 32, "%s(%d)", node->Name(), node->_idx);
-  if (lw <= 0 || lw >= 32) lw = 10;
-
-  // Write one character into the buffer, respecting bounds.
-  auto put = [&](int r, int c, char ch) {
-    if (r >= 0 && r < buf_h && c >= 0 && c < buf_w) {
-      buf[r * buf_w + c] = ch;
-      if (r > max_row) max_row = r;
-    }
-  };
-
-  if (node->Opcode() != opcode) {
-    // Leaf terminal: just place the label.
-    for (int i = 0; i < lw; i++) put(row, x + i, lbl[i]);
-    return x + lw / 2;
-  }
-
-  // OP node: recurse left (in(1)) then right (in(2)).
-  int left_w = chain_art_width(node->in(1), opcode);
-  int lc = chain_art_place(node->in(1), opcode, row + 2, x,            buf, buf_h, buf_w, max_row);
-  int rc = chain_art_place(node->in(2), opcode, row + 2, x + left_w + 2, buf, buf_h, buf_w, max_row);
-
-  // Centre this node above its children.
-  int center = (lc + rc) / 2;
-  int col    = MAX2(x, center - lw / 2);
-  for (int i = 0; i < lw; i++) put(row, col + i, lbl[i]);
-
-  // Connector characters: '/' halfway between lc and center,
-  //                       '\' halfway between center and rc.
-  put(row + 1, (lc + center) / 2,     '/');
-  put(row + 1, (center + rc + 1) / 2, '\\');
-
-  return center;
-}
-
-// Render the reduction chain rooted at `head` as an ASCII-art binary tree.
-static void print_chain_art(Node* head, int opcode, outputStream* st) {
-  ResourceMark rm;
-
-  // 2 extra chars of gap per level; +32 margin so the right edge is always blank.
-  int buf_w = chain_art_width(head, opcode) + 32;
-  if (buf_w > 4096) buf_w = 4096;
-  const int buf_h = 256;
-
-  char* buf = NEW_RESOURCE_ARRAY(char, (size_t)buf_h * buf_w);
-  memset(buf, ' ', (size_t)buf_h * buf_w);
-
-  int max_row = 0;
-  chain_art_place(head, opcode, 0, 0, buf, buf_h, buf_w, max_row);
-
-  for (int r = 0; r <= max_row; r++) {
-    char* line = buf + (long)r * buf_w;
-    // Trim trailing spaces.
-    int end = buf_w - 1;
-    while (end > 0 && line[end] == ' ') end--;
-    end += (line[end] != ' ') ? 1 : 0;  // exclusive end of content
-    // Temporarily null-terminate (safe: the +32 margin ensures end < buf_w).
-    char save = line[end];
-    line[end]  = '\0';
-    st->print_cr("%s", line);
-    line[end]  = save;
-  }
-}
-
 // Reassociates latency-bound reduction loop chains for long Min/Max that have a shape like this:
 // OP(A, OP(B, OP(C, Phi)))
 // To become the following by shifting the Phi node to the front and shifting the rest of inputs:
@@ -4830,8 +4730,6 @@ public:
 private:
   IdealLoopTree* _loop;
   PhaseIdealLoop* _phase;
-  int _depth = 0; // Tracks recursion depth for do_reassociate_chain logging
-
   static bool is_associative(Node* n) {
     return n->Opcode() == Op_MinL || n->Opcode() == Op_MaxL;
   }
@@ -4880,12 +4778,6 @@ private:
       return false;
     }
 
-    if (UseNewCode) {
-      tty->print_cr("ReassociateReductionChains: before reassociation (chain_length=%d, opcode=%s):",
-                    chain_length, NodeClassNames[opcode]);
-      print_chain_art(chain_head, opcode, tty);
-    }
-
     Node* new_chain_head = do_reassociate_chain(chain_head, opcode, phi, chain_length);
 
 //    Node* new_chain_head = MinMaxNode::build_min_max_long(&_phase->igvn(), phi, reassociated, opcode == Op_MaxL);
@@ -4894,25 +4786,10 @@ private:
     _phase->igvn().replace_in_uses(chain_head, new_chain_head);
     _phase->igvn()._worklist.push(chain_head);
 
-    if (UseNewCode) {
-      tty->print_cr("ReassociateReductionChains: after reassociation:");
-      print_chain_art(new_chain_head, opcode, tty);
-    }
-
     return true;
   }
 
   Node* do_reassociate_chain(Node* node, int opcode, PhiNode* phi, uint chain_length) {
-    if (UseNewCode) {
-      // tty->print_cr("do_reassociate_chain");
-      tty->print_cr("%*sdo_reassociate_chain: %s(%d) [in(1)=%s(%d), in(2)=%s(%d)]",
-                    _depth * 2, "",
-                    node->Name(), node->_idx,
-                    node->in(1)->Name(), node->in(1)->_idx,
-                    node->in(2)->Name(), node->in(2)->_idx);
-      _depth++;
-    }
-
     // Accumulate chain of nodes to apply transformation
     Unique_Node_List<Node> chain_nodes;
     Node* n = node;
