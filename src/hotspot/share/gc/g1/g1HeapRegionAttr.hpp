@@ -89,8 +89,8 @@ public:
   bool is_pinned() const               { return _is_pinned != 0; }
 
   void set_old()                       { _type = Old; }
-  void clear_humongous_candidate()               {
-    assert(is_humongous_candidate() || !is_in_cset(), "must be");
+  void clear_humongous_candidate()     {
+    assert(is_humongous_candidate(), "must be");
     _type = HumongousNonCandidate;
   }
 
