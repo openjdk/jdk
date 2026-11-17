@@ -24,7 +24,9 @@
 /*
  * @test
  * @bug 8397199
- * @summary Reject empty PKCS12 attribute value sets
+ * @summary Reject empty PKCS12 friendlyName and localKeyId value sets
+ * @library /test/lib
+ * @run main EmptyAttributeSet
  */
 
 import java.io.ByteArrayInputStream;
@@ -32,20 +34,22 @@ import java.io.IOException;
 import java.security.KeyStore;
 import java.util.Base64;
 
+import jdk.test.lib.Asserts;
+
 public class EmptyAttributeSet {
     private static void check(String encoded, String oid) throws Exception {
         byte[] data = Base64.getDecoder().decode(encoded);
         KeyStore store = KeyStore.getInstance("PKCS12");
-        try {
-            store.load(new ByteArrayInputStream(data), null);
-            throw new AssertionError("Empty attribute accepted: " + oid);
-        } catch (IOException e) {
-            String message = e.getMessage();
-            if (message == null || !message.contains(oid) ||
-                    !message.contains("Empty attribute value set")) {
-                throw new AssertionError("Unexpected exception", e);
-            }
-        }
+
+        IOException e = Asserts.assertThrows(IOException.class,
+                () -> store.load(new ByteArrayInputStream(data), null));
+
+        String message = e.getMessage();
+        Asserts.assertNotNull(message);
+        Asserts.assertTrue(message.contains(oid),
+                "Missing OID in exception message: " + message);
+        Asserts.assertTrue(message.contains("Empty attribute value set"),
+                "Unexpected exception message: " + message);
     }
 
     public static void main(String[] args) throws Exception {
