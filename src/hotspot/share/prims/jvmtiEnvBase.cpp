@@ -36,7 +36,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "prims/downcallLinker.hpp"
-#include "prims/jvmtiAgentSet.hpp"
+#include "prims/jvmtiAgentManager.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExtensions.hpp"
@@ -275,7 +275,7 @@ JvmtiEnvBase::env_dispose() {
     tag_map_to_clear->clear();
   }
 
-  JvmtiAgentSet::on_env_disposal(jvmti_external());
+  JvmtiAgentManager::on_env_disposal(jvmti_external());
 
   _needs_clean_up = true;
 }

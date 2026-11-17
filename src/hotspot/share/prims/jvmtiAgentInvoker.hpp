@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_PRIMS_JVMTIAGENTLIFECYCLE_HPP
-#define SHARE_PRIMS_JVMTIAGENTLIFECYCLE_HPP
+#ifndef SHARE_PRIMS_JVMTIAGENTINVOKER_HPP
+#define SHARE_PRIMS_JVMTIAGENTINVOKER_HPP
 
 #include "memory/allStatic.hpp"
 #include "utilities/macros.hpp"
@@ -32,26 +32,11 @@ class JavaThread;
 class JvmtiAgent;
 class outputStream;
 
-class JvmtiAgentLifecycle : AllStatic {
-  friend class JvmtiAgentSet;
- private:
-  static void register_for_native_resolution(const JvmtiAgent* agent) NOT_JVMTI_RETURN;
-  static void register_for_unload(const JvmtiAgent* agent) NOT_JVMTI_RETURN;
-
-  static bool invoke_JVM_OnLoad(JvmtiAgent* agent) NOT_JVMTI_RETURN_(false);
-  static bool invoke_Agent_OnLoad(JvmtiAgent* agent) NOT_JVMTI_RETURN_(false);
-  static bool invoke_Agent_OnAttach(JvmtiAgent* agent,
-                                    outputStream* st) NOT_JVMTI_RETURN_(false);
-
-  static bool locate_and_invoke_Agent_OnLoad(JvmtiAgent* agent) NOT_JVMTI_RETURN_(false);
-  static bool locate_and_invoke_Agent_OnAttach(JvmtiAgent* agent,
-                                               outputStream* st,
-                                               bool initial_load) NOT_JVMTI_RETURN_(false);
+class JvmtiAgentInvoker : AllStatic {
  public:
-  static bool is_static(const JvmtiAgent* agent) NOT_JVMTI_RETURN_(false);
   static void attempt_xrun_conversion(JvmtiAgent* agent) NOT_JVMTI_RETURN;
-  static bool start(JvmtiAgent* agent, outputStream* st = nullptr) NOT_JVMTI_RETURN_(false);
+  static bool invoke_startup(JvmtiAgent* agent, outputStream* st) NOT_JVMTI_RETURN_(false);
   static void invoke_Agent_OnUnload_entry_points(JavaThread* jt) NOT_JVMTI_RETURN;
 };
 
-#endif // SHARE_PRIMS_JVMTIAGENTLIFECYCLE_HPP
+#endif // SHARE_PRIMS_JVMTIAGENTINVOKER_HPP

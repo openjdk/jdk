@@ -26,7 +26,8 @@
 #include "jfr/periodic/jfrJvmtiAgentEvent.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "prims/jvmtiAgent.hpp"
-#include "prims/jvmtiAgentSet.hpp"
+#include "prims/jvmtiAgentLibrary.hpp"
+#include "prims/jvmtiAgentManager.hpp"
 #include "runtime/javaThread.inline.hpp"
 
 // Non-java agents:
@@ -60,14 +61,12 @@ static const char* name_and_options(const JvmtiAgent* agent, const char** parsed
   return copy;
 }
 
-// Java Mission Control (JMC) uses (Java) Long.MIN_VALUE
-// to describe that a long value is undefined.
-static jlong jmc_undefined_long = min_jlong;
+static constexpr jlong not_applicable = min_jlong;
 
 template <typename AgentEvent>
-static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent, const Ticks& timestamp, jlong disposal_time = jmc_undefined_long) {
+static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent, const Ticks& timestamp, jlong disposal_time = not_applicable) {
   assert(agent != nullptr, "invariant");
-  if (!agent->is_timing_published()) {
+  if (!agent->is_timing_finalized()) {
     return;
   }
   event.set_starttime(timestamp);
@@ -86,31 +85,31 @@ static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent, const T
 template <typename AgentEvent>
 static void send_agent_disposal_event(AgentEvent& event, const JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
-  assert(agent->is_disposed(), "invariant");
+  assert(agent->is_env_disposed(), "invariant");
   ResourceMark rm;
   const Ticks timestamp = Ticks::now();
   send_agent_event(event, agent, timestamp, JfrTime::is_ft_enabled() ? timestamp.ft_value() : timestamp.value());
 }
 
-static void send_native_agent_events(JvmtiAgentSet::Iterator& agent_iter, const Ticks& timestamp) {
+static void send_native_agent_events(JvmtiAgentManager::Iterator& agent_iter, const Ticks& timestamp) {
   while (agent_iter.has_next()) {
     const JvmtiAgent* agent = agent_iter.next();
     assert(!agent->is_java_agent(), "invariant");
     EventNativeAgent event;
-    event.set_path(agent->path());
+    event.set_path(agent->library()->path());
     send_agent_event(event, agent, timestamp);
   }
 }
 
 void JfrJvmtiAgentEvent::generate_native_agent_events(const Ticks& timestamp) {
-  JvmtiAgentSet::Iterator native_agents_iter = JvmtiAgentSet::native_agents();
+  JvmtiAgentManager::Iterator native_agents_iter = JvmtiAgentManager::native_agents();
   send_native_agent_events(native_agents_iter, timestamp);
-  JvmtiAgentSet::Iterator xrun_agents_iter = JvmtiAgentSet::xrun_agents();
+  JvmtiAgentManager::Iterator xrun_agents_iter = JvmtiAgentManager::xrun_agents();
   send_native_agent_events(xrun_agents_iter, timestamp);
 }
 
 void JfrJvmtiAgentEvent::generate_java_agent_events(const Ticks& timestamp) {
-  JvmtiAgentSet::Iterator agent_iter = JvmtiAgentSet::java_agents();
+  JvmtiAgentManager::Iterator agent_iter = JvmtiAgentManager::java_agents();
   while (agent_iter.has_next()) {
     const JvmtiAgent* agent = agent_iter.next();
     assert(agent->is_java_agent(), "invariant");
@@ -130,7 +129,7 @@ void JfrJvmtiAgentEvent::generate_java_agent_events(const Ticks& timestamp) {
 // we rely on the periodic batch timestamp to preserve chronology.
 void JfrJvmtiAgentEvent::generate_event_on_agent_disposal(const JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
-  assert(agent->is_disposed(), "invariant");
+  assert(agent->is_env_disposed(), "invariant");
   if (agent->is_java_agent()) {
     if (EventJavaAgent::is_enabled()) {
       EventJavaAgent event;
@@ -140,7 +139,7 @@ void JfrJvmtiAgentEvent::generate_event_on_agent_disposal(const JvmtiAgent* agen
   }
   if (EventNativeAgent::is_enabled()) {
     EventNativeAgent event;
-    event.set_path(agent->path());
+    event.set_path(agent->library()->path());
     send_agent_disposal_event(event, agent);
   }
 }

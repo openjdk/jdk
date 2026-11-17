@@ -22,7 +22,7 @@
  */
 
 #include "prims/jvmtiAgent.hpp"
-#include "prims/jvmtiAgentLifecycle.hpp"
+#include "prims/jvmtiAgentLibrary.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -46,32 +46,29 @@ static inline const char* copy_string(const char* str) {
 }
 
 JvmtiAgent::JvmtiAgent(const char* name, const char* options, bool is_absolute_path, bool xrun) :
-  _next(nullptr),
-  _initialization_time(min_jlong),
-  _initialization_duration(min_jlong),
   _name(copy_string(name)),
   _options(copy_string(options)),
-  _path(nullptr),
-  _resolver(nullptr),
-  _env(nullptr),
-  _startup(Startup::NotEntered),
-  _association(EnvAssociation::None),
-  _timing(Timing::Unstarted),
   _is_absolute_path(is_absolute_path),
   _instrument_lib(strcmp(name, "instrument") == 0),
   _dynamic(is_live_or_dead_phase()),
   _xrun(xrun),
+  _library(nullptr),
+  _startup(Startup::NotEntered),
+  _next(nullptr),
   _registered(false),
-  _static(JvmtiAgentLifecycle::is_static(this)) {}
+  _env(nullptr),
+  _association(EnvAssociation::None),
+  _timing(TimingState::Pending),
+  _initialization_time(min_jlong),
+  _initialization_duration(min_jlong) {}
 
 JvmtiAgent::~JvmtiAgent() {
   assert(!is_registered(), "invariant");
-  assert(!is_associated(), "invariant");
+  assert(!is_env_associated(), "invariant");
   assert(!has_env(), "invariant");
   assert(AtomicAccess::load(&_startup) != Startup::Executing, "invariant");
   FREE_C_HEAP_ARRAY(_name);
   FREE_C_HEAP_ARRAY(_options);
-  FREE_C_HEAP_ARRAY(_path);
 }
 
 const char* JvmtiAgent::name() const {
@@ -88,10 +85,6 @@ bool JvmtiAgent::is_absolute_path() const {
 
 bool JvmtiAgent::is_dynamic() const {
   return _dynamic;
-}
-
-bool JvmtiAgent::is_static() const {
-  return _static;
 }
 
 bool JvmtiAgent::is_instrument_lib() const {
@@ -114,52 +107,35 @@ void JvmtiAgent::convert_from_xrun() {
   _xrun = false;
 }
 
-JvmtiResolver* JvmtiAgent::resolver() const {
-  return AtomicAccess::load_acquire(&_resolver);
+JvmtiAgentLibrary* JvmtiAgent::library() const {
+  return AtomicAccess::load_acquire(&_library);
 }
 
-bool JvmtiAgent::has_resolver() const {
-  return resolver() != nullptr;
-}
-
-void JvmtiAgent::set_resolver(JvmtiResolver* resolver) {
-  assert(resolver != nullptr, "invariant");
-  assert(!has_resolver(), "invariant");
+void JvmtiAgent::set_library(JvmtiAgentLibrary* library) {
+  assert(library != nullptr, "invariant");
+  assert(!has_library(), "invariant");
   assert(AtomicAccess::load(&_startup) == Startup::NotEntered, "invariant");
   assert(AtomicAccess::load(&_association) == EnvAssociation::None, "invariant");
-  AtomicAccess::release_store(&_resolver, resolver);
+  AtomicAccess::release_store(&_library, library);
 }
 
-const char* JvmtiAgent::path() const {
-  return AtomicAccess::load_acquire(&_path);
-}
-
-bool JvmtiAgent::has_path() const {
-  return path() != nullptr;
-}
-
-void JvmtiAgent::set_path(const char* path) {
-  assert(path != nullptr, "invariant");
-  assert(!has_path(), "invariant");
-  assert(has_resolver(), "invariant");
-  assert(AtomicAccess::load(&_startup) == Startup::NotEntered, "invariant");
-  assert(AtomicAccess::load(&_association) == EnvAssociation::None, "invariant");
-  AtomicAccess::release_store(&_path, copy_string(path));
+bool JvmtiAgent::has_library() const {
+  return library() != nullptr;
 }
 
 void JvmtiAgent::begin_startup() {
-  assert(has_resolver(), "invariant");
-  assert(has_path(), "invariant");
+  assert(has_library(), "invariant");
+  assert(library()->path() != nullptr, "invariant");
   assert(AtomicAccess::load(&_startup) == Startup::NotEntered, "invariant");
   assert(AtomicAccess::load(&_association) == EnvAssociation::None, "invariant");
-  assert(is_timing_unstarted(), "invariant");
+  assert(is_timing_pending(), "invariant");
   assert(!is_registered(), "invariant");
   AtomicAccess::store(&_startup, Startup::Executing);
 }
 
 void JvmtiAgent::end_startup() {
   assert(AtomicAccess::load(&_startup) == Startup::Executing, "invariant");
-  assert(!is_dynamic() || is_timing_published(), "invariant");
+  assert(!is_dynamic() || is_timing_finalized(), "invariant");
   AtomicAccess::store(&_startup, Startup::Returned);
 }
 
@@ -168,16 +144,16 @@ bool JvmtiAgent::has_startup_returned() const {
 }
 
 bool JvmtiAgent::is_registered() const {
-  assert(!_registered || is_associated() || is_disposed(), "invariant");
+  assert(!_registered || is_env_associated() || is_env_disposed(), "invariant");
   return _registered;
 }
 
 void JvmtiAgent::mark_registered() {
   DEBUG_ONLY(assert_exclusivity();)
   assert(!is_xrun(), "invariant");
-  assert(has_resolver(), "invariant");
-  assert(has_path(), "invariant");
-  assert(is_associated(), "invariant");
+  assert(has_library(), "invariant");
+  assert(library()->path() != nullptr, "invariant");
+  assert(is_env_associated(), "invariant");
   assert(has_startup_returned(), "invariant");
   assert(!is_registered(), "invariant");
   _registered = true;
@@ -187,16 +163,16 @@ JvmtiAgent* JvmtiAgent::next() const {
   return AtomicAccess::load_acquire(&_next);
 }
 
-bool JvmtiAgent::can_associate() const {
+bool JvmtiAgent::can_associate_env() const {
   return AtomicAccess::load(&_startup) == Startup::Executing &&
     AtomicAccess::load(&_association) == EnvAssociation::None;
 }
 
-bool JvmtiAgent::is_associated() const {
+bool JvmtiAgent::is_env_associated() const {
   return AtomicAccess::load(&_association) == EnvAssociation::Associated;
 }
 
-bool JvmtiAgent::is_disposed() const {
+bool JvmtiAgent::is_env_disposed() const {
   return AtomicAccess::load(&_association) == EnvAssociation::Disposed;
 }
 
@@ -204,94 +180,94 @@ bool JvmtiAgent::has_env() const {
   return AtomicAccess::load(&_env) != nullptr;
 }
 
-void JvmtiAgent::set_env(const jvmtiEnv* env) {
+void JvmtiAgent::associate_env(const jvmtiEnv* env) {
   DEBUG_ONLY(assert_exclusivity();)
   assert(env != nullptr, "invariant");
   assert(!has_env(), "invariant");
-  assert(has_resolver(), "invariant");
-  assert(has_path(), "invariant");
-  assert(can_associate(), "invariant");
+  assert(has_library(), "invariant");
+  assert(library()->path() != nullptr, "invariant");
+  assert(can_associate_env(), "invariant");
   AtomicAccess::store(&_env, env);
   AtomicAccess::store(&_association, EnvAssociation::Associated);
 }
 
-void JvmtiAgent::clear_env() {
+void JvmtiAgent::mark_env_disposed() {
   DEBUG_ONLY(assert_exclusivity();)
   assert(has_env(), "invariant");
-  assert(is_associated(), "invariant");
+  assert(is_env_associated(), "invariant");
   AtomicAccess::store(&_env, static_cast<const jvmtiEnv*>(nullptr));
   AtomicAccess::store(&_association, EnvAssociation::Disposed);
 }
 
-bool JvmtiAgent::equals(const jvmtiEnv* rhs_env) const {
+bool JvmtiAgent::matches_env(const jvmtiEnv* rhs_env) const {
   assert(rhs_env != nullptr, "invariant");
   return AtomicAccess::load(&_env) == rhs_env;
 }
 
-bool JvmtiAgent::is_timing_unstarted() const {
-  return AtomicAccess::load(&_timing) == Timing::Unstarted;
+bool JvmtiAgent::is_timing_pending() const {
+  return AtomicAccess::load(&_timing) == TimingState::Pending;
 }
 
-bool JvmtiAgent::is_initializing() const {
-  return AtomicAccess::load(&_timing) == Timing::Measuring;
+bool JvmtiAgent::is_timing_measuring() const {
+  return AtomicAccess::load(&_timing) == TimingState::Measuring;
 }
 
-void JvmtiAgent::publish_timing() {
-  assert(!is_timing_published(), "invariant");
-  AtomicAccess::release_store(&_timing, Timing::Published);
+bool JvmtiAgent::is_timing_finalized() const {
+  return AtomicAccess::load_acquire(&_timing) == TimingState::Finalized;
 }
 
-void JvmtiAgent::initialization_begin() {
+void JvmtiAgent::finalize_timing() {
+  assert(!is_timing_finalized(), "invariant");
+  AtomicAccess::release_store(&_timing, TimingState::Finalized);
+}
+
+void JvmtiAgent::begin_initialization_timing() {
   DEBUG_ONLY(if (is_registered()) { assert_exclusivity(); })
-  assert(is_timing_unstarted(), "invarinat");
-  AtomicAccess::store(&_timing, Timing::Measuring);
+  assert(is_timing_pending(), "invarinat");
+  AtomicAccess::store(&_timing, TimingState::Measuring);
   assert(_initialization_time.value() == min_jlong, "invariant");
   _initialization_time = Ticks::now();
 }
 
-void JvmtiAgent::initialization_end() {
+void JvmtiAgent::end_initialization_timing() {
   DEBUG_ONLY(if (is_registered()) { assert_exclusivity(); })
-  assert(is_initializing(), "invariant");
+  assert(is_timing_measuring(), "invariant");
   assert(_initialization_duration.value() == min_jlong, "invariant");
   _initialization_duration = Ticks::now() - _initialization_time;
-  publish_timing();
+  finalize_timing();
 }
 
-void JvmtiAgent::initialization_unavailable() {
+void JvmtiAgent::finalize_unavailable_timing() {
   DEBUG_ONLY(assert_exclusivity();)
   assert(has_startup_returned(), "invariant");
-  assert(is_timing_unstarted(), "invariant");
-  assert(is_disposed(), "invariant");
+  assert(is_timing_pending(), "invariant");
+  assert(is_env_disposed(), "invariant");
   assert(_initialization_time.value() == min_jlong, "invariant");
   assert(_initialization_duration.value() == min_jlong, "invariant");
-  publish_timing();
+  finalize_timing();
 }
 
-void JvmtiAgent::initialization_without_vm_init_callback() {
+void JvmtiAgent::finalize_timing_without_vm_init_callback() {
   DEBUG_ONLY(assert_exclusivity();)
   assert(has_startup_returned(), "invariant");
   assert(!is_dynamic(), "invariant");
-  assert(is_xrun() || (is_registered() && is_associated()), "invariant");
-  initialization_begin();
+  assert(is_xrun() || (is_registered() && is_env_associated()), "invariant");
+  begin_initialization_timing();
   _initialization_duration = Tickspan();
-  publish_timing();
-}
-
-bool JvmtiAgent::is_timing_published() const {
-  return AtomicAccess::load_acquire(&_timing) == Timing::Published;
+  finalize_timing();
 }
 
 bool JvmtiAgent::has_initialization_time() const {
-  assert(is_timing_published(), "antecedent is false");
+  assert(is_timing_finalized(), "antecedent is false");
   return _initialization_time.value() != min_jlong;
 }
 
 const Ticks& JvmtiAgent::initialization_time() const {
-  assert(is_timing_published(), "antecedent is false");
+  assert(is_timing_finalized(), "antecedent is false");
   return _initialization_time;
 }
 
 const Tickspan& JvmtiAgent::initialization_duration() const {
-  assert(is_timing_published(), "antecedent is false");
+  assert(is_timing_finalized(), "antecedent is false");
   return _initialization_duration;
 }

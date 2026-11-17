@@ -44,7 +44,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
-#include "prims/jvmtiAgentSet.hpp"
+#include "prims/jvmtiAgentManager.hpp"
 #include "prims/jvmtiCodeBlobEvents.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -771,7 +771,7 @@ void JvmtiExport::post_vm_initialized() {
 
       // We map the JvmtiEnv to its JvmtiAgent to measure when and for how long
       // it took to initialize so that JFR can report this information.
-      JvmtiAgent* const agent = JvmtiAgentSet::initialization_begin(env->jvmti_external());
+      JvmtiAgent* const agent = JvmtiAgentManager::begin_initialization_timing(env->jvmti_external());
       JvmtiThreadEventMark jem(thread);
 
       // Transition to native and invoke callback.
@@ -782,7 +782,7 @@ void JvmtiExport::post_vm_initialized() {
       }
 
       assert(thread->thread_state() == _thread_in_vm, "invariant");
-      JvmtiAgentSet::initialization_end(agent);
+      JvmtiAgentManager::end_initialization_timing(agent);
       EVT_TRACE(JVMTI_EVENT_VM_INIT, ("Evt VM init event sent"));
     }
   }
@@ -790,7 +790,7 @@ void JvmtiExport::post_vm_initialized() {
   // Agents are initialized as part of posting the VMInit event above.
   // For -Xrun agents and agents with no VMInit callback, we explicitly ensure they are also initialized.
   // JVM_OnLoad and Agent_OnLoad callouts are performed too early for the proper timestamp logic.
-  JvmtiAgentSet::initialization_begin();
+  JvmtiAgentManager::finalize_pending_initialization_timing();
 }
 
 void JvmtiExport::post_vm_death() {

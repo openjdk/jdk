@@ -22,69 +22,56 @@
  *
  */
 
-#ifndef SHARE_PRIMS_JVMTIAGENTSET_HPP
-#define SHARE_PRIMS_JVMTIAGENTSET_HPP
+#ifndef SHARE_PRIMS_JVMTIAGENTMANAGER_HPP
+#define SHARE_PRIMS_JVMTIAGENTMANAGER_HPP
 
 #include "jvmtifiles/jvmti.h"
 #include "memory/allStatic.hpp"
 #include "utilities/macros.hpp"
 
+class JavaThread;
 class JvmtiAgent;
 class outputStream;
 
-class JvmtiAgentSet : AllStatic {
+class JvmtiAgentManager : AllStatic {
   friend class JvmtiExport;
  private:
-  static void initialization_begin();
   static void add(JvmtiAgent* agent);
-  static void report_disposal(JvmtiAgent* agent);
-  static JvmtiAgent* find(const jvmtiEnv* env);
-  static JvmtiAgent* find_vm_init_agent(const jvmtiEnv* env);
+
+  static void finalize_pending_initialization_timing();
+
+  enum class StartResult { Retained, Discarded };
+  static StartResult start(JvmtiAgent* agent, outputStream* st = nullptr);
   static void start();
-  static bool start(JvmtiAgent* agent, outputStream* st = nullptr);
   static void start_xrun();
+
  public:
   static void on_argument_parse(const char* name,
                                 const char* options,
                                 bool is_absolute_path,
                                 bool xrun = false) NOT_JVMTI_RETURN;
-
-  static void start_agent(const char* name,
-                            bool is_absolute_path,
-                            const char* options,
-                            outputStream* st) NOT_JVMTI_RETURN;
-
-  static void start_agents() NOT_JVMTI_RETURN;
-  static void start_xrun_agents() NOT_JVMTI_RETURN;
   static void disable_agent_list() NOT_JVMTI_RETURN;
-  static void print(outputStream* st) NOT_JVMTI_RETURN;
-
-  static void on_env_creation(const jvmtiEnv* env) NOT_JVMTI_RETURN;
-  static void on_env_disposal(const jvmtiEnv* env) NOT_JVMTI_RETURN;
-
-  static JvmtiAgent* initialization_begin(const jvmtiEnv* env) NOT_JVMTI_RETURN_(nullptr);
-  static void initialization_end(JvmtiAgent* agent) NOT_JVMTI_RETURN;
 
   // Our candidate set includes all JvmtiAgent instances, but instances need not be retained.
-  // For instances that are retained, the supported subsets are as follows:
-  // JAVA and NATIVE partition live REGISTERED agents; XRUN is disjoint from REGISTERED.
-  // JAVA and NATIVE iterators exclude disposed agents; REGISTERED and XRUN do not.
-  enum Subset {
+  // For instances that are retained, the supported selections are as follows:
+  // LIVE_JAVA and LIVE_NATIVE partition live REGISTERED agents; XRUN is disjoint from REGISTERED.
+  // LIVE_JAVA and LIVE_NATIVE iterators exclude disposed agents; REGISTERED and XRUN do not.
+  enum Selection {
     REGISTERED,
-    JAVA,
-    NATIVE,
+    LIVE_JAVA,
+    LIVE_NATIVE,
     XRUN
   };
 
   class Iterator {
-    friend class JvmtiAgentSet;
+    friend class JvmtiAgentManager;
    private:
-    const Subset _subset;
+    const Selection _selection;
     mutable int _idx;
     mutable JvmtiAgent* _next;
     JvmtiAgent* internal_next() const;
     JvmtiAgent* initial_element() const;
-    Iterator(Subset subset);
+    Iterator(Selection selection);
     Iterator();
    public:
     bool has_next() const NOT_JVMTI_RETURN_(false);
@@ -95,6 +82,23 @@ class JvmtiAgentSet : AllStatic {
   static Iterator java_agents() NOT_JVMTI({ Iterator it; return it; });
   static Iterator native_agents() NOT_JVMTI({ Iterator it; return it; });
   static Iterator xrun_agents() NOT_JVMTI({ Iterator it; return it; });
+
+  static void on_env_creation(const jvmtiEnv* env) NOT_JVMTI_RETURN;
+  static void on_env_disposal(const jvmtiEnv* env) NOT_JVMTI_RETURN;
+
+  static JvmtiAgent* begin_initialization_timing(const jvmtiEnv* env) NOT_JVMTI_RETURN_(nullptr);
+  static void end_initialization_timing(JvmtiAgent* agent) NOT_JVMTI_RETURN;
+
+  static void start_agents() NOT_JVMTI_RETURN;
+  static void start_xrun_agents() NOT_JVMTI_RETURN;
+  static void start_agent(const char* name,
+                          bool is_absolute_path,
+                          const char* options,
+                          outputStream* st) NOT_JVMTI_RETURN;
+
+  static void invoke_Agent_OnUnload_entry_points(JavaThread* jt) NOT_JVMTI_RETURN;
+
+  static void print(outputStream* st) NOT_JVMTI_RETURN;
 };
 
-#endif // SHARE_PRIMS_JVMTIAGENTSET_HPP
+#endif // SHARE_PRIMS_JVMTIAGENTMANAGER_HPP

@@ -32,6 +32,11 @@
  *      -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps TestAgents
  */
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import jdk.test.lib.Asserts;
+
 public class TestAgents {
     // Agent_OnAttach options format: <operation>, <slot>, <value>.
     //
@@ -131,8 +136,13 @@ public class TestAgents {
         recordEvents("check-no-environments-success, 0, 0").assertNoEvents(LIBRARY);
     }
 
-    private static AgentEventRecording.FilteredList assertAgentEvents(AgentEventRecording.Results results, String... options) {
-        return results.forLibrary(LIBRARY).assertOptions(options).assertDynamic(true).assertInitializationTiming();
+    private static AgentEventRecording.FilteredList assertAgentEvents(AgentEventRecording.Results results, String... options) throws Exception {
+        var events = results.forLibrary(LIBRARY).assertOptions(options).assertDynamic(true).assertInitializationTiming();
+        for (var event : events.events()) {
+            Asserts.assertTrue(Files.isSameFile(Path.of(event.getString("path")), Path.of(LIBRARY)),
+                    "Unexpected shared library path: " + event);
+        }
+        return events;
     }
 
     private static AgentEventRecording.Results recordEvents(String... options) throws Exception {
