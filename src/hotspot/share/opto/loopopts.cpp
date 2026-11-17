@@ -3034,7 +3034,7 @@ int PhaseIdealLoop::stride_of_possible_iv(IfNode* iff) {
     return 0;
   }
   Node* cmp = bl->in(1);
-  if (!Node::is<Op_CmpI>(cmp) && !Node::is<Op_CmpU>(cmp)) {
+  if (!Node::is_exact<Op_CmpI>(cmp) && !Node::is_exact<Op_CmpU>(cmp)) {
     return 0;
   }
   // Must have an invariant operand

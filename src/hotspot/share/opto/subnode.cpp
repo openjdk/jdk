@@ -2008,7 +2008,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // in BoolNode::Ideal since we create a new non-constant node (see [CMPU_MASK]).
 const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
   Node* cmp = in(1);
-  if (is<Op_CmpU>(cmp)) {
+  if (is_exact<Op_CmpU>(cmp)) {
     Node* cmp1 = cmp->in(1);
     Node* cmp2 = cmp->in(2);
 

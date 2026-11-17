@@ -2239,13 +2239,13 @@ void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
 }
 
 void Compile::add_flat_access(Node* n) {
-  assert(Node::is<Op_LoadFlat>(n) || Node::is<Op_StoreFlat>(n), "unexpected node %s", n == nullptr ? "nullptr" : n->Name());
+  assert(Node::is_exact<Op_LoadFlat>(n) || Node::is_exact<Op_StoreFlat>(n), "unexpected node %s", n == nullptr ? "nullptr" : n->Name());
   assert(!_flat_access_nodes.contains(n), "duplicate insertion");
   _flat_access_nodes.push(n);
 }
 
 void Compile::remove_flat_access(Node* n) {
-  assert(Node::is<Op_LoadFlat>(n) || Node::is<Op_StoreFlat>(n), "unexpected node %s", n == nullptr ? "nullptr" : n->Name());
+  assert(Node::is_exact<Op_LoadFlat>(n) || Node::is_exact<Op_StoreFlat>(n), "unexpected node %s", n == nullptr ? "nullptr" : n->Name());
   _flat_access_nodes.remove_if_existing(n);
 }
 

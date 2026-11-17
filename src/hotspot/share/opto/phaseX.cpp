@@ -2996,7 +2996,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       // set_req_X() after clearing one input leaves the shared input with a
       // single user and has_special_unique_user() is true. 'u' is still being
       // disconnected, so a required input may already be null.
-      return Node::is<Op_Replicate>(u->in(1)) || Node::is<Op_Replicate>(u->in(2));
+      return Node::is_exact<Op_Replicate>(u->in(1)) || Node::is_exact<Op_Replicate>(u->in(2));
     });
   }
 

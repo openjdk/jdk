@@ -89,7 +89,7 @@ static Node *merge_region(RegionNode *region, PhaseGVN *phase) {
   uint rreq = region->req();
   for( uint i = 1; i < rreq; i++ ) {
     Node *r = region->in(i);
-    if (Node::is<Op_Region>(r) && // Found a region?
+    if (Node::is_exact<Op_Region>(r) && // Found a region?
         r->in(0) == r &&        // Not already collapsed?
         r != region &&          // Avoid stupid situations
         r->outcnt() == 2 ) {    // Self user and 'region' user only?
@@ -2598,7 +2598,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (opt != nullptr)  return opt;
   }
 
-  if (is<Op_AddP>(in(1)) && can_reshape) {
+  if (is_exact<Op_AddP>(in(1)) && can_reshape) {
     // Try to undo Phi of AddP:
     // (Phi (AddP base address offset) (AddP base2 address2 offset2))
     // becomes:
@@ -2622,7 +2622,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // i.e. AddP with base == address and same offset as first AddP
       bool doit = true;
       for (uint i = 2; i < req(); i++) {
-        if (!is<Op_AddP>(in(i)) ||
+        if (!is_exact<Op_AddP>(in(i)) ||
             in(i)->in(AddPNode::Base) == nullptr ||
             in(i)->in(AddPNode::Address) == nullptr ||
             in(i)->in(AddPNode::Offset) == nullptr ||

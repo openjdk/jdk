@@ -777,7 +777,7 @@ Node* LoadNode::find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node
 }
 
 ArrayCopyNode* MemNode::find_array_copy_clone(Node* ld_alloc, Node* mem) const {
-  if (mem->is_Proj() && (is<Op_MemBarStoreStore>(mem->in(0)) || is<Op_MemBarCPUOrder>(mem->in(0)))) {
+  if (mem->is_Proj() && (is_exact<Op_MemBarStoreStore>(mem->in(0)) || is_exact<Op_MemBarCPUOrder>(mem->in(0)))) {
     if (ld_alloc != nullptr) {
       // Check if there is an array copy for a clone
       Node* mb = mem->in(0);
@@ -2141,7 +2141,7 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
 
   // Skip up past a SafePoint control.  Cannot do this for Stores because
   // pointer stores & cardmarks must stay on the same side of a SafePoint.
-  if (is<Op_SafePoint>(ctrl) &&
+  if (is_exact<Op_SafePoint>(ctrl) &&
       phase->C->get_alias_index(phase->type(address)->as_ptr()) != Compile::AliasIdxRaw &&
       !addr_mark &&
       (depends_only_on_test() || has_unknown_control_dependency())) {
@@ -5629,7 +5629,7 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
         st = nodes[j];
         st_off -= BytesPerInt;
         con = intcon[0];
-        if (con != 0 && is<Op_StoreI>(st)) {
+        if (con != 0 && is_exact<Op_StoreI>(st)) {
           assert(st_off >= header_size, "still ignoring header");
           assert(get_store_offset(st, phase) == st_off, "must be");
           assert(in(i-1) == zmem, "must be");
@@ -5956,7 +5956,7 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
     if (zeroes_done + BytesPerLong >= size_limit) {
       AllocateNode* alloc = allocation();
       assert(alloc != nullptr, "must be present");
-      if (is<Op_Allocate>(alloc)) {
+      if (is_exact<Op_Allocate>(alloc)) {
         Node* klass_node = alloc->in(AllocateNode::KlassNode);
         ciKlass* k = phase->type(klass_node)->as_instklassptr()->instance_klass();
         if (zeroes_done == k->layout_helper())

@@ -927,7 +927,7 @@ public:
   template <typename T> static T* isa(std::nullptr_t);
   template <typename T> static T* as(Node*);
   template <typename T> static const T* as(const Node*);
-  template <int Op> static bool is(const Node* n) {
+  template <int Op> static bool is_exact(const Node* n) {
     if (n == nullptr) return false;
     return n->Opcode() == Op;
   }

@@ -2811,7 +2811,7 @@ bool Matcher::is_non_long_integral_vector(const Node* n) {
 }
 
 bool Matcher::is_encode_and_store_pattern(const Node* n, const Node* m) {
-  if (!Node::is<Op_StoreN>(n)   ||
+  if (!Node::is_exact<Op_StoreN>(n)   ||
       !Node::is<EncodePNode>(m) ||
       n->as_Store()->barrier_data() == 0) {
     return false;

@@ -1621,10 +1621,10 @@ void PhaseIdealLoop::ensure_zero_trip_guard_proj(Node* node, bool is_main_loop) 
   Node* zer_bol = node->in(0)->in(1);
   assert(Node::is<BoolNode>(zer_bol), "must be Bool");
   Node* zer_cmp = zer_bol->in(1);
-  assert(Node::is<Op_CmpI>(zer_cmp), "must be CmpI");
+  assert(Node::is_exact<Op_CmpI>(zer_cmp), "must be CmpI");
   // For the main loop, the opaque node is the second input to zer_cmp, for the post loop it's the first input node
   Node* zer_opaq = zer_cmp->in(is_main_loop ? 2 : 1);
-  assert(Node::is<Op_OpaqueZeroTripGuard>(zer_opaq), "must be OpaqueZeroTripGuard");
+  assert(Node::is_exact<Op_OpaqueZeroTripGuard>(zer_opaq), "must be OpaqueZeroTripGuard");
 }
 #endif
 

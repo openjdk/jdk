@@ -4149,7 +4149,7 @@ void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
           break;
       }
     } else if (n1op == Op_RShiftI &&
-               Node::is<Op_LShiftI>(n1->in(1)) &&
+               Node::is_exact<Op_LShiftI>(n1->in(1)) &&
                n1->in(2) == n1->in(1)->in(2) &&
                n1->in(2)->is_Con()) {
       jint shift = n1->in(2)->bottom_type()->as_int()->get_con();
@@ -7643,7 +7643,7 @@ OpaqueZeroTripGuardNode* CountedLoopNode::is_canonical_loop_entry() {
     return nullptr;
   }
   Node* iffm = ctrl->in(0);
-  if (!is<Op_If>(iffm)) {
+  if (!is_exact<Op_If>(iffm)) {
     return nullptr;
   }
   Node* bolzm = iffm->in(1);

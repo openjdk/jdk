@@ -375,7 +375,7 @@ void CastIINode::remove_range_check_cast(Compile* C) {
 bool CastLLNode::is_inner_loop_backedge(IfProjNode* proj) {
   if (proj != nullptr) {
     Node* ctrl_use = proj->unique_ctrl_out_or_null();
-    if (is<Op_Loop>(ctrl_use) &&
+    if (is_exact<Op_Loop>(ctrl_use) &&
         ctrl_use->in(2) == proj &&
         ctrl_use->as_Loop()->is_loop_nest_inner_loop()) {
       return true;
@@ -445,7 +445,7 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // transform (CastLL (ConvI2L ..)) into (ConvI2L (CastII ..)) if the type of the CastLL is narrower than the type of
   // the ConvI2L.
   Node* in1 = in(1);
-  if (is<Op_ConvI2L>(in1)) {
+  if (is_exact<Op_ConvI2L>(in1)) {
     const Type* t = Value(phase);
     const Type* t_in = phase->type(in1);
     if (t != Type::TOP && t_in != Type::TOP) {

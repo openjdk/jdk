@@ -683,7 +683,7 @@ bool ConnectionGraph::can_reduce_phi(PhiNode* ophi) const {
   // If there was an error attempting to reduce allocation merges for this
   // method we might have disabled the compilation and be retrying with RAM
   // disabled.
-  if (!_compile->do_reduce_allocation_merges() || !Node::is<Op_Region>(ophi->region())) {
+  if (!_compile->do_reduce_allocation_merges() || !Node::is_exact<Op_Region>(ophi->region())) {
     return false;
   }
 
@@ -5461,7 +5461,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node*>& alloc_worklist,
                n->Opcode() == Op_EncodeISOArray) {
       // get the memory projection
       n = n->find_out_with(Op_SCMemProj);
-      assert(Node::is<Op_SCMemProj>(n), "memory projection required");
+      assert(Node::is_exact<Op_SCMemProj>(n), "memory projection required");
     } else if (n->is_CallLeaf() && n->as_CallLeaf()->_name != nullptr &&
                strcmp(n->as_CallLeaf()->_name, "store_unknown_value") == 0) {
       n = n->as_CallLeaf()->proj_out(TypeFunc::Memory);
@@ -5496,7 +5496,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node*>& alloc_worklist,
       } else if (n->is_LoadStore()) {
         // get the memory projection
         n = n->find_out_with(Op_SCMemProj);
-        assert(Node::is<Op_SCMemProj>(n), "memory projection required");
+        assert(Node::is_exact<Op_SCMemProj>(n), "memory projection required");
       }
     }
     // push user on appropriate worklist

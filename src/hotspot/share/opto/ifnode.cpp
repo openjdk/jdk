@@ -529,7 +529,7 @@ IfProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) co
   BoolNode* bn = isa<BoolNode>(b);
   if (bn == nullptr)  return nullptr;
   Node* cmp = bn->in(1);
-  if (!is<Op_CmpU>(cmp))  return nullptr;
+  if (!is_exact<Op_CmpU>(cmp))  return nullptr;
 
   l = cmp->in(1);
   r = cmp->in(2);
@@ -821,7 +821,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
 bool IfNode::cmp_folds(PhaseIterGVN* igvn, bool fold_ne) {
   BoolNode* in1_b = isa<BoolNode>(in(1));
   return in1_b != nullptr &&
-    (is<Op_CmpI>(in(1)->in(1)) || is<Op_CmpL>(in(1)->in(1))) &&
+    (is_exact<Op_CmpI>(in(1)->in(1)) || is_exact<Op_CmpL>(in(1)->in(1))) &&
     in(1)->in(1)->in(2) != nullptr &&
     in(1)->in(1)->in(2) != igvn->C->top() &&
     (in1_b->_test.is_less() ||
@@ -833,7 +833,7 @@ bool IfNode::cmp_folds(PhaseIterGVN* igvn, bool fold_ne) {
 bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
   return is<IfProjNode>(ctrl) &&
     ctrl->outcnt() == 1 && // No side-effects
-    is<Op_If>(ctrl->in(0)) &&
+    is_exact<Op_If>(ctrl->in(0)) &&
     ctrl->in(0)->outcnt() == 2 &&
     ctrl->in(0)->as_If()->cmp_folds(igvn, true) &&
     // Must compare same value
@@ -1629,7 +1629,7 @@ bool IfNode::is_cmp_with_loadrange(IfProjNode* proj) const {
         ((other->in(0) != nullptr && other->in(0) == proj) ||
          (other->in(0) == nullptr &&
           is<AddPNode>(other->in(2)) &&
-          is<Op_CastPP>(other->in(2)->in(1)) &&
+          is_exact<Op_CastPP>(other->in(2)->in(1)) &&
           other->in(2)->in(1)->in(0) == proj))) {
       return true;
     }
@@ -1641,7 +1641,7 @@ bool IfNode::is_null_check(IfProjNode* proj, PhaseIterGVN* igvn) const {
   Node* other = in(1)->in(1)->in(2);
   if (other->in(MemNode::Address) != nullptr &&
       is<BoolNode>(proj->in(0)->in(1)) &&
-      is<Op_CmpP>(proj->in(0)->in(1)->in(1)) &&
+      is_exact<Op_CmpP>(proj->in(0)->in(1)->in(1)) &&
       proj->in(0)->in(1)->in(1)->in(2) != nullptr &&
       proj->in(0)->in(1)->in(1)->in(1) == other->in(MemNode::Address)->in(AddPNode::Address)->uncast() &&
       igvn->type(proj->in(0)->in(1)->in(1)->in(2)) == TypePtr::NULL_PTR) {
