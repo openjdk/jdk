@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ public final class MacCertificateUtils {
         keychain.map(Keychain::asCliArg).ifPresent(args::add);
 
         return toSupplier(() -> {
-            final var output = Executor.of(args.toArray(String[]::new))
-                    .setQuiet(true).saveOutput(true).executeExpectSuccess()
+            final var output = Executor.of(args)
+                    .quiet().saveOutput(true).executeExpectSuccess()
                     .getOutput();
 
             final byte[] pemCertificatesBuffer = output.stream()

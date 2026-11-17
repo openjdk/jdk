@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Test info class which provides some useful utility methods and information about a <b>custom run test</b>.
@@ -44,8 +45,8 @@ public class RunInfo extends AbstractInfo {
     private final boolean hasMultipleTests;
 
     public RunInfo(List<DeclaredTest> tests) {
-        super(tests.get(0).getTestMethod().getDeclaringClass());
-        this.test = tests.get(0);
+        super(tests.getFirst().getTestMethod().getDeclaringClass());
+        this.test = tests.getFirst();
         this.testMethod = test.getTestMethod();
         this.hasMultipleTests = tests.size() != 1;
         if (hasMultipleTests) {
@@ -82,6 +83,19 @@ public class RunInfo extends AbstractInfo {
     public Method getTest(String testName) {
         checkMultipleTests("getTest");
         return getMethod(testName);
+    }
+
+    /**
+     * Get the set of names of the associated tests.
+     *
+     * @return the set of names of the tests specified for this custom run test in {@link Run#test()}.
+     */
+    public Set<String> getTestNames() {
+        if (hasMultipleTests) {
+            return tests.keySet();
+        } else {
+            return Set.of(test.getTestMethod().getName());
+        }
     }
 
     /**

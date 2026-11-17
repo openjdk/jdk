@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ extern void vm_exit_during_initialization(const char* error, const char* message
 extern void vm_shutdown_during_initialization(const char* error, const char* message = nullptr);
 
 extern void vm_exit_during_cds_dumping(const char* error, const char* message = nullptr);
+
+extern void print_statistics_before_exit();
 
 // This is defined in linkType.cpp due to linking restraints
 extern bool is_vm_statically_linked();

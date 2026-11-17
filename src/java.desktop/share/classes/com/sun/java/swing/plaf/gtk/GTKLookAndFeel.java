@@ -1421,6 +1421,8 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         return c.getComponentOrientation().isLeftToRight();
     }
 
+    private native boolean applyThemeIfNeeded();
+
     /**
      * {@inheritDoc}
      */
@@ -1463,6 +1465,21 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
 
         // By default mnemonics are hidden for GTK L&F
         MnemonicHandler.setMnemonicHidden(true);
+
+        if (IS_3) {
+            boolean shouldApplyTheme = false;
+            if (toolkit instanceof UNIXToolkit unixToolkit) {
+                if ("gnome".equals(unixToolkit.getDesktop())) {
+                    int gnomeShellVersion = unixToolkit.getGnomeShellMajorVersion();
+                    shouldApplyTheme = gnomeShellVersion >= 47;
+                }
+            }
+
+            if (shouldApplyTheme && applyThemeIfNeeded()) {
+                GTKEngine.INSTANCE.themeChanged();
+                GTKIconFactory.resetIcons();
+            }
+        }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,12 +59,21 @@
 #include "error_messages.h"
 #include "debugInit.h"
 
+/* To handle "format string is not a string literal" warning. */
+#if !defined(_MSC_VER)
+  #define ATTRIBUTE_PRINTF(fmt_pos_num, vargs_pos_num) \
+          __attribute__((format(printf, fmt_pos_num, vargs_pos_num)))
+#else
+  #define ATTRIBUTE_PRINTF(fmt_pos_num, vargs_pos_num)
+#endif
+
 /* Definition of a CommonRef tracked by the backend for the frontend */
 typedef struct RefNode {
     jlong        seqNum;        /* ID of reference, also key for hash table */
     jobject      ref;           /* could be strong or weak */
     struct RefNode *next;       /* next RefNode* in bucket chain */
     jint         count;         /* count of references */
+    jboolean     hasIdentity  ; /* references to non-identity objects are always strong */
     jboolean     isPinAll;      /* true if this is a strong reference due to a commonRef_pinAll() */
     jboolean     isCommonPin;   /* true if this is a strong reference due to a commonRef_pin() */
 } RefNode;

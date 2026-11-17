@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,14 +33,22 @@ frame JavaThread::pd_last_frame() {
   intptr_t* sp = last_Java_sp();
   address pc = _anchor.last_Java_pc();
 
-  // Last_Java_pc is not set if we come here from compiled code.
-  // Assume spill slot for Z_R14 (return register) contains a suitable pc.
-  // Should have been filled by method entry code.
+#ifdef ASSERT
+  // pc == nullptr is a valid case for C2 runtime stubs
+  // as they do not set last_Java_pc.
+  // C2 stubs set their caller's SP as last_Java_sp and store their return pc
+  // in the caller's frame::z_common_abi::return_pc.
+  // where frame::setup() finds and reads it.
   if (pc == nullptr) {
-    pc = (address) *(sp + 14);
+    address return_pc = (address)((frame::z_common_abi*)sp)->return_pc;
+    CodeBlob* cb = CodeCache::find_blob(return_pc);
+    assert(cb != nullptr, "The return address must be a CodeBlob");
+    assert(cb->is_runtime_stub(), "The return address must be a runtime stub");
   }
+#endif
 
-  return frame(sp, pc);
+  // Likely the frame of a RuntimeStub (e.g. after a call to the VM).
+  return frame(sp, pc, frame::kind::code_blob);
 }
 
 bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava) {
@@ -64,7 +72,8 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
       return false;
     }
 
-    frame ret_frame((intptr_t*)uc->uc_mcontext.gregs[15/*Z_SP*/], pc);
+    // pc is from ucontext — could be anywhere (native, compiled, unknown).
+    frame ret_frame((intptr_t*)uc->uc_mcontext.gregs[15/*Z_SP*/], pc, frame::kind::unknown);
 
     if (ret_frame.fp() == nullptr) {
       // The found frame does not have a valid frame pointer.

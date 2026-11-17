@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
             return Executor.of(sysEnv.rpm().toString(),
                 "-q", "--queryformat", "%{name}\\n",
                 "-q", "--whatprovides", file.toString()
-            ).saveOutput(true).executeExpectSuccess().getOutput().stream();
+            ).saveOutput(true).quiet().executeExpectSuccess().stdout().stream();
         });
     }
 
@@ -112,14 +112,14 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
                         "APPLICATION_VERSION", specFileName),
                 new PackageProperty("Release", pkg.release().orElseThrow(),
                         "APPLICATION_RELEASE", specFileName),
-                new PackageProperty("Arch", pkg.arch(), null, specFileName));
+                new PackageProperty("Arch", pkg.arch(), specFileName));
 
         var actualValues = Executor.of(
                 sysEnv.rpm().toString(),
                 "-qp",
-                "--queryformat", properties.stream().map(e -> String.format("%%{%s}", e.name)).collect(joining("\\n")),
+                "--queryformat", properties.stream().map(e -> String.format("%%{%s}", e.name())).collect(joining("\\n")),
                 outputPackageFile().toString()
-        ).saveOutput(true).executeExpectSuccess().getOutput();
+        ).saveOutput(true).quiet().executeExpectSuccess().stdout();
 
         for (int i = 0; i != properties.size(); i++) {
             Optional.ofNullable(properties.get(i).verifyValue(actualValues.get(i))).ifPresent(errors::add);
@@ -133,8 +133,6 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
 
         Path rpmFile = outputPackageFile();
 
-        Log.verbose(I18N.format("message.outputting-bundle-location", rpmFile.getParent()));
-
         //run rpmbuild
         Executor.of(sysEnv.rpmbuild().toString(),
                 "-bb", specFile().toAbsolutePath().toString(),
@@ -147,8 +145,6 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
                         env.buildRoot().toAbsolutePath()),
                 "--define", String.format("%%_rpmfilename %s", rpmFile.getFileName())
         ).executeExpectSuccess();
-
-        Log.verbose(I18N.format("message.output-bundle-location", rpmFile.getParent()));
     }
 
     private Path installPrefix() {

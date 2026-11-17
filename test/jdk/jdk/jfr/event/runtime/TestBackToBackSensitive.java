@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,9 @@ import jdk.jfr.Configuration;
 import jdk.jfr.Event;
 import jdk.jfr.Recording;
 import jdk.jfr.StackTrace;
+import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.RecordedClassLoader;
-import jdk.jfr.consumer.RecordingStream;
+import jdk.test.lib.jfr.TestClassLoader;
 
 /**
  * @test
@@ -52,28 +53,17 @@ public class TestBackToBackSensitive {
     static class FillEvent extends Event {
         String message;
     }
+    public static Object OBJECT;
 
     public static void main(String... arg) throws Exception {
-        Set<Instant> threadDumps = Collections.synchronizedSet(new LinkedHashSet<>());
-        Set<Instant> classLoaderStatistics = Collections.synchronizedSet(new LinkedHashSet<>());
-        Set<Instant> physicalMemory = Collections.synchronizedSet(new LinkedHashSet<>());
-
+        TestClassLoader loader = new TestClassLoader();
+        Class<?> clazz = loader.loadClass(TestBackToBackSensitive.class.getName());
+        String classLoaderName = loader.getClass().getName();
+        OBJECT = clazz.getDeclaredConstructor().newInstance();
         Configuration configuration = Configuration.getConfiguration("default");
-        try (RecordingStream r1 = new RecordingStream(configuration)) {
-            r1.setMaxSize(Long.MAX_VALUE);
-            r1.onEvent("jdk.ThreadDump", e -> threadDumps.add(e.getStartTime()));
-            r1.onEvent("jdk.ClassLoaderStatistics", e -> {
-                RecordedClassLoader cl = e.getValue("classLoader");
-                if (cl != null) {
-                    if (cl.getType().getName().contains("PlatformClassLoader")) {
-                        classLoaderStatistics.add(e.getStartTime());
-                        System.out.println("Class loader" + e);
-                    }
-                }
-            });
-            r1.onEvent("jdk.PhysicalMemory", e -> physicalMemory.add(e.getStartTime()));
+        try (Recording r1 = new Recording(configuration)) {
             // Start chunk 1
-            r1.startAsync();
+            r1.start();
             try (Recording r2 = new Recording()) {
                 // Start chunk 2
                 r2.start();
@@ -86,6 +76,25 @@ public class TestBackToBackSensitive {
                 f.commit();
             }
             r1.stop();
+            Path file = Path.of("file.jfr");
+            r1.dump(file);
+            Set<Instant> threadDumps = new LinkedHashSet<>();
+            Set<Instant> classLoaderStatistics = new LinkedHashSet<>();
+            Set<Instant> physicalMemory = new LinkedHashSet<>();
+            try (EventStream es = EventStream.openFile(file)) {
+                es.onEvent("jdk.ThreadDump", e -> threadDumps.add(e.getStartTime()));
+                es.onEvent("jdk.ClassLoaderStatistics", e -> {
+                    RecordedClassLoader cl = e.getValue("classLoader");
+                    if (cl != null) {
+                        if (cl.getType().getName().equals(classLoaderName)) {
+                            classLoaderStatistics.add(e.getStartTime());
+                            System.out.println("Class loader" + e);
+                        }
+                    }
+                });
+                es.onEvent("jdk.PhysicalMemory", e -> physicalMemory.add(e.getStartTime()));
+                es.start();
+            }
             long chunkFiles = filesInRepository();
             System.out.println("Number of chunk files: " + chunkFiles);
             // When jdk.PhysicalMemory is expected to be emitted:
@@ -93,15 +102,15 @@ public class TestBackToBackSensitive {
             // Chunk 2: begin, end
             // Chunk 3: begin, end
             // Chunk 4: begin, end
-            assertCount(r1, "jdk.PhysicalMemory", physicalMemory, 2 * chunkFiles);
+            assertCount("jdk.PhysicalMemory", physicalMemory, 2 * chunkFiles);
             // When jdk.ClassLoaderStatistics and jdk.ThreadThreadDump are expected to be
             // emitted:
             // Chunk 1: begin, end
             // Chunk 2: begin, end
             // Chunk 3: end
             // Chunk 4: end
-            assertCount(r1, "jdk.ThreadDump", threadDumps, 2 + 2 + (chunkFiles - 2));
-            assertCount(r1, "jdk.ClassLoaderStatistics", classLoaderStatistics, 2 + 2 + (chunkFiles - 2));
+            assertCount("jdk.ThreadDump", threadDumps, 2 + 2 + (chunkFiles - 2));
+            assertCount("jdk.ClassLoaderStatistics", classLoaderStatistics, 2 + 2 + (chunkFiles - 2));
         }
     }
 
@@ -110,15 +119,13 @@ public class TestBackToBackSensitive {
         return Files.list(repository).filter(p -> p.toString().endsWith(".jfr")).count();
     }
 
-    private static void assertCount(RecordingStream stream, String eventName, Set<Instant> timestamps, long expected) throws Exception {
+    private static void assertCount(String eventName, Set<Instant> timestamps, long expected) throws Exception {
         System.out.println("Timestamps for " + eventName + ":");
         for (Instant timestamp : timestamps) {
             System.out.println(timestamp);
         }
         int count = timestamps.size();
         if (count != expected) {
-            System.out.println("Dumping failure file.");
-            stream.dump(Path.of("failure.jfr"));
             throw new Exception("Expected " + expected + "  timestamps for event " + eventName + ", but got " + count);
         }
     }

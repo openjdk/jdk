@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,8 +22,8 @@
  * questions.
  */
 
-#ifndef CPU_AARCH64_VM_FOREIGN_GLOBALS_AARCH64_HPP
-#define CPU_AARCH64_VM_FOREIGN_GLOBALS_AARCH64_HPP
+#ifndef CPU_AARCH64_FOREIGNGLOBALS_AARCH64_HPP
+#define CPU_AARCH64_FOREIGNGLOBALS_AARCH64_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "utilities/growableArray.hpp"
@@ -49,4 +49,4 @@ struct ABIDescriptor {
   bool is_volatile_reg(FloatRegister reg) const;
 };
 
-#endif // CPU_AARCH64_VM_FOREIGN_GLOBALS_AARCH64_HPP
+#endif // CPU_AARCH64_FOREIGNGLOBALS_AARCH64_HPP

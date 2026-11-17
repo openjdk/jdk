@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,9 +29,6 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
-#ifdef COMPILER2
-#include "opto/matcher.hpp"
-#endif
 
 // ----------------------------------------------------------------------------
 
@@ -39,7 +36,6 @@
 #define __ masm->
 
 address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address mark/* = nullptr*/) {
-#ifdef COMPILER2
   // Stub is fixed up when the corresponding call is converted from calling
   // compiled code to calling interpreted code.
   if (mark == nullptr) {
@@ -55,7 +51,7 @@ address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address ma
   __ relocate(static_stub_Relocation::spec(mark));
 
   AddressLiteral meta = __ allocate_metadata_address(nullptr);
-  bool success = __ load_const_from_toc(as_Register(Matcher::inline_cache_reg_encode()), meta);
+  bool success = __ load_const_from_toc(Z_inline_cache, meta);
 
   __ set_inst_mark();
   AddressLiteral a((address)-1);
@@ -67,10 +63,6 @@ address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address ma
   __ z_br(Z_R1);
   __ end_a_stub(); // Update current stubs pointer and restore insts_end.
   return stub;
-#else
-  ShouldNotReachHere();
-  return nullptr;
-#endif
 }
 
 #undef __

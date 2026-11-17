@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
- * Copyright 2025 Arm Limited and/or its affiliates.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,6 @@
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciExceptions.hpp"
-#endif
 
 
 // We have interfaces for the following instructions:
@@ -44,7 +41,6 @@
 // - - NativeMovRegMem
 // - - NativeJump
 // - - - NativeGeneralJump
-// - - NativeIllegalInstruction
 // - - NativeCallTrampolineStub
 // - - NativeMembar
 // - - NativeLdSt
@@ -55,6 +51,7 @@
 // Provides the primitive operations to manipulate code relative to this.
 
 class NativeCall;
+template <typename T> class NativeLdSt;
 
 class NativeInstruction {
   friend class Relocation;
@@ -80,28 +77,37 @@ public:
   inline bool is_nop() const;
   bool is_jump();
   bool is_general_jump();
-  inline bool is_jump_or_nop();
   inline bool is_cond_jump();
   bool is_safepoint_poll();
   bool is_movz();
   bool is_movk();
   bool is_stop();
 
+  bool is_udf(uint16_t imm) {
+    uint32_t insn = uint_at(0);
+    return Instruction_aarch64::extract(insn, 31, 16) == 0 &&
+      Instruction_aarch64::extract(insn, 15, 0) == imm;
+  }
+
+  enum : uint16_t { udf_stop = 1, udf_deopt };
+
 protected:
   address addr_at(int offset) const { return address(this) + offset; }
 
   s_char sbyte_at(int offset) const { return *(s_char*)addr_at(offset); }
   u_char ubyte_at(int offset) const { return *(u_char*)addr_at(offset); }
-  jint int_at(int offset) const { return *(jint*)addr_at(offset); }
-  juint uint_at(int offset) const { return *(juint*)addr_at(offset); }
-  address ptr_at(int offset) const { return *(address*)addr_at(offset); }
-  oop oop_at(int offset) const { return *(oop*)addr_at(offset); }
+  jint int_at(int offset) const     { return *(jint*)addr_at(offset); }
+  juint uint_at(int offset) const   { return *(juint*)addr_at(offset); }
+  address ptr_at(int offset) const  { return *(address*)addr_at(offset); }
+  oop oop_at(int offset) const      { return *(oop*)addr_at(offset); }
 
-  void set_char_at(int offset, char c) { *addr_at(offset) = (u_char)c; }
-  void set_int_at(int offset, jint i) { *(jint*)addr_at(offset) = i; }
-  void set_uint_at(int offset, jint i) { *(juint*)addr_at(offset) = i; }
-  void set_ptr_at(int offset, address ptr) { *(address*)addr_at(offset) = ptr; }
-  void set_oop_at(int offset, oop o) { *(oop*)addr_at(offset) = o; }
+#define MACOS_WX_WRITE MACOS_AARCH64_ONLY(os::thread_wx_enable_write())
+  void set_char_at(int offset, char c)     { MACOS_WX_WRITE;  *addr_at(offset) = (u_char)c; }
+  void set_int_at(int offset, jint i)      { MACOS_WX_WRITE;  *(jint*)addr_at(offset) = i; }
+  void set_uint_at(int offset, juint i)    { MACOS_WX_WRITE;  *(juint*)addr_at(offset) = i; }
+  void set_ptr_at(int offset, address ptr) { MACOS_WX_WRITE;  *(address*)addr_at(offset) = ptr; }
+  void set_oop_at(int offset, oop o)       { MACOS_WX_WRITE;  *(oop*)addr_at(offset) = o; }
+#undef MACOS_WX_WRITE
 
   void wrote(int offset);
 
@@ -111,10 +117,22 @@ public:
 
   static bool is_adrp_at(address instr);
 
-  static bool is_ldr_literal_at(address instr);
+  static bool is_load_literal_at(address instr);
 
-  bool is_ldr_literal() {
-    return is_ldr_literal_at(addr_at(0));
+  bool is_load_literal() {
+    return is_load_literal_at(addr_at(0));
+  }
+
+  static bool is_ldr_gpr_literal_at(address instr);
+
+  bool is_ldr_gpr_literal() {
+    return is_ldr_gpr_literal_at(addr_at(0));
+  }
+
+  static bool is_ldrw_gpr_literal_at(address instr);
+
+  bool is_ldrw_gpr_literal() {
+    return is_ldrw_gpr_literal_at(addr_at(0));
   }
 
   static bool is_ldrw_to_zr(address instr);
@@ -129,7 +147,7 @@ public:
   }
 
   static bool maybe_cpool_ref(address instr) {
-    return is_adrp_at(instr) || is_ldr_literal_at(instr);
+    return is_adrp_at(instr) || is_load_literal_at(instr);
   }
 
   bool is_Membar() {
@@ -138,11 +156,32 @@ public:
       Instruction_aarch64::extract(insn, 7, 0) == 0b10111111;
   }
 
-  bool is_Imm_LdSt() {
-    unsigned int insn = uint_at(0);
-    return Instruction_aarch64::extract(insn, 29, 27) == 0b111 &&
-      Instruction_aarch64::extract(insn, 23, 23) == 0b0 &&
-      Instruction_aarch64::extract(insn, 26, 25) == 0b00;
+  template <typename T> bool is_Imm_LdSt() {
+    return NativeLdSt<T>::is_ldst_ur_at(addr_at(0)) ||
+           NativeLdSt<T>::is_ldst_unsigned_offset_at(addr_at(0));
+  }
+
+  static bool is_neon_vector_mov_alias(uint32_t insn) {
+    if (Instruction_aarch64::extract(insn, 31, 31) != 0 ||
+        Instruction_aarch64::extract(insn, 29, 21) != 0b001110101 ||
+        Instruction_aarch64::extract(insn, 15, 10) != 0b000111) {
+      return false;
+    }
+    return Instruction_aarch64::extract(insn, 9, 5) ==
+           Instruction_aarch64::extract(insn, 20, 16);
+  }
+
+  static bool is_sve_vector_mov_alias(uint32_t insn) {
+    if (Instruction_aarch64::extract(insn, 31, 21) != 0b00000100011 ||
+        Instruction_aarch64::extract(insn, 15, 10) != 0b001100) {
+      return false;
+    }
+    return Instruction_aarch64::extract(insn, 9, 5) ==
+           Instruction_aarch64::extract(insn, 20, 16);
+  }
+
+  static uint32_t encode_sve_movprfx(uint32_t dst, uint32_t src) {
+    return 0x1082f << 10 | (src << 5) | dst;
   }
 };
 
@@ -179,13 +218,11 @@ public:
   address destination() const;
 
   void set_destination(address dest) {
-    int offset = dest - instruction_address();
-    unsigned int insn = 0b100101 << 26;
+    int64_t offset = dest - instruction_address();
+    juint insn = 0b100101u << 26u;
     assert((offset & 3) == 0, "should be");
-    offset >>= 2;
-    offset &= (1 << 26) - 1; // mask off insn part
-    insn |= offset;
-    set_int_at(displacement_offset, insn);
+    Instruction_aarch64::spatch(reinterpret_cast<address>(&insn), 25, 0, offset >> 2);
+    set_uint_at(displacement_offset, insn);
   }
 
   void verify_alignment() { ; }
@@ -218,9 +255,6 @@ public:
   void set_destination_mt_safe(address dest);
 
   address get_trampoline();
-#if INCLUDE_JVMCI
-  void trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS);
-#endif
 };
 
 inline NativeCall* nativeCall_at(address address) {
@@ -253,7 +287,7 @@ public:
       return addr_at(instruction_size);
     else if (is_adrp_at(instruction_address()))
       return addr_at(2*4);
-    else if (is_ldr_literal_at(instruction_address()))
+    else if (is_load_literal_at(instruction_address()))
       return(addr_at(4));
     assert(false, "Unknown instruction in NativeMovConstReg");
     return nullptr;
@@ -382,7 +416,6 @@ public:
   void set_jump_destination(address dest);
 
   static void replace_mt_safe(address instr_addr, address code_buffer);
-  static void verify();
 };
 
 inline NativeGeneralJump* nativeGeneralJump_at(address address) {
@@ -390,12 +423,6 @@ inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   DEBUG_ONLY(jump->verify());
   return jump;
 }
-
-class NativeIllegalInstruction: public NativeInstruction {
-public:
-  // Insert illegal opcode as specific address
-  static void insert(address code_pos);
-};
 
 inline bool NativeInstruction::is_nop() const{
   uint32_t insn = *(uint32_t*)addr_at(0);
@@ -419,10 +446,6 @@ inline bool NativeInstruction::is_jump() {
     return true;
   } else
     return false;
-}
-
-inline bool NativeInstruction::is_jump_or_nop() {
-  return is_nop() || is_jump();
 }
 
 // Call trampoline stubs.
@@ -466,58 +489,113 @@ inline NativeMembar* NativeMembar_at(address addr) {
   return (NativeMembar*)addr;
 }
 
-class NativeLdSt : public NativeInstruction {
-private:
-  int32_t size() { return Instruction_aarch64::extract(uint_at(0), 31, 30); }
-  // Check whether instruction is with unscaled offset.
-  bool is_ldst_ur() {
-    return (Instruction_aarch64::extract(uint_at(0), 29, 21) == 0b111000010 ||
-            Instruction_aarch64::extract(uint_at(0), 29, 21) == 0b111000000) &&
-      Instruction_aarch64::extract(uint_at(0), 11, 10) == 0b00;
+template <typename T>
+class NativeLdStImpl;
+
+template <>
+class NativeLdStImpl<Register> : public NativeInstruction {
+protected:
+  int32_t size() {
+    assert(Instruction_aarch64::extract(uint_at(0), 26, 26) == 0b0, "");
+    return Instruction_aarch64::extract(uint_at(0), 31, 30);
   }
-  bool is_ldst_unsigned_offset() {
-    return Instruction_aarch64::extract(uint_at(0), 29, 22) == 0b11100101 ||
-      Instruction_aarch64::extract(uint_at(0), 29, 22) == 0b11100100;
-  }
+
 public:
+  // Check whether instruction is with unscaled offset.
+  static bool is_ldst_ur_at(address instr) {
+    const uint32_t insn = (*(uint32_t*)instr);
+    return (Instruction_aarch64::extract(insn, 29, 21) == 0b111000010 ||
+            Instruction_aarch64::extract(insn, 29, 21) == 0b111000000) &&
+      Instruction_aarch64::extract(insn, 11, 10) == 0b00;
+  }
+
+  static bool is_ldst_unsigned_offset_at(address instr) {
+    const uint32_t insn = (*(uint32_t*)instr);
+    return Instruction_aarch64::extract(insn, 29, 22) == 0b11100101 ||
+           Instruction_aarch64::extract(insn, 29, 22) == 0b11100100;
+  }
+
+
   Register target() {
     uint32_t r = Instruction_aarch64::extract(uint_at(0), 4, 0);
     return r == 0x1f ? zr : as_Register(r);
   }
+};
+
+template <>
+class NativeLdStImpl<FloatRegister> : public NativeInstruction {
+protected:
+  int32_t size() {
+    assert(Instruction_aarch64::extract(uint_at(0), 26, 26) == 0b1, "");
+    uint32_t is_q = Instruction_aarch64::extract(uint_at(0), 23, 23);
+    return is_q == 0b1 ? 4 : Instruction_aarch64::extract(uint_at(0), 31, 30);
+  }
+
+public:
+
+  // Check whether instruction is with unscaled offset.
+  static bool is_ldst_ur_at(address instr) {
+    const uint32_t insn = (*(uint32_t*)instr);
+    return Instruction_aarch64::extract(insn, 29, 24) == 0b111100 &&
+           Instruction_aarch64::extract(insn, 21, 21) == 0b0 &&
+           Instruction_aarch64::extract(insn, 11, 10) == 0b00;
+  }
+
+  static bool is_ldst_unsigned_offset_at(address instr) {
+    const uint32_t insn = (*(uint32_t*)instr);
+    return Instruction_aarch64::extract(insn, 29, 24) == 0b111101;
+  }
+
+  FloatRegister target() {
+    uint32_t r = Instruction_aarch64::extract(uint_at(0), 4, 0);
+    return as_FloatRegister(r);
+  }
+
+};
+
+template <typename T>
+class NativeLdSt : public NativeLdStImpl<T> {
+protected:
+  bool is_ldst_ur() {
+    return NativeLdSt<T>::is_ldst_ur_at(this->addr_at(0));
+  }
+
+  bool is_ldst_unsigned_offset() {
+    return NativeLdSt<T>::is_ldst_unsigned_offset_at(this->addr_at(0));
+  }
+
+public:
   Register base() {
-    uint32_t b = Instruction_aarch64::extract(uint_at(0), 9, 5);
+    uint32_t b = Instruction_aarch64::extract(this->uint_at(0), 9, 5);
     return b == 0x1f ? sp : as_Register(b);
   }
   int64_t offset() {
     if (is_ldst_ur()) {
-      return Instruction_aarch64::sextract(uint_at(0), 20, 12);
+      return Instruction_aarch64::sextract(this->uint_at(0), 20, 12);
     } else if (is_ldst_unsigned_offset()) {
-      return Instruction_aarch64::extract(uint_at(0), 21, 10) << size();
+      return Instruction_aarch64::extract(this->uint_at(0), 21, 10) << this->size();
     } else {
       // others like: pre-index or post-index.
       ShouldNotReachHere();
       return 0;
     }
   }
-  size_t size_in_bytes() { return 1ULL << size(); }
-  bool is_not_pre_post_index() { return (is_ldst_ur() || is_ldst_unsigned_offset()); }
-  bool is_load() {
-    assert(Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b01 ||
-           Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b00, "must be ldr or str");
+  size_t size_in_bytes() { return 1ULL << this->size(); }
+  bool is_not_pre_post_index() { return is_ldst_ur() || is_ldst_unsigned_offset(); }
 
-    return Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b01;
-  }
-  bool is_store() {
-    assert(Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b01 ||
-           Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b00, "must be ldr or str");
-
-    return Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b00;
+  Assembler::AccessDir dir() {
+    switch(Instruction_aarch64::extract(this->uint_at(0), 22, 22)) {
+      case 0b0: return Assembler::STORE;
+      case 0b1: return Assembler::LOAD;
+      default: ShouldNotReachHere();
+    }
   }
 };
 
-inline NativeLdSt* NativeLdSt_at(address addr) {
-  assert(nativeInstruction_at(addr)->is_Imm_LdSt(), "no immediate load/store found");
-  return (NativeLdSt*)addr;
+template <typename T>
+inline NativeLdSt<T>* NativeLdSt_at(address addr) {
+  assert(nativeInstruction_at(addr)->is_Imm_LdSt<T>(), "no immediate load/store found");
+  return (NativeLdSt<T>*)addr;
 }
 
 // A NativePostCallNop takes the form of NOP followed by one or two instruction
@@ -861,8 +939,7 @@ class NativeDeoptInstruction: public NativeInstruction {
 
   static bool is_deopt_at(address instr) {
     assert(instr != nullptr, "");
-    uint32_t value = *(uint32_t *) instr;
-    return value == 0xd4ade001;
+    return nativeInstruction_at(instr)->is_udf(udf_deopt);
   }
 
   // MT-safe patching

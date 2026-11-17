@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,6 @@
  * questions.
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -33,31 +29,35 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * @test
  * @bug 8276970
  * @summary Test to verify the charset in PrintStream is inherited
  *      in the OutputStreamWriter/PrintWriter
- * @run testng InheritEncodingTest
+ * @run junit InheritEncodingTest
  */
-@Test
 public class InheritEncodingTest {
 
     private static final String testString = "\u00e9\u3042"; // "éあ"
 
-    @DataProvider
-    public Object[][] encodings() {
-        return new Object[][]{
-                {StandardCharsets.ISO_8859_1},
-                {StandardCharsets.US_ASCII},
-                {StandardCharsets.UTF_8},
-                {StandardCharsets.UTF_16},
-                {StandardCharsets.UTF_16BE},
-                {StandardCharsets.UTF_16LE},
+    public static Charset[] encodings() {
+        return new Charset[]{
+                StandardCharsets.ISO_8859_1,
+                StandardCharsets.US_ASCII,
+                StandardCharsets.UTF_8,
+                StandardCharsets.UTF_16,
+                StandardCharsets.UTF_16BE,
+                StandardCharsets.UTF_16LE
         };
     }
 
-    @Test (dataProvider = "encodings")
+    @ParameterizedTest
+    @MethodSource("encodings")
     public void testOutputStreamWriter(Charset stdCharset) throws IOException {
         var ba = new ByteArrayOutputStream();
         var ps = new PrintStream(ba, true, stdCharset);
@@ -65,16 +65,17 @@ public class InheritEncodingTest {
 
         // tests OutputStreamWriter's encoding explicitly
         var osw = new OutputStreamWriter(ps);
-        assertEquals(Charset.forName(osw.getEncoding()), stdCharset);
+        assertEquals(stdCharset, Charset.forName(osw.getEncoding()));
 
         // tests roundtrip result
         osw.write(testString);
         osw.flush();
         var result = ba.toString(stdCharset);
-        assertEquals(result, expected);
+        assertEquals(expected, result);
     }
 
-    @Test (dataProvider = "encodings")
+    @ParameterizedTest
+    @MethodSource("encodings")
     public void testPrintWriter(Charset stdCharset) throws IOException {
         var ba = new ByteArrayOutputStream();
         var ps = new PrintStream(ba, true, stdCharset);
@@ -85,10 +86,11 @@ public class InheritEncodingTest {
         pw.write(testString);
         pw.flush();
         var result = ba.toString(stdCharset);
-        assertEquals(result, expected);
+        assertEquals(expected, result);
     }
 
-    @Test (dataProvider = "encodings")
+    @ParameterizedTest
+    @MethodSource("encodings")
     public void testPrintStream(Charset stdCharset) throws IOException {
         var ba = new ByteArrayOutputStream();
         var ps = new PrintStream(ba, true, stdCharset);
@@ -96,12 +98,12 @@ public class InheritEncodingTest {
 
         // tests PrintStream's charset explicitly
         var psWrapper = new PrintStream(ps);
-        assertEquals(psWrapper.charset(), stdCharset);
+        assertEquals(stdCharset, psWrapper.charset());
 
         // tests roundtrip result
         psWrapper.print(testString);
         psWrapper.flush();
         var result = ba.toString(stdCharset);
-        assertEquals(result, expected);
+        assertEquals(expected, result);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  *
  */
 
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotModules.hpp"
 #include "cds/aotStreamedHeapLoader.hpp"
 #include "cds/aotThread.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -329,7 +329,7 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
     // A concurrent GC thread might racingly read the object payload after GC is enabled.
     InPlaceLinkingOopClosure cl(heap_object, linker);
     heap_object->oop_iterate(&cl);
-    HeapShared::remap_loaded_metadata(heap_object);
+    AOTHeap::remap_loaded_metadata(heap_object);
     return;
   }
 
@@ -353,7 +353,7 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
   // shady metadata fields from the archive that do not point at real metadata.
   // We deal with this by explicitly reading the requested address from the
   // archive and fixing it to real Metadata before writing it into the heap object.
-  HeapShared::do_metadata_offsets(heap_object, [&](int metadata_offset) {
+  AOTHeap::do_metadata_offsets(heap_object, [&](int metadata_offset) {
     BitMap::idx_t metadata_field_idx = header_bit + (size_t)metadata_offset / sizeof(RawElementT);
     BitMap::idx_t skip = word_scale;
     assert(metadata_field_idx >= start_bit && metadata_field_idx + skip <= end_bit,
@@ -797,11 +797,13 @@ void AOTStreamedHeapLoader::cleanup() {
     Universe::vm_global()->release(&handles[num_null_handles], num_handles - num_null_handles);
   }
 
-  FREE_C_HEAP_ARRAY(void*, _object_index_to_heap_object_table);
+  FREE_C_HEAP_ARRAY(_object_index_to_heap_object_table);
+  _object_index_to_heap_object_table = nullptr;
+  _roots_archive = nullptr;
 
   // Unmap regions
-  FileMapInfo::current_info()->unmap_region(AOTMetaspace::hp);
-  FileMapInfo::current_info()->unmap_region(AOTMetaspace::bm);
+  FileMapInfo::static_input_archive()->unmap_region(AOTMetaspace::hp);
+  FileMapInfo::static_input_archive()->unmap_region(AOTMetaspace::bm);
 
   _cleanup_materialization_time_ns = (Ticks::now() - start).nanoseconds();
 
@@ -971,21 +973,21 @@ void AOTStreamedHeapLoader::initialize() {
   EXCEPTION_MARK
 
   _materialization_start_ticks = Ticks::now();
+  FileMapInfo* mapinfo = FileMapInfo::static_input_archive();
+  mapinfo->map_bitmap_region();
 
-  FileMapInfo::current_info()->map_bitmap_region();
-
-  _heap_region = FileMapInfo::current_info()->region_at(AOTMetaspace::hp);
-  _bitmap_region = FileMapInfo::current_info()->region_at(AOTMetaspace::bm);
+  _heap_region = mapinfo->region_at(AOTMetaspace::hp);
+  _bitmap_region = mapinfo->region_at(AOTMetaspace::bm);
 
   assert(_heap_region->used() > 0, "empty heap archive?");
 
   _is_in_use = true;
 
   // archived roots are at this offset in the stream.
-  size_t roots_offset = FileMapInfo::current_info()->streamed_heap()->roots_offset();
-  size_t forwarding_offset = FileMapInfo::current_info()->streamed_heap()->forwarding_offset();
-  size_t root_highest_object_index_table_offset = FileMapInfo::current_info()->streamed_heap()->root_highest_object_index_table_offset();
-  _num_archived_objects = FileMapInfo::current_info()->streamed_heap()->num_archived_objects();
+  size_t roots_offset = mapinfo->streamed_heap()->roots_offset();
+  size_t forwarding_offset = mapinfo->streamed_heap()->forwarding_offset();
+  size_t root_highest_object_index_table_offset = mapinfo->streamed_heap()->root_highest_object_index_table_offset();
+  _num_archived_objects = mapinfo->streamed_heap()->num_archived_objects();
 
   // The first int is the length of the array
   _roots_archive = ((int*)(((address)_heap_region->mapped_base()) + roots_offset)) + 1;
@@ -995,7 +997,7 @@ void AOTStreamedHeapLoader::initialize() {
   // We can't retire a TLAB until the filler klass is set; set it to the archived object klass.
   CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
 
-  objArrayOop roots = oopFactory::new_objectArray(_num_roots, CHECK);
+  refArrayOop roots = oopFactory::new_objectArray(_num_roots, CHECK);
   _roots = OopHandle(Universe::vm_global(), roots);
 
   _object_index_to_buffer_offset_table = (size_t*)(((address)_heap_region->mapped_base()) + forwarding_offset);
@@ -1051,7 +1053,7 @@ oop AOTStreamedHeapLoader::materialize_root(int root_index) {
   {
     MutexLocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
 
-    oop root = objArrayOop(_roots.resolve())->obj_at(root_index);
+    oop root = oop_cast<refArrayOop>(_roots.resolve())->obj_at(root_index);
 
     if (root != nullptr) {
       // The root has already been materialized
@@ -1070,7 +1072,7 @@ oop AOTStreamedHeapLoader::materialize_root(int root_index) {
 }
 
 oop AOTStreamedHeapLoader::get_root(int index) {
-  oop result = objArrayOop(_roots.resolve())->obj_at(index);
+  oop result = oop_cast<refArrayOop>(_roots.resolve())->obj_at(index);
   if (result == nullptr) {
     // Materialize root
     result = materialize_root(index);
@@ -1102,25 +1104,13 @@ void AOTStreamedHeapLoader::finish_initialization(FileMapInfo* static_mapinfo) {
 }
 
 AOTMapLogger::OopDataIterator* AOTStreamedHeapLoader::oop_iterator(FileMapInfo* info, address buffer_start, address buffer_end) {
-  class StreamedLoaderOopIterator : public AOTMapLogger::OopDataIterator {
-  private:
-    int _current;
-    int _next;
-
-    address _buffer_start;
-
-    int _num_archived_objects;
-
+  class StreamedLoaderOopIterator : public AOTStreamedHeapOopIterator {
   public:
     StreamedLoaderOopIterator(address buffer_start,
                               int num_archived_objects)
-      : _current(0),
-        _next(1),
-        _buffer_start(buffer_start),
-        _num_archived_objects(num_archived_objects) {
-    }
+      : AOTStreamedHeapOopIterator(buffer_start, num_archived_objects) {}
 
-    AOTMapLogger::OopData capture(int dfs_index) {
+    AOTMapLogger::OopData capture(int dfs_index) override {
       size_t buffered_offset = buffer_offset_for_object_index(dfs_index);
       address buffered_addr = _buffer_start + buffered_offset;
       oopDesc* raw_oop = (oopDesc*)buffered_addr;
@@ -1140,35 +1130,6 @@ AOTMapLogger::OopDataIterator* AOTStreamedHeapLoader::oop_iterator(FileMapInfo* 
                klass,
                size,
                false };
-    }
-
-    bool has_next() override {
-      return _next <= _num_archived_objects;
-    }
-
-    AOTMapLogger::OopData next() override {
-      _current = _next;
-      AOTMapLogger::OopData result = capture(_current);
-      _next = _current + 1;
-      return result;
-    }
-
-    AOTMapLogger::OopData obj_at(narrowOop* addr) override {
-      int dfs_index = (int)(*addr);
-      if (dfs_index == 0) {
-        return null_data();
-      } else {
-        return capture(dfs_index);
-      }
-    }
-
-    AOTMapLogger::OopData obj_at(oop* addr) override {
-      int dfs_index = (int)cast_from_oop<uintptr_t>(*addr);
-      if (dfs_index == 0) {
-        return null_data();
-      } else {
-        return capture(dfs_index);
-      }
     }
 
     GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* roots() override {

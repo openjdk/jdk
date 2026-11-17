@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,73 +30,96 @@
 #include "signature.h"
 
 
+static jdwpError
+findComponentClass(JNIEnv *env, jobject arrayClassLoader, char *componentSignature,
+                   jclass *classes, jint count, jclass *componentClassPtr)
+{
+    int i;
+
+    *componentClassPtr = NULL;
+    for (i = 0; i < count; i++) {
+        char *signature = NULL;
+        jclass clazz = classes[i];
+        jboolean match;
+        jvmtiError error;
+
+        /* signature must match */
+        error = classSignature(clazz, &signature, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            return map2jdwpError(error);
+        }
+        match = strcmp(signature, componentSignature) == 0;
+        jvmtiDeallocate(signature);
+
+        /* if signature matches, get class loader to check if
+         * it matches
+         */
+        if (match) {
+            jobject loader;
+            error = classLoader(clazz, &loader);
+            if (error != JVMTI_ERROR_NONE) {
+                return map2jdwpError(error);
+            }
+            match = isSameObject(env, loader, arrayClassLoader);
+        }
+
+        if (match) {
+            *componentClassPtr = clazz;
+            return JDWP_ERROR(NONE);
+        }
+    }
+    return JDWP_ERROR(NONE);
+}
+
 /*
- * Determine the component class by looking thru all classes for
- * one that has the signature of the component and the same class loadeer
- * as the array.  See JVM spec 5.3.3:
+ * Determine the component class by first looking through the array's loader
+ * classes, then all classes if necessary, for one with the component signature
+ * and the same defining class loader as the array. See JVM spec 5.3.3:
  *     If the component type is a reference type, C is marked as having
  *     been defined by the defining class loader of the component type.
  */
 static jdwpError
 getComponentClass(JNIEnv *env, jclass arrayClass, char *componentSignature,
-                jclass *componentClassPtr)
+                  jclass *componentClassPtr)
 {
     jobject arrayClassLoader;
     jclass *classes;
     jint count;
-    jclass componentClass = NULL;
     jdwpError serror;
     jvmtiError error;
 
-    serror = JDWP_ERROR(NONE);
-
+    *componentClassPtr = NULL;
     error = classLoader(arrayClass, &arrayClassLoader);
     if (error != JVMTI_ERROR_NONE) {
         return map2jdwpError(error);
     }
 
-    error = allLoadedClasses(&classes, &count);
-    if (error != JVMTI_ERROR_NONE) {
-        serror = map2jdwpError(error);
-    } else {
-        int i;
-        for (i = 0; (i < count) && (componentClass == NULL); i++) {
-            char *signature = NULL;
-            jclass clazz = classes[i];
-            jboolean match;
-            jvmtiError error;
-
-            /* signature must match */
-            error = classSignature(clazz, &signature, NULL);
-            if (error != JVMTI_ERROR_NONE) {
-                serror = map2jdwpError(error);
-                break;
-            }
-            match = strcmp(signature, componentSignature) == 0;
-            jvmtiDeallocate(signature);
-
-            /* if signature matches, get class loader to check if
-             * it matches
-             */
-            if (match) {
-                jobject loader;
-                error = classLoader(clazz, &loader);
-                if (error != JVMTI_ERROR_NONE) {
-                    return map2jdwpError(error);
-                }
-                match = isSameObject(env, loader, arrayClassLoader);
-            }
-
-            if (match) {
-                componentClass = clazz;
-            }
+    /*
+     * Hidden classes and their arrays have '.' in their signatures and are
+     * not included in GetClassLoaderClasses.
+     */
+    if (strchr(componentSignature, '.') == NULL) {
+        error = allClassLoaderClasses(arrayClassLoader, &classes, &count);
+        if (error != JVMTI_ERROR_NONE) {
+            return map2jdwpError(error);
         }
+        serror = findComponentClass(env, arrayClassLoader, componentSignature,
+                                   classes, count, componentClassPtr);
         jvmtiDeallocate(classes);
-
-        *componentClassPtr = componentClass;
+        if (serror != JDWP_ERROR(NONE) || *componentClassPtr != NULL) {
+            return serror;
+        }
     }
 
-    if (serror == JDWP_ERROR(NONE) && componentClass == NULL) {
+    error = allLoadedClasses(&classes, &count);
+    if (error != JVMTI_ERROR_NONE) {
+        return map2jdwpError(error);
+    }
+    serror = findComponentClass(env, arrayClassLoader, componentSignature,
+                               classes, count, componentClassPtr);
+    jvmtiDeallocate(classes);
+
+    if (serror == JDWP_ERROR(NONE) && *componentClassPtr == NULL) {
         /* per JVM spec, component class is always loaded
          * before array class, so this should never occur.
          */

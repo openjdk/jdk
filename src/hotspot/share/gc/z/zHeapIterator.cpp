@@ -456,13 +456,13 @@ void ZHeapIterator::follow_array_chunk(const ZHeapIteratorContext& context, cons
 
   // Follow array chunk
   ZHeapIteratorOopClosure<false /* VisitReferents */> cl(this, context, obj);
-  ZIterator::oop_iterate_range(obj, &cl, start, end);
+  ZIterator::oop_iterate_elements_range(obj, &cl, start, end);
 }
 
 template <bool VisitWeaks>
 void ZHeapIterator::follow(const ZHeapIteratorContext& context, oop obj) {
   // Follow
-  if (obj->is_objArray()) {
+  if (obj->is_refArray()) {
     follow_array(context, obj);
   } else {
     follow_object<VisitWeaks>(context, obj);

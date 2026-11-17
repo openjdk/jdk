@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,12 +42,6 @@
 
 // Map the full jimage, only with 64 bit addressing.
 bool ImageFileReader::memory_map_image = sizeof(void *) == 8;
-
-#ifdef WIN32
-const char FileSeparator = '\\';
-#else
-const char FileSeparator = '/';
-#endif
 
 // Image files are an alternate file format for storing classes and resources. The
 // goal is to supply file access which is faster and smaller than the jar format.
@@ -150,18 +144,22 @@ void ImageLocation::clear_data() {
 
 // Manage a table of open image files.  This table allows multiple access points
 // to share an open image.
-ImageFileReaderTable::ImageFileReaderTable() : _count(0), _max(_growth) {
-    _table = static_cast<ImageFileReader**>(calloc(_max, sizeof(ImageFileReader*)));
-    assert(_table != NULL && "allocation failed");
+ImageFileReaderTable::ImageFileReaderTable() : _count(0), _max(0), _table(NULL) {
 }
 
-// Add a new image entry to the table.
-void ImageFileReaderTable::add(ImageFileReader* image) {
+// Add a new image entry to the table. Return false if allocation fails.
+bool ImageFileReaderTable::add(ImageFileReader* image) {
     if (_count == _max) {
+        void* tmp = realloc(_table, (_max + _growth) * sizeof(ImageFileReader*));
+        if (tmp == NULL) {
+            // Allocation failed, _table still owns the original memory
+            return false;
+        }
         _max += _growth;
-        _table = static_cast<ImageFileReader**>(realloc(_table, _max * sizeof(ImageFileReader*)));
+        _table = static_cast<ImageFileReader**>(tmp);
     }
     _table[_count++] = image;
+    return true;
 }
 
 // Remove an image entry from the table.
@@ -174,20 +172,14 @@ void ImageFileReaderTable::remove(ImageFileReader* image) {
         }
     }
 
-    if (_count != 0 && _count == _max - _growth) {
-        _max -= _growth;
-        _table = static_cast<ImageFileReader**>(realloc(_table, _max * sizeof(ImageFileReader*)));
-    }
-}
-
-// Determine if image entry is in table.
-bool ImageFileReaderTable::contains(ImageFileReader* image) {
-    for (u4 i = 0; i < _count; i++) {
-        if (_table[i] == image) {
-            return true;
+    if (_count != 0 && _count <= _max - _growth) {
+        // Leave the table allocation and capacity unchanged if allocation fails.
+        void* tmp = realloc(_table, (_max - _growth) * sizeof(ImageFileReader*));
+        if (tmp != NULL) {
+            _max -= _growth;
+            _table = static_cast<ImageFileReader**>(tmp);
         }
     }
-    return false;
 }
 
 // Table to manage multiple opens of an image file.
@@ -244,9 +236,13 @@ ImageFileReader* ImageFileReader::open(const char* name, bool big_endian) {
             return existing_reader;
         }
     }
-    // Bump use count and add to table.
+    // Add to table and bump use count if success.
+    if (!_reader_table.add(reader)) {
+        // Failed to add to table.
+        delete reader;
+        return NULL;
+    }
     reader->inc_use();
-    _reader_table.add(reader);
     return reader;
 }
 
@@ -259,25 +255,6 @@ void ImageFileReader::close(ImageFileReader *reader) {
         _reader_table.remove(reader);
         delete reader;
     }
-}
-
-// Return an id for the specified ImageFileReader.
-u8 ImageFileReader::reader_to_ID(ImageFileReader *reader) {
-    // ID is just the cloaked reader address.
-    return (u8)reader;
-}
-
-// Validate the image id.
-bool ImageFileReader::id_check(u8 id) {
-    // Make sure the ID is a managed (_reader_table) reader.
-    SimpleCriticalSectionLock cs(&_reader_table_lock);
-    return _reader_table.contains((ImageFileReader*)id);
-}
-
-// Return an id for the specified ImageFileReader.
-ImageFileReader* ImageFileReader::id_to_reader(u8 id) {
-    assert(id_check(id) && "invalid image id");
-    return (ImageFileReader*)id;
 }
 
 // Constructor initializes to a closed state.
@@ -372,23 +349,6 @@ bool ImageFileReader::read_at(u1* data, u8 size, u8 offset) const {
     return (u8)osSupport::read(_fd, (char*)data, size, offset) == size;
 }
 
-// Find the location attributes associated with the path.    Returns true if
-// the location is found, false otherwise.
-bool ImageFileReader::find_location(const char* path, ImageLocation& location) const {
-    // Locate the entry in the index perfect hash table.
-    s4 index = ImageStrings::find(_endian, path, _redirect_table, table_length());
-    // If is found.
-    if (index != ImageStrings::NOT_FOUND) {
-        // Get address of first byte of location attribute stream.
-        u1* data = get_location_data(index);
-        // Expand location attributes.
-        location.set_data(data);
-        // Make sure result is not a false positive.
-        return verify_location(location, path);
-    }
-    return false;
-}
-
 // Find the location index and size associated with the path.
 // Returns the location index and size if the location is found, 0 otherwise.
 u4 ImageFileReader::find_location_index(const char* path, u8 *size) const {
@@ -403,8 +363,8 @@ u4 ImageFileReader::find_location_index(const char* path, u8 *size) const {
         ImageLocation location(data);
         // Make sure result is not a false positive.
         if (verify_location(location, path)) {
-                *size = (jlong)location.get_attribute(ImageLocation::ATTRIBUTE_UNCOMPRESSED);
-                return offset;
+            *size = (jlong)location.get_attribute(ImageLocation::ATTRIBUTE_UNCOMPRESSED);
+            return offset;
         }
     }
     return 0;            // not found
@@ -435,7 +395,7 @@ bool ImageFileReader::verify_location(ImageLocation& location, const char* path)
     }
     // Get base name string.
     const char* base = location.get_attribute(ImageLocation::ATTRIBUTE_BASE, strings);
-    // Compare with basne name.
+    // Compare with base name.
     if (!(next = ImageStrings::starts_with(next, base))) return false;
     // Get extension string.
     const char* extension = location.get_attribute(ImageLocation::ATTRIBUTE_EXTENSION, strings);
@@ -474,7 +434,7 @@ void ImageFileReader::get_resource(ImageLocation& location, u1* uncompressed_dat
             compressed_data = new u1[(size_t)compressed_size];
             assert(compressed_data != NULL && "allocation failed");
             // Read bytes from offset beyond the image index.
-            bool is_read = read_at(compressed_data, compressed_size, _index_size + offset);
+            [[maybe_unused]] bool is_read = read_at(compressed_data, compressed_size, _index_size + offset);
             assert(is_read && "error reading from image or short read");
         } else {
             compressed_data = get_data_address() + offset;
@@ -490,7 +450,7 @@ void ImageFileReader::get_resource(ImageLocation& location, u1* uncompressed_dat
         }
     } else {
         // Read bytes from offset beyond the image index.
-        bool is_read = read_at(uncompressed_data, uncompressed_size, _index_size + offset);
+        [[maybe_unused]] bool is_read = read_at(uncompressed_data, uncompressed_size, _index_size + offset);
         assert(is_read && "error reading from image or short read");
     }
 }

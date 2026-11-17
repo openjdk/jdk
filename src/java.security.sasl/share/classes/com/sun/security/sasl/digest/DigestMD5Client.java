@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.security.sasl.digest;
 
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,7 +33,6 @@ import java.util.StringTokenizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
 import java.util.logging.Level;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -657,7 +657,7 @@ final class DigestMD5Client extends DigestMD5Base implements SaslClient {
             byte[] expected = generateResponseValue("",
                 digestUri, negotiatedQop, username, negotiatedRealm,
                 passwd, nonce, cnonce,  nonceCount, authzidBytes);
-            if (!Arrays.equals(expected, fromServer)) {
+            if (!MessageDigest.isEqual(expected, fromServer)) {
                 /* Server's rspauth value does not match */
                 throw new SaslException(
                     "Server's rspauth value does not match what client expects");

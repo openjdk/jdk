@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.io.*;
 public class setvalues001a {
 
     public static final String OBJECT_FIELD_NAME = "object";
+    public static final String FINAL_OBJECT_FIELD_NAME = "finalObject";
 
     static ArgumentHandler argumentHandler = null;
     static Log log = null;
@@ -58,6 +59,7 @@ public class setvalues001a {
         OriginalValuesClass original = new OriginalValuesClass();
         TargetValuesClass target = new TargetValuesClass();
         ObjectClass.object = new TestedClass();
+        ObjectClass.finalObject = new TestedFinalClass();
 
         // send debugger signal READY
         log.display("Sending signal to debugger: " + setvalues001.READY);
@@ -284,7 +286,7 @@ public class setvalues001a {
         }
 */
 
-        // check taht no any changed value differs from target
+        // check that none of the changed values differs from target
         if (different > 0) {
             log.complain("Values of " + different + " fields have not been set correctly");
             return false;
@@ -294,7 +296,7 @@ public class setvalues001a {
         return true;
     }
 
-    // class with the original values of static fields
+    // class with the original values of instance fields
     public static class OriginalValuesClass {
         static final boolean booleanValue = true;
         static final byte    byteValue    = (byte)0x01;
@@ -308,7 +310,7 @@ public class setvalues001a {
         static final Object  objectValue  = new OriginalValuesClass();
     }
 
-    // class with the original values of static fields
+    // class with the target values of instance fields
     public static class TargetValuesClass {
         static final boolean booleanValue = false;
         static final byte    byteValue    = (byte)0x0F;
@@ -322,7 +324,7 @@ public class setvalues001a {
         static final Object  objectValue  = new TargetValuesClass();
     }
 
-    // tested class with own static fields values
+    // tested class with own instance fields values
     public static class TestedClass {
         private   boolean  booleanValue = OriginalValuesClass.booleanValue;
         private   byte     byteValue    = OriginalValuesClass.byteValue;
@@ -336,10 +338,25 @@ public class setvalues001a {
                   Object   objectValue  = OriginalValuesClass.objectValue;
     }
 
-    // class with static field with the tested object
+    // tested class with own instance final fields values
+    public static class TestedFinalClass {
+        private   final boolean  booleanValue = OriginalValuesClass.booleanValue;
+        private   final byte     byteValue    = OriginalValuesClass.byteValue;
+        protected final char     charValue    = OriginalValuesClass.charValue;
+        protected final int      intValue     = OriginalValuesClass.intValue;
+        public    final short    shortValue   = OriginalValuesClass.shortValue;
+        public    final long     longValue    = OriginalValuesClass.longValue;
+                  final float    floatValue   = OriginalValuesClass.floatValue;
+                  final double   doubleValue  = OriginalValuesClass.doubleValue;
+                  final String   stringValue  = OriginalValuesClass.stringValue;
+                  final Object   objectValue  = OriginalValuesClass.objectValue;
+    }
+
+    // class with static fields with the tested objects
     public static class ObjectClass {
-        // static field with the tested object
+        // static fields with the tested objects
         public static TestedClass object = null;
+        public static TestedFinalClass finalObject = null;
     }
 
 }

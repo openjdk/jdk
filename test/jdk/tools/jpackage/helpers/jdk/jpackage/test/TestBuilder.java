@@ -128,7 +128,7 @@ final class TestBuilder implements AutoCloseable {
         clear();
     }
 
-    void processCmdLineArg(String arg) throws Throwable {
+    void processCmdLineArg(String arg) throws Exception {
         int separatorIdx = arg.indexOf('=');
         final String argName;
         final String argValue;
@@ -140,7 +140,7 @@ final class TestBuilder implements AutoCloseable {
             argValue = null;
         }
         try {
-            ThrowingConsumer<String> argProcessor = argProcessors.get(argName);
+            var argProcessor = argProcessors.get(argName);
             if (argProcessor == null) {
                 throw new ParseException("Unrecognized");
             }
@@ -205,8 +205,8 @@ final class TestBuilder implements AutoCloseable {
     }
 
     private void createTestInstance(MethodCall testBody) {
-        final List<ThrowingConsumer<Object>> curBeforeActions;
-        final List<ThrowingConsumer<Object>> curAfterActions;
+        final List<ThrowingConsumer<Object, ? extends Exception>> curBeforeActions;
+        final List<ThrowingConsumer<Object, ? extends Exception>> curAfterActions;
 
         Method testMethod = testBody.getMethod();
         if (Stream.of(BeforeEach.class, AfterEach.class).anyMatch(
@@ -326,7 +326,7 @@ final class TestBuilder implements AutoCloseable {
     }
 
     // Wraps Method.invoke() into ThrowingRunnable.run()
-    private ThrowingConsumer<Object> wrap(Method method) {
+    private ThrowingConsumer<Object, ? extends Exception> wrap(Method method) {
         return (test) -> {
             Class<?> methodClass = method.getDeclaringClass();
             String methodName = String.join(".", methodClass.getName(),
@@ -375,13 +375,13 @@ final class TestBuilder implements AutoCloseable {
     }
 
     private final TestMethodSupplier testMethodSupplier;
-    private final Map<String, ThrowingConsumer<String>> argProcessors;
+    private final Map<String, ThrowingConsumer<String, ? extends Exception>> argProcessors;
     private final Consumer<TestInstance> testConsumer;
     private final Path workDirRoot;
     private final ClassLoader testClassLoader;
     private List<MethodCall> testGroup;
-    private List<ThrowingConsumer<Object>> beforeActions;
-    private List<ThrowingConsumer<Object>> afterActions;
+    private List<ThrowingConsumer<Object, ? extends Exception>> beforeActions;
+    private List<ThrowingConsumer<Object, ? extends Exception>> afterActions;
     private Set<String> excludedTests;
     private Set<String> includedTests;
     private String spaceSubstitute;

@@ -1,8 +1,7 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- */
-
-/* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, IBM Corporation. All rights reserved.
+ * Copyright (c) 2002 Graz University of Technology. All rights reserved.
  *
  * Redistribution and use in  source and binary forms, with or without
  * modification, are permitted  provided that the following conditions are met:
@@ -929,6 +928,11 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DeriveKey
     rv = (*ckpFunctions->C_DeriveKey)(ckSessionHandle, ckpMechanism, ckBaseKeyHandle,
                  ckpAttributes, ckAttributesLength, phKey);
 
+    /* If derivation failed, do not attempt copy-back */
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+        goto cleanup;
+    }
+
     jKeyHandle = ckLongToJLong(ckKeyHandle);
 
     switch (ckpMechanism->mechanism) {
@@ -937,9 +941,22 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DeriveKey
         /* we must copy back the client version */
         ssl3CopyBackClientVersion(env, ckpMechanism, jMechanism);
         break;
-    case CKM_TLS12_MASTER_KEY_DERIVE:
-        tls12CopyBackClientVersion(env, ckpMechanism, jMechanism);
+    case CKM_TLS12_MASTER_KEY_DERIVE: {
+        CK_TLS12_MASTER_KEY_DERIVE_PARAMS *p =
+            (CK_TLS12_MASTER_KEY_DERIVE_PARAMS *)ckpMechanism->pParameter;
+
+        copyBackClientVersion(env, ckpMechanism, jMechanism,
+                p->pVersion, CLASS_TLS12_MASTER_KEY_DERIVE_PARAMS);
         break;
+    }
+    case CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE: {
+        CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS *p =
+            (CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS *)ckpMechanism->pParameter;
+
+        copyBackClientVersion(env, ckpMechanism, jMechanism,
+                p->pVersion, CLASS_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS);
+        break;
+    }
     case CKM_SSL3_KEY_AND_MAC_DERIVE:
     case CKM_TLS_KEY_AND_MAC_DERIVE:
         /* we must copy back the unwrapped key info to the jMechanism object */
@@ -956,8 +973,9 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DeriveKey
         // empty
         break;
     }
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
-        jKeyHandle =0L;
+    /* Do not continue if any copy-back operation raised an exception */
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
     }
 
 cleanup:
@@ -967,7 +985,7 @@ cleanup:
     return jKeyHandle ;
 }
 
-static void copyBackClientVersion(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism, jobject jMechanism,
+void copyBackClientVersion(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism, jobject jMechanism,
         CK_VERSION *ckVersion, const char *class_master_key_derive_params)
 {
     jclass jMasterKeyDeriveParamsClass, jMechanismClass, jVersionClass;
@@ -1037,25 +1055,6 @@ void ssl3CopyBackClientVersion(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism,
         copyBackClientVersion(env, ckpMechanism, jMechanism,
                 ckSSL3MasterKeyDeriveParams->pVersion,
                 CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS);
-    }
-}
-
-/*
- * Copy back the client version information from the native
- * structure to the Java object. This is only used for
- * CKM_TLS12_MASTER_KEY_DERIVE mechanism when used for deriving a key.
- *
- */
-void tls12CopyBackClientVersion(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism,
-        jobject jMechanism)
-{
-    CK_TLS12_MASTER_KEY_DERIVE_PARAMS *ckTLS12MasterKeyDeriveParams;
-    ckTLS12MasterKeyDeriveParams =
-            (CK_TLS12_MASTER_KEY_DERIVE_PARAMS *)ckpMechanism->pParameter;
-    if (ckTLS12MasterKeyDeriveParams != NULL_PTR) {
-        copyBackClientVersion(env, ckpMechanism, jMechanism,
-                ckTLS12MasterKeyDeriveParams->pVersion,
-                CLASS_TLS12_MASTER_KEY_DERIVE_PARAMS);
     }
 }
 

@@ -145,50 +145,50 @@ The following options are accepted by the `jdb` command:
 `-help`
 :   Displays a help message.
 
-`-sourcepath` *dir1*`:`*dir2*`:`...
+[`-sourcepath`]{#option-sourcepath} *dir1*`:`*dir2*`:`...
 :   Uses the specified path to search for source files in the specified path.
     If this option is not specified, then use the default path of dot (`.`).
 
-`-attach` *address*
+[`-attach`]{#option-attach} *address*
 :   Attaches the debugger to a running JVM with the default connection
     mechanism.
 
-`-listen` *address*
+[`-listen`]{#option-listen} *address*
 :   Waits for a running JVM to connect to the specified address with a standard
     connector.
 
-`-listenany`
+[`-listenany`]{#option-listenany}
 :   Waits for a running JVM to connect at any available address using a
     standard connector.
 
-`-launch`
+[`-launch`]{#option-launch}
 :   Starts the debugged application immediately upon startup of the `jdb`
     command. The `-launch` option removes the need for the `run` command. The
     debugged application is launched and then stopped just before the initial
     application class is loaded. At that point, you can set any necessary
     breakpoints and use the `cont` command to continue execution.
 
-`-listconnectors`
+[`-listconnectors`]{#option-listconnectors}
 :   Lists the connectors available in this JVM.
 
-`-connect` *connector-name*`:`*name1*`=`*value1*....
+[`-connect`]{#option-connect} *connector-name*`:`*name1*`=`*value1*....
 :   Connects to the target JVM with the named connector and listed argument
     values.
 
-`-dbgtrace` \[*flags*\]
+[`-dbgtrace`]{#option-dbgtrace} \[*flags*\]
 :   Prints information for debugging the `jdb` command.
 
-`-tclient`
+[`-tclient`]{#option-tclient}
 :   Runs the application in the Java HotSpot VM client.
 
-`-trackallthreads`
+[`-trackallthreads`]{#option-trackallthreads}
 :   Track all threads as they are created, including virtual threads.
     See [Working With Virtual Threads](#working-with-virtual-threads) below.
 
-`-tserver`
+[`-tserver`]{#option-tserver}
 :   Runs the application in the Java HotSpot VM server.
 
-`-J`*option*
+[`-J`]{#option-J}*option*
 :   Passes *option* to the JDB JVM, where option is one of the options described on
     the reference page for the Java application launcher. For example,
     `-J-Xms48m` sets the startup memory to 48 MB. See *Overview of Java

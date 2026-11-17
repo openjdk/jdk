@@ -26,6 +26,7 @@
 package jdk.internal.math;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import java.util.Arrays;
 /**
  * A simple big integer class specifically for floating point base conversion.
  */
+@AOTSafeClassInitializer
 final class FDBigInteger {
 
     @Stable
@@ -53,6 +55,7 @@ final class FDBigInteger {
 
     // Initialize FDBigInteger cache of powers of 5.
     static {
+        // Legacy CDS archive support (to be deprecated)
         CDS.initializeFromArchive(FDBigInteger.class);
         Object[] caches = archivedCaches;
         if (caches == null) {

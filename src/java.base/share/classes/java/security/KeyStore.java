@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,15 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.time.Instant;
 import java.util.*;
 import javax.crypto.SecretKey;
 
 import javax.security.auth.DestroyFailedException;
 import javax.security.auth.callback.*;
+
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 
 import sun.security.util.Debug;
 import sun.security.util.CryptoAlgorithmConstraints;
@@ -853,8 +857,18 @@ public class KeyStore {
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the keystore type. This warning is shown once per caller for
+     * each legacy keystore type. If the keystore type is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * </ul>
      *
@@ -875,6 +889,7 @@ public class KeyStore {
      *
      * @see Provider
      */
+    @CallerSensitive
     public static KeyStore getInstance(String type)
         throws KeyStoreException
     {
@@ -882,6 +897,11 @@ public class KeyStore {
 
         if (!CryptoAlgorithmConstraints.permits("KEYSTORE", type)) {
             throw new KeyStoreException(type + " is disabled");
+        }
+
+        if (CryptoAlgorithmConstraints.isLegacy("KeyStore", type)) {
+            CryptoAlgorithmConstraints.warn("KeyStore", type,
+                    Reflection.getCallerClass());
         }
 
         try {
@@ -905,11 +925,24 @@ public class KeyStore {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the keystore type. This warning is shown once per caller for
+     * each legacy keystore type. If the keystore type is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
@@ -936,6 +969,7 @@ public class KeyStore {
      *
      * @see Provider
      */
+    @CallerSensitive
     public static KeyStore getInstance(String type, String provider)
         throws KeyStoreException, NoSuchProviderException
     {
@@ -947,6 +981,11 @@ public class KeyStore {
 
         if (!CryptoAlgorithmConstraints.permits("KEYSTORE", type)) {
             throw new KeyStoreException(type + " is disabled");
+        }
+
+        if (CryptoAlgorithmConstraints.isLegacy("KeyStore", type)) {
+            CryptoAlgorithmConstraints.warn("KeyStore", type,
+                    Reflection.getCallerClass());
         }
 
         try {
@@ -967,11 +1006,24 @@ public class KeyStore {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the keystore type. This warning is shown once per caller for
+     * each legacy keystore type. If the keystore type is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
@@ -997,6 +1049,7 @@ public class KeyStore {
      *
      * @since 1.4
      */
+    @CallerSensitive
     public static KeyStore getInstance(String type, Provider provider)
         throws KeyStoreException
     {
@@ -1008,6 +1061,11 @@ public class KeyStore {
 
         if (!CryptoAlgorithmConstraints.permits("KEYSTORE", type)) {
             throw new KeyStoreException(type + " is disabled");
+        }
+
+        if (CryptoAlgorithmConstraints.isLegacy("KeyStore", type)) {
+            CryptoAlgorithmConstraints.warn("KeyStore", type,
+                    Reflection.getCallerClass());
         }
 
         try {
@@ -1182,6 +1240,9 @@ public class KeyStore {
 
     /**
      * Returns the creation date of the entry identified by the given alias.
+     * <p>
+     * It is recommended to use the {@link #getCreationInstant(String)}
+     * method instead.
      *
      * @param alias the alias name
      *
@@ -1199,6 +1260,32 @@ public class KeyStore {
         }
         return keyStoreSpi.engineGetCreationDate(alias);
     }
+
+
+    /**
+     * Returns the instant that the entry identified by the given alias was
+     * created.
+     *
+     * @param alias the alias name
+     *
+     * @return the instant that the entry identified by the given alias
+     * was created, or {@code null} if the given alias does not exist
+     *
+     * @throws KeyStoreException if the keystore has not been initialized
+     * (loaded)
+     *
+     * @since 27
+     */
+    public final Instant getCreationInstant(String alias)
+            throws KeyStoreException
+    {
+        if (!initialized) {
+            throw new KeyStoreException("Uninitialized keystore");
+        }
+        return keyStoreSpi.engineGetCreationInstant(alias);
+    }
+
+
 
     /**
      * Assigns the given key to the given alias, protecting it with the given
@@ -1724,11 +1811,25 @@ public class KeyStore {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value. Disallowed type will be skipped.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * Disallowed type will be skipped.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the keystore type. This warning is shown once per caller for
+     * each legacy keystore type. If the keystore type is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param  file the keystore file
      * @param  password the keystore password, which may be {@code null}
@@ -1755,10 +1856,12 @@ public class KeyStore {
      *
      * @since 9
      */
+    @CallerSensitive
     public static final KeyStore getInstance(File file, char[] password)
         throws KeyStoreException, IOException, NoSuchAlgorithmException,
             CertificateException {
-        return getInstance(file, password, null, true);
+        return getInstance(file, password, null, true,
+                Reflection.getCallerClass());
     }
 
     /**
@@ -1785,11 +1888,25 @@ public class KeyStore {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified keystore type is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value. Disallowed type will be skipped.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * Disallowed type will be skipped.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the keystore type. This warning is shown once per caller for
+     * each legacy keystore type. If the keystore type is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param  file the keystore file
      * @param  param the {@code LoadStoreParameter} that specifies how to load
@@ -1817,15 +1934,17 @@ public class KeyStore {
      *
      * @since 9
      */
+    @CallerSensitive
     public static final KeyStore getInstance(File file,
         LoadStoreParameter param) throws KeyStoreException, IOException,
             NoSuchAlgorithmException, CertificateException {
-        return getInstance(file, null, param, false);
+        return getInstance(file, null, param, false,
+                Reflection.getCallerClass());
     }
 
     // Used by getInstance(File, char[]) & getInstance(File, LoadStoreParameter)
     private static final KeyStore getInstance(File file, char[] password,
-        LoadStoreParameter param, boolean hasPassword)
+        LoadStoreParameter param, boolean hasPassword, Class<?> callerClass)
             throws KeyStoreException, IOException, NoSuchAlgorithmException,
                 CertificateException {
 
@@ -1840,6 +1959,7 @@ public class KeyStore {
         }
 
         KeyStore keystore = null;
+        String matched = null;
 
         try (DataInputStream dataStream =
             new DataInputStream(
@@ -1862,9 +1982,16 @@ public class KeyStore {
                                 String ksAlgo = s.getAlgorithm();
                                 if (CryptoAlgorithmConstraints.permits(
                                         "KEYSTORE", ksAlgo)) {
+                                    if (CryptoAlgorithmConstraints.isLegacy(
+                                            "KeyStore", ksAlgo)) {
+                                        CryptoAlgorithmConstraints.warn(
+                                                "KeyStore", ksAlgo, callerClass);
+                                    }
                                     keystore = new KeyStore(impl, p, ksAlgo);
-                                    break;
+                                } else {
+                                    matched = ksAlgo;
                                 }
+                                break;
                             }
                         } catch (NoSuchAlgorithmException e) {
                             // ignore
@@ -1894,9 +2021,14 @@ public class KeyStore {
                 return keystore;
             }
         }
-
-        throw new KeyStoreException("Unrecognized keystore format. "
-                + "Please load it with a specified type");
+        if (matched == null) {
+            throw new KeyStoreException("Unrecognized keystore format. "
+                    + "Please load it with a specified type");
+        } else {
+            throw new KeyStoreException("Keystore format " +
+                    matched +
+                    " disabled by jdk.crypto.disabledAlgorithms property");
+        }
     }
 
     /**

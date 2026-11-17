@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,10 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import jdk.internal.jimage.ImageReader;
-import jdk.internal.jimage.ImageReaderFactory;
+import jdk.internal.jimage.SystemImageReader;
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleHashes.HashSupplier;
 
@@ -200,11 +201,11 @@ public final class SystemModuleFinders {
 
         }
 
-        // exploded build (do not cache module finder)
+        // exploded build
         Path dir = Path.of(home, "modules");
         if (!Files.isDirectory(dir))
             throw new InternalError("Unable to detect the run-time image");
-        return ModulePath.of(ModuleBootstrap.patcher(), dir);
+        return ModulePath.ofExplodedImage(dir, ModuleBootstrap.patcher(), PreviewFeatures.isEnabled());
     }
 
     /**
@@ -392,7 +393,7 @@ public final class SystemModuleFinders {
      * Holder class for the ImageReader.
      */
     private static class SystemImage {
-        static final ImageReader READER = ImageReaderFactory.getImageReader();
+        static final ImageReader READER = SystemImageReader.get();
         static ImageReader reader() {
             return READER;
         }
@@ -465,12 +466,6 @@ public final class SystemModuleFinders {
             ImageReader reader = SystemImage.reader();
             return Optional.ofNullable(findResource(reader, name))
                     .map(reader::getResourceBuffer);
-        }
-
-        @Override
-        public void release(ByteBuffer bb) {
-            Objects.requireNonNull(bb);
-            ImageReader.releaseByteBuffer(bb);
         }
 
         @Override

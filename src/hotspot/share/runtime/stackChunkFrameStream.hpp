@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public:
   intptr_t*        sp() const  { return _sp; }
   inline address   pc() const  { return get_pc(); }
   inline intptr_t* fp() const;
-  inline intptr_t* unextended_sp() const { return frame_kind == ChunkFrames::Mixed ? _unextended_sp : _sp; }
+  inline intptr_t* unextended_sp() const { return _unextended_sp; }
   inline address orig_pc() const;
 
   inline bool is_interpreted() const;

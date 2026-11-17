@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,9 @@ import sun.security.util.Debug;
  */
 enum CADistrustPolicy {
     /**
-     * Distrust TLS Server certificates anchored by a Symantec root CA and
-     * issued after April 16, 2019 (with exceptions for a couple of subordinate
-     * CAs, see the jdk.security.caDistrustPolicies definition in the
-     * java.security file for more details). If enabled, this policy is
-     * currently enforced by the PKIX and SunX509 TrustManager implementations
-     * of the SunJSSE provider implementation.
+     * Distrust TLS Server certificates anchored by a Symantec root CA.
+     * If enabled, this policy is currently enforced by the PKIX and SunX509
+     * TrustManager implementations of the SunJSSE provider implementation.
      */
     SYMANTEC_TLS {
         void checkDistrust(String variant, X509Certificate[] chain)
@@ -54,10 +51,9 @@ enum CADistrustPolicy {
     },
 
     /**
-     * Distrust TLS Server certificates anchored by an Entrust root CA and
-     * issued after November 11, 2024. If enabled, this policy is currently
-     * enforced by the PKIX and SunX509 TrustManager implementations
-     * of the SunJSSE provider implementation.
+     * Distrust TLS Server certificates anchored by an Entrust root CA.
+     * If enabled, this policy is currently enforced by the PKIX and SunX509
+     * TrustManager implementations of the SunJSSE provider implementation.
      */
     ENTRUST_TLS {
         void checkDistrust(String variant, X509Certificate[] chain)
@@ -70,10 +66,9 @@ enum CADistrustPolicy {
     },
 
     /**
-     * Distrust TLS Server certificates anchored by a CAMERFIRMA root CA and
-     * issued after April 15, 2025. If enabled, this policy is currently
-     * enforced by the PKIX and SunX509 TrustManager implementations
-     * of the SunJSSE provider implementation.
+     * Distrust TLS Server certificates anchored by a CAMERFIRMA root CA.
+     * If enabled, this policy is currently enforced by the PKIX and SunX509
+     * TrustManager implementations of the SunJSSE provider implementation.
      */
     CAMERFIRMA_TLS {
         void checkDistrust(String variant, X509Certificate[] chain)
@@ -82,6 +77,23 @@ enum CADistrustPolicy {
                 return;
             }
             CamerfirmaTLSPolicy.checkDistrust(chain);
+        }
+    },
+
+    /**
+     * Distrust TLS Server certificates anchored by the Chunghwa ePKI root CA
+     * and issued after March 17, 2026. After APRIL 19, 2027, certificates will
+     * be distrusted regardless of the issued date in the certificate.
+     * If enabled, this policy is currently enforced by the PKIX and SunX509
+     * TrustManager implementations of the SunJSSE provider implementation.
+     */
+    CHUNGHWA_TLS {
+        void checkDistrust(String variant, X509Certificate[] chain)
+                           throws ValidatorException {
+            if (!variant.equals(Validator.VAR_TLS_SERVER)) {
+                return;
+            }
+            ChunghwaTLSPolicy.checkDistrust(chain);
         }
     };
 

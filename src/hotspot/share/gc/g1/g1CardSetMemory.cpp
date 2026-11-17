@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CardSetMemory.inline.hpp"
 #include "gc/g1/g1MonotonicArena.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "utilities/ostream.hpp"
 
 G1CardSetAllocator::G1CardSetAllocator(const char* name,
@@ -56,12 +55,12 @@ void G1CardSetAllocator::drop_all() {
 size_t G1CardSetAllocator::mem_size() const {
   return sizeof(*this) +
          num_segments() * sizeof(Segment) +
-         _arena.num_total_slots() * _arena.slot_size();
+         (size_t)_arena.num_total_slots() * _arena.slot_size();
 }
 
 size_t G1CardSetAllocator::unused_mem_size() const {
-  uint num_unused_slots = (_arena.num_total_slots() - _arena.num_allocated_slots()) +
-                          (uint)_free_slots_list.free_count();
+  size_t num_unused_slots = (_arena.num_total_slots() - _arena.num_allocated_slots()) +
+                            _free_slots_list.free_count();
   return num_unused_slots * _arena.slot_size();
 }
 
@@ -91,7 +90,7 @@ G1CardSetMemoryManager::~G1CardSetMemoryManager() {
   for (uint i = 0; i < num_mem_object_types(); i++) {
     _allocators[i].~G1CardSetAllocator();
   }
-  FREE_C_HEAP_ARRAY(G1CardSetAllocator<G1CardSetContainer>, _allocators);
+  FREE_C_HEAP_ARRAY(_allocators);
 }
 
 void G1CardSetMemoryManager::free(uint type, void* value) {

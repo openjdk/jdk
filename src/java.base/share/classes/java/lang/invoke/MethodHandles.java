@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3055,6 +3055,12 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * <p>
          * If the returned method handle is invoked, the field's class will
          * be initialized, if it has not already been initialized.
+         * {@link ExceptionInInitializerError} is thrown if invoking the method handle
+         * provokes the class to be initialized and the initializer fails.
+         * {@link IllegalStateException} is thrown if the field is a {@linkplain
+         * Field#isStrictInit() strictly-initialized} static field and the method handle
+         * is invoked by the thread initializing the field's class before the field has
+         * been initialized.
          * @param refc the class or interface from which the method is accessed
          * @param name the field's name
          * @param type the field's type
@@ -3100,9 +3106,6 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * Access checking is performed immediately on behalf of the lookup
          * class.
          * <p>
-         * If the returned VarHandle is operated on, the declaring class will be
-         * initialized, if it has not already been initialized.
-         * <p>
          * Certain access modes of the returned VarHandle are unsupported under
          * the following conditions:
          * <ul>
@@ -3128,6 +3131,15 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * and atomic update access modes compare values using their bitwise
          * representation (see {@link Float#floatToRawIntBits} and
          * {@link Double#doubleToRawLongBits}, respectively).
+         * <p>
+         * If the returned VarHandle is operated on, the declaring class will be
+         * initialized, if it has not already been initialized.
+         * {@link ExceptionInInitializerError} is thrown if operating on the VarHandle
+         * provokes the class to be initialized and the initializer fails.
+         * {@link IllegalStateException} is thrown if the field is a {@linkplain
+         * Field#isStrictInit() strictly-initialized} static field and the VarHandle
+         * is operated on by the thread initializing the field's class to read the
+         * field before it has been initialized.
          * @apiNote
          * Bitwise comparison of {@code float} values or {@code double} values,
          * as performed by the numeric and atomic update access modes, differ
@@ -3390,9 +3402,14 @@ return mh1;
          * If the {@code Field} object's {@code accessible} flag is not set,
          * access checking is performed immediately on behalf of the lookup class.
          * <p>
-         * If the field is static, and
-         * if the returned method handle is invoked, the field's class will
-         * be initialized, if it has not already been initialized.
+         * If the field is static, and if the returned method handle is invoked, the
+         * field's class will be initialized, if it has not already been initialized.
+         * {@link ExceptionInInitializerError} is thrown if invoking the method handle
+         * provokes the class to be initialized and the initializer fails.
+         * {@link IllegalStateException} is thrown if the field is a {@linkplain
+         * Field#isStrictInit() strictly-initialized} static field and the method handle
+         * is invoked by the thread initializing the field's class before the field has
+         * been initialized.
          * @param f the reflected field
          * @return a method handle which can load values from the reflected field
          * @throws IllegalAccessException if access checking fails
@@ -3445,6 +3462,11 @@ return mh1;
                                                   : "final field has no write access";
                     throw field.makeAccessException(msg, this);
                 }
+                // strictly-initialized finals not trusted finals at this time
+                if (field.isStrictInit()) {
+                    throw field.makeAccessException("strictly-initialized final field has no write access", this);
+                }
+
                 // check if write access to final field allowed
                 if (!field.isStatic() && isAccessible) {
                     SharedSecrets.getJavaLangReflectAccess().checkAllowedToUnreflectFinalSetter(lookupClass, f);
@@ -3468,10 +3490,6 @@ return mh1;
          * Access checking is performed immediately on behalf of the lookup
          * class, regardless of the value of the field's {@code accessible}
          * flag.
-         * <p>
-         * If the field is static, and if the returned VarHandle is operated
-         * on, the field's declaring class will be initialized, if it has not
-         * already been initialized.
          * <p>
          * Certain access modes of the returned VarHandle are unsupported under
          * the following conditions:
@@ -3498,6 +3516,16 @@ return mh1;
          * and atomic update access modes compare values using their bitwise
          * representation (see {@link Float#floatToRawIntBits} and
          * {@link Double#doubleToRawLongBits}, respectively).
+         * <p>
+         * If the field is static, and if the returned VarHandle is operated
+         * on, the field's declaring class will be initialized, if it has not
+         * already been initialized.
+         * {@link ExceptionInInitializerError} is thrown if operating on the VarHandle
+         * provokes the class to be initialized and the initializer fails.
+         * {@link IllegalStateException} is thrown if the field is a {@linkplain
+         * Field#isStrictInit() strictly-initialized} static field and the VarHandle
+         * is operated on by the thread initializing the field's class to read the
+         * field before it has been initialized.
          * @apiNote
          * Bitwise comparison of {@code float} values or {@code double} values,
          * as performed by the numeric and atomic update access modes, differ
@@ -3961,7 +3989,7 @@ return mh1;
                 refc = lookupClass();
             }
             return VarHandles.makeFieldHandle(getField, refc,
-                                              this.allowedModes == TRUSTED && !getField.isTrustedFinalField());
+                                              this.allowedModes == TRUSTED);
         }
         /** Check access and get the requested constructor. */
         private MethodHandle getDirectConstructor(Class<?> refc, MemberName ctor) throws IllegalAccessException {
@@ -4826,7 +4854,9 @@ assert((int)twice.invokeExact(21) == 42);
      * Before the method handle is returned, the passed-in value is converted to the requested type.
      * If the requested type is primitive, widening primitive conversions are attempted,
      * else reference conversions are attempted.
-     * <p>The returned method handle is equivalent to {@code identity(type).bindTo(value)}.
+     * <p>The returned method handle is equivalent to {@code identity(type).bindTo(value)},
+     * for reference types.  For all types it is equivalent to
+     * {@code insertArguments(identity(type), 0, value)}.
      * @param type the return type of the desired method handle
      * @param value the value to return
      * @return a method handle of the given return type and no arguments, which always returns the given value
@@ -5866,11 +5896,15 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @param combiner method handle to call initially on the incoming arguments
      * @return method handle which incorporates the specified argument folding logic
      * @throws NullPointerException if either argument is null
-     * @throws IllegalArgumentException if either of the following two conditions holds:
-     *          (1) {@code combiner}'s return type is non-{@code void} and not the same as the argument type at position
-     *              {@code pos} of the target signature;
-     *          (2) the {@code N} argument types at position {@code pos} of the target signature (skipping one matching
-     *              the {@code combiner}'s return type) are not identical with the argument types of {@code combiner}.
+     * @throws IllegalArgumentException if any of the following conditions holds:
+     *          <ol>
+     *          <li>{@code combiner}'s return type is non-{@code void} and not the same as the argument type at position
+     *              {@code pos} of the target signature;</li>
+     *          <li>the {@code N} argument types at position {@code pos} of the target signature (skipping one matching
+     *              the {@code combiner}'s return type) are not identical with the argument types of {@code combiner};</li>
+     *          <li>{@code pos} is negative or greater than the target's arity, or there are not sufficient arguments
+     *              after {@code pos} in {@code target} to match {@code combiner}.</li>
+     *          </ol>
      *
      * @see #foldArguments(MethodHandle, MethodHandle)
      * @since 9
@@ -5894,14 +5928,15 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         int foldArgs   = combinerType.parameterCount();
         Class<?> rtype = combinerType.returnType();
         int foldVals = rtype == void.class ? 0 : 1;
+        if (foldPos < 0 || foldPos > targetType.parameterCount() - foldVals - foldArgs) {
+            throw newIllegalArgumentException("position is out of range for target and combiner", foldPos);
+        }
+        boolean ok = true;
         int afterInsertPos = foldPos + foldVals;
-        boolean ok = (targetType.parameterCount() >= afterInsertPos + foldArgs);
-        if (ok) {
-            for (int i = 0; i < foldArgs; i++) {
-                if (combinerType.parameterType(i) != targetType.parameterType(i + afterInsertPos)) {
-                    ok = false;
-                    break;
-                }
+        for (int i = 0; i < foldArgs; i++) {
+            if (combinerType.parameterType(i) != targetType.parameterType(i + afterInsertPos)) {
+                ok = false;
+                break;
             }
         }
         if (ok && foldVals != 0 && combinerType.returnType() != targetType.parameterType(foldPos))
@@ -7670,6 +7705,36 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         }
 
         return expectedType;
+    }
+
+    /**
+     * Creates a synchronizing method handle that executes the given {@code body}
+     * handle while synchronizing on a lock object passed as the first argument.
+     * <p>
+     * The returned method handle behaves similar to the following notional code:
+     * {@snippet lang="java" :
+     * R adapter(Object lock, A... a) {
+     *     synchronized (lock) {
+     *         return body.invokeExact(a...);
+     *     }
+     * }
+     * }
+     * <p>
+     * The returned method handle will throw an {@link IdentityException} if the object
+     * passed as the lock object is not an {@link java.util.Objects#hasIdentity(Object) identity object}.
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original body method handle was.
+     *
+     * @param body body of the synchronized block
+     * @return the synchronizing method handle
+     * @throws NullPointerException if {@code body} is {@code null}.
+     *
+     * @since 28
+     */
+    public static MethodHandle synchronize(MethodHandle body) {
+        Objects.requireNonNull(body);
+        return MethodHandleImpl.makeSynchronize(body.asFixedArity());
     }
 
     /**

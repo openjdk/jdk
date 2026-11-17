@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,22 @@
    @summary Make sure JarInputStream constructor will not
             throw NullPointerException when the JAR file is
             empty.
-   */
+   @run junit EmptyJar
+ */
+
+import org.junit.jupiter.api.Test;
 
 import java.util.jar.*;
 import java.io.*;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
 public class EmptyJar {
-    public static void main(String args[]) throws Exception {
-        try {
-            JarInputStream is = new JarInputStream
-                (new ByteArrayInputStream(new byte[0]));
-        } catch (NullPointerException e) {
-            throw new Exception("unexpected NullPointerException");
-        }
+
+    @Test
+    void npeTest() {
+        // Ensure no NPE is thrown
+        assertDoesNotThrow(() -> new JarInputStream(new ByteArrayInputStream(new byte[0])),
+                "unexpected NullPointerException");
     }
 }

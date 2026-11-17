@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import jdk.javadoc.internal.html.Script;
  *
  * Many methods return the current object, to facilitate fluent builder-style usage.
  */
-public class Head extends Content {
+public class Head {
     private final Runtime.Version docletVersion;
     private final ZonedDateTime generatedDate;
     private final DocPath pathToRoot;
@@ -261,28 +261,11 @@ public class Head extends Content {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @implSpec This implementation always returns {@code false}.
-     *
-     * @return {@code false}
-     */
-    @Override
-    public boolean isEmpty() {
-        return false;
-    }
-
-    @Override
-    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
-        return toContent().write(out, newline, atNewline);
-    }
-
-    /**
      * Returns the HTML for the HEAD element.
      *
      * @return the HTML
      */
-    private Content toContent() {
+    public Content toContent() {
         var head = HtmlTree.of(HtmlTag.HEAD)
             .add(getGeneratedBy(showTimestamp, generatedDate))
             .add(HtmlTree.TITLE(title));
@@ -336,11 +319,6 @@ public class Head extends Content {
     }
 
     private void addStylesheets(HtmlTree head) {
-        if (index) {
-            // Add JQuery-UI stylesheet first so its rules can be overridden.
-            addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS));
-        }
-
         if (mainStylesheet == null) {
             mainStylesheet = DocPaths.STYLESHEET;
         }
@@ -378,11 +356,8 @@ public class Head extends Content {
                 mainBodyScript.append("const pathtoroot = ")
                         .appendStringLiteral(ptrPath + "/")
                         .append(";\n")
-                        .append("loadScripts();\n")
-                        .append("initTheme();\n");
+                        .append("loadScripts();\n");
             }
-            addScriptElement(head, DocPaths.JQUERY_JS);
-            addScriptElement(head, DocPaths.JQUERY_UI_JS);
         }
         for (HtmlConfiguration.JavaScriptFile javaScriptFile : additionalScripts) {
             addScriptElement(head, javaScriptFile);

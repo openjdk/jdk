@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @run     main/othervm ClassLoaderLeakTest FontManagerTest
  */
 
+import java.awt.Toolkit;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.io.File;
@@ -48,6 +49,7 @@ public class ClassLoaderLeakTest {
     private static Throwable launchFailure = null;
 
     public static void main(String[] args) {
+        Toolkit.getDefaultToolkit().getSystemEventQueue(); // load EQ in initial TG
         doneSignal = new CountDownLatch(1);
         launchSignal = new CountDownLatch(1);
 

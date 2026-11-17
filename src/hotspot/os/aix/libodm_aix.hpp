@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ class odmWrapper : private dynamicOdm {
 
   CLASS_SYMBOL odm_class() { return _odm_class; }
   bool has_class() { return odm_class() != (CLASS_SYMBOL)-1; }
-  int class_offset(const char *field, bool is_aix_5);
+  int class_offset(const char *field);
   char* data() { return _data; }
 
   char* retrieve_obj(const char* name = nullptr) {

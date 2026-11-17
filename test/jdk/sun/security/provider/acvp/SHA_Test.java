@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,14 @@ public class SHA_Test {
         if (alg.startsWith("SHA2-")) alg = "SHA-" + alg.substring(5);
         var md = provider == null ? MessageDigest.getInstance(alg)
                 : MessageDigest.getInstance(alg, provider);
-        for (var t : kat.get("testGroups").asArray()) {
+        for (var t : kat.get("testGroups").elements()) {
             var testType = t.get("testType").asString();
             switch (testType) {
                 case "AFT" -> {
-                    for (var c : t.get("tests").asArray()) {
-                        System.out.print(c.get("tcId").asString() + " ");
+                    for (var c : t.get("tests").elements()) {
+                        System.out.print(c.get("tcId").asInt() + " ");
                         var msg = toByteArray(c.get("msg").asString());
-                        var len = Integer.parseInt(c.get("len").asString());
+                        var len = c.get("len").asInt();
                         if (msg.length * 8 == len) {
                             Asserts.assertEqualsByteArray(
                                     toByteArray(c.get("md").asString()), md.digest(msg));
@@ -56,12 +56,12 @@ public class SHA_Test {
                 case "MCT" -> {
                     var mctVersion = t.get("mctVersion").asString();
                     var trunc = mctVersion.equals("alternate");
-                    for (var c : t.get("tests").asArray()) {
-                        System.out.print(c.get("tcId").asString() + " ");
+                    for (var c : t.get("tests").elements()) {
+                        System.out.print(c.get("tcId").asInt() + " ");
                         var SEED = toByteArray(c.get("msg").asString());
-                        var INITIAL_SEED_LENGTH = Integer.parseInt(c.get("len").asString());
+                        var INITIAL_SEED_LENGTH = c.get("len").asInt();
                         if (SEED.length * 8 == INITIAL_SEED_LENGTH) {
-                            for (var r : c.get("resultsArray").asArray()) {
+                            for (var r : c.get("resultsArray").elements()) {
                                 if (alg.startsWith("SHA3-")) {
                                     var MD = SEED;
                                     for (var i = 0; i < 1000; i++) {
@@ -99,12 +99,12 @@ public class SHA_Test {
                     }
                 }
                 case "LDT" -> {
-                    for (var c : t.get("tests").asArray()) {
-                        System.out.print(c.get("tcId").asString() + " ");
+                    for (var c : t.get("tests").elements()) {
+                        System.out.print(c.get("tcId").asInt() + " ");
                         var lm = c.get("largeMsg");
                         var ct = toByteArray(lm.get("content").asString());
-                        var flen = Long.parseLong(lm.get("fullLength").asString());
-                        var clen = Long.parseLong(lm.get("contentLength").asString());
+                        var flen = lm.get("fullLength").asLong();
+                        var clen = lm.get("contentLength").asLong();
                         var cc = 0L;
                         while (cc < flen) {
                             md.update(ct);

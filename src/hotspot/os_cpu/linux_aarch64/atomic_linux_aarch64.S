@@ -1,5 +1,5 @@
 // Copyright (c) 2021, Red Hat Inc. All rights reserved.
-// Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,21 @@ DECLARE_FUNC(aarch64_atomic_fetch_add_4_relaxed_default_impl):
         stxr    w9, w8, [x0]
         cbnz    w9, 0b
 #endif
+        mov     w0, w2
+        ret
+
+        .align 5
+DECLARE_FUNC(aarch64_atomic_xchg_1_default_impl):
+        hint    #0x22 // bti c
+#ifdef __ARM_FEATURE_ATOMICS
+        swpalb  w1, w2, [x0]
+#else
+        prfm    pstl1strm, [x0]
+0:      ldaxrb  w2, [x0]
+        stlxrb  w8, w1, [x0]
+        cbnz    w8, 0b
+#endif
+        dmb     ish
         mov     w0, w2
         ret
 

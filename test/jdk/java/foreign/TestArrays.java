@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestArrays
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestArrays
  */
 
 import java.lang.foreign.*;
@@ -39,7 +39,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.testng.annotations.*;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_CHAR;
@@ -48,8 +47,13 @@ import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
-import static org.testng.Assert.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestArrays {
 
     static SequenceLayout bytes = MemoryLayout.sequenceLayout(100,
@@ -104,7 +108,8 @@ public class TestArrays {
         }
     }
 
-    @Test(dataProvider = "arrays")
+    @ParameterizedTest
+    @MethodSource("nativeAccessOps")
     public void testArrays(Consumer<MemorySegment> init, Consumer<MemorySegment> checker, MemoryLayout layout) {
         Arena scope = Arena.ofAuto();
         MemorySegment segment = scope.allocate(layout);
@@ -113,37 +118,42 @@ public class TestArrays {
         checker.accept(segment);
     }
 
-    @Test(dataProvider = "elemLayouts",
-            expectedExceptions = IllegalStateException.class)
+    @ParameterizedTest
+    @MethodSource("elemLayouts")
     public void testTooBigForArray(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
         MemoryLayout seq = MemoryLayout.sequenceLayout((Integer.MAX_VALUE * layout.byteSize()) + 1, layout);
         //do not really allocate here, as it's way too much memory
         MemorySegment segment = MemorySegment.NULL.reinterpret(seq.byteSize());
-        arrayFactory.apply(segment);
+        assertThrows(IllegalStateException.class, () -> {
+            arrayFactory.apply(segment);
+        });
     }
 
-    @Test(dataProvider = "elemLayouts",
-            expectedExceptions = IllegalStateException.class)
+    @ParameterizedTest
+    @MethodSource("elemLayouts")
     public void testBadSize(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        if (layout.byteSize() == 1) throw new IllegalStateException(); //make it fail
+        if (layout.byteSize() == 1) return; // skip
         try (Arena arena = Arena.ofConfined()) {
             long byteSize = layout.byteSize() + 1;
             long byteAlignment = layout.byteSize();
             MemorySegment segment = arena.allocate(byteSize, byteAlignment);
-            arrayFactory.apply(segment);
+            assertThrows(IllegalStateException.class, () -> {
+                arrayFactory.apply(segment);
+            });
         }
     }
 
-    @Test(dataProvider = "elemLayouts",
-            expectedExceptions = IllegalStateException.class)
+    @ParameterizedTest
+    @MethodSource("elemLayouts")
     public void testArrayFromClosedSegment(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
         Arena arena = Arena.ofConfined();
         MemorySegment segment = arena.allocate(layout);
         arena.close();
-        arrayFactory.apply(segment);
+        assertThrows(IllegalStateException.class, () -> {
+            arrayFactory.apply(segment);
+        });
     }
 
-    @DataProvider(name = "arrays")
     public Object[][] nativeAccessOps() {
         Consumer<MemorySegment> byteInitializer =
                 (base) -> initBytes(base, bytes, (addr, pos) -> byteHandle.set(addr, 0L, pos, (byte)(long)pos));
@@ -186,7 +196,6 @@ public class TestArrays {
         };
     }
 
-    @DataProvider(name = "elemLayouts")
     public Object[][] elemLayouts() {
         return new Object[][] {
                 { JAVA_BYTE, (Function<MemorySegment, Object>)s -> s.toArray(JAVA_BYTE)},

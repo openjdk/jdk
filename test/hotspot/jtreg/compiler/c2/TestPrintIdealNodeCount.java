@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Run with -Xcomp -XX:-TieredCompilation to force C2 compilations to test -XX:+PrintIdealNodeCount in debug builds.
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+PrintIdealNodeCount compiler.c2.TestPrintIdealNodeCount
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:-DisplayVMOutput
+ *                   -XX:+PrintIdealNodeCount compiler.c2.TestPrintIdealNodeCount
  */
 package compiler.c2;
 

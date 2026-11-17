@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,10 @@
  * @test
  * @summary Vectorization test on basic long operations
  * @library /test/lib /
- *
- * @build jdk.test.whitebox.WhiteBox
- *        compiler.vectorization.runner.VectorizationTestRunner
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.BasicLongOpTest
- *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") | (os.simpleArch == "riscv64")
  * @requires vm.compiler2.enabled
+ *
+ * @run driver ${test.main.class}
  */
 
 package compiler.vectorization.runner;
@@ -124,6 +116,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
         counts = {IRNode.ADD_VL, ">0"})
     @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true", "rvv", "true"},
         counts = {IRNode.MUL_VL, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.VMLA, ">0"})
     public long[] vectorMulAdd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {

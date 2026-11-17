@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,37 @@
   void neon_reduce_logical_helper(int opc, bool sf, Register Rd, Register Rn, Register Rm,
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
 
+  // Helper functions for min/max reduction operations
+
+  void decode_minmax_reduction_opc(int opc, bool* is_min, bool* is_unsigned, Condition* cond);
+
+  void neon_minmaxp(bool is_unsigned, bool is_min, FloatRegister dst,
+                    SIMD_Arrangement size, FloatRegister src1, FloatRegister src2) {
+    auto m = is_unsigned ? (is_min ? &Assembler::uminp : &Assembler::umaxp)
+                         : (is_min ? &Assembler::sminp : &Assembler::smaxp);
+    (this->*m)(dst, size, src1, src2);
+  }
+
+  // Typedefs used to disambiguate overloaded member functions.
+  typedef void (Assembler::*neon_reduction2)
+    (FloatRegister, SIMD_Arrangement, FloatRegister);
+
+  void neon_minmaxv(bool is_unsigned, bool is_min, FloatRegister dst,
+                    SIMD_Arrangement size, FloatRegister src) {
+    auto m = is_unsigned ? (is_min ? (neon_reduction2)&Assembler::uminv
+                                   : (neon_reduction2)&Assembler::umaxv)
+                         : (is_min ? &Assembler::sminv
+                                   : &Assembler::smaxv);
+    (this->*m)(dst, size, src);
+  }
+
+  void sve_minmaxv(bool is_unsigned, bool is_min, FloatRegister dst,
+                   SIMD_RegVariant size, PRegister pg, FloatRegister src) {
+    auto m = is_unsigned ? (is_min ? &Assembler::sve_uminv : &Assembler::sve_umaxv)
+                         : (is_min ? &Assembler::sve_sminv : &Assembler::sve_smaxv);
+    (this->*m)(dst, size, pg, src);
+  }
+
   void select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
                                     FloatRegister src2, FloatRegister index,
                                     FloatRegister tmp, unsigned vector_length_in_bytes);
@@ -44,16 +75,24 @@
                                    unsigned vector_length_in_bytes);
 
  public:
+  using Assembler::sve_cpy;
+
+  void entry_barrier();
+
   // jdk.internal.util.ArraysSupport.vectorizedHashCode
-  address arrays_hashcode(Register ary, Register cnt, Register result, FloatRegister vdata0,
-                          FloatRegister vdata1, FloatRegister vdata2, FloatRegister vdata3,
-                          FloatRegister vmul0, FloatRegister vmul1, FloatRegister vmul2,
-                          FloatRegister vmul3, FloatRegister vpow, FloatRegister vpowm,
+  address arrays_hashcode(Register ary, Register cnt, Register result, Register blocks,
+                          Register tail, Register sum, FloatRegister v_block0, FloatRegister v_block1,
+                          FloatRegister v_block2, FloatRegister v_block3, FloatRegister v_p0, FloatRegister v_p1,
+                          FloatRegister v_p2, FloatRegister v_p3, FloatRegister v_input1, FloatRegister v_input2,
                           BasicType eltype);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   void fast_lock(Register object, Register box, Register t1, Register t2, Register t3);
   void fast_unlock(Register object, Register box, Register t1, Register t2, Register t3);
+
+  void string_equals_sve(Register a1, Register a2, Register result, Register cnt1,
+                           FloatRegister ztmp1, FloatRegister ztmp2,
+                           PRegister pgtmp, PRegister ptmp);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -109,7 +148,7 @@
   void sve_compare(PRegister pd, BasicType bt, PRegister pg,
                    FloatRegister zn, FloatRegister zm, Condition cond);
 
-  void sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp);
+  void sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, FloatRegister vtmp);
 
   // Vector cast
   void neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
@@ -143,6 +182,9 @@
   void neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
                           FloatRegister fsrc, FloatRegister vsrc,
                           unsigned vector_length_in_bytes, FloatRegister vtmp);
+
+  void neon_reduce_add_fp16(FloatRegister dst, FloatRegister fsrc, FloatRegister vsrc,
+                            unsigned vector_length_in_bytes, FloatRegister vtmp);
 
   void neon_reduce_logical(int opc, Register dst, BasicType bt, Register isrc,
                            FloatRegister vsrc, unsigned vector_length_in_bytes);
@@ -197,6 +239,9 @@
   void vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
                          FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T);
 
+  static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi);
+  static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi);
+
   void verify_int_in_range(uint idx, const TypeInt* t, Register val, Register tmp);
   void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);
 
@@ -213,4 +258,13 @@
   void vector_expand_sve(FloatRegister dst, FloatRegister src, PRegister pg,
                          FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
                          int vector_length_in_bytes);
+
+  void sve_cpy(FloatRegister dst, SIMD_RegVariant T, PRegister pg, int imm8,
+               bool isMerge);
+  int vector_iota_entry_index(BasicType bt);
+
+  void sve_sdiv_byte(FloatRegister dst_src1, FloatRegister src2, FloatRegister vtmp1,
+                     FloatRegister vtmp2, FloatRegister vtmp3, FloatRegister vtmp4);
+  void sve_sdiv_short(FloatRegister dst_src1, FloatRegister src2,
+                      FloatRegister vtmp1, FloatRegister vtmp2);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

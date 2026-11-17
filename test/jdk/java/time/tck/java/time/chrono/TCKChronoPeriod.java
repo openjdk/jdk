@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,8 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.YEARS;
-import static org.testng.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -78,16 +79,17 @@ import java.time.chrono.ThaiBuddhistChronology;
 import java.time.temporal.Temporal;
 import java.time.temporal.UnsupportedTemporalTypeException;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKChronoPeriod {
 
     //-----------------------------------------------------------------------
     // regular data factory for names and descriptions of available calendars
     //-----------------------------------------------------------------------
-    @DataProvider(name = "calendars")
     Chronology[][] data_of_calendars() {
         return new Chronology[][]{
                     {HijrahChronology.INSTANCE},
@@ -100,7 +102,8 @@ public class TCKChronoPeriod {
     //-----------------------------------------------------------------------
     // Test Serialization of Calendars
     //-----------------------------------------------------------------------
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_serialization(Chronology chrono) throws Exception {
         ChronoPeriod period = chrono.period(1, 2, 3);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -111,167 +114,195 @@ public class TCKChronoPeriod {
 
         ObjectInputStream in = new ObjectInputStream(bais);
         ChronoPeriod ser = (ChronoPeriod) in.readObject();
-        assertEquals(ser, period, "deserialized ChronoPeriod is wrong");
+        assertEquals(period, ser, "deserialized ChronoPeriod is wrong");
     }
 
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_get(Chronology chrono) {
         ChronoPeriod period = chrono.period(1, 2, 3);
-        assertEquals(period.get(YEARS), 1);
-        assertEquals(period.get(MONTHS), 2);
-        assertEquals(period.get(DAYS), 3);
+        assertEquals(1, period.get(YEARS));
+        assertEquals(2, period.get(MONTHS));
+        assertEquals(3, period.get(DAYS));
     }
 
-    @Test(dataProvider="calendars", expectedExceptions=UnsupportedTemporalTypeException.class)
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_get_unsupported(Chronology chrono) {
-        ChronoPeriod period = chrono.period(1, 2, 3);
-        period.get(HOURS);
+        Assertions.assertThrows(UnsupportedTemporalTypeException.class, () -> {
+            ChronoPeriod period = chrono.period(1, 2, 3);
+            period.get(HOURS);
+        });
     }
 
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_getUnits(Chronology chrono) {
         ChronoPeriod period = chrono.period(1, 2, 3);
-        assertEquals(period.getUnits().size(), 3);
-        assertEquals(period.getUnits().get(0), YEARS);
-        assertEquals(period.getUnits().get(1), MONTHS);
-        assertEquals(period.getUnits().get(2), DAYS);
+        assertEquals(3, period.getUnits().size());
+        assertEquals(YEARS, period.getUnits().get(0));
+        assertEquals(MONTHS, period.getUnits().get(1));
+        assertEquals(DAYS, period.getUnits().get(2));
     }
 
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_getChronology(Chronology chrono) {
         ChronoPeriod period = chrono.period(1, 2, 3);
-        assertEquals(period.getChronology(), chrono);
+        assertEquals(chrono, period.getChronology());
     }
 
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_isZero_isNegative(Chronology chrono) {
         ChronoPeriod periodPositive = chrono.period(1, 2, 3);
-        assertEquals(periodPositive.isZero(), false);
-        assertEquals(periodPositive.isNegative(), false);
+        assertEquals(false, periodPositive.isZero());
+        assertEquals(false, periodPositive.isNegative());
 
         ChronoPeriod periodZero = chrono.period(0, 0, 0);
-        assertEquals(periodZero.isZero(), true);
-        assertEquals(periodZero.isNegative(), false);
+        assertEquals(true, periodZero.isZero());
+        assertEquals(false, periodZero.isNegative());
 
         ChronoPeriod periodNegative = chrono.period(-1, 0, 0);
-        assertEquals(periodNegative.isZero(), false);
-        assertEquals(periodNegative.isNegative(), true);
+        assertEquals(false, periodNegative.isZero());
+        assertEquals(true, periodNegative.isNegative());
     }
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_plus(Chronology chrono) {
         ChronoPeriod period = chrono.period(1, 2, 3);
         ChronoPeriod period2 = chrono.period(2, 3, 4);
         ChronoPeriod result = period.plus(period2);
-        assertEquals(result, chrono.period(3, 5, 7));
+        assertEquals(chrono.period(3, 5, 7), result);
     }
 
-    @Test(dataProvider="calendars", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_plus_wrongChrono(Chronology chrono) {
-        ChronoPeriod period = chrono.period(1, 2, 3);
-        ChronoPeriod isoPeriod = Period.of(2, 3, 4);
-        ChronoPeriod thaiPeriod = ThaiBuddhistChronology.INSTANCE.period(2, 3, 4);
-        // one of these two will fail
-        period.plus(isoPeriod);
-        period.plus(thaiPeriod);
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            ChronoPeriod period = chrono.period(1, 2, 3);
+            ChronoPeriod isoPeriod = Period.of(2, 3, 4);
+            ChronoPeriod thaiPeriod = ThaiBuddhistChronology.INSTANCE.period(2, 3, 4);
+            // one of these two will fail
+            period.plus(isoPeriod);
+            period.plus(thaiPeriod);
+        });
     }
 
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_minus(Chronology chrono) {
         ChronoPeriod period = chrono.period(1, 2, 3);
         ChronoPeriod period2 = chrono.period(2, 3, 4);
         ChronoPeriod result = period.minus(period2);
-        assertEquals(result, chrono.period(-1, -1, -1));
+        assertEquals(chrono.period(-1, -1, -1), result);
     }
 
-    @Test(dataProvider="calendars", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_minus_wrongChrono(Chronology chrono) {
-        ChronoPeriod period = chrono.period(1, 2, 3);
-        ChronoPeriod isoPeriod = Period.of(2, 3, 4);
-        ChronoPeriod thaiPeriod = ThaiBuddhistChronology.INSTANCE.period(2, 3, 4);
-        // one of these two will fail
-        period.minus(isoPeriod);
-        period.minus(thaiPeriod);
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            ChronoPeriod period = chrono.period(1, 2, 3);
+            ChronoPeriod isoPeriod = Period.of(2, 3, 4);
+            ChronoPeriod thaiPeriod = ThaiBuddhistChronology.INSTANCE.period(2, 3, 4);
+            // one of these two will fail
+            period.minus(isoPeriod);
+            period.minus(thaiPeriod);
+        });
     }
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_addTo(Chronology chrono) {
         ChronoPeriod period = chrono.period(1, 2, 3);
         ChronoLocalDate date = chrono.dateNow();
         Temporal result = period.addTo(date);
-        assertEquals(result, date.plus(14, MONTHS).plus(3, DAYS));
+        assertEquals(date.plus(14, MONTHS).plus(3, DAYS), result);
     }
 
-    @Test(dataProvider="calendars", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_addTo_wrongChrono(Chronology chrono) {
-        ChronoPeriod period = chrono.period(1, 2, 3);
-        ChronoLocalDate isoDate = LocalDate.of(2000, 1, 1);
-        ChronoLocalDate thaiDate = ThaiBuddhistChronology.INSTANCE.date(2000, 1, 1);
-        // one of these two will fail
-        period.addTo(isoDate);
-        period.addTo(thaiDate);
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            ChronoPeriod period = chrono.period(1, 2, 3);
+            ChronoLocalDate isoDate = LocalDate.of(2000, 1, 1);
+            ChronoLocalDate thaiDate = ThaiBuddhistChronology.INSTANCE.date(2000, 1, 1);
+            // one of these two will fail
+            period.addTo(isoDate);
+            period.addTo(thaiDate);
+        });
     }
 
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_subtractFrom(Chronology chrono) {
         ChronoPeriod period = chrono.period(1, 2, 3);
         ChronoLocalDate date = chrono.dateNow();
         Temporal result = period.subtractFrom(date);
-        assertEquals(result, date.minus(14, MONTHS).minus(3, DAYS));
+        assertEquals(date.minus(14, MONTHS).minus(3, DAYS), result);
     }
 
-    @Test(dataProvider="calendars", expectedExceptions=DateTimeException.class)
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_subtractFrom_wrongChrono(Chronology chrono) {
-        ChronoPeriod period = chrono.period(1, 2, 3);
-        ChronoLocalDate isoDate = LocalDate.of(2000, 1, 1);
-        ChronoLocalDate thaiDate = ThaiBuddhistChronology.INSTANCE.date(2000, 1, 1);
-        // one of these two will fail
-        period.subtractFrom(isoDate);
-        period.subtractFrom(thaiDate);
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            ChronoPeriod period = chrono.period(1, 2, 3);
+            ChronoLocalDate isoDate = LocalDate.of(2000, 1, 1);
+            ChronoLocalDate thaiDate = ThaiBuddhistChronology.INSTANCE.date(2000, 1, 1);
+            // one of these two will fail
+            period.subtractFrom(isoDate);
+            period.subtractFrom(thaiDate);
+        });
     }
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_negated(Chronology chrono) {
         ChronoPeriod period = chrono.period(1, 2, 3);
-        assertEquals(period.negated(), chrono.period(-1, -2, -3));
+        assertEquals(chrono.period(-1, -2, -3), period.negated());
     }
 
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_multipliedBy(Chronology chrono) {
         ChronoPeriod period = chrono.period(1, 2, 3);
-        assertEquals(period.multipliedBy(3), chrono.period(3, 6, 9));
+        assertEquals(chrono.period(3, 6, 9), period.multipliedBy(3));
     }
 
     //-----------------------------------------------------------------------
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_equals_equal(Chronology chrono) {
         ChronoPeriod a1 = chrono.period(1, 2, 3);
         ChronoPeriod a2 = chrono.period(1, 2, 3);
         assertEquals(a1, a1);
-        assertEquals(a1, a2);
         assertEquals(a2, a1);
+        assertEquals(a1, a2);
         assertEquals(a2, a2);
-        assertEquals(a1.hashCode(), a2.hashCode());
+        assertEquals(a2.hashCode(), a1.hashCode());
     }
 
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_equals_notEqual(Chronology chrono) {
         ChronoPeriod a = chrono.period(1, 2, 3);
         ChronoPeriod b = chrono.period(2, 2, 3);
-        assertEquals(a.equals(b), false);
-        assertEquals(b.equals(a), false);
-        assertEquals(a.equals(""), false);
-        assertEquals(a.equals(null), false);
+        assertEquals(false, a.equals(b));
+        assertEquals(false, b.equals(a));
+        assertEquals(false, a.equals(""));
+        assertEquals(false, a.equals(null));
     }
 
-    @Test(dataProvider="calendars")
+    @ParameterizedTest
+    @MethodSource("data_of_calendars")
     public void test_toString(Chronology chrono) {
         ChronoPeriod period = chrono.period(1, 2, 3);
         if (period instanceof Period == false) {
-            assertEquals(period.toString(), chrono.getId() + " P1Y2M3D");
+            assertEquals(chrono.getId() + " P1Y2M3D", period.toString());
         }
     }
 

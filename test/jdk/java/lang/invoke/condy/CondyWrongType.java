@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,10 @@
  * @summary Test bootstrap methods returning the wrong type
  * @library /java/lang/invoke/common
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run testng CondyWrongType
- * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyWrongType
+ * @run junit CondyWrongType
+ * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyWrongType
  */
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
 
 import java.lang.invoke.MethodHandle;
@@ -46,11 +43,15 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.invoke.MethodType.methodType;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CondyWrongType {
 
-    @DataProvider
-    public Object[][] primitivesProvider() throws Exception {
+    public static Object[][] primitivesProvider() throws Exception {
         Map<String, Class<?>> typeMap = Map.of(
                 "B", byte.class,
                 "C", char.class,
@@ -81,7 +82,8 @@ public class CondyWrongType {
         return cases.stream().toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "primitivesProvider")
+    @ParameterizedTest
+    @MethodSource("primitivesProvider")
     public void testPrimitives(String name, String type, boolean pass) {
         test(name, type, pass);
     }
@@ -106,27 +108,12 @@ public class CondyWrongType {
 
     static void test(String name, String type, boolean pass) {
         MethodHandle mh = caster(name, type);
-        Throwable caught = null;
-        try {
-            mh.invoke();
-        } catch (Throwable t) {
-            caught = t;
+        if (pass) {
+            assertDoesNotThrow(() -> mh.invoke());
+        } else {
+            Throwable caught = assertThrows(BootstrapMethodError.class, () -> mh.invoke());
+            assertInstanceOf(ClassCastException.class, caught.getCause());
         }
-
-        if (caught == null) {
-            if (pass) {
-                return;
-            } else {
-                Assert.fail("Throwable expected");
-            }
-        } else if (pass) {
-            Assert.fail("Throwable not expected");
-        }
-
-        Assert.assertTrue(BootstrapMethodError.class.isAssignableFrom(caught.getClass()));
-        caught = caught.getCause();
-        Assert.assertNotNull(caught);
-        Assert.assertTrue(ClassCastException.class.isAssignableFrom(caught.getClass()));
     }
 
     static Object bsm(MethodHandles.Lookup l, String name, Class<?> type) {

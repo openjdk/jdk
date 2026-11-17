@@ -158,8 +158,8 @@ public class PerUserCfgTest {
     }
 
     private static void withConfigFile(JPackageCommand cmd, Path srcCfgFile,
-            Path outputCfgFileDir, ThrowingConsumer<JPackageCommand> action) throws
-            Throwable {
+            Path outputCfgFileDir, ThrowingConsumer<JPackageCommand, ? extends Exception> action) throws
+            Exception {
         Path targetCfgFile = outputCfgFileDir.resolve(cmd.appLauncherCfgPath(
                 null).getFileName());
         TKit.assertPathExists(targetCfgFile, false);

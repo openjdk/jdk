@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,27 +84,26 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static org.testng.Assert.assertEquals;
-
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test DateTimeFormatterBuilder.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestDateTimeFormatterBuilderWithLocale {
 
     private DateTimeFormatterBuilder builder;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         builder = new DateTimeFormatterBuilder();
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="patternPrint")
     Object[][] data_patternPrint() {
         return new Object[][] {
             {"Q", date(2012, 2, 10), "1"},
@@ -115,15 +114,15 @@ public class TestDateTimeFormatterBuilderWithLocale {
         };
     }
 
-    @Test(dataProvider="patternPrint")
+    @ParameterizedTest
+    @MethodSource("data_patternPrint")
     public void test_appendPattern_patternPrint(String input, Temporal temporal, String expected) throws Exception {
         DateTimeFormatter f = builder.appendPattern(input).toFormatter(Locale.UK);
         String test = f.format(temporal);
-        assertEquals(test, expected);
+        assertEquals(expected, test);
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="mapTextLookup")
     Object[][] data_mapTextLookup() {
         return new Object[][] {
             {IsoChronology.INSTANCE.date(1, 1, 1), Locale.ENGLISH},
@@ -133,7 +132,8 @@ public class TestDateTimeFormatterBuilderWithLocale {
         };
     }
 
-    @Test(dataProvider="mapTextLookup")
+    @ParameterizedTest
+    @MethodSource("data_mapTextLookup")
     public void test_appendText_mapTextLookup(ChronoLocalDate date, Locale locale) {
         final String firstYear = "firstYear";
         final String firstMonth = "firstMonth";
@@ -146,16 +146,15 @@ public class TestDateTimeFormatterBuilderWithLocale {
             .toFormatter(locale)
             .withResolverStyle(ResolverStyle.STRICT);
 
-        assertEquals(date.format(formatter), firstYearMonth);
+        assertEquals(firstYearMonth, date.format(formatter));
 
         TemporalAccessor ta = formatter.parse(firstYearMonth);
-        assertEquals(ta.getLong(ChronoField.YEAR_OF_ERA), first);
-        assertEquals(ta.getLong(ChronoField.MONTH_OF_YEAR), first);
+        assertEquals(first, ta.getLong(ChronoField.YEAR_OF_ERA));
+        assertEquals(first, ta.getLong(ChronoField.MONTH_OF_YEAR));
     }
 
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="localePatterns")
     Object[][] localizedDateTimePatterns() {
         return new Object[][] {
             // French Locale and ISO Chronology
@@ -202,11 +201,12 @@ public class TestDateTimeFormatterBuilderWithLocale {
         };
     }
 
-    @Test(dataProvider="localePatterns")
+    @ParameterizedTest
+    @MethodSource("localizedDateTimePatterns")
     public void test_getLocalizedDateTimePattern(FormatStyle dateStyle, FormatStyle timeStyle,
             Chronology chrono, Locale locale, String expected) {
         String actual = DateTimeFormatterBuilder.getLocalizedDateTimePattern(dateStyle, timeStyle, chrono, locale);
-        assertEquals(actual, expected, "Pattern " + convertNonAscii(actual));
+        assertEquals(expected, actual, "Pattern " + convertNonAscii(actual));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,7 +34,7 @@
 class LIR_Assembler;
 #endif
 class StubAssembler;
-class G1PreBarrierStub;
+class G1PreBarrierStubC1;
 class G1PreBarrierStubC2;
 
 class G1BarrierSetAssembler: public CardTableBarrierSetAssembler {
@@ -65,7 +65,7 @@ protected:
 
 public:
 #ifdef COMPILER1
-  void gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub);
+  void gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStubC1* stub);
 
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,40 +24,55 @@
 package compiler.lib.ir_framework.shared;
 
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.network.*;
+import compiler.lib.ir_framework.driver.network.testvm.TestVmMessageReader;
+import compiler.lib.ir_framework.driver.network.testvm.java.JavaMessageParser;
+import compiler.lib.ir_framework.driver.network.testvm.java.JavaMessages;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
+
+import jdk.test.lib.Utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
+import java.net.*;
+import java.util.concurrent.*;
 
 /**
- * Dedicated socket to send data from the flag and test VM back to the driver VM.
+ * Dedicated Driver VM socket to receive data from the Test VM. Could either be received from Java and C2 code.
  */
 public class TestFrameworkSocket implements AutoCloseable {
-    public static final String STDOUT_PREFIX = "[STDOUT]";
-    public static final String TESTLIST_TAG = "[TESTLIST]";
-    public static final String DEFAULT_REGEX_TAG = "[DEFAULT_REGEX]";
-    public static final String PRINT_TIMES_TAG = "[PRINT_TIMES]";
-    public static final String NOT_COMPILABLE_TAG = "[NOT_COMPILABLE]";
-
-    // Static fields used for test VM only.
     private static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";
-    private static final int SERVER_PORT = Integer.getInteger(SERVER_PORT_PROPERTY, -1);
+    private static final int SOCKET_TIMEOUT_IN_MS = (int)Utils.adjustTimeout(10_000L);
 
-    private static final boolean REPRODUCE = Boolean.getBoolean("Reproduce");
-    private static Socket clientSocket = null;
-    private static PrintWriter clientWriter = null;
-
-    private final String serverPortPropertyFlag;
-    private FutureTask<String> socketTask;
+    private final int serverSocketPort;
     private final ServerSocket serverSocket;
-    private boolean receivedStdOut = false;
+    private final ExecutorService acceptExecutor;
+    private final ExecutorService clientExecutor;
+
+    /*
+     * CompletableFuture shared by the Driver VM and the accept/reader threads.
+     *
+     * Lifecycle:
+     * 1. The future is created before the accept loop task is submitted.
+     * 2. The Driver VM starts the Test VM. The socket and the executors remain open while the Driver VM waits on the
+     *    future to be completed.
+     * 3. The accept thread accepts the Test VM connection and reads the identity handshake.
+     * 4. The accept thread now schedules a reader for incoming Test VM messages.
+     * 5. During normal execution, the Test VM closes the connection before exiting. The reader completes the future
+     *    with the parsed Test VM messages.
+     * 6. Accepting, identity handshake, task submission, or message reading failures complete the future exceptionally.
+     * 7. The Driver VM obtains the result, observes a failure, or times out before the socket and executors are closed.
+     *
+     * Note: The future must be created eagerly such that the Driver VM can wait on it even before the accept thread
+     *       has accepted the Test VM connection. The accept thread might only be scheduled after the Test VM has exited.
+     *       This is possible because the server socket is already listening and the OS can queue the connection until
+     *       the accept thread processes it.
+     */
+    private final CompletableFuture<JavaMessages> javaMessagesFuture;
+
+    // Written by the Driver VM thread and read by the accept thread.
+    private volatile boolean running;
 
     public TestFrameworkSocket() {
         try {
@@ -66,140 +81,141 @@ public class TestFrameworkSocket implements AutoCloseable {
         } catch (IOException e) {
             throw new TestFrameworkException("Failed to create TestFramework server socket", e);
         }
-        int port = serverSocket.getLocalPort();
+        serverSocketPort = serverSocket.getLocalPort();
+        acceptExecutor = Executors.newSingleThreadExecutor();
+        clientExecutor = Executors.newCachedThreadPool();
+        javaMessagesFuture = new CompletableFuture<>();
         if (TestFramework.VERBOSE) {
-            System.out.println("TestFramework server socket uses port " + port);
+            System.out.println("TestFramework server socket uses port " + serverSocketPort);
         }
-        serverPortPropertyFlag = "-D" + SERVER_PORT_PROPERTY + "=" + port;
-        start();
     }
 
     public String getPortPropertyFlag() {
-        return serverPortPropertyFlag;
+        return "-D" + SERVER_PORT_PROPERTY + "=" + serverSocketPort;
     }
 
-    private void start() {
-        socketTask = initSocketTask();
-        Thread socketThread = new Thread(socketTask);
-        socketThread.start();
+    public void start() {
+        running = true;
+        acceptExecutor.submit(this::acceptLoop);
     }
 
     /**
-     * Waits for a client (created by flag or test VM) to connect. Return the messages received from the client.
+     * Main loop to wait for new client connections and handling them upon connection request.
      */
-    private FutureTask<String> initSocketTask() {
-        return new FutureTask<>(() -> {
-            try (Socket clientSocket = serverSocket.accept();
-                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
-            ) {
-                StringBuilder builder = new StringBuilder();
-                String next;
-                while ((next = in.readLine()) != null) {
-                    builder.append(next).append(System.lineSeparator());
-                    if (next.startsWith(STDOUT_PREFIX)) {
-                        receivedStdOut = true;
-                    }
+    private void acceptLoop() {
+        while (running) {
+            try {
+                acceptNewClientConnection();
+            } catch (SocketException e) {
+                if (!running || serverSocket.isClosed()) {
+                    // Normal shutdown
+                    return;
                 }
-                return builder.toString();
-            } catch (IOException e) {
-                throw new TestFrameworkException("Server socket error", e);
+                throwServerSocketError(e);
+            } catch (TestFrameworkException e) {
+                throwTestFrameworkException(e);
+            } catch (Exception e) {
+                throwServerSocketError(e);
             }
-        });
+        }
+    }
+
+    private void throwServerSocketError(Exception e) {
+        throwTestFrameworkException(new TestFrameworkException("Server socket error", e));
+    }
+
+    private void throwTestFrameworkException(TestFrameworkException testFrameworkException) {
+        running = false;
+        javaMessagesFuture.completeExceptionally(testFrameworkException);
+        throw testFrameworkException;
+    }
+
+    /**
+     * Accept new client connection by first reading the identity of the connection (either coming from Java or C2)
+     * and then submitting a task accordingly to manage incoming messages on that connection/socket.
+     */
+    private void acceptNewClientConnection() throws IOException {
+        Socket client = serverSocket.accept();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+        try {
+            String identity = readIdentity(client, reader).trim();
+            submitTask(identity, client, reader);
+        } catch (Exception e) {
+            client.close();
+            reader.close();
+            throw e;
+        }
+    }
+
+    private String readIdentity(Socket client, BufferedReader reader) throws IOException {
+        String identity;
+        try {
+            client.setSoTimeout(SOCKET_TIMEOUT_IN_MS);
+            identity = reader.readLine();
+            TestFramework.check(identity != null, "end of stream has been reached without reading the identity");
+        } catch (SocketTimeoutException e) {
+            throw new TestFrameworkException("Timed out while waiting for initial identity message", e);
+        } finally {
+            client.setSoTimeout(0);
+        }
+        return identity;
+    }
+
+    /**
+     * Submit dedicated tasks which are wrapped into {@link Future} objects. The tasks will read all messages sent
+     * over that connection.
+     */
+    private void submitTask(String identity, Socket client, BufferedReader reader) {
+        if (identity.equals(TestVmSocket.IDENTITY)) {
+            TestVmMessageReader<JavaMessages> messageReader =
+                    new TestVmMessageReader<>(client, reader, new JavaMessageParser());
+            javaMessagesFuture.completeAsync(messageReader::call, clientExecutor);
+        } else {
+            throw new TestFrameworkException("Unrecognized identity: " + identity);
+        }
     }
 
     @Override
     public void close() {
         try {
+            running = false;
             serverSocket.close();
         } catch (IOException e) {
             throw new TestFrameworkException("Could not close socket", e);
         }
+        acceptExecutor.shutdown();
+        clientExecutor.shutdown();
     }
 
-    /**
-     * Only called by test VM to write to server socket.
-     */
-    public static void write(String msg, String tag) {
-        write(msg, tag, false);
+    public TestVMData testVmData(String hotspotPidFileName, boolean allowNotCompilable) {
+        JavaMessages javaMessages = testVmMessages();
+        return new TestVMData(javaMessages, hotspotPidFileName, allowNotCompilable);
     }
 
-    /**
-     * Only called by test VM to write to server socket.
-     * <p>
-     * The test VM is spawned by the main jtreg VM. The stdout of the test VM is hidden
-     * unless the Verbose or ReportStdout flag is used. TestFrameworkSocket is used by the parent jtreg
-     * VM and the test VM to communicate. By sending the prints through the TestFrameworkSocket with the
-     * parameter stdout set to true, the parent VM will print the received messages to its stdout, making it
-     * visible to the user.
-     */
-    public static void write(String msg, String tag, boolean stdout) {
-        if (REPRODUCE) {
-            System.out.println("Debugging Test VM: Skip writing due to -DReproduce");
-            return;
-        }
-        TestFramework.check(SERVER_PORT != -1, "Server port was not set correctly for flag and/or test VM "
-                                               + "or method not called from flag or test VM");
+    private JavaMessages testVmMessages() {
         try {
-            // Keep the client socket open until the test VM terminates (calls closeClientSocket before exiting main()).
-            if (clientSocket == null) {
-                clientSocket = new Socket(InetAddress.getLoopbackAddress(), SERVER_PORT);
-                clientWriter = new PrintWriter(clientSocket.getOutputStream(), true);
-            }
-            if (stdout) {
-                msg = STDOUT_PREFIX + tag + " " + msg;
-            }
-            clientWriter.println(msg);
-        } catch (Exception e) {
-            // When the test VM is directly run, we should ignore all messages that would normally be sent to the
-            // driver VM.
-            String failMsg = System.lineSeparator() + System.lineSeparator() + """
-                             ###########################################################
-                              Did you directly run the test VM (TestVM class)
-                              to reproduce a bug?
-                              => Append the flag -DReproduce=true and try again!
-                             ###########################################################
-                             """;
-            throw new TestRunException(failMsg, e);
-        }
-        if (TestFramework.VERBOSE) {
-            System.out.println("Written " + tag + " to socket:");
-            System.out.println(msg);
-        }
-    }
-
-    /**
-     * Closes (and flushes) the printer to the socket and the socket itself. Is called as last thing before exiting
-     * the main() method of the flag and the test VM.
-     */
-    public static void closeClientSocket() {
-        if (clientSocket != null) {
-            try {
-                clientWriter.close();
-                clientSocket.close();
-            } catch (IOException e) {
-                throw new RuntimeException("Could not close TestVM socket", e);
-            }
-        }
-    }
-
-    /**
-     * Get the socket output of the flag VM.
-     */
-    public String getOutput() {
-        try {
-            return socketTask.get();
+            // Note: The Test VM may have already exited while the accept and message reader thread are still processing
+            //       the connection. Let's wait until they are finished.
+            return javaMessagesFuture.get(SOCKET_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS);
         } catch (ExecutionException e) {
-            // Thrown when socket task was not finished, yet (i.e. no client sent data) but socket was already closed.
-            return "";
+            throw new TestFrameworkException("No test VM messages were received", e);
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Timed out while waiting for Test VM messages." + System.lineSeparator() +
+                                        System.lineSeparator() +
+                                        "Did any of the following happen?" + System.lineSeparator() +
+                                        "(1) TestFramework.addFlags(-DReproduce=true)" + System.lineSeparator() +
+                                        "(2) TestFramework.addFlags(--version) or any other VM flag that prevents " +
+                                        " TestVM.main() from being called?" + System.lineSeparator() +
+                                        "(3) The Test VM crashed before calling TestVM.main()" + System.lineSeparator() +
+                                        System.lineSeparator() +
+                                        "(1) and (2) are unsupported and are expected to fail." + System.lineSeparator() +
+                                        "-> Please change your test!" + System.lineSeparator() +
+                                        "(3) The IR Framework cannot handle early VM crashes." + System.lineSeparator() +
+                                        "-> Please change your test if such a crash was anticipated!" +
+                                        System.lineSeparator() + System.lineSeparator() +
+                                        "In all other cases, please file an IR Framework bug!", e);
         } catch (Exception e) {
-            throw new TestFrameworkException("Could not read from socket task", e);
+            throw new TestFrameworkException("Error while fetching Test VM Future", e);
         }
-    }
-
-    /**
-     * Return whether test VM sent messages to be put on stdout (starting with {@link ::STDOUT_PREFIX}).
-     */
-    public boolean hasStdOut() {
-        return receivedStdOut;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
- *              H3QuicVTTest
+ *              ${test.main.class}
  */
 /*
  * @test id=never
@@ -70,7 +70,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  * @run junit/othervm
  *              -Djdk.internal.httpclient.quic.selector.useVirtualThreads=never
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
- *              H3QuicVTTest
+ *              ${test.main.class}
  */
 /*
  * @test id=always
@@ -83,7 +83,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  * @run junit/othervm
  *              -Djdk.internal.httpclient.quic.selector.useVirtualThreads=always
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
- *              H3QuicVTTest
+ *              ${test.main.class}
  */
 /*
  * @test id=explicit-default
@@ -96,7 +96,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  * @run junit/othervm
  *              -Djdk.internal.httpclient.quic.selector.useVirtualThreads=default
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
- *              H3QuicVTTest
+ *              ${test.main.class}
  */
 /*
  * @test id=garbage
@@ -109,12 +109,12 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  * @run junit/othervm
  *              -Djdk.internal.httpclient.quic.selector.useVirtualThreads=garbage
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
- *              H3QuicVTTest
+ *              ${test.main.class}
  */
 // -Djava.security.debug=all
 class H3QuicVTTest implements HttpServerAdapters {
 
-    private static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private static HttpTestServer h3Server;
     private static String requestURI;
 
@@ -139,10 +139,6 @@ class H3QuicVTTest implements HttpServerAdapters {
 
     @BeforeAll
     static void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         // create an H3 only server
         h3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3Server.addHandler((exchange) -> exchange.sendResponseHeaders(200, 0), "/hello");

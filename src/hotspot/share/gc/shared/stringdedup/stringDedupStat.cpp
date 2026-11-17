@@ -94,13 +94,17 @@ static double strdedup_elapsed_param_ms(Tickspan t) {
 void StringDedup::Stat::log_summary(const Stat* last_stat, const Stat* total_stat) {
   log_info(stringdedup)(
     "Concurrent String Deduplication "
-    "%zu/" STRDEDUP_BYTES_FORMAT_NS " (new), "
+    "%zu (inspected), "
+    "%zu/" STRDEDUP_BYTES_FORMAT_NS " (new unknown), "
     "%zu/" STRDEDUP_BYTES_FORMAT_NS " (deduped), "
-    "avg " STRDEDUP_PERCENT_FORMAT_NS ", "
+    "total avg deduped/new unknown bytes " STRDEDUP_PERCENT_FORMAT_NS ", "
+    STRDEDUP_BYTES_FORMAT_NS " (total deduped)," STRDEDUP_BYTES_FORMAT_NS " (total new unknown), "
     STRDEDUP_ELAPSED_FORMAT_MS " of " STRDEDUP_ELAPSED_FORMAT_MS,
+    last_stat->_inspected,
     last_stat->_new, STRDEDUP_BYTES_PARAM(last_stat->_new_bytes),
     last_stat->_deduped, STRDEDUP_BYTES_PARAM(last_stat->_deduped_bytes),
     percent_of(total_stat->_deduped_bytes, total_stat->_new_bytes),
+    STRDEDUP_BYTES_PARAM(total_stat->_deduped_bytes), STRDEDUP_BYTES_PARAM(total_stat->_new_bytes),
     strdedup_elapsed_param_ms(last_stat->_process_elapsed),
     strdedup_elapsed_param_ms(last_stat->_active_elapsed));
 }
@@ -210,14 +214,14 @@ void StringDedup::Stat::log_statistics() const {
   double deduped_bytes_percent       = percent_of(_deduped_bytes, _new_bytes);
   double replaced_percent            = percent_of(_replaced, _new);
   double deleted_percent             = percent_of(_deleted, _new);
-  log_debug(stringdedup)("    Inspected:    %12zu", _inspected);
-  log_debug(stringdedup)("      Known:      %12zu(%5.1f%%)", _known, known_percent);
-  log_debug(stringdedup)("      Shared:     %12zu(%5.1f%%)", _known_shared, known_shared_percent);
-  log_debug(stringdedup)("      New:        %12zu(%5.1f%%)" STRDEDUP_BYTES_FORMAT,
+  log_debug(stringdedup)("    Inspected:     %12zu", _inspected);
+  log_debug(stringdedup)("      Known:       %12zu(%5.1f%%)", _known, known_percent);
+  log_debug(stringdedup)("      Shared:      %12zu(%5.1f%%)", _known_shared, known_shared_percent);
+  log_debug(stringdedup)("      New unknown: %12zu(%5.1f%%)" STRDEDUP_BYTES_FORMAT,
                          _new, new_percent, STRDEDUP_BYTES_PARAM(_new_bytes));
-  log_debug(stringdedup)("      Replaced:   %12zu(%5.1f%%)", _replaced, replaced_percent);
-  log_debug(stringdedup)("      Deleted:    %12zu(%5.1f%%)", _deleted, deleted_percent);
-  log_debug(stringdedup)("    Deduplicated: %12zu(%5.1f%%)" STRDEDUP_BYTES_FORMAT "(%5.1f%%)",
+  log_debug(stringdedup)("      Replaced:    %12zu(%5.1f%%)", _replaced, replaced_percent);
+  log_debug(stringdedup)("      Deleted:     %12zu(%5.1f%%)", _deleted, deleted_percent);
+  log_debug(stringdedup)("    Deduplicated:  %12zu(%5.1f%%)" STRDEDUP_BYTES_FORMAT "(%5.1f%%)",
                          _deduped, deduped_percent, STRDEDUP_BYTES_PARAM(_deduped_bytes), deduped_bytes_percent);
   log_debug(stringdedup)("    Skipped: %zu (dead), %zu (incomplete), %zu (shared)",
                          _skipped_dead, _skipped_incomplete, _skipped_shared);

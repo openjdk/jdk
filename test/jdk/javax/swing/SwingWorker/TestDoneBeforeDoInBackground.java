@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 8081474
+ * @library /test/lib
  * @summary  Verifies if SwingWorker calls 'done'
  *           before the 'doInBackground' is finished
  * @run main TestDoneBeforeDoInBackground
@@ -34,22 +35,25 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jdk.test.lib.Utils;
+
 public class TestDoneBeforeDoInBackground {
 
-    private static final int WAIT_TIME = 200;
+    private static final long WAIT_TIME = Utils.adjustTimeout(200);
     private static final long CLEANUP_TIME = 1000;
 
     private static final AtomicBoolean doInBackgroundStarted = new AtomicBoolean(false);
     private static final AtomicBoolean doInBackgroundFinished = new AtomicBoolean(false);
     private static final AtomicBoolean doneFinished = new AtomicBoolean(false);
     private static final CountDownLatch doneLatch = new CountDownLatch(1);
+    private static final CountDownLatch workerStarted = new CountDownLatch(1);
 
     public static void main(String[] args) throws InterruptedException {
         SwingWorker<String, String> worker = new SwingWorker<>() {
             @Override
             protected String doInBackground() throws Exception {
                 try {
-                    while (!Thread.currentThread().isInterrupted()) {
+                    while (true) {
                         System.out.println("Working...");
                         Thread.sleep(WAIT_TIME);
                     }
@@ -85,6 +89,12 @@ public class TestDoneBeforeDoInBackground {
         worker.addPropertyChangeListener(
             new PropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent evt) {
+                    if (worker.getState() == SwingWorker.StateValue.STARTED) {
+                        // Now the worker has started and we got a STARTED
+                        // notification. It should be save to cancel now.
+                        workerStarted.countDown();
+                    }
+
                     System.out.println("doInBackgroundStarted: " +
                                         doInBackgroundStarted.get() +
                                         " doInBackgroundFinished: " +
@@ -121,7 +131,9 @@ public class TestDoneBeforeDoInBackground {
                 }
             });
         worker.execute();
-        Thread.sleep(WAIT_TIME * 3);
+        if (!workerStarted.await(5 * WAIT_TIME, TimeUnit.MILLISECONDS)) {
+            throw new RuntimeException("worker didn't start in time");
+        }
 
         final long start = System.currentTimeMillis();
         worker.cancel(true);

@@ -1,2 +1,2 @@
-LambdaConv10.java:15:39: compiler.err.prob.found.req: (compiler.misc.incompatible.arg.types.in.lambda)
+LambdaConv10.java:15:39: compiler.err.prob.found.req: (compiler.misc.incompatible.arg.types.in.lambda: java.lang.Integer, int)
 1 error

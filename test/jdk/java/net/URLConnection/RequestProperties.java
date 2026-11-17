@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4485208 8252767
  * @summary Validate various request property methods on java.net.URLConnection
  * throw NullPointerException and IllegalStateException when expected
- * @run testng RequestProperties
+ * @run junit ${test.main.class}
  */
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.URL;
@@ -40,13 +37,19 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class RequestProperties {
 
     private static final Class NPE = NullPointerException.class;
     private static final Class ISE = IllegalStateException.class;
 
-    @DataProvider(name = "urls")
-    private Object[][] urls() {
+    private static List<String> urls() {
         final List<String> urls = new ArrayList<>();
         urls.add("http://foo.com/bar/");
         urls.add("jar:http://foo.com/bar.html!/foo/bar");
@@ -54,11 +57,7 @@ public class RequestProperties {
         if (hasFtp()) {
             urls.add("ftp://foo:bar@foobar.com/etc/passwd");
         }
-        final Object[][] data = new Object[urls.size()][1];
-        for (int i = 0; i < urls.size(); i++) {
-            data[i][0] = urls.get(i);
-        }
-        return data;
+        return List.copyOf(urls);
     }
 
 
@@ -66,10 +65,11 @@ public class RequestProperties {
      * Test that {@link java.net.URLConnection#setRequestProperty(String, String)} throws
      * a {@link NullPointerException} when passed null key
      */
-    @Test(dataProvider = "urls")
+    @ParameterizedTest
+    @MethodSource("urls")
     public void testSetRequestPropertyNullPointerException(final String url) throws Exception {
         final URLConnection conn = new URL(url).openConnection();
-        Assert.assertThrows(NPE, () -> conn.setRequestProperty(null, "bar"));
+        assertThrows(NPE, () -> conn.setRequestProperty(null, "bar"));
         // expected to pass
         conn.setRequestProperty("key", null);
     }
@@ -78,10 +78,11 @@ public class RequestProperties {
      * Test that {@link java.net.URLConnection#addRequestProperty(String, String)} throws
      * a {@link NullPointerException} when passed null key
      */
-    @Test(dataProvider = "urls")
+    @ParameterizedTest
+    @MethodSource("urls")
     public void testAddRequestPropertyNullPointerException(final String url) throws Exception {
         final URLConnection conn = new URL(url).openConnection();
-        Assert.assertThrows(NPE, () -> conn.addRequestProperty(null, "hello"));
+        assertThrows(NPE, () -> conn.addRequestProperty(null, "hello"));
         // expected to pass
         conn.addRequestProperty("key", null);
     }
@@ -90,10 +91,11 @@ public class RequestProperties {
      * Test that {@link java.net.URLConnection#getRequestProperty(String)} returns
      * null when the passed key is null
      */
-    @Test(dataProvider = "urls")
+    @ParameterizedTest
+    @MethodSource("urls")
     public void testGetRequestPropertyReturnsNull(final String url) throws Exception {
         final URLConnection conn = new URL(url).openConnection();
-        Assert.assertNull(conn.getRequestProperty(null),
+        assertNull(conn.getRequestProperty(null),
                 "getRequestProperty was expected to return null for null key");
     }
 
@@ -105,7 +107,7 @@ public class RequestProperties {
     public void testSetRequestPropertyIllegalStateException() throws Exception {
         final URLConnection conn = createAndConnectURLConnection();
         try {
-            Assert.assertThrows(ISE, () -> conn.setRequestProperty("foo", "bar"));
+            assertThrows(ISE, () -> conn.setRequestProperty("foo", "bar"));
         } finally {
             safeClose(conn);
         }
@@ -119,7 +121,7 @@ public class RequestProperties {
     public void testAddRequestPropertyIllegalStateException() throws Exception {
         final URLConnection conn = createAndConnectURLConnection();
         try {
-            Assert.assertThrows(ISE, () -> conn.addRequestProperty("foo", "bar"));
+            assertThrows(ISE, () -> conn.addRequestProperty("foo", "bar"));
         } finally {
             safeClose(conn);
         }
@@ -133,7 +135,7 @@ public class RequestProperties {
     public void testGetRequestPropertyIllegalStateException() throws Exception {
         final URLConnection conn = createAndConnectURLConnection();
         try {
-            Assert.assertThrows(ISE, () -> conn.getRequestProperty("hello"));
+            assertThrows(ISE, () -> conn.getRequestProperty("hello"));
         } finally {
             safeClose(conn);
         }
@@ -147,7 +149,7 @@ public class RequestProperties {
     public void testGetRequestPropertiesIllegalStateException() throws Exception {
         final URLConnection conn = createAndConnectURLConnection();
         try {
-            Assert.assertThrows(ISE, () -> conn.getRequestProperties());
+            assertThrows(ISE, () -> conn.getRequestProperties());
         } finally {
             safeClose(conn);
         }

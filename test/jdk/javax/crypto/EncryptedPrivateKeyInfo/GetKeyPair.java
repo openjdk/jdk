@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @bug 8360563
  * @library /test/lib
  * @summary Testing getKeyPair using ML-KEM
- * @enablePreview
  * @modules java.base/sun.security.util
  */
 
@@ -61,9 +60,6 @@ public class GetKeyPair {
     static byte[] keyOrigPub, keyOrigPriv;
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider(
-            System.getProperty("test.provider.name", "SunJCE"));
-
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-KEM");
         KeyPair kpOrig = kpg.generateKeyPair();
         keyOrigPub = kpOrig.getPublic().getEncoded();
@@ -92,12 +88,8 @@ public class GetKeyPair {
         arrayCheck(ekpi.getKeyPair(password));
 
         // Test getKeyPair(key, provider) provider null
-        System.out.print("Testing getKeyPair(key, null): ");
-        arrayCheck(ekpi.getKeyPair(key, null));
-
-        // Test getKeyPair(key, provider) provider SunJCE
-        System.out.print("Testing getKeyPair(key, SunJCE): ");
-        arrayCheck(ekpi.getKeyPair(key, p));
+        System.out.print("Testing getKeyPair(key): ");
+        arrayCheck(ekpi.getKeyPair(key));
     }
 
     static void arrayCheck(KeyPair kp) throws Exception {

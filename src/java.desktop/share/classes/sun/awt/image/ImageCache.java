@@ -29,15 +29,12 @@ import java.awt.*;
 import java.lang.ref.*;
 import java.util.*;
 import java.util.concurrent.locks.*;
-import sun.awt.AppContext;
 
 /**
  * ImageCache - A fixed pixel count sized cache of Images keyed by arbitrary
  * set of arguments. All images are held with SoftReferences so they will be
  * dropped by the GC if heap memory gets tight. When our size hits max pixel
  * count least recently requested images are removed first.
- *
- * The ImageCache must be used from the thread with an AppContext only.
  *
  */
 public final class ImageCache {
@@ -56,9 +53,10 @@ public final class ImageCache {
     // Reference queue for tracking lost softreferences to images in the cache
     private final ReferenceQueue<Image> referenceQueue = new ReferenceQueue<>();
 
+    private static final ImageCache instance = new ImageCache();
+
     public static ImageCache getInstance() {
-        return AppContext.getSoftReferenceValue(ImageCache.class,
-                () -> new ImageCache());
+        return instance;
     }
 
     ImageCache(final int maxPixelCount) {

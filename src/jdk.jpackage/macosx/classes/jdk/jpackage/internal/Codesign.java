@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,22 +34,20 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
-
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedResultException;
 
 public final class Codesign {
 
     public static final class CodesignException extends Exception {
 
-        CodesignException(String[] output) {
-            this.output = output;
+        CodesignException(UnexpectedResultException cause) {
+            super(Objects.requireNonNull(cause));
         }
 
-        String[] getOutput() {
-            return output;
+        @Override
+        public UnexpectedResultException getCause() {
+            return (UnexpectedResultException)super.getCause();
         }
-
-        private final String[] output;
 
         private static final long serialVersionUID = 1L;
     }
@@ -69,7 +67,7 @@ public final class Codesign {
             }
 
             return new Codesign(cmdline, quiet ? exec -> {
-                exec.setQuiet(true);
+                exec.quiet();
             } : null);
         }
 
@@ -94,14 +92,13 @@ public final class Codesign {
 
     public void applyTo(Path path) throws IOException, CodesignException {
 
-        var exec = Executor.of(Stream.concat(
-                cmdline.stream(),
-                Stream.of(path.toString())).toArray(String[]::new)
-        ).saveOutput(true);
+        var exec = Executor.of(cmdline).args(path.toString()).saveOutput(true);
         configureExecutor.ifPresent(configure -> configure.accept(exec));
 
-        if (exec.execute() != 0) {
-            throw new CodesignException(exec.getOutput().toArray(String[]::new));
+        try {
+            exec.execute().expectExitCode(0);
+        } catch (UnexpectedResultException ex) {
+            throw new CodesignException(ex);
         }
     }
 

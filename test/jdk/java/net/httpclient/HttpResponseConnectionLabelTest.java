@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * @comment Use a higher idle timeout to increase the chances of
  *    the same connection being used for sequential HTTP requests
  * @run junit/othervm -Djdk.httpclient.keepalive.timeout=120
- *                    HttpResponseConnectionLabelTest
+ *                    ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
@@ -87,7 +87,7 @@ class HttpResponseConnectionLabelTest {
 
     private static final String SERVER_ID_HEADER_NAME = "X-Server-Id";
 
-    private static final SSLContext SSL_CONTEXT = createSslContext();
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
     // For each test instance, start with a fresh client having no connections in the pool
     private final HttpClient client = HttpServerAdapters
@@ -119,14 +119,6 @@ class HttpResponseConnectionLabelTest {
     private static final ServerRequestPair SEC_HTTPS2 = ServerRequestPair.of(Version.HTTP_2, true);
 
     private static final ServerRequestPair SEC_HTTP3 = ServerRequestPair.of(Version.HTTP_3, true);
-
-    private static SSLContext createSslContext() {
-        try {
-            return new SimpleSSLContext().get();
-        } catch (IOException exception) {
-            throw new UncheckedIOException(exception);
-        }
-    }
 
     private record ServerRequestPair(
             HttpTestServer server,

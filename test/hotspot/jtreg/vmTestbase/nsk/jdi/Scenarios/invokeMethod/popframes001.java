@@ -160,10 +160,9 @@ public class popframes001 {
             if (eventIterator != null) {
                 while (eventIterator.hasNext()) {
                     event = eventIterator.nextEvent();
-//                    display("\nevent ===>>> " + event);
+                    display("\nevent ===>>> " + event);
 
                     if (event instanceof ClassPrepareEvent) {
-                        display("\nevent ===>>> " + event);
                         testedClass = (ClassType )debugee.classByName(testedClassName);
                         debugeeClass = (ClassType )debugee.classByName(debugeeName);
 
@@ -179,11 +178,9 @@ public class popframes001 {
                         debugee.resume();
 
                     } else if (event instanceof MethodExitEvent) {
-                        display("\nevent ===>>> " + event);
                         hitMethodExitEvent((MethodExitEvent )event);
 
                     } else if (event instanceof MethodEntryEvent) {
-                        display("\nevent ===>>> " + event);
                         hitMethodEntryEvent((MethodEntryEvent )event);
                         display("\nresuming...");
                         debugee.resume();

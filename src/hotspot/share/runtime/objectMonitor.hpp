@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
-#include "oops/markWord.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
 #include "runtime/javaThread.hpp"
@@ -39,7 +38,6 @@ class ObjectMonitorContentionMark;
 class ParkEvent;
 class BasicLock;
 class ContinuationWrapper;
-
 
 class ObjectWaiter : public CHeapObj<mtThread> {
  public:
@@ -72,7 +70,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   oop vthread() const;
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
-
+  const char* getTStateName(TStates state);
   void set_bad_pointers() {
 #ifdef ASSERT
     this->_prev  = (ObjectWaiter*) badAddressVal;
@@ -90,26 +88,16 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   }
 };
 
-// The ObjectMonitor class implements the heavyweight version of a
-// JavaMonitor. The lightweight BasicLock/stack lock version has been
-// inflated into an ObjectMonitor. This inflation is typically due to
-// contention or use of Object.wait().
+// The ObjectMonitor class implements the heavyweight version of a JavaMonitor.
+// This inflation is typically due to contention or use of Object.wait().
 //
 // WARNING: This is a very sensitive and fragile class. DO NOT make any
 // changes unless you are fully aware of the underlying semantics.
 //
 // ObjectMonitor Layout Overview/Highlights/Restrictions:
 //
-// - For performance reasons we ensure the _metadata field is located at offset 0,
-//   which in turn means that ObjectMonitor can't inherit from any other class nor use
-//   any virtual member functions.
-// - The _metadata and _owner fields should be separated by enough space
-//   to avoid false sharing due to parallel access by different threads.
-//   This is an advisory recommendation.
 // - The general layout of the fields in ObjectMonitor is:
-//     _metadata
-//     <lightly_used_fields>
-//     <optional padding>
+//     _object
 //     _owner
 //     <optional padding>
 //     <remaining_fields>
@@ -149,7 +137,6 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   friend class VMStructs;
-  JVMCI_ONLY(friend class JVMCIVMStructs;)
 
   static OopStorage* _oop_storage;
 
@@ -158,20 +145,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // ParkEvent of unblocker thread.
   static ParkEvent* _vthread_unparker_ParkEvent;
 
-  // Because of frequent access, the metadata field is at offset zero (0).
-  // Enforced by the assert() in metadata_addr().
-  // * Locking with UseObjectMonitorTable:
-  //   Contains the _object's hashCode.
-  // * Locking without UseObjectMonitorTable:
-  //   Contains the displaced object header word - mark
-  volatile uintptr_t _metadata;     // metadata
   WeakHandle _object;               // backward object pointer
-  // Separate _metadata and _owner on different cache lines since both can
-  // have busy multi-threaded access. _metadata and _object are set at initial
-  // inflation. The _object does not change, so it is a good choice to share
-  // its cache line with _metadata.
-  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(_metadata) +
-                        sizeof(WeakHandle));
 
   static const int64_t NO_OWNER = 0;
   static const int64_t ANONYMOUS_OWNER = 1;
@@ -183,7 +157,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // both can have busy multi-threaded access. _previous_owner_tid is only
   // changed by ObjectMonitor::exit() so it is a good choice to share the
   // cache line with _owner.
-  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
+  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(int64_t volatile) +
                         sizeof(volatile uint64_t));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
@@ -218,35 +192,11 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   static int Knob_SpinLimit;
 
-  static ByteSize metadata_offset()    { return byte_offset_of(ObjectMonitor, _metadata); }
+  static ByteSize object_offset()      { return byte_offset_of(ObjectMonitor, _object); }
   static ByteSize owner_offset()       { return byte_offset_of(ObjectMonitor, _owner); }
   static ByteSize recursions_offset()  { return byte_offset_of(ObjectMonitor, _recursions); }
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
   static ByteSize entry_list_offset()  { return byte_offset_of(ObjectMonitor, _entry_list); }
-
-  // ObjectMonitor references can be ORed with markWord::monitor_value
-  // as part of the ObjectMonitor tagging mechanism. When we combine an
-  // ObjectMonitor reference with an offset, we need to remove the tag
-  // value in order to generate the proper address.
-  //
-  // We can either adjust the ObjectMonitor reference and then add the
-  // offset or we can adjust the offset that is added to the ObjectMonitor
-  // reference. The latter avoids an AGI (Address Generation Interlock)
-  // stall so the helper macro adjusts the offset value that is returned
-  // to the ObjectMonitor reference manipulation code:
-  //
-  #define OM_OFFSET_NO_MONITOR_VALUE_TAG(f) \
-    ((in_bytes(ObjectMonitor::f ## _offset())) - checked_cast<int>(markWord::monitor_value))
-
-  uintptr_t           metadata() const;
-  void                set_metadata(uintptr_t value);
-  volatile uintptr_t* metadata_addr();
-
-  markWord            header() const;
-  void                set_header(markWord hdr);
-
-  intptr_t            hash() const;
-  void                set_hash(intptr_t hash);
 
   bool is_busy() const {
     // TODO-FIXME: assert _owner == NO_OWNER implies _recursions = 0
@@ -352,7 +302,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // returns false and throws IllegalMonitorStateException (IMSE).
   bool      check_owner(TRAPS);
 
- private:
   class ExitOnSuspend {
    protected:
     ObjectMonitor* _om;
@@ -362,23 +311,16 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
     void operator()(JavaThread* current);
     bool exited() { return _om_exited; }
   };
-  class ClearSuccOnSuspend {
-   protected:
-    ObjectMonitor* _om;
-   public:
-    ClearSuccOnSuspend(ObjectMonitor* om) : _om(om)  {}
-    void operator()(JavaThread* current);
-  };
 
   bool      enter_is_async_deflating();
-  void      notify_contended_enter(JavaThread *current);
+  void      notify_contended_enter(JavaThread *current, bool post_jvmti_events = true);
  public:
   void      enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   bool      enter_for(JavaThread* locking_thread);
-  bool      enter(JavaThread* current);
+  bool      enter(JavaThread* current, bool post_jvmti_events = true);
   bool      try_enter(JavaThread* current, bool check_for_recursion = true);
   bool      spin_enter(JavaThread* current);
-  void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark);
+  void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark, bool post_jvmti_events = true);
   void      exit(JavaThread* current, bool not_suspended = true);
   bool      resume_operation(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
   void      wait(jlong millis, bool interruptible, TRAPS);
@@ -402,8 +344,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   bool      notify_internal(JavaThread* current);
   ObjectWaiter* dequeue_waiter();
   void      dequeue_specific_waiter(ObjectWaiter* waiter);
-  void      enter_internal(JavaThread* current);
-  void      reenter_internal(JavaThread* current, ObjectWaiter* current_node);
+  void      enter_internal(JavaThread* current, ObjectWaiter* current_node, bool reenter_path);
+  bool      try_enter_fast(JavaThread* current, ObjectWaiter* current_node);
   void      entry_list_build_dll(JavaThread* current);
   void      unlink_after_acquire(JavaThread* current, ObjectWaiter* current_node);
   ObjectWaiter* entry_list_tail(JavaThread* current);
@@ -426,7 +368,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
  public:
   // Deflation support
   bool      deflate_monitor(Thread* current);
-  void      install_displaced_markword_in_object(const oop obj);
 
   // JFR support
   static bool is_jfr_excluded(const Klass* monitor_klass);

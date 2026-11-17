@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,9 @@ public class PostImageScriptTest {
 
             test.addInitializer(cmd -> {
                 cmd.setArgumentValue("--resource-dir", TKit.createTempDirectory("resources"));
+
+                // Ensure the full output is enabled as custom scripts write to jpackage's "out" stream.
+                cmd.setEnabledMessageCategories(JPackageCommand.messageCategoriesConsoleAll());
             });
 
             return test;
@@ -229,7 +232,7 @@ public class PostImageScriptTest {
             cmd.saveConsoleOutput(true);
 
         }).addBundleVerifier((cmd, result) -> {
-            final var imageDir = result.stdout().getOutput().stream().map(String::stripLeading).filter(str -> {
+            final var imageDir = result.stdout().stream().map(String::stripLeading).filter(str -> {
                 return str.startsWith(imageDirOutputPrefix);
             }).map(str -> {
                 return str.substring(imageDirOutputPrefix.length());

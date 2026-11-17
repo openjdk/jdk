@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.FromOptions.buildApplicationBuilder;
 import static jdk.jpackage.internal.FromOptions.createPackageBuilder;
 import static jdk.jpackage.internal.LinuxPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_RPM;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_APP_CATEGORY;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_DEB_MAINTAINER_EMAIL;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_MENU_GROUP;
@@ -35,17 +36,22 @@ import static jdk.jpackage.internal.cli.StandardOption.LINUX_PACKAGE_NAME;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_RELEASE;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_RPM_LICENSE_TYPE;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_SHORTCUT_HINT;
+import static jdk.jpackage.internal.cli.StandardOption.TEMP_ROOT;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
 
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxDebPackage;
 import jdk.jpackage.internal.model.LinuxLauncher;
 import jdk.jpackage.internal.model.LinuxLauncherMixin;
+import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.LinuxRpmPackage;
 import jdk.jpackage.internal.model.StandardPackageType;
+import jdk.jpackage.internal.summary.StandardProperty;
+import jdk.jpackage.internal.summary.StandardWarning;
 
 final class LinuxFromOptions {
 
@@ -67,23 +73,31 @@ final class LinuxFromOptions {
 
         appBuilder.launchers().map(LinuxPackagingPipeline::normalizeShortcuts).ifPresent(appBuilder::launchers);
 
+        if (OptionUtils.bundlingOperation(options) == CREATE_LINUX_RPM) {
+            appBuilder.derivedVersionNormalizer(LinuxFromOptions::normalizeRpmVersion);
+        }
+
         return LinuxApplication.create(appBuilder.create());
     }
 
-    static LinuxRpmPackage createLinuxRpmPackage(Options options) {
+    static LinuxRpmPackage createLinuxRpmPackage(Options options, LinuxRpmSystemEnvironment sysEnv) {
 
-        final var superPkgBuilder = createLinuxPackageBuilder(options, LINUX_RPM);
+        final var superPkgBuilder = createLinuxPackageBuilder(options, sysEnv, LINUX_RPM);
 
         final var pkgBuilder = new LinuxRpmPackageBuilder(superPkgBuilder);
 
         LINUX_RPM_LICENSE_TYPE.ifPresentIn(options, pkgBuilder::licenseType);
 
-        return pkgBuilder.create();
+        final var pkg = pkgBuilder.create();
+
+        updateSummary(options, pkg);
+
+        return pkg;
     }
 
-    static LinuxDebPackage createLinuxDebPackage(Options options) {
+    static LinuxDebPackage createLinuxDebPackage(Options options, LinuxDebSystemEnvironment sysEnv) {
 
-        final var superPkgBuilder = createLinuxPackageBuilder(options, LINUX_DEB);
+        final var superPkgBuilder = createLinuxPackageBuilder(options, sysEnv, LINUX_DEB);
 
         final var pkgBuilder = new LinuxDebPackageBuilder(superPkgBuilder);
 
@@ -93,13 +107,15 @@ final class LinuxFromOptions {
 
         // Show warning if license file is missing
         if (pkg.licenseFile().isEmpty()) {
-            Log.verbose(I18N.getString("message.debs-like-licenses"));
+            OptionUtils.summary(options).put(StandardWarning.LINUX_DEB_MISSING_LICENSE_FILE);
         }
+
+        updateSummary(options, pkg);
 
         return pkg;
     }
 
-    private static LinuxPackageBuilder createLinuxPackageBuilder(Options options, StandardPackageType type) {
+    private static LinuxPackageBuilder createLinuxPackageBuilder(Options options, LinuxSystemEnvironment sysEnv, StandardPackageType type) {
 
         final var app = createLinuxApplication(options);
 
@@ -107,13 +123,35 @@ final class LinuxFromOptions {
 
         final var pkgBuilder = new LinuxPackageBuilder(superPkgBuilder);
 
+        pkgBuilder.arch(sysEnv.packageArch());
+
         LINUX_PACKAGE_DEPENDENCIES.ifPresentIn(options, pkgBuilder::additionalDependencies);
         LINUX_APP_CATEGORY.ifPresentIn(options, pkgBuilder::category);
-        LINUX_MENU_GROUP.ifPresentIn(options, pkgBuilder::menuGroupName);
+        LINUX_MENU_GROUP.ifPresentIn(options, v -> {
+            pkgBuilder.menuGroupName(v)
+                    .probeMenuGroupNameFile(TEMP_ROOT.getFrom(options).resolve("desktop-file-validate/probe.desktop"));
+            pkgBuilder.desktopEntryFileValidator(sysEnv.desktopEntryFileValidator());
+        });
         LINUX_RELEASE.ifPresentIn(options, pkgBuilder::release);
         LINUX_PACKAGE_NAME.ifPresentIn(options, pkgBuilder::literalName);
 
         return pkgBuilder;
     }
 
+    private static String normalizeRpmVersion(String version) {
+        // RPM does not support "-" symbol in version. In some case
+        // we might have "-" from "release" file version.
+        // Normalize version if it has "-" symbols. All other supported version
+        // formats by "release" file should be supported by RPM.
+        if (version.contains("-")) {
+            return DottedVersion.lazy(version).toComponentsString();
+        }
+
+        return version;
+    }
+
+    private static void updateSummary(Options options, LinuxPackage pkg) {
+        OptionUtils.summary(options).put(StandardProperty.VERSION, pkg.versionWithRelease());
+        OptionUtils.summary(options).put(StandardProperty.LINUX_PACKAGE_NAME, pkg.packageName());
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ public abstract class MessageInfo {
      * otherwise the preferred destination of the message to be sent.
      *
      * @return  The socket address, or {@code null} if this instance is to be
-     *          used for sending a message and has been construced without
+     *          used for sending a message and has been constructed without
      *          specifying a preferred destination address
      *
      */
@@ -154,7 +154,7 @@ public abstract class MessageInfo {
      * sent on.
      *
      * @return The association, or {@code null} if this instance is to be
-     *         used for sending a message and has been construced using the
+     *         used for sending a message and has been constructed using the
      *         the {@link #createOutgoing(SocketAddress,int)
      *         createOutgoing(SocketAddress,int)} static factory method
      */
@@ -163,7 +163,7 @@ public abstract class MessageInfo {
     /**
      * Returns the number of bytes read for the received message.
      *
-     * <P> This method is only appicable for received messages, it has no
+     * <P> This method is only applicable for received messages, it has no
      * meaning for messages being sent.
      *
      * @return  The number of bytes read, {@code -1} if the channel is an {@link

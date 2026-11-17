@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,16 +60,14 @@ static int getBPPFromModeString(CFStringRef mode)
 }
 
 static BOOL isValidDisplayMode(CGDisplayModeRef mode) {
-    // Workaround for apple bug FB13261205, since it only affects arm based macs
-    // and arm support started with macOS 11 ignore the workaround for previous versions
-    if (@available(macOS 11, *)) {
-        if (architecture == -1) {
-            architecture = [[NSRunningApplication currentApplication] executableArchitecture];
-        }
-        if (architecture == NSBundleExecutableArchitectureARM64) {
-            return (CGDisplayModeGetPixelWidth(mode) >= 800);
-        }
+    // Workaround for apple bug FB13261205, only affects arm based macs
+    if (architecture == -1) {
+        architecture = [[NSRunningApplication currentApplication] executableArchitecture];
     }
+    if (architecture == NSBundleExecutableArchitectureARM64) {
+        return (CGDisplayModeGetPixelWidth(mode) >= 800);
+    }
+
     return (1 < CGDisplayModeGetWidth(mode) && 1 < CGDisplayModeGetHeight(mode));
 }
 

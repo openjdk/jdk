@@ -84,8 +84,7 @@ hb_face_count (hb_blob_t *blob)
 
   hb_sanitize_context_t c (blob);
 
-  const char *start = hb_blob_get_data (blob, nullptr);
-  auto *ot = reinterpret_cast<OT::OpenTypeFontFile *> (const_cast<char *> (start));
+  auto *ot = blob->as<OT::OpenTypeFontFile> ();
   if (unlikely (!ot->sanitize (&c)))
     return 0;
 
@@ -329,7 +328,7 @@ hb_face_create_from_file_or_fail (const char   *file_name,
   return face;
 }
 
-static struct supported_face_loaders_t {
+static const struct supported_face_loaders_t {
         char name[16];
         hb_face_t * (*from_file) (const char *font_file, unsigned face_index);
         hb_face_t * (*from_blob) (hb_blob_t *blob, unsigned face_index);
@@ -910,7 +909,7 @@ hb_face_set_get_table_tags_func (hb_face_t *face,
  * @start_offset: The index of first table tag to retrieve
  * @table_count: (inout): Input = the maximum number of table tags to return;
  *                Output = the actual number of table tags returned (may be zero)
- * @table_tags: (out) (array length=table_count): The array of table tags found
+ * @table_tags: (out) (array length=table_count) (nullable): The array of table tags found
  *
  * Fetches a list of all table tags for a face, if possible. The list returned will
  * begin at the offset provided

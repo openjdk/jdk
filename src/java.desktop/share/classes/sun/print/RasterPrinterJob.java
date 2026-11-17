@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,24 +33,23 @@ import java.awt.HeadlessException;
 import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
 import java.awt.Shape;
+import java.awt.Window;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.Book;
-import java.awt.print.Pageable;
 import java.awt.print.PageFormat;
+import java.awt.print.Pageable;
 import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterAbortException;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
-import java.awt.Window;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
-import sun.awt.image.ByteInterleavedRaster;
 
 import javax.print.Doc;
 import javax.print.DocFlavor;
@@ -69,8 +68,8 @@ import javax.print.attribute.ResolutionSyntax;
 import javax.print.attribute.Size2DSyntax;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
-import javax.print.attribute.standard.DialogTypeSelection;
 import javax.print.attribute.standard.DialogOwner;
+import javax.print.attribute.standard.DialogTypeSelection;
 import javax.print.attribute.standard.Fidelity;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.JobSheets;
@@ -81,14 +80,16 @@ import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
 import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.PageRanges;
+import javax.print.attribute.standard.PrinterIsAcceptingJobs;
 import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.PrinterState;
 import javax.print.attribute.standard.PrinterStateReason;
 import javax.print.attribute.standard.PrinterStateReasons;
-import javax.print.attribute.standard.PrinterIsAcceptingJobs;
 import javax.print.attribute.standard.RequestingUserName;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Sides;
+
+import sun.awt.image.ByteInterleavedRaster;
 
 import static sun.font.FontUtilities.isIgnorableWhitespace;
 
@@ -450,6 +451,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * @return the service for this printer job.
      *
      */
+    @Override
     public PrintService getPrintService() {
         if (myService == null) {
             PrintService svc = PrintServiceLookup.lookupDefaultPrintService();
@@ -488,6 +490,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * @throws PrinterException if the specified service does not support
      * 2D printing or no longer available.
      */
+    @Override
     public void setPrintService(PrintService service)
         throws PrinterException {
         if (service == null) {
@@ -712,6 +715,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     1.2
      */
+    @Override
     public PageFormat pageDialog(PageFormat page)
         throws HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {
@@ -754,6 +758,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * return a PageFormat corresponding to the updated attributes,
      * or null if the user cancelled the dialog.
      */
+    @Override
     @SuppressWarnings("deprecation")
     public PageFormat pageDialog(final PrintRequestAttributeSet attributes)
         throws HeadlessException {
@@ -919,6 +924,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Override
     public boolean printDialog(final PrintRequestAttributeSet attributes)
         throws HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {
@@ -1048,6 +1054,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Override
     public boolean printDialog() throws HeadlessException {
 
         if (GraphicsEnvironment.isHeadless()) {
@@ -1104,6 +1111,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * for each page is the default page format.
      * @param painter Called to render each page of the document.
      */
+    @Override
     public void setPrintable(Printable painter) {
         setPageable(new OpenBook(defaultPage(new PageFormat()), painter));
     }
@@ -1116,6 +1124,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * @param format  The size and orientation of each page to
      *                be printed.
      */
+    @Override
     public void setPrintable(Printable painter, PageFormat format) {
         setPageable(new OpenBook(format, painter));
         updatePageAttributes(getPrintService(), format);
@@ -1131,6 +1140,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * @see PageFormat
      * @see Printable
      */
+    @Override
     public void setPageable(Pageable document) throws NullPointerException {
         if (document != null) {
             mDocument = document;
@@ -1429,6 +1439,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * @see java.awt.print.Pageable
      * @see java.awt.print.Printable
      */
+    @Override
     public void print() throws PrinterException {
         print(attributes);
     }
@@ -1440,6 +1451,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
     }
 
+    @Override
     public void print(PrintRequestAttributeSet attributes)
         throws PrinterException {
 
@@ -1610,6 +1622,10 @@ public abstract class RasterPrinterJob extends PrinterJob {
                 cancelDoc();
             }
 
+        } catch (PrinterException pe) {
+            throw pe;
+        } catch (Throwable printError) {
+            throw (PrinterException) new PrinterException().initCause(printError);
         } finally {
             // reset previousPaper in case this job is invoked again.
             previousPaper = null;
@@ -1712,6 +1728,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * Platform subclasses which can access the actual default paper size
      * for a printer may override this method.
      */
+    @Override
     public PageFormat defaultPage(PageFormat page) {
         PageFormat newPage = (PageFormat)page.clone();
         newPage.setOrientation(PageFormat.PORTRAIT);
@@ -1767,6 +1784,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * The passed in PageFormat is cloned and altered to be usable on
      * the PrinterJob's current printer.
      */
+    @Override
     public PageFormat validatePage(PageFormat page) {
         PageFormat newPage = (PageFormat)page.clone();
         Paper newPaper = new Paper();
@@ -1779,6 +1797,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     /**
      * Set the number of copies to be printed.
      */
+    @Override
     public void setCopies(int copies) {
         mNumCopies = copies;
     }
@@ -1786,6 +1805,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     /**
      * Get the number of copies to be printed.
      */
+    @Override
     public int getCopies() {
         return mNumCopies;
     }
@@ -1800,6 +1820,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     /**
      * Get the name of the printing user.
      */
+    @Override
     public String getUserName() {
         return System.getProperty("user.name");
     }
@@ -1819,6 +1840,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * Set the name of the document to be printed.
      * The document name can not be null.
      */
+    @Override
     public void setJobName(String jobName) {
         if (jobName != null) {
             mDocName = jobName;
@@ -1830,6 +1852,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     /**
      * Get the name of the document to be printed.
      */
+    @Override
     public String getJobName() {
         return mDocName;
     }
@@ -2391,6 +2414,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * chance. If there is no print job in progress then
      * this call does nothing.
      */
+    @Override
     public void cancel() {
         synchronized (this) {
             if (performingPrinting) {

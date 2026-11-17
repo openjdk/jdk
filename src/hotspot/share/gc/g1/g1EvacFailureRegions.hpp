@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +26,7 @@
 #ifndef SHARE_GC_G1_G1EVACFAILUREREGIONS_HPP
 #define SHARE_GC_G1_G1EVACFAILUREREGIONS_HPP
 
+#include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
 
 class G1AbstractSubTask;
@@ -35,17 +37,18 @@ class G1HeapRegionClosure;
 // evacuation failure.
 // An evacuation failure may occur due to pinning or due to allocation failure
 // (not enough to-space). For every such occurrence the class records region
-// information to speed up iteration of these regions in various gc phases.
+// information to speed up iteration of these regions in various GC phases.
 //
 // Pinned regions may experience an allocation failure at the same time as G1
-// tries to evacuate anything but objects that are possible to be pinned. So
+// tries to evacuate anything but objects that are possible to be pinned.
 //
-//   _num_regions_pinned + _num_regions_alloc_failed >= _num_regions_evac_failed
+// So it is possible that the number of pinned regions plus the number of allocation
+// failed regions is larger than the number of evacuation failed regions.
 //
 class G1EvacFailureRegions {
   // Records for every region on the heap whether the region has experienced an
   // evacuation failure.
-  CHeapBitMap _regions_evac_failed;
+  CHeapBitMap _evac_failed_regions_map;
   // Records for every region on the heap whether the evacuation failure cause
   // has been allocation failure or region pinning.
   CHeapBitMap _regions_pinned;
@@ -53,19 +56,19 @@ class G1EvacFailureRegions {
   // Evacuation failed regions (indexes) in the current collection.
   uint* _evac_failed_regions;
   // Number of regions evacuation failed in the current collection.
-  volatile uint _num_regions_evac_failed;
+  Atomic<uint> _num_evac_failed_regions;
 
 public:
   G1EvacFailureRegions();
   ~G1EvacFailureRegions();
 
   uint get_region_idx(uint idx) const {
-    assert(idx < _num_regions_evac_failed, "precondition");
+    assert(idx < _num_evac_failed_regions.load_relaxed(), "precondition");
     return _evac_failed_regions[idx];
   }
 
   // Sets up the bitmap and failed regions array for addition.
-  void pre_collection(uint max_regions);
+  void pre_collection(uint max_num_regions);
   // Drops memory for internal data structures, but keep counts.
   void post_collection();
 
@@ -77,11 +80,11 @@ public:
   // Return a G1AbstractSubTask which does necessary preparation for evacuation failed regions
   G1AbstractSubTask* create_prepare_regions_task();
 
-  inline uint num_regions_evac_failed() const;
+  inline uint num_evac_failed_regions() const;
 
-  inline bool has_regions_evac_failed() const;
-  inline bool has_regions_evac_pinned() const;
-  inline bool has_regions_alloc_failed() const;
+  inline bool has_evac_failed_regions() const;
+  inline bool has_evac_pinned_regions() const;
+  inline bool has_alloc_failed_regions() const;
 
   // Record that the garbage collection encountered an evacuation failure in the
   // given region. Returns whether this has been the first occurrence of an evacuation

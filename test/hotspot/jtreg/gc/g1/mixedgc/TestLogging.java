@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test TestLogging
+ * @bug 8393007
  * @summary Check that a mixed GC is reflected in the gc logs
  * @requires vm.gc.G1
  * @requires vm.opt.MaxGCPauseMillis == "null"
@@ -56,7 +57,7 @@ public class TestLogging {
             "-XX:+WhiteBoxAPI",
             "-Xms10M", "-Xmx10M", "-XX:NewSize=2M", "-XX:MaxNewSize=2M",
             "-XX:+AlwaysTenure", // surviving promote objects immediately
-            "-XX:InitiatingHeapOccupancyPercent=100", // set initial CMC threshold and disable adaptive IHOP
+            "-XX:G1IHOP=100", // set initial CMC threshold and disable adaptive IHOP
             "-XX:-G1UseAdaptiveIHOP",                 // to avoid additional concurrent cycles caused by ergonomics
             "-XX:G1MixedGCCountTarget=4",
             "-XX:MaxGCPauseMillis=30000", // to have enough time
@@ -68,6 +69,7 @@ public class TestLogging {
         test("-Xlog:gc,gc+heap=debug");
         // Test turns logging on by giving -Xlog:gc=debug flag
         test("-Xlog:gc=debug,gc+heap=debug");
+        testWasteAllowance();
     }
 
     private static void test(String vmFlag) throws Exception {
@@ -76,6 +78,16 @@ public class TestLogging {
         System.out.println(output.getStdout());
         output.shouldHaveExitValue(0);
         output.shouldContain("Pause Young (Mixed)");
+    }
+
+    private static void testWasteAllowance() throws Exception {
+        // Multiplying a 64 MiB heap size by 100 overflows on 32-bit VMs.
+        OutputAnalyzer output = spawnMixedGCProvoker("-Xms64m", "-Xmx64m",
+                "-XX:G1HeapWastePercent=100", "-Xlog:gc,gc+ergo+cset=debug");
+        System.out.println(output.getStdout());
+        output.shouldHaveExitValue(0);
+        output.shouldContain("Pause Young (Mixed)");
+        output.shouldMatch("Pruned .*\\(allowed 67108864\\)");
     }
 
     /**

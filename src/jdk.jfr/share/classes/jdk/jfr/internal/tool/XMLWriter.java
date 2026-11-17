@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordedObject;
 
 final class XMLWriter extends EventPrintWriter {
+
     public XMLWriter(PrintWriter destination) {
         super(destination);
     }
@@ -167,38 +168,65 @@ final class XMLWriter extends EventPrintWriter {
     }
 
     private void printEscaped(String text) {
-        for (int i = 0; i < text.length(); i++) {
-            printEscaped(text.charAt(i));
+        int i = 0;
+        while (i < text.length()) {
+            int codePoint = text.codePointAt(i);
+            printEscaped(codePoint);
+            i += Character.charCount(codePoint);
         }
     }
 
-    private void printEscaped(char c) {
-        if (c == 34) {
+    // Valid XML 1.0 characters are taken from https://www.w3.org/TR/xml/#charsets
+    // Section 2.2
+    // Char ::= #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+    private static boolean isValid(int cp) {
+        if (cp == 0x09 || cp == 0x0A || cp == 0x0D) {
+            return true;
+        }
+        if (0x20 <= cp && cp <= 0xD7FF) {
+            return true;
+        }
+        if (0xE000 <= cp && cp <= 0xFFFD) {
+            return true;
+        }
+        if (0x10000 <= cp && cp <= 0x10FFFF) {
+            return true;
+        }
+        return false;
+    }
+
+    private void printEscaped(int cp) {
+        if (!isValid(cp)) {
+            // Not a valid XML 1.0 character. Use UTF-8 replacement character
+            print(EventPrintWriter.UTF8_REPLACEMENT);
+            return;
+        }
+        if (cp == 34) {
             print("&quot;");
             return;
         }
-        if (c == 38) {
+        if (cp == 38) {
             print("&amp;");
             return;
         }
-        if (c == 39) {
+        if (cp == 39) {
             print("&apos;");
             return;
         }
-        if (c == 60) {
+        if (cp == 60) {
             print("&lt;");
             return;
         }
-        if (c == 62) {
+        if (cp == 62) {
             print("&gt;");
             return;
         }
-        if (c > 0x7F) {
-            print("&#");
-            print((int) c);
+        if (cp > 0x7F) {
+            print("&#x");
+            print(Integer.toHexString(cp));
             print(';');
             return;
         }
-        print(c);
+        print((char) cp);
     }
 }

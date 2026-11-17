@@ -30,12 +30,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
-import jaxp.library.JAXPTestUtilities;
 
 /*
  * Utilities for testing XML Catalog API.
@@ -68,6 +66,9 @@ final class CatalogTestUtils {
 
     private static final String JAXP_PROPS = "jaxp.properties";
     private static final String JAXP_PROPS_BAK = JAXP_PROPS + ".bak";
+
+    private static final Path CATALOG_DIR =
+            Path.of(System.getProperty("test.src")).resolve("catalogFiles").normalize().toAbsolutePath();
 
     private CatalogTestUtils() { }
 
@@ -109,19 +110,12 @@ final class CatalogTestUtils {
 
     // Gets the paths of the specified catalogs.
     private static URI[] getCatalogPaths(String... catalogNames) {
-        return catalogNames == null
-                ? null
-                : Stream.of(catalogNames).map(
-                        catalogName -> getCatalogPath(catalogName)).collect(
-                                Collectors.toList()).toArray(new URI[0]);
+        return Stream.of(catalogNames).map(CatalogTestUtils::getCatalogPath).toList().toArray(new URI[0]);
     }
 
     // Gets the paths of the specified catalogs.
     static URI getCatalogPath(String catalogName) {
-        return catalogName == null
-                ? null
-                : Paths.get(JAXPTestUtilities.getPathByClassName(CatalogTestUtils.class, "catalogFiles")
-                        + catalogName).toUri();
+        return CATALOG_DIR.resolve(catalogName).toUri();
     }
 
     /* ********** jaxp.properties ********** */

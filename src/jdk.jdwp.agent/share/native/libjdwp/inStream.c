@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 #include "FrameID.h"
 
 #define INITIAL_REF_ALLOC 50
-#define SMALLEST(a, b) ((a) < (b)) ? (a) : (b)
 
 /*
  * TO DO: Support processing of replies through command input streams.
@@ -470,6 +469,7 @@ inStream_readValue(PacketInputStream *stream)
                 break;
             default:
                 stream->error = JDWP_ERROR(INVALID_TAG);
+                value.j = 0L; // to make compiler happy
                 break;
         }
     }

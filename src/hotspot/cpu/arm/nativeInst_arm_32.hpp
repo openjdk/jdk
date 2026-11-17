@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,7 +371,7 @@ class NativeMovConstReg: public NativeInstruction {
  public:
 
   intptr_t data() const;
-  void set_data(intptr_t x, address pc = 0);
+  void set_data(intptr_t x, address pc = nullptr);
   bool is_pc_relative() {
     return !is_movw();
   }

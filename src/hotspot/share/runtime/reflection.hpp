@@ -48,6 +48,8 @@ class Reflection: public AllStatic {
     DECLARED          = 1,
     MEMBER_PUBLIC     = 0,
     MEMBER_DECLARED   = 1,
+    TRUSTED_FINAL     = 0x10,
+    NULL_RESTRICTED   = 0x20,
     MAX_DIM           = 255
   };
 

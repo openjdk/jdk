@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class PreviewAutoSuppress extends TestRunner {
+    // Major version number (e.g. '27').
+    private static final String FEATURE_VERSION = String.valueOf(Runtime.version().feature());
 
     protected ToolBox tb;
 
@@ -83,7 +85,7 @@ public class PreviewAutoSuppress extends TestRunner {
         List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(classes)
                 .options("--enable-preview",
-                         "-source", String.valueOf(Runtime.version().feature()),
+                         "-source", FEATURE_VERSION,
                          "-Xlint:preview",
                          "-XDforcePreview",
                          "-XDrawDiagnostics")
@@ -92,10 +94,12 @@ public class PreviewAutoSuppress extends TestRunner {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
+        // As of Valhalla, j.l.Record is a preview class
         List<String> expected =
-                List.of("Outer.java:3:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.records)",
+                List.of("- compiler.warn.preview.feature.use.classfile: Record.class, " + FEATURE_VERSION,
                         "Outer.java:3:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.records)",
-                        "2 warnings");
+                        "Outer.java:3:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.records)",
+                        "3 warnings");
         if (!log.equals(expected))
             throw new Exception("expected output not found" + log);
         checkPreviewClassfile(classes.resolve("test").resolve("Outer.class"), true); //TODO: correct?
@@ -182,7 +186,7 @@ public class PreviewAutoSuppress extends TestRunner {
                          "--add-exports", "java.base/preview.api=ALL-UNNAMED",
                          "--enable-preview",
                          "-Xlint:preview",
-                         "-source", String.valueOf(Runtime.version().feature()),
+                         "-source", FEATURE_VERSION,
                          "-XDrawDiagnostics")
                 .files(tb.findJavaFiles(testSrc))
                 .run()

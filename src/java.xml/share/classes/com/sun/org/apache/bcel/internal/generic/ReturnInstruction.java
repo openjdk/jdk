@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,7 +26,7 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
 /**
  * Super class for the xRETURN family of instructions.
  *
- * @LastModified: Feb 2023
+ * @LastModified: Nov 2026
  */
 public abstract class ReturnInstruction extends Instruction implements ExceptionThrower, TypedInstruction, StackConsumer {
 
@@ -37,7 +37,9 @@ public abstract class ReturnInstruction extends Instruction implements Exception
     }
 
     /**
-     * @param opcode of instruction
+     * Constructs a ReturnInstruction.
+     *
+     * @param opcode of instruction.
      */
     protected ReturnInstruction(final short opcode) {
         super(opcode, (short) 1);
@@ -48,6 +50,11 @@ public abstract class ReturnInstruction extends Instruction implements Exception
         return new Class<?>[] {ExceptionConst.ILLEGAL_MONITOR_STATE};
     }
 
+    /**
+     * Gets the type of the returned value.
+     *
+     * @return The type.
+     */
     public Type getType() {
         final short opcode = super.getOpcode();
         switch (opcode) {
@@ -69,7 +76,7 @@ public abstract class ReturnInstruction extends Instruction implements Exception
     }
 
     /**
-     * @return type associated with the instruction
+     * @return type associated with the instruction.
      */
     @Override
     public Type getType(final ConstantPoolGen cp) {

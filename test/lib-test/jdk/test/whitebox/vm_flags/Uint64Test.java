@@ -35,7 +35,7 @@
  */
 
 public class Uint64Test {
-    private static final String FLAG_NAME = "MaxRAM";
+    private static final String FLAG_NAME = "StringDeduplicationHashSeed";
     private static final Long[] TESTS = {0L, 100L, (long) Integer.MAX_VALUE,
             -1L, Long.MAX_VALUE, Long.MIN_VALUE};
 

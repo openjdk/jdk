@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ public class FileImageInputStream extends ImageInputStreamImpl {
         Disposer.addRecord(disposerReferent, disposerRecord);
     }
 
+    @Override
     public int read() throws IOException {
         checkClosed();
         bitOffset = 0;
@@ -107,6 +108,7 @@ public class FileImageInputStream extends ImageInputStreamImpl {
         return val;
     }
 
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         checkClosed();
         bitOffset = 0;
@@ -124,6 +126,7 @@ public class FileImageInputStream extends ImageInputStreamImpl {
      * @return the file length as a {@code long}, or
      * {@code -1}.
      */
+    @Override
     public long length() {
         try {
             checkClosed();
@@ -133,6 +136,7 @@ public class FileImageInputStream extends ImageInputStreamImpl {
         }
     }
 
+    @Override
     public void seek(long pos) throws IOException {
         checkClosed();
         if (pos < flushedPos) {
@@ -143,6 +147,7 @@ public class FileImageInputStream extends ImageInputStreamImpl {
         streamPos = raf.getFilePointer();
     }
 
+    @Override
     public void close() throws IOException {
         super.close();
         disposerRecord.dispose(); // this closes the RandomAccessFile

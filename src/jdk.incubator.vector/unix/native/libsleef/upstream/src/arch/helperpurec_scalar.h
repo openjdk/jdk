@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2023.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -426,7 +426,7 @@ static INLINE void vstream_v_p_vf(float *ptr, vfloat v) { *ptr = v; }
 static vquad loadu_vq_p(void *p) {
   vquad vq;
   memcpy(8 + (char *)&vq, p, 8);
-  memcpy((char *)&vq, 8 + p, 8);
+  memcpy((char *)&vq, 8 + (char *)p, 8);
   return vq;
 }
 

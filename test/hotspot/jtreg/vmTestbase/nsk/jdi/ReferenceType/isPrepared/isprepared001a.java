@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,13 @@ import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
-
 /**
  * This class is used as debugee application for the isprepared001 JDI test.
  */
 
 public class isprepared001a {
 
-    static boolean verbose_mode = false;  // debugger may switch to true
-                                          // - for more easy failure evaluation
+    private static Log log = new Log(System.err);
 
     NotPreparedClass not_prepared_class_0, not_prepared_class_1[] = {not_prepared_class_0};
 
@@ -43,33 +41,20 @@ public class isprepared001a {
 
     PreparedClass  prepared_class_0 = new PreparedClass();
 
-    private static void print_log_on_verbose(String message) {
-        if ( verbose_mode ) {
-            System.err.println(message);
-        }
-    }
-
     public static void main (String argv[]) {
 
-        for (int i=0; i<argv.length; i++) {
-            if ( argv[i].equals("-vbs") || argv[i].equals("-verbose") ) {
-                verbose_mode = true;
-                break;
-            }
-        }
-
-        print_log_on_verbose("**> isprepared001a: debugee started!");
+        log.display("**> isprepared001a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
         isprepared001a isprepared001a_obj = new isprepared001a();
 
-        print_log_on_verbose("**> isprepared001a: waiting for \"quit\" signal...");
+        log.display("**> isprepared001a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            print_log_on_verbose("**> isprepared001a: \"quit\" signal recieved!");
-            print_log_on_verbose("**> isprepared001a: completed succesfully!");
+            log.display("**> isprepared001a: \"quit\" signal recieved!");
+            log.display("**> isprepared001a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> isprepared001a: unexpected signal (no \"quit\") - " + instruction);
@@ -83,7 +68,6 @@ class NotPreparedClass {}
 
 // not prepared interface
 interface NotPreparedInterface {}
-
 
 // prepared interface
 interface PreparedInterface {

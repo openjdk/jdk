@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,7 +286,7 @@ public interface Chronology extends Comparable<Chronology> {
      * Gets the calendar type of the calendar system.
      * <p>
      * The calendar type is an identifier defined by the CLDR and
-     * <em>Unicode Locale Data Markup Language (LDML)</em> specifications
+     * <em>Unicode Common Locale Data {@literal &} Rules (CLDR)</em> specifications
      * to uniquely identify a calendar.
      * The {@code getCalendarType} is the concatenation of the CLDR calendar type
      * and the variant, if applicable, is appended separated by "-".

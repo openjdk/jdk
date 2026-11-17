@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@ import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.DebugSettings;
 import sun.awt.SunToolkit;
 import sun.awt.util.IdentityArrayList;
@@ -259,7 +258,7 @@ public class Window extends Container implements Accessible {
     /**
      * Contains all the windows that have a peer object associated,
      * i. e. between addNotify() and removeNotify() calls. The list
-     * of all Window instances can be obtained from AppContext object.
+     * of all Window instances can be obtained from {@link #getWindows()}
      *
      * @since 1.6
      */
@@ -275,7 +274,7 @@ public class Window extends Container implements Accessible {
                                             new Vector<WeakReference<Window>>();
 
     /*
-     * We insert a weak reference into the Vector of all Windows in AppContext
+     * We insert a weak reference into the Vector of all Windows
      * instead of 'this' so that garbage collection can still take place
      * correctly.
      */
@@ -427,11 +426,9 @@ public class Window extends Container implements Accessible {
     static class WindowDisposerRecord implements sun.java2d.DisposerRecord {
         WeakReference<Window> owner;
         final WeakReference<Window> weakThis;
-        final WeakReference<AppContext> context;
 
-        WindowDisposerRecord(AppContext context, Window victim) {
+        WindowDisposerRecord(Window victim) {
             weakThis = victim.weakThis;
-            this.context = new WeakReference<AppContext>(context);
         }
 
         public void updateOwner() {
@@ -448,10 +445,7 @@ public class Window extends Container implements Accessible {
                     parent.removeOwnedWindow(weakThis);
                 }
             }
-            AppContext ac = context.get();
-            if (null != ac) {
-                Window.removeFromWindowList(ac, weakThis);
-            }
+            Window.removeFromWindowList(weakThis);
         }
     }
 
@@ -499,7 +493,7 @@ public class Window extends Container implements Accessible {
         }
 
         modalExclusionType = Dialog.ModalExclusionType.NO_EXCLUDE;
-        disposerRecord = new WindowDisposerRecord(appContext, this);
+        disposerRecord = new WindowDisposerRecord(this);
         sun.java2d.Disposer.addRecord(anchor, disposerRecord);
 
         SunToolkit.checkAndSetPolicy(this);
@@ -1489,34 +1483,6 @@ public class Window extends Container implements Accessible {
         }
     }
 
-    private static Window[] getWindows(AppContext appContext) {
-        synchronized (Window.class) {
-            Window[] realCopy;
-            @SuppressWarnings("unchecked")
-            Vector<WeakReference<Window>> windowList =
-                (Vector<WeakReference<Window>>)appContext.get(Window.class);
-            if (windowList != null) {
-                int fullSize = windowList.size();
-                int realSize = 0;
-                Window[] fullCopy = new Window[fullSize];
-                for (int i = 0; i < fullSize; i++) {
-                    Window w = windowList.get(i).get();
-                    if (w != null) {
-                        fullCopy[realSize++] = w;
-                    }
-                }
-                if (fullSize != realSize) {
-                    realCopy = Arrays.copyOf(fullCopy, realSize);
-                } else {
-                    realCopy = fullCopy;
-                }
-            } else {
-                realCopy = new Window[0];
-            }
-            return realCopy;
-        }
-    }
-
     /**
      * Returns an array of all {@code Window}s, both owned and ownerless,
      * created by this application.
@@ -1534,7 +1500,24 @@ public class Window extends Container implements Accessible {
      * @since 1.6
      */
     public static Window[] getWindows() {
-        return getWindows(AppContext.getAppContext());
+        synchronized (Window.class) {
+            Window[] realCopy;
+            int fullSize = windowList.size();
+            int realSize = 0;
+            Window[] fullCopy = new Window[fullSize];
+            for (int i = 0; i < fullSize; i++) {
+                Window w = windowList.get(i).get();
+                if (w != null) {
+                    fullCopy[realSize++] = w;
+                }
+            }
+            if (fullSize != realSize) {
+                realCopy = Arrays.copyOf(fullCopy, realSize);
+            } else {
+                realCopy = fullCopy;
+            }
+            return realCopy;
+        }
     }
 
     /**
@@ -2746,30 +2729,22 @@ public class Window extends Container implements Accessible {
         child.disposerRecord.updateOwner();
     }
 
+    private static final Vector<WeakReference<Window>> windowList = new Vector<>();
+
     private void addToWindowList() {
         synchronized (Window.class) {
-            @SuppressWarnings("unchecked")
-            Vector<WeakReference<Window>> windowList = (Vector<WeakReference<Window>>)appContext.get(Window.class);
-            if (windowList == null) {
-                windowList = new Vector<WeakReference<Window>>();
-                appContext.put(Window.class, windowList);
-            }
             windowList.add(weakThis);
         }
     }
 
-    private static void removeFromWindowList(AppContext context, WeakReference<Window> weakThis) {
+    private static void removeFromWindowList(WeakReference<Window> weakThis) {
         synchronized (Window.class) {
-            @SuppressWarnings("unchecked")
-            Vector<WeakReference<Window>> windowList = (Vector<WeakReference<Window>>)context.get(Window.class);
-            if (windowList != null) {
-                windowList.remove(weakThis);
-            }
+            windowList.remove(weakThis);
         }
     }
 
     private void removeFromWindowList() {
-        removeFromWindowList(appContext, weakThis);
+        removeFromWindowList(weakThis);
     }
 
     /**
@@ -2909,7 +2884,7 @@ public class Window extends Container implements Accessible {
         weakThis = new WeakReference<>(this);
 
         anchor = new Object();
-        disposerRecord = new WindowDisposerRecord(appContext, this);
+        disposerRecord = new WindowDisposerRecord(this);
         sun.java2d.Disposer.addRecord(anchor, disposerRecord);
 
         addToWindowList();

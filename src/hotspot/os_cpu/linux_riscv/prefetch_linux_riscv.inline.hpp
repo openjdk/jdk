@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,10 +23,10 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_RISCV_VM_PREFETCH_LINUX_RISCV_INLINE_HPP
-#define OS_CPU_LINUX_RISCV_VM_PREFETCH_LINUX_RISCV_INLINE_HPP
+#ifndef OS_CPU_LINUX_RISCV_PREFETCH_LINUX_RISCV_INLINE_HPP
+#define OS_CPU_LINUX_RISCV_PREFETCH_LINUX_RISCV_INLINE_HPP
 
-#include "runtime/prefetch.hpp"
+// Included in runtime/prefetch.inline.hpp
 
 inline void Prefetch::read (const void *loc, intx interval) {
   if (interval >= 0 && UseZicbop) {
@@ -42,4 +42,4 @@ inline void Prefetch::write(void *loc, intx interval) {
   }
 }
 
-#endif // OS_CPU_LINUX_RISCV_VM_PREFETCH_LINUX_RISCV_INLINE_HPP
+#endif // OS_CPU_LINUX_RISCV_PREFETCH_LINUX_RISCV_INLINE_HPP

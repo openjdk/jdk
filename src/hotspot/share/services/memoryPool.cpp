@@ -51,7 +51,6 @@ MemoryPool::MemoryPool(const char* name,
   _type(type),
   _initial_size(init_size),
   _max_size(max_size),
-  _available_for_allocation(true),
   _managers(),
   _num_managers(0),
   _peak_usage(),
@@ -188,7 +187,7 @@ MemoryUsage CodeHeapPool::get_memory_usage() {
   size_t used      = used_in_bytes();
   OrderAccess::acquire(); // ensure possible cache expansion in CodeCache::allocate is seen
   size_t committed = _codeHeap->capacity();
-  size_t maxSize   = (available_for_allocation() ? max_size() : 0);
+  size_t maxSize   = max_size();
 
   return MemoryUsage(initial_size(), used, committed, maxSize);
 }

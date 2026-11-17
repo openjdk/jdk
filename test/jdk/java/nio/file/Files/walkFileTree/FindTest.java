@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,15 @@
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
  *        CreateFileTree
- * @run testng/othervm -Djava.io.tmpdir=. FindTest
+ * @run junit/othervm -Djava.io.tmpdir=. FindTest
  */
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.FileSystemLoopException;
 import java.nio.file.FileVisitOption;
-import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
-import java.nio.file.Files;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -56,11 +56,11 @@ import java.util.stream.Collectors;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FindTest {
 
@@ -69,7 +69,7 @@ public class FindTest {
     private static Path top;
     private static String TOP;
 
-    @BeforeClass
+    @BeforeAll
     public static void createFileTree() throws Exception {
         top = CreateFileTree.create();
         TOP = top.toAbsolutePath().toString();
@@ -107,7 +107,7 @@ public class FindTest {
             throws IOException {
         List<String> expectedList = Arrays.asList(expected.getStdout()
                                           .split(System.lineSeparator()));
-        assertEquals(actual.size(), expectedList.size());
+        assertEquals(expectedList.size(), actual.size());
         assertTrue(actual.removeAll(expectedList));
     }
 

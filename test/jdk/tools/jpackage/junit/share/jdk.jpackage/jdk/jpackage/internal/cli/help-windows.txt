@@ -64,8 +64,35 @@ Generic Options:
           removed upon the task completion.
   --vendor <vendor string>
           Vendor of the application
-  --verbose
-          Enables verbose output
+  --verbose [<[-]category(,[-]category)*>]
+          Configures verbose output. Where "category" is one of
+              "all"
+              "console"
+              "log"
+              "errors"
+              "progress"
+              "resources"
+              "summary"
+              "tools"
+              "trace"
+              "warnings"
+
+          Suppress all console output, enable logging via System.Logger API:
+              --verbose log
+          Enable all message categories in the console:
+              --verbose console
+          Enable all message categories, but "trace" and "tools" in the console:
+              --verbose console,-trace,-tools
+          Enable "trace" and "tools" message categories in the console:
+              --verbose trace,tools
+          Enable "trace" and "tools" message categories in the console and
+          enable logging via System.Logger API:
+              --verbose log,trace,tools
+
+          If the option is specified without the value, it is equivalent to
+              --verbose console,-trace
+          If the option is not specified it is equivalent to
+              --verbose errors,warnings
   --version
           Print the product version to the output stream and exit.
 
@@ -102,6 +129,14 @@ Options for creating the application image:
   --app-content <additional content>[,<additional content>...]
           A comma separated list of paths to files and/or directories
           to add to the application payload.
+          --app-content is processed after --app-resources, independent
+          of command-line order.
+          This option can be used more than once.
+  --app-resources <additional resources>[;<additional resources>...]
+          A semicolon-separated list of paths to files and/or directories
+          to add to the application image root directory.
+          If a file from --app-resources conflicts with one from
+          --app-content, the file from --app-content is used.
           This option can be used more than once.
   --input -i <directory path>
           Path of the input directory that contains the files to be packaged
@@ -189,17 +224,23 @@ Platform dependent options for creating the application package:
   --win-help-url <url>
           URL where user can obtain further information or technical support
   --win-menu [<shortcut startup directory>]
-          Request to add a Start menu shortcut for this application
+          Adds a Start menu shortcut for this application, or requests
+          to do so if --win-shortcut-prompt is specified
   --win-menu-group <menu group name>
           Start Menu group this application is placed in
   --win-per-user-install
-          Request to perform an install on a per-user basis
+          Installs the application on a per-user basis.
+          Without this option installs per-machine
   --win-shortcut [<shortcut startup directory>]
-          Request to add desktop shortcut for this application
+          Adds a desktop shortcut for this application, or requests
+          to do so if --win-shortcut-prompt is specified
   --win-shortcut-prompt
-          Adds a dialog to enable the user to choose if shortcuts
-          will be created by installer.
+          Adds a dialog if at least one of --win-menu or --win-shortcut
+          are specified to enable the user to choose if these shortcuts
+          will be created by the installer
   --win-update-url <url>
           URL of available application update information
   --win-upgrade-uuid <uuid>
           UUID associated with upgrades for this package
+  --win-with-ui
+          Enforces the installer to have UI

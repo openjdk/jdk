@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,15 @@
  * @test
  * @bug 8257598
  * @summary check that Record::equals uses the fields and not the accessors for the comparison
- * @run testng CheckEqualityIsBasedOnFields
+ * @run junit CheckEqualityIsBasedOnFields
  */
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class CheckEqualityIsBasedOnFields {
     public record R01(boolean x) {
@@ -91,8 +89,7 @@ public class CheckEqualityIsBasedOnFields {
         }
     }
 
-    @DataProvider(name = "recordData")
-    public Object[][] recordTypeAndExpectedValue() {
+    public static Object[][] recordTypeAndExpectedValue() {
         return new Object[][] {
                 new Object[] { R01.class, boolean.class, new Object[]{true, false} },
                 new Object[] { R02.class, byte.class, new Object[]{(byte)0, (byte)1, (byte)2, (byte)3, (byte)4, (byte)5,
@@ -112,7 +109,8 @@ public class CheckEqualityIsBasedOnFields {
         };
     }
 
-    @Test(dataProvider = "recordData")
+    @ParameterizedTest
+    @MethodSource("recordTypeAndExpectedValue")
     public void testEqualsDoesntUseAccessors(Class<?> clazz, Class<?> componentClass, Object[] expectedXValues) throws Exception {
         Constructor<?> ctor;
         Method getter, equalsMethod;
@@ -125,8 +123,8 @@ public class CheckEqualityIsBasedOnFields {
             System.out.println(rec1.toString());
             System.out.println(rec2.toString());
             assertFalse((boolean) equalsMethod.invoke(rec1, rec2));
-            assertNotEquals(expectedXValues[i], expectedXValues[i + expectedXValues.length / 2]);
-            assertEquals(getter.invoke(rec1), getter.invoke(rec2));
+            assertNotEquals(expectedXValues[i + expectedXValues.length / 2], expectedXValues[i]);
+            assertEquals(getter.invoke(rec2), getter.invoke(rec1));
         }
     }
 }

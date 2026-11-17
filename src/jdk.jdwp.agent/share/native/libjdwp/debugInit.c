@@ -181,11 +181,11 @@ DEF_Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     vmInitialized = JNI_FALSE;
     gdata->vmDead = JNI_FALSE;
 
-    jvmtiCompileTimeMajorVersion  = ( JVMTI_VERSION & JVMTI_VERSION_MASK_MAJOR )
+    jvmtiCompileTimeMajorVersion  = ((unsigned)JVMTI_VERSION & JVMTI_VERSION_MASK_MAJOR)
                                         >> JVMTI_VERSION_SHIFT_MAJOR;
-    jvmtiCompileTimeMinorVersion  = ( JVMTI_VERSION & JVMTI_VERSION_MASK_MINOR )
+    jvmtiCompileTimeMinorVersion  = ((unsigned)JVMTI_VERSION & JVMTI_VERSION_MASK_MINOR)
                                         >> JVMTI_VERSION_SHIFT_MINOR;
-    jvmtiCompileTimeMicroVersion  = ( JVMTI_VERSION & JVMTI_VERSION_MASK_MICRO )
+    jvmtiCompileTimeMicroVersion  = ((unsigned)JVMTI_VERSION & JVMTI_VERSION_MASK_MICRO)
                                         >> JVMTI_VERSION_SHIFT_MICRO;
 
     /* Get the JVMTI Env, IMPORTANT: Do this first! For jvmtiAllocate(). */

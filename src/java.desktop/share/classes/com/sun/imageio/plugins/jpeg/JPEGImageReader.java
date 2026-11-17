@@ -1258,8 +1258,14 @@ public class JPEGImageReader extends ImageReader {
 
             int[] sBands = param.getSourceBands();
             if (sBands != null) {
-                srcBands = sBands;
+                srcBands = sBands.clone();
                 numRasterBands = srcBands.length;
+            }
+            for (int b = 0; b < srcBands.length; b++) {
+                if (srcBands[b] < 0 || srcBands[b] >= numComponents) {
+                   throw new IllegalArgumentException(
+                          "ImageReadParam out of range source band : " + srcBands[b]);
+                }
             }
             if (!wantRaster) {  // ignore dest bands for Raster
                 destinationBands = param.getDestinationBands();

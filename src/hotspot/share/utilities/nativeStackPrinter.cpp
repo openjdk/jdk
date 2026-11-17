@@ -45,7 +45,7 @@ void NativeStackPrinter::print_stack_from_frame(outputStream* st, frame fr,
                                                 bool print_source_info, int max_frames) {
   // see if it's a valid frame
   if (fr.pc()) {
-    st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
+    st->print_cr("Native frames: (J=compiled Java code, A=AOT compiled, P=AOT preloaded, j=interpreted, Vv=VM code, C=native code)");
     const int limit = max_frames == -1 ? StackPrintLimit
                                        : MIN2(max_frames, StackPrintLimit);
     int count = 0;

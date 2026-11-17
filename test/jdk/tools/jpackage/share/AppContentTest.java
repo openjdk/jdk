@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -37,13 +38,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.FileUtils;
@@ -52,8 +54,13 @@ import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.ApplicationLayout;
+import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.ConfigurationTarget;
+import jdk.jpackage.test.FailedCommandErrorValidator;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
+import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -61,17 +68,17 @@ import jdk.jpackage.test.TKit;
 
 
 /**
- * Tests generation of packages with additional content in app image.
+ * Tests generation of packages with additional content or resources in app image.
  */
 
 /*
  * @test
- * @summary jpackage with --app-content option
+ * @summary jpackage with --app-content or --app-resources option
  * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build AppContentTest
- * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppContentTest
  */
 public class AppContentTest {
@@ -86,27 +93,99 @@ public class AppContentTest {
     @Test
     @ParameterSupplier("test")
     @ParameterSupplier(value="testSymlink", ifNotOS = WINDOWS)
+    @ParameterSupplier
     public void testAppImage(TestSpec testSpec) throws Exception {
         testSpec.test(new ConfigurationTarget(JPackageCommand.helloAppImage()));
     }
 
     @Test(ifOS = MACOS)
-    @Parameter({"apps", "warning.non.standard.contents.sub.dir"})
-    @Parameter({"apps/dukeplug.png", "warning.app.content.is.not.dir"})
-    public void testWarnings(String testPath, String warningId) throws Exception {
-        final var appContentValue = TKit.TEST_SRC_ROOT.resolve(testPath);
-        final var expectedWarning = JPackageStringBundle.MAIN.cannedFormattedString(
-                warningId, appContentValue);
+    @Parameter("NOT_DIRECTORY")
+    @Parameter("NON_STANDARD_DIRECTORY_NAME")
+    public void testWarnings(AppContentMultiLineWarning type) throws Exception {
 
-        JPackageCommand.helloAppImage()
-            .addArguments("--app-content", appContentValue)
-            .setFakeRuntime()
-            .validateOutput(expectedWarning)
-            .executeIgnoreExitCode();
+        var cmd = JPackageCommand.helloAppImage()
+                .setFakeRuntime()
+                .saveConsoleOutput(true)
+                .setEnabledMessageCategories(MessageCategory.WARNINGS, MessageCategory.ERRORS);
+        for (var appContent: type.initAppContent()) {
+            cmd.addArguments("--app-content", appContent);
+        }
+
+        var result = cmd.executeIgnoreExitCode();
+
+        var validator = new JPackageOutputValidator().stderr();
+
+        validator.expectMatchingStrings(JPackageCommand.makeSummaryMultiLineWarning("warning.non-standard-app-content"));
+        type.expectedWarnings().stream().map(str -> {
+            return TKit.assertTextStream("  " + str.getValue()).predicate(String::equals);
+        }).forEach(validator::add);
+
+        // Signing is finicky when the bundle contains invalid content.
+        // It may pass or fail depending on the version of the codesign (macOS version?).
+        if (result.getExitCode() != 0) {
+            // Expect codesign error in the output.
+            var cmdlinePattern = String.format(
+                    "^/usr/bin/codesign -s - -vvvv --force %s",
+                    Pattern.quote(cmd.outputBundle().normalize().toAbsolutePath().toString()));
+
+            //
+            // Typical codesign error:
+            //
+            // foo/output/WarningsAppContentTest.app: replacing existing signature
+            // foo/output/WarningsAppContentTest.app: code object is not signed at all
+            // In subcomponent: foo/output/WarningsAppContentTest.app/Contents/dukeplug.png
+            //
+
+            var errorValidator = new FailedCommandErrorValidator(Pattern.compile(cmdlinePattern))
+                    .exitCode(1)
+                    .validators(
+                            TKit.assertTextStream(": replacing existing signature").predicate(String::endsWith),
+                            TKit.assertTextStream(": code object is not signed at all").predicate(String::endsWith),
+                            TKit.assertTextStream("In subcomponent: ").predicate(String::startsWith))
+                    .create();
+            validator.add(errorValidator);
+        }
+
+        validator.validateEndOfStream().applyTo(cmd, result);
+    }
+
+    public enum AppContentMultiLineWarning {
+        NOT_DIRECTORY("warning.non-standard-app-content.not-dir", Path.of("apps/dukeplug.png")),
+        NON_STANDARD_DIRECTORY_NAME("warning.non-standard-app-content.non-standard-dir-name", Path.of("apps")),
+        ;
+
+        AppContentMultiLineWarning(String formatKey, Path appContent) {
+            this.formatKey = Objects.requireNonNull(formatKey);
+            this.appContent = TKit.TEST_SRC_ROOT.resolve(appContent);
+        }
+
+        List<Path> initAppContent() {
+            return List.of(appContent);
+        }
+
+        List<CannedFormattedString> expectedWarnings() {
+            return switch (this) {
+                case NOT_DIRECTORY -> {
+                    yield List.of(JPackageStringBundle.MAIN.cannedFormattedString(formatKey, appContent));
+                }
+                case NON_STANDARD_DIRECTORY_NAME -> {
+                    yield List.of(JPackageStringBundle.MAIN.cannedFormattedString(formatKey, appContent.getFileName(), appContent));
+                }
+            };
+        }
+
+        private final String formatKey;
+        private Path appContent;
+    }
+
+    private static Collection<Object[]> withOptions(Stream<TestSpec.Builder> specs) {
+        return specs.flatMap(builder -> Stream.of(AppFilesOption.values())
+                .map(option -> new Object[] { builder.create(option) }))
+                .toList();
     }
 
     public static Collection<Object[]> test() {
-        return Stream.of(
+        var tests = Stream.of(
                 build().add(TEST_JAVA).add(TEST_DUKE),
                 build().add(TEST_JAVA).add(TEST_BAD),
                 build().startGroup().add(TEST_JAVA).add(TEST_DUKE).endGroup().add(TEST_DIR),
@@ -122,36 +201,105 @@ public class AppContentTest {
                 build().add(createTextFileContent("a/b/c/d", "Foo")).add(createTextFileContent("a", "Bar")),
                 // Same name: one is a file, another is a directory.
                 build().add(createTextFileContent("a", "Bar")).add(createTextFileContent("a/b/c/d", "Foo"))
-        ).map(TestSpec.Builder::create).map(v -> {
-            return new Object[] {v};
-        }).toList();
+        );
+
+        return withOptions(tests);
+    }
+
+    public static Collection<Object[]> testAppImage() {
+        var tests = Stream.of(
+                build().add(NonExistentPath.create("*output-app-image*", JPackageCommand::outputBundle))
+        );
+
+        return withOptions(tests);
     }
 
     public static Collection<Object[]> testSymlink() {
-        return Stream.of(
+        var tests = Stream.of(
                 build().add(TEST_JAVA)
                         .add(new SymlinkContentFactory("Links", "duke-link", "duke-target"))
                         .add(new SymlinkContentFactory("", "a/b/foo-link", "c/bar-target"))
-        ).map(TestSpec.Builder::create).map(v -> {
-            return new Object[] {v};
-        }).toList();
+        );
+
+        return withOptions(tests);
     }
 
-    public record TestSpec(List<List<ContentFactory>> contentFactories) {
+    private enum AppFilesOption {
+        CONTENT("--app-content", ",", ApplicationLayout::contentDirectory, TKit.isOSX()),
+        RESOURCES("--app-resources", File.pathSeparator,
+            ApplicationLayout::resourcesDirectory, false);
+
+        AppFilesOption(String optionName, String delimiter,
+                Function<ApplicationLayout, Path> outputRoot,
+                boolean wrapInResourcesOnMac) {
+            this.optionName = optionName;
+            this.delimiter = delimiter;
+            this.outputRoot = outputRoot;
+            this.wrapInResourcesOnMac = wrapInResourcesOnMac;
+        }
+
+        Path optionPath(Path path) {
+            if (wrapInResourcesOnMac()
+                    && Optional.ofNullable(path.getParent())
+                            .map(Path::getFileName)
+                            .map(RESOURCES_DIR::equals)
+                            .orElse(false)) {
+                return path.getParent();
+            }
+            return path;
+        }
+
+        Path outputRoot(JPackageCommand cmd) {
+            var root = outputRoot.apply(cmd.appLayout());
+            return wrapInResourcesOnMac
+                    ? root.resolve(RESOURCES_DIR)
+                    : root;
+        }
+
+        String optionName() {
+           return optionName;
+        }
+
+        boolean wrapInResourcesOnMac() {
+            return wrapInResourcesOnMac;
+        }
+
+        private final String optionName;
+        private final String delimiter;
+        private final Function<ApplicationLayout, Path> outputRoot;
+        // On OSX `--app-content` paths will be copied into the "Contents" folder
+        // of the output app image.
+        // "codesign" imposes restrictions on the directory structure of "Contents" folder.
+        // In particular, random files should be placed in "Contents/Resources" folder
+        // otherwise "codesign" will fail to sign.
+        // Need to prepare arguments for `--app-content` accordingly.
+        private final boolean wrapInResourcesOnMac;
+    }
+
+    private record TestSpec(AppFilesOption option,
+            List<List<ContentFactory>> contentFactories) {
         public TestSpec {
+            Objects.requireNonNull(option);
             contentFactories.stream().flatMap(List::stream).forEach(Objects::requireNonNull);
+            if (contentFactories.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
         }
 
         @Override
         public String toString() {
-            return contentFactories.stream().map(group -> {
+            var sb = new StringBuilder();
+
+            sb.append(option).append(" ").append(contentFactories.stream().map(group -> {
                 return group.stream().map(ContentFactory::toString).collect(joining(","));
-            }).collect(joining("; "));
+            }).collect(joining("; ")));
+
+            return sb.toString();
         }
 
         void test(ConfigurationTarget target) {
             final int expectedJPackageExitCode;
-            if (contentFactories.stream().flatMap(List::stream).anyMatch(TEST_BAD::equals)) {
+            if (contentFactories.stream().flatMap(List::stream).anyMatch(NonExistentPath.class::isInstance)) {
                 expectedJPackageExitCode = 1;
             } else {
                 expectedJPackageExitCode = 0;
@@ -160,27 +308,20 @@ public class AppContentTest {
             final List<List<Content>> allContent = new ArrayList<>();
 
             target.addInitializer(JPackageCommand::setFakeRuntime)
-            .addRunOnceInitializer(_ -> {
+            .addInitializer(cmd -> {
                 contentFactories.stream().map(group -> {
-                    return group.stream().map(ContentFactory::create).toList();
+                    return group.stream().map(contentFactory -> {
+                        return contentFactory.create(cmd, option.wrapInResourcesOnMac());
+                    }).toList();
                 }).forEach(allContent::add);
             }).addInitializer(cmd -> {
                 allContent.stream().map(group -> {
-                    return Stream.of("--app-content", group.stream()
+                    return Stream.of(option.optionName, group.stream()
                             .map(Content::paths)
                             .flatMap(List::stream)
-                            .map(appContentArg -> {
-                                if (COPY_IN_RESOURCES && Optional.ofNullable(appContentArg.getParent())
-                                        .map(Path::getFileName)
-                                        .map(RESOURCES_DIR::equals)
-                                        .orElse(false)) {
-                                    return appContentArg.getParent();
-                                } else {
-                                    return appContentArg;
-                                }
-                            })
+                            .map(path -> option.optionPath(path))
                             .map(Path::toString)
-                            .collect(joining(",")));
+                            .collect(joining(option.delimiter)));
                     }).flatMap(x -> x).forEachOrdered(cmd::addArgument);
             });
 
@@ -193,7 +334,11 @@ public class AppContentTest {
             });
 
             target.addInstallVerifier(cmd -> {
-                var appContentRoot = getAppContentRoot(cmd);
+                if (expectedJPackageExitCode != 0) {
+                    return;
+                }
+
+                var appContentRoot = option.outputRoot(cmd);
 
                 Set<PathVerifier> disabledVerifiers = new HashSet<>();
 
@@ -244,8 +389,8 @@ public class AppContentTest {
         }
 
         static final class Builder {
-            TestSpec create() {
-                return new TestSpec(groups);
+            TestSpec create(AppFilesOption option) {
+                return new TestSpec(option, groups);
             }
 
             final class GroupBuilder {
@@ -301,17 +446,8 @@ public class AppContentTest {
         return new TestSpec.Builder();
     }
 
-    private static Path getAppContentRoot(JPackageCommand cmd) {
-        final Path contentDir = cmd.appLayout().contentDirectory();
-        if (COPY_IN_RESOURCES) {
-            return contentDir.resolve(RESOURCES_DIR);
-        } else {
-            return contentDir;
-        }
-    }
-
-    private static Path createAppContentRoot() {
-        if (COPY_IN_RESOURCES) {
+    private static Path createAppContentRoot(boolean srcRootMustBeResourcesDir) {
+        if (srcRootMustBeResourcesDir) {
             return TKit.createTempDirectory("app-content").resolve(RESOURCES_DIR);
         } else {
             return TKit.createTempDirectory("app-content");
@@ -330,7 +466,7 @@ public class AppContentTest {
 
     @FunctionalInterface
     private interface ContentFactory {
-        Content create();
+        Content create(JPackageCommand cmd, boolean srcRootMustBeResourcesDir);
     }
 
     private interface Content {
@@ -338,12 +474,7 @@ public class AppContentTest {
         Iterable<PathVerifier> verifiers(Path appContentRoot);
     }
 
-    private sealed interface PathVerifier permits
-            RegularFileVerifier,
-            DirectoryVerifier,
-            SymlinkTargetVerifier,
-            NoPathVerifier {
-
+    private sealed interface PathVerifier {
         Path path();
         void verify();
     }
@@ -468,22 +599,45 @@ public class AppContentTest {
     /**
      * Non-existing content.
      */
-    private static final class NonExistantPath implements ContentFactory {
+    private static final class NonExistentPath implements ContentFactory {
+
+        private NonExistentPath(String label, Function<JPackageCommand, Path> makePath) {
+            this.label = Objects.requireNonNull(label);
+            this.makePath = Objects.requireNonNull(makePath);
+        }
+
         @Override
-        public Content create() {
-            var nonExistant = TKit.createTempFile("non-existant");
-            try {
-                TKit.deleteIfExists(nonExistant);
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
+        public Content create(JPackageCommand cmd, boolean srcRootMustBeResourcesDir) {
+            var nonexistent = makePath.apply(cmd);
+            if (Files.exists(nonexistent)) {
+                throw new IllegalStateException();
             }
-            return new FileContent(nonExistant, 0);
+            return new FileContent(nonexistent, 0);
         }
 
         @Override
         public String toString() {
-            return "*non-existant*";
+            return label;
         }
+
+        static NonExistentPath create(String label, Function<JPackageCommand, Path> makePath) {
+            return new NonExistentPath(label, makePath);
+        }
+
+        static NonExistentPath create(String path) {
+            return new NonExistentPath(String.format("*%s*", Objects.requireNonNull(path)), _ -> {
+                var nonexistent = TKit.createTempFile(path);
+                try {
+                    TKit.deleteIfExists(nonexistent);
+                    return nonexistent;
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+            });
+        }
+
+        private final String label;
+        private final Function<JPackageCommand, Path> makePath;
     }
 
     /**
@@ -566,8 +720,8 @@ public class AppContentTest {
         }
 
         @Override
-        public Content create() {
-            final var appContentRoot = createAppContentRoot();
+        public Content create(JPackageCommand cmd, boolean srcRootMustBeResourcesDir) {
+            final var appContentRoot = createAppContentRoot(srcRootMustBeResourcesDir);
 
             final var symlinkPath = appContentRoot.resolve(symlinkPath());
             final var symlinkedPath = appContentRoot.resolve(symlinkedPath());
@@ -583,7 +737,7 @@ public class AppContentTest {
             }
 
             List<Path> contentPaths;
-            if (COPY_IN_RESOURCES) {
+            if (srcRootMustBeResourcesDir) {
                 contentPaths = List.of(appContentRoot);
             } else if (basedir.equals(Path.of(""))) {
                 contentPaths = Stream.of(symlinkPath(), symlinkedPath()).map(path -> {
@@ -631,7 +785,7 @@ public class AppContentTest {
 
     private static final class FileContentFactory implements ContentFactory {
 
-        FileContentFactory(ThrowingSupplier<Path> factory, Path pathInAppContentRoot) {
+        FileContentFactory(ThrowingSupplier<Path, IOException> factory, Path pathInAppContentRoot) {
             this.factory = ThrowingSupplier.toSupplier(factory);
             this.pathInAppContentRoot = pathInAppContentRoot;
             if (pathInAppContentRoot.isAbsolute()) {
@@ -640,17 +794,17 @@ public class AppContentTest {
         }
 
         @Override
-        public Content create() {
+        public Content create(JPackageCommand cmd, boolean srcRootMustBeResourcesDir) {
             Path srcPath = factory.get();
             if (!srcPath.endsWith(pathInAppContentRoot)) {
                 throw new IllegalArgumentException();
             }
 
             Path dstPath;
-            if (!COPY_IN_RESOURCES) {
+            if (!srcRootMustBeResourcesDir) {
                 dstPath = srcPath;
             } else {
-                var contentDir = createAppContentRoot();
+                var contentDir = createAppContentRoot(srcRootMustBeResourcesDir);
                 dstPath = contentDir.resolve(pathInAppContentRoot);
                 try {
                     FileUtils.copyRecursive(srcPath, dstPath);
@@ -673,15 +827,7 @@ public class AppContentTest {
     private static final ContentFactory TEST_JAVA = createTextFileContent("apps/PrintEnv.java", "Not what someone would expect");
     private static final ContentFactory TEST_DUKE = createTextFileContent("duke.txt", "Hi Duke!");
     private static final ContentFactory TEST_DIR = createDirTreeContent("apps");
-    private static final ContentFactory TEST_BAD = new NonExistantPath();
-
-    // On OSX `--app-content` paths will be copied into the "Contents" folder
-    // of the output app image.
-    // "codesign" imposes restrictions on the directory structure of "Contents" folder.
-    // In particular, random files should be placed in "Contents/Resources" folder
-    // otherwise "codesign" will fail to sign.
-    // Need to prepare arguments for `--app-content` accordingly.
-    private static final boolean COPY_IN_RESOURCES = TKit.isOSX();
+    private static final ContentFactory TEST_BAD = NonExistentPath.create("non-existent");
 
     private static final Path RESOURCES_DIR = Path.of("Resources");
 }

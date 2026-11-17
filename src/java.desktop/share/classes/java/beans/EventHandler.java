@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,7 +229,7 @@ import sun.reflect.misc.MethodUtil;
  *</pre>
  * </blockquote>
  * The target property may also be "qualified" with an arbitrary number
- * of property prefixs delimited with the "." character.  For example, the
+ * of property prefixes delimited with the "." character.  For example, the
  * following action listener:
  * <pre>
  *   EventHandler.create(ActionListener.class, target, "a.b", "c.d")
@@ -415,6 +415,7 @@ public class EventHandler implements InvocationHandler {
      *
      * @see EventHandler
      */
+    @Override
     public Object invoke(final Object proxy, final Method method, final Object[] arguments) {
         String methodName = method.getName();
         if (method.getDeclaringClass() == Object.class)  {

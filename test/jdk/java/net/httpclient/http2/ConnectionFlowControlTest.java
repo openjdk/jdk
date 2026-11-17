@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @run junit/othervm   -Djdk.internal.httpclient.debug=err
  *                      -Djdk.httpclient.connectionWindowSize=65535
  *                      -Djdk.httpclient.windowsize=16384
- *                      ConnectionFlowControlTest
+ *                      ${test.main.class}
  */
 
 import java.io.IOException;
@@ -74,7 +74,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ConnectionFlowControlTest {
 
-    private static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
     private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
     private static String http2URI;
@@ -162,6 +162,7 @@ public class ConnectionFlowControlTest {
                             is.readAllBytes();
                         }
                         System.out.printf("%s did not fail: %s%n", query, response.statusCode());
+                        responses.remove(query, response);
                     } catch (AssertionError t1) {
                         // since we won't pull all responses, the client
                         // will not exit unless we ask it to shutdown now.
@@ -189,6 +190,21 @@ public class ConnectionFlowControlTest {
                     t0 = t0.getCause();
                 }
                 t = t0;
+                // make sure to pull on the already received responses
+                // if any - otherwise attempting to close the client will
+                // block forever; This may happen if this line above throws:
+                //     var response = cc.send(request, BodyHandlers.ofInputStream());
+                if (!responses.isEmpty() && !client.isTerminated()) {
+                    for (var e : responses.entrySet()) {
+                        System.out.println("Pulling response: " + e.getKey());
+                        try (var is = e.getValue().body()) {
+                            is.readAllBytes();
+                            System.out.println("Got response for: " + e.getKey());
+                        } catch (Exception x) {
+                            System.out.println("Got exception for: " + e.getKey() + ": " + x);
+                        }
+                    }
+                }
             }
             if (t == null) {
                 // we could fail here if we haven't waited long enough
@@ -240,10 +256,6 @@ public class ConnectionFlowControlTest {
 
     @BeforeAll
     static void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         var http2TestServerLocal = new Http2TestServer("localhost", false, 0);
         http2TestServerLocal.addHandler(new Http2TestHandler(), "/http2/");
         http2TestServer = HttpTestServer.of(http2TestServerLocal);

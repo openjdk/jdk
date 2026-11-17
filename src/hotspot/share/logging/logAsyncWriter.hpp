@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ class AsyncLogWriter : public NonJavaThread {
     }
 
     ~Buffer() {
-      FREE_C_HEAP_ARRAY(char, _buf);
+      FREE_C_HEAP_ARRAY(_buf);
     }
 
     void push_flush_token();
@@ -185,6 +185,7 @@ class AsyncLogWriter : public NonJavaThread {
   static const LogDecorations& None;
 
   AsyncLogWriter();
+  ~AsyncLogWriter() override;
   void enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
   bool write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot);
   void run() override;

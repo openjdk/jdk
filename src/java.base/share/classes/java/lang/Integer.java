@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,13 @@
 package java.lang;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.VM;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.value.Deserializer;
+import jdk.internal.value.ValueClass;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -54,10 +59,18 @@ import static java.lang.String.COMPACT_STRINGS;
  * dealing with an {@code int}.
  *
  * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Integer} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * <p>Implementation note: The implementations of the "bit twiddling"
  * methods (such as {@link #highestOneBit(int) highestOneBit} and
@@ -69,7 +82,8 @@ import static java.lang.String.COMPACT_STRINGS;
  * @since 1.0
  */
 @jdk.internal.ValueBased
-public final class Integer extends Number
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class Integer extends Number
         implements Comparable<Integer>, Constable, ConstantDesc {
     /**
      * A constant holding the minimum value an {@code int} can
@@ -878,6 +892,10 @@ public final class Integer extends Number
      * Cache to support the object identity semantics of autoboxing for values between
      * -128 and 127 (inclusive) as required by JLS.
      *
+     * When preview features are enabled, the cache does not affect object
+     * equality {@code ==} semantics, but exists for performance.
+     * See doc/value-class-preview.md "Wrapper Class Caches" section.
+     *
      * The cache is initialized on first usage.  The size of the cache
      * may be controlled by the {@code -XX:AutoBoxCacheMax=<size>} option.
      * During VM initialization, java.lang.Integer.IntegerCache.high property
@@ -891,15 +909,20 @@ public final class Integer extends Number
      * with new Integer object(s) after initialization.
      */
 
+    @AOTSafeClassInitializer
     private static final class IntegerCache {
         static final int low = -128;
-        static final int high;
+        @Stable static int high;
 
-        @Stable
-        static final Integer[] cache;
+        @Stable static Integer[] cache;
         static Integer[] archivedCache;
 
         static {
+            runtimeSetup();
+        }
+
+        @AOTRuntimeSetup
+        private static void runtimeSetup() {
             // high value may be configured by property
             int h = 127;
             String integerCacheHighPropValue =
@@ -915,32 +938,56 @@ public final class Integer extends Number
             }
             high = h;
 
-            // Load IntegerCache.archivedCache from archive, if possible
-            CDS.initializeFromArchive(IntegerCache.class);
-            int size = (high - low) + 1;
-
-            // Use the archived cache if it exists and is large enough
-            if (archivedCache == null || size > archivedCache.length) {
-                Integer[] c = new Integer[size];
-                int j = low;
-                // If archive has Integer cache, we must use all instances from it.
-                // Otherwise, the identity checks between archived Integers and
-                // runtime-cached Integers would fail.
-                int archivedSize = (archivedCache == null) ? 0 : archivedCache.length;
-                for (int i = 0; i < archivedSize; i++) {
-                    c[i] = archivedCache[i];
-                    assert j == archivedCache[i];
-                    j++;
-                }
-                // Fill the rest of the cache.
-                for (int i = archivedSize; i < size; i++) {
-                    c[i] = new Integer(j++);
-                }
-                archivedCache = c;
+            Integer[] precomputed;
+            if (cache != null) {
+                // IntegerCache has been AOT-initialized.
+                precomputed = cache;
+            } else {
+                // Legacy CDS archive support (to be deprecated):
+                // Load IntegerCache.archivedCache from archive, if possible
+                CDS.initializeFromArchive(IntegerCache.class);
+                precomputed = archivedCache;
             }
-            cache = archivedCache;
+
+            cache = loadOrInitializeCache(precomputed);
+            archivedCache = cache; // Legacy CDS archive support (to be deprecated)
             // range [-128, 127] must be interned (JLS7 5.1.7)
             assert IntegerCache.high >= 127;
+        }
+
+        private static Integer[] loadOrInitializeCache(Integer[] precomputed) {
+            int size = (high - low) + 1;
+
+            // Use the precomputed cache if it exists and is large enough
+            if (precomputed != null && size <= precomputed.length) {
+                return precomputed;
+            }
+
+            Integer[] c = newCacheArray(size);
+            int j = low;
+            // If we loading a precomputed cache (from AOT cache or CDS archive),
+            // we must use all instances from it.
+            // Otherwise, the Integers from the AOT cache (or CDS archive) will not
+            // have the same object identity as items in IntegerCache.cache[].
+            int precomputedSize = (precomputed == null) ? 0 : precomputed.length;
+            for (int i = 0; i < precomputedSize; i++) {
+                c[i] = precomputed[i];
+                assert j == precomputed[i];
+                j++;
+            }
+            // Fill the rest of the cache.
+            for (int i = precomputedSize; i < size; i++) {
+                c[i] = new Integer(j++);
+            }
+            return c;
+        }
+
+        private static Integer[] newCacheArray(int size) {
+            // ValueClass.newReferenceArray requires a value class component.
+            if (PreviewFeatures.isEnabled()) {
+                return (Integer[]) ValueClass.newReferenceArray(Integer.class, size);
+            }
+            return new Integer[size];
         }
 
         private IntegerCache() {}
@@ -948,14 +995,26 @@ public final class Integer extends Number
 
     /**
      * Returns an {@code Integer} instance representing the specified
-     * {@code int} value.  If a new {@code Integer} instance is not
-     * required, this method should generally be used in preference to
-     * the constructor {@link #Integer(int)}, as this method is likely
-     * to yield significantly better space and time performance by
-     * caching frequently requested values.
-     *
-     * This method will always cache values in the range -128 to 127,
-     * inclusive, and may cache other values outside of this range.
+     * {@code int} value.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Integer} is an identity class.
+     *              If a new {@code Integer} instance is not
+     *              required, this method should generally be used in preference to
+     *              the constructor {@link #Integer(int)}, as this method is likely
+     *              to yield significantly better space and time performance by
+     *              caching frequently requested values.
+     *              This method will always cache values in the range -128 to 127,
+     *              inclusive, and may cache other values outside of this range.
+     *          </p>
+     *          <p>
+     *              - When preview features are enabled, {@code Integer} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor,
+     *              whether cached or not.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  i an {@code int} value.
      * @return an {@code Integer} instance representing {@code i}.
@@ -988,6 +1047,7 @@ public final class Integer extends Number
      * likely to yield significantly better space and time performance.
      */
     @Deprecated(since="9")
+    @Deserializer("value")
     public Integer(int value) {
         this.value = value;
     }
@@ -1425,6 +1485,7 @@ public final class Integer extends Number
      * @param divisor the value doing the dividing
      * @return the unsigned quotient of the first argument divided by
      * the second argument
+     * @throws ArithmeticException if the divisor is zero
      * @see #remainderUnsigned
      * @since 1.8
      */
@@ -1443,6 +1504,7 @@ public final class Integer extends Number
      * @param divisor the value doing the dividing
      * @return the unsigned remainder of the first argument divided by
      * the second argument
+     * @throws ArithmeticException if the divisor is zero
      * @see #divideUnsigned
      * @since 1.8
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,11 @@
 /* @test
    @bug 4071322
    @summary Basic test for File.listRoots method
+   @run junit ListRoots
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -35,33 +37,57 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class ListRoots {
 
-    public static void main(String[] args) throws Exception {
+    private static Set<File> expectedSet;
+    private static Set<File> actualSet;
+
+    @BeforeAll
+    public static void init() throws IOException {
         File[] rs = File.listRoots();
         for (int i = 0; i < rs.length; i++) {
-            System.out.println(i + ": " + rs[i]);
-        }
-
-        File f = new File(System.getProperty("test.src", "."), "ListRoots.java");
-        String cp = f.getCanonicalPath();
-        boolean found = Stream.of(rs)
-                .map(File::getPath)
-                .anyMatch(p -> cp.startsWith(p));
-        if (!found) {
-            throw new RuntimeException(cp + " does not have a recognized root");
+            System.err.println(i + ": " + rs[i]);
         }
 
         // the list of roots should match FileSystem::getRootDirectories
-        Set<File> roots1 = Stream.of(rs).collect(Collectors.toSet());
         FileSystem fs = FileSystems.getDefault();
-        Set<File> roots2 = StreamSupport.stream(fs.getRootDirectories().spliterator(), false)
-                .map(Path::toFile)
-                .collect(Collectors.toSet());
-        if (!roots1.equals(roots2)) {
-            System.out.println(roots2);
-            throw new RuntimeException("Does not match FileSystem::getRootDirectories");
-        }
+        expectedSet =
+            StreamSupport.stream(fs.getRootDirectories().spliterator(), false)
+                         .map(Path::toFile)
+                         .collect(Collectors.toSet());
+        actualSet = Stream.of(rs).collect(Collectors.toSet());
     }
 
+    @Test
+    public void checkRoot() throws IOException {
+        File f = new File(System.getProperty("user.dir"));
+        String cp = f.getCanonicalPath();
+        boolean found = Stream.of(File.listRoots())
+                .map(File::getPath)
+                .anyMatch(p -> cp.startsWith(p));
+        assertTrue(found, cp + " does not have a recognized root");
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void listRootsUnix() throws IOException {
+        assertEquals(expectedSet, actualSet,
+                     "Does not equal FileSystem::getRootDirectories");
+    }
+
+    @Test
+    @EnabledOnOs(OS.WINDOWS)
+    public void listRootsWindows() throws IOException {
+        assertTrue(expectedSet.stream().anyMatch(actualSet::contains),
+                   "Does not intersect FileSystem::getRootDirectories");
+    }
 }

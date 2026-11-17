@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.net.ProtocolException;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -109,6 +110,7 @@ class ServerImpl {
     static final long REQ_RSP_TIMER_SCHEDULE = ServerConfig.getReqRspTimerScheduleMillis();
     static final long MAX_REQ_TIME = getTimeMillis(ServerConfig.getMaxReqTime());
     static final long MAX_RSP_TIME = getTimeMillis(ServerConfig.getMaxRspTime());
+    static final boolean HOST_VALIDATION_DISABLED = ServerConfig.isHostValidationDisabled();;
     static final boolean reqRspTimeoutEnabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
     // the maximum idle duration for a connection which is currently idle but has served
     // some request in the past
@@ -418,7 +420,8 @@ class ServerImpl {
             // Stopping marking the state as finished if stop is requested,
             // termination is in progress and exchange count is 0
             if (r instanceof Event.StopRequested) {
-                logger.log(Level.TRACE, "Handling Stop Requested Event");
+                logger.log(Level.TRACE, "Handling {0} event",
+                        r.getClass().getSimpleName());
 
                 // checking if terminating is set to true
                 final boolean terminatingCopy = terminating;
@@ -436,10 +439,11 @@ class ServerImpl {
             HttpConnection c = t.getConnection();
 
             try {
-                if (r instanceof Event.WriteFinished) {
+                if (r instanceof Event.ExchangeFinished) {
 
-                    logger.log(Level.TRACE, "Write Finished");
-                    int exchanges = endExchange();
+                    logger.log(Level.TRACE, "Handling {0} event",
+                                r.getClass().getSimpleName());
+                    int exchanges = t.endExchange();
                     if (terminating && exchanges == 0 && reqConnections.isEmpty()) {
                         finishedLatch.countDown();
                     }
@@ -535,6 +539,8 @@ class ServerImpl {
                                 if (MAX_CONNECTIONS > 0 && allConnections.size() >= MAX_CONNECTIONS) {
                                     // we've hit max limit of current open connections, so we go
                                     // ahead and close this connection without processing it
+                                    logger.log(Level.DEBUG, "connection limit reached, " +
+                                            "closing accepted connection " + chan);
                                     try {
                                         chan.close();
                                     } catch (IOException ignore) {
@@ -733,7 +739,16 @@ class ServerImpl {
                     connection.raw = rawin;
                     connection.rawout = rawout;
                 }
-                Request req = new Request(rawin, rawout);
+
+                Request req;
+                try {
+                    req = new Request(rawin, rawout, newconnection && !https);
+                } catch (ProtocolException pe) {
+                    logger.log(Level.DEBUG, "closing due to: " + pe);
+                    reject(Code.HTTP_BAD_REQUEST, "", pe.getMessage());
+                    return;
+                }
+
                 requestLine = req.requestLine();
                 if (requestLine == null) {
                     /* connection closed */
@@ -756,18 +771,34 @@ class ServerImpl {
                             requestLine, "Bad request line");
                     return;
                 }
+
+                // Read the request URI
                 String uriStr = requestLine.substring(start, space);
+                // Reject ambiguous URIs
+                if (uriStr.startsWith("//")) {
+                    reject(Code.HTTP_BAD_REQUEST,
+                            requestLine, "Bad request URI");
+                    return;
+                }
                 URI uri;
                 try {
                     uri = new URI(uriStr);
                 } catch (URISyntaxException e3) {
                     reject(Code.HTTP_BAD_REQUEST,
-                            requestLine, "URISyntaxException thrown");
+                            requestLine, "Bad request URI");
                     return;
                 }
+
                 start = space+1;
                 String version = requestLine.substring(start);
-                Headers headers = req.headers();
+                Headers headers;
+                try {
+                    headers = req.headers();
+                } catch (ProtocolException pe) {
+                    reject(Code.HTTP_BAD_REQUEST, requestLine,
+                            "Failed to parse headers: " + pe.getMessage());
+                    return;
+                }
                 /* check key for illegal characters */
                 for (var k : headers.keySet()) {
                     if (!isValidName(k)) {
@@ -817,6 +848,25 @@ class ServerImpl {
                         requestCompleted(connection);
                     }
                 }
+                /* check if there's a single Host header */
+                if (!HOST_VALIDATION_DISABLED) {
+                    List<String> hostValueList = headers.get("Host");
+                    if (hostValueList == null || hostValueList.isEmpty()) {
+                        if (!version.equalsIgnoreCase("http/1.0")) {
+                            reject(400, requestLine, "Missing Host header");
+                            return;
+                        }
+                    } else if (hostValueList.size() > 1) {
+                        reject(400, requestLine, "Multiple Host headers");
+                        return;
+                    } else {
+                        String host = hostValueList.get(0);
+                        if (host.indexOf(',') != -1) {
+                            reject(400, requestLine, "Multiple Host header values");
+                            return;
+                        }
+                    }
+                }
                 ctx = contexts.findContext(protocol, uri.getPath());
                 if (ctx == null) {
                     reject(Code.HTTP_NOT_FOUND,
@@ -832,68 +882,77 @@ class ServerImpl {
                 tx = new ExchangeImpl(
                     method, uri, req, clen, connection
                 );
-                String chdr = headers.getFirst("Connection");
-                Headers rheaders = tx.getResponseHeaders();
+                try {
 
-                if (chdr != null && chdr.equalsIgnoreCase("close")) {
-                    tx.close = true;
-                }
-                if (version.equalsIgnoreCase("http/1.0")) {
-                    tx.http10 = true;
-                    if (chdr == null) {
+                    String chdr = headers.getFirst("Connection");
+                    Headers rheaders = tx.getResponseHeaders();
+
+                    if (chdr != null && chdr.equalsIgnoreCase("close")) {
                         tx.close = true;
-                        rheaders.set("Connection", "close");
-                    } else if (chdr.equalsIgnoreCase("keep-alive")) {
-                        rheaders.set("Connection", "keep-alive");
-                        int idleSeconds = (int) (ServerConfig.getIdleIntervalMillis() / 1000);
-                        String val = "timeout=" + idleSeconds;
-                        rheaders.set("Keep-Alive", val);
                     }
-                }
+                    if (version.equalsIgnoreCase("http/1.0")) {
+                        tx.http10 = true;
+                        if (chdr == null) {
+                            tx.close = true;
+                            rheaders.set("Connection", "close");
+                        } else if (chdr.equalsIgnoreCase("keep-alive")) {
+                            rheaders.set("Connection", "keep-alive");
+                            int idleSeconds = (int) (ServerConfig.getIdleIntervalMillis() / 1000);
+                            String val = "timeout=" + idleSeconds;
+                            rheaders.set("Keep-Alive", val);
+                        }
+                    }
 
-                if (newconnection) {
-                    connection.setParameters(
-                        rawin, rawout, chan, engine, sslStreams,
-                        sslContext, protocol, ctx, rawin
-                    );
-                }
-                /* check if client sent an Expect 100 Continue.
-                 * In that case, need to send an interim response.
-                 * In future API may be modified to allow app to
-                 * be involved in this process.
-                 */
-                String exp = headers.getFirst("Expect");
-                if (exp != null && exp.equalsIgnoreCase("100-continue")) {
-                    logReply(100, requestLine, null);
-                    sendReply(
-                        Code.HTTP_CONTINUE, false, null
-                    );
-                }
-                /* uf is the list of filters seen/set by the user.
-                 * sf is the list of filters established internally
-                 * and which are not visible to the user. uc and sc
-                 * are the corresponding Filter.Chains.
-                 * They are linked together by a LinkHandler
-                 * so that they can both be invoked in one call.
-                 */
-                final List<Filter> sf = ctx.getSystemFilters();
-                final List<Filter> uf = ctx.getFilters();
+                    if (newconnection) {
+                        connection.setParameters(
+                                rawin, rawout, chan, engine, sslStreams,
+                                sslContext, protocol, ctx, rawin
+                        );
+                    }
+                    /* check if client sent an Expect 100 Continue.
+                     * In that case, need to send an interim response.
+                     * In future API may be modified to allow app to
+                     * be involved in this process.
+                     */
+                    String exp = headers.getFirst("Expect");
+                    if (exp != null && exp.equalsIgnoreCase("100-continue")) {
+                        logReply(100, requestLine, null);
+                        sendReply(
+                                Code.HTTP_CONTINUE, false, null
+                        );
+                    }
+                    /* uf is the list of filters seen/set by the user.
+                     * sf is the list of filters established internally
+                     * and which are not visible to the user. uc and sc
+                     * are the corresponding Filter.Chains.
+                     * They are linked together by a LinkHandler
+                     * so that they can both be invoked in one call.
+                     */
+                    final List<Filter> sf = ctx.getSystemFilters();
+                    final List<Filter> uf = ctx.getFilters();
 
-                final Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
-                final Filter.Chain uc = new Filter.Chain(uf, new LinkHandler(sc));
+                    final Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
+                    final Filter.Chain uc = new Filter.Chain(uf, new LinkHandler(sc));
 
-                /* set up the two stream references */
-                tx.getRequestBody();
-                tx.getResponseBody();
-                if (https) {
-                    uc.doFilter(new HttpsExchangeImpl(tx));
-                } else {
-                    uc.doFilter(new HttpExchangeImpl(tx));
+                    /* set up the two stream references */
+                    tx.getRequestBody();
+                    tx.getResponseBody();
+                    if (https) {
+                        uc.doFilter(new HttpsExchangeImpl(tx));
+                    } else {
+                        uc.doFilter(new HttpExchangeImpl(tx));
+                    }
+                } catch (Throwable t) {
+                    // release the exchange.
+                    logger.log(Level.TRACE, "ServerImpl.Exchange", t);
+                    if (!tx.writefinished()) {
+                        closeConnection(connection);
+                    }
+                    tx.postExchangeFinished(false);
                 }
-
             } catch (Exception e) {
                 logger.log(Level.TRACE, "ServerImpl.Exchange", e);
-                if (tx == null || !tx.writefinished) {
+                if (tx == null || !tx.writefinished()) {
                     closeConnection(connection);
                 }
             } catch (Throwable t) {

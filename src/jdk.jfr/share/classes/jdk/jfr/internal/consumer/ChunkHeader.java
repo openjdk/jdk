@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@ import jdk.jfr.internal.MetadataDescriptor;
 
 public final class ChunkHeader {
     public static final long HEADER_SIZE = 68;
-    static final byte UPDATING_CHUNK_HEADER = (byte) 255;
+    public static final byte UPDATING_CHUNK_HEADER = (byte) 255;
     public static final long CHUNK_SIZE_POSITION = 8;
     static final long DURATION_NANOS_POSITION = 40;
-    static final long FILE_STATE_POSITION = 64;
+    public static final long FILE_STATE_POSITION = 64;
     static final long FLAG_BYTE_POSITION = 67;
     static final long METADATA_TYPE_ID = 0;
     static final byte[] FILE_MAGIC = { 'F', 'L', 'R', '\0' };

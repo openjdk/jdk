@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.Result;
 
 
 /**
@@ -56,7 +57,7 @@ import java.util.stream.Stream;
  */
 record OptionSpec<T>(
         List<OptionName> names,
-        Optional<OptionValueConverter<T>> converter,
+        Optional<OptionValueConverter<String, T>> converter,
         Set<OptionScope> scope,
         MergePolicy mergePolicy,
         Optional<T> defaultOptionalValue,
@@ -134,7 +135,7 @@ record OptionSpec<T>(
         });
     }
 
-    <U> OptionSpec<U> copyWithConverter(OptionValueConverter<U> converter) {
+    <U> OptionSpec<U> copyWithConverter(OptionValueConverter<String, U> converter) {
         if (!defaultOptionalValue.isEmpty()) {
             throw new UnsupportedOperationException("Can not convert an option spec with optional value");
         }
@@ -169,12 +170,16 @@ record OptionSpec<T>(
         return valueType(converter).orElseThrow();
     }
 
+    Result<T> convert(OptionName optionName, StringToken optionValue) {
+        return OptionValueConverter.convertString(converter().orElseThrow(), optionName, optionValue);
+    }
+
     @SuppressWarnings("unchecked")
     <U> Optional<OptionArrayValueConverter<U>> arrayValueConverter() {
         return converter.filter(OptionArrayValueConverter.class::isInstance).map(v -> (OptionArrayValueConverter<U>)v);
     }
 
-    private static <T> Optional<Class<? extends T>> valueType(Optional<OptionValueConverter<T>> valueConverter) {
+    private static <T> Optional<Class<? extends T>> valueType(Optional<OptionValueConverter<String, T>> valueConverter) {
         return valueConverter.map(OptionValueConverter::valueType);
     }
 }

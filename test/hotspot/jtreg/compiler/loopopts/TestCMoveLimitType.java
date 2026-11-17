@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
  * @key stress randomness
  * @bug 8299975
  * @summary Limit underflow protection CMoveINode in PhaseIdealLoop::do_unroll must also protect type from underflow
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-DisplayVMOutput -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestCMoveLimitType::test*
  *                   -XX:CompileCommand=dontinline,compiler.loopopts.TestCMoveLimitType::dontInline
  *                   -XX:RepeatCompilation=50 -XX:+StressIGVN

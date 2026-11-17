@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,13 +62,6 @@ public class Binder extends DebugeeBinder {
      * Default message prefix for <code>Binder</code> object.
      */
     public static final String LOG_PREFIX = "binder> ";
-
-    /**
-     * Get version string.
-     */
-    public static String getVersion () {
-        return "@(#)Binder.java 1.14 03/10/08";
-    }
 
     // -------------------------------------------------- //
 

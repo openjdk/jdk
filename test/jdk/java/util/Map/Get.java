@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6306829
+ * @bug 6306829 8336669
  * @summary Verify assertions in get() javadocs
  * @author Martin Buchholz
  */
@@ -43,19 +43,27 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 public class Get {
 
-    private static void realMain(String[] args) throws Throwable {
-        testMap(new Hashtable<Character,Boolean>());
-        testMap(new HashMap<Character,Boolean>());
-        testMap(new IdentityHashMap<Character,Boolean>());
-        testMap(new LinkedHashMap<Character,Boolean>());
-        testMap(new ConcurrentHashMap<Character,Boolean>());
-        testMap(new WeakHashMap<Character,Boolean>());
-        testMap(new TreeMap<Character,Boolean>());
-        testMap(new ConcurrentSkipListMap<Character,Boolean>());
+    // An identity class holding an char (like non-Preview Character)
+    record Char(char c) implements Comparable<Char> {
+        @Override
+        public int compareTo(Char ch) {
+            return Character.compare(c, ch.c);
+        }
     }
 
-    private static void put(Map<Character,Boolean> m,
-                            Character key, Boolean value,
+    private static void realMain(String[] args) throws Throwable {
+        testMap(new Hashtable<Char,Boolean>());
+        testMap(new HashMap<Char,Boolean>());
+        testMap(new IdentityHashMap<Char,Boolean>());
+        testMap(new LinkedHashMap<Char,Boolean>());
+        testMap(new ConcurrentHashMap<Char,Boolean>());
+        testMap(new WeakHashMap<Char,Boolean>());
+        testMap(new TreeMap<Char,Boolean>());
+        testMap(new ConcurrentSkipListMap<Char,Boolean>());
+    }
+
+    private static void put(Map<Char,Boolean> m,
+                            Char key, Boolean value,
                             Boolean oldValue) {
         if (oldValue != null) {
             check("containsValue(oldValue)", m.containsValue(oldValue));
@@ -70,7 +78,7 @@ public class Get {
         check("!isEmpty", ! m.isEmpty());
     }
 
-    private static void testMap(Map<Character,Boolean> m) {
+    private static void testMap(Map<Char,Boolean> m) {
         // We verify following assertions in get(Object) method javadocs
         boolean permitsNullKeys = (! (m instanceof ConcurrentMap ||
                                       m instanceof Hashtable     ||
@@ -80,10 +88,11 @@ public class Get {
         boolean usesIdentity = m instanceof IdentityHashMap;
 
         System.err.println(m.getClass());
-        put(m, 'A', true,  null);
-        put(m, 'A', false, true);       // Guaranteed identical by JLS
-        put(m, 'B', true,  null);
-        put(m, new Character('A'), false, usesIdentity ? null : false);
+        Char aCh = new Char('A');
+        put(m, aCh, true,  null);
+        put(m, aCh, false, true);
+        put(m, new Char('B'), true,  null);
+        put(m, new Char('A'), false, usesIdentity ? null : false);
         if (permitsNullKeys) {
             try {
                 put(m, null, true,  null);
@@ -101,17 +110,18 @@ public class Get {
         }
         if (permitsNullValues) {
             try {
-                put(m, 'C', null, null);
-                put(m, 'C', true, null);
-                put(m, 'C', null, true);
+                Char cCh = new Char('C');
+                put(m, cCh, null, null);
+                put(m, cCh, true, null);
+                put(m, cCh, null, true);
             }
             catch (Throwable t) { unexpected(m.getClass().getName(), t); }
         } else {
-            try { m.put('A', null); fail(m.getClass().getName() + " did not reject null key"); }
+            try { m.put(new Char('A'), null); fail(m.getClass().getName() + " did not reject null key"); }
             catch (NullPointerException e) {}
             catch (Throwable t) { unexpected(m.getClass().getName(), t); }
 
-            try { m.put('C', null); fail(m.getClass().getName() + " did not reject null key"); }
+            try { m.put(new Char('C'), null); fail(m.getClass().getName() + " did not reject null key"); }
             catch (NullPointerException e) {}
             catch (Throwable t) { unexpected(m.getClass().getName(), t); }
         }

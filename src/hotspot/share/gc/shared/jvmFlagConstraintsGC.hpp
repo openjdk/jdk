@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,9 @@
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/jvmFlagConstraintsParallel.hpp"
 #endif
+#if INCLUDE_ZGC
+#include "gc/z/jvmFlagConstraintsZ.hpp"
+#endif
 
 /*
  * Here we have GC arguments constraints functions, which are called automatically
@@ -66,7 +69,8 @@
  f(uintx,  SurvivorRatioConstraintFunc)                        \
  f(size_t, MetaspaceSizeConstraintFunc)                        \
  f(size_t, MaxMetaspaceSizeConstraintFunc)                     \
- f(uint, GCCardSizeInBytesConstraintFunc)
+ f(uint, GCCardSizeInBytesConstraintFunc)                      \
+ f(uintx, ArrayMarkingMinStrideConstraintFunc)
 
 SHARED_GC_CONSTRAINTS(DECLARE_CONSTRAINT)
 
@@ -75,6 +79,7 @@ JVMFlag::Error MaxPLABSizeBounds(const char* name, size_t value, bool verbose);
 #define GC_CONSTRAINTS(f)                      \
   SHARED_GC_CONSTRAINTS(f)                     \
   G1GC_ONLY(G1_GC_CONSTRAINTS(f))              \
-  PARALLELGC_ONLY(PARALLEL_GC_CONSTRAINTS(f))
+  PARALLELGC_ONLY(PARALLEL_GC_CONSTRAINTS(f))  \
+  ZGC_ONLY(Z_GC_CONSTRAINTS(f))
 
 #endif // SHARE_GC_SHARED_JVMFLAGCONSTRAINTSGC_HPP

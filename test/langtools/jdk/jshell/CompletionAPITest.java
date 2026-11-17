@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8366691
+ * @bug 8366691 8375015
  * @summary Test JShell Completion API
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -49,6 +49,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -59,6 +60,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
+import jdk.jshell.JShell;
 import jdk.jshell.SourceCodeAnalysis.CompletionContext;
 import jdk.jshell.SourceCodeAnalysis.CompletionState;
 import jdk.jshell.SourceCodeAnalysis.ElementSuggestion;
@@ -67,7 +69,7 @@ import org.junit.jupiter.api.Test;
 
 public class CompletionAPITest extends KullaTesting {
 
-    private static final long TIMEOUT = 2_000;
+    private static final long TIMEOUT = 20_000;
 
     @Test
     public void testAPI() {
@@ -144,7 +146,7 @@ public class CompletionAPITest extends KullaTesting {
     }
 
     @Test
-    public void testDocumentation() {
+    public void testDocumentation() throws Exception {
         waitIndexingFinished();
 
         Path classes = prepareZip();
@@ -171,6 +173,7 @@ public class CompletionAPITest extends KullaTesting {
 
         while (clazz.get().get() != null && (System.currentTimeMillis() - start) < TIMEOUT) {
             System.gc();
+            Thread.sleep(100);
         }
 
         assertNull(clazz.get().get());
@@ -265,8 +268,6 @@ public class CompletionAPITest extends KullaTesting {
                 "public class JShellTest {\n" +
                 "}\n";
 
-        Path srcZip = Paths.get("src.zip");
-
         try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(srcZip))) {
             out.putNextEntry(new JarEntry("jshelltest/JShellTest.java"));
             out.write(clazz.getBytes());
@@ -276,18 +277,15 @@ public class CompletionAPITest extends KullaTesting {
 
         compiler.compile(clazz);
 
-        try {
-            Field availableSources = Class.forName("jdk.jshell.SourceCodeAnalysisImpl").getDeclaredField("availableSourcesOverride");
-            availableSources.setAccessible(true);
-            availableSources.set(null, Arrays.asList(srcZip));
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException ex) {
-            throw new IllegalStateException(ex);
-        }
-
         return compiler.getClassDir();
     }
     //where:
         private final Compiler compiler = new Compiler();
+        private final Path srcZip = Paths.get("src.zip");
+
+    public void setUp(Consumer<JShell.Builder> bc) {
+        super.setUp(bc.andThen(b -> b.binarySourceMapping(p -> compiler.getClassDir().equals(p) ? List.of(srcZip) : null)));
+    }
 
     static {
         try {

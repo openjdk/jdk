@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ void ZForwarding::oops_do_in_forwarded_via_table(Function function) {
 }
 
 inline bool ZForwarding::in_place_relocation() const {
-  assert(AtomicAccess::load(&_ref_count) != 0, "The page has been released/detached");
+  assert(_ref_count.load_relaxed() != 0, "The page has been released/detached");
   return _in_place;
 }
 
@@ -307,7 +307,7 @@ inline void ZForwarding::relocated_remembered_fields_register(volatile zpointer*
   // Invariant: Page is being retained
   assert(ZGeneration::young()->is_phase_mark(), "Only called when");
 
-  const ZPublishState res = AtomicAccess::load(&_relocated_remembered_fields_state);
+  const ZPublishState res = _relocated_remembered_fields_state.load_relaxed();
 
   // none:      Gather remembered fields
   // published: Have already published fields - not possible since they haven't been
@@ -327,7 +327,7 @@ inline void ZForwarding::relocated_remembered_fields_register(volatile zpointer*
 // Returns true iff the page is being (or about to be) relocated by the OC
 // while the YC gathered the remembered fields of the "from" page.
 inline bool ZForwarding::relocated_remembered_fields_is_concurrently_scanned() const {
-  return AtomicAccess::load(&_relocated_remembered_fields_state) == ZPublishState::reject;
+  return _relocated_remembered_fields_state.load_relaxed() == ZPublishState::reject;
 }
 
 template <typename Function>
@@ -335,7 +335,7 @@ inline void ZForwarding::relocated_remembered_fields_apply_to_published(Function
   // Invariant: Page is not being retained
   assert(ZGeneration::young()->is_phase_mark(), "Only called when");
 
-  const ZPublishState res = AtomicAccess::load_acquire(&_relocated_remembered_fields_state);
+  const ZPublishState res = _relocated_remembered_fields_state.load_acquire();
 
   // none:      Nothing published - page had already been relocated before YC started
   // published: OC relocated and published relocated remembered fields
@@ -363,14 +363,14 @@ inline void ZForwarding::relocated_remembered_fields_apply_to_published(Function
     // collection. Mark that it is unsafe (and unnecessary) to call scan_page
     // on the page in the page table.
     assert(res != ZPublishState::accept, "Unexpected");
-    AtomicAccess::store(&_relocated_remembered_fields_state, ZPublishState::reject);
+    _relocated_remembered_fields_state.store_relaxed(ZPublishState::reject);
   } else {
     log_debug(gc, remset)("scan_forwarding failed retain safe " PTR_FORMAT, untype(start()));
     // Guaranteed that the page was fully relocated and removed from page table.
     // Because of this we can signal to scan_page that any page found in page table
     // of the same slot as the current forwarding is a page that is safe to scan,
     // and in fact must be scanned.
-    AtomicAccess::store(&_relocated_remembered_fields_state, ZPublishState::accept);
+    _relocated_remembered_fields_state.store_relaxed(ZPublishState::accept);
   }
 }
 

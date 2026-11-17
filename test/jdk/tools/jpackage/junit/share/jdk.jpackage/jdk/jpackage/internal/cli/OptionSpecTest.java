@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,11 +293,11 @@ public class OptionSpecTest {
         return toOptionNames(List.of(names));
     }
 
-    private static <T> OptionValueConverter<T> converter(ValueConverter<T> conv) {
+    private static <T> OptionValueConverter<String, T> converter(ValueConverter<String, T> conv) {
         return buildConverter(conv).create();
     }
 
-    private static <T> OptionValueConverter.Builder<T> buildConverter(ValueConverter<T> conv) {
+    private static <T> OptionValueConverter.Builder<T> buildConverter(ValueConverter<String, T> conv) {
         return OptionValueConverter.<T>build().converter(conv);
     }
 
@@ -329,7 +329,7 @@ public class OptionSpecTest {
             return this;
         }
 
-        OptionSpecBuilder<T> converter(OptionValueConverter<T> v) {
+        OptionSpecBuilder<T> converter(OptionValueConverter<String, T> v) {
             converter = v;
             return this;
         }
@@ -355,7 +355,7 @@ public class OptionSpecTest {
         }
 
         private List<OptionName> names;
-        private OptionValueConverter<T> converter;
+        private OptionValueConverter<String, T> converter;
         private T defaultOptionalValue;
         private Set<OptionScope> scope = Set.of(new OptionScope() {});
         private MergePolicy mergePolicy = MergePolicy.USE_LAST;

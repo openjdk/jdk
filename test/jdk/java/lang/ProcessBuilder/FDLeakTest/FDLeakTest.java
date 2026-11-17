@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /**
  * @test id=posix_spawn
- * @summary Check that we don't leak FDs
+ * @summary Check that we don't leak FDs to child processes
  * @requires os.family != "windows"
  * @library /test/lib
  * @run main/othervm/native -Djdk.lang.Process.launchMechanism=posix_spawn -agentlib:FDLeaker FDLeakTest
@@ -32,18 +32,10 @@
 
 /**
  * @test id=fork
- * @summary Check that we don't leak FDs
+ * @summary Check that we don't leak FDs to child processes
  * @requires os.family != "windows"
  * @library /test/lib
  * @run main/othervm/native -Djdk.lang.Process.launchMechanism=fork -agentlib:FDLeaker FDLeakTest
- */
-
-/**
- * @test id=vfork
- * @summary Check that we don't leak FDs
- * @requires os.family == "linux"
- * @library /test/lib
- * @run main/othervm/native -Djdk.lang.Process.launchMechanism=vfork -agentlib:FDLeaker FDLeakTest
  */
 
 import jdk.test.lib.process.ProcessTools;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ void GraphKit::gen_stub(address C_function,
                         bool return_pc) {
   ResourceMark rm;
 
-  const TypeTuple *jdomain = C->tf()->domain();
-  const TypeTuple *jrange  = C->tf()->range();
+  const TypeTuple *jdomain = C->tf()->domain_sig();
+  const TypeTuple *jrange  = C->tf()->range_sig();
 
   // The procedure start
   StartNode* start = new StartNode(root(), jdomain);
@@ -88,18 +88,17 @@ void GraphKit::gen_stub(address C_function,
 
   const int NoAlias = Compile::AliasIdxBot;
 
-  Node* adr_last_Java_pc = basic_plus_adr(top(),
-                                            thread,
-                                            in_bytes(JavaThread::frame_anchor_offset()) +
-                                            in_bytes(JavaFrameAnchor::last_Java_pc_offset()));
+  Node* adr_last_Java_pc = off_heap_plus_addr(thread,
+                                              in_bytes(JavaThread::frame_anchor_offset()) +
+                                              in_bytes(JavaFrameAnchor::last_Java_pc_offset()));
 
   // Drop in the last_Java_sp.  last_Java_fp is not touched.
   // Always do this after the other "last_Java_frame" fields are set since
   // as soon as last_Java_sp != nullptr the has_last_Java_frame is true and
   // users will look at the other fields.
   //
-  Node *adr_sp = basic_plus_adr(top(), thread, in_bytes(JavaThread::last_Java_sp_offset()));
-  Node *last_sp = frameptr();
+  Node* adr_sp = off_heap_plus_addr(thread, in_bytes(JavaThread::last_Java_sp_offset()));
+  Node* last_sp = frameptr();
   store_to_memory(control(), adr_sp, last_sp, T_ADDRESS, MemNode::unordered);
 
   // Set _thread_in_native
@@ -116,7 +115,7 @@ void GraphKit::gen_stub(address C_function,
   // extra argument. Not all calls need it, but it is cheap to add here.
   for (uint pcnt = cnt; pcnt < parm_cnt; pcnt++, cnt++) {
     const Type *f = jdomain->field_at(pcnt);
-    if (CCallingConventionRequiresIntsAsLongs && f->isa_int()) {
+    if (CCallingConventionRequiresIntsAsLongs && f->is_int()) {
       fields[cnt++] = TypeLong::LONG;
       fields[cnt] = Type::HALF; // Must add an additional half for a long.
     } else {
@@ -139,13 +138,13 @@ void GraphKit::gen_stub(address C_function,
   // Make a private copy of jrange->fields();
   const Type **rfields = TypeTuple::fields(jrange->cnt() - TypeFunc::Parms);
   // Fixup oop returns
-  int retval_ptr = retval->isa_oop_ptr();
+  int retval_ptr = retval->is_oopptr();
   if (retval_ptr) {
     assert( pass_tls, "Oop must be returned thru TLS" );
     // Fancy-jumps return address; others return void
     rfields[TypeFunc::Parms] = is_fancy_jump ? TypeRawPtr::BOTTOM : Type::TOP;
 
-  } else if (retval->isa_int()) { // Returning any integer subtype?
+  } else if (retval->is_int()) { // Returning any integer subtype?
     // "Fatten" byte, char & short return types to 'int' to show that
     // the native C code can return values with junk high order bits.
     // We'll sign-extend it below later.
@@ -164,7 +163,7 @@ void GraphKit::gen_stub(address C_function,
 
   //-----------------------------
   // Make the call node.
-  CallRuntimeNode* call = new CallRuntimeNode(c_sig, C_function, name, TypePtr::BOTTOM, new (C) JVMState(0));
+  CallRuntimeNode* call = new CallRuntimeNode(c_sig, C_function, name, TypePtr::BOTTOM, TypePtr::BOTTOM, new (C) JVMState(0));
   //-----------------------------
 
   // Fix-up the debug info for the call.
@@ -180,7 +179,7 @@ void GraphKit::gen_stub(address C_function,
   call->set_req(TypeFunc::ReturnAdr, top());
   for (; i < parm_cnt; i++) { // Regular input arguments.
     const Type *f = jdomain->field_at(i);
-    if (CCallingConventionRequiresIntsAsLongs && f->isa_int()) {
+    if (CCallingConventionRequiresIntsAsLongs && f->is_int()) {
       call->init_req(cnt++, _gvn.transform(new ConvI2LNode(map()->in(i))));
       call->init_req(cnt++, top());
     } else {
@@ -228,7 +227,7 @@ void GraphKit::gen_stub(address C_function,
   Node* target = map()->in(TypeFunc::Parms);
   // Runtime call returning oop in TLS?  Fetch it out
   if( pass_tls ) {
-    Node* adr = basic_plus_adr(top(), thread, in_bytes(JavaThread::vm_result_oop_offset()));
+    Node* adr = off_heap_plus_addr(thread, in_bytes(JavaThread::vm_result_oop_offset()));
     Node* vm_result = make_load(nullptr, adr, TypeOopPtr::BOTTOM, T_OBJECT, MemNode::unordered);
     map()->set_req(TypeFunc::Parms, vm_result); // vm_result passed as result
     // clear thread-local-storage(tls)
@@ -237,7 +236,7 @@ void GraphKit::gen_stub(address C_function,
 
   //-----------------------------
   // check exception
-  Node* adr = basic_plus_adr(top(), thread, in_bytes(Thread::pending_exception_offset()));
+  Node* adr = off_heap_plus_addr(thread, in_bytes(Thread::pending_exception_offset()));
   Node* pending = make_load(nullptr, adr, TypeOopPtr::BOTTOM, T_OBJECT, MemNode::unordered);
 
   Node* exit_memory = reset_memory();
@@ -269,7 +268,7 @@ void GraphKit::gen_stub(address C_function,
                          exit_memory,
                          frameptr(),
                          returnadr());
-    if (C->tf()->range()->cnt() > TypeFunc::Parms)
+    if (C->tf()->range_sig()->cnt() > TypeFunc::Parms)
       ret->add_req( map()->in(TypeFunc::Parms) );
     break;
   case 1:    // This is a fancy tail-call jump.  Jump to computed address.

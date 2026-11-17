@@ -180,6 +180,11 @@ public class StressNMethodRelocation {
         }
 
         public void compileWithC2() throws Exception {
+            // The enqueue below is dropped while a compile the policy queued
+            // on its own is still in the queue, so wait for that one first
+            while (WHITE_BOX.isMethodQueuedForCompilation(method)) {
+                Thread.onSpinWait();
+            }
             WHITE_BOX.enqueueMethodForCompilation(method, C2_LEVEL);
             while (WHITE_BOX.isMethodQueuedForCompilation(method)) {
                 Thread.onSpinWait();

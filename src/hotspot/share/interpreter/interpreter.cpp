@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,10 @@ void InterpreterCodelet::initialize(const char* description, Bytecodes::Code byt
 
 void InterpreterCodelet::verify() {}
 
-void InterpreterCodelet::print_on(outputStream* st) const {
+void InterpreterCodelet::print_on(outputStream* st, bool print_code) const {
   ttyLocker ttyl;
 
-  if (AbstractInterpreter::should_print_instructions()) {
+  if (print_code) {
     st->cr();
     st->print_cr("----------------------------------------------------------------------");
   }
@@ -74,10 +74,14 @@ void InterpreterCodelet::print_on(outputStream* st) const {
   st->print_cr("[" INTPTR_FORMAT ", " INTPTR_FORMAT "]  %d bytes",
                 p2i(code_begin()), p2i(code_end()), code_size());
 
-  if (AbstractInterpreter::should_print_instructions()) {
+  if (print_code) {
     st->cr();
     Disassembler::decode(code_begin(), code_end(), st NOT_PRODUCT(COMMA &_asm_remarks));
   }
+}
+
+void InterpreterCodelet::print_on(outputStream* st) const {
+  print_on(st, AbstractInterpreter::should_print_instructions());
 }
 
 void InterpreterCodelet::print() const { print_on(tty); }
@@ -101,7 +105,7 @@ CodeletMark::~CodeletMark() {
   // Align so printing shows nop's instead of random code at the end (Codelets are aligned).
   (*_masm)->align(wordSize);
   // Make sure all code is in code buffer.
-  (*_masm)->flush();
+  (*_masm)->invalidate_icache();
 
   // Commit Codelet.
   int committed_code_size = (*_masm)->code()->pure_insts_size();

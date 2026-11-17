@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,8 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     private volatile int state;
     final ReentrantLock subscriptionLock = new ReentrantLock();
     volatile SubscriptionWrapper subscription;
-    volatile Throwable withError;
     public HttpBodySubscriberWrapper(BodySubscriber<T> userSubscriber) {
+        Objects.requireNonNull(userSubscriber, "BodySubscriber");
         this.userSubscriber = userSubscriber;
     }
 
@@ -297,7 +297,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
             onTermination();
             logComplete(t);
             tryUnregister();
-            t  = withError = Utils.getCompletionCause(t);
+            t  = Utils.getCompletionCause(t);
             if (t == null) {
                 try {
                     var state = this.state;
@@ -316,7 +316,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
                     // race that might cause the next send() operation to
                     // fail as the connection has already been put back
                     // into the cache when we reach here.
-                    propagateError(t = withError = Utils.getCompletionCause(x));
+                    propagateError(t = Utils.getCompletionCause(x));
                 }
             } else {
                 propagateError(t);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
+import compiler.lib.ir_framework.shared.NoTestsRunException;
 import compiler.lib.ir_framework.shared.TestRunException;
 import jdk.test.lib.Asserts;
 
@@ -54,7 +55,7 @@ public class TestRunTests {
             Asserts.fail("Should have thrown exception");
         } catch (IRViolationException e) {
             System.setOut(oldOut);
-            String[] matches = { "test(int)", "test2(int)", "Failed IR Rules (2)"};
+            String[] matches = { "test", "test2", "Failed IR Rules (2)"};
             Arrays.stream(matches).forEach(m -> Asserts.assertTrue(e.getExceptionInfo().contains(m)));
             Asserts.assertEQ(e.getExceptionInfo().split("STANDALONE mode", -1).length - 1, 2);
         }
@@ -64,6 +65,27 @@ public class TestRunTests {
         new TestFramework(SkipC2Compilation.class).addFlags("-XX:TieredStopAtLevel=1").start();
         new TestFramework(SkipC2Compilation.class).addFlags("-XX:TieredStopAtLevel=2").start();
         new TestFramework(SkipC2Compilation.class).addFlags("-XX:TieredStopAtLevel=3").start();
+        new TestFramework(FilteredIRRun.class).addFlags("-DTest=testGood").start();
+        new TestFramework(FilteredIRRun.class).addFlags("-DExclude=test2").start();
+        new TestFramework(FilteredIRRun.class).addFlags("-DTest=testGood", "-DExclude=test2").start();
+
+        for (String[] flags : new String[][] { { "-DTest=testNotExist" }, { "-DTest=testNotExist", "-DExclude=test2" } }) {
+            try {
+                new TestFramework(FilteredIRRun.class).addFlags(flags).start();
+                Asserts.fail("expected NoTestsRunException");
+            } catch (NoTestsRunException e) {
+                // Expected
+            }
+        }
+        for (String[] flags : new String[][] { {}, { "-DTest=test1" }, { "-DTest=test2" } }) {
+            try {
+                new TestFramework(FilteredIRRun.class).addFlags(flags).start();
+                Asserts.fail("Expected test2 to fail IR verification");
+            } catch (IRViolationException e) {
+                Asserts.assertTrue(e.getExceptionInfo().contains("ir_framework.tests.FilteredIRRun::test2"),
+                                   e.getExceptionInfo());
+            }
+        }
     }
     public int iFld;
 
@@ -265,6 +287,43 @@ class BadStandalone {
 
     @Run(test = "test2", mode = RunMode.STANDALONE)
     public void run2(RunInfo info) {
+    }
+}
+
+class FilteredIRRun {
+    int iFld;
+
+    @Test
+    @IR(counts = {IRNode.STORE_I, "1"})
+    public void test1(int x) {
+        iFld = x;
+    }
+
+    @Test
+    @IR(failOn = IRNode.STORE_I)
+    public void test2(int x) {
+        iFld = x;
+    }
+
+    @Run(test = {"test1", "test2"})
+    public void run(RunInfo info) {
+        test1(23);
+        test2(42);
+        if (!info.isWarmUp()) {
+            TestFramework.assertCompiledByC2(info.getTest("test1"));
+            TestFramework.assertCompiledByC2(info.getTest("test2"));
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_I, "1"})
+    public void testGood(int x) {
+        iFld = x;
+    }
+
+    @Run(test = {"testGood"})
+    public void runGood() {
+        testGood(34);
     }
 }
 

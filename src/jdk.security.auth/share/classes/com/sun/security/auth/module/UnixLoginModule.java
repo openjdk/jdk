@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.security.auth.module;
 
 import java.util.*;
-import java.io.IOException;
 import javax.security.auth.*;
 import javax.security.auth.callback.*;
 import javax.security.auth.login.*;
@@ -34,6 +33,7 @@ import javax.security.auth.spi.*;
 import com.sun.security.auth.UnixPrincipal;
 import com.sun.security.auth.UnixNumericUserPrincipal;
 import com.sun.security.auth.UnixNumericGroupPrincipal;
+import jdk.internal.util.OperatingSystem;
 
 /**
  * This {@code LoginModule} imports a user's Unix
@@ -121,20 +121,34 @@ public class UnixLoginModule implements LoginModule {
      */
     public boolean login() throws LoginException {
 
-        long[] unixGroups = null;
+        // Fail immediately on Windows to avoid cygwin-like functions
+        // being loaded, which are not supported.
+        if (OperatingSystem.isWindows()) {
+            throw new FailedLoginException
+                    ("Failed in attempt to import " +
+                            "the underlying system identity information" +
+                            " on " + System.getProperty("os.name"));
+        }
 
         try {
             ss = new UnixSystem();
-        } catch (UnsatisfiedLinkError ule) {
+        } catch (ExceptionInInitializerError | UnsatisfiedLinkError ule) {
+            // Errors could happen in either static blocks or the constructor,
+            // both have a cause.
             succeeded = false;
-            throw new FailedLoginException
+            var error = new FailedLoginException
                                 ("Failed in attempt to import " +
                                 "the underlying system identity information" +
                                 " on " + System.getProperty("os.name"));
+            if (ule.getCause() != null) {
+                error.initCause(ule.getCause());
+            }
+            throw error;
         }
         userPrincipal = new UnixPrincipal(ss.getUsername());
         UIDPrincipal = new UnixNumericUserPrincipal(ss.getUid());
         GIDPrincipal = new UnixNumericGroupPrincipal(ss.getGid(), true);
+        long[] unixGroups = null;
         if (ss.getGroups() != null && ss.getGroups().length > 0) {
             unixGroups = ss.getGroups();
             for (int i = 0; i < unixGroups.length; i++) {
@@ -150,9 +164,11 @@ public class UnixLoginModule implements LoginModule {
                     "succeeded importing info: ");
             System.out.println("\t\t\tuid = " + ss.getUid());
             System.out.println("\t\t\tgid = " + ss.getGid());
-            unixGroups = ss.getGroups();
-            for (int i = 0; i < unixGroups.length; i++) {
-                System.out.println("\t\t\tsupp gid = " + unixGroups[i]);
+            System.out.println("\t\t\tusername = " + ss.getUsername());
+            if (unixGroups != null) {
+                for (int i = 0; i < unixGroups.length; i++) {
+                    System.out.println("\t\t\tsupp gid = " + unixGroups[i]);
+                }
             }
         }
         succeeded = true;

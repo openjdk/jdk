@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 4748292
  * @library /test/lib
  * @summary Prevent/Disable reverse name lookups with JSSE SSL sockets
- * @run main/othervm ReverseNameLookup -Djava.net.preferIPv4Stack
+ * @run main/othervm -Djava.net.preferIPv4Stack ${test.main.class}
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
@@ -69,7 +69,7 @@ public class ReverseNameLookup {
     /*
      * Turn on SSL debugging?
      */
-    static boolean debug = false;
+    static boolean debug = Boolean.getBoolean("test.debug");
 
     /*
      * If the client or server is doing some kind of object creation

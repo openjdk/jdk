@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (C) 2022, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +27,7 @@
 
 /*
  * @test
- * @bug 8281236
+ * @bug 8281236 8314323
  * @summary Check TLS connection behaviors for named groups configuration
  * @library /javax/net/ssl/templates
  * @run main/othervm NamedGroups
@@ -136,6 +137,60 @@ public class NamedGroups extends SSLSocketTemplate {
                         "secp256r1"
                 },
                 true);
+
+        runTest(new String[] {
+                        "X25519MLKEM768"
+                },
+                new String[] {
+                        "X25519MLKEM768"
+                },
+                false);
+
+        runTest(new String[] {
+                        "SecP256r1MLKEM768"
+                },
+                new String[] {
+                        "SecP256r1MLKEM768"
+                },
+                false);
+
+        runTest(new String[] {
+                        "SecP384r1MLKEM1024"
+                },
+                new String[] {
+                        "SecP384r1MLKEM1024"
+                },
+                false);
+
+        runTest(new String[] {
+                        "X25519MLKEM768"
+                },
+                new String[] {
+                        "SecP256r1MLKEM768"
+                },
+                true);
+
+        runTest(new String[] {
+                        "X25519MLKEM768"
+                },
+                new String[0],
+                true);
+
+        runTest(new String[] {
+                        "SecP256r1MLKEM768"
+                },
+                null,
+                true);
+
+        runTest(new String[] {
+                        "X25519MLKEM768",
+                        "x25519"
+                },
+                new String[] {
+                        "X25519MLKEM768",
+                        "x25519"
+                },
+                false);
     }
 
     private static void runTest(String[] serverNamedGroups,

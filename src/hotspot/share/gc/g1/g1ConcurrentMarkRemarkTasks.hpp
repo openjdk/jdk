@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTMARKREMARKTASKS_HPP
 #define SHARE_GC_G1_G1CONCURRENTMARKREMARKTASKS_HPP
 
-#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "utilities/growableArray.hpp"
 
 class G1CollectedHeap;
 class G1ConcurrentMark;
+class G1HeapRegion;
 
 // Update per-region liveness info based on CM stats. Then, reclaim empty
 // regions right away and select certain regions (e.g. sparse ones) for remset
@@ -41,13 +42,15 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
   G1ConcurrentMark* _cm;
   G1HeapRegionClaimer _hrclaimer;
 
-  uint volatile _total_selected_for_rebuild;
+  GrowableArrayCHeap<G1HeapRegion*, mtGC> _old_selected_for_rebuild;
+  GrowableArrayCHeap<G1HeapRegion*, mtGC> _humongous_selected_for_rebuild;
 
   // Reclaimed empty regions
   G1FreeRegionList _cleanup_list;
 
   struct G1OnRegionClosure;
 
+  void prune(GrowableArrayCHeap<G1HeapRegion*, mtGC>* old_regions);
 public:
   G1UpdateRegionLivenessAndSelectForRebuildTask(G1CollectedHeap* g1h,
                                                 G1ConcurrentMark* cm,
@@ -57,10 +60,17 @@ public:
 
   void work(uint worker_id) override;
 
-  uint total_selected_for_rebuild() const { return _total_selected_for_rebuild; }
+  uint total_selected_for_rebuild() const {
+    return (uint)_old_selected_for_rebuild.length() + (uint)_humongous_selected_for_rebuild.length();
+  }
+
+  // Sort selected old regions by efficiency and prune them based on G1HeapWastePercent.
+  // This pruning improves rebuild time in addition to remembered set memory usage.
+  // Returns the set of regions selected in efficiency order.
+  GrowableArrayCHeap<G1HeapRegion*, mtGC>* sort_and_prune_selected();
+  GrowableArrayCHeap<G1HeapRegion*, mtGC>* humongous_selected() { return &_humongous_selected_for_rebuild; }
 
   static uint desired_num_workers(uint num_regions);
 };
 
 #endif /* SHARE_GC_G1_G1CONCURRENTMARKREMARKTASKS_HPP */
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.net.httpserver;
 
+import java.net.ProtocolException;
 import java.nio.*;
 import java.io.*;
 import java.nio.channels.*;
@@ -36,18 +37,20 @@ import com.sun.net.httpserver.*;
  */
 class Request {
 
-    static final int BUF_LEN = 2048;
     static final byte CR = 13;
     static final byte LF = 10;
+    static final byte FIRST_CHAR = 32;
 
     private String startLine;
     private SocketChannel chan;
     private InputStream is;
     private OutputStream os;
     private final int maxReqHeaderSize;
+    private final boolean firstClearRequest;
 
-    Request(InputStream rawInputStream, OutputStream rawout) throws IOException {
+    Request(InputStream rawInputStream, OutputStream rawout, boolean firstClearRequest) throws IOException {
         this.maxReqHeaderSize = ServerConfig.getMaxReqHeaderSize();
+        this.firstClearRequest = firstClearRequest;
         is = rawInputStream;
         os = rawout;
         do {
@@ -55,11 +58,6 @@ class Request {
             /* skip blank lines */
         } while ("".equals(startLine));
     }
-
-
-    char[] buf = new char[BUF_LEN];
-    int pos;
-    StringBuffer lineBuf;
 
     public InputStream inputStream() {
         return is;
@@ -75,30 +73,46 @@ class Request {
      */
 
     public String readLine() throws IOException {
-        boolean gotCR = false, gotLF = false;
-        pos = 0; lineBuf = new StringBuffer();
+        boolean gotLF = false;
+        StringBuilder lineBuf = new StringBuilder();
         long lsize = 32;
+
+        // For the first request that comes on a clear connection
+        // we will check that the first non CR/LF char on the
+        // request line is eligible. This should be the first char
+        // of a method name, so it should be at least greater or equal
+        // to 32 (FIRST_CHAR) which is the space character.
+        // The main goal here is to fail fast if we receive 0x16 (22) which
+        // happens to be the first byte of a TLS handshake record.
+        // This is typically what would be received if a TLS client opened
+        // a TLS connection on a non-TLS server.
+        // If we receive 0x16 we should close the connection immediately as
+        // it indicates we're receiving a ClientHello on a clear
+        // connection, and we will never receive the expected CRLF that
+        // terminates the first request line.
+        // Though we could check only for 0x16, any characters < 32
+        // (excluding CRLF) is not expected at this position in a
+        // request line, so we can still fail here early if any of
+        // those are detected.
+        int offset = 0;
         while (!gotLF) {
             int c = is.read();
             if (c == -1) {
                 return null;
             }
-            if (gotCR) {
-                if (c == LF) {
-                    gotLF = true;
-                } else {
-                    gotCR = false;
-                    consume(CR);
-                    consume(c);
-                    lsize = lsize + 2;
-                }
+            if (c == CR || c == LF) {
+                checkCRLF(c);
+                gotLF = true;
             } else {
-                if (c == CR) {
-                    gotCR = true;
-                } else {
-                    consume(c);
-                    lsize = lsize + 1;
+                if (firstClearRequest && offset == 0) {
+                    if (c < FIRST_CHAR) {
+                        throw new ProtocolException("Unexpected start of request line");
+                    }
+                    offset++;
                 }
+                checkCtl(c);
+                lineBuf.append((char)c);
+                lsize = lsize + 1;
             }
             if (maxReqHeaderSize > 0 && lsize > maxReqHeaderSize) {
                 throw new IOException("Maximum header (" +
@@ -106,16 +120,7 @@ class Request {
                         ServerConfig.getMaxReqHeaderSize() + ".");
             }
         }
-        lineBuf.append(buf, 0, pos);
-        return new String(lineBuf);
-    }
-
-    private void consume(int c) throws IOException {
-        if (pos == BUF_LEN) {
-            lineBuf.append(buf);
-            pos = 0;
-        }
-        buf[pos++] = (char)c;
+        return lineBuf.toString();
     }
 
     /**
@@ -126,7 +131,23 @@ class Request {
     }
 
     Headers hdrs = null;
-    @SuppressWarnings("fallthrough")
+
+    void checkCRLF(int firstc) throws IOException {
+        if (firstc == CR) {
+            int c = is.read();
+            if (c != LF) {
+                throw new ProtocolException("Invalid CR in request header");
+            }
+        }
+    }
+
+    void checkCtl(int c) throws IOException {
+        if (c == 0x7f ||
+                c < ' ' && c != CR && c!= LF && c != '\t') {
+            throw new ProtocolException("Invalid character in request header");
+        }
+    }
+
     Headers headers() throws IOException {
         if (hdrs != null) {
             return hdrs;
@@ -140,20 +161,16 @@ class Request {
 
         // check for empty headers
         if (firstc == CR || firstc == LF) {
-            int c = is.read();
-            if (c == CR || c == LF) {
-                return hdrs;
-            }
-            s[0] = (char)firstc;
-            len = 1;
-            firstc = c;
+            checkCRLF(firstc);
+            return hdrs;
         }
         long hsize = startLine.length() + 32L;
 
         while (firstc != LF && firstc != CR && firstc >= 0) {
             int keyend = -1;
             int c;
-            boolean inKey = firstc > ' ';
+            boolean inKey = firstc != ' ' && firstc != '\t';
+            checkCtl(firstc);
             s[len++] = (char) firstc;
             hsize = hsize + 1;
     parseloop:{
@@ -165,27 +182,26 @@ class Request {
                         ? maxReqHeaderSize - hsize - 32
                         : Long.MAX_VALUE;
                 while ((c = is.read()) >= 0) {
+                    checkCtl(c);
                     switch (c) {
-                      /*fallthrough*/
                       case ':':
-                        if (inKey && len > 0)
+                        if (inKey && len > 0) {
                             keyend = len;
-                        inKey = false;
+                            inKey = false;
+                        }
                         break;
                       case '\t':
                         c = ' ';
-                      case ' ':
-                        inKey = false;
                         break;
                       case CR:
                       case LF:
-                        firstc = is.read();
-                        if (c == CR && firstc == LF) {
-                            firstc = is.read();
-                            if (firstc == CR)
-                                firstc = is.read();
+                        checkCRLF(c);
+                        if (inKey) {
+                            throw new ProtocolException("Missing field separator");
                         }
-                        if (firstc == LF || firstc == CR || firstc > ' ')
+                        firstc = is.read();
+                        checkCRLF(firstc);
+                        if (firstc != ' ' && firstc != '\t')
                             break parseloop;
                         /* continuation */
                         c = ' ';
@@ -220,7 +236,7 @@ class Request {
             }
             String v;
             if (keyend >= len)
-                v = new String();
+                v = "";
             else
                 v = String.copyValueOf(s, keyend, len - keyend);
 

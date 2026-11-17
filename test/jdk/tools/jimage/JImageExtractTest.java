@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,8 @@ public class JImageExtractTest extends JImageCliTest {
             AclEntry entry = AclEntry.newBuilder()
                                      .setType(AclEntryType.DENY)
                                      .setPrincipal(fileOwner)
-                                     .setPermissions(AclEntryPermission.WRITE_DATA)
+                                     .setPermissions(AclEntryPermission.WRITE_DATA,
+                                                     AclEntryPermission.APPEND_DATA)
                                      .setFlags(AclEntryFlag.FILE_INHERIT, AclEntryFlag.DIRECTORY_INHERIT)
                                      .build();
             List<AclEntry> acl = view.getAcl();

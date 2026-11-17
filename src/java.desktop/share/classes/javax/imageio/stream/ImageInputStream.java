@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * @throws java.io.EOFException if the end of the stream is reached.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     boolean readBoolean() throws IOException;
 
     /**
@@ -204,6 +205,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * @throws java.io.EOFException if the end of the stream is reached.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     byte readByte() throws IOException;
 
     /**
@@ -228,6 +230,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * @throws java.io.EOFException if the end of the stream is reached.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     int readUnsignedByte() throws IOException;
 
     /**
@@ -246,6 +249,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      *
      * @see #getByteOrder
      */
+    @Override
     short readShort() throws IOException;
 
     /**
@@ -267,6 +271,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      *
      * @see #getByteOrder
      */
+    @Override
     int readUnsignedShort() throws IOException;
 
     /**
@@ -284,6 +289,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      *
      * @see #readUnsignedShort
      */
+    @Override
     char readChar() throws IOException;
 
     /**
@@ -302,6 +308,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      *
      * @see #getByteOrder
      */
+    @Override
     int readInt() throws IOException;
 
     /**
@@ -340,6 +347,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      *
      * @see #getByteOrder
      */
+    @Override
     long readLong() throws IOException;
 
     /**
@@ -358,6 +366,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      *
      * @see #getByteOrder
      */
+    @Override
     float readFloat() throws IOException;
 
     /**
@@ -376,6 +385,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      *
      * @see #getByteOrder
      */
+    @Override
     double readDouble() throws IOException;
 
     /**
@@ -410,6 +420,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     String readLine() throws IOException;
 
     /**
@@ -494,6 +505,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * a valid modified UTF-8 encoding of a string.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     String readUTF() throws IOException;
 
     /**
@@ -518,6 +530,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * reading all the bytes.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void readFully(byte[] b, int off, int len) throws IOException;
 
     /**
@@ -537,6 +550,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      * reading all the bytes.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void readFully(byte[] b) throws IOException;
 
     /**
@@ -822,6 +836,7 @@ public interface ImageInputStream extends DataInput, Closeable {
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     int skipBytes(int n) throws IOException;
 
     /**
@@ -995,5 +1010,6 @@ public interface ImageInputStream extends DataInput, Closeable {
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void close() throws IOException;
 }

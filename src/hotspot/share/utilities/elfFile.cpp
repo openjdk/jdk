@@ -107,7 +107,7 @@ MarkedFileReader::~MarkedFileReader() {
 }
 
 ElfFile::ElfFile(const char* filepath) :
-  _next(nullptr), _filepath(os::strdup(filepath)), _file(nullptr),
+  _next(nullptr), _filepath(os::strdup(filepath, mtInternal)), _file(nullptr),
   _symbol_tables(nullptr), _string_tables(nullptr), _shdr_string_table(nullptr), _funcDesc_table(nullptr),
   _status(NullDecoder::no_error), _dwarf_file(nullptr) {
   memset(&_elfHdr, 0, sizeof(_elfHdr));
@@ -942,7 +942,7 @@ bool DwarfFile::ArangesCache::add_entry(const AddressDescriptor& descriptor, uin
 
 bool DwarfFile::ArangesCache::grow() {
   size_t new_capacity = _capacity == 0 ? 128 : _capacity * 1.5;
-  ArangesEntry* new_entries = REALLOC_C_HEAP_ARRAY_RETURN_NULL(ArangesEntry, _entries, new_capacity, mtInternal);
+  ArangesEntry* new_entries = REALLOC_C_HEAP_ARRAY_RETURN_NULL(_entries, new_capacity, mtInternal);
   if (new_entries == nullptr) {
     return false;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,18 @@
 
 /* @test
  * @summary unit tests for java.lang.invoke.MethodHandles
- * @run testng/othervm -ea -esa test.java.lang.invoke.VarArgsTest
+ * @run junit/othervm -ea -esa test.java.lang.invoke.VarArgsTest
  */
 package test.java.lang.invoke;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.Arrays;
 import java.util.List;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
-import static org.testng.AssertJUnit.*;
-import org.testng.annotations.*;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class VarArgsTest {
 
@@ -61,17 +60,17 @@ public class VarArgsTest {
         MethodHandle asList = publicLookup()
             .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class));
         MethodHandle asListWithVarargs = asList.withVarargs(asList.isVarargsCollector());
-        assert(asListWithVarargs.isVarargsCollector());
+        assertTrue(asListWithVarargs.isVarargsCollector());
         assertEquals("[]", asListWithVarargs.invoke().toString());
         assertEquals("[1]", asListWithVarargs.invoke(1).toString());
         assertEquals("[two, too]", asListWithVarargs.invoke("two", "too").toString());
     }
 
-    @Test(expectedExceptions = { IllegalArgumentException.class })
+    @Test
     public void testWithVarargsIAE() throws Throwable {
         MethodHandle lenMH = publicLookup()
-            .findVirtual(String.class, "length", methodType(int.class));
-        MethodHandle lenMHWithVarargs = lenMH.withVarargs(true);
+                .findVirtual(String.class, "length", methodType(int.class));
+        assertThrows(IllegalArgumentException.class, () -> lenMH.withVarargs(true));
     }
 
 }

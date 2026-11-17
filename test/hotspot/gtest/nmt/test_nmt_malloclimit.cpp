@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "nmt/mallocLimit.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/nmtCommon.hpp"
@@ -154,4 +155,15 @@ TEST_VM_FATAL_ERROR_MSG(NMT, MallocLimitDeathTestOnStrDup, ".*MallocLimit: reach
   for (int i = 0; i < 100000; i++) {
     char* p = os::strdup("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", mtTest);
   }
+}
+
+TEST_VM_FATAL_ERROR_MSG(NMT, MallocLimitDeathTestOnArenaGrow, ".*MallocLimit in Arena::grow.*") {
+  // We fake the correct assert if NMT is off to make the test pass (there is no way to execute a death test conditionally)
+  if (!MemTracker::enabled()) {
+    fatal("Fake message please ignore: MallocLimit in Arena::grow");
+  }
+  // the real test
+  MallocLimitHandler::initialize("test:10m:oom");
+  Arena ar(mtTest);
+  ar.Amalloc(10 * M, AllocFailStrategy::EXIT_OOM);
 }

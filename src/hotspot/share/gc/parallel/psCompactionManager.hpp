@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ public:
 class ParCompactionManager : public CHeapObj<mtGC> {
   friend class MarkFromRootsTask;
   friend class ParallelCompactRefProcProxyTask;
-  friend class ParallelScavengeRefProcProxyTask;
   friend class ParMarkBitMap;
   friend class PSParallelCompact;
   friend class FillDensePrefixAndCompactionTask;
@@ -78,7 +77,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static RegionTaskQueueSet*    _region_task_queues;
   static PSOldGen*              _old_gen;
 
-  static PartialArrayStateManager*  _partial_array_state_manager;
   PartialArraySplitter              _partial_array_splitter;
 
   PSMarkTaskQueue               _marking_stack;
@@ -120,14 +118,14 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
 
   inline PSMarkTaskQueue*  marking_stack() { return &_marking_stack; }
-  void push_objArray(oop obj);
+  void push_objArray(objArrayOop obj);
 
   // To collect per-region live-words in a worker local cache in order to
   // reduce threads contention.
   class MarkingStatsCache : public CHeapObj<mtGC> {
     constexpr static size_t num_entries = 1024;
-    static_assert(is_power_of_2(num_entries), "inv");
-    static_assert(num_entries > 0, "inv");
+    static_assert(is_power_of_2(num_entries));
+    static_assert(num_entries > 0);
 
     constexpr static size_t entry_mask = num_entries - 1;
 

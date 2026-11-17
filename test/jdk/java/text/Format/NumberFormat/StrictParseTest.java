@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8327640 8331485 8333755 8335668
+ * @bug 8327640 8331485 8333755 8335668 8388507
  * @summary Test suite for NumberFormat parsing with strict leniency
  * @run junit/othervm -Duser.language=en -Duser.country=US StrictParseTest
  * @run junit/othervm -Duser.language=ja -Duser.country=JP StrictParseTest
@@ -114,8 +114,20 @@ public class StrictParseTest {
         successParse(nonLocalizedDFmt, "a12345,67890b");
         successParse(nonLocalizedDFmt, "a1234,67890b");
         failParse(nonLocalizedDFmt, "a123456,7890b", 6);
-    }
+        // Special case: NaN
+        failParse(nonLocalizedDFmt, "NaNFoo", 3);
+        successParse(nonLocalizedDFmt, "NaN");
 
+        // Grouping size == 0 cases
+        var fmt = new DecimalFormat();
+        fmt.setStrict(true);
+        fmt.setGroupingSize(0);
+        fmt.setGroupingUsed(true);
+        var pp = new ParsePosition(0);
+        assertNull(fmt.parse("555,000.0", pp));
+        assertEquals(3, pp.getErrorIndex());
+        assertDoesNotThrow(() -> fmt.parse("555.0"));
+    }
 
     // 8333755: Check that parsing with integer only against a suffix value works
     @Test // Non-localized, run once

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "classfile/classLoader.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
@@ -166,11 +167,11 @@ void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool che
   }
 }
 
-bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
+bool os::first_resident_in_range(address start, size_t size, address& resident_start, size_t& resident_size) {
 
 #ifdef _AIX
-  committed_start = start;
-  committed_size = size;
+  resident_start = start;
+  resident_size = size;
   return true;
 #else
 
@@ -187,10 +188,10 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
   assert(is_aligned(start, page_sz), "Start address must be page aligned");
   assert(is_aligned(size, page_sz), "Size must be page aligned");
 
-  committed_start = nullptr;
+  resident_start = nullptr;
 
   int loops = checked_cast<int>((pages + stripe - 1) / stripe);
-  int committed_pages = 0;
+  int resident_pages = 0;
   address loop_base = start;
   bool found_range = false;
 
@@ -209,7 +210,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
 
     // During shutdown, some memory goes away without properly notifying NMT,
     // E.g. ConcurrentGCThread/WatcherThread can exit without deleting thread object.
-    // Bailout and return as not committed for now.
+    // Bailout and return as not resident for now.
     if (mincore_return_value == -1 && errno == ENOMEM) {
       return false;
     }
@@ -223,32 +224,32 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
     assert(mincore_return_value == 0, "Range must be valid");
     // Process this stripe
     for (uintx vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
-      if ((vec[vecIdx] & 0x01) == 0) { // not committed
+      if ((vec[vecIdx] & 0x01) == 0) { // not resident
         // End of current contiguous region
-        if (committed_start != nullptr) {
+        if (resident_start != nullptr) {
           found_range = true;
           break;
         }
-      } else { // committed
+      } else { // resident
         // Start of region
-        if (committed_start == nullptr) {
-          committed_start = loop_base + page_sz * vecIdx;
+        if (resident_start == nullptr) {
+          resident_start = loop_base + page_sz * vecIdx;
         }
-        committed_pages ++;
+        resident_pages ++;
       }
     }
 
     loop_base += pages_to_query * page_sz;
   }
 
-  if (committed_start != nullptr) {
-    assert(committed_pages > 0, "Must have committed region");
-    assert(committed_pages <= int(size / page_sz), "Can not commit more than it has");
-    assert(committed_start >= start && committed_start < start + size, "Out of range");
-    committed_size = page_sz * committed_pages;
+  if (resident_start != nullptr) {
+    assert(resident_pages > 0, "Must have a resident region");
+    assert(resident_pages <= int(size / page_sz), "Resident size exceeds region size");
+    assert(resident_start >= start && resident_start < start + size, "Out of range");
+    resident_size = page_sz * resident_pages;
     return true;
   } else {
-    assert(committed_pages == 0, "Should not have committed region");
+    assert(resident_pages == 0, "Should not have a resident region");
     return false;
   }
 #endif
@@ -321,7 +322,7 @@ int os::create_file_for_heap(const char* dir) {
   int fd;
 
 #if defined(LINUX) && defined(O_TMPFILE)
-  char* native_dir = os::strdup(dir);
+  char* native_dir = os::strdup(dir, mtInternal);
   if (native_dir == nullptr) {
     vm_exit_during_initialization(err_msg("strdup failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
@@ -457,12 +458,10 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     warning("Failed mmap to file. (%s)", os::strerror(errno));
     return nullptr;
   }
-  if (base != nullptr && addr != base) {
-    if (!os::release_memory(addr, size)) {
-      warning("Could not release memory on unsuccessful file mapping");
-    }
-    return nullptr;
-  }
+
+  // The requested address should be the same as the returned address when using MAP_FIXED
+  // as per POSIX.
+  assert(base == nullptr || addr == base, "base should equal addr when using MAP_FIXED");
   return addr;
 }
 
@@ -855,7 +854,7 @@ void os::dll_unload(void *lib) {
   char* l_pathdup = nullptr;
   l_path = os::Linux::dll_path(lib);
   if (l_path != nullptr) {
-    l_path = l_pathdup = os::strdup(l_path);
+    l_path = l_pathdup = os::strdup(l_path, mtInternal);
   }
 #endif  // LINUX
 
@@ -889,6 +888,14 @@ void* os::lookup_function(const char* name) {
   return dlsym(RTLD_DEFAULT, name);
 }
 
+int64_t os::ftell(FILE* file) {
+  return ::ftell(file);
+}
+
+int os::fseek(FILE* file, int64_t offset, int whence) {
+  return ::fseek(file, offset, whence);
+}
+
 jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::lseek(fd, offset, whence);
 }
@@ -907,8 +914,25 @@ FILE* os::fdopen(int fd, const char* mode) {
 
 ssize_t os::pd_write(int fd, const void *buf, size_t nBytes) {
   ssize_t res;
+#ifdef __APPLE__
+  // macOS fails for individual write operations > 2GB.
+  // See https://gitlab.haskell.org/ghc/ghc/-/issues/17414
+  ssize_t total = 0;
+  while (nBytes > 0) {
+    size_t bytes_to_write = MIN2(nBytes, (size_t)INT_MAX);
+    RESTARTABLE(::write(fd, buf, bytes_to_write), res);
+    if (res == OS_ERR) {
+      return OS_ERR;
+    }
+    buf = (const char*)buf + res;
+    nBytes -= res;
+    total += res;
+  }
+  return total;
+#else
   RESTARTABLE(::write(fd, buf, nBytes), res);
   return res;
+#endif
 }
 
 ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
@@ -1630,15 +1654,15 @@ jlong os::elapsed_frequency() {
   return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
-double os::elapsed_process_cpu_time() {
+bool os::elapsed_process_cpu_time(double& value) {
   struct rusage usage;
   int retval = getrusage(RUSAGE_SELF, &usage);
   if (retval == 0) {
-    return usage.ru_utime.tv_sec + usage.ru_stime.tv_sec +
+    value = usage.ru_utime.tv_sec + usage.ru_stime.tv_sec +
          (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000.0 * 1000.0);
-  } else {
-    return -1;
+    return true;
   }
+  return false;
 }
 
 // Return the real, user, and system times in seconds from an

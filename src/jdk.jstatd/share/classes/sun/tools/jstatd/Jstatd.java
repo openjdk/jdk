@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,10 +149,9 @@ public class Jstatd {
         name.append("/").append(rminame);
 
         try {
-            remoteHost = new RemoteHostImpl(rmiPort);
             ObjectInputFilter filter = ObjectInputFilter.Config.createFilter(rmiFilterPattern);
-            RemoteHost stub = (RemoteHost) UnicastRemoteObject.exportObject(
-                    remoteHost, rmiPort, filter);
+            remoteHost = new RemoteHostImpl(rmiPort, filter);
+            RemoteHost stub = (RemoteHost) UnicastRemoteObject.exportObject(remoteHost, rmiPort, filter);
             bind(name.toString(), stub);
             System.out.println("jstatd started (bound to " + name.toString() + ")");
             System.out.flush();

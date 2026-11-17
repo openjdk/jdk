@@ -147,6 +147,9 @@ class ValueNumberingVisitor: public InstructionVisitor {
       kill_memory();
     } else {
       kill_field(x->field(), x->needs_patching());
+      if (x->enclosing_field() != nullptr) {
+        kill_field(x->enclosing_field(), true);
+      }
     }
   }
   void do_StoreIndexed   (StoreIndexed*    x) { kill_array(x->type()); }
@@ -195,10 +198,11 @@ class ValueNumberingVisitor: public InstructionVisitor {
     }
   }
   void do_NewTypeArray   (NewTypeArray*    x) { /* nothing to do */ }
-  void do_NewObjectArray (NewObjectArray*  x) { /* nothing to do */ }
-  void do_NewMultiArray  (NewMultiArray*   x) { /* nothing to do */ }
+  // The following three operations can trigger class loading and thus side-effects in class loaders.
+  void do_NewObjectArray (NewObjectArray*  x) { kill_memory(); }
+  void do_NewMultiArray  (NewMultiArray*   x) { kill_memory(); }
+  void do_InstanceOf     (InstanceOf*      x) { kill_memory(); }
   void do_CheckCast      (CheckCast*       x) { /* nothing to do */ }
-  void do_InstanceOf     (InstanceOf*      x) { /* nothing to do */ }
   void do_BlockBegin     (BlockBegin*      x) { /* nothing to do */ }
   void do_Goto           (Goto*            x) { /* nothing to do */ }
   void do_If             (If*              x) { /* nothing to do */ }
@@ -211,6 +215,7 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_ExceptionObject(ExceptionObject* x) { /* nothing to do */ }
   void do_ProfileCall    (ProfileCall*     x) { /* nothing to do */ }
   void do_ProfileReturnType (ProfileReturnType*  x) { /* nothing to do */ }
+  void do_ProfileACmpTypes(ProfileACmpTypes*  x) { /* nothing to do */ }
   void do_ProfileInvoke  (ProfileInvoke*   x) { /* nothing to do */ };
   void do_RuntimeCall    (RuntimeCall*     x) { /* nothing to do */ };
   void do_MemBar         (MemBar*          x) { /* nothing to do */ };

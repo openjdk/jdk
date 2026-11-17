@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import nsk.share.test.LocalRandom;
 import java.io.PrintStream;
 import nsk.share.gc.gp.GarbageProducer;
 import nsk.share.gc.tree.*;
-import nsk.share.gc.gp.MemoryStrategy;
 import nsk.share.log.Log;
 
 /**
@@ -37,6 +36,11 @@ public final class Memory {
         private static int bits = 0;
         private static int referenceSize = 0;
         private static int objectExtraSize = 0;
+
+        private static final boolean previewEnabled =
+                System.getProperty("test.java.opts", "").contains("--enable-preview") ||
+                System.getProperty("test.vm.opts", "").contains("--enable-preview");
+
 
         private Memory() {
         }
@@ -56,6 +60,14 @@ public final class Memory {
                 if (referenceSize == 0)
                         referenceSize = (getBits() == 64) ? 8 : 4;
                 return referenceSize;
+        }
+
+        public static boolean isPreviewEnabled() {
+                return previewEnabled;
+        }
+
+        public static boolean isValhallaEnabled() {
+            return previewEnabled;
         }
 
         /**
@@ -115,6 +127,46 @@ public final class Memory {
         }
 
         /**
+         * Get size of Integer element in Integer array.
+         * If array is not flattened, the only reference size is returned, the referred values
+         * should be added manually in references are not null.
+         */
+        public static int getIntegerArrayElementSize() {
+
+            if (!Memory.isValhallaEnabled()) {
+                return getReferenceSize();
+            }
+            return 8;
+        }
+
+        /**
+         * Get size of Byte element in Byte array.
+         * If array is not flattened, the only reference size is returned, the referred values
+         * should be added manually in references are not null.
+         */
+        public static int getByteArrayElementSize() {
+
+            if (!Memory.isValhallaEnabled()) {
+                return getReferenceSize();
+            }
+            return 2;
+        }
+
+        /**
+         * Get size of Boolean element in Boolean array.
+         * If array is not flattened, the only reference size is returned, the referred values
+         * should be added manually in references are not null.
+         */
+        public static int getBooleanArrayElementSize() {
+            if (!Memory.isValhallaEnabled()) {
+                return getReferenceSize();
+            }
+            return 2;
+        }
+
+
+
+    /**
          *  Get how many extra bytes an object occupies in the heap
          *  compared to sum of it's fields.
          *
@@ -151,8 +203,9 @@ public final class Memory {
          */
         public static int getArrayLength(long memory, long objectSize) {
                 int arrayExtraSize = getArrayExtraSize();
-                return (int) Math.min((memory - arrayExtraSize) / objectSize,
+                int length = (int) Math.min((memory - arrayExtraSize) / objectSize,
                         Integer.MAX_VALUE);
+                return Math.max(length, 0);
         }
 
         /**

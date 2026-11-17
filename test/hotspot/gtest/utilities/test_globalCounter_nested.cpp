@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/spinYield.hpp"
@@ -39,8 +39,8 @@ enum NestedTestState {
 };
 
 class RCUNestedThread : public JavaTestThread {
-  volatile NestedTestState _state;
-  volatile bool _proceed;
+  Atomic<NestedTestState> _state;
+  Atomic<bool> _proceed;
 
 protected:
   RCUNestedThread(Semaphore* post) :
@@ -52,21 +52,21 @@ protected:
   ~RCUNestedThread() {}
 
   void set_state(NestedTestState new_state) {
-    AtomicAccess::release_store(&_state, new_state);
+    _state.release_store(new_state);
   }
 
   void wait_with_state(NestedTestState new_state) {
     SpinYield spinner;
-    AtomicAccess::release_store(&_state, new_state);
-    while (!AtomicAccess::load_acquire(&_proceed)) {
+    _state.release_store(new_state);
+    while (!_proceed.load_acquire()) {
       spinner.wait();
     }
-    AtomicAccess::release_store(&_proceed, false);
+    _proceed.release_store(false);
   }
 
 public:
   NestedTestState state() const {
-    return AtomicAccess::load_acquire(&_state);
+    return _state.load_acquire();
   }
 
   void wait_for_state(NestedTestState goal) {
@@ -77,7 +77,7 @@ public:
   }
 
   void proceed() {
-    AtomicAccess::release_store(&_proceed, true);
+    _proceed.release_store(true);
   }
 };
 

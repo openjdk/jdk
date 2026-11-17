@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,21 @@
  */
 package sbd.test;
 
-import java.io.File;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.File;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8326915
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm sbd.test.ExternalRefTest
+ * @run junit/othervm sbd.test.ExternalRefTest
  * @summary Part of the Secure-By-Default (SBD) project. This test verifies issues
  * and error message improvements related to external references.
  */
@@ -43,11 +45,10 @@ public class ExternalRefTest {
      * @bug 8326915
      * Verifies that SAXParseException rather than NPE is thrown when a validating
      * parser is restricted from processing external references.
-     * @throws Exception if the test fails
      */
     @Test
-    public void testValidatingParser() throws Exception {
-        Assert.assertThrows(SAXParseException.class, () -> validateWithParser());
+    public void testValidatingParser() {
+        assertThrows(SAXParseException.class, this::validateWithParser);
     }
 
     private void validateWithParser() throws Exception {

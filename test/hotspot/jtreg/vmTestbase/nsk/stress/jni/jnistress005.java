@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,9 @@ package nsk.stress.jni;
 import nsk.share.Consts;
 import nsk.share.Debug;
 import nsk.share.test.StressOptions;
+import jdk.test.lib.thread.ThreadWrapper;
 
-public class jnistress005 extends Thread {
+public class jnistress005 extends ThreadWrapper {
 
     /* Maximum number of iterations.  Ignored if <= 0L */
     static long numIteration = 0L;
@@ -244,8 +245,11 @@ public class jnistress005 extends Thread {
         garb = new GarbageGenerator[nGarb];
         for (i = 0; i < nJNI; i++)
             jniter[i] = new JNIter005(sync);
+        Thread[] jniterThreads = new Thread[nJNI];
+        for (i = 0; i < nJNI; i++)
+            jniterThreads[i] = jniter[i].getThread();
         for (i = 0; i < nInter; i++) {
-            irupt[i] = new Interrupter(jniter, sync);
+            irupt[i] = new Interrupter(jniterThreads, sync);
             irupt[i].setInterval(iruptInterval);
         }
         for (i = 0; i < nGarb; i++) {
@@ -366,7 +370,7 @@ public class jnistress005 extends Thread {
     final private static boolean DEBUG = false;
 }
 
-class JNIter005 extends Thread {
+class JNIter005 extends ThreadWrapper {
 
     // The native methods for testing JNI exception calls
     public native void except(Throwable tobj);
