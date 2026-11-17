@@ -67,6 +67,7 @@ static const int stub_size = 2550;
 
 VM_Version::VM_Features VM_Version::_features;
 VM_Version::VM_Features VM_Version::_cpu_features;
+VM_Version::VM_Features VM_Version::_cpu_features_disabled_by_aot_cache;
 
 extern "C" {
   typedef void (*get_cpu_info_stub_t)(void*);
@@ -100,16 +101,21 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
   address clear_apx_test_state() {
 #   define __ _masm->
     address start = __ pc();
-    // EGPRs are call clobbered registers, Explicit clearing of r16 and r31 during signal
-    // handling guarantees that preserved register values post signal handling were
-    // re-instantiated by operating system and not because they were not modified externally.
+    // EGPRs are call clobbered registers. Explicit clearing of r16 and the last volatile EGPR
+    // (r31 for non-Windows and r29 for Windows) during signal handling guarantees that
+    // the preserved register values after signal handling were re-instantiated by the
+    // operating system and not because they were not modified externally.
 
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
     // EGPR state save/restoration.
     __ mov64(r16, 0L);
+#ifdef _WINDOWS
+    __ mov64(r29, 0L);
+#else
     __ mov64(r31, 0L);
+#endif
     UseAPX = save_apx;
     VM_Version::clean_cpuFeatures();
     __ ret(0);
@@ -442,7 +448,11 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
     __ mov64(r16, VM_Version::egpr_test_value());
+#ifdef _WINDOWS
+    __ mov64(r29, VM_Version::egpr_test_value());
+#else
     __ mov64(r31, VM_Version::egpr_test_value());
+#endif
     __ xorl(rsi, rsi);
     VM_Version::set_cpuinfo_segv_addr_apx(__ pc());
     // Generate SEGV
@@ -451,7 +461,11 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     VM_Version::set_cpuinfo_cont_addr_apx(__ pc());
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::apx_save_offset())));
     __ movq(Address(rsi, 0), r16);
+#ifdef _WINDOWS
+    __ movq(Address(rsi, 8), r29);
+#else
     __ movq(Address(rsi, 8), r31);
+#endif
 
     //
     // Query CPUID 0xD.19 for APX XSAVE offset
@@ -869,6 +883,33 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
   };
 };
 
+void VM_Version::apply_aot_cache_cpu_features() {
+  VM_Features* archived_cpu_features = (VM_Features*)get_aot_cache_cpu_features();
+  if (archived_cpu_features != nullptr) {
+    assert(is_aligned(archived_cpu_features, cpu_features_alignment()), "sanity check");
+    assert(UseAOTCacheCpuFeaturesOnly, "UseAOTCacheCpuFeaturesOnly must be true");
+    VM_Features rt_features = _cpu_features.aot_code_cache_features();
+    if (!rt_features.super_set_of(archived_cpu_features)) {
+      if (!FLAG_IS_DEFAULT(UseAOTCacheCpuFeaturesOnly)) {
+        warning("UseAOTCacheCpuFeaturesOnly is ignored: one or more cpu features recorded in AOT cache are not supported by this CPU");
+      }
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+      return;
+    }
+    _cpu_features_disabled_by_aot_cache = rt_features.features_not_in(archived_cpu_features);
+    _features.clear_features(&_cpu_features_disabled_by_aot_cache);
+    LogTarget(Info, os, cpu) os_cpu_log;
+    if (os_cpu_log.is_enabled()) {
+      ResourceMark rm;
+      stringStream ss;
+      insert_features_names(_cpu_features_disabled_by_aot_cache, ss);
+      if (!ss.is_empty()) {
+        os_cpu_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
+      }
+    }
+  }
+}
+
 void VM_Version::get_processor_features() {
 
   _cpu = 4; // 486 by default
@@ -895,6 +936,8 @@ void VM_Version::get_processor_features() {
     _logical_processors_per_package = logical_processor_count();
     _L1_data_cache_line_size = L1_line_size();
   }
+
+  apply_aot_cache_cpu_features();
 
   // xchg and xadd instructions
   _supports_atomic_getset4 = true;
@@ -1153,9 +1196,6 @@ void VM_Version::get_processor_features() {
            cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   ss.print(", ");
   int features_offset = (int)ss.size();
-  if (compute_fast_bmi2()) {
-    _features.set_feature(CPU_FAST_BMI2);
-  }
 
   insert_features_names(_features, ss);
 
@@ -1511,6 +1551,19 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
     }
+
+    // Zhaoxin added BMI2 support in Lujiazui (KX-6000+).
+    // Based on community benchmarks(https://uops.info/html-instr/PDEP_R64_R64_R64.html),
+    // PEXT/PDEP performance is known to be similarly poor to pre-Zen3 AMD, suggesting a microcode implementation.
+    // This cannot be confirmed as Zhaoxin publishes no public optimization guide.
+    // Therefore we disable the flag by default, but allow it to be enabled explicitly on command line,
+    // provided bmi2 support is enabled.
+    if (FLAG_IS_DEFAULT(UseParallelBitInstructions) || (!supports_bmi2() && UseParallelBitInstructions)) {
+      if (!FLAG_IS_DEFAULT(UseParallelBitInstructions)) {
+        warning("pdep/pext instructions are not available on this CPU");
+      }
+      FLAG_SET_DEFAULT(UseParallelBitInstructions, false);
+    }
   }
 
   if (is_amd_family()) { // AMD cpus specific settings
@@ -1587,7 +1640,23 @@ void VM_Version::get_processor_features() {
       }
     }
 #endif // COMPILER2
-
+    if (is_amd()) {
+      // AMD added BMI2 in Excavator (Family 0x15, model 0x60+) but used
+      // microcode for PEXT/PDEP through all of Zen 2 (Family 0x17).
+      // Native ALU hardware support arrived with Zen 3 (Family 0x19).
+      // Therefore disable UseParallelBitInstructions by default on family < 0x19.
+      // Source: AMD Software Optimization Guide (doc #56665), Section 2.10.2, https://developer.amd.com/resources/developer-guides-manuals/
+      if (supports_bmi2()) {
+        if (cpu_family() >= CPU_FAMILY_AMD_19H && FLAG_IS_DEFAULT(UseParallelBitInstructions)) {
+          FLAG_SET_DEFAULT(UseParallelBitInstructions, true);
+        }
+      } else if (UseParallelBitInstructions) {
+        if (!FLAG_IS_DEFAULT(UseParallelBitInstructions)) {
+          warning("pdep/pext instructions are not available on this CPU");
+        }
+        FLAG_SET_DEFAULT(UseParallelBitInstructions, false);
+      }
+    }
   }
 
   if (is_intel()) { // Intel cpus specific settings
@@ -1648,6 +1717,21 @@ void VM_Version::get_processor_features() {
     }
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
+    }
+
+    // All Intel CPUs with BMI2 (Haswell+) implement PEXT/PDEP natively.
+    // 3-cycle latency, 1-per-cycle throughput on a dedicated ALU port.
+    // Source: Intel Intrinsics Guide, https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html
+    if (supports_bmi2()) {
+      // tzcnt does not require VEX prefix
+      if (FLAG_IS_DEFAULT(UseParallelBitInstructions)) {
+        FLAG_SET_DEFAULT(UseParallelBitInstructions, true);
+      }
+    } else if (UseParallelBitInstructions) {
+      if (!FLAG_IS_DEFAULT(UseParallelBitInstructions)) {
+        warning("pdep/pext instructions are not available on this CPU");
+      }
+      FLAG_SET_DEFAULT(UseParallelBitInstructions, false);
     }
   }
 
@@ -2014,51 +2098,6 @@ bool VM_Version::compute_has_intel_jcc_erratum() {
     // If we are running on another intel machine not recognized in the table, we are okay.
     return false;
   }
-}
-
-// The BMI2 instruction set includes PEXT (parallel bits extract) and PDEP
-// (parallel bits deposit), which are used to intrinsify Integer/Long.compress
-// and Integer/Long.expand (added in JDK 19, see https://bugs.openjdk.org/browse/JDK-8283893).
-//
-// While all BMI2-capable CPUs can execute these instructions, PEXT and PDEP
-// are unique in that some vendors implement them via microcode rather than
-// native ALU hardware. The microcoded versions are significantly slower (high latency/low throughput)
-// than the manual bitwise fallback used in the Java implementation.
-// Conversely, all other BMI2 instructions (BZHI, MULX, RORX, SARX, SHRX, SHLX)
-// execute efficiently on every BMI2-capable CPU and are unaffected by this check.
-//
-// The logic in this method is based on official optimization guides from hardware vendors,
-// to guarantee that microcode implementations of PEXT/PDEP are not used.
-bool VM_Version::compute_fast_bmi2() {
-  if (!supports_bmi2()) {
-    return false;
-  }
-
-  if (is_intel()) {
-    // All Intel CPUs with BMI2 (Haswell+) implement PEXT/PDEP natively.
-    // 3-cycle latency, 1-per-cycle throughput on a dedicated ALU port.
-    // Source: Intel Intrinsics Guide, https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html
-    return true;
-  }
-
-  if (is_amd()) {
-    // AMD added BMI2 in Excavator (Family 0x15, model 0x60+) but used
-    // microcode for PEXT/PDEP through all of Zen 2 (Family 0x17).
-    // Native ALU hardware support arrived with Zen 3 (Family 0x19).
-    // Source: AMD Software Optimization Guide (doc #56665), Section 2.10.2, https://developer.amd.com/resources/developer-guides-manuals/
-    uint32_t family = extended_cpu_family();
-    return family >= CPU_FAMILY_AMD_19H;
-  }
-
-  // Zhaoxin added BMI2 support in Lujiazui (KX-6000+).
-  // Based on community benchmarks(https://uops.info/html-instr/PDEP_R64_R64_R64.html),
-  // PEXT/PDEP performance is known to be similarly poor to pre-Zen3 AMD, suggesting a microcode implementation.
-  // This cannot be confirmed as Zhaoxin publishes no public optimization guide.
-
-  // On VIA/Centaur CNS, BMI2 is implemented in hardware with PDEP/PEXT executing at two per cycle (better than Haswell).
-  // Intel acquired Centaur in 2021, and CNS never reached production, so we don't check for it.
-
-  return false;
 }
 
 // On Xen, the cpuid instruction returns
@@ -3328,11 +3367,14 @@ void VM_Version::insert_features_names(VM_Version::VM_Features features, stringS
 }
 
 void VM_Version::get_cpu_features_name(void* features_buffer, stringStream& ss) {
+  assert(is_aligned(features_buffer, cpu_features_alignment()), "sanity check");
   VM_Features* features = (VM_Features*)features_buffer;
   insert_features_names(*features, ss);
 }
 
 void VM_Version::get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) {
+  assert(is_aligned(features_set1, cpu_features_alignment()), "sanity check");
+  assert(is_aligned(features_set2, cpu_features_alignment()), "sanity check");
   VM_Features* vm_features_set1 = (VM_Features*)features_set1;
   VM_Features* vm_features_set2 = (VM_Features*)features_set2;
   int i = 0;
@@ -3354,12 +3396,19 @@ int VM_Version::cpu_features_size() {
 }
 
 void VM_Version::store_cpu_features(void* buf) {
+  assert(is_aligned(buf, cpu_features_alignment()), "sanity check");
   VM_Features copy = _features.aot_code_cache_features();
   memcpy(buf, &copy, sizeof(VM_Features));
 }
 
 bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {
+  assert(is_aligned(features_buffer, cpu_features_alignment()), "sanity check");
   VM_Features* features_to_test = (VM_Features*)features_buffer;
   VM_Features rt_features = _features.aot_code_cache_features();
   return rt_features.verify_aot_code_cache_features(features_to_test);
+}
+
+void VM_Version::get_cpu_features_disabled_by_aot_cache(void* buf) {
+  assert(is_aligned(buf, cpu_features_alignment()), "sanity check");
+  memcpy(buf, &_cpu_features_disabled_by_aot_cache, sizeof(VM_Features));
 }

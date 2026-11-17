@@ -452,7 +452,7 @@ public final /*value*/ class HijrahDate
      * HijrahChronology.  If the chronology has a shorter month length
      * for the month, the day is reduced to be the last day of the month.
      *
-     * @param chronology the new HijrahChonology, non-null
+     * @param chronology the new HijrahChronology, non-null
      * @return a HijrahDate with the requested HijrahChronology, non-null
      */
     public HijrahDate withVariant(HijrahChronology chronology) {
@@ -460,7 +460,7 @@ public final /*value*/ class HijrahDate
             return this;
         }
         // Like resolvePreviousValid the day is constrained to stay in the same month
-        int monthDays = chronology.getDayOfYear(prolepticYear, monthOfYear);
+        int monthDays = chronology.getMonthLength(prolepticYear, monthOfYear);
         return HijrahDate.of(chronology, prolepticYear, monthOfYear,(dayOfMonth > monthDays) ? monthDays : dayOfMonth );
     }
 

@@ -29,8 +29,10 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @enablePreview
+ * @requires (vm.opt.UseFieldFlattening == null | vm.opt.UseFieldFlattening == "true")
+ * @requires (vm.opt.UseNullableAtomicValueFlattening == null | vm.opt.UseNullableAtomicValueFlattening == "true")
  * @compile FlatFieldAccessorMethods.java
- * @run main runtime.valhalla.valuetypes.FlatFieldAccessorMethods
+ * @run main ${test.main.class}
  */
 
 package runtime.valhalla.valuetypes;

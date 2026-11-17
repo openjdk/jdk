@@ -24,14 +24,14 @@
  */
 
 /*
- * @test id=default
+ * @test id=satb
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=0 TestVerifyLevels
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=1 TestVerifyLevels
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=2 TestVerifyLevels
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=3 TestVerifyLevels
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=4 TestVerifyLevels
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=0 TestVerifyLevels
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=1 TestVerifyLevels
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=2 TestVerifyLevels
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=3 TestVerifyLevels
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=4 TestVerifyLevels
  */
 
 /*

@@ -4255,16 +4255,24 @@ public class Types {
 
     // <editor-fold defaultstate="collapsed" desc="Greatest lower bound">
     public Type glb(List<Type> ts) {
+        return glb(ts, new HashSet<>());
+    }
+    //where
+    private Type glb(List<Type> ts, Set<Type> seenCvars) {
         Type t1 = ts.head;
         for (Type t2 : ts.tail) {
             if (t1.isErroneous())
                 return t1;
-            t1 = glb(t1, t2);
+            t1 = glb(t1, t2, seenCvars);
         }
         return t1;
     }
     //where
     public Type glb(Type t, Type s) {
+        return glb(t, s, new HashSet<>());
+    }
+    //where
+    private Type glb(Type t, Type s, Set<Type> seenCvars) {
         if (s == null)
             return t;
         else if (t.isPrimitive() || s.isPrimitive())
@@ -4275,7 +4283,7 @@ public class Types {
             return s;
 
         List<Type> closure = union(closure(t), closure(s));
-        return glbFlattened(closure, t);
+        return glbFlattened(closure, t, seenCvars);
     }
     //where
     /**
@@ -4285,8 +4293,10 @@ public class Types {
      *
      * @param flatBounds List of type to glb
      * @param errT Original type to use if the result is an error type
+     * @param seenCvars capture variables already replaced by their
+     * lower bound earlier in this glb computation
      */
-    private Type glbFlattened(List<Type> flatBounds, Type errT) {
+    private Type glbFlattened(List<Type> flatBounds, Type errT, Set<Type> seenCvars) {
         List<Type> bounds = closureMin(flatBounds);
 
         if (bounds.isEmpty()) {             // length == 0
@@ -4308,12 +4318,18 @@ public class Types {
                 }
             }
             if (classCount > 1) {
-                if (lowers.isEmpty()) {
+                boolean progress = true;
+                for (Type cvar : cvars) {
+                    if (!seenCvars.add(cvar)) {
+                        progress = false;
+                    }
+                }
+                if (lowers.isEmpty() || !progress) {
                     return createErrorType(errT);
                 } else {
                     // try again with lower bounds included instead of capture variables
                     List<Type> newBounds = bounds.diff(cvars).appendList(lowers);
-                    return glb(newBounds);
+                    return glb(newBounds, seenCvars);
                 }
             }
         }

@@ -71,8 +71,7 @@ void CallGenerator::mark_projs_not_dead_loop_safe(Node* ret) const {
   CallNode* call = call_node();
   if (ret->is_Proj() && ret->in(0) == call) {
     ret->mark_not_dead_loop_safe();
-  } else if (ret->isa_ValueType()) {
-    ValueTypeNode* vt = ret->as_ValueType();
+  } else if (ValueTypeNode* vt = ret->isa_ValueType(); vt != nullptr) {
     Node* oop = vt->get_oop();
     if (oop->is_Proj() && oop->in(0) == call) {
       oop->mark_not_dead_loop_safe();
@@ -213,7 +212,7 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false, _separate_io_proj);
   Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
-  if (!call->is_boxing_method()) {
+  if (!call->is_boxing_or_unboxing_call()) {
     mark_projs_not_dead_loop_safe(ret);
   }
   kit.push_node(method()->return_type()->basic_type(), ret);
@@ -1303,7 +1302,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
       Node* member_name = kit.argument(nargs - 1);
       if (member_name->Opcode() == Op_ConP) {
         input_not_const = false;
-        const TypeOopPtr* oop_ptr = member_name->bottom_type()->is_oopptr();
+        const TypeOopPtr* oop_ptr = member_name->bottom_type()->as_oopptr();
         ciMethod* target = oop_ptr->const_oop()->as_member_name()->get_vmtarget();
 
         if (!ciMethod::is_consistent_info(callee, target)) {

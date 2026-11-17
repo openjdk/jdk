@@ -96,7 +96,7 @@ class fixed_strings {
       }
     }
     node* p = new node;
-    p->v = os::strdup_check_oom(s);
+    p->v = os::strdup_check_oom(s, mtInternal);
     p->next = first;
     first = p;
     return p->v;
@@ -947,9 +947,9 @@ static const char* rtv_linkedin_libpath() {
   struct scnhdr the_scn;
   struct ldhdr the_ldr;
   constexpr size_t xcoffsz = FILHSZ + _AOUTHSZ_EXEC;
-  STATIC_ASSERT(sizeof(the_xcoff) == xcoffsz);
-  STATIC_ASSERT(sizeof(the_scn) == SCNHSZ);
-  STATIC_ASSERT(sizeof(the_ldr) == LDHDRSZ);
+  static_assert(sizeof(the_xcoff) == xcoffsz);
+  static_assert(sizeof(the_scn) == SCNHSZ);
+  static_assert(sizeof(the_ldr) == LDHDRSZ);
   // read the generic XCOFF header and analyze the substructures
   // to find the burned in libpath. In any case of error perform the assert
   if (nullptr == (f = fopen(buffer, "r")) ||
@@ -979,7 +979,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
   if (path == nullptr)
     return false;
 
-  char* path2 = os::strdup(path);
+  char* path2 = os::strdup(path, mtInternal);
   // if exist, strip off trailing (shr_64.o) or similar
   char* substr;
   if (path2[strlen(path2) - 1] == ')' && (substr = strrchr(path2, '('))) {
@@ -1023,7 +1023,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
     Libpath.print("%s:%s", env, rtv_linkedin_libpath());
   }
 
-  char* libpath = os::strdup(Libpath.base());
+  char* libpath = os::strdup(Libpath.base(), mtInternal);
 
   char *saveptr, *token;
   for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
@@ -1062,7 +1062,7 @@ void* Aix_dlopen(const char* filename, int Flags, int *eno, const char** error_r
     char* member = nullptr;
     const char* substr;
     if (filename[strlen(filename) - 1] == ')' && (substr = strrchr(filename, '('))) {
-      member = os::strdup(substr);
+      member = os::strdup(substr, mtInternal);
     }
 
     unsigned i = 0;

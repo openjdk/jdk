@@ -37,7 +37,7 @@ import jdk.test.lib.Utils;
 
 /**
  * @test
- * @bug 8320725
+ * @bug 8320725 8391945
  * @key randomness
  * @library /test/lib /
  * @summary Verify non-strictly ordered AddReductionVF/VD and MulReductionVF/VD
@@ -170,7 +170,7 @@ public class TestVectorAddMulReduction {
     @Test
     @IR(counts = {IRNode.MUL_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
         failOn = {"requires_strict_order"},
-        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=8"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatMul_64() {
@@ -180,7 +180,7 @@ public class TestVectorAddMulReduction {
     @Test
     @IR(counts = {IRNode.MUL_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
         failOn = {"requires_strict_order"},
-        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=16"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatMul_128() {
@@ -199,7 +199,7 @@ public class TestVectorAddMulReduction {
     @Test
     @IR(counts = {IRNode.MUL_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
         failOn = {"requires_strict_order"},
-        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=16"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testDoubleMul_128() {

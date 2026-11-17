@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ trap "rm -rf \"$TMPDIR\"" EXIT
 
 ORIG_DIR=`pwd`
 cd "$TMPDIR"
-PANDOC_VERSION=2.19.2
+PANDOC_VERSION=3.6.4
 PACKAGE_VERSION=1.0
 TARGET_PLATFORM=linux_x64
 if [ $# = 1 ]; then
@@ -47,7 +47,10 @@ elif [[ $TARGET_PLATFORM == linux_aarch64 ]] ; then
   PANDOC_PLATFORM=linux-arm64
   PANDOC_SUFFIX=tar.gz
 elif [[ $TARGET_PLATFORM == macosx_x64 ]] ; then
-  PANDOC_PLATFORM=macOS
+  PANDOC_PLATFORM=x86_64-macOS
+  PANDOC_SUFFIX=zip
+elif [[ $TARGET_PLATFORM == macosx_aarch64 ]] ; then
+  PANDOC_PLATFORM=arm64-macOS
   PANDOC_SUFFIX=zip
 elif [[ $TARGET_PLATFORM == windows_x64 ]] ; then
   PANDOC_PLATFORM=windows-x86_64
@@ -72,7 +75,7 @@ fi
 cd ..
 
 mkdir pandoc
-cp tmp/pandoc-$PANDOC_VERSION/$PANDOC_PATH pandoc
+cp tmp/pandoc-"$PANDOC_VERSION"*/"$PANDOC_PATH" pandoc
 chmod +x pandoc/$PANDOC_EXE
 
 tar -cvzf ../$BUNDLE_NAME pandoc

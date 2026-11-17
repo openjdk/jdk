@@ -144,9 +144,6 @@ void ShenandoahInPlacePromotionPlanner::complete_planning() const {
 void ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) const {
   if (r->is_regular_or_regular_pinned() && (r->get_top_before_promote() != nullptr)) {
     // This region was scheduled for promotion. The promotion must be completed.
-    // The 'always_tenure' override flag set by WB.fullGC() is not carried over
-    // into the degenerated cycle so we cannot rely on is_tenurable again. We checked
-    // it when we made the plan for this region, that plan is authoritative.
     assert(r->is_young() && r->is_active(), "Region scheduled for promotion must still be young and active");
     promote(r);
     return;

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,6 +31,7 @@ import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
  *
  * @author Neil Graham, IBM
  *
+ * @LastModified: June 2026
  */
 public class SchemaNamespaceSupport
     extends NamespaceSupport {
@@ -50,6 +50,7 @@ public class SchemaNamespaceSupport
         if (fContext.length <= fCurrentContext)
             fContext = new int[fCurrentContext+1];
         System.arraycopy(nSupport.fContext, 0, fContext, 0, fCurrentContext+1);
+        rebuildNamespaceTable();
     } // end constructor
 
     /**
@@ -76,6 +77,7 @@ public class SchemaNamespaceSupport
         System.arraycopy(namespaceDecls, 0, fNamespace, fNamespaceSize,
                          namespaceDecls.length);
         fNamespaceSize = newSize;
+        rebuildNamespaceTable();
     } // setEffectiveContext(String):void
 
     /**
@@ -108,6 +110,7 @@ public class SchemaNamespaceSupport
         if (fCurrentContext >= 3) {
             fCurrentContext = 3;
             fNamespaceSize = fContext[3];
+            rebuildNamespaceTable();
         }
     } // makeGlobal
 } // class NamespaceSupport

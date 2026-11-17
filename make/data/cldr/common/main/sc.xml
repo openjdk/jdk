@@ -1150,6 +1150,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="islamic-umalqura">calendàriu egirianu (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">egirianu (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">calendàriu ISO-8601</type>
+			<type key="calendar" type="iso8601" scope="core">ISO-8601</type>
 			<type key="calendar" type="japanese">calendàriu giaponesu</type>
 			<type key="calendar" type="japanese" scope="core">giaponesu</type>
 			<type key="calendar" type="persian">calendàriu persianu</type>
@@ -1189,6 +1190,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="em" type="default" scope="core">predefinida</type>
 			<type key="em" type="emoji" scope="core">emoji</type>
 			<type key="em" type="text" scope="core">testu</type>
+			<type key="hc" type="c12">sistema oràriu a 12 oras</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">sistema oràriu a 24 oras</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">sistema oràriu a 12 oras (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">sistema oràriu a 12 oras (1–12)</type>
@@ -1307,6 +1312,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="ss" type="none" scope="core">alluta</type>
 			<type key="ss" type="standard" scope="core">istudada</type>
 		</types>
+		<typeValues>
+			<typeValue type="no" draft="unconfirmed">alluta</typeValue>
+			<typeValue type="yes" draft="unconfirmed">istudada</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">mètricu</measurementSystemName>
 			<measurementSystemName type="UK">britànnicu</measurementSystemName>
@@ -1851,6 +1860,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 				</months>
+				<eras>
+					<eraNames>
+						<era type="0">annu de su mundu</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">a.m.</era>
+					</eraAbbr>
+				</eras>
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">
@@ -1882,16 +1899,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
-			</calendar>
-			<calendar type="ethiopic-amete-alem">
-				<eras>
-					<eraNames>
-						<era type="0">annu de su mundu</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0">a.m.</era>
-					</eraAbbr>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>
@@ -2323,6 +2330,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other">w'a' 'chida' 'de' 'su' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">y G – y G</greatestDifference>
 							<greatestDifference id="y">y – y G</greatestDifference>
@@ -3549,9 +3561,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Parigi</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Ora istiale britànnica</daylight>
-				</long>
 				<exemplarCity>Londra</exemplarCity>
 			</zone>
 			<zone type="Europe/Gibraltar">
@@ -3576,9 +3585,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Giacarta</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Ora istandard irlandesa</daylight>
-				</long>
 				<exemplarCity>Dublinu</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -3793,18 +3799,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ora istandard de s’Alaska</standard>
 					<daylight>Ora legale de s’Alaska</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">OAK</generic>
-					<standard draft="contributed">OIAK</standard>
-					<daylight draft="contributed">OLAK</daylight>
-				</short>
-			</metazone>
-			<metazone type="Almaty">
-				<long>
-					<generic>Ora de Almaty</generic>
-					<standard>Ora istandard de Almaty</standard>
-					<daylight>Ora legale de Almaty</daylight>
-				</long>
 			</metazone>
 			<metazone type="Amazon">
 				<long>
@@ -3819,11 +3813,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ora istandard tzentrale USA</standard>
 					<daylight>Ora legale tzentrale USA</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">OT</generic>
-					<standard draft="contributed">OIT</standard>
-					<daylight draft="contributed">OLT</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
@@ -3831,11 +3820,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ora istandard orientale USA</standard>
 					<daylight>Ora legale orientale USA</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">OO</generic>
-					<standard draft="contributed">OIO</standard>
-					<daylight draft="contributed">OLO</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
@@ -3843,11 +3827,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ora istandard Montes Pedrosos USA</standard>
 					<daylight>Ora legale Montes Pedrosos USA</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">OMP</generic>
-					<standard draft="contributed">OIMP</standard>
-					<daylight draft="contributed">OLMP</daylight>
-				</short>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
@@ -3855,11 +3834,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ora istandard de su Patzìficu USA</standard>
 					<daylight>Ora legale de su Patzìficu USA</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">OP</generic>
-					<standard draft="contributed">OIP</standard>
-					<daylight draft="contributed">OLP</daylight>
-				</short>
 			</metazone>
 			<metazone type="Anadyr">
 				<long>
@@ -3873,20 +3847,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Ora de Apia</generic>
 					<standard>Ora istandard de Apia</standard>
 					<daylight>Ora legale de Apia</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtau">
-				<long>
-					<generic>Ora de Aktau</generic>
-					<standard>Ora istandard de Aktau</standard>
-					<daylight>Ora legale de Aktau</daylight>
-				</long>
-			</metazone>
-			<metazone type="Aqtobe">
-				<long>
-					<generic>Ora de Aktobe</generic>
-					<standard>Ora istandard de Aktobe</standard>
-					<daylight>Ora legale de Aktobe</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3923,11 +3883,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ora istandard de s’Atlànticu</standard>
 					<daylight>Ora legale de s’Atlànticu</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">OA</generic>
-					<standard draft="contributed">OIA</standard>
-					<daylight draft="contributed">OLA</daylight>
-				</short>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
@@ -3993,6 +3948,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Ora de Brasìlia</generic>
 					<standard>Ora istandard de Brasìlia</standard>
 					<daylight>Ora legale de Brasìlia</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Ora britànnica</generic>
+					<daylight>Ora istiale britànnica</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -4068,11 +4029,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ora istandard de Cuba</standard>
 					<daylight>Ora legale de Cuba</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">OC</generic>
-					<standard draft="contributed">OIC</standard>
-					<daylight draft="contributed">OLC</daylight>
-				</short>
 			</metazone>
 			<metazone type="Davis">
 				<long>
@@ -4202,11 +4158,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Ora legale de sa Groenlàndia otzidentale</daylight>
 				</long>
 			</metazone>
-			<metazone type="Guam">
-				<long>
-					<standard>Ora istandard de Guàm</standard>
-				</long>
-			</metazone>
 			<metazone type="Gulf">
 				<long>
 					<standard>Ora istandard de su Gulfu</standard>
@@ -4219,7 +4170,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Ora istandard de sas ìsulas Hawaii-Aleutinas</standard>
+					<standard>Ora istandard de sas ìsulas Hawaii</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4278,6 +4229,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Ora de s’Iràn</generic>
 					<standard>Ora istandard de s’Iràn</standard>
 					<daylight>Ora legale de s’Iràn</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Ora irlandesa</generic>
+					<daylight>Ora istandard irlandesa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -4347,11 +4304,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ora de su Kirghìzistan</standard>
 				</long>
 			</metazone>
-			<metazone type="Lanka">
-				<long>
-					<standard>Ora de Lanka</standard>
-				</long>
-			</metazone>
 			<metazone type="Line_Islands">
 				<long>
 					<standard>Ora de sas Ìsulas de sa Lìnia</standard>
@@ -4362,13 +4314,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Ora de Lord Howe</generic>
 					<standard>Ora istandard de Lord Howe</standard>
 					<daylight>Ora legale de Lord Howe</daylight>
-				</long>
-			</metazone>
-			<metazone type="Macau">
-				<long>
-					<generic>Ora de Macao</generic>
-					<standard>Ora istandard de Macao</standard>
-					<daylight>Ora legale de Macao</daylight>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
@@ -4486,11 +4431,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Ora legale de su Fernando de Noronha</daylight>
 				</long>
 			</metazone>
-			<metazone type="North_Mariana">
-				<long>
-					<standard>Ora de sas Ìsulas Mariannas Setentrionales</standard>
-				</long>
-			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Ora de Novosibirsk</generic>
@@ -4570,13 +4510,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Ora de Pyongyang</standard>
 				</long>
 			</metazone>
-			<metazone type="Qyzylorda">
-				<long>
-					<generic>Ora de Qyzylorda</generic>
-					<standard>Ora istandard de Qyzylorda</standard>
-					<daylight>Ora legale de Qyzylorda</daylight>
-				</long>
-			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Ora de sa Reunione</standard>
@@ -4603,9 +4536,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Ora de sas Samoa</generic>
 					<standard>Ora istandard de sas Samoa</standard>
-					<daylight>Ora legale de sas Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -5194,11 +5125,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>renminbi tzinesu (extracontinentale)</displayName>
 				<displayName count="one">yuan tzinesu (extracontinentale)</displayName>
 				<displayName count="other">yuans tzinesos (extracontinentales)</displayName>
-			</currency>
-			<currency type="CNX">
-				<displayName>dòllaru de sa Banca Popolare Tzinesa</displayName>
-				<displayName count="one">dòllaru de sa Banca Popolare Tzinesa</displayName>
-				<displayName count="other">dòllaros de sa Banca Popolare Tzinesa</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>renminbi tzinesu</displayName>

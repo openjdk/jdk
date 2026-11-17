@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,14 +90,37 @@ public class AssertsTest {
     }
 
     public static void testErrorMessages() throws Exception {
-        try {
-            Asserts.assertNotEquals(new Bar(1), new Bar(2));
-            throw new Exception("Should fail");
-        } catch (RuntimeException e) {
-            if (!e.getMessage().contains("was 2")) {
-                throw new Exception("msg is " + e.getMessage());
-            }
-        }
+        expectFailure("assertLessThan: expected that 43 < 42", () -> Asserts.assertLessThan(43, 42));
+        expectFailure("assertLessThan: values must be non-null: <null> , <42>", () -> Asserts.<Integer>assertLessThan(null, 42));
+        expectFailure("assertLessThan: values must be non-null: <42> , <null>", () -> Asserts.<Integer>assertLessThan(42, null));
+        expectFailure("assertLessThanOrEqual: expected that 43 <= 42", () -> Asserts.assertLessThanOrEqual(43, 42));
+        expectFailure("assertLessThanOrEqual: values must be non-null: <null> , <42>", () -> Asserts.<Integer>assertLessThanOrEqual(null, 42));
+        expectFailure("assertLessThanOrEqual: values must be non-null: <42> , <null>", () -> Asserts.<Integer>assertLessThanOrEqual(42, null));
+
+        expectFailure("assertEquals expected: 42 but was: 43", () -> Asserts.assertEquals(42, 43));
+
+        byte[] zero = new byte[1];
+        expectFailure("assertEqualsByteArray: expected 00 but was 0000", () -> Asserts.assertEqualsByteArray(zero, new byte[2]));
+        expectFailure("assertEqualsByteArray: expected null but was 00", () -> Asserts.assertEqualsByteArray(null, zero));
+        expectFailure("assertEqualsByteArray: expected 00 but was null", () -> Asserts.assertEqualsByteArray(zero, null));
+        expectFailure("assertNotEqualsByteArray: expected not equals but was 00", () -> Asserts.assertNotEqualsByteArray(zero, zero));
+        expectFailure("assertNotEqualsByteArray: expected not equals but was 00", () -> Asserts.assertNotEqualsByteArray(zero, new byte[1]));
+        expectFailure("assertNotEqualsByteArray: expected not equals but was null", () -> Asserts.assertNotEqualsByteArray(null, null));
+
+        expectFailure("assertGreaterThanOrEqual: expected 42 >= 43", () -> Asserts.assertGreaterThanOrEqual(42, 43));
+        expectFailure("assertGreaterThanOrEqual: values must be non-null: <null> , <42>", () -> Asserts.<Integer>assertGreaterThanOrEqual(null, 42));
+        expectFailure("assertGreaterThanOrEqual: values must be non-null: <42> , <null>", () -> Asserts.<Integer>assertGreaterThanOrEqual(42, null));
+        expectFailure("assertGreaterThan: expected 42 > 43", () -> Asserts.assertGreaterThan(42, 43));
+        expectFailure("assertGreaterThan: values must be non-null: <null> , <42>", () -> Asserts.<Integer>assertGreaterThan(null, 42));
+        expectFailure("assertGreaterThan: values must be non-null: <42> , <null>", () -> Asserts.<Integer>assertGreaterThan(42, null));
+
+        expectFailure("assertNotEquals: expected not equals but was 43", () -> Asserts.assertNotEquals(new Bar(42), new Bar(43)));
+
+        expectFailure("assertNull: expected null but was 42", () -> Asserts.assertNull(new Bar(42)));
+        expectFailure("assertNotNull: expected non-null but was null", () -> Asserts.assertNotNull(null));
+
+        expectFailure("assertTrue: expected true, was false", () -> Asserts.assertTrue(false));
+        expectFailure("assertFalse: expected false, was true", () -> Asserts.assertFalse(true));
     }
 
     private static void testLessThan() throws Exception {
@@ -127,8 +150,8 @@ public class AssertsTest {
 
         Foo f2 = new Foo(1);
         expectFail(Assertion.EQ, f1, f2);
-        expectFail(Assertion.LTE, null, 2);
-        expectFail(Assertion.LTE, 2, null);
+        expectFail(Assertion.EQ, null, 2);
+        expectFail(Assertion.EQ, 2, null);
     }
 
     private static void testEqualsByteArray() throws Exception {
@@ -250,6 +273,16 @@ public class AssertsTest {
         }
         throw new Exception("Expected " + Assertion.format(assertion, (Object[]) args) +
                             " to throw a RuntimeException");
+    }
+
+    private static void expectFailure(String expectedMessage, Runnable action) throws Exception {
+        try {
+            action.run();
+        } catch (RuntimeException e) {
+            assertEquals(expectedMessage, e.getMessage());
+            return;
+        }
+        throw new Exception("Expected failure: " + expectedMessage);
     }
 
     private static void expectPass(Assertion assertion, byte[] b1, byte[] b2) {

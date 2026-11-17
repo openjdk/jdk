@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: Apr 2025
+ * @LastModified: June 2026
  */
 public class XPATHErrorResources extends ListResourceBundle
 {
@@ -327,6 +327,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   public static final String ER_GETTING_UNKNOWN_PROPERTY = "ER_GETTING_UNKNOWN_PROPERTY";
   public static final String ER_XPATH_GROUP_LIMIT = "ER_XPATH_GROUP_LIMIT";
   public static final String ER_XPATH_OPERATOR_LIMIT = "ER_XPATH_OPERATOR_LIMIT";
+  public static final String ER_NON_XSLT_SYSTEM_PROPERTY = "ER_NON_XSLT_SYSTEM_PROPERTY";
 
   //END: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
 
@@ -861,6 +862,10 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_XPATH_OPERATOR_LIMIT,
       "JAXP0801002: the compiler encountered an XPath expression containing "
           + "''{0}'' operators that exceeds the ''{1}'' limit set by ''{2}''."},
+
+  { ER_NON_XSLT_SYSTEM_PROPERTY,
+      "Access to non-XSLT system property ''{0}'' is not allowed. Set "
+          + "''{1}'' to ''true'' to allow it."},
 
   //END:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
 

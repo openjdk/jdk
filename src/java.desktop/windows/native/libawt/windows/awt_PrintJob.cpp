@@ -424,37 +424,40 @@ Java_sun_awt_windows_WPrinterJob_showDocProperties(JNIEnv *env,
 
     if (hDevMode != NULL && hDevNames != NULL) {
         devmode = (DEVMODE *)::GlobalLock(hDevMode);
-        devnames = (DEVNAMES *)::GlobalLock(hDevNames);
+        if (devmode != NULL) {
+            devnames = (DEVNAMES *)::GlobalLock(hDevNames);
+            if (devnames != NULL) {
+                LPTSTR lpdevnames = (LPTSTR)devnames;
+                // No need to call _tcsdup as we won't unlock until we are done.
+                LPTSTR printerName = lpdevnames+devnames->wDeviceOffset;
+                LPTSTR portName = lpdevnames+devnames->wOutputOffset;
 
-        LPTSTR lpdevnames = (LPTSTR)devnames;
-        // No need to call _tcsdup as we won't unlock until we are done.
-        LPTSTR printerName = lpdevnames+devnames->wDeviceOffset;
-        LPTSTR portName = lpdevnames+devnames->wOutputOffset;
+                HANDLE hPrinter;
+                if (::OpenPrinter(printerName, &hPrinter, NULL) == TRUE) {
+                    devmode->dmFields |= dmFields;
+                    devmode->dmCopies = copies;
+                    devmode->dmCollate = collate;
+                    devmode->dmColor = color;
+                    devmode->dmDuplex = duplex;
+                    devmode->dmOrientation = orient;
+                    devmode->dmPrintQuality = xres_quality;
+                    devmode->dmYResolution = yres;
+                    devmode->dmPaperSize = paper;
+                    devmode->dmDefaultSource = bin;
 
-        HANDLE hPrinter;
-        if (::OpenPrinter(printerName, &hPrinter, NULL) == TRUE) {
-            devmode->dmFields |= dmFields;
-            devmode->dmCopies = copies;
-            devmode->dmCollate = collate;
-            devmode->dmColor = color;
-            devmode->dmDuplex = duplex;
-            devmode->dmOrientation = orient;
-            devmode->dmPrintQuality = xres_quality;
-            devmode->dmYResolution = yres;
-            devmode->dmPaperSize = paper;
-            devmode->dmDefaultSource = bin;
-
-            rval = ::DocumentProperties((HWND)hWndParent,
-                           hPrinter, printerName, devmode, devmode,
-                           DM_IN_BUFFER | DM_OUT_BUFFER | DM_IN_PROMPT);
-            if (rval == IDOK) {
-                UpdateJobAttributes(env, wJob, attrSet, devmode);
-                ret = JNI_TRUE;
+                    rval = ::DocumentProperties((HWND)hWndParent,
+                                   hPrinter, printerName, devmode, devmode,
+                                   DM_IN_BUFFER | DM_OUT_BUFFER | DM_IN_PROMPT);
+                    if (rval == IDOK) {
+                        UpdateJobAttributes(env, wJob, attrSet, devmode);
+                        ret = JNI_TRUE;
+                    }
+                    VERIFY(::ClosePrinter(hPrinter));
+                }
+                ::GlobalUnlock(hDevNames);
             }
-            VERIFY(::ClosePrinter(hPrinter));
+            ::GlobalUnlock(hDevMode);
         }
-        ::GlobalUnlock(hDevNames);
-        ::GlobalUnlock(hDevMode);
     }
 
     return ret;
@@ -653,8 +656,8 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
                 }
             }
             AwtPrintControl::setPrintDC(env, self, newDC);
+            ::GlobalUnlock(setup.hDevNames);
         }
-        ::GlobalUnlock(setup.hDevNames);
     }
 
     /* Get the Windows paper and margins description.
@@ -695,8 +698,8 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
                     return JNI_FALSE;
                 }
             }
+            ::GlobalUnlock(setup.hDevMode);
         }
-        ::GlobalUnlock(setup.hDevMode);
     }
 
     HGLOBAL oldG = AwtPrintControl::getPrintHDMode(env, self);
@@ -736,8 +739,8 @@ Java_sun_awt_windows_WPrinterJob_setNativeCopies(JNIEnv *env, jobject self,
           ? static_cast<short>(copies) : SHRT_MAX;
         devmode->dmCopies = nCopies;
         devmode->dmFields |= DM_COPIES;
+        ::GlobalUnlock(hDevMode);
       }
-      ::GlobalUnlock(hDevMode);
     }
 }
 
@@ -1457,8 +1460,8 @@ Java_sun_awt_windows_WPrinterJob__1startDoc(JNIEnv *env, jobject self,
                 } else if (ret < 0) {
                     success = false;
                 }
+                ::GlobalUnlock(hDevMode);
         }
-        ::GlobalUnlock(hDevMode);
         if (!success) {
             if (dest != NULL) {
                 JNU_ReleaseStringPlatformChars(env, dest, destination);
@@ -1666,11 +1669,10 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_deviceStartPage
                         RESTORE_CONTROLWORD
 
                         ::ClosePrinter(hPrinter);
-                        free ((char*)printerName);
                       }
+                      free ((char*)printerName);
+                      ::GlobalUnlock(hDevNames);
                     }
-
-                    ::GlobalUnlock(hDevNames);
                   } // sync
                   HDC res = ::ResetDC(printDC, devmode);
                   RESTORE_CONTROLWORD
@@ -3395,8 +3397,8 @@ static void pageFormatToSetup(JNIEnv *env, jobject job,
             devmode->dmPaperLength =
               (short)(convertFromPoints(paperSize.height, MM_LOMETRIC));
           }
+          ::GlobalUnlock(setup->hDevMode);
         }
-        ::GlobalUnlock(setup->hDevMode);
     }
 
     // When setting up these values, account for the orientation of the Paper
@@ -3428,10 +3430,12 @@ static WORD getOrientationFromDevMode2(HGLOBAL hDevMode) {
 
     if (hDevMode != NULL) {
         LPDEVMODE devMode = (LPDEVMODE) GlobalLock(hDevMode);
-        if ((devMode != NULL) && (devMode->dmFields & DM_ORIENTATION)) {
-            orient = devMode->dmOrientation;
+        if (devMode != NULL) {
+            if (devMode->dmFields & DM_ORIENTATION) {
+                orient = devMode->dmOrientation;
+            }
+            GlobalUnlock(hDevMode);
         }
-        GlobalUnlock(hDevMode);
     }
     return orient;
 }
@@ -3457,8 +3461,8 @@ static void setOrientationInDevMode(HGLOBAL hDevMode, jboolean isPortrait) {
                                     ? DMORIENT_PORTRAIT
                                     : DMORIENT_LANDSCAPE;
             devMode->dmFields |= DM_ORIENTATION;
+            GlobalUnlock(hDevMode);
         }
-        GlobalUnlock(hDevMode);
     }
 }
 
@@ -3855,8 +3859,8 @@ void setCapabilities(JNIEnv *env, jobject self, HDC printDC) {
                 SAVE_CONTROLWORD
                 ::ResetDC(printDC, devmode);
                 RESTORE_CONTROLWORD
+                GlobalUnlock(hDevMode);
             }
-            GlobalUnlock(hDevMode);
         }
     }
 
@@ -4003,11 +4007,13 @@ static void matchPaperSize(HDC printDC, HGLOBAL hDevMode, HGLOBAL hDevNames,
         *newHgt = origHgt;
 
         if (hDevMode != NULL) {
-          DEVMODE *devmode = (DEVMODE *)::GlobalLock(hDevMode);
-          if (devmode != NULL && (devmode->dmFields & DM_PAPERSIZE)) {
-            *paperSize = devmode->dmPaperSize;
-          }
-          ::GlobalUnlock(hDevMode);
+            DEVMODE *devmode = (DEVMODE *)::GlobalLock(hDevMode);
+            if (devmode != NULL) {
+                if (devmode->dmFields & DM_PAPERSIZE) {
+                    *paperSize = devmode->dmPaperSize;
+                }
+                ::GlobalUnlock(hDevMode);
+            }
         }
         return;
       }
@@ -4022,8 +4028,8 @@ static void matchPaperSize(HDC printDC, HGLOBAL hDevMode, HGLOBAL hDevNames,
             LPTSTR lpdevnames = (LPTSTR)devnames;
             printer = _tcsdup(lpdevnames+devnames->wDeviceOffset);
             port = _tcsdup(lpdevnames+devnames->wOutputOffset);
+            ::GlobalUnlock(hDevNames);
         }
-        ::GlobalUnlock(hDevNames);
     }
 
     //REMIND: code duplicated in AwtPrintControl::getNearestMatchingPaper

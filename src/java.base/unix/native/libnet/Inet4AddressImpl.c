@@ -105,7 +105,6 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
     // try once, with our static buffer
     memset(&hints, 0, sizeof(hints));
-    hints.ai_flags = AI_CANONNAME;
     hints.ai_family = AF_INET;
 
     NET_RESTARTABLE(error, getaddrinfo(hostname, NULL, &hints, &res),

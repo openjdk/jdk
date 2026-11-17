@@ -41,7 +41,6 @@ import static compiler.valhalla.valuetypes.ValueTypes.*;
  * @key randomness
  * @summary Test value class specific type profiling.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation

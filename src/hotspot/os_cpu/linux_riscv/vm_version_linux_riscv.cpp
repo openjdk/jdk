@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,10 +26,14 @@
 
 #include "asm/register.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
+#include "os_linux.hpp"
 #include "riscv_hwprobe.hpp"
+#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/formatBuffer.hpp"
 
 #include <asm/hwcap.h>
 #include <ctype.h>
@@ -117,6 +121,41 @@ void VM_Version::RVNonExtFeatureValue::log_enabled() {
   log_info(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
 }
 
+void VM_Version::apply_aot_cache_cpu_features() {
+  RVExtFeatureSet* archived_cpu_features = (RVExtFeatureSet*)get_aot_cache_cpu_features();
+  if (archived_cpu_features != nullptr) {
+    assert(is_aligned(archived_cpu_features, cpu_features_alignment()), "sanity check");
+    assert(UseAOTCacheCpuFeaturesOnly, "UseAOTCacheCpuFeaturesOnly must be true");
+    RVExtFeatureSet* runtime_cpu_features = RVExtFeatureSet::current();
+    if (!runtime_cpu_features->super_set_of(archived_cpu_features)) {
+      if (!FLAG_IS_DEFAULT(UseAOTCacheCpuFeaturesOnly)) {
+        warning("UseAOTCacheCpuFeaturesOnly is ignored: one or more cpu features recorded in AOT cache are not supported by this CPU");
+      }
+      FLAG_SET_ERGO(UseAOTCacheCpuFeaturesOnly, false);
+      return;
+    }
+    _rv_ext_features_disabled_by_aot_cache = runtime_cpu_features->features_not_in(archived_cpu_features);
+    // Undetected extensions can still have flags enabled by command-line options or RVA profiles.
+    for (int i = 0; i < RVExtFeatureSet::CPU_FEATURE_COUNT; i++) {
+      if (!archived_cpu_features->support_feature(i)) {
+        _ext_feature_list[i]->disable_feature();
+        // Normal flag initialization skips disabled extensions.
+        _ext_feature_list[i]->update_flag();
+      }
+    }
+
+    LogTarget(Info, os, cpu) os_cpu_log;
+    if (os_cpu_log.is_enabled()) {
+      ResourceMark rm;
+      stringStream ss;
+      insert_features_names(&_rv_ext_features_disabled_by_aot_cache, ss);
+      if (!ss.is_empty()) {
+        os_cpu_log.print("CPU features turned off by UseAOTCacheCpuFeaturesOnly: %s", ss.as_string());
+      }
+    }
+  }
+}
+
 void VM_Version::setup_cpu_available_features() {
 
   assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
@@ -136,6 +175,14 @@ void VM_Version::setup_cpu_available_features() {
   char* uarch = os_uarch_additional_features();
   vendor_features();
 
+  // Linux kernel require Zifencei
+  if (!ext_Zifencei.feature_enabled()) {
+    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
+    ext_Zifencei.enable_feature();
+  }
+
+  apply_aot_cache_cpu_features();
+
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
     // Use at max half the buffer.
@@ -148,13 +195,15 @@ void VM_Version::setup_cpu_available_features() {
   strcat(buf, "rv64");
   int i = 0;
   while (_feature_list[i] != nullptr) {
-    if (_feature_list[i]->enabled()) {
-      // Change flag default
-      _feature_list[i]->update_flag();
+    if (_feature_list[i]->feature_enabled()) {
+      if (i < RVExtFeatureSet::CPU_FEATURE_COUNT) {
+        assert(_ext_feature_list[i] == _feature_list[i], "feature lists must have the same extension order");
+        _ext_feature_list[i]->update_flag();
+      }
 
       // Feature will be disabled by update_flag() if flag
       // is set to false by the user on the command line.
-      if (!_feature_list[i]->enabled()) {
+      if (!_feature_list[i]->feature_enabled()) {
         continue;
       }
 
@@ -188,12 +237,6 @@ void VM_Version::setup_cpu_available_features() {
     i++;
   }
 
-  // Linux kernel require Zifencei
-  if (!ext_Zifencei.enabled()) {
-    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
-    ext_Zifencei.enable_feature();
-  }
-
   if (UseCtxFencei) {
     // Note that we can set this up only for effected threads
     // via PR_RISCV_SCOPE_PER_THREAD, i.e. on VM attach/deattach.
@@ -206,7 +249,7 @@ void VM_Version::setup_cpu_available_features() {
     }
   }
 
-  _cpu_info_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf, mtInternal);
 
   _features_string = _cpu_info_string + features_offset;
 }
@@ -265,7 +308,7 @@ char* VM_Version::os_uarch_additional_features() {
       }
       if (ret == nullptr) {
         if (strncmp(buf, "uarch", sizeof "uarch" - 1) == 0) {
-          ret = os::strdup(p + 2);
+          ret = os::strdup(p + 2, mtInternal);
           ret[strcspn(ret, "\n")] = '\0';
         }
       }
@@ -275,12 +318,32 @@ char* VM_Version::os_uarch_additional_features() {
     mode = VM_MBARE;
   }
   fclose(f);
+
+  // The code generator assumes that every address it embeds in an instruction
+  // sequence fits in 48 bits, see movptr() and mov_metadata(). On SV57 hardware
+  // that only holds because the kernel clamps the window it allocates from by
+  // default to the SV48 range: MMAP_VA_BITS_64 is MIN(VA_BITS, VA_BITS_SV48),
+  // so DEFAULT_MAP_WINDOW and STACK_TOP stay at 2^47 on SV48 and SV57 alike.
+  // SV57 kernels before Linux v6.6 lack that clamp, allocate from the full SV57
+  // range and cannot be supported.
+  if (mode >= VM_SV57) {
+    long major, minor, patch;
+    os::Linux::kernel_version(&major, &minor, &patch);
+    if (os::Linux::kernel_version_compare(major, minor, patch, 6, 6, 0) == -1) {
+      vm_exit_during_initialization(
+        err_msg(
+           "Satp mode SV%d requires a Linux kernel of 6.6 or later, which restricts "
+           "the default address space to the sv48 range (current kernel is %ld.%ld.%ld).",
+           (int)mode, major, minor, patch));
+    }
+  }
+
   satp_mode.enable_feature(mode);
   return ret;
 }
 
 void VM_Version::vendor_features() {
-  if (!mvendorid.enabled()) {
+  if (!mvendorid.feature_enabled()) {
     return;
   }
   switch (mvendorid.value()) {
@@ -297,8 +360,6 @@ void VM_Version::vendor_features() {
 
 void VM_Version::rivos_features() {
   // Enable common features not dependent on marchid/mimpid.
-  ext_Zicbom.enable_feature();
-  ext_Zicboz.enable_feature();
   ext_Zicbop.enable_feature();
 
   // If we running on a pre-6.5 kernel
@@ -312,7 +373,6 @@ void VM_Version::rivos_features() {
 
   ext_Zicsr.enable_feature();
   ext_Zifencei.enable_feature();
-  ext_Zic64b.enable_feature();
   ext_Ztso.enable_feature();
 
   ext_Zvfh.enable_feature();
@@ -329,7 +389,7 @@ void VM_Version::rivos_features() {
 }
 
 void VM_Version::xuantie_features() {
-  if (!marchid.enabled()) {
+  if (!marchid.feature_enabled()) {
     return;
   }
 
@@ -341,6 +401,11 @@ void VM_Version::xuantie_features() {
   }
 
   ext_v.enable_feature();
+  ext_Zabha.enable_feature();
+  ext_Zacas.enable_feature();
+  // Zalasr will always be available. Note that hwprobe won't report Ztso on C925-C950 CPUs.
+  ext_Zalasr.enable_feature();
+  ext_Zawrs.enable_feature();
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
   ext_Zbc.enable_feature();
@@ -349,11 +414,11 @@ void VM_Version::xuantie_features() {
   ext_Zfa.enable_feature();
   ext_Zfh.enable_feature();
   ext_Zfhmin.enable_feature();
-  ext_Zicbom.enable_feature();
   ext_Zicbop.enable_feature();
+  ext_Ziccid.enable_feature();
+  ext_Zicond.enable_feature();
   ext_Zicntr.enable_feature();
   ext_Zicsr.enable_feature();
-  ext_Zic64b.enable_feature();
   ext_Zifencei.enable_feature();
   ext_Zihintpause.enable_feature();
   ext_Zvbb.enable_feature();
@@ -362,13 +427,10 @@ void VM_Version::xuantie_features() {
   ext_Zvkn.enable_feature();
   ext_Zvkg.enable_feature();
 
-#ifndef PRODUCT
-  ext_Zacas.enable_feature();
-  ext_Zicboz.enable_feature();
-  ext_Zicond.enable_feature();
-  ext_Ztso.enable_feature();
-#endif
-
   unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
   unaligned_vector.enable_feature(MISALIGNED_VECTOR_FAST);
+
+  if (FLAG_IS_DEFAULT(CodeEntryAlignment)) {
+    FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
+  }
 }

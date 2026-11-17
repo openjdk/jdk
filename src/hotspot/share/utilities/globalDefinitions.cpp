@@ -404,11 +404,11 @@ size_t lcm(size_t a, size_t b) {
 // Test that nth_bit macro and friends behave as
 // expected, even with low-precedence operators.
 
-STATIC_ASSERT(nth_bit(3)   == 0x8);
-STATIC_ASSERT(nth_bit(1|2) == 0x8);
+static_assert(nth_bit(3)   == 0x8);
+static_assert(nth_bit(1|2) == 0x8);
 
-STATIC_ASSERT(right_n_bits(3)   == 0x7);
-STATIC_ASSERT(right_n_bits(1|2) == 0x7);
+static_assert(right_n_bits(3)   == 0x7);
+static_assert(right_n_bits(1|2) == 0x7);
 
 // Check for Flush-To-Zero mode
 

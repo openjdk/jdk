@@ -189,7 +189,7 @@ const char* G1CardSetConfiguration::mem_object_type_name_str(uint index) {
 }
 
 void G1CardSetCoarsenStats::reset() {
-  STATIC_ASSERT(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
+  static_assert(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
   for (uint i = 0; i < ARRAY_SIZE(_coarsen_from); i++) {
     _coarsen_from[i].store_relaxed(0);
     _coarsen_collision[i].store_relaxed(0);
@@ -197,7 +197,7 @@ void G1CardSetCoarsenStats::reset() {
 }
 
 void G1CardSetCoarsenStats::set(G1CardSetCoarsenStats& other) {
-  STATIC_ASSERT(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
+  static_assert(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
   for (uint i = 0; i < ARRAY_SIZE(_coarsen_from); i++) {
     _coarsen_from[i].store_relaxed(other._coarsen_from[i].load_relaxed());
     _coarsen_collision[i].store_relaxed(other._coarsen_collision[i].load_relaxed());
@@ -205,7 +205,7 @@ void G1CardSetCoarsenStats::set(G1CardSetCoarsenStats& other) {
 }
 
 void G1CardSetCoarsenStats::subtract_from(G1CardSetCoarsenStats& other) {
-  STATIC_ASSERT(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
+  static_assert(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
   for (uint i = 0; i < ARRAY_SIZE(_coarsen_from); i++) {
     _coarsen_from[i].store_relaxed(other._coarsen_from[i].load_relaxed() - _coarsen_from[i].load_relaxed());
     _coarsen_collision[i].store_relaxed(other._coarsen_collision[i].load_relaxed() - _coarsen_collision[i].load_relaxed());
@@ -686,7 +686,10 @@ void G1CardSet::transfer_cards(G1CardSetHashTableValue* table_entry, ContainerPt
     assert(container_type(source_container) == ContainerHowl, "must be");
     // Need to correct for that the Full remembered set occupies more cards than the
     // AoCS before.
-    _num_occupied.add_then_fetch(_config->max_cards_in_region() - table_entry->_num_occupied.load_relaxed(), memory_order_relaxed);
+    // Use int64_t to represent the difference because due to races this difference can be negative.
+    const int64_t diff = (int64_t)_config->max_cards_in_region() - table_entry->_num_occupied.load_relaxed();
+
+    _num_occupied.add_then_fetch((size_t)diff, memory_order_relaxed);
   }
 }
 
@@ -702,7 +705,8 @@ void G1CardSet::transfer_cards_in_howl(ContainerPtr parent_container,
     G1TransferCard iter(this, card_region);
     iterate_cards_during_transfer(source_container, iter);
   } else {
-    uint diff = _config->max_cards_in_howl_bitmap() - container_ptr<G1CardSetBitMap>(source_container)->num_bits_set();
+    // Use int64_t to represent the difference because due to races this difference can be negative.
+    int64_t diff = (int64_t)_config->max_cards_in_howl_bitmap() - container_ptr<G1CardSetBitMap>(source_container)->num_bits_set();
 
     // Need to correct for that the Full remembered set occupies more cards than the
     // bitmap before.
@@ -712,14 +716,14 @@ void G1CardSet::transfer_cards_in_howl(ContainerPtr parent_container,
     diff -= 1;
 
     G1CardSetHowl* howling_array = container_ptr<G1CardSetHowl>(parent_container);
-    howling_array->_num_entries.add_then_fetch(diff, memory_order_relaxed);
+    howling_array->_num_entries.add_then_fetch((uint)diff, memory_order_relaxed);
 
     G1CardSetHashTableValue* table_entry = get_container(card_region);
     assert(table_entry != nullptr, "Table entry not found for transferred cards");
 
-    table_entry->_num_occupied.add_then_fetch(diff, memory_order_relaxed);
+    table_entry->_num_occupied.add_then_fetch((uint)diff, memory_order_relaxed);
 
-    _num_occupied.add_then_fetch(diff, memory_order_relaxed);
+    _num_occupied.add_then_fetch((size_t)diff, memory_order_relaxed);
   }
 }
 

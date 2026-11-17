@@ -78,7 +78,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   }
 #endif
 
-  assert(VtableStub::receiver_location() == R3_ARG1->as_VMReg(), "receiver expected in R3_ARG1");
+  assert(SharedRuntime::name_for_receiver() == R3_ARG1->as_VMReg(), "receiver expected in R3_ARG1");
 
   const Register rcvr_klass = R11_scratch1;
   address npe_addr = __ pc(); // npe = null pointer exception
@@ -164,7 +164,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
   }
 #endif
 
-  assert(VtableStub::receiver_location() == R3_ARG1->as_VMReg(), "receiver expected in R3_ARG1");
+  assert(SharedRuntime::name_for_receiver() == R3_ARG1->as_VMReg(), "receiver expected in R3_ARG1");
 
   // Entry arguments:
   //  R19_method: Interface

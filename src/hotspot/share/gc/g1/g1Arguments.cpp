@@ -89,7 +89,7 @@ void G1Arguments::initialize_verification_types() {
   if (strlen(VerifyGCType) > 0) {
     const char delimiter[] = " ,\n";
     size_t length = strlen(VerifyGCType);
-    char* type_list = NEW_C_HEAP_ARRAY(char, length + 1, mtInternal);
+    char* type_list = NEW_C_HEAP_ARRAY(char, length + 1, mtGC);
     strncpy(type_list, VerifyGCType, length + 1);
     char* save_ptr;
 
@@ -201,6 +201,12 @@ void G1Arguments::initialize() {
     // the number of parallel GC threads.
     uint marking_thread_num = scale_concurrent_worker_threads(ParallelGCThreads);
     FLAG_SET_ERGO(ConcGCThreads, marking_thread_num);
+  }
+  // G1 does not support more marking threads than parallel worker threads.
+  if (ConcGCThreads > ParallelGCThreads) {
+    vm_exit_during_initialization(err_msg("G1 expects ConcGCThreads (%u) <= ParallelGCThreads (%u), "
+                                          "verify the values of -XX:ParallelGCThreads and -XX:ConcGCThreads",
+                                          ConcGCThreads, ParallelGCThreads));
   }
 
   if (FLAG_IS_DEFAULT(GCTimeRatio) || GCTimeRatio == 0) {

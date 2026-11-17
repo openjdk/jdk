@@ -49,7 +49,7 @@ public class DwarfCFrame extends BasicCFrame {
 
     /**
      * @return DwarfParser instance for the PC, null if native library relates to the pc not found.
-     * @throws DebuggerException if DWARF processing is failed.
+     * @throws DwarfException if DWARF processing is failed.
      *         For example: pc is not covered in this DWARF, Common Information Entry (CIE) has
      *         language personality routine and/or Language Data Area (LSDA).
      */
@@ -60,13 +60,13 @@ public class DwarfCFrame extends BasicCFrame {
                                                                     : new DwarfParser(libptr);
             try {
                 dwarf.processDwarf(pc);
-            } catch (DebuggerException e) {
-                // DebuggerException might be thrown from unwinding signal trampoline
+            } catch (DwarfException e) {
+                // DwarfException might be thrown from unwinding signal trampoline
                 // (e.g. __restore_rt on AMD64) because it might have DW_CFA_def_cfa_expression
                 // DWARF instruction.
                 // However SA can ignore the case safely because it does not rely on DWARF,
                 // would restore register values from the stack directly.
-                // Thus DebuggerException would be rethrown if the pc is not in signal trampoline.
+                // Thus DwarfException would be rethrown if the pc is not in signal trampoline.
                 if (!linuxDbg.isSignalTrampoline(pc)) {
                     throw e;
                 }
@@ -164,9 +164,11 @@ public class DwarfCFrame extends BasicCFrame {
         }
 
         try {
-            return dwarf == null
-                ? fp.getAddressAt(VM.getVM().getAddressSize()) // Current frame is Java
-                : cfa.getAddressAt(dwarf.getReturnAddressOffsetFromCFA()); // current frame is Native
+            if (dwarf == null) {
+                return fp.getAddressAt(VM.getVM().getAddressSize()); // Current frame is Java
+            }
+            int offset = dwarf.getReturnAddressOffsetFromCFA();
+            return offset == Integer.MAX_VALUE ? null : cfa.getAddressAt(offset); // current frame is Native
         } catch (UnmappedAddressException | UnalignedAddressException _) {
             // Sender PC is invalid - maybe bottom of stack
             return null;
@@ -200,6 +202,11 @@ public class DwarfCFrame extends BasicCFrame {
         }
     }
 
+    /**
+     * For a native sender PC (a return address), look up the library, FDE, CFI row and symbol at PC - 1.
+     * Use the exact PC for the top frame and the frame restored from a signal context,
+     * also for signal trampoline PCs, and for code cache (Java) PCs.
+     */
     @Override
     public CFrame sender(ThreadProxy th) {
         return sender(th, null, null, null);

@@ -152,7 +152,7 @@
   product(double, G1LastPLABAverageOccupancy, 50.0, EXPERIMENTAL,           \
                "The expected average occupancy of the last PLAB in "        \
                "percent.")                                                  \
-               range(0.001, 100.0)                                          \
+               range(0.0, 99.999)                                           \
                                                                             \
   product(size_t, G1SATBBufferSize, 1*K,                                    \
           "Number of entries in an SATB log buffer.")                       \
@@ -267,7 +267,7 @@
   product(size_t, G1HeapRegionSize, 0,                                      \
           "Size of the G1 regions.")                                        \
           range(0, NOT_LP64(32*M) LP64_ONLY(512*M))                         \
-          constraint(G1HeapRegionSizeConstraintFunc,AfterMemoryInit)        \
+          constraint(G1HeapRegionSizeConstraintFunc, AfterErgo)             \
                                                                             \
   product(uint, G1ConcRefinementThreads, 0,                                 \
           "The number of parallel remembered set update threads. "          \
@@ -339,6 +339,7 @@
           "Number of milliseconds after a previous GC to wait before "      \
           "triggering a periodic gc. A value of zero disables periodically "\
           "enforced gc cycles.")                                            \
+          range(0, NOT_LP64(max_uintx) LP64_ONLY(max_jlong))                \
                                                                             \
   product(bool, G1PeriodicGCInvokesConcurrent, true,                        \
           "Determines the kind of periodic GC. Set to true to have G1 "     \

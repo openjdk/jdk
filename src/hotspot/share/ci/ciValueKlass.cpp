@@ -51,10 +51,9 @@ bool ciValueKlass::can_be_returned_as_fields() const {
 }
 
 bool ciValueKlass::is_empty() {
-  // Do not use ValueKlass::is_empty_value_type here because it does
-  // consider the container empty even if fields of empty value types
-  // are not flat
-  return nof_declared_nonstatic_fields() == 0;
+  // Flat fields are recursively expanded, nullable flat fields include
+  // their null marker and non-flat fields remain as oops.
+  return nof_nonstatic_fields() == 0;
 }
 
 bool ciValueKlass::is_cloneable() const {
@@ -164,6 +163,12 @@ ciConstant ciValueKlass::get_null_reset_value() {
   ValueKlass* vk = get_ValueKlass();
   oop null_reset_value = vk->null_reset_value();
   return ciConstant(T_OBJECT, CURRENT_ENV->get_object(null_reset_value));
+}
+
+int ciValueKlass::get_null_reset_value_offset() {
+  VM_ENTRY_MARK
+  ValueKlass* vk = get_ValueKlass();
+  return vk->null_reset_value_offset();
 }
 
 ArrayDescription ciValueKlass::array_description_of_array_properties(const ArrayProperties& requested_properties) {

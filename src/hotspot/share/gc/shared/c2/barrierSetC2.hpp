@@ -57,6 +57,8 @@ const DecoratorSet C2_TIGHTLY_COUPLED_ALLOC  = DECORATOR_LAST << 9;
 const DecoratorSet C2_ARRAY_COPY             = DECORATOR_LAST << 10;
 // Loads from immutable memory
 const DecoratorSet C2_IMMUTABLE_MEMORY       = DECORATOR_LAST << 11;
+// Accesses two narrow oops, or one narrow oop along with some primitive data at once.
+const DecoratorSet C2_SPECIAL_ACCESS         = DECORATOR_LAST << 12;
 
 class Compile;
 class ConnectionGraph;
@@ -68,7 +70,6 @@ class PhaseIdealLoop;
 class PhaseMacroExpand;
 class Type;
 class TypePtr;
-class Unique_Node_List;
 
 // This class wraps a node and a type.
 class C2AccessValue: public StackObj {
@@ -94,7 +95,7 @@ public:
   C2AccessValuePtr(Node* node, const TypePtr* type) :
     C2AccessValue(node, type) {}
 
-  const TypePtr* type() const { return _type->is_ptr(); }
+  const TypePtr* type() const { return _type->as_ptr(); }
 };
 
 // This class wraps a bunch of context parameters that are passed around in the
@@ -125,7 +126,7 @@ public:
   Node* base() const              { return _base; }
   C2AccessValuePtr& addr() const  { return _addr; }
   BasicType type() const          { return _type; }
-  bool is_oop() const             { return is_reference_type(_type); }
+  bool is_oop() const             { return is_reference_type(_type) || (_decorators & C2_SPECIAL_ACCESS) != 0; }
   bool is_raw() const             { return (_decorators & AS_RAW) != 0; }
   Node* raw_access() const        { return _raw_access; }
 
@@ -167,8 +168,8 @@ public:
   Node* control() const;
   const ValueTypeNode* vt() const { return _vt; }
 
-  virtual PhaseGVN& gvn() const;
-  virtual bool is_parse_access() const { return true; }
+  PhaseGVN& gvn() const override;
+  bool is_parse_access() const override { return true; }
 };
 
 // This class wraps a bunch of context parameters that are passed around in the
@@ -214,7 +215,7 @@ public:
 
 class BarrierSetC2State : public ArenaObj {
 protected:
-  Node_Array                      _live;
+  Node_Array<Node> _live;
 
 public:
   BarrierSetC2State(Arena* arena) : _live(arena) {}
@@ -360,7 +361,7 @@ public:
   // Elide GC barriers from instructions in 'accesses' if they are dominated by
   // instructions in 'access_dominators' (according to elide_mach_barrier()) and
   // there is no safepoint poll in between.
-  void elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const;
+  void elide_dominated_barriers(const Node_List<MachNode>& accesses, const Node_List<Node>& access_dominators) const;
   virtual void late_barrier_analysis() const { }
   virtual void compute_liveness_at_stubs() const;
   virtual int estimate_stub_size() const { return 0; }

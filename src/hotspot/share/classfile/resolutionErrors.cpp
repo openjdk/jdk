@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,9 +99,9 @@ ResolutionErrorEntry* ResolutionErrorTable::find_entry(const constantPoolHandle&
 ResolutionErrorEntry::ResolutionErrorEntry(Symbol* error, const char* message,
                                            Symbol* cause, const char* cause_msg):
         _error(error),
-        _message(message != nullptr ? os::strdup(message) : nullptr),
+        _message(message != nullptr ? os::strdup(message, mtClass) : nullptr),
         _cause(cause),
-        _cause_msg(cause_msg != nullptr ? os::strdup(cause_msg) : nullptr),
+        _cause_msg(cause_msg != nullptr ? os::strdup(cause_msg, mtClass) : nullptr),
         _nest_host_error(nullptr) {
 
   Symbol::maybe_increment_refcount(_error);

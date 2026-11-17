@@ -424,7 +424,7 @@ public sealed interface ConstantPoolBuilder
      * @see InvokeDynamicEntry#asSymbol() InvokeDynamicEntry::asSymbol
      */
     default InvokeDynamicEntry invokeDynamicEntry(DynamicCallSiteDesc dcsd) {
-        var ret = invokeDynamicEntry(bsmEntry((DirectMethodHandleDesc)dcsd.bootstrapMethod(), List.of(dcsd.bootstrapArgs())), nameAndTypeEntry(dcsd.invocationName(), dcsd.invocationType()));
+        var ret = invokeDynamicEntry(bsmEntry(dcsd.bootstrapMethod(), List.of(dcsd.bootstrapArgs())), nameAndTypeEntry(dcsd.invocationName(), dcsd.invocationType()));
         ((AbstractPoolEntry.InvokeDynamicEntryImpl) ret).sym = dcsd;
         return ret;
     }

@@ -184,54 +184,51 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
   if (block_index < 2 || block->get_node(block_index - 2) != inst1) {
     return false;
   }
-  if (inst1 != nullptr) {
-    MachNode* prevNode = inst1->isa_Mach();
-    if (prevNode != nullptr) {
-      // Includes other flags as well, but that doesn't matter here
-      juint all_node_flags = prevNode->flags();
-      if (all_node_flags == 0) {
-        // We can return early - there is no way the test can be removed, the preceding node does not set any flags
+  if (MachNode* prevNode = Node::isa<MachNode>(inst1); prevNode != nullptr) {
+    // Includes other flags as well, but that doesn't matter here
+    juint all_node_flags = prevNode->flags();
+    if (all_node_flags == 0) {
+      // We can return early - there is no way the test can be removed, the preceding node does not set any flags
+      return false;
+    }
+    juint required_flags = 0;
+    // Search for the uses of the node and compute which flags are required
+    for (DUIterator_Fast imax, i = test_to_check->fast_outs(imax); i < imax; i++) {
+      MachNode* node_out = test_to_check->fast_out(i)->isa_Mach();
+      bool found_correct_oper = false;
+      for (uint16_t j = 0; j < node_out->_num_opnds; ++j) {
+        MachOper* operand = node_out->_opnds[j];
+        if (operand->opcode() == cmpOp_rule || operand->opcode() == cmpOpU_rule) {
+          auto condition = static_cast<Assembler::Condition>(operand->ccode());
+          juint flags_for_inst = map_condition_to_required_test_flags(condition);
+          required_flags = required_flags | flags_for_inst;
+          found_correct_oper = true;
+          break;
+        }
+      }
+      if (!found_correct_oper) {
+        // We could not find one the required flags for one of the dependencies. Keep the test as it might set flags needed for that node
         return false;
       }
-      juint required_flags = 0;
-      // Search for the uses of the node and compute which flags are required
-      for (DUIterator_Fast imax, i = test_to_check->fast_outs(imax); i < imax; i++) {
-        MachNode* node_out = test_to_check->fast_out(i)->isa_Mach();
-        bool found_correct_oper = false;
-        for (uint16_t j = 0; j < node_out->_num_opnds; ++j) {
-          MachOper* operand = node_out->_opnds[j];
-          if (operand->opcode() == cmpOp_rule || operand->opcode() == cmpOpU_rule) {
-            auto condition = static_cast<Assembler::Condition>(operand->ccode());
-            juint flags_for_inst = map_condition_to_required_test_flags(condition);
-            required_flags = required_flags | flags_for_inst;
-            found_correct_oper = true;
-            break;
-          }
-        }
-        if (!found_correct_oper) {
-          // We could not find one the required flags for one of the dependencies. Keep the test as it might set flags needed for that node
-          return false;
-        }
-      }
-      assert(required_flags != 0, "No flags required, should be impossible!");
-      bool sets_all_required_flags = (required_flags & ~all_node_flags) == 0;
-      if (sets_all_required_flags) {
-        // All flags are covered are clear to remove this test
-        MachProjNode* machProjNode = block->get_node(block_index - 1)->isa_MachProj();
-        assert(machProjNode != nullptr, "Expected a MachProj node here!");
-        assert(ra_->get_reg_first(machProjNode) == ra_->get_reg_first(test_to_check), "Test must operate on the same register as its replacement");
+    }
+    assert(required_flags != 0, "No flags required, should be impossible!");
+    bool sets_all_required_flags = (required_flags & ~all_node_flags) == 0;
+    if (sets_all_required_flags) {
+      // All flags are covered are clear to remove this test
+      MachProjNode* machProjNode = block->get_node(block_index - 1)->isa_MachProj();
+      assert(machProjNode != nullptr, "Expected a MachProj node here!");
+      assert(ra_->get_reg_first(machProjNode) == ra_->get_reg_first(test_to_check), "Test must operate on the same register as its replacement");
 
-        // Remove the original test node and replace it with the pseudo test node. The AND node already sets ZF
-        test_to_check->replace_by(machProjNode);
+      // Remove the original test node and replace it with the pseudo test node. The AND node already sets ZF
+      test_to_check->replace_by(machProjNode);
 
-        // Modify the block
-        test_to_check->set_removed();
-        block->remove_node(block_index);
+      // Modify the block
+      test_to_check->set_removed();
+      block->remove_node(block_index);
 
-        // Modify the control flow
-        cfg_->map_node_to_block(test_to_check, nullptr);
-        return true;
-      }
+      // Modify the control flow
+      cfg_->map_node_to_block(test_to_check, nullptr);
+      return true;
     }
   }
   return false;

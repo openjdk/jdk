@@ -41,7 +41,24 @@
 #define CHECK_BAILOUT() { if (ce->compilation()->bailed_out()) return; }
 
 void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
-  ShouldNotReachHere();
+  __ bind(_entry);
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
+         "polling page return stub not created yet");
+  address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+
+  // Determine saved exception pc using pc relative address computation.
+  {
+    Label next_pc;
+    __ z_larl(Z_R1_scratch, next_pc);
+    __ bind(next_pc);
+  }
+
+  int current_offset = __ offset();
+  __ add2reg(Z_R1_scratch, safepoint_offset() - current_offset);
+  __ z_stg(Z_R1_scratch, Address(Z_thread, JavaThread::saved_exception_pc_offset()));
+
+  __ load_const_optimized(Z_R1_scratch, (intptr_t)stub);
+  __ z_br(Z_R1_scratch);
 }
 
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {
@@ -125,7 +142,7 @@ LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR
   _array = array;
   _index = index;
   _result = result;
-  _scratch_reg = FrameMap::Z_R2_oop_opr;
+  _stub_result_reg = FrameMap::Z_R2_oop_opr;
   _info = new CodeEmitInfo(info);
 }
 
@@ -148,7 +165,6 @@ StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, L
   _array = array;
   _index = index;
   _value = value;
-  _scratch_reg = FrameMap::Z_R2_oop_opr;
   _info = new CodeEmitInfo(info);
 }
 
@@ -173,7 +189,7 @@ void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
 SubstitutabilityCheckStub::SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info) {
   _left = left;
   _right = right;
-  _scratch_reg = FrameMap::Z_R2_oop_opr;
+  _stub_result_reg = FrameMap::Z_R2_oop_opr;
   _info = new CodeEmitInfo(info);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.ContinuationSupport;
 
 public class Util {
 
@@ -222,55 +223,64 @@ public class Util {
         // If a buffer of this size is too large for the cache, there
         // should not be a buffer in the cache that is at least as
         // large. So we'll just create a new one. Also, we don't have
-        // to remove the buffer from the cache (as this method does
-        // below) given that we won't put the new buffer in the cache.
-        if (isBufferTooLarge(size)) {
-            long addr = unsafe.allocateMemory(size);
-            return NIO_ACCESS.newDirectByteBuffer(addr, size);
+        // to remove a buffer from the cache given that we won't put
+        // the new buffer in the cache.
+        if (!isBufferTooLarge(size)) {
+            // Try to get buffer from carrier thread local cache
+            ContinuationSupport.pinIfSupported();
+            try {
+                BufferCache cache = bufferCache.get();
+                ByteBuffer buf = cache.get(size);
+                if (buf != null) {
+                    return buf;
+                }
+                if (!cache.isEmpty()) {
+                    // Free buffer to avoid cache growing
+                    ByteBuffer fromCache = cache.removeFirst();
+                    free(fromCache);
+                }
+            } finally {
+                ContinuationSupport.unpinIfSupported();
+            }
         }
 
-        BufferCache cache = bufferCache.get();
-        ByteBuffer buf = cache.get(size);
-        if (buf != null) {
-            return buf;
-        } else {
-            // No suitable buffer in the cache so we need to allocate a new
-            // one. To avoid the cache growing then we remove the first
-            // buffer from the cache and free it.
-            if (!cache.isEmpty()) {
-                buf = cache.removeFirst();
-                free(buf);
-            }
-            long addr = unsafe.allocateMemory(size);
-            return NIO_ACCESS.newDirectByteBuffer(addr, size);
-        }
+        // Allocate and return new buffer
+        long addr = unsafe.allocateMemory(size);
+        return NIO_ACCESS.newDirectByteBuffer(addr, size);
     }
 
     /**
      * Returns a temporary buffer of at least the given size and
      * aligned to the alignment
      */
-    public static ByteBuffer getTemporaryAlignedDirectBuffer(int size,
-                                                             int alignment) {
-        if (isBufferTooLarge(size)) {
-            return getTemporaryDirectBuffer(size + alignment - 1)
-                .alignedSlice(alignment);
+    public static ByteBuffer getTemporaryAlignedDirectBuffer(int size, int alignment) {
+        assert alignment > 0 && (alignment & (alignment - 1)) == 0;
+        assert size >= 0 && size % alignment == 0;
+
+        int allocationSize = size + alignment - 1;
+        if (!isBufferTooLarge(allocationSize)) {
+            // Try to get buffer from carrier thread local cache
+            ContinuationSupport.pinIfSupported();
+            try {
+                BufferCache cache = bufferCache.get();
+                ByteBuffer buf = cache.get(allocationSize);
+                if (buf != null) {
+                    return buf.alignedSlice(alignment);
+                }
+                if (!cache.isEmpty()) {
+                    // Free buffer to avoid cache growing
+                    ByteBuffer fromCache = cache.removeFirst();
+                    free(fromCache);
+                }
+            } finally {
+                ContinuationSupport.unpinIfSupported();
+            }
         }
 
-        BufferCache cache = bufferCache.get();
-        ByteBuffer buf = cache.get(size);
-        if (buf != null) {
-            if (buf.alignmentOffset(0, alignment) == 0) {
-                return buf;
-            }
-        } else {
-            if (!cache.isEmpty()) {
-                buf = cache.removeFirst();
-                free(buf);
-            }
-        }
-        return getTemporaryDirectBuffer(size + alignment - 1)
-            .alignedSlice(alignment);
+        // Allocate new buffer and return slice with the required alignment
+        long addr = unsafe.allocateMemory(allocationSize);
+        return NIO_ACCESS.newDirectByteBuffer(addr, allocationSize)
+                .alignedSlice(alignment);
     }
 
     /**
@@ -296,6 +306,7 @@ public class Util {
      */
     static void offerFirstTemporaryDirectBuffer(ByteBuffer buf) {
         buf = unwrapIfAlignedSlice(buf);
+        assert buf != null;
 
         // If the buffer is too large for the cache we don't have to
         // check the cache. We'll just free it.
@@ -304,11 +315,16 @@ public class Util {
             return;
         }
 
-        assert buf != null;
-        BufferCache cache = bufferCache.get();
-        if (!cache.offerFirst(buf)) {
-            // cache is full
-            free(buf);
+        // Return buffer to carrier thread local cache if possible
+        ContinuationSupport.pinIfSupported();
+        try {
+            BufferCache cache = bufferCache.get();
+            if (!cache.offerFirst(buf)) {
+                // cache is full
+                free(buf);
+            }
+        } finally {
+            ContinuationSupport.unpinIfSupported();
         }
     }
 
@@ -320,6 +336,7 @@ public class Util {
      */
     static void offerLastTemporaryDirectBuffer(ByteBuffer buf) {
         buf = unwrapIfAlignedSlice(buf);
+        assert buf != null;
 
         // If the buffer is too large for the cache we don't have to
         // check the cache. We'll just free it.
@@ -328,11 +345,16 @@ public class Util {
             return;
         }
 
-        assert buf != null;
-        BufferCache cache = bufferCache.get();
-        if (!cache.offerLast(buf)) {
-            // cache is full
-            free(buf);
+        // Return buffer to carrier thread local cache if possible
+        ContinuationSupport.pinIfSupported();
+        try {
+            BufferCache cache = bufferCache.get();
+            if (!cache.offerLast(buf)) {
+                // cache is full
+                free(buf);
+            }
+        } finally {
+            ContinuationSupport.unpinIfSupported();
         }
     }
 

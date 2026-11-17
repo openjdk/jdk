@@ -44,6 +44,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -218,17 +219,17 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   resolve_oop_handle(result, tmp, t1);
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
-  shadd(result, index, result, index, LogBytesPerHeapOop);
-  load_heap_oop(result, Address(result, 0), tmp, t1);
+  shift_left_add(index, index, result, LogBytesPerHeapOop);
+  load_heap_oop(result, Address(index, 0), tmp, t1);
 }
 
 void InterpreterMacroAssembler::load_resolved_klass_at_offset(
                                 Register cpool, Register index, Register klass, Register temp) {
-  shadd(temp, index, cpool, temp, LogBytesPerWord);
+  shift_left_add(temp, index, cpool, LogBytesPerWord);
   lhu(temp, Address(temp, sizeof(ConstantPool))); // temp = resolved_klass_index
   ld(klass, Address(cpool, ConstantPool::resolved_klasses_offset())); // klass = cpool->_resolved_klasses
-  shadd(klass, temp, klass, temp, LogBytesPerWord);
-  ld(klass, Address(klass, Array<Klass*>::base_offset_in_bytes()));
+  shift_left_add(temp, temp, klass, LogBytesPerWord);
+  ld(klass, Address(temp, Array<Klass*>::base_offset_in_bytes()));
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is a
@@ -457,10 +458,10 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   if (table == Interpreter::dispatch_table(state)) {
     mv(t1, Interpreter::distance_from_dispatch_table(state));
     add(t1, Rs, t1);
-    shadd(t1, t1, xdispatch, t1, 3);
+    shift_left_add(t1, t1, xdispatch, 3);
   } else {
     mv(t1, (address)table);
-    shadd(t1, Rs, t1, Rs, 3);
+    shift_left_add(t1, Rs, t1, 3, Rs);
   }
   ld(t1, Address(t1));
   jr(t1);
@@ -468,7 +469,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   if (needs_thread_local_poll) {
     bind(safepoint);
     la(t1, ExternalAddress((address)safepoint_table));
-    shadd(t1, Rs, t1, Rs, 3);
+    shift_left_add(t1, Rs, t1, 3, Rs);
     ld(t1, Address(t1));
     jr(t1);
   }
@@ -601,7 +602,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     // We use c_rarg1 so that if we go slow path it will be the correct
     // register for unlock_object to pass to VM directly
     ld(c_rarg1, monitor_block_top); // derelativize pointer
-    shadd(c_rarg1, c_rarg1, fp, c_rarg1, LogBytesPerWord);
+    shift_left_add(c_rarg1, c_rarg1, fp, LogBytesPerWord);
     // c_rarg1 points to current entry, starting with top-most entry
 
     la(x9, monitor_block_bot);  // points to word before bottom of
@@ -1203,19 +1204,23 @@ template <class ArrayData> void InterpreterMacroAssembler::profile_array_type(Re
     mv(tmp, array);
     profile_obj_type(tmp, Address(mdp, in_bytes(ArrayData::array_offset())), t1);
 
-    Label not_flat;
-    test_non_flat_array_oop(array, tmp, not_flat);
+    if (Arguments::is_valhalla_enabled()) {
+      if (UseArrayFlattening) {
+        Label not_flat;
+        test_non_flat_array_oop(array, tmp, not_flat);
 
-    set_mdp_flag_at(mdp, ArrayData::flat_array_byte_constant());
+        set_mdp_flag_at(mdp, ArrayData::flat_array_byte_constant());
 
-    bind(not_flat);
+        bind(not_flat);
+      }
 
-    Label not_null_free;
-    test_non_null_free_array_oop(array, tmp, not_null_free);
+      Label not_null_free;
+      test_non_null_free_array_oop(array, tmp, not_null_free);
 
-    set_mdp_flag_at(mdp, ArrayData::null_free_array_byte_constant());
+      set_mdp_flag_at(mdp, ArrayData::null_free_array_byte_constant());
 
-    bind(not_null_free);
+      bind(not_null_free);
+    }
 
     bind(profile_continue);
   }
@@ -1278,6 +1283,7 @@ void InterpreterMacroAssembler::profile_acmp(Register mdp,
                                              Register left,
                                              Register right,
                                              Register tmp) {
+  assert(Arguments::is_valhalla_enabled(), "Profiling acmp makes sense only for value types");
   if (ProfileInterpreter) {
     Label profile_continue;
 
@@ -1720,7 +1726,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
         // CallTypeData/VirtualCallTypeData to reach its end. Non null
         // if there's a return to profile.
         assert(SingleTypeEntry::static_cell_count() < TypeStackSlotEntries::per_arg_count(), "can't move past ret type");
-        shadd(mdp, tmp, mdp, tmp, exact_log2(DataLayout::cell_size));
+        shift_left_add(mdp, tmp, mdp, exact_log2(DataLayout::cell_size), tmp);
       }
       sd(mdp, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
     } else {
@@ -1800,19 +1806,19 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     int type_base = in_bytes(ParametersTypeData::type_offset(0));
     int per_arg_scale = exact_log2(DataLayout::cell_size);
     add(t0, mdp, off_base);
-    add(t1, mdp, type_base);
+    add(tmp3, mdp, type_base);
 
-    shadd(tmp2, tmp1, t0, tmp2, per_arg_scale);
+    shift_left_add(tmp2, tmp1, t0, per_arg_scale);
     // load offset on the stack from the slot for this parameter
     ld(tmp2, Address(tmp2, 0));
     neg(tmp2, tmp2);
 
     // read the parameter from the local area
-    shadd(tmp2, tmp2, xlocals, tmp2, Interpreter::logStackElementSize);
+    shift_left_add(tmp2, tmp2, xlocals, Interpreter::logStackElementSize);
     ld(tmp2, Address(tmp2, 0));
 
     // profile the parameter
-    shadd(t1, tmp1, t1, t0, per_arg_scale);
+    shift_left_add(t1, tmp1, tmp3, per_arg_scale);
     Address arg_type(t1, 0);
     profile_obj_type(tmp2, arg_type, tmp3);
 
@@ -1867,13 +1873,14 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
 }
 
 void InterpreterMacroAssembler::read_flat_field(Register entry, Register obj) {
+  assert(UseFieldFlattening, "Should be used only if field flattening is enabled");
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::read_flat_field), obj, entry);
 }
 
-void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_offset,
-                                                 Register tmp1, Register tmp2,
-                                                 Register obj) {
-  assert_different_registers(entry, field_offset, tmp1, tmp2, obj);
+void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1,
+                                                 Register tmp2, Register obj) {
+  assert(UseFieldFlattening, "Should be used only if field flattening is enabled");
+  assert_different_registers(entry, tmp1, tmp2, obj);
   Label slow_path, done;
 
   load_unsigned_byte(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::flags_offset())));
@@ -1881,17 +1888,8 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_
 
   null_check(x10); // FIXME JDK-8341120
 
-  add(obj, obj, field_offset);
-
-  load_klass(tmp1, x10);
-  payload_address(x10, x10, tmp1);
-
-  Register layout_info = field_offset;
-  load_unsigned_short(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::field_index_offset())));
-  ld(tmp2, Address(entry, in_bytes(ResolvedFieldEntry::field_holder_offset())));
-  value_field_layout_info(tmp2, tmp1, layout_info);
-
-  flat_field_copy(IN_HEAP, x10, obj, layout_info);
+  mv(tmp1, x10);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::write_null_free_flat_field), obj, tmp1, entry);
   j(done);
 
   bind(slow_path);
@@ -1938,7 +1936,7 @@ void InterpreterMacroAssembler::verify_frame_setup() {
   Label L;
   const Address monitor_block_top(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   ld(t0, monitor_block_top);
-  shadd(t0, t0, fp, t0, LogBytesPerWord);
+  shift_left_add(t0, t0, fp, LogBytesPerWord);
   beq(esp, t0, L);
   stop("broken stack frame setup in interpreter");
   bind(L);

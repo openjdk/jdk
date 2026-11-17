@@ -101,7 +101,7 @@ public class TestParticleLife {
                   IRNode.STORE_VECTOR,    "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private void testIR_updatePositions() {
         // This call should inline given the CompileCommand above.
         // We expect auto vectorization of the relatively simple loop.
@@ -129,7 +129,7 @@ public class TestParticleLife {
                   IRNode.STORE_VECTOR,       "= 0",
                   IRNode.ADD_REDUCTION_VF,   "= 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     private void testIR_updateForcesScalar() {
         // This call should inline given the CompileCommand above.
         // We expect no vectorization, though it may in principle be possible
@@ -156,7 +156,7 @@ public class TestParticleLife {
                   IRNode.VECTOR_BLEND_F,     "> 0",
                   IRNode.ADD_REDUCTION_VF,   "> 0"}, // instead we reduce the vector to a scalar
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeature = {"avx2", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
     private void testIR_updateForcesVectorAPI_Inner_Gather() {
         // This call should inline given the CompileCommand above.
         // We expect the VectorAPI calls to intrinsify.
@@ -182,7 +182,7 @@ public class TestParticleLife {
                   IRNode.VECTOR_BLEND_F,     "> 0",
                   IRNode.ADD_REDUCTION_VF,   "> 0"}, // instead we reduce the vector to a scalar
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     private void testIR_updateForcesVectorAPI_Inner_Rearranged() {
         // This call should inline given the CompileCommand above.
         // We expect the VectorAPI calls to intrinsify.
@@ -210,7 +210,7 @@ public class TestParticleLife {
                   IRNode.STORE_VECTOR,       "> 0",  // store back a vector
                   IRNode.ADD_REDUCTION_VF,   "= 0"}, // and no reduction operation
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeature = {"avx2", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
     private void testIR_updateForcesVectorAPI_Outer() {
         // This call should inline given the CompileCommand above.
         // We expect the VectorAPI calls to intrinsify.

@@ -299,7 +299,8 @@ ObjectMonitor::ObjectMonitor(oop object) :
   _unmounted_vthreads(0),
   _wait_set(nullptr),
   _waiters(0),
-  _wait_set_lock(0)
+  _wait_set_lock(0),
+  _object_strong_lock(0)
 { }
 
 ObjectMonitor::~ObjectMonitor() {

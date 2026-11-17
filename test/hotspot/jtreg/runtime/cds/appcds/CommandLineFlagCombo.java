@@ -25,10 +25,12 @@
 /*
  * @test CommandLineFlagCombo
  * @requires vm.cds.write.archived.java.heap
+ * @requires vm.gc.G1
  * @comment This test explicitly chooses the type of GC to be used by sub-processes. It may conflict with the GC type set
  * via the -vmoptions command line option of JTREG. vm.gc==null will help the test case to discard the explicitly passed
  * vm options.
  * @requires (vm.gc=="null")
+ * @requires vm.cds.default.archive.available
  * @summary Test command line flag combinations that
  *          could likely affect the behaviour of AppCDS
  * @library /test/lib

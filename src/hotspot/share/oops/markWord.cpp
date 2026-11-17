@@ -26,9 +26,9 @@
 #include "utilities/ostream.hpp"
 
 #ifdef _LP64
-STATIC_ASSERT(markWord::klass_shift + markWord::klass_bits == 64);
+static_assert(markWord::klass_shift + markWord::klass_bits == 64);
 // The hash (preceding klass bits) shall be a direct neighbor but not interleave
-STATIC_ASSERT(markWord::klass_shift == markWord::hash_bits + markWord::hash_shift);
+static_assert(markWord::klass_shift == markWord::hash_bits + markWord::hash_shift);
 #endif
 
 void markWord::print_on(outputStream* st) const {

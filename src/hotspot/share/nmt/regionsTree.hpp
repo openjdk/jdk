@@ -21,8 +21,9 @@
  * questions.
  *
  */
-#ifndef NMT_REGIONSTREE_HPP
-#define NMT_REGIONSTREE_HPP
+
+#ifndef SHARE_NMT_REGIONSTREE_HPP
+#define SHARE_NMT_REGIONSTREE_HPP
 
 #include "logging/log.hpp"
 #include "nmt/nmtCommon.hpp"
@@ -109,4 +110,4 @@ class RegionsTree : public VMATree {
   size_t committed_size(const VirtualMemoryRegion& rgn);
 };
 
-#endif // NMT_REGIONSTREE_HPP
+#endif // SHARE_NMT_REGIONSTREE_HPP

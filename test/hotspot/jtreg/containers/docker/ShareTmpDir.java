@@ -74,7 +74,7 @@ public class ShareTmpDir {
         started2.delete();
         DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "WaitForFlagFile");
         Object lock = new Object();
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
         opts.addDockerOpts("--volume", sharedtmpdir.getAbsolutePath() + ":/tmp/:z");
         opts.addJavaOpts("-Xlog:os+container=trace", "-Xlog:perf*=debug", "-cp", "/test-classes/");
 

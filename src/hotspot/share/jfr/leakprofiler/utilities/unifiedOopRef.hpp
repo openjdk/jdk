@@ -33,10 +33,10 @@ struct UnifiedOopRef {
   static const uintptr_t native_tag = 0b001;
   static const uintptr_t raw_tag    = 0b010;
   static const uintptr_t narrow_tag = LP64_ONLY(0b100) NOT_LP64(0);
-  STATIC_ASSERT((native_tag & raw_tag) == 0);
-  STATIC_ASSERT((native_tag & narrow_tag) == 0);
-  STATIC_ASSERT((raw_tag & narrow_tag) == 0);
-  STATIC_ASSERT((native_tag | raw_tag | narrow_tag) == tag_mask);
+  static_assert((native_tag & raw_tag) == 0);
+  static_assert((native_tag & narrow_tag) == 0);
+  static_assert((raw_tag & narrow_tag) == 0);
+  static_assert((native_tag | raw_tag | narrow_tag) == tag_mask);
 
   uintptr_t _value;
 

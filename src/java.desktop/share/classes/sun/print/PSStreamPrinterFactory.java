@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,12 @@ public class PSStreamPrinterFactory extends StreamPrintServiceFactory {
          DocFlavor.URL.PNG,
     };
 
+    @Override
     public  String getOutputFormat() {
         return psMimeType;
     }
 
+    @Override
     public DocFlavor[] getSupportedDocFlavors() {
         return getFlavors();
     }
@@ -63,6 +65,7 @@ public class PSStreamPrinterFactory extends StreamPrintServiceFactory {
         return flavors;
     }
 
+    @Override
     public StreamPrintService getPrintService(OutputStream out) {
         return new PSStreamPrintService(out);
     }

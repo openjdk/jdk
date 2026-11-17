@@ -120,7 +120,7 @@ class JvmtiVTSuspender : AllStatic {
 //
 // The Jvmti state for each thread (across all JvmtiEnv):
 // 1. Local table of enabled events.
-class JvmtiThreadState : public CHeapObj<mtInternal> {
+class JvmtiThreadState : public CHeapObj<mtServiceability> {
  private:
   friend class JvmtiEnv;
   // The _thread field is a link to the JavaThread associated with JvmtiThreadState.
