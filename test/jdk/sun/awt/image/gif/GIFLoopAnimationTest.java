@@ -40,6 +40,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @ignore Sanity check
  * @key headful
  * @summary One-frame GIF without loop extension doesn't animate
+ * @library /javax/imageio/plugins/gif
  * @build GIFWriter
  * @run main GIFLoopAnimationTest one-frame
  */
@@ -49,6 +50,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @bug 8316165
  * @key headful
  * @summary One-frame GIF with the infinite loop stops animation
+ * @library /javax/imageio/plugins/gif
  * @build GIFWriter
  * @run main GIFLoopAnimationTest one-frame-loop
  */
@@ -58,6 +60,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @bug 8316165
  * @key headful
  * @summary One-frame GIF with a fixed loop repeat stops animating
+ * @library /javax/imageio/plugins/gif
  * @build GIFWriter
  * @run main GIFLoopAnimationTest one-frame-loop2
  */
@@ -66,6 +69,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @test id=five-frames
  * @key headful
  * @summary Five-frame GIF without loop stops animating at the last frame
+ * @library /javax/imageio/plugins/gif
  * @build GIFWriter
  * @run main GIFLoopAnimationTest five-frames
  */
@@ -76,11 +80,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @key headful
  * @summary Five-frame GIF with 5 repeats stops animating after
  *          repeating animation 5 times
+ * @library /javax/imageio/plugins/gif
  * @build GIFWriter
  * @run main GIFLoopAnimationTest five-frames-loop5
  */
 
-public class GIFLoopAnimationTest {
+public final class GIFLoopAnimationTest {
 
     private static JFrame frame;
 
