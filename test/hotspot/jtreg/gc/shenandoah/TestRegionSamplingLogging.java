@@ -23,13 +23,13 @@
  */
 
 /*
- * @test id=default-rotation
+ * @test id=satb-rotation
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+ShenandoahRegionSampling -XX:+ShenandoahRegionSampling
  *      -Xlog:gc+region=trace:region-snapshots-%p.log::filesize=100,filecount=3
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGCHeuristics=adaptive
  *      TestRegionSamplingLogging
  */
 
