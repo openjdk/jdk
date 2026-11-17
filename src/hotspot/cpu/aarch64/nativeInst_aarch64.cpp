@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright 2025 Arm Limited and/or its affiliates.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,88 +371,94 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
-template<typename Variant>
-bool NativePostCallNop::patch_helper(int32_t oopmap_slot, int32_t cb_offset) {
-  constexpr size_t block_size = HeapBlock::minimum_alignment();
-  const int32_t cb_offset_to_segment = cb_offset + CodeHeap::header_size();
-  const int32_t cb_blocks_offset = cb_offset_to_segment / block_size;
-
-  const uint32_t chunk1 = *(uint32_t*)addr_at(first_check_size);
-  uint32_t data1 = Variant::extract_metadata(chunk1);
-
-  const uint32_t chunks_count = Variant::two_chunks_flag.extract(data1) + 1;
+bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
 #ifdef ASSERT
-  const uint32_t req_chunks_count = metadata_chunks_count<Variant>(cb_offset);
+  patch_precondition(oopmap_slot, cb_offset, /* allow_non_empty */ true);
 
-  assert(block_size <= CodeCacheSegmentSize, "incorrect block size value");
-
-  uintptr_t code_blob_address = (uintptr_t) this - cb_offset;
-  uint32_t code_blob_offset_from_segment = code_blob_address % block_size;
-  assert(CodeHeap::header_size() == code_blob_offset_from_segment, "unexpected offset value");
-
-  bool is_empty;
-
-  if (chunks_count == 1) {
-    is_empty = (data1 == 0);
-    assert(req_chunks_count == 1, "one metadata chunk is sufficient");
-  } else {
-    assert(req_chunks_count <= 2, "two metadata chunks are sufficient");
-    assert(chunks_count == 2, "unexpected number of chunks");
-
-    const uint32_t chunk2_offset = first_check_size + NativeInstruction::instruction_size;
-    const uint32_t chunk2 = *(uint32_t*)addr_at(chunk2_offset);
-    uint32_t data2 = Variant::extract_metadata(chunk2);
-
-    is_empty = (data1 == 1 && data2 == 0);
-  }
-
-  if (!is_empty) {
-    // If not empty, it can be a copy of the nmethod, in which case the
-    // contents should already match the values requested from this method.
-    verify(cb_offset, oopmap_slot);
+  if (oopmap_slot >= 0x3f || cb_offset >= 0xfff) {
+    /* To facilitate verification of the scenario in which
+     * direct form is not sufficient to hold the values,
+     * reduce the accepted set of values in debug builds. */
+    return false;
   }
 #endif
 
-  uint64_t data = Variant::two_chunks_flag.insert(0, chunks_count - 1);
+  const int32_t cb_blocks_offset = compute_cb_blocks_offset(cb_offset);
+  int32_t oopmap_slot_adjusted = oopmap_slot;
 
-  if (chunks_count == 1) {
-    if (!pack<typename Variant::one_chunk>(/* output */ data,
-                                           oopmap_slot, cb_blocks_offset)) {
-      return false;
-    }
-  } else {
-    if (!pack<typename Variant::two_chunks>(/* output */ data,
-                                            oopmap_slot, cb_blocks_offset)) {
-      return false;
-    }
+  if (cb_blocks_offset == 0) {
+    // Distinguish from the case when the fields are empty.
+    oopmap_slot_adjusted++;
   }
+
+  uint32_t oopmap_slot_adjusted_masked = (uint32_t) oopmap_slot_adjusted & 0x1ff;
+  uint32_t cb_blocks_offset_masked = (uint32_t) cb_blocks_offset & 0x3ff;
+  if (cb_blocks_offset_masked != (uint32_t) cb_blocks_offset ||
+      oopmap_slot_adjusted_masked != (uint32_t) oopmap_slot_adjusted) {
+    return false;
+  }
+
+  address metadata_slot_addr = addr_at(first_check_size);
+
+  uint32_t slot_value = (oopmap_slot_adjusted_masked << 10) | cb_blocks_offset_masked;
+  assert((slot_value & 0x7ffff) == slot_value, "insufficient metadata bits");
+
+  /* field_opcode */
+  Instruction_aarch64::patch(metadata_slot_addr, 29, 29, (slot_value & 0x1) ^ 1);
+  /* field_shift */
+  Instruction_aarch64::patch(metadata_slot_addr, 22, 21, (slot_value >> 1) & 0x3);
+  /* field_imm */
+  Instruction_aarch64::patch(metadata_slot_addr, 20, 5, (slot_value >> 3) & 0xffff);
 
 #ifdef ASSERT
-  const uint32_t metadata_bits_count = chunks_count * Variant::metadata_chunk_width;
-  const uint64_t metadata_mask = (1ull << metadata_bits_count) - 1;
-  assert((data & metadata_mask) == data, "insufficient metadata bits");
-#endif
-
-  address addr = addr_at(first_check_size);
-
-  data = Variant::patch_chunk(addr, data);
-
-  if (chunks_count == 2) {
-    data = Variant::patch_chunk(addr + NativeInstruction::instruction_size, data);
-  }
-
+  assert(is_match_direct_form(*(uint32_t*)metadata_slot_addr), "unexpected output form");
   verify(cb_offset, oopmap_slot);
+#endif
 
   return true; // successfully encoded
 }
 
-bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
-  const uint32_t chunk = *(uint32_t*)addr_at(first_check_size);
-  if (VariantADR::is_match(chunk)) {
-    return patch_helper<VariantADR>(oopmap_slot, cb_offset);
-  } else {
-    return patch_helper<VariantMOV>(oopmap_slot, cb_offset);
+bool NativePostCallNop::patch_stub(uint32_t* out_stub_slot_value,
+                                   int32_t oopmap_slot,
+                                   int32_t cb_offset,
+                                   address metadata_stub_slot_addr) {
+#ifdef ASSERT
+  patch_precondition(oopmap_slot, cb_offset, /* allow_non_empty */ false);
+#endif
+
+  const int32_t cb_blocks_offset = compute_cb_blocks_offset(cb_offset);
+
+  uint32_t cb_blocks_offset_masked = (uint32_t) cb_blocks_offset & 0xffff;
+  uint32_t oopmap_slot_masked = (uint32_t) oopmap_slot & 0xffff;
+  if (cb_blocks_offset_masked != (uint32_t) cb_blocks_offset ||
+      oopmap_slot_masked != (uint32_t) oopmap_slot) {
+    return false;
   }
+
+  address offset_metadata_addr = addr_at(first_check_size);
+  assert(offset_metadata_addr < metadata_stub_slot_addr,
+         "stubs should be located after main code");
+
+  uint32_t stub_offset = metadata_stub_slot_addr - offset_metadata_addr;
+  assert((stub_offset & (instruction_size - 1)) == 0, "unexpected alignment");
+
+  stub_offset /= instruction_size;
+  uint32_t stub_offset_masked = stub_offset & 0x3ffff;
+  if (stub_offset_masked != stub_offset) {
+    return false;
+  }
+
+  // switch to MOVN
+  Instruction_aarch64::patch(offset_metadata_addr, 30, 29, 0x0);
+  /* field_shift */
+  Instruction_aarch64::patch(offset_metadata_addr, 22, 21, (stub_offset & 0x3));
+  /* field_imm */
+  Instruction_aarch64::patch(offset_metadata_addr, 20, 5, (stub_offset >> 2) & 0xffff);
+
+  assert(is_match_stub_form(*(uint32_t*)offset_metadata_addr), "unexpected output form");
+
+  *out_stub_slot_value = (oopmap_slot_masked << 16) | cb_blocks_offset_masked;
+  return true;
 }
 
 void NativeDeoptInstruction::verify() {

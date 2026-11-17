@@ -849,6 +849,7 @@ public:
 
   // nop
   void post_call_nop();
+  bool post_call_nop(int32_t oopmap_slot, int32_t cb_offset);
 
   // Stack frame creation/removal
   void enter(bool strip_ret_addr = false);

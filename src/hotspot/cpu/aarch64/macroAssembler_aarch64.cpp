@@ -1150,31 +1150,23 @@ void MacroAssembler::post_call_nop() {
   InstructionMark im(this);
   relocate(post_call_nop_Relocation::spec());
   InlineSkippedInstructionsCounter skipCounter(this);
-  uint32_t offs = offset() + CodeBlob::align_code_offset(sizeof(nmethod));
-  offs += code()->total_offset_of(code()->insts());
-  uint32_t chunks_count = NativePostCallNop::metadata_chunks_count(offs);
-  if (code_section()->scratch_emit()) {
-    // Review
-    // For size estimation, conservatively assume two slots will be required.
-    chunks_count = 2;
-  }
   nop();
-  if (chunks_count == 1) {
-    if (UsePostCallSequenceWithADRP) {
-      adr(zr, pc());
-    } else {
-      movk(zr, 0);
-    }
-  } else if (chunks_count > 1) {
-    assert(chunks_count == 2, "either 1 or 2");
-    if (UsePostCallSequenceWithADRP) {
-      _adrp(zr, pc());
-      adr(zr, pc());
-    } else {
-      movz(zr, 0);
-      movk(zr, 0);
-    }
+  movk(zr, 0);
+}
+
+bool MacroAssembler::post_call_nop(int32_t oopmap_slot, int32_t cb_offset) {
+  assert(Continuations::enabled(), "should not be called");
+
+  InstructionMark im(this);
+  InlineSkippedInstructionsCounter skipCounter(this);
+  address post_call_nop_addr = pc();
+  nop();
+  movk(zr, 0);
+  if (oopmap_slot == -1) {
+    return false;
   }
+
+  return nativePostCallNop_at(post_call_nop_addr)->patch(oopmap_slot, cb_offset);
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
