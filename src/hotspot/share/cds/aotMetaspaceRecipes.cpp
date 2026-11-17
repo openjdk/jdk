@@ -198,7 +198,16 @@ void AOTMetaspaceRecipes::load_all_classes(TRAPS) {
       if (ik->defined_by_other_loaders()) {
         AOTSystemDictionary::copy_unregistered_class(THREAD, ik);
       } else if (!ik->is_hidden()) {
-        Klass* actual = SystemDictionary::resolve_or_fail(ik->name(), class_loader, true, CHECK);
+        Klass* actual;
+        // When using an alternate system loader, only classes defined in the
+        // boot class loader are archived. When loading these classes, rely on
+        // the boot class loader to load these classes rather than the alternate
+        // system loader as it may possibly not delegate.
+        if (CDSConfig::using_alternate_system_loader()) {
+          actual = SystemDictionary::resolve_or_fail(ik->name(), Handle(THREAD, nullptr), true, CHECK);
+        } else {
+          actual = SystemDictionary::resolve_or_fail(ik->name(), class_loader, true, CHECK);
+        }
         if (actual != ik) {
           ResourceMark rm(THREAD);
           log_error(aot)("Unable to resolve class from CDS archive: %s", ik->external_name());

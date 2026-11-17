@@ -794,7 +794,8 @@ void CDSConfig::setup_compiler_args() {
   if (is_dumping_aot_configuration()) {
     // --- AOT training
     if (using_alternate_system_loader()) {
-      log_warning(aot)("AOT optimizations are curtailed because -Djava.system.class.loader is specified");
+      log_warning(aot)("AOT optimizations are curtailed because -Djava.system.class.loader=%s is specified",
+        Arguments::get_property("java.system.class.loader"));
       FLAG_SET_ERGO(AOTRecordTraining, false);
     } else {
       FLAG_SET_ERGO_IF_DEFAULT(AOTRecordTraining, true);
@@ -821,7 +822,8 @@ void CDSConfig::setup_compiler_args() {
   } else if (is_dumping_aot_cache()) {
     // --- AOT assembly
     if (using_alternate_system_loader()) {
-      log_warning(aot)("AOT optimizations are curtailed because -Djava.system.class.loader is specified");
+      log_warning(aot)("AOT optimizations are curtailed because -Djava.system.class.loader=%s is specified",
+        Arguments::get_property("java.system.class.loader"));
     }
 
     if (!is_dumping_aot_linked_classes()) {
