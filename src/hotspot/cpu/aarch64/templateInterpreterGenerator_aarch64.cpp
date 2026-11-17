@@ -1194,7 +1194,8 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
     __ sub(lowest_probing_addr, prospective_sp, shadow_zone_size);
 
     // Align the pointer in `probing_addr` so we have an integral number of pages
-    // between `probing_addr` and `lowest_probing_addr`.
+    // between `probing_addr` and `lowest_probing_addr`. This ensures that we do
+    // not write to an address below the computed lowest probing address.
     __ sub(probing_addr, probing_addr, lowest_probing_addr);
     __ add(probing_addr, probing_addr, page_size - 1);
     __ andr(probing_addr, probing_addr, -page_size);
