@@ -546,6 +546,7 @@ static SpecialFlag const special_jvm_flags[] = {
 #endif
   { "AlwaysCompileLoopMethods",     JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
   { "OptoBundling",                 JDK_Version::undefined(), JDK_Version::jdk(28), JDK_Version::jdk(29) },
+  { "G1ConcMarkStepDurationMillis", JDK_Version::undefined(), JDK_Version::jdk(28), JDK_Version::jdk(29) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
