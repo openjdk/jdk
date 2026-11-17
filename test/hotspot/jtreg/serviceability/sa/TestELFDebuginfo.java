@@ -61,12 +61,13 @@ public class TestELFDebuginfo {
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
 
-        // callSleep() JNI function would call sleep_internal(). Both functions
-        // are provided by libDebuginfoTest.so which is stripped with --strip-all
-        // in build process. It does not has a symbol of sleep_internal() because
-        // it is not an exported function. In addition .note.gnu.build-id ELF
-        // section is removed, so SA should find out associated debuginfo from
-        // .gnu_debuglink section.
+        // callSleep() JNI function calls sleep_internal(). Both functions
+        // are provided by libDebuginfoTest.so, which is stripped with --strip-all
+        // in build process. See BUILD_TEST_libDebuginfoTest in make/test/JtregNativeHotspot.gmk.
+        // It does not have the sleep_internal() symbol because
+        // it is not an exported function. In addition the .note.gnu.build-id ELF
+        // section is removed, forcing SA to find out the associated debuginfo from
+        // the .gnu_debuglink section instead.
         out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldContain("LingeredAppForDebuginfoTest.callSleep");
         out.shouldContain("sleep_internal");
