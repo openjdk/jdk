@@ -103,6 +103,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     Label push;
 
     const Register tmp2_top = tmp2;
+    // Keep the top address across the CAS for the push below.
+    const Register tmp4_addr = tmp4;
 
     // Check if lock-stack is full.
     lwu(tmp2_top, Address(xthread, JavaThread::lock_stack_top_offset()));
@@ -110,8 +112,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     bge(tmp2_top, tmp3_t, slow_path);
 
     // Check if recursive.
-    add(tmp3_t, xthread, tmp2_top);
-    ld(tmp3_t, Address(tmp3_t, -oopSize));
+    add(tmp4_addr, xthread, tmp2_top);
+    ld(tmp3_t, Address(tmp4_addr, -oopSize));
     beq(obj, tmp3_t, push);
 
     // Relaxed normal load to check for monitor. Optimization for monitor case.
@@ -125,14 +127,14 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     // Try to lock. Transition lock-bits 0b01 => 0b00
     ori(tmp1_mark, tmp1_mark, markWord::lock_neutral_value);
     xori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
+    const Register cas_result = t0;
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
-            memory_order_acquire, /*result*/ tmp3_t);
-    bne(tmp1_mark, tmp3_t, slow_path);
+            memory_order_acquire, /*result*/ cas_result);
+    bne(tmp1_mark, cas_result, slow_path);
 
     bind(push);
     // After successful lock, push object on lock-stack.
-    add(tmp3_t, xthread, tmp2_top);
-    sd(obj, Address(tmp3_t));
+    sd(obj, Address(tmp4_addr));
     addw(tmp2_top, tmp2_top, oopSize);
     sw(tmp2_top, Address(xthread, JavaThread::lock_stack_top_offset()));
     j(locked);
@@ -286,23 +288,23 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
   { // Fast unlock
     Label push_and_slow_path;
+    // tmp1 can hold the top address until the mark is loaded below.
+    const Register tmp1_addr = tmp1;
 
     // Check if obj is top of lock-stack.
     lwu(tmp2_top, Address(xthread, JavaThread::lock_stack_top_offset()));
     subw(tmp2_top, tmp2_top, oopSize);
-    add(tmp3_t, xthread, tmp2_top);
-    ld(tmp3_t, Address(tmp3_t));
+    add(tmp1_addr, xthread, tmp2_top);
+    ld(tmp3_t, Address(tmp1_addr));
     // Top of lock stack was not obj. Must be monitor.
     bne(obj, tmp3_t, inflated_load_mark);
 
     // Pop lock-stack.
-    DEBUG_ONLY(add(tmp3_t, xthread, tmp2_top);)
-    DEBUG_ONLY(sd(zr, Address(tmp3_t));)
+    DEBUG_ONLY(sd(zr, Address(tmp1_addr));)
     sw(tmp2_top, Address(xthread, JavaThread::lock_stack_top_offset()));
 
     // Check if recursive.
-    add(tmp3_t, xthread, tmp2_top);
-    ld(tmp3_t, Address(tmp3_t, -oopSize));
+    ld(tmp3_t, Address(tmp1_addr, -oopSize));
     beq(obj, tmp3_t, unlocked);
 
     // Not recursive.
@@ -319,9 +321,10 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
     // Try to unlock. Transition lock bits 0b00 => 0b01
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
     ori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
+    const Register cas_result = t0;
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
-            memory_order_release, /*result*/ tmp3_t);
-    beq(tmp1_mark, tmp3_t, unlocked);
+            memory_order_release, /*result*/ cas_result);
+    beq(tmp1_mark, cas_result, unlocked);
 
     bind(push_and_slow_path);
     // Compare and exchange failed.
