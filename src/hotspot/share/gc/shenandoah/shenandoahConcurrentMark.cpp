@@ -58,7 +58,7 @@ public:
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::Work, worker_id, true);
     SuspendibleThreadSetJoiner stsj;
-    _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/);
+    _cm->mark_loop<GENERATION, true /*cancellable*/>(worker_id, _terminator);
   }
 };
 
@@ -75,7 +75,7 @@ public:
   void work(uint worker_id) {
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::finish_mark, ShenandoahPhaseTimings::Work, worker_id, true);
     ShenandoahParallelWorkerSession worker_session(worker_id);
-    _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/);
+    _cm->mark_loop<GENERATION, false /* not cancellable */>(worker_id, _terminator);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
   }
 };

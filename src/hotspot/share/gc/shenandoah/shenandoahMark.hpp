@@ -112,12 +112,8 @@ private:
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
 
 protected:
-  template<bool CANCELLABLE, bool STRING_DEDUP>
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
-                StringDedup::Requests* const req);
-
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
-                 bool cancellable);
+  template<ShenandoahGenerationType GENERATION, bool CANCELLABLE>
+  void mark_loop(uint worker_id, TaskTerminator* terminator);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP

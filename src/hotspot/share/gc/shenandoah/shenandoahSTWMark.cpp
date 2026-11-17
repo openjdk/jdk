@@ -146,6 +146,14 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahPhaseTimings::Phase phase = ShenandoahPhaseTimings::full_gc_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::Work, worker_id);
-
-  mark_loop(worker_id, &_terminator, _generation->type(), false /* not cancellable */);
+  switch (_generation->type()) {
+    case NON_GEN:
+      mark_loop<NON_GEN, false /* not cancellable */>(worker_id, &_terminator);
+      break;
+    case GLOBAL:
+      mark_loop<GLOBAL, false /* not cancellable */>(worker_id, &_terminator);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
 }
