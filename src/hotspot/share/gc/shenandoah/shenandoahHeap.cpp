@@ -1199,6 +1199,11 @@ public:
     _propagator.do_thread(thread);
     if (ShenandoahThreadLocalData::gclab(thread) != nullptr) {
       _retire.do_thread(thread);
+    } else {
+      // GC workers will get their _has_evac_failures flag reset in
+      // ShenandoahRetireGCLABClosure. Threads without a GCLAB have
+      // the flag reset here before update refs.
+      ShenandoahThreadLocalData::set_has_evac_failures(thread, false);
     }
   }
 private:
@@ -1303,7 +1308,7 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   // The handshake won't touch worker threads (or control thread, or VM thread), so do those separately.
   Threads::non_java_threads_do(&prepare_for_update_refs);
 
-  // Now retire labs and propagate gc_state for Java threads
+  // Propagate gc_state for Java threads and reset their _has_evac_failures flag.
   Handshake::execute(&prepare_for_update_refs);
 }
 
