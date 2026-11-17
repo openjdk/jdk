@@ -158,7 +158,7 @@ class ServerImpl {
         newlyAcceptedConnections = Collections.synchronizedSet(new HashSet<>());
         var reqRspTimeoutEnabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
         scheduler = createScheduler(reqRspTimeoutEnabled ? 2 : 1, logger);
-        scheduler.scheduleAtFixedRate(
+        scheduler.scheduleWithFixedDelay(
                 new IdleTimeoutTask(),
                 IDLE_TIMER_TASK_SCHEDULE, IDLE_TIMER_TASK_SCHEDULE, TimeUnit.MILLISECONDS);
         if (reqRspTimeoutEnabled) {
