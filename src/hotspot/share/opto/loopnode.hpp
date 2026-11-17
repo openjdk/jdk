@@ -1648,6 +1648,9 @@ public:
   void eliminate_useless_zero_trip_guard();
   void eliminate_useless_multiversion_if();
 
+  // Traverses all innermost loops and reassociates latency-bound MinL/MaxL
+  // reduction chains to reduce the number of serial operations on the
+  // loop-carried Phi value.  See ReassociateReductionChains in loopopts.cpp.
   void reassociate_reduction_chains();
 
  public:
