@@ -102,7 +102,7 @@ import static java.lang.Float.*;
 #end[FP16]
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtype$>
+public abstract sealed /*value*/ class $abstractvectortype$ extends AbstractVector<$Boxtype$>
          permits $Type$Vector64, $Type$Vector128, $Type$Vector256, $Type$Vector512, $Type$VectorMax {
 
     $abstractvectortype$($type$[] vec) {

@@ -29,7 +29,7 @@ import java.util.function.IntUnaryOperator;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-abstract sealed class AbstractShuffle<E> extends VectorShuffle<E>
+abstract sealed /*value*/ class AbstractShuffle<E> extends VectorShuffle<E>
         permits ByteVector64.ByteShuffle64, ByteVector128.ByteShuffle128, ByteVector256.ByteShuffle256, ByteVector512.ByteShuffle512, ByteVectorMax.ByteShuffleMax,
         DoubleVector64.DoubleShuffle64, DoubleVector128.DoubleShuffle128, DoubleVector256.DoubleShuffle256, DoubleVector512.DoubleShuffle512, DoubleVectorMax.DoubleShuffleMax,
         FloatVector64.FloatShuffle64, FloatVector128.FloatShuffle128, FloatVector256.FloatShuffle256, FloatVector512.FloatShuffle512, FloatVectorMax.FloatShuffleMax,
