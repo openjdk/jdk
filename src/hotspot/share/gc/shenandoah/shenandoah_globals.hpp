@@ -538,7 +538,7 @@
           "sensitive the heuristics are to humongous allocations, i.e. "    \
           "the more likely they trigger a GC to clear space for humongous " \
           "objects.")                                                       \
-          range(0.0,1.0)                                                    \
+          range(0.001,1.0)                                                    \
                                                                             \
   product(uintx, ShenandoahHeuristicsMaxHumongousLookBackWindow, 3,         \
                                                               EXPERIMENTAL, \

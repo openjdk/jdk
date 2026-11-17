@@ -242,7 +242,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   if (trigger_average_allocation_rate(consumption, allocatable_bytes, false /* is_humongous */)) {
     return true;
   }
- 
+
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->humongous_alloc_backoff_epochs_left() == 0) {
     bool trigger = false;
