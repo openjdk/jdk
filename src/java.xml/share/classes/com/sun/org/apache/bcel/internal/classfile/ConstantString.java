@@ -48,15 +48,17 @@ public final class ConstantString extends Constant implements ConstantObject {
     /**
      * Initialize instance from file data.
      *
-     * @param file Input stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Input stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     ConstantString(final DataInput file) throws IOException {
         this(file.readUnsignedShort());
     }
 
     /**
-     * @param stringIndex Index of Constant_Utf8 in constant pool
+     * Constructs a ConstantString.
+     *
+     * @param stringIndex Index of Constant_Utf8 in constant pool.
      */
     public ConstantString(final int stringIndex) {
         super(Const.CONSTANT_String);
@@ -67,7 +69,7 @@ public final class ConstantString extends Constant implements ConstantObject {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -75,10 +77,10 @@ public final class ConstantString extends Constant implements ConstantObject {
     }
 
     /**
-     * Dump constant field reference to file stream in binary format.
+     * Dumps constant field reference to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -87,14 +89,20 @@ public final class ConstantString extends Constant implements ConstantObject {
     }
 
     /**
-     * @return dereferenced string
+     * Gets the dereferenced string.
+     *
+     * @param cp The constant pool.
+     * @return dereferenced string.
      */
     public String getBytes(final ConstantPool cp) {
         return (String) getConstantValue(cp);
     }
 
     /**
-     * @return String object
+     * Gets the String object.
+     *
+     * @param cp The constant pool.
+     * @return String object.
      */
     @Override
     public Object getConstantValue(final ConstantPool cp) {
@@ -102,6 +110,8 @@ public final class ConstantString extends Constant implements ConstantObject {
     }
 
     /**
+     * Gets the index in constant pool of the string.
+     *
      * @return Index in constant pool of the string (ConstantUtf8).
      */
     public int getStringIndex() {
@@ -109,7 +119,9 @@ public final class ConstantString extends Constant implements ConstantObject {
     }
 
     /**
-     * @param stringIndex the index into the constant of the string value
+     * Sets the string index.
+     *
+     * @param stringIndex The index into the constant of the string value.
      */
     public void setStringIndex(final int stringIndex) {
         this.stringIndex = stringIndex;

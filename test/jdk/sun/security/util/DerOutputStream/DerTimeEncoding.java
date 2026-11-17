@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @modules java.base/sun.security.util
  */
 
-import java.util.Date;
+import java.time.Instant;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 
@@ -37,8 +37,9 @@ public class DerTimeEncoding {
     public static void main(String args[]) throws Exception {
         //Check that dates after 2050 use GeneralizedTime
         DerOutputStream out = new DerOutputStream();
-        Date generalizedTimeDate = new Date(2688854400000L); // Test date is 3/17/2055
-        out.putTime(generalizedTimeDate);
+        // Test instant is 3/17/2055
+        Instant generalizedTimeInstant = Instant.ofEpochMilli(2688854400000L);
+        out.putTime(generalizedTimeInstant);
         DerValue val = new DerValue(out.toByteArray());
         if (val.tag != DerValue.tag_GeneralizedTime) {
             System.out.println("putTime incorrectly serialized to UTC time instead of GeneralizedTime");
@@ -47,8 +48,9 @@ public class DerTimeEncoding {
 
         //Check dates between 1950-2050 use UTC time
         out = new DerOutputStream();
-        Date utcDate = new Date(242092800000L); //Test date is 9/3/1977
-        out.putTime(utcDate);
+        //Test instant is 9/3/1977
+        Instant utcInstant = Instant.ofEpochMilli(242092800000L);
+        out.putTime(utcInstant);
         val = new DerValue(out.toByteArray());
         if (val.tag != DerValue.tag_UtcTime) {
             System.out.println("putTime incorrectly serialized to Generalized time instead of UTC time");

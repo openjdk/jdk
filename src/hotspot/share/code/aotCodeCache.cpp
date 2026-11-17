@@ -543,6 +543,7 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _search_entries(nullptr),
   _store_entries(nullptr),
   _store_entries_cnt(0),
+  _store_nmethod_cnt(0),
   _compile_id(0),
   _comp_level(0)
 {
@@ -1382,7 +1383,7 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
     CompilerDirectiveMatcher matcher(method, comp_level);
     DirectiveSet* directives = matcher.directive_set();
     if (directives->IgnoreAOTCompiledOption || directives->ExcludeOption) {
-      LogStreamHandle(Info, aot, codecache, compilation) log;
+      LogStreamHandle(Info, aot, compilation) log;
       if (log.is_enabled()) {
         log.print_cr("Ignore AOT code entry on level %d for ", comp_level);
         method->print_value_on(&log);
@@ -2626,6 +2627,9 @@ AOTCodeEntry* AOTCodeCache::store_nmethod(nmethod* nm, GrowableArray<ciMethod*>*
 
   TraceTime t1("Total time to store AOT code", &_t_totalStore, enable_timers(), false);
   AOTCodeEntry* entry = cache->write_nmethod(nm, java_callees, for_preload);
+  if (entry != nullptr) {
+    cache->_store_nmethod_cnt++;
+  }
   {
     ResourceMark rm;
     const char* name = nm->method()->name_and_sig_as_C_string();
@@ -3314,6 +3318,15 @@ bool AOTCodeCache::write_relocations(CodeBlob& code_blob, RelocIterator& iter,
         reloc_data.at_put(idx, id);
         break;
       }
+      case relocInfo::address_stub_type: {
+        address dest = iter.address_stub_reloc()->destination();
+        int id = _table->id_for_address(dest, iter, &code_blob, true /* assert_for_unknown_address */);
+        if (id == BAD_ADDRESS_ID) {
+          return false;
+        }
+        reloc_data.at_put(idx, id);
+        break;
+      }
       case relocInfo::static_stub_type:
         break;
       case relocInfo::external_word_type: {
@@ -3478,6 +3491,11 @@ void AOTCodeReader::read_relocations(CodeBlob *code_blob, RelocIterator& iter,
           r->fix_owner_after_move();
         }
 #endif // USE_TRAMPOLINE_STUB_FIX_OWNER
+        break;
+      }
+      case relocInfo::address_stub_type: {
+        address dest = _cache->address_for_id(reloc_data[j]);
+        iter.address_stub_reloc()->set_destination(dest);
         break;
       }
       case relocInfo::static_stub_type:
