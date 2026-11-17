@@ -29,8 +29,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Hashtable;
 import java.util.HexFormat;
+import java.util.List;
 
 import javax.naming.Context;
+import javax.naming.NamingException;
 import javax.naming.OperationNotSupportedException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
@@ -40,7 +42,8 @@ import com.sun.jndi.ldap.BerEncoder;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -69,37 +72,30 @@ class LdapCtxGetSchemaTest {
     private static final byte SEARCH_RESULT_DONE_OP = 0x65;
 
     private static Server server;
-    private static DirContext dirContext;
 
     @BeforeAll
     static void beforeAll() throws Exception {
         server = new Server();
         server.start();
         System.err.println("Started server at " + server.getAddress());
-        // construct a LdapCtx that talks to the server we just created
-        final Hashtable<String, String> envProps = createEnvProps();
-        dirContext = new InitialDirContext(envProps);
     }
 
     @AfterAll
     static void afterAll() throws Exception {
-        if (dirContext != null) {
-            System.err.println("Closing " + dirContext);
-            dirContext.close();
-        }
         if (server != null) {
             System.err.println("Stopping server " + server);
             server.close();
         }
     }
 
-    private static Hashtable<String, String> createEnvProps() throws Exception {
+    private static Hashtable<String, String> createEnvProps(final String baseDN) throws Exception {
         final Hashtable<String, String> envProps = new Hashtable<>();
         envProps.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         final String providerUrl = URIBuilder.newBuilder()
                 .scheme("ldap")
                 .host(server.getInetAddress().getHostAddress())
                 .port(server.getPort())
+                .path("/" + baseDN)
                 .build().toString();
         envProps.put(Context.PROVIDER_URL, providerUrl);
         // explicitly set LDAP version to 3 to prevent LDAP BIND requests
@@ -108,16 +104,35 @@ class LdapCtxGetSchemaTest {
         return envProps;
     }
 
+    private static List<String> baseNames() {
+        return List.of(
+                // empty base DN
+                "",
+                // arbitrary non-empty base DN
+                "CN=fooBarBaseDN"
+        );
+    }
+
     /*
      * Calls DirContext.getSchema(Name). The server side is implemented to return zero values
      * for the "subschemasubentry" attribute. This test verifies that in that case, a
      * OperationNotSupportedException is thrown from DirContext.getSchema(Name), as specified
      * by that method.
      */
-    @Test
-    void testGetSchema() throws Exception {
-        assertThrows(OperationNotSupportedException.class,
-                () -> dirContext.getSchema(new LdapName(DN)));
+    @ParameterizedTest
+    @MethodSource("baseNames")
+    void testGetSchema(final String baseDN) throws Throwable {
+        final Hashtable<String, String> envProps = createEnvProps(baseDN);
+        final DirContext dirContext = new InitialDirContext(envProps);
+        Throwable testFailure = null;
+        try {
+            assertThrows(OperationNotSupportedException.class,
+                    () -> dirContext.getSchema(new LdapName(DN)));
+        } catch (Throwable t) {
+            testFailure = t;
+        } finally {
+            closeDirContext(dirContext, testFailure);
+        }
     }
 
     /*
@@ -126,10 +141,20 @@ class LdapCtxGetSchemaTest {
      * OperationNotSupportedException is thrown from DirContext.getSchema(String), as specified
      * by that method.
      */
-    @Test
-    void testGetSchemaString() throws Exception {
-        assertThrows(OperationNotSupportedException.class,
-                () -> dirContext.getSchema(DN));
+    @ParameterizedTest
+    @MethodSource("baseNames")
+    void testGetSchemaString(final String baseDN) throws Throwable {
+        final Hashtable<String, String> envProps = createEnvProps(baseDN);
+        final DirContext dirContext = new InitialDirContext(envProps);
+        Throwable testFailure = null;
+        try {
+            assertThrows(OperationNotSupportedException.class,
+                    () -> dirContext.getSchema(DN));
+        } catch (Throwable t) {
+            testFailure = t;
+        } finally {
+            closeDirContext(dirContext, testFailure);
+        }
     }
 
     // construct the SearchResultEntry for the given message id
@@ -212,6 +237,37 @@ class LdapCtxGetSchemaTest {
             sb.append("0x").append(formatter.formatHex(bytes, i, i + 1));
         }
         return sb.toString();
+    }
+
+    /**
+     * Closes the {@code ctx}. The method returns normally if {@code testFailure} is null and
+     * there was no exception when closing the {@code ctx}.
+     * <p>
+     * If the {@code testFailure} is not null, then this method rethrows it.
+     * If there was an exception when closing the {@code ctx}, then that exception is added
+     * as a suppressed exception to the {@code testFailure}.
+     * <p>
+     * If the {@code testFailure} is null and if there was an exception when closing the {@code ctx}
+     * then that exception is rethrown.
+     */
+    private static void closeDirContext(final DirContext ctx, final Throwable testFailure)
+            throws Throwable {
+        Throwable toThrow = testFailure;
+        try {
+            System.err.println("closing " + ctx);
+            ctx.close();
+        } catch (NamingException ne) {
+            if (toThrow == null) {
+                toThrow = ne;
+            } else if (toThrow != ne) {
+                // add the failure to close the DirContext
+                // as a suppressed exception to the original test failure
+                toThrow.addSuppressed(ne);
+            }
+        }
+        if (toThrow != null) {
+            throw toThrow;
+        }
     }
 
     // the LDAP server used in the test
