@@ -4278,10 +4278,9 @@ instruct vsqrt_fp_masked(vReg dst_src, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vstring_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
-                         iRegI_R10 result, vReg_V4 v4, vReg_V5 v5,
-                         vReg_V6 v6, vReg_V7 v7, vReg_V8 v8,
-                         vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
+instruct vstring_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt, iRegI_R10 result,
+                         vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
+                         vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
                          rFlagsReg cr)
 %{
   predicate(UseRVV && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
@@ -4301,9 +4300,8 @@ instruct vstring_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
 %}
 
 instruct varray_equalsB(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
-                        vReg_V4 v4, vReg_V5 v5,
-                        vReg_V6 v6, vReg_V7 v7, vReg_V8 v8,
-                        vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
+                        vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
+                        vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
                         iRegP_R28 tmp, rFlagsReg cr)
 %{
   predicate(UseRVV && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
@@ -4322,9 +4320,8 @@ instruct varray_equalsB(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
 %}
 
 instruct varray_equalsC(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
-                        vReg_V4 v4, vReg_V5 v5,
-                        vReg_V6 v6, vReg_V7 v7, vReg_V8 v8,
-                        vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
+                        vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
+                        vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
                         iRegP_R28 tmp, rFlagsReg cr)
 %{
   predicate(UseRVV && ((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
@@ -4365,10 +4362,9 @@ instruct varrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI b
 %}
 
 instruct vstring_compareU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
-                          iRegI_R10 result, vReg_V4 v4, vReg_V5 v5,
-                          vReg_V6 v6, vReg_V7 v7, vReg_V8 v8,
-                          vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
-                          iRegP_R28 tmp1, iRegL_R29 tmp2)
+                          vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
+                          vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
+                          iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2)
 %{
   predicate(UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
@@ -4388,10 +4384,9 @@ instruct vstring_compareU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_
 %}
 
 instruct vstring_compareL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
-                          iRegI_R10 result, vReg_V4 v4, vReg_V5 v5,
-                          vReg_V6 v6, vReg_V7 v7, vReg_V8 v8,
-                          vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
-                          iRegP_R28 tmp1, iRegL_R29 tmp2)
+                          vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
+                          vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
+                          iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2)
 %{
   predicate(UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));

@@ -2872,8 +2872,7 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
                                         bool islatin, Label &DONE) {
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
 
-  Label try_m2, try_m4, large_input, compare_full_chunks_loop,
-        compare_once, all_equal;
+  Label try_m2, try_m4, large_input, compare_full_chunks_loop, compare_once, all_equal;
   // v4 and v8 start non-overlapping register groups aligned for LMUL=m4.
   const VectorRegister va = v4;
   const VectorRegister vb = v8;
