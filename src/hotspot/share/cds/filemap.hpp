@@ -103,7 +103,7 @@ public:
   void print(outputStream* st, int region_index);
 };
 
-#define CDS_MUST_MATCH_FLAGS_DO(f) \
+#define AOT_MUST_MATCH_FLAGS_DO(f) \
   f(CompactStrings) \
   f(DiagnoseSyncOnValueBasedClasses) \
   f(FlatArrayElementMaxOops) \
@@ -121,14 +121,14 @@ public:
   f(ValueTypeReturnedAsFields) \
   /* end */
 
-class CDSMustMatchFlags {
+class AOTMustMatchFlags {
 private:
 
 // std::remove_const_t is necessary because UseCompactObjectHeaders is a const in 32-bit builds.
-#define DECLARE_CDS_MUST_MATCH_FLAG(n) \
+#define DECLARE_AOT_MUST_MATCH_FLAG(n) \
   std::remove_const_t<decltype(n)> _v_##n;
-  CDS_MUST_MATCH_FLAGS_DO(DECLARE_CDS_MUST_MATCH_FLAG);
-#undef DECLARE_CDS_MUST_MATCH_FLAG
+  AOT_MUST_MATCH_FLAGS_DO(DECLARE_AOT_MUST_MATCH_FLAG);
+#undef DECLARE_AOT_MUST_MATCH_FLAG
 
   inline static void do_print(outputStream* st, bool v);
   LP64_ONLY(inline static void do_print(outputStream* st, uint v);)
@@ -188,7 +188,7 @@ private:
   bool   _aot_class_linking_value;      // The value of the AOTClassLinking variable when this archive was created
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
   bool   _has_valhalla_patched_classes; // Is this archived dumped with --enable-preview?
-  CDSMustMatchFlags _must_match;        // These flags must be the same between dumptime and runtime
+  AOTMustMatchFlags _must_match;        // These flags must be the same between dumptime and runtime
   size_t _rw_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the rw region
   size_t _ro_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the ro region
 
@@ -311,10 +311,6 @@ public:
                 int cpu_features_size, int cpu_features_offset);
   static bool is_valid_region(int region) {
     return (0 <= region && region < NUM_CDS_REGIONS);
-  }
-
-  bool check_must_match_flags() const {
-    return _must_match.runtime_check();
   }
 
   void print(outputStream* st);

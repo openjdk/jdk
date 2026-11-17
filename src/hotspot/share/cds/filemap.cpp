@@ -87,43 +87,43 @@
 #define O_BINARY 0     // otherwise do nothing.
 #endif
 
-inline void CDSMustMatchFlags::do_print(outputStream* st, bool v) {
+inline void AOTMustMatchFlags::do_print(outputStream* st, bool v) {
   st->print("%s", v ? "true" : "false");
 }
 
 #ifdef _LP64
-inline void CDSMustMatchFlags::do_print(outputStream* st, uint v) {
+inline void AOTMustMatchFlags::do_print(outputStream* st, uint v) {
   st->print("%u", v);
 }
 
-inline void CDSMustMatchFlags::do_print(outputStream* st, int v) {
+inline void AOTMustMatchFlags::do_print(outputStream* st, int v) {
   st->print("%d", v);
 }
 #endif
 
-inline void CDSMustMatchFlags::do_print(outputStream* st, intx v) {
+inline void AOTMustMatchFlags::do_print(outputStream* st, intx v) {
   st->print("%zd", v);
 }
 
-inline void CDSMustMatchFlags::do_print(outputStream* st, uintx v) {
+inline void AOTMustMatchFlags::do_print(outputStream* st, uintx v) {
   st->print("%zu", v);
 }
 
-inline void CDSMustMatchFlags::do_print(outputStream* st, double v) {
+inline void AOTMustMatchFlags::do_print(outputStream* st, double v) {
   st->print("%f", v);
 }
 
-void CDSMustMatchFlags::init() {
+void AOTMustMatchFlags::init() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
-#define INIT_CDS_MUST_MATCH_FLAG(n) \
+#define INIT_AOT_MUST_MATCH_FLAG(n) \
   _v_##n = n;
-  CDS_MUST_MATCH_FLAGS_DO(INIT_CDS_MUST_MATCH_FLAG);
-#undef INIT_CDS_MUST_MATCH_FLAG
+  AOT_MUST_MATCH_FLAGS_DO(INIT_AOT_MUST_MATCH_FLAG);
+#undef INIT_AOT_MUST_MATCH_FLAG
 }
 
 template <typename T>
-bool CDSMustMatchFlags::check_flag(T saved, T actual, const char* name) {
+bool AOTMustMatchFlags::check_flag(T saved, T actual, const char* name) {
   if (saved != actual) {
     ResourceMark rm;
     stringStream ss;
@@ -139,18 +139,18 @@ bool CDSMustMatchFlags::check_flag(T saved, T actual, const char* name) {
   }
 }
 
-bool CDSMustMatchFlags::runtime_check() const {
-#define CHECK_CDS_MUST_MATCH_FLAG(n) \
+bool AOTMustMatchFlags::runtime_check() const {
+#define CHECK_AOT_MUST_MATCH_FLAG(n) \
   if (!check_flag(_v_##n, n, #n)) { \
     return false; \
   }
-  CDS_MUST_MATCH_FLAGS_DO(CHECK_CDS_MUST_MATCH_FLAG);
-#undef CHECK_CDS_MUST_MATCH_FLAG
+  AOT_MUST_MATCH_FLAGS_DO(CHECK_AOT_MUST_MATCH_FLAG);
+#undef CHECK_AOT_MUST_MATCH_FLAG
 
   return true;
 }
 
-void CDSMustMatchFlags::print_info() const {
+void AOTMustMatchFlags::print_info() const {
   LogTarget(Info, cds) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
@@ -159,13 +159,13 @@ void CDSMustMatchFlags::print_info() const {
   }
 }
 
-void CDSMustMatchFlags::print(outputStream* st) const {
-#define PRINT_CDS_MUST_MATCH_FLAG(n) \
+void AOTMustMatchFlags::print(outputStream* st) const {
+#define PRINT_AOT_MUST_MATCH_FLAG(n) \
   st->print("- %-41s ", #n ":");     \
   do_print(st, _v_##n);              \
   st->cr();
-  CDS_MUST_MATCH_FLAGS_DO(PRINT_CDS_MUST_MATCH_FLAG);
-#undef PRINT_CDS_MUST_MATCH_FLAG
+  AOT_MUST_MATCH_FLAGS_DO(PRINT_AOT_MUST_MATCH_FLAG);
+#undef PRINT_AOT_MUST_MATCH_FLAG
 }
 
 // Fill in the fileMapInfo structure with data about this VM instance.
@@ -2001,7 +2001,7 @@ int FileMapHeader::compute_crc() {
 
 // This is for flags that are checked only under certain conditions.
 #define CHECK_OTHER_MUST_MATCH_FLAG(saved, flag) \
-  if (!CDSMustMatchFlags::check_flag(saved, flag, #flag)) { return false; }
+  if (!AOTMustMatchFlags::check_flag(saved, flag, #flag)) { return false; }
 
 // This function should only be called during run time with UseSharedSpaces enabled.
 bool FileMapHeader::validate() {
