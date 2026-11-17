@@ -31,9 +31,9 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  * INVOKESPECIAL - Invoke instance method; special handling for superclass, private and instance initialization method
  * invocations
  *
- * <PRE>
+ * <pre>
  * Stack: ..., objectref, [arg1, [arg2 ...]] -&gt; ...
- * </PRE>
+ * </pre>
  *
  * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokespecial"> The
  *      invokespecial instruction in The Java Virtual Machine Specification</a>
@@ -46,15 +46,20 @@ public class INVOKESPECIAL extends InvokeInstruction {
     INVOKESPECIAL() {
     }
 
+    /**
+     * Constructs an INVOKESPECIAL instruction.
+     *
+     * @param index index into constant pool.
+     */
     public INVOKESPECIAL(final int index) {
         super(Const.INVOKESPECIAL, index);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -70,9 +75,9 @@ public class INVOKESPECIAL extends InvokeInstruction {
     }
 
     /**
-     * Dump instruction as byte code to stream out.
+     * Dumps instruction as byte code to stream out.
      *
-     * @param out Output stream
+     * @param out Output stream.
      */
     @Override
     public void dump(final DataOutputStream out) throws IOException {

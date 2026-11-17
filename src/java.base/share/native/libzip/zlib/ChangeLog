@@ -1,6 +1,37 @@
 
                 ChangeLog file for zlib
 
+Changes in 1.4 (4 Nov 2026)
+- Change CMake library names on MSVC
+- Return z_off_t default to long for portability
+- Fail gzopen() with "x" if O_EXCL not available
+- Deliver all gzip data before reporting error
+- Fix gzwrite() buffer overflow (CVE-2026-85091)
+- Fix inflateGetDictionary() write past buffer on invalid window size
+- Fix window write overrun after inflateSync()
+- Fix read before provided data after repeated inflatePrime()'s
+- Fix write past pending buffer after repeated deflatePrime()'s
+- Fix copy of uninitialized memory by inflateBack() on invalid data
+- Fix copy of uninitialized memory after gzseek() as first write action
+- Fix read outside window after a deflateResetKeep() mid-stream
+- Avoid out-of-bounds pointer arithmetic in infback9() (CVE-2026-4738)
+- Fix several vulnerabilities in contrib/minizip
+- Fix truncated stream detection in gzread()
+- Fix pending skip handling in gzread()
+- Fix loss of zero fill on repeated gzseek()'s when writing
+- Fix inaccurate total_in after Z_NEED_DICT returned
+- Detect and report bad deflateSetDictionary() calls
+- Avoid undefined behaviors in C language usage
+- Fix minizip extra field overflows when almost full and need Zip64
+- Don't assume NULL is defined in compress.c and uncompr.c
+- Use the generated zconf.h when building test programs out of tree
+- Improve portability and functionality of CMake builds
+- Provide 64-bit file offsets on Windows with #defines as on Linux
+- Improve portability to Android, AIX, PowerPC, s390x, and Windows
+- Use a PCG random number generator instead of rand() in minizip
+- Clarify documentation
+- (See https://github.com/madler/zlib for all 195 commits)
+
 Changes in 1.3.2 (17 Feb 2026)
 - Continued rewrite of CMake build [Vollstrecker]
 - Various portability improvements

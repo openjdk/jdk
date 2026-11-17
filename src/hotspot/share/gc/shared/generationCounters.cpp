@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,10 @@
 GenerationCounters::GenerationCounters(const char* name,
                                        int ordinal, int spaces,
                                        size_t min_capacity, size_t max_capacity,
-                                       size_t curr_capacity) {
+                                       size_t curr_capacity) :
+  _current_size(nullptr),
+  _name_space(nullptr)
+{
   if (UsePerfData) {
     EXCEPTION_MARK;
     ResourceMark rm;

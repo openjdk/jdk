@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -116,7 +116,7 @@
 
   // Use MachUncommonTrapNode for representing uncommon trap sequences.
   // This is an alternative to representing uncommon traps as runtime calls.
-  static const bool use_mach_uncommon_trap_node = false;
+  static const bool use_mach_uncommon_trap_node = true;
 
   // Are floats converted to double when stored to stack during
   // deoptimization?

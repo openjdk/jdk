@@ -30,7 +30,6 @@ import com.sun.org.apache.bcel.internal.Const;
  * This class is derived from the abstract {@link Constant} and represents a reference to a long object.
  *
  * @see Constant
- * @LastModified: Sept 2025
  */
 public final class ConstantLong extends Constant implements ConstantObject {
 
@@ -48,15 +47,17 @@ public final class ConstantLong extends Constant implements ConstantObject {
     /**
      * Initialize instance from file data.
      *
-     * @param file Input stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Input stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     ConstantLong(final DataInput file) throws IOException {
         this(file.readLong());
     }
 
     /**
-     * @param bytes Data
+     * Constructs a ConstantLong.
+     *
+     * @param bytes Data.
      */
     public ConstantLong(final long bytes) {
         super(Const.CONSTANT_Long);
@@ -67,7 +68,7 @@ public final class ConstantLong extends Constant implements ConstantObject {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -75,10 +76,10 @@ public final class ConstantLong extends Constant implements ConstantObject {
     }
 
     /**
-     * Dump constant long to file stream in binary format.
+     * Dumps constant long to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -87,14 +88,19 @@ public final class ConstantLong extends Constant implements ConstantObject {
     }
 
     /**
-     * @return data, i.e., 8 bytes.
+     * Gets the data.
+     *
+     * @return data, that is, 8 bytes.
      */
     public long getBytes() {
         return bytes;
     }
 
     /**
-     * @return Long object
+     * Gets the Long object.
+     *
+     * @param cp The constant pool (not used).
+     * @return Long object.
      */
     @Override
     public Object getConstantValue(final ConstantPool cp) {
@@ -102,7 +108,9 @@ public final class ConstantLong extends Constant implements ConstantObject {
     }
 
     /**
-     * @param bytes the raw bytes that represent this long
+     * Sets the raw bytes that represent the long value.
+     *
+     * @param bytes The raw bytes that represent the long value.
      */
     public void setBytes(final long bytes) {
         this.bytes = bytes;

@@ -49,13 +49,18 @@ public final class ConstantMethodType extends Constant {
     /**
      * Initialize instance from file data.
      *
-     * @param file Input stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Input stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     ConstantMethodType(final DataInput file) throws IOException {
         this(file.readUnsignedShort());
     }
 
+    /**
+     * Constructs a ConstantMethodType.
+     *
+     * @param descriptorIndex Index to the method descriptor.
+     */
     public ConstantMethodType(final int descriptorIndex) {
         super(Const.CONSTANT_MethodType);
         this.descriptorIndex = descriptorIndex;
@@ -65,7 +70,7 @@ public final class ConstantMethodType extends Constant {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class. I.e.,
      * the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -73,10 +78,10 @@ public final class ConstantMethodType extends Constant {
     }
 
     /**
-     * Dump name and signature index to file stream in binary format.
+     * Dumps name and signature index to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -84,16 +89,26 @@ public final class ConstantMethodType extends Constant {
         file.writeShort(descriptorIndex);
     }
 
+    /**
+     * Gets the descriptor index.
+     *
+     * @return The descriptor index.
+     */
     public int getDescriptorIndex() {
         return descriptorIndex;
     }
 
+    /**
+     * Sets the descriptor index.
+     *
+     * @param descriptorIndex The descriptor index.
+     */
     public void setDescriptorIndex(final int descriptorIndex) {
         this.descriptorIndex = descriptorIndex;
     }
 
     /**
-     * @return String representation
+     * @return String representation.
      */
     @Override
     public String toString() {

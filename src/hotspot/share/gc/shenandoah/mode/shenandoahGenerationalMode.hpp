@@ -29,11 +29,8 @@
 
 class ShenandoahGenerationalMode : public ShenandoahMode {
 public:
-  virtual void initialize_flags() const;
-  virtual const char* name()     { return "Generational"; }
-  virtual bool is_diagnostic()   { return false; }
-  virtual bool is_experimental() { return false; }
-  virtual bool is_generational() { return true; }
+  void initialize_flags() const override;
+  bool is_generational() override { return true; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHGENERATIONALMODE_HPP

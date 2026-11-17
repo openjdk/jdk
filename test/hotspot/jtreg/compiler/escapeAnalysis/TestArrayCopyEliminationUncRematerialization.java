@@ -25,9 +25,18 @@
  * @test
  * @bug 8370416
  * @key randomness
+ * @requires vm.jvmti
  * @summary Ensure that rematerialization loads for a scalarized arraycopy destination use the correct control and memory state.
  * @library /test/lib /
- * @run driver ${test.main.class}
+ * @run driver ${test.main.class} true
+ */
+
+/**
+ * @test
+ * @key randomness
+ * @requires !vm.jvmti
+ * @library /test/lib /
+ * @run driver ${test.main.class} false
  */
 
 package compiler.escapeAnalysis;
@@ -57,6 +66,9 @@ public class TestArrayCopyEliminationUncRematerialization {
     private static final String PACKAGE = "compiler.escapeAnalysis.templated";
     private static final String CLASS_NAME = "TestArrayCopyEliminationUncRematerializationGenerated";
 
+    // The C2 doesn't generates additional instructions to support JVMTI events for non-jvmti JVM build.
+    private static boolean isJvmtiPresent = true;
+
     // This generates a test containing test methods of the form
     //  static int testStore(int[] src, boolean flag) {
     //      int[] dst = new int[COPY_LEN];
@@ -85,6 +97,10 @@ public class TestArrayCopyEliminationUncRematerialization {
 
         // Ensure consistent results for the node counts in the arraycopy subtests.
         comp.invoke(PACKAGE + "." + CLASS_NAME, "main", new Object[] { new String[] { } });
+
+        if (args.length > 1 && "false".equalsIgnoreCase(args[1])) {
+            isJvmtiPresent = false;
+        }
     }
 
     private record TestConfig(int srcSize, int copyLen, int copyIdx, int writeIdx, int returnIdx) {
@@ -285,9 +301,10 @@ public class TestArrayCopyEliminationUncRematerialization {
             var testCaseClone = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCount, TestTemplates templates) -> scope(
                 let("typeAbbrev", pty.abbrev().equals("C") ? "US" : pty.abbrev()),
                 runTestConst.asToken(testName),
+                let("loadCountAdjusted", loadCount + (isJvmtiPresent && pty.abbrev().equals("I") ? 1 : 0)),
                 """
                 @Test
-                @IR(counts = { IRNode.LOAD_#{typeAbbrev}, "=#{loadCount}" },
+                @IR(counts = { IRNode.LOAD_#{typeAbbrev}, "=#{loadCountAdjusted}" },
                     applyIf = { "TieredCompilation", "true"})
                 """,
                 testMethodClone.asToken(testName, templates)

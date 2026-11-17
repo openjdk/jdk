@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -56,11 +56,12 @@ import jdk.xml.internal.Utils;
  *   attribute_info attributes[attributes_count];
  * }
  * </pre>
+ *
  * @see Attribute
  * @see CodeException
  * @see LineNumberTable
  * @see LocalVariableTable
- * @LastModified: Sept 2025
+ * @LastModified: Nov 2026
  */
 public final class Code extends Attribute {
 
@@ -82,50 +83,56 @@ public final class Code extends Attribute {
     }
 
     /**
-     * @param nameIndex Index pointing to the name <em>Code</em>
-     * @param length Content length in bytes
-     * @param file Input stream
-     * @param constantPool Array of constants
+     * Constructs a Code attribute object from a DataInput.
+     *
+     * @param nameIndex    Index pointing to the name <em>Code</em>.
+     * @param length       Content length in bytes.
+     * @param dataInput    Data input.
+     * @param constantPool Array of constants.
+     * @throws ClassFormatException Thrown if the code array read from {@code file} is greater than {@link Const#MAX_CODE_SIZE}.
      */
-    Code(final int nameIndex, final int length, final DataInput file, final ConstantPool constantPool) throws IOException {
+    Code(final int nameIndex, final int length, final DataInput dataInput, final ConstantPool constantPool) throws IOException {
         // Initialize with some default values which will be overwritten later
-        this(nameIndex, length, file.readUnsignedShort(), file.readUnsignedShort(), (byte[]) null, (CodeException[]) null, (Attribute[]) null, constantPool);
-        final int codeLength = Args.requireU4(file.readInt(), 1, "Code length attribute");
+        this(nameIndex, length, dataInput.readUnsignedShort(), dataInput.readUnsignedShort(), (byte[]) null, (CodeException[]) null, (Attribute[]) null,
+                constantPool);
+        final int codeLength = Args.requireU4(dataInput.readInt(), 0, Const.MAX_CODE_SIZE, "Code length attribute");
         code = new byte[codeLength]; // Read byte code
-        file.readFully(code);
+        dataInput.readFully(code);
         /*
-         * Read exception table that contains all regions where an exception handler is active, i.e., a try { ... } catch ()
-         * block.
+         * Read exception table that contains all regions where an exception handler is active, that is, a try { ... } catch () block.
          */
-        final int exceptionTableLength = file.readUnsignedShort();
+        final int exceptionTableLength = dataInput.readUnsignedShort();
         exceptionTable = new CodeException[exceptionTableLength];
         for (int i = 0; i < exceptionTableLength; i++) {
-            exceptionTable[i] = new CodeException(file);
+            exceptionTable[i] = new CodeException(dataInput);
         }
         /*
          * Read all attributes, currently 'LineNumberTable' and 'LocalVariableTable'
          */
-        final int attributesCount = file.readUnsignedShort();
+        final int attributesCount = dataInput.readUnsignedShort();
         attributes = new Attribute[attributesCount];
         for (int i = 0; i < attributesCount; i++) {
-            attributes[i] = readAttribute(file, constantPool);
+            attributes[i] = readAttribute(dataInput, constantPool);
         }
         /*
-         * Adjust length, because of setAttributes in this(), s.b. length is incorrect, because it didn't take the internal
-         * attributes into account yet! Very subtle bug, fixed in 3.1.1.
+         * Adjust length, because of setAttributes in this(), s.b. length is incorrect, because it didn't take the internal attributes into account yet! Very
+         * subtle bug, fixed in 3.1.1.
          */
         super.setLength(length);
     }
 
     /**
-     * @param nameIndex Index pointing to the name <em>Code</em>
-     * @param length Content length in bytes
-     * @param maxStack Maximum size of stack
-     * @param maxLocals Number of local variables
-     * @param code Actual byte code
-     * @param exceptionTable of handled exceptions
-     * @param attributes Attributes of code: LineNumber or LocalVariable
-     * @param constantPool Array of constants
+     * Constructs a Code attribute.
+     *
+     * @param nameIndex Index pointing to the name <em>Code</em>.
+     * @param length Content length in bytes.
+     * @param maxStack Maximum size of stack.
+     * @param maxLocals Number of local variables.
+     * @param code Actual byte code.
+     * @param exceptionTable of handled exceptions.
+     * @param attributes Attributes of code: LineNumber or LocalVariable.
+     * @param constantPool Array of constants.
+     * @throws ClassFormatException Thrown if the code array is greater than {@link Const#MAX_CODE_SIZE}.
      */
     public Code(final int nameIndex, final int length, final int maxStack, final int maxLocals, final byte[] code, final CodeException[] exceptionTable,
         final Attribute[] attributes, final ConstantPool constantPool) {
@@ -133,6 +140,7 @@ public final class Code extends Attribute {
         this.maxStack = Args.requireU2(maxStack, "maxStack");
         this.maxLocals = Args.requireU2(maxLocals, "maxLocals");
         this.code = Utils.createEmptyArrayIfNull(code);
+        Args.requireU4(this.code.length, 0, Const.MAX_CODE_SIZE, "Code length attribute");
         this.exceptionTable = Utils.createEmptyArrayIfNull(exceptionTable, CodeException[].class);
         Args.requireU2(this.exceptionTable.length, "exceptionTable.length");
         this.attributes = attributes != null ? attributes : EMPTY_ARRAY;
@@ -141,9 +149,9 @@ public final class Code extends Attribute {
 
     /**
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
-     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     * That is, the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -151,8 +159,7 @@ public final class Code extends Attribute {
     }
 
     /**
-     * @return the full size of this code attribute, minus its first 6 bytes, including the size of all its contained
-     *         attributes
+     * @return The full size of this code attribute, minus its first 6 bytes, including the size of all its contained attributes.
      */
     private int calculateLength() {
         int len = 0;
@@ -165,9 +172,10 @@ public final class Code extends Attribute {
     }
 
     /**
-     * @return deep copy of this attribute
+     * Creates a deep copy of this attribute.
      *
-     * @param constantPool the constant pool to duplicate
+     * @param constantPool The constant pool to duplicate.
+     * @return deep copy of this attribute.
      */
     @Override
     public Attribute copy(final ConstantPool constantPool) {
@@ -184,10 +192,10 @@ public final class Code extends Attribute {
     }
 
     /**
-     * Dump code attribute to file stream in binary format.
+     * Dumps code attribute to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -196,17 +204,19 @@ public final class Code extends Attribute {
         file.writeShort(maxLocals);
         file.writeInt(code.length);
         file.write(code, 0, code.length);
-        file.writeShort(exceptionTable.length);
+        file.writeShort(Args.requireU2(exceptionTable.length, "exceptionTable.length"));
         for (final CodeException exception : exceptionTable) {
             exception.dump(file);
         }
-        file.writeShort(attributes.length);
+        file.writeShort(Args.requireU2(attributes.length, "attributes.length"));
         for (final Attribute attribute : attributes) {
             attribute.dump(file);
         }
     }
 
     /**
+     * Gets the collection of code attributes.
+     *
      * @return Collection of code attributes.
      * @see Attribute
      */
@@ -215,6 +225,8 @@ public final class Code extends Attribute {
     }
 
     /**
+     * Gets the actual byte code of the method.
+     *
      * @return Actual byte code of the method.
      */
     public byte[] getCode() {
@@ -222,6 +234,8 @@ public final class Code extends Attribute {
     }
 
     /**
+     * Gets the table of handled exceptions.
+     *
      * @return Table of handled exceptions.
      * @see CodeException
      */
@@ -230,7 +244,9 @@ public final class Code extends Attribute {
     }
 
     /**
-     * @return the internal length of this code attribute (minus the first 6 bytes) and excluding all its attributes
+     * Gets the internal length of this code attribute (minus the first 6 bytes) and excluding all its attributes.
+     *
+     * @return The internal length of this code attribute (minus the first 6 bytes) and excluding all its attributes.
      */
     private int getInternalLength() {
         return 2 /* maxStack */ + 2 /* maxLocals */ + 4 /* code length */
@@ -241,7 +257,9 @@ public final class Code extends Attribute {
     }
 
     /**
-     * @return LineNumberTable of Code, if it has one
+     * Gets the LineNumberTable of Code, if it has one.
+     *
+     * @return LineNumberTable of Code, if it has one.
      */
     public LineNumberTable getLineNumberTable() {
         for (final Attribute attribute : attributes) {
@@ -253,7 +271,9 @@ public final class Code extends Attribute {
     }
 
     /**
-     * @return LocalVariableTable of Code, if it has one
+     * Gets the LocalVariableTable of Code, if it has one.
+     *
+     * @return LocalVariableTable of Code, if it has one.
      */
     public LocalVariableTable getLocalVariableTable() {
         for (final Attribute attribute : attributes) {
@@ -266,6 +286,7 @@ public final class Code extends Attribute {
 
     /**
      * Gets the local variable type table attribute {@link LocalVariableTypeTable}.
+     *
      * @return LocalVariableTypeTable of Code, if it has one, null otherwise.
      * @since 6.10.0
      */
@@ -279,6 +300,8 @@ public final class Code extends Attribute {
     }
 
     /**
+     * Gets the number of local variables.
+     *
      * @return Number of local variables.
      */
     public int getMaxLocals() {
@@ -286,6 +309,8 @@ public final class Code extends Attribute {
     }
 
     /**
+     * Gets the maximum size of stack used by this method.
+     *
      * @return Maximum size of stack used by this method.
      */
     public int getMaxStack() {
@@ -294,6 +319,7 @@ public final class Code extends Attribute {
 
     /**
      * Finds the attribute of {@link StackMap} instance.
+     *
      * @return StackMap of Code, if it has one, else null.
      * @since 6.8.0
      */
@@ -307,7 +333,9 @@ public final class Code extends Attribute {
     }
 
     /**
-     * @param attributes the attributes to set for this Code
+     * Sets the attributes for this Code.
+     *
+     * @param attributes The attributes to set for this Code.
      */
     public void setAttributes(final Attribute[] attributes) {
         this.attributes = attributes != null ? attributes : EMPTY_ARRAY;
@@ -315,30 +343,41 @@ public final class Code extends Attribute {
     }
 
     /**
-     * @param code byte code
+     * Sets the byte code.
+     *
+     * @param code byte code.
+     * @throws ClassFormatException Thrown if the code array is greater than {@link Const#MAX_CODE_SIZE}.
      */
     public void setCode(final byte[] code) {
         this.code = Utils.createEmptyArrayIfNull(code);
+        Args.requireU4(this.code.length, 0, Const.MAX_CODE_SIZE, "Code length attribute");
         super.setLength(calculateLength()); // Adjust length
     }
 
     /**
-     * @param exceptionTable exception table
+     * Sets the exception table.
+     *
+     * @param exceptionTable exception table.
      */
     public void setExceptionTable(final CodeException[] exceptionTable) {
         this.exceptionTable = exceptionTable != null ? exceptionTable : CodeException.EMPTY_ARRAY;
+        Args.requireU2(this.exceptionTable.length, "exceptionTable.length");
         super.setLength(calculateLength()); // Adjust length
     }
 
     /**
-     * @param maxLocals maximum number of local variables
+     * Sets the maximum number of local variables.
+     *
+     * @param maxLocals maximum number of local variables.
      */
     public void setMaxLocals(final int maxLocals) {
         this.maxLocals = maxLocals;
     }
 
     /**
-     * @param maxStack maximum stack size
+     * Sets the maximum stack size.
+     *
+     * @param maxStack maximum stack size.
      */
     public void setMaxStack(final int maxStack) {
         this.maxStack = maxStack;

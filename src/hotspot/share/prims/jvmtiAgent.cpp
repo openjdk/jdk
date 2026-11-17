@@ -82,6 +82,13 @@ JvmtiAgent::JvmtiAgent(const char* name, const char* options, bool is_absolute_p
   _dynamic(dynamic),
   _xrun(false) {}
 
+JvmtiAgent::~JvmtiAgent() {
+  os::free(const_cast<char*>(_name));
+  os::free(const_cast<char*>(_options));
+  // lib handle is managed at the load site (on error, either unloaded or the process is shut down)
+  os::free(const_cast<char*>(_os_lib_path));
+}
+
 JvmtiAgent* JvmtiAgent::next() const {
   return AtomicAccess::load_acquire(&_next);
 }
@@ -580,7 +587,7 @@ static void check_cds_dump(JvmtiAgent* agent) {
   if (CDSConfig::new_aot_flags_used()) { // JEP 483
     // Agents are allowed with -XX:AOTMode=record and -XX:AOTMode=required/auto.
     // Agents are completely disabled when -XX:AOTMode=create (see cdsConfig.cpp)
-    assert(!CDSConfig::is_dumping_final_static_archive(), "agents should have been disabled with -XX:AOTMode=create");
+    assert(!CDSConfig::is_dumping_aot_cache(), "agents should have been disabled with -XX:AOTMode=create");
   } else if (CDSConfig::is_dumping_classic_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {
     // Classic CDS (static or dynamic dump). Disallow agents.
     vm_exit_during_cds_dumping("JVMTI agents are not allowed when dumping CDS archives");

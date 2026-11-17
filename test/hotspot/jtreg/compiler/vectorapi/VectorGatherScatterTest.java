@@ -35,6 +35,7 @@ import jdk.incubator.vector.VectorShape;
 import jdk.incubator.vector.VectorSpecies;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
 /**
@@ -42,8 +43,9 @@ import jdk.test.lib.Utils;
  * @bug 8288397
  * @key randomness
  * @library /test/lib /
- * @requires vm.cpu.features ~= ".*sve.*" & (vm.opt.MaxVectorSize == "null" | vm.opt.MaxVectorSize >= 16)
- * @summary AArch64: Fix register issues in SVE backend match rules
+ * @requires (vm.cpu.features ~= ".*sve.*" & (vm.opt.MaxVectorSize == "null" | vm.opt.MaxVectorSize >= 16)) |
+ *            vm.cpu.features ~= ".*rvv.*"
+ * @summary Test vector gather/scatter on SVE and RVV
  * @modules jdk.incubator.vector
  *
  * @run driver compiler.vectorapi.VectorGatherScatterTest
@@ -146,7 +148,11 @@ public class VectorGatherScatterTest {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
-                                   "-XX:UseSVE=1");
+        TestFramework testFramework = new TestFramework();
+        testFramework.addFlags("--add-modules=jdk.incubator.vector");
+        if (Platform.isAArch64()) {
+            testFramework.addFlags("-XX:UseSVE=1");
+        }
+        testFramework.start();
     }
 }

@@ -320,7 +320,7 @@ uint8_t ShenandoahBarrierSetC2::refine_store(Node* n, uint8_t bd) {
 
   // Type system tells us something about nullity?
   const Type* newval_bottom = newval->bottom_type();
-  assert(newval_bottom->isa_oopptr() || newval_bottom->isa_narrowoop() ||
+  assert(newval_bottom->is_oopptr() || newval_bottom->is_narrowoop() ||
          newval_bottom == TypePtr::NULL_PTR, "Should be an oop store");
   const TypePtr* newval_type = newval_bottom->make_ptr();
   assert(newval_type != nullptr, "Should have been filtered before");
@@ -517,13 +517,37 @@ void ShenandoahBarrierSetC2::analyze_dominating_barriers() const {
 }
 
 uint ShenandoahBarrierSetC2::estimated_barrier_size(const Node* node) const {
-  // Barrier impact on fast-path is driven by GC state checks emitted very late.
-  // These checks are tight load-test-branch sequences, with no impact on C2 graph
-  // size. Limiting unrolling in presence of GC barriers might turn some loops
-  // tighter than with default unrolling, which may benefit performance due to denser
-  // code. Testing shows it is still counter-productive.
-  // Therefore, we report zero barrier size to let C2 do its normal thing.
-  return 0;
+  // Barrier cost drives how deep C2 optimizations go, to avoid emitting too many
+  // GC barriers, for example during loop unrolling. This is a heuristic question,
+  // and it is asked before final barrier elision code is able to remove some
+  // of the barriers. It also asks for a node count, which for late-expanded barriers
+  // forces us to make assumptions. We give an approximate answer, estimating
+  // how many Ideal nodes our barrier shapes would correspond to. This model tries
+  // to match other GCs as much as possible to avoid accidental performance differences.
+
+  uint8_t bd = MemNode::barrier_data(node) & ShenandoahBitsReal;
+
+  if (bd == 0) {
+    // No real barriers.
+    return 0;
+  }
+
+  uint nodes = 0;
+
+  if ((bd & ~ShenandoahBitCardMark) != 0) {
+    // Hot-patched GC state checks are either a single nop or a jump.
+    nodes += 1;
+  }
+
+  if ((bd & ShenandoahBitCardMark) != 0) {
+    // Card mark is not covered by hot-patching.
+    nodes += 4;
+    if (UseCondCardMark) {
+      nodes += 4;
+    }
+  }
+
+  return nodes;
 }
 
 bool ShenandoahBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const {
@@ -545,9 +569,9 @@ bool ShenandoahBarrierSetC2::clone_needs_barrier(const TypeOopPtr* src_type, boo
     return false;
   }
 
-  if (src_type->isa_instptr() != nullptr) {
+  if (src_type->is_instptr()) {
     // Instance: need barrier only if there is a possibility of having an oop anywhere in it.
-    ciInstanceKlass* ik = src_type->is_instptr()->instance_klass();
+    ciInstanceKlass* ik = src_type->as_instptr()->instance_klass();
     if ((src_type->klass_is_exact() || !ik->has_subklass()) &&
         !ik->has_injected_fields() && !ik->has_object_fields()) {
       if (!src_type->klass_is_exact()) {
@@ -557,9 +581,9 @@ bool ShenandoahBarrierSetC2::clone_needs_barrier(const TypeOopPtr* src_type, boo
       }
       return false;
     }
-  } else if (src_type->isa_aryptr() != nullptr) {
+  } else if (src_type->is_aryptr()) {
     // Array: need barrier only if array is oop-bearing.
-    BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+    BasicType src_elem = src_type->as_aryptr()->elem()->array_element_basic_type();
     if (is_reference_type(src_elem, true) && src_type->is_not_flat()) {
       is_oop_array = true;
     } else if (!src_type->is_not_flat()) {
@@ -574,7 +598,7 @@ bool ShenandoahBarrierSetC2::clone_needs_barrier(const TypeOopPtr* src_type, boo
 }
 
 void ShenandoahBarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* size, bool is_array) const {
-  const TypeOopPtr* src_type = kit->gvn().type(src_base)->is_oopptr();
+  const TypeOopPtr* src_type = kit->gvn().type(src_base)->as_oopptr();
 
   bool is_oop_array = false;
   if (!clone_needs_barrier(src_type, is_oop_array)) {
@@ -617,7 +641,7 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
   Node* const dest_offset = ac->in(ArrayCopyNode::DestPos);
   Node* length            = ac->in(ArrayCopyNode::Length);
 
-  const TypeOopPtr* src_type = phase->igvn().type(src)->is_oopptr();
+  const TypeOopPtr* src_type = phase->igvn().type(src)->as_oopptr();
 
   bool is_oop_array = false;
   if (!clone_needs_barrier(src_type, is_oop_array)) {
@@ -639,7 +663,7 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
   // This is the full clone, so offsets should equal each other and be at array base.
   assert(src_offset == dest_offset, "should be equal");
   const jlong offset = src_offset->get_long();
-  const TypeAryPtr* const ary_ptr = src->get_ptr_type()->isa_aryptr();
+  const TypeAryPtr* const ary_ptr = src->get_ptr_type()->as_aryptr();
   BasicType bt = ary_ptr->elem()->array_element_basic_type();
   if (offset != arrayOopDesc::base_offset_in_bytes(bt)) {
     // Something is off with flat arrays. Go to runtime instead.
@@ -792,12 +816,12 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
     bool is_native = (bd & ShenandoahBitNative) != 0;
 
     bool is_referent = adr_type != nullptr &&
-                       adr_type->isa_instptr() &&
-                       adr_type->is_instptr()->instance_klass()->is_subtype_of(Compile::current()->env()->Reference_klass()) &&
-                       adr_type->is_instptr()->offset() == java_lang_ref_Reference::referent_offset();
+                       adr_type->is_instptr() &&
+                       adr_type->as_instptr()->instance_klass()->is_subtype_of(Compile::current()->env()->Reference_klass()) &&
+                       adr_type->as_instptr()->offset() == java_lang_ref_Reference::referent_offset();
 
-    bool is_oop_addr = (adr_type != nullptr) && (adr_type->isa_oopptr() || adr_type->isa_narrowoop());
-    bool is_raw_addr = (adr_type != nullptr) && (adr_type->isa_rawptr() || adr_type->isa_klassptr());
+    bool is_oop_addr = (adr_type != nullptr) && (adr_type->is_oopptr() || adr_type->is_narrowoop());
+    bool is_raw_addr = (adr_type != nullptr) && (adr_type->is_rawptr() || adr_type->is_klassptr());
 
     verify_gc_barrier_assert(!expect_some_real || (bd == 0) || (bd & ShenandoahBitsReal) != 0, "Without real barriers, metadata should be stripped at this point", bd, n);
 

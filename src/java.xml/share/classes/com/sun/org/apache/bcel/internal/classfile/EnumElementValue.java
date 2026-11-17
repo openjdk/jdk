@@ -25,6 +25,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 /**
+ * Represents an enum element value in an annotation.
+ *
  * @since 6.0
  */
 public class EnumElementValue extends ElementValue {
@@ -33,6 +35,14 @@ public class EnumElementValue extends ElementValue {
 
     private final int valueIdx;
 
+    /**
+     * Constructs an EnumElementValue.
+     *
+     * @param type The element value type.
+     * @param typeIdx The type index.
+     * @param valueIdx The value index.
+     * @param cpool The constant pool.
+     */
     public EnumElementValue(final int type, final int typeIdx, final int valueIdx, final ConstantPool cpool) {
         super(type, cpool);
         if (type != ENUM_CONSTANT) {
@@ -49,18 +59,38 @@ public class EnumElementValue extends ElementValue {
         dos.writeShort(valueIdx); // u2
     }
 
+    /**
+     * Gets the enum type string.
+     *
+     * @return The enum type string.
+     */
     public String getEnumTypeString() {
         return super.getConstantPool().getConstantUtf8(typeIdx).getBytes();
     }
 
+    /**
+     * Gets the enum value string.
+     *
+     * @return The enum value string.
+     */
     public String getEnumValueString() {
         return super.getConstantPool().getConstantUtf8(valueIdx).getBytes();
     }
 
+    /**
+     * Gets the type index.
+     *
+     * @return The type index.
+     */
     public int getTypeIndex() {
         return typeIdx;
     }
 
+    /**
+     * Gets the value index.
+     *
+     * @return The value index.
+     */
     public int getValueIndex() {
         return valueIdx;
     }
