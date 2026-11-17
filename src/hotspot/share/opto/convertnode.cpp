@@ -810,7 +810,7 @@ Node* ConvI2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Convert ConvI2L(AndI(ConvL2I(x), mask)) to AndL(x, mask) if the mask is
   // non-negative. The result of the AND is then in [0, mask] and hence
   // non-negative, so ConvI2L only zero-extends it.
-  //   (long)((int)x & mask) == x & mask   if mask >= 0
+  //   (long)((int)x & mask) == x & (long)mask   if mask is a non-negative int
   if (z->Opcode() == Op_AndI) {
     // Don't do this for nodes which have more than one user: the AndI would
     // stay in the graph and we'd end up computing the mask twice.
