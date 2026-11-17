@@ -130,7 +130,7 @@ const Type* ProjNode::proj_type(const Type* t) const {
   if (t == Type::BOTTOM) {
     return Type::BOTTOM;
   }
-  t = t->is_tuple()->field_at(_con);
+  t = t->as_tuple()->field_at(_con);
   CallStaticJavaNode* call = in(0)->isa_CallStaticJava();
   if (call != nullptr && call->is_boxing_method()) {
     // The result of autoboxing is always non-null on normal path.
@@ -179,12 +179,12 @@ void ProjNode::check_con() const {
   if (_con == SCMemProjNode::SCMEMPROJCON ) return;
   const Type* t = n->bottom_type();
   if (t == Type::TOP)  return;  // multi is dead
-  assert(_con < t->is_tuple()->cnt(), "ProjNode::_con must be in range");
+  assert(_con < t->as_tuple()->cnt(), "ProjNode::_con must be in range");
 }
 
 //------------------------------Identity---------------------------------------
 Node* ProjNode::Identity(PhaseGVN* phase) {
-  if (in(0) != nullptr && in(0)->Opcode() == Op_Tuple) {
+  if (is_exact<Op_Tuple>(in(0))) {
     // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
     return in(0)->in(_con);
   }

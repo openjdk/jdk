@@ -1301,15 +1301,15 @@ class CallStubImpl {
 
  public:
 
-  // Size of call trampoline stub.
+  // Size of call stub.
   // This doesn't need to be accurate to the byte, but it
   // must be larger than or equal to the real size of the stub.
-  static uint size_call_trampoline() {
+  static uint size_call_stub() {
     return MacroAssembler::trampoline_stub_size;
   }
 
-  // number of relocations needed by a call trampoline stub
-  static uint reloc_call_trampoline() {
+  // Number of relocations needed by a call stub.
+  static uint reloc_call_stub() {
     return 5;
   }
 
@@ -1696,7 +1696,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
   if (src_lo == dst_lo && src_hi == dst_hi)
     return size;            // Self copy, no move.
 
-  if (bottom_type()->isa_vect() != nullptr && ideal_reg() == Op_VecX) {
+  if (bottom_type()->is_vect() && ideal_reg() == Op_VecX) {
     int src_offset = ra_->reg2offset(src_lo);
     int dst_offset = ra_->reg2offset(dst_lo);
     DEBUG_ONLY(int algm = MIN2(RegMask::num_registers(ideal_reg()), (int)Matcher::stack_alignment_in_slots()) * VMRegImpl::stack_slot_size);
@@ -2565,7 +2565,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     nodes._large_lo = m2;
     nodes._small = nullptr;
     nodes._last = nodes._large_lo;
-    assert(m2->bottom_type()->isa_long(), "must be long");
+    assert(m2->bottom_type()->is_long(), "must be long");
   } else {
     loadConLNode *m2 = new loadConLNode();
 
@@ -2588,7 +2588,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     nodes._large_lo = nullptr;
     nodes._small = m2;
     nodes._last = nodes._small;
-    assert(m2->bottom_type()->isa_long(), "must be long");
+    assert(m2->bottom_type()->is_long(), "must be long");
   }
 
   return nodes;
@@ -2660,7 +2660,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     nodes._replicated = m4;
     nodes._small = nullptr;
     nodes._last = nodes._replicated;
-    assert(m2->bottom_type()->isa_long(), "must be long");
+    assert(m2->bottom_type()->is_long(), "must be long");
   } else {
     loadConLNode *m2 = new  loadConLNode();
     mtvsrdNode *m3 = new  mtvsrdNode();
@@ -2697,7 +2697,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     nodes._moved = m3;
     nodes._replicated = m4;
     nodes._last = nodes._replicated;
-    assert(m2->bottom_type()->isa_long(), "must be long");
+    assert(m2->bottom_type()->is_long(), "must be long");
   }
 
   return nodes;
@@ -2721,7 +2721,7 @@ encode %{
 
     // some asserts
     assert(nodes->length() >= 1, "must have created at least 1 node");
-    assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
+    assert(loadConLNodes._last->bottom_type()->is_long(), "must be long");
   %}
 
   enc_class enc_load_long_constP(iRegLdst dst, immP src, iRegLdst toc) %{
@@ -2828,7 +2828,7 @@ encode %{
 
       nodes->push(m1);
       nodes->push(m2);
-      assert(m2->bottom_type()->isa_ptr(), "must be ptr");
+      assert(m2->bottom_type()->is_ptr(), "must be ptr");
     } else {
       loadConPNode *m2 = new loadConPNode();
 
@@ -2844,7 +2844,7 @@ encode %{
       ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
 
       nodes->push(m2);
-      assert(m2->bottom_type()->isa_ptr(), "must be ptr");
+      assert(m2->bottom_type()->is_ptr(), "must be ptr");
     }
   %}
 
@@ -3022,7 +3022,7 @@ encode %{
     if (loadConLNodes._last)     nodes->push(loadConLNodes._last);
 
     assert(nodes->length() >= 1, "must have created at least 1 node");
-    assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
+    assert(loadConLNodes._last->bottom_type()->is_long(), "must be long");
   %}
 
   enc_class postalloc_expand_load_replF_constant_vsx(vecX dst, immF src, iRegLdst toc, iRegLdst tmp) %{
@@ -6110,8 +6110,8 @@ instruct encodeP_narrow_oop_shift_0(iRegNdst dst, iRegPsrc src) %{
 //  shift != 0, base != 0
 instruct decodeN(iRegPdst dst, iRegNsrc src, flagsRegCR0 cr0) %{
   match(Set dst (DecodeN src));
-  predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
-             n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
+  predicate((n->bottom_type()->as_oopptr()->ptr() != TypePtr::NotNull &&
+             n->bottom_type()->as_oopptr()->ptr() != TypePtr::Constant) &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base() != nullptr);
   ins_cost(4 * DEFAULT_COST); // Should be more expensive than decodeN_Disjoint_isel.
@@ -6145,8 +6145,8 @@ instruct decodeN_nullBase(iRegPdst dst, iRegNsrc src) %{
 instruct decodeN_Disjoint_notNull(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
   effect(TEMP_DEF dst);
-  predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
-             n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
+  predicate((n->bottom_type()->as_oopptr()->ptr() == TypePtr::NotNull ||
+             n->bottom_type()->as_oopptr()->ptr() == TypePtr::Constant) &&
             CompressedOops::base_disjoint());
   ins_cost(DEFAULT_COST);
 
@@ -6162,8 +6162,8 @@ instruct decodeN_Disjoint_notNull(iRegPdst dst, iRegNsrc src) %{
 instruct decodeN_Disjoint_isel(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
   match(Set dst (DecodeN src));
   effect(TEMP_DEF dst, TEMP crx);
-  predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
-             n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
+  predicate((n->bottom_type()->as_oopptr()->ptr() != TypePtr::NotNull &&
+             n->bottom_type()->as_oopptr()->ptr() != TypePtr::Constant) &&
             CompressedOops::base_disjoint());
   ins_cost(3 * DEFAULT_COST); // Has a lower latency than decodeN because of a better ILP.
 
@@ -6180,8 +6180,8 @@ instruct decodeN_Disjoint_isel(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
 // src != 0, shift != 0, base != 0
 instruct decodeN_notNull_addBase(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
-  predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
-             n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
+  predicate((n->bottom_type()->as_oopptr()->ptr() == TypePtr::NotNull ||
+             n->bottom_type()->as_oopptr()->ptr() == TypePtr::Constant) &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base() != nullptr);
   ins_cost(2 * DEFAULT_COST);
@@ -8080,7 +8080,7 @@ instruct lShiftL_regI_immGE32(iRegLdst dst, iRegIorL2I src1, uimmI6_ge32 src2) %
 // Shift amounts >= 32 are handled by lShiftL_regI_immGE32.
 instruct scaledPositiveI2L_lShiftL_convI2L_reg_imm6(iRegLdst dst, iRegIorL2I src1, uimmI5 src2) %{
   match(Set dst (LShiftL (ConvI2L src1) src2));
-  predicate(((ConvI2LNode*)(_kids[0]->_leaf))->type()->is_long()->is_positive_int());
+  predicate(((ConvI2LNode*)(_kids[0]->_leaf))->type()->as_long()->is_positive_int());
 
   format %{ "SLDI    $dst, i2l(positive_int($src1)), $src2" %}
   size(4);
@@ -10774,7 +10774,7 @@ instruct indexOf_imm1_char_U(iRegIdst result, iRegPsrc haystack, iRegIorL2I hayc
 
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needleImm;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr;
 #ifdef VM_LITTLE_ENDIAN
@@ -10807,7 +10807,7 @@ instruct indexOf_imm1_char_L(iRegIdst result, iRegPsrc haystack, iRegIorL2I hayc
 
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needleImm;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -10833,7 +10833,7 @@ instruct indexOf_imm1_char_UL(iRegIdst result, iRegPsrc haystack, iRegIorL2I hay
 
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needleImm;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -10852,15 +10852,15 @@ instruct indexOf_imm1_U(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
   effect(USE_KILL needle, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(180);
 
   format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
     jchar chr;
 #ifdef VM_LITTLE_ENDIAN
@@ -10886,15 +10886,15 @@ instruct indexOf_imm1_L(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
   effect(USE_KILL needle, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(180);
 
   format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -10913,15 +10913,15 @@ instruct indexOf_imm1_UL(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
   effect(USE_KILL needle, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(180);
 
   format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -10979,15 +10979,15 @@ instruct indexOf_imm_U(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(250);
 
   format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
 
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
@@ -11006,15 +11006,15 @@ instruct indexOf_imm_L(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(250);
 
   format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
 
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
@@ -11033,15 +11033,15 @@ instruct indexOf_imm_UL(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(250);
 
   format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
 
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,

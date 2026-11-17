@@ -60,8 +60,8 @@ protected:
     ShenandoahInitLogger::print_gc_specific();
 
     ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-    log_info(gc, init)("Young Heuristics: %s", heap->young_generation()->heuristics()->name());
-    log_info(gc, init)("Old Heuristics: %s", heap->old_generation()->heuristics()->name());
+    log_info(gc, init)("Young Heuristics: %s", ShenandoahGCHeuristics);
+    log_info(gc, init)("Old Heuristics: %s", ShenandoahGCHeuristics);
   }
 };
 
