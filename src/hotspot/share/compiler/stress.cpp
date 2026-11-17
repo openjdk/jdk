@@ -43,7 +43,7 @@ static bool should_initialize_stress_seed(CompilerType comp) {
 #endif // COMPILER1
 #ifdef COMPILER2
     case compiler_c2:
-      return StressLCM || StressGCM || StressIGVN || StressCCP ||
+      return StressLCM || StressGCM || StressIGVN || StressCCP || StressOptimizationDelay ||
         StressIncrementalInlining || StressMacroExpansion ||
         StressMacroElimination || StressUnstableIfTraps ||
         StressBailout || StressLoopPeeling || StressCountedLoop ||

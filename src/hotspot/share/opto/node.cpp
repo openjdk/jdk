@@ -505,6 +505,9 @@ Node *Node::clone() const {
   if (is_macro()) {
     C->add_macro_node(n);
   }
+  if (is_OptimizationDelay()) {
+    C->add_optimization_delay_node(n->as_OptimizationDelay());
+  }
   if (is_expensive()) {
     C->add_expensive_node(n);
   }
@@ -630,6 +633,9 @@ void Node::destruct(PhaseValues* phase) {
 
   if (is_macro()) {
     compile->remove_macro_node(this);
+  }
+  if (is_OptimizationDelay()) {
+    compile->remove_optimization_delay_node(as_OptimizationDelay());
   }
   if (is_expensive()) {
     compile->remove_expensive_node(this);

@@ -38,6 +38,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "opto/idealGraphPrinter.hpp"
+#include "opto/optimizationdelaypolicy.hpp"
 #include "opto/phase.hpp"
 #include "opto/phasetype.hpp"
 #include "opto/printinlining.hpp"
@@ -70,6 +71,7 @@ class MachNode;
 class MachOper;
 class MachSafePointNode;
 class Node;
+class OptimizationDelayNode;
 template <typename T> class Node_Array;
 template <typename T> class Node_List;
 class Node_Notes;
@@ -340,6 +342,8 @@ class Compile : public Phase {
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
+  // Phase for iteratively revealing/removing all optimization delay nodes
+  bool                  _optimization_delay_nodes_cleanup_phase;
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
   /* If major progress is set:
@@ -404,6 +408,7 @@ class Compile : public Phase {
   CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
+  GrowableArray<OptimizationDelayNode*>  _optimization_delay_nodes; // List of optimization delay nodes
   GrowableArray<ParsePredicateNode*> _parse_predicates; // List of Parse Predicates.
   // List of OpaqueTemplateAssertionPredicateNode nodes for Template Assertion Predicates which can be seen as list
   // of Template Assertion Predicates themselves.
@@ -419,6 +424,9 @@ class Compile : public Phase {
   ConnectionGraph*      _congraph;
 
   Stress                _stress;
+
+  OptimizationDelayPolicy _optimization_delay_policy;
+
 #ifndef PRODUCT
   IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
@@ -836,6 +844,12 @@ public:
 
   bool       allow_macro_nodes() { return _allow_macro_nodes;  }
   void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
+
+  OptimizationDelayPolicy& optimization_delay_policy() { return _optimization_delay_policy; }
+  void add_optimization_delay_node(OptimizationDelayNode* n);
+  void remove_optimization_delay_node(OptimizationDelayNode* n);
+  bool advance_optimization_delay_nodes(PhaseIterGVN& igvn);
+  void optimization_delay_nodes_cleanup(PhaseIterGVN& igvn);
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
