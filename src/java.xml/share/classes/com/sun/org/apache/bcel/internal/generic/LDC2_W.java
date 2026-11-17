@@ -23,10 +23,9 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * LDC2_W - Push long or double from constant pool
  *
- * <PRE>
+ * <pre>
  * Stack: ... -&gt; ..., item.word1, item.word2
- * </PRE>
- * @LastModified: May 2021
+ * </pre>
  */
 public class LDC2_W extends CPInstruction implements PushInstruction {
 
@@ -36,15 +35,20 @@ public class LDC2_W extends CPInstruction implements PushInstruction {
     LDC2_W() {
     }
 
+    /**
+     * Constructs an LDC2_W instruction.
+     *
+     * @param index index into constant pool.
+     */
     public LDC2_W(final int index) {
         super(com.sun.org.apache.bcel.internal.Const.LDC2_W, index);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -67,6 +71,12 @@ public class LDC2_W extends CPInstruction implements PushInstruction {
         }
     }
 
+    /**
+     * Gets the constant value from the constant pool.
+     *
+     * @param cpg constant pool generator.
+     * @return The constant value as a Number.
+     */
     public Number getValue(final ConstantPoolGen cpg) {
         final com.sun.org.apache.bcel.internal.classfile.Constant c = cpg.getConstantPool().getConstant(super.getIndex());
         switch (c.getTag()) {

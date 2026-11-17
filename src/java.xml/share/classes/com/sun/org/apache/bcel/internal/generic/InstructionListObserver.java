@@ -27,5 +27,10 @@ package com.sun.org.apache.bcel.internal.generic;
  */
 public interface InstructionListObserver {
 
+    /**
+     * Notifies observer of changes.
+     *
+     * @param list The instruction list.
+     */
     void notify(InstructionList list);
 }

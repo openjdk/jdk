@@ -28,9 +28,9 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * LDC_W - Push item from constant pool (wide index)
  *
- * <PRE>
+ * <pre>
  * Stack: ... -&gt; ..., item.word1, item.word2
- * </PRE>
+ * </pre>
  */
 public class LDC_W extends LDC {
 
@@ -40,12 +40,17 @@ public class LDC_W extends LDC {
     LDC_W() {
     }
 
+    /**
+     * Constructs an LDC_W instruction.
+     *
+     * @param index index into constant pool.
+     */
     public LDC_W(final int index) {
         super(index);
     }
 
     /**
-     * Read needed data (i.e., index) from file.
+     * Reads needed data (that is, index) from file.
      */
     @Override
     protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {

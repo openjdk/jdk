@@ -453,6 +453,7 @@ class Parse : public GraphKit {
   void init_blocks();
   void load_state_from(Block* b);
   void store_state_to(Block* b) { b->record_state(this); }
+  void canonicalize_early_larval_aliases();
 
   // Parse all the basic blocks.
   void do_all_blocks();

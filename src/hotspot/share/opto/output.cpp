@@ -508,21 +508,24 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
         MachNode* mach = nj->as_Mach();
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
         reloc_size += mach->reloc();
+        // CallStubImpl reserves space and relocations in the stub section for
+        // per-call trampolines (AArch64/PPC) or address stubs (RISC-V).
+        // To-interpreter stubs are accounted for separately below.
         if (mach->is_MachUncommonTrap()) {
-          // add size information for trampoline stub
+          // Add size information for call stub.
           // class CallStubImpl is platform-specific and defined in the *.ad files.
-          stub_size  += CallStubImpl::size_call_trampoline();
-          reloc_size += CallStubImpl::reloc_call_trampoline();
+          stub_size  += CallStubImpl::size_call_stub();
+          reloc_size += CallStubImpl::reloc_call_stub();
 
           // No nop is needed to disambiguate from another safepoint.
           assert(mach->as_MachUncommonTrap()->ret_addr_offset() > 0 &&
                  (uint)mach->as_MachUncommonTrap()->ret_addr_offset() < mach->size(C->regalloc()),
                  "Safepoint address should be offset from the first instruction and should not point after the node");
         } else if (mach->is_MachCall()) {
-          // add size information for trampoline stub
+          // Add size information for call stub.
           // class CallStubImpl is platform-specific and defined in the *.ad files.
-          stub_size  += CallStubImpl::size_call_trampoline();
-          reloc_size += CallStubImpl::reloc_call_trampoline();
+          stub_size  += CallStubImpl::size_call_stub();
+          reloc_size += CallStubImpl::reloc_call_stub();
 
           MachCallNode *mcall = mach->as_MachCall();
           // This destination address is NOT PC-relative
@@ -796,7 +799,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 
     ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == nullptr) {
-      ciKlass* cik = t->is_oopptr()->exact_klass();
+      ciKlass* cik = t->as_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
       uint first_ind = spobj->first_index(sfpt->jvms());
@@ -807,7 +810,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
         Node* null_marker_node = sfpt->in(first_ind++);
         assert(null_marker_node != nullptr, "null_marker node not found");
         if (!null_marker_node->is_top()) {
-          const TypeInt* null_marker_type = null_marker_node->bottom_type()->is_int();
+          const TypeInt* null_marker_type = null_marker_node->bottom_type()->as_int();
           if (null_marker_node->is_Con()) {
             properties = new ConstantIntValue(null_marker_type->get_con());
           } else {
@@ -817,7 +820,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
         }
       }
       if (cik->is_array_klass() && !cik->is_type_array_klass()) {
-        properties = new ConstantIntValue(array_description_value(t->is_aryptr()));
+        properties = new ConstantIntValue(array_description_value(t->as_aryptr()));
       }
       sv = new ObjectValue(spobj->_idx,
                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()), true, properties);
@@ -946,35 +949,35 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       break;
     case Type::AryPtr:
     case Type::InstPtr:          // fall through
-      array->append(new ConstantOopWriteValue(t->isa_oopptr()->const_oop()->constant_encoding()));
+      array->append(new ConstantOopWriteValue(t->as_oopptr()->const_oop()->constant_encoding()));
       break;
     case Type::NarrowOop:
       if (t == TypeNarrowOop::NULL_PTR) {
         array->append(new ConstantOopWriteValue(nullptr));
       } else {
-        array->append(new ConstantOopWriteValue(t->make_ptr()->isa_oopptr()->const_oop()->constant_encoding()));
+        array->append(new ConstantOopWriteValue(t->make_ptr()->as_oopptr()->const_oop()->constant_encoding()));
       }
       break;
     case Type::Int:
-      array->append(new ConstantIntValue(t->is_int()->get_con()));
+      array->append(new ConstantIntValue(t->as_int()->get_con()));
       break;
     case Type::RawPtr:
       // A return address (T_ADDRESS).
-      assert((intptr_t)t->is_ptr()->get_con() < (intptr_t)0x10000, "must be a valid BCI");
+      assert((intptr_t)t->as_ptr()->get_con() < (intptr_t)0x10000, "must be a valid BCI");
 #ifdef _LP64
       // Must be restored to the full-width 64-bit stack slot.
-      array->append(new ConstantLongValue(t->is_ptr()->get_con()));
+      array->append(new ConstantLongValue(t->as_ptr()->get_con()));
 #else
-      array->append(new ConstantIntValue(t->is_ptr()->get_con()));
+      array->append(new ConstantIntValue(t->as_ptr()->get_con()));
 #endif
       break;
     case Type::FloatCon: {
-      float f = t->is_float_constant()->getf();
+      float f = t->as_float_constant()->getf();
       array->append(new ConstantIntValue(jint_cast(f)));
       break;
     }
     case Type::DoubleCon: {
-      jdouble d = t->is_double_constant()->getd();
+      jdouble d = t->as_double_constant()->getd();
 #ifdef _LP64
       array->append(new ConstantIntValue((jint)0));
       array->append(new ConstantDoubleValue(d));
@@ -994,7 +997,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       break;
     }
     case Type::Long: {
-      jlong d = t->is_long()->get_con();
+      jlong d = t->as_long()->get_con();
 #ifdef _LP64
       array->append(new ConstantIntValue((jint)0));
       array->append(new ConstantLongValue(d));
@@ -1154,13 +1157,13 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         scval = PhaseOutput::sv_for_node_id(objs, spobj->_idx);
         if (scval == nullptr) {
           const Type *t = spobj->bottom_type();
-          ciKlass* cik = t->is_oopptr()->exact_klass();
+          ciKlass* cik = t->as_oopptr()->exact_klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
           assert(!cik->is_value_klass(), "Synchronization on value object?");
           ScopeValue* properties = nullptr;
           if (cik->is_array_klass() && !cik->is_type_array_klass()) {
-            properties = new ConstantIntValue(array_description_value(t->is_aryptr()));
+            properties = new ConstantIntValue(array_description_value(t->as_aryptr()));
           }
           ObjectValue* sv = new ObjectValue(spobj->_idx,
                                             new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()), true, properties);
@@ -1213,7 +1216,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         }
       } else {
         const TypePtr *tp = obj_node->get_ptr_type();
-        scval = new ConstantOopWriteValue(tp->is_oopptr()->const_oop()->constant_encoding());
+        scval = new ConstantOopWriteValue(tp->as_oopptr()->const_oop()->constant_encoding());
       }
 
       OptoReg::Name box_reg = BoxLockNode::reg(box_node);
@@ -3058,8 +3061,8 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
       // Add precedence edge from following safepoint to use of derived pointer
       for (uint k = 1; k < m->req(); k++) {
         const Type *t = m->in(k)->bottom_type();
-        if (t->isa_oop_ptr() &&
-            t->is_ptr()->offset() != 0) {
+        if (t->is_oopptr() &&
+            t->as_ptr()->offset() != 0) {
           need_safept_prec = true;
           break;
         }

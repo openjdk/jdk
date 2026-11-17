@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+// Test method for TestMemoryEffectsNewInstance
+public class compiler/c1/TestMemoryEffectsNewInstanceGenerated version 55:0 {
+    public static Method test:"()I" stack 2 locals 0 {
+        // Write 0 to VICTIM.value from the Java file.
+        getstatic Field compiler/c1/TestMemoryEffectsNewInstance.VICTIM:"Lcompiler/c1/TestMemoryEffectsNewInstance$Victim;";
+        iconst_0;
+        putfield Field compiler/c1/TestMemoryEffectsNewInstance$Victim.value:"I";
+
+        // Call `new` on a class that side-effects in its static initializer and discard the object reference.
+        // Since `new` does not fully initialze the new instance if we do not explicitly invoke the instance initializer.
+        new class compiler/c1/TestMemoryEffectsNewInstance$Culprit;
+        pop;
+
+        // Reload and return VICTIM.value to observe the sideffect.
+        getstatic Field compiler/c1/TestMemoryEffectsNewInstance.VICTIM:"Lcompiler/c1/TestMemoryEffectsNewInstance$Victim;";
+        getfield Field compiler/c1/TestMemoryEffectsNewInstance$Victim.value:"I";
+        ireturn;
+    }
+}

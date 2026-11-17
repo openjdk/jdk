@@ -218,11 +218,11 @@ public:
   bool is_loaded()    const { return _loaded; }
   void set_loaded()         { _loaded = true; }
 
-  bool is_verified()  const;
+  bool is_verified()  const NOT_CDS_RETURN_(false);
   void set_verified();
 
   // Use atomic access to _not_entrant field.
-  bool not_entrant() const;
+  bool not_entrant() const NOT_CDS_RETURN_(false);
   void set_not_entrant();
   bool try_set_not_entrant();
 
@@ -877,6 +877,7 @@ private:
   uint*         _search_entries; // sorted by ID table [id, index] @search_table_offset
   AOTCodeEntry* _store_entries;  // Used when writing cache
   uint          _store_entries_cnt; // total entries count
+  uint          _store_nmethod_cnt; // total nmethod count
 
   // These guys can stash data to help log messages in the APH.  Move to the writer obj?
   uint _compile_id;
@@ -1033,11 +1034,11 @@ public:
   // publish all entries for a code blob in code cache address table
   static void publish_stub_addresses(CodeBlob &code_blob, BlobId id, AOTStubData *stub_data) NOT_CDS_RETURN;
 
-  static uint store_entries_cnt() {
-    if (is_on_for_dump()) {
-      return cache()->_store_entries_cnt;
+  static uint store_nmethod_cnt() {
+    if (is_on()) {
+      return cache()->_store_nmethod_cnt;
     }
-    return -1;
+    return 0;
   }
 
 // Static access

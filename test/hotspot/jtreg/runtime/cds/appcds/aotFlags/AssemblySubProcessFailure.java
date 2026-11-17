@@ -52,7 +52,7 @@ public class AssemblySubProcessFailure {
         //
         // The easiest way to trigger a failure is to pass a bad VM option, only to the
         // sub-process using JDK_AOT_VM_OPTIONS.
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTCacheOutput=" + aotCacheFile,
             "-cp", appJar, helloClass);
