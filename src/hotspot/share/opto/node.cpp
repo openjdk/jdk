@@ -562,6 +562,11 @@ Node *Node::clone() const {
     MachProjNode* mthis = this->as_MachProj();
     new (&mach->_rout) RegMask(mthis->_rout);
   }
+  if (this->is_MachKill()) {
+    MachKillNode* kill = n->as_MachKill();
+    MachKillNode* mthis = this->as_MachKill();
+    new (&kill->_mask) RegMask(mthis->_mask);
+  }
   if (n->is_Call()) {
     // CallGenerator is linked to the original node.
     CallGenerator* cg = n->as_Call()->generator();
