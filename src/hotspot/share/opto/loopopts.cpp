@@ -1188,7 +1188,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
     return n;
   }
 
-  if (n->isa_FlatArrayCheck()) {
+  if (n->is_FlatArrayCheck()) {
     move_flat_array_check_out_of_loop(n);
     return n;
   }
@@ -1886,8 +1886,8 @@ bool PhaseIdealLoop::safe_for_if_replacement(const Node* dom) const {
 // computation per usage to allow it to sink out of the loop.
 void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
   bool is_raw_to_oop_cast = n->is_ConstraintCast() &&
-                            n->in(1)->bottom_type()->isa_rawptr() &&
-                            !n->bottom_type()->isa_rawptr();
+                            n->in(1)->bottom_type()->is_rawptr() &&
+                            !n->bottom_type()->is_rawptr();
 
   if (has_ctrl(n) &&
       !n->is_Phi() &&
@@ -2322,7 +2322,7 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
 // "Nearly" because all Nodes have been cloned from the original in the loop,
 // but the fall-in edges to the Cmp are different.  Clone bool/Cmp pairs
 // through the Phi recursively, and return a Bool.
-CmpNode*PhaseIdealLoop::clone_bool(PhiNode* phi) {
+CmpNode* PhaseIdealLoop::clone_bool(PhiNode* phi) {
   uint i;
   // Convert this Phi into a Phi merging Bools
   for( i = 1; i < phi->req(); i++ ) {
@@ -2337,22 +2337,29 @@ CmpNode*PhaseIdealLoop::clone_bool(PhiNode* phi) {
   Node *sample_cmp = phi->in(1);
 
   // Make Phis to merge the Cmp's inputs.
-  PhiNode *phi1 = new PhiNode( phi->in(0), Type::TOP );
-  PhiNode *phi2 = new PhiNode( phi->in(0), Type::TOP );
-  for( uint j = 1; j < phi->req(); j++ ) {
-    Node *cmp_top = phi->in(j); // Inputs are all Cmp or TOP
-    Node *n1, *n2;
-    if( cmp_top->is_Cmp() ) {
-      n1 = cmp_top->in(1);
-      n2 = cmp_top->in(2);
+  // The Cmp could be a FlatArrayCheck node: input 1 is then memory and a memory Phi with the right address type
+  // needs to be created.
+  PhiNode* phi1 = nullptr;
+  PhiNode* phi2 = new PhiNode(phi->in(0), Type::TOP);
+  for (uint j = 1; j < phi->req(); j++) {
+    Node* cmp = phi->in(j); // Inputs are all Cmp
+    Node* n1, *n2;
+    assert(cmp->is_Cmp(), "");
+    n1 = cmp->in(1);
+    n2 = cmp->in(2);
+
+    if (phi1 == nullptr) {
+      phi1 = PhiNode::make(phi->in(0), n1);
     } else {
-      n1 = n2 = cmp_top;
+      phi1->set_req(j, n1);
+      phi1->set_type(phi1->type()->meet_speculative(n1->bottom_type()));
     }
-    phi1->set_req( j, n1 );
-    phi2->set_req( j, n2 );
-    phi1->set_type(phi1->type()->meet_speculative(n1->bottom_type()));
+    phi2->set_req(j, n2);
+    assert(phi1->bottom_type() != Type::MEMORY || cmp->is_FlatArrayCheck(), "only FlatArrayCheck has a memory input");
     phi2->set_type(phi2->type()->meet_speculative(n2->bottom_type()));
+    assert(phi2->bottom_type() != Type::MEMORY, "no memory input to a Cmp");
   }
+  assert(phi1 != nullptr, "");
 
   // See if these Phis have been made before.
   // Register with optimizer
@@ -3028,14 +3035,13 @@ void PhaseIdealLoop::clone_loop_body(const Node_List<Node>& body, Node_List<Node
 // being a cycle involving an add and a phi,
 // with an optional truncation (left-shift followed by a right-shift)
 // of the add. Returns zero if not an iv.
-int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
-  const TypeInteger* ttype = nullptr;
-  if (!iff->is_If() || iff->in(1) == nullptr || !iff->in(1)->is_Bool()) {
+int PhaseIdealLoop::stride_of_possible_iv(IfNode* iff) {
+  BoolNode* bl = Node::isa<BoolNode>(iff->in(1));
+  if (bl == nullptr) {
     return 0;
   }
-  BoolNode* bl = iff->in(1)->as_Bool();
   Node* cmp = bl->in(1);
-  if (!cmp || (cmp->Opcode() != Op_CmpI && cmp->Opcode() != Op_CmpU)) {
+  if (!Node::is_exact<Op_CmpI>(cmp) && !Node::is_exact<Op_CmpU>(cmp)) {
     return 0;
   }
   // Must have an invariant operand
@@ -3072,7 +3078,7 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
     }
   }
   if (add2 != nullptr) {
-    const TypeInt* add2t = _igvn.type(add2)->is_int();
+    const TypeInt* add2t = _igvn.type(add2)->as_int();
     if (add2t->is_con()) {
       return add2t->get_con();
     }
@@ -3380,7 +3386,7 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree* lo
   //   -3 >=u -2
   // is false.
   Node* limit = cmpu->in(2);
-  const TypeInt* type_limit = _igvn.type(limit)->is_int();
+  const TypeInt* type_limit = _igvn.type(limit)->as_int();
   if (type_limit->_lo < 0) {
     return nullptr;
   }
@@ -3999,25 +4005,25 @@ bool PhaseIdealLoop::partial_peel(IdealLoopTree* loop, Node_List<Node>& old_new)
   IfNode *peel_if = nullptr;
   IfNode *peel_if_cmpu = nullptr;
 
-  Node *iff = loop->tail();
-  while (iff != head) {
-    if (iff->is_If()) {
-      Node *ctrl = get_ctrl(iff->in(1));
+  Node* next = loop->tail();
+  while (next != head) {
+    if (IfNode* iff = next->isa_If(); iff != nullptr) {
+      Node *ctrl = get_ctrl(next->in(1));
       if (ctrl->is_top()) return false; // Dead test on live IF.
       // If loop-varying exit-test, check for induction variable
       if (loop->is_member(get_loop(ctrl)) &&
           loop->is_loop_exit(iff) &&
           is_possible_iv_test(iff)) {
-        Node* cmp = iff->in(1)->in(1);
+        Node* cmp = next->in(1)->in(1);
         if (cmp->Opcode() == Op_CmpI) {
-          peel_if = iff->as_If();
+          peel_if = iff;
         } else {
           assert(cmp->Opcode() == Op_CmpU, "must be CmpI or CmpU");
-          peel_if_cmpu = iff->as_If();
+          peel_if_cmpu = iff;
         }
       }
     }
-    iff = idom(iff);
+    next = idom(next);
   }
 
   // Prefer signed compare over unsigned compare.

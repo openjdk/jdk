@@ -28,22 +28,44 @@ import com.sun.org.apache.bcel.internal.classfile.AnnotationElementValue;
 import com.sun.org.apache.bcel.internal.classfile.ElementValue;
 
 /**
+ * Generates annotation element values.
+ *
  * @since 6.0
  */
 public class AnnotationElementValueGen extends ElementValueGen {
     // For annotation element values, this is the annotation
     private final AnnotationEntryGen a;
 
+    /**
+     * Constructs an AnnotationElementValueGen.
+     *
+     * @param value The annotation element value.
+     * @param cpool The constant pool generator.
+     * @param copyPoolEntries whether to copy pool entries.
+     */
     public AnnotationElementValueGen(final AnnotationElementValue value, final ConstantPoolGen cpool, final boolean copyPoolEntries) {
         super(ANNOTATION, cpool);
         a = new AnnotationEntryGen(value.getAnnotationEntry(), cpool, copyPoolEntries);
     }
 
+    /**
+     * Constructs an AnnotationElementValueGen.
+     *
+     * @param a The annotation entry generator.
+     * @param cpool The constant pool generator.
+     */
     public AnnotationElementValueGen(final AnnotationEntryGen a, final ConstantPoolGen cpool) {
         super(ANNOTATION, cpool);
         this.a = a;
     }
 
+    /**
+     * Constructs an AnnotationElementValueGen.
+     *
+     * @param type The type.
+     * @param annotation The annotation.
+     * @param cpool The constant pool generator.
+     */
     public AnnotationElementValueGen(final int type, final AnnotationEntryGen annotation, final ConstantPoolGen cpool) {
         super(type, cpool);
         if (type != ANNOTATION) {
@@ -58,12 +80,19 @@ public class AnnotationElementValueGen extends ElementValueGen {
         a.dump(dos);
     }
 
+    /**
+     * Gets the annotation.
+     *
+     * @return The annotation.
+     */
     public AnnotationEntryGen getAnnotation() {
         return a;
     }
 
     /**
-     * Return immutable variant of this AnnotationElementValueGen
+     * Returns an immutable variant of this AnnotationElementValueGen.
+     *
+     * @return An immutable variant of this AnnotationElementValueGen.
      */
     @Override
     public ElementValue getElementValue() {

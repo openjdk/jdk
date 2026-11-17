@@ -1034,7 +1034,7 @@ class CallStubImpl {
   // This doesn't need to be accurate to the byte, but it
   // must be larger than or equal to the real size of the stub.
   static uint size_call_stub() {
-    return MacroAssembler::max_reloc_call_address_stub_size();
+    return MacroAssembler::max_address_stub_size();
   }
 
   // Number of relocations needed by a call stub.
@@ -1648,7 +1648,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
 
   assert(src_lo != OptoReg::Bad && dst_lo != OptoReg::Bad, "must move at least 1 register");
 
-  if (src_hi != OptoReg::Bad && !bottom_type()->isa_pvectmask()) {
+  if (src_hi != OptoReg::Bad && !bottom_type()->is_pvectmask()) {
     assert((src_lo & 1) == 0 && src_lo + 1 == src_hi &&
            (dst_lo & 1) == 0 && dst_lo + 1 == dst_hi,
            "expected aligned-adjacent pairs");
@@ -1667,8 +1667,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
   // address also needs t0 to materialize an offset outside the 12-bit range.
   if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
     int last_dst_offset = dst_offset;
-    if (bottom_type()->isa_vect() != nullptr) {
-      if (!bottom_type()->isa_pvectmask()) {
+    if (bottom_type()->is_vect()) {
+      if (!bottom_type()->is_pvectmask()) {
         assert(ideal_reg() == Op_VecA, "Must be Op_VecA");
         int vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
         last_dst_offset += vector_reg_size_in_bytes - 8;
@@ -1688,8 +1688,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     }
   }
 
-  if (bottom_type()->isa_vect() != nullptr && masm != nullptr) {
-    if (!bottom_type()->isa_pvectmask()) {
+  if (bottom_type()->is_vect() && masm != nullptr) {
+    if (!bottom_type()->is_pvectmask()) {
       assert(ideal_reg() == Op_VecA, "Must be Op_VecA");
       int vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
@@ -1812,11 +1812,11 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     } else {
       st->print("%s", Matcher::regName[dst_lo]);
     }
-    if (bottom_type()->isa_vect() && !bottom_type()->isa_pvectmask()) {
+    if (bottom_type()->is_vect() && !bottom_type()->is_pvectmask()) {
       assert(ideal_reg() == Op_VecA, "Must be Op_VecA");
       int vsize = Matcher::scalable_vector_reg_size(T_BYTE) * 8;
       st->print("\t# vector spill size = %d", vsize);
-    } else if (bottom_type()->isa_pvectmask()) {
+    } else if (bottom_type()->is_pvectmask()) {
       assert(ideal_reg() == Op_RegVectMask, "Must be Op_RegVectMask");
       assert(Matcher::supports_scalable_vector(), "bad register type for spill");
       int vsize = Matcher::scalable_predicate_reg_slots() * 32;
@@ -2229,10 +2229,10 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   assert_cond(addp != nullptr);
   for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
     Node* u = addp->fast_out(i);
-    if (u != nullptr && u->is_Mem()) {
-      int opsize = u->as_Mem()->memory_size();
+    if (MemNode* u_mem = Node::isa<MemNode>(u); u_mem != nullptr) {
+      int opsize = u_mem->memory_size();
       assert(opsize > 0, "unexpected memory operand size");
-      if (u->as_Mem()->memory_size() != (1 << shift)) {
+      if (u_mem->memory_size() != (1 << shift)) {
         return false;
       }
     }
@@ -2242,11 +2242,7 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
 
 // Binary src (Replicate scalar/immediate)
 static bool is_vector_scalar_binary_pattern(Node* n, Node* m) {
-  if (n == nullptr || m == nullptr) {
-    return false;
-  }
-
-  if (m->Opcode() != Op_Replicate) {
+  if (n == nullptr || !Node::is_exact<Op_Replicate>(m)) {
     return false;
   }
 
@@ -2276,11 +2272,8 @@ static bool is_vector_scalar_binary_pattern(Node* n, Node* m) {
 // (XorV src (Replicate m1))
 // (XorVMask src (MaskAll m1))
 static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
-  if (n != nullptr && m != nullptr) {
-    return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
-           VectorNode::is_all_ones_vector(m);
-  }
-  return false;
+  return (Node::is_exact<Op_XorV>(n) || Node::is_exact<Op_XorVMask>(n)) &&
+         m != nullptr && VectorNode::is_all_ones_vector(m);
 }
 
 // 'n' is the current user of input 'm', which is being considered for cloning.
@@ -9612,8 +9605,8 @@ instruct encodeHeapOop_not_null(iRegNNoSp dst, iRegP src) %{
 %}
 
 instruct decodeHeapOop(iRegPNoSp dst, iRegN src) %{
-  predicate(n->bottom_type()->is_ptr()->ptr() != TypePtr::NotNull &&
-            n->bottom_type()->is_ptr()->ptr() != TypePtr::Constant);
+  predicate(n->bottom_type()->as_ptr()->ptr() != TypePtr::NotNull &&
+            n->bottom_type()->as_ptr()->ptr() != TypePtr::Constant);
   match(Set dst (DecodeN src));
 
   ins_cost(ALU_COST);
@@ -9627,8 +9620,8 @@ instruct decodeHeapOop(iRegPNoSp dst, iRegN src) %{
 %}
 
 instruct decodeHeapOop_not_null(iRegPNoSp dst, iRegN src) %{
-  predicate(n->bottom_type()->is_ptr()->ptr() == TypePtr::NotNull ||
-            n->bottom_type()->is_ptr()->ptr() == TypePtr::Constant);
+  predicate(n->bottom_type()->as_ptr()->ptr() == TypePtr::NotNull ||
+            n->bottom_type()->as_ptr()->ptr() == TypePtr::Constant);
   match(Set dst (DecodeN src));
 
   ins_cost(ALU_COST);
