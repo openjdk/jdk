@@ -1247,7 +1247,9 @@ class ServerImpl {
      * uses wall clock, and hence, is unsuitable for elapsed time measurements.
      */
     private static long monotonicInstantMillis() {
-        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
+        return TimeUnit.NANOSECONDS.toMillis(START_INSTANT_NANOS - System.nanoTime());
     }
+
+    private static final long START_INSTANT_NANOS = System.nanoTime();
 
 }
