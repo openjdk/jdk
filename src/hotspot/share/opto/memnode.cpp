@@ -41,6 +41,7 @@
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/connode.hpp"
@@ -52,6 +53,7 @@
 #include "opto/mempointer.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
@@ -805,19 +807,8 @@ ArrayCopyNode* MemNode::find_array_copy_clone(Node* ld_alloc, Node* mem) const {
   return nullptr;
 }
 
-// The logic for reordering loads and stores uses four steps:
-// (a) Walk carefully past stores and initializations which we
-//     can prove are independent of this load.
-// (b) Observe that the next memory state makes an exact match
-//     with self (load or store), and locate the relevant store.
-// (c) Ensure that, if we were to wire self directly to the store,
-//     the optimizer would fold it up somehow.
-// (d) Do the rewiring, and return, depending on some other part of
-//     the optimizer to fold up the load.
-// This routine handles steps (a) and (b).  Steps (c) and (d) are
-// specific to loads and stores, so they are handled by the callers.
-// (Currently, only LoadNode::Ideal has steps (c), (d).  More later.)
-//
+// Walk carefully past stores and initializations which we can prove to be independent of this
+// access
 Node* MemNode::find_previous_store(PhaseGVN* phase) {
   AccessAnalyzer analyzer(phase, this);
 
@@ -830,9 +821,9 @@ Node* MemNode::find_previous_store(PhaseGVN* phase) {
       return phase->C->top();
     } else if (cnt <= 0) {
       // Caught in cycle or a complicated dance?
-      return nullptr;
+      break;
     } else if (mem->is_Phi()) {
-      return nullptr;
+      break;
     }
 
     AccessAnalyzer::AccessIndependence independence = analyzer.detect_access_independence(mem);
@@ -841,13 +832,11 @@ Node* MemNode::find_previous_store(PhaseGVN* phase) {
       mem = independence.mem;
       assert(mem != nullptr, "must not be nullptr");
     } else {
-      // (b) found the store that this access observes if this is not null
-      // Otherwise, give up if it is null
-      return independence.mem;
+      return independence.mem == nullptr ? mem : independence.mem;
     }
   }
 
-  return nullptr;              // bail out
+  return mem;
 }
 
 //----------------------calculate_adr_type-------------------------------------
@@ -2126,10 +2115,10 @@ AllocateNode* LoadNode::is_new_object_mark_load() const {
 // If the offset is constant and the base is an object allocation,
 // try to hook me up to the exact initializing store.
 Node* LoadNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (has_pinned_control_dependency()) { return nullptr; }
   Node* p = Ideal_load_common(phase, can_reshape);
-  if (p == NodeSentinel) { return nullptr; }
-
+  if (p == NodeSentinel) {
+    return nullptr;
+  }
   if (p == nullptr && !can_reshape) {
     phase->record_for_igvn(this);
   }
@@ -2139,8 +2128,28 @@ Node* LoadNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
   Node* p = MemNode::Ideal_common(phase, can_reshape);
-  if (p != nullptr) { return p; }
+  if (p != nullptr) {
+    return p;
+  }
 
+  if (has_pinned_control_dependency()) {
+    return nullptr;
+  }
+
+  if (optimize_inputs(phase, can_reshape)) {
+    return this;
+  }
+
+  // Try to fold the load after its inputs have been optimized
+  if (const Type* con = try_constant_fold(phase); con != nullptr) {
+    return ConNode::make(con);
+  }
+
+  return try_fold(phase, can_reshape);
+}
+ 
+// Find better inputs for a load
+bool LoadNode::optimize_inputs(PhaseGVN* phase, bool can_reshape) {
   Node* ctrl = in(MemNode::Control);
   Node* address = in(MemNode::Address);
 
@@ -2155,7 +2164,7 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
       (depends_only_on_test() || has_unknown_control_dependency())) {
     ctrl = ctrl->in(0);
     set_req(MemNode::Control,ctrl);
-    return this;
+    return true;
   }
 
   intptr_t ignore = 0;
@@ -2171,7 +2180,7 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
         && all_controls_dominate(base, phase->C->start(), phase)) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, nullptr);
-      return this;
+      return true;
     }
   }
 
@@ -2183,27 +2192,7 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
     Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, this, phase);
     if (opt_mem != mem) {
       set_req_X(MemNode::Memory, opt_mem, phase);
-      return this;
-    }
-    const TypeOopPtr* t_oop = addr_t->isa_oopptr();
-    if ((t_oop != nullptr) &&
-        (t_oop->is_known_instance_field() ||
-         t_oop->is_ptr_to_boxed_value())) {
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      assert(igvn != nullptr, "must be PhaseIterGVN when can_reshape is true");
-      if (igvn->_worklist.member(opt_mem)) {
-        // Delay this transformation until memory Phi is processed.
-        igvn->_worklist.push(this);
-        return NodeSentinel;
-      }
-      // Split instance field load through Phi.
-      Node* result = split_through_phi(phase);
-      if (result != nullptr) return result;
-
-      if (t_oop->is_ptr_to_boxed_value()) {
-        Node* result = eliminate_autobox(igvn);
-        if (result != nullptr) return result;
-      }
+      return true;
     }
   }
 
@@ -2223,45 +2212,124 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
           ctl = IfNode::up_one_dom(ctl);
           if (ctl == use->in(0)) {
             set_req(0, use->in(0));
-            return this;
+            return true;
           }
         }
       }
     }
   }
 
-  // Check for prior store with a different base or offset; make Load
-  // independent.  Skip through any number of them.  Bail out if the stores
-  // are in an endless dead cycle and report no progress.  This is a key
-  // transform for Reflection.  However, if after skipping through the Stores
-  // we can't then fold up against a prior store do NOT do the transform as
-  // this amounts to using the 'Oracle' model of aliasing.  It leaves the same
-  // array memory alive twice: once for the hoisted Load and again after the
-  // bypassed Store.  This situation only works if EVERYBODY who does
-  // anti-dependence work knows how to bypass.  I.e. we need all
-  // anti-dependence checks to ask the same Oracle.  Right now, that Oracle is
-  // the alias index stuff.  So instead, peek through Stores and IFF we can
-  // fold up, do so.
+  return false;
+}
+
+const Type* LoadNode::try_constant_fold(PhaseGVN* phase) const {
+  Node* adr = in(MemNode::Address);
+  const TypePtr* tp = phase->type(adr)->isa_ptr();
+  if (tp == nullptr || tp->empty()) {
+    return nullptr;
+  }
+
+  int off = tp->offset();
+  if (off == Type::OffsetBot) {
+    return nullptr;
+  }
+
+  ciObject* const_oop = nullptr;
+  if (const TypeOopPtr* toop = tp->isa_oopptr(); toop != nullptr && toop->const_oop() != nullptr) {
+    const_oop = toop->const_oop();
+  } else {
+    return nullptr;
+  }
+
+  if (const TypeAryPtr* ary = tp->isa_aryptr(); ary != nullptr) {
+    // Try to constant-fold a stable array element, make sure the reference is not into the header
+    const int min_base_off = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+    const bool off_beyond_header = off >= min_base_off;
+    if (FoldStableValues && !is_mismatched_access() && ary->is_stable() && off_beyond_header && adr->is_AddP()) {
+      int stable_dimension = (ary->stable_dimension() > 0 ? ary->stable_dimension() - 1 : 0);
+      const Type* con_type = Type::make_constant_from_array_element(const_oop->as_array(), off, ary->field_offset().get(),
+                                                                    stable_dimension,
+                                                                    value_basic_type(), is_unsigned());
+      if (con_type != nullptr) {
+        return con_type;
+      }
+    }
+  } else if (const TypeInstPtr* tinst = tp->isa_instptr(); tinst != nullptr) {
+    // Optimize loads from constant fields.
+    if (!is_mismatched_access() && const_oop->is_instance()) {
+      const Type* con_type = Type::make_constant_from_field(const_oop->as_instance(), off, is_unsigned(), value_basic_type());
+      if (con_type != nullptr) {
+        return con_type;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+// Try to find the result of the load
+Node* LoadNode::try_fold(PhaseGVN* phase, bool can_reshape) {
+  Node* mem = in(MemNode::Memory);
+  Node* address = in(MemNode::Address);
+  const TypePtr* addr_t = phase->type(address)->isa_ptr();
+  if (can_reshape && addr_t != nullptr) {
+    const TypeOopPtr* t_oop = addr_t->isa_oopptr();
+    if ((t_oop != nullptr) &&
+        (t_oop->is_known_instance_field() ||
+         t_oop->is_ptr_to_boxed_value())) {
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      assert(igvn != nullptr, "must be PhaseIterGVN when can_reshape is true");
+      if (igvn->_worklist.member(mem)) {
+        // Delay this transformation until memory Phi is processed.
+        igvn->_worklist.push(this);
+        return nullptr;
+      }
+      // Split instance field load through Phi.
+      Node* result = split_through_phi(phase);
+      if (result != nullptr) {
+        return result;
+      }
+
+      if (t_oop->is_ptr_to_boxed_value()) {
+        Node* result = eliminate_autobox(igvn);
+        if (result != nullptr) {
+          return result;
+        }
+      }
+    }
+  }
+
+  // Check for prior store with a different base or offset; make Load independent. Skip through any
+  // number of them. Bail out if the stores are in an endless dead cycle and report no progress.
+  // This is a key transform for Reflection.
   Node* prev_mem = find_previous_store(phase);
-  if (prev_mem != nullptr && prev_mem->is_top()) {
+  if (prev_mem->is_top()) {
     // find_previous_store returns top when the access is dead
     return prev_mem;
   }
-  if (prev_mem != nullptr) {
-    Node* value = can_see_arraycopy_value(prev_mem, phase);
-    if (value != nullptr) {
-      return value;
-    }
+
+  if (Node* value = can_see_arraycopy_value(prev_mem, phase); value != nullptr) {
+    return value;
   }
-  // Steps (a), (b):  Walk past independent stores to find an exact match.
-  if (prev_mem != nullptr && prev_mem != in(MemNode::Memory)) {
-    // (c) See if we can fold up on the spot, but don't fold up here.
-    // Fold-up might require truncation (for LoadB/LoadS/LoadUS) or
-    // just return a prior value, which is done by Identity calls.
-    if (can_see_stored_value_through_membars(prev_mem, phase)) {
-      // Make ready for step (d):
-      set_req_X(MemNode::Memory, prev_mem, phase);
-      return this;
+
+  if (Node* value = can_see_stored_value_through_membars(prev_mem, phase); value != nullptr) {
+    Node* normalized = value;
+    switch (Opcode()) {
+      case Op_LoadB:  normalized = Compile::narrow_value(T_BYTE,    value, _type, phase, false); break;
+      case Op_LoadUB: normalized = Compile::narrow_value(T_BOOLEAN, value, _type, phase, false); break;
+      case Op_LoadS:  normalized = Compile::narrow_value(T_SHORT,   value, _type, phase, false); break;
+      case Op_LoadUS: normalized = Compile::narrow_value(T_CHAR,    value, _type, phase, false); break;
+      case Op_LoadN:
+        if (value->bottom_type()->is_ptr()) {
+          normalized = new EncodePNode(value, _type);
+        }
+        break;
+    }
+
+    if (normalized != value) {
+      return normalized;
+    } else {
+      return new IdentityNode(value);
     }
   }
 
@@ -2316,16 +2384,32 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     return _type;
   }
 
-  // If load can see a previous constant store, use that.
+  if (const Type* con = try_constant_fold(phase); con != nullptr) {
+    return con;
+  }
+
+  // If load can see a previous constant store, use that. We can't delay until Ideal call since a
+  // singleton Value is needed for split_thru_phi optimization.
   Node* value = can_see_stored_value_through_membars(mem, phase);
   if (value != nullptr && value->is_Con()) {
     if (phase->type(value)->is_ptr() && _type->is_narrowoop()) {
       return phase->type(value)->make_narrowoop();
-    } else {
+    } else if (value->bottom_type()->higher_equal(_type)) {
       assert(value->bottom_type()->higher_equal(_type), "sanity");
       return phase->type(value);
+    } else if (value->is_ConI()) {
+      int con = value->get_int();
+      switch (Opcode()) {
+        case Op_LoadB:  con = jbyte(con);   break;
+        case Op_LoadUB: con = jubyte(con);  break;
+        case Op_LoadS:  con = jshort(con);  break;
+        case Op_LoadUS: con = jushort(con); break;
+        default: ShouldNotReachHere();
+      }
+      return TypeInt::make(con);
     }
   }
+
   // Try to guess loaded type from pointer type
   if (tp->is_aryptr()) {
     const TypeAryPtr* ary = tp->as_aryptr();
@@ -2339,21 +2423,6 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     // possible base offset.
     const int min_base_off = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     const bool off_beyond_header = (off >= min_base_off);
-
-    // Try to constant-fold a stable array element.
-    if (FoldStableValues && !is_mismatched_access() && ary->is_stable()) {
-      // Make sure the reference is not into the header and the offset is constant
-      ciObject* aobj = ary->const_oop();
-      if (aobj != nullptr && off_beyond_header && adr->is_AddP() && off != Type::OffsetBot) {
-        int stable_dimension = (ary->stable_dimension() > 0 ? ary->stable_dimension() - 1 : 0);
-        const Type* con_type = Type::make_constant_from_array_element(aobj->as_array(), off, ary->field_offset().get(),
-                                                                      stable_dimension,
-                                                                      value_basic_type(), is_unsigned());
-        if (con_type != nullptr) {
-          return con_type;
-        }
-      }
-    }
 
     // Don't do this for integer types. There is only potential profit if
     // the element type t is lower than _type; that is, for int types, if _type is
@@ -2429,15 +2498,6 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
           bool is_narrow_oop = (bt == T_NARROWOOP);
           return Type::make_from_constant(map, true, 1, is_narrow_oop);
         }
-      }
-    }
-
-    // Optimize loads from constant fields.
-    ciObject* const_oop = tinst->const_oop();
-    if (!is_mismatched_access() && off != Type::OffsetBot && const_oop != nullptr && const_oop->is_instance()) {
-      const Type* con_type = Type::make_constant_from_field(const_oop->as_instance(), off, is_unsigned(), bt);
-      if (con_type != nullptr) {
-        return con_type;
       }
     }
   } else if (tp->base() == Type::KlassPtr || tp->base() == Type::InstKlassPtr || tp->base() == Type::AryKlassPtr) {
@@ -2616,153 +2676,6 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
 // Do we Match on this edge index or not?  Match only the address.
 uint LoadNode::match_edge(uint idx) const {
   return idx == MemNode::Address;
-}
-
-//--------------------------LoadBNode::Ideal--------------------------------------
-//
-//  If the previous store is to the same address as this load,
-//  and the value stored was larger than a byte, replace this load
-//  with the value stored truncated to a byte.  If no truncation is
-//  needed, the replacement is done in LoadNode::Identity().
-//
-Node* LoadBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value_through_membars(mem, phase);
-  if (value != nullptr) {
-    Node* narrow = Compile::narrow_value(T_BYTE, value, _type, phase, false);
-    if (narrow != value) {
-      return narrow;
-    }
-  }
-  // Identity call will handle the case where truncation is not needed.
-  return LoadNode::Ideal(phase, can_reshape);
-}
-
-const Type* LoadBNode::Value(PhaseGVN* phase) const {
-  Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value_through_membars(mem, phase);
-  if (value != nullptr && value->is_Con() &&
-      !value->bottom_type()->higher_equal(_type)) {
-    // If the input to the store does not fit with the load's result type,
-    // it must be truncated. We can't delay until Ideal call since
-    // a singleton Value is needed for split_thru_phi optimization.
-    int con = value->get_int();
-    return TypeInt::make((con << 24) >> 24);
-  }
-  return LoadNode::Value(phase);
-}
-
-//--------------------------LoadUBNode::Ideal-------------------------------------
-//
-//  If the previous store is to the same address as this load,
-//  and the value stored was larger than a byte, replace this load
-//  with the value stored truncated to a byte.  If no truncation is
-//  needed, the replacement is done in LoadNode::Identity().
-//
-Node* LoadUBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value_through_membars(mem, phase);
-  if (value != nullptr) {
-    Node* narrow = Compile::narrow_value(T_BOOLEAN, value, _type, phase, false);
-    if (narrow != value) {
-      return narrow;
-    }
-  }
-  // Identity call will handle the case where truncation is not needed.
-  return LoadNode::Ideal(phase, can_reshape);
-}
-
-const Type* LoadUBNode::Value(PhaseGVN* phase) const {
-  Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value_through_membars(mem, phase);
-  if (value != nullptr && value->is_Con() &&
-      !value->bottom_type()->higher_equal(_type)) {
-    // If the input to the store does not fit with the load's result type,
-    // it must be truncated. We can't delay until Ideal call since
-    // a singleton Value is needed for split_thru_phi optimization.
-    int con = value->get_int();
-    return TypeInt::make(con & 0xFF);
-  }
-  return LoadNode::Value(phase);
-}
-
-//--------------------------LoadUSNode::Ideal-------------------------------------
-//
-//  If the previous store is to the same address as this load,
-//  and the value stored was larger than a char, replace this load
-//  with the value stored truncated to a char.  If no truncation is
-//  needed, the replacement is done in LoadNode::Identity().
-//
-Node* LoadUSNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value_through_membars(mem, phase);
-  if (value != nullptr) {
-    Node* narrow = Compile::narrow_value(T_CHAR, value, _type, phase, false);
-    if (narrow != value) {
-      return narrow;
-    }
-  }
-  // Identity call will handle the case where truncation is not needed.
-  return LoadNode::Ideal(phase, can_reshape);
-}
-
-const Type* LoadUSNode::Value(PhaseGVN* phase) const {
-  Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value_through_membars(mem, phase);
-  if (value != nullptr && value->is_Con() &&
-      !value->bottom_type()->higher_equal(_type)) {
-    // If the input to the store does not fit with the load's result type,
-    // it must be truncated. We can't delay until Ideal call since
-    // a singleton Value is needed for split_thru_phi optimization.
-    int con = value->get_int();
-    return TypeInt::make(con & 0xFFFF);
-  }
-  return LoadNode::Value(phase);
-}
-
-//--------------------------LoadSNode::Ideal--------------------------------------
-//
-//  If the previous store is to the same address as this load,
-//  and the value stored was larger than a short, replace this load
-//  with the value stored truncated to a short.  If no truncation is
-//  needed, the replacement is done in LoadNode::Identity().
-//
-Node* LoadSNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value_through_membars(mem, phase);
-  if (value != nullptr) {
-    Node* narrow = Compile::narrow_value(T_SHORT, value, _type, phase, false);
-    if (narrow != value) {
-      return narrow;
-    }
-  }
-  // Identity call will handle the case where truncation is not needed.
-  return LoadNode::Ideal(phase, can_reshape);
-}
-
-const Type* LoadSNode::Value(PhaseGVN* phase) const {
-  Node* mem = in(MemNode::Memory);
-  Node* value = can_see_stored_value_through_membars(mem, phase);
-  if (value != nullptr && value->is_Con() &&
-      !value->bottom_type()->higher_equal(_type)) {
-    // If the input to the store does not fit with the load's result type,
-    // it must be truncated. We can't delay until Ideal call since
-    // a singleton Value is needed for split_thru_phi optimization.
-    int con = value->get_int();
-    return TypeInt::make((con << 16) >> 16);
-  }
-  return LoadNode::Value(phase);
-}
-
-Node* LoadNNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  // Can see the corresponding value, may need to add an EncodeP
-  Node* value = can_see_stored_value_through_membars(in(Memory), phase);
-  if (value != nullptr && phase->type(value)->is_ptr() && type()->is_narrowoop()) {
-    return new EncodePNode(value, type());
-  }
-
-  // Identity call will handle the case where EncodeP is unnecessary
-  return LoadNode::Ideal(phase, can_reshape);
 }
 
 //=============================================================================
