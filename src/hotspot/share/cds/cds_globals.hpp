@@ -99,6 +99,11 @@
            "do not map the archive")                                        \
            range(0, 2)                                                      \
                                                                             \
+  product(bool, AOTStressArchiveUnmapping, false, DIAGNOSTIC,               \
+           "Iff ArchiveRelocationMode is 1, always map the archive at  "    \
+           "the preferred address, unmap it, and then map at alternative "  \
+           "address")                                                       \
+                                                                            \
   /*========== New "AOT" flags =========================================*/  \
   /* The following 3 flags are aliases of -Xshare:dump,                 */  \
   /* -XX:SharedArchiveFile=..., etc. See CDSConfig::check_flag_aliases()*/  \

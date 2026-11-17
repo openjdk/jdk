@@ -2274,7 +2274,7 @@ void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
             _worklist.push(in);
           }
           if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
-              in->is_Proj() && in->in(0) != nullptr && in->in(0)->is_Initialize()) {
+              in->is_Proj() && Node::is<InitializeNode>(in->in(0))) {
             // A Load that directly follows an InitializeNode is
             // going away. The Stores that follow are candidates
             // again to be captured by the InitializeNode.
@@ -2537,10 +2537,10 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
             Node* castii = in1->fast_out(j);
             if (castii->is_CastII() && castii->as_CastII()->carry_dependency()) {
               // Find If.
-              if (castii->in(0) != nullptr && castii->in(0)->in(0) != nullptr && castii->in(0)->in(0)->is_If()) {
+              if (castii->in(0) != nullptr && Node::is<IfNode>(castii->in(0)->in(0))) {
                 Node* ifnode = castii->in(0)->in(0);
                 // Check that if connects to the cmp
-                if (ifnode->in(1) != nullptr && ifnode->in(1)->is_Bool() && ifnode->in(1)->in(1) == cmp) {
+                if (Node::is<BoolNode>(ifnode->in(1)) && ifnode->in(1)->in(1) == cmp) {
                   worklist.push(castii);
                 }
               }
@@ -2839,7 +2839,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // notification like above.
   if (use_op == Op_AddI) {
     for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
-      if (Node* u2 = use->fast_out(i); u2 != nullptr && u2->is_MinMax()) {
+      if (Node* u2 = use->fast_out(i); Node::is<MinMaxNode>(u2)) {
         add_users_to_worklist_if(worklist, u2, [](Node* u1) {
           return u1->is_MinMax();
         });
@@ -2915,8 +2915,8 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     Node* c = use;
     do {
       c = c->unique_ctrl_out_or_null();
-    } while (c != nullptr && c->is_Region());
-    if (c != nullptr && c->is_CallStaticJava() && c->as_CallStaticJava()->uncommon_trap_request() != 0) {
+    } while (Node::is<RegionNode>(c));
+    if (auto call = Node::isa<CallStaticJavaNode>(c); call != nullptr && call->uncommon_trap_request() != 0) {
       worklist.push(c);
     }
   }
@@ -2996,10 +2996,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       // set_req_X() after clearing one input leaves the shared input with a
       // single user and has_special_unique_user() is true. 'u' is still being
       // disconnected, so a required input may already be null.
-      Node* in1 = u->in(1);
-      Node* in2 = u->in(2);
-      return (in1 != nullptr && in1->Opcode() == Op_Replicate) ||
-             (in2 != nullptr && in2->Opcode() == Op_Replicate);
+      return Node::is_exact<Op_Replicate>(u->in(1)) || Node::is_exact<Op_Replicate>(u->in(2));
     });
   }
 
@@ -3137,6 +3134,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     };
     use->visit_uses(push_phi_to_worklist, is_boundary);
+  }
+  // DecodeN of a Phi of EncodePs is transformed into a Phi of the EncodePs' inputs
+  if (use->is_Phi()) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->is_DecodeN();
+    });
   }
 }
 

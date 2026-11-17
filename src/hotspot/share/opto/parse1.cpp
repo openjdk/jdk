@@ -2291,11 +2291,10 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       // It is a bug if we create a phi which sees a garbage value on a live path.
 
       // Merging two value types?
-      if (phi != nullptr && phi->is_ValueType()) {
+      if (ValueTypeNode* vtm = Node::isa<ValueTypeNode>(phi); vtm != nullptr) { // Current value type
         // Reload current state because it may have been updated by ensure_phi
         assert(phi == map()->in(j), "unexpected value in map");
-        assert(phi->as_ValueType()->has_phi_inputs(r), "");
-        ValueTypeNode* vtm = phi->as_ValueType(); // Current value type
+        assert(vtm->has_phi_inputs(r), "");
         ValueTypeNode* vtn = n->as_ValueType(); // Incoming value type
         assert(vtm == phi, "Value type should have Phi input");
 
