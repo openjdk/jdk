@@ -1716,7 +1716,7 @@ FileMapInfo* AOTMetaspace::open_dynamic_archive() {
 //  true  = map at FileMapHeader::_requested_base_address
 //  false = map at an alternative address picked by OS.
 //  There are several paths that archive mapping may take:
-//  1. Unified placholder path. The placeholder API is used to reserve space, then map the archive directly into it.
+//  1. Unified placeholder path. The placeholder API is used to reserve space, then map the archive directly into it.
 //      This path is the first choice taken by all platforms when we attempt to map a requested base address.
 //  2. Legacy Windows path. If the Windows version is older than 1803 and does not support VirtualAlloc2/MapViewOfFile3,
 //      a race-prone path is taken. This path reserves memory, releases it,
@@ -2142,7 +2142,7 @@ char* AOTMetaspace::reserve_address_space_for_archives(FileMapInfo* static_mapin
                                      false /* exec */, false /* special */);
     MemTracker::record_virtual_memory_split_reserved(base_address, total_range_size,
                                                      ccs_begin_offset, mtClassShared, mtClass);
-    // Only the archive space remains a placeholder so we can interatively split and map into it later.
+    // Only the archive space remains a placeholder so we can iteratively split and map into it later.
     archive_placeholder = split.left;
     aot_log_info(aot)("Placeholders allocated successfully. Archive base: " INTPTR_FORMAT, p2i(archive_placeholder.base()));
     return archive_placeholder.base();
