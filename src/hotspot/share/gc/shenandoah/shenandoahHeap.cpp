@@ -208,6 +208,8 @@ jint ShenandoahHeap::initialize() {
 
   _soft_max_size.store_relaxed(clamp(SoftMaxHeapSize, min_capacity(), max_capacity()));
 
+  _humongous_budget_region_count.store_relaxed(_num_regions);
+
   _committed.store_relaxed(_initial_size);
 
   size_t heap_page_size   = UseLargePages ? os::large_page_size() : os::vm_page_size();
@@ -1779,6 +1781,16 @@ void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* 
   }
 }
 
+void ShenandoahHeap::record_humongous_triggered_gc() {
+  ShenandoahHeapLocker locker(lock());
+
+  size_t empty_humongous_region_sum = 0;
+  size_t empty_region_array_size = 0;
+  free_set()->build_empty_region_array(empty_humongous_region_sum, empty_region_array_size);
+  _empty_humongous_region_count_at_trigger.store_relaxed(empty_humongous_region_sum);
+  _humongous_triggered_gc.store_relaxed(true);
+}
+
 void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
   assert(gc_cause() != GCCause::_no_gc, "cause wasn't set");
 
@@ -1796,20 +1808,23 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
 
     _humongous_allocation_history.push(max, total, failed);
 
+    // humongous counts
     {
       ShenandoahHeapLocker locker(lock());
-      const size_t empty_region_array_size = free_set()->build_empty_region_array();
+      size_t empty_region_array_size = 0;
+      size_t empty_humongous_region_sum = 0;
+      free_set()->build_empty_region_array(empty_humongous_region_sum, empty_region_array_size);
       const double prob_failure = _humongous_allocation_history.probability_of_failure(
         free_set()->empty_region_array(),
         empty_region_array_size,
         ShenandoahHeuristicsHumongousGcCycleRecencyWeight
       );
-      const bool need_gc = _humongous_allocation_history.sample_count() >= ShenandoahHeuristicsHumongousMinSampleCount
+      const bool risk_high = _humongous_allocation_history.sample_count() >= ShenandoahHeuristicsHumongousMinSampleCount
         && prob_failure >= ShenandoahHeuristicsHumongousFailureProb;
-      _need_conc_gc_for_humongous.store_relaxed(need_gc);
+      _humongous_alloc_failure_risk_high.store_relaxed(risk_high);
       log_info(gc, ergo)("Humongous allocation failure probability: %.1f%%, %zu epochs in history%s",
                     prob_failure * 100, _humongous_allocation_history.sample_count(),
-                    need_gc ? ", need a concurrent gc" : "");
+                    risk_high ? ", humongous alloc failure risk high" : "");
 
       // Only count the part of each run usable by requests of the largest recent size:
       // a 2-region hole contributes nothing to 3-region requests.
@@ -1822,6 +1837,31 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
       log_debug(gc, ergo)("Humongous budget: %zu regions for request size %zu regions, %zu runs",
                          humongous_budget, k, empty_region_array_size);
       _humongous_budget_region_count.store_relaxed(humongous_budget);
+
+      const size_t sum_at_trigger = _empty_humongous_region_count_at_trigger.load_relaxed();
+      const bool triggered_by_humongous = _humongous_triggered_gc.exchange(false, memory_order_relaxed);
+      const size_t backoff_epochs_left = _humongous_alloc_backoff_epochs_left.load_relaxed();
+      const bool made_progress = sum_at_trigger < empty_humongous_region_sum;
+      if (triggered_by_humongous) {
+        if (made_progress) {
+          // The current ending gc made progress releasing regions. Reset.
+          _humongous_alloc_backoff_epochs_left.store_relaxed(0);
+          _humongous_alloc_targeted_backoff_epoch.store_relaxed(0);
+        } else {
+          // The humongous gc didn't make progress
+          // The backoff epoch is already 0 since only 0 backoff can trigger gc. Backoff more
+          size_t curr_backoff_epoch = _humongous_alloc_targeted_backoff_epoch.load_relaxed();
+          size_t next_backoff_epoch = curr_backoff_epoch == 0 ? 1 : MIN2(curr_backoff_epoch * 2, (size_t)humongous_backoff_max_epochs);
+          _humongous_alloc_targeted_backoff_epoch.store_relaxed(next_backoff_epoch);
+          _humongous_alloc_backoff_epochs_left.store_relaxed(next_backoff_epoch);
+        }
+      } else if (backoff_epochs_left > 0) {
+        if (made_progress) {
+          _humongous_alloc_backoff_epochs_left.store_relaxed(0);
+        } else {
+          _humongous_alloc_backoff_epochs_left.store_relaxed(backoff_epochs_left - 1);
+        }
+      }
     }
   }
 
@@ -2963,10 +3003,13 @@ bool ShenandoahHumongousAllocationHistory::can_fit(const Epoch& epoch, const siz
   }
 
   size_t available_slots = 0;
+  // Calculate how many objects the CURRENT heap can accommodate if the objects are all at max requested size within the single PREVIOUS gc epoch
   for (size_t i = 0; i < empty_region_array_length; i++) {
     available_slots += empty_region_array[i] / max_requested_region_count;
   }
-  return (epoch.total_requested_region_count + max_requested_region_count - 1) / max_requested_region_count <= available_slots;
+  // (a + b - 1) / b is the ceiling of (a / b)
+  size_t demand = (epoch.total_requested_region_count + max_requested_region_count - 1) / max_requested_region_count;
+  return demand <= available_slots;
 }
 
 void ShenandoahHumongousAllocationHistory::push(size_t max_requested_region_count, size_t total_requested_region_count, size_t failed_humongous_request_count) {

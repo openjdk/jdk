@@ -271,7 +271,12 @@ private:
   Atomic<size_t> _max_humongous_region_count_requested_since_gc_end;
   Atomic<size_t> _total_humongous_region_count_requested_since_gc_end;
   Atomic<size_t> _failed_humongous_request_count_since_gc_end;
-  Atomic<bool> _need_conc_gc_for_humongous;
+  Atomic<bool> _humongous_alloc_failure_risk_high;
+  Atomic<bool> _humongous_triggered_gc;
+  Atomic<size_t> _empty_humongous_region_count_at_trigger;
+  Atomic<size_t> _humongous_alloc_targeted_backoff_epoch;
+  Atomic<size_t> _humongous_alloc_backoff_epochs_left;
+  static const uint humongous_backoff_max_epochs = 16;
   Atomic<size_t> _humongous_budget_region_count;
   ShenandoahHumongousAllocationHistory _humongous_allocation_history;
   ShenandoahDecayAllocRate _alloc_rate_decay;
@@ -307,13 +312,16 @@ public:
     return _total_humongous_region_count_requested_since_gc_end.load_relaxed();
   }
 
-  // TODO: eh, rename?
-  bool read_need_concurrent_gc_for_humongous_and_reset() {
-    return _need_conc_gc_for_humongous.exchange(false, memory_order_relaxed);
+  bool read_humongous_alloc_failure_risk_high_and_reset() {
+    return _humongous_alloc_failure_risk_high.exchange(false, memory_order_relaxed);
   }
 
   size_t humongous_budget_region_count() const {
     return _humongous_budget_region_count.load_relaxed();
+  }
+
+  size_t humongous_alloc_backoff_epochs_left() const {
+    return _humongous_alloc_backoff_epochs_left.load_relaxed();
   }
 
 // ---------- Periodic Tasks
@@ -578,6 +586,7 @@ public:
   void notify_gc_progress();
   void notify_gc_no_progress();
   size_t get_gc_no_progress_count() const;
+  void record_humongous_triggered_gc();
 
   // The uncommit thread targets soft max heap, notify this thread when that value has changed.
   void notify_soft_max_changed();

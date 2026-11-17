@@ -2835,28 +2835,33 @@ ShenandoahFreeSet::MutatorFreeStats ShenandoahFreeSet::mutator_free_stats_locked
   return stats;
 }
 
-size_t ShenandoahFreeSet::build_empty_region_array() {
+void ShenandoahFreeSet::build_empty_region_array(size_t& empty_humongous_region_sum, size_t& cluster_count) {
   shenandoah_assert_heaplocked();
   const idx_t leftmost = _partitions.leftmost_empty(ShenandoahFreeSetPartitionId::Mutator);
   const idx_t rightmost = _partitions.rightmost_empty(ShenandoahFreeSetPartitionId::Mutator);
 
   size_t region_span = 0;
-  size_t cluster_count = 0;
+  size_t cluster = 0;
+  size_t sum = 0;
   for (idx_t i = leftmost; i <= rightmost; i++) {
     if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, i)
           && _heap->get_region(i)->is_empty_or_trash()) {
       region_span++;
     } else {
       if (region_span > 1) {
-        _empty_region_array[cluster_count++] = region_span;
+        _empty_region_array[cluster++] = region_span;
+        sum += region_span;
       }
       region_span = 0;
     }
   }
+
   if (region_span > 1) {
-    _empty_region_array[cluster_count++] = region_span;
+    _empty_region_array[cluster++] = region_span;
+    sum += region_span;
   }
-  return cluster_count;
+  cluster_count = cluster;
+  empty_humongous_region_sum = sum;
 }
 
 void ShenandoahFreeSet::log_status() {

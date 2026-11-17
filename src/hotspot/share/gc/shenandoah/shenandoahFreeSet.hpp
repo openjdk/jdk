@@ -662,7 +662,7 @@ public:
   // Public because ShenandoahRegionPartitions assertions require access.
   size_t alloc_capacity(ShenandoahHeapRegion *r) const;
   size_t alloc_capacity(size_t idx) const;
-  size_t build_empty_region_array();
+  void build_empty_region_array(size_t& empty_humongous_region_sum, size_t& cluster_count);
   const size_t* empty_region_array() const { return _empty_region_array; }
 
   // Return bytes used by old
