@@ -1449,7 +1449,7 @@ public class ForkJoinPool extends AbstractExecutorService
         final int postTopLevelExec(int taken) {
             ForkJoinWorkerThread f = (config & CLEAR_TLS) == 0 ? null : owner;
             nsteals += taken;
-            int s = U.getInt(this, SOURCE) & SMASK;
+            int s = U.getInt(this, SOURCE);
             U.putInt(this, SOURCE, NOSOURCE);
             if (f != null)
                 f.resetThreadLocals();
@@ -2010,7 +2010,7 @@ public class ForkJoinPool extends AbstractExecutorService
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred;
-            int index = r & SMASK, prevSrc = index;
+            int index = (r & SMASK) | IDLE, prevSrc = index;
             while ((runState & STOP) == 0L) {
                 long stat; int taken;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
@@ -2046,7 +2046,7 @@ public class ForkJoinPool extends AbstractExecutorService
             index += stride;
             if ((q = qs[qid]) != null) {
                 for (int b = q.base;;) {
-                    ForkJoinTask<?>[] a; int cap;
+                    ForkJoinTask<?>[] a; int cap;  Object t;
                     if (b < 0 || (a = q.array) == null || (cap = a.length) <= 0)
                         break scan;      // locked
                     int m = cap - 1, nb = (b + 1) & IDXMASK;
@@ -2061,10 +2061,10 @@ public class ForkJoinPool extends AbstractExecutorService
                         }
                     }
                     else if (b == (b = q.cmpxBase(b, nb | TAKING))) {
-                        Object t = U.getAndSetReference(a, bp, null);
+                        boolean taken = ((t = U.getAndSetReference(a, bp, null)) != null);
                         boolean signal = (U.getReferenceAcquire(a, np) != null);
-                        q.base = (t == null)? b : nb;
-                        if (t == null)
+                        q.base = (taken)? nb : b;
+                        if (!taken)
                             break scan;  // contended
                         if (stolen != Integer.MAX_VALUE && stolen++ == 0)
                             w.source = qid;
@@ -2771,7 +2771,7 @@ public class ForkJoinPool extends AbstractExecutorService
         throw new RejectedExecutionException();
     }
 
-    private <T> ForkJoinTask<T> poolSubmit(ForkJoinTask<T> task) {
+    private <T> ForkJoinTask<T> poolSubmit(boolean signalIfEmpty, ForkJoinTask<T> task) {
         Thread t; ForkJoinWorkerThread wt; WorkQueue q; boolean internal;
         if (((t = JLA.currentCarrierThread()) instanceof ForkJoinWorkerThread) &&
             (wt = (ForkJoinWorkerThread)t).pool == this) {
@@ -2782,7 +2782,7 @@ public class ForkJoinPool extends AbstractExecutorService
             internal = false;
             q = externalSubmissionQueue(true);
         }
-        q.push(task, this, internal);
+        q.push(task, signalIfEmpty ? this : null, internal);
         return task;
     }
 
@@ -3347,7 +3347,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *         scheduled for execution
      */
     public <T> T invoke(ForkJoinTask<T> task) {
-        poolSubmit(Objects.requireNonNull(task));
+        poolSubmit(true, Objects.requireNonNull(task));
         try {
             return task.join();
         } catch (RuntimeException | Error unchecked) {
@@ -3366,7 +3366,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *         scheduled for execution
      */
     public void execute(ForkJoinTask<?> task) {
-        poolSubmit(Objects.requireNonNull(task));
+        poolSubmit(true, Objects.requireNonNull(task));
     }
 
     // AbstractExecutorService methods
@@ -3379,7 +3379,8 @@ public class ForkJoinPool extends AbstractExecutorService
     @Override
     @SuppressWarnings("unchecked")
     public void execute(Runnable task) {
-        poolSubmit((Objects.requireNonNull(task) instanceof ForkJoinTask<?>)
+        poolSubmit(true,
+                   (Objects.requireNonNull(task) instanceof ForkJoinTask<?>)
                    ? (ForkJoinTask<Void>) task // avoid re-wrap
                    : new ForkJoinTask.RunnableExecuteAction(task));
     }
@@ -3399,7 +3400,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *         scheduled for execution
      */
     public <T> ForkJoinTask<T> submit(ForkJoinTask<T> task) {
-        return poolSubmit(Objects.requireNonNull(task));
+        return poolSubmit(true, Objects.requireNonNull(task));
     }
 
     /**
@@ -3411,6 +3412,7 @@ public class ForkJoinPool extends AbstractExecutorService
     public <T> ForkJoinTask<T> submit(Callable<T> task) {
         Objects.requireNonNull(task);
         return poolSubmit(
+            true,
             (Thread.currentThread() instanceof ForkJoinWorkerThread) ?
             new ForkJoinTask.AdaptedCallable<T>(task) :
             new ForkJoinTask.AdaptedInterruptibleCallable<T>(task));
@@ -3425,6 +3427,7 @@ public class ForkJoinPool extends AbstractExecutorService
     public <T> ForkJoinTask<T> submit(Runnable task, T result) {
         Objects.requireNonNull(task);
         return poolSubmit(
+            true,
             (Thread.currentThread() instanceof ForkJoinWorkerThread) ?
             new ForkJoinTask.AdaptedRunnable<T>(task, result) :
             new ForkJoinTask.AdaptedInterruptibleRunnable<T>(task, result));
@@ -3440,6 +3443,7 @@ public class ForkJoinPool extends AbstractExecutorService
     public ForkJoinTask<?> submit(Runnable task) {
         Objects.requireNonNull(task);
         return poolSubmit(
+            true,
             (task instanceof ForkJoinTask<?>) ?
             (ForkJoinTask<Void>) task : // avoid re-wrap
             ((Thread.currentThread() instanceof ForkJoinWorkerThread) ?
@@ -3487,9 +3491,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * @since 19
      */
     public <T> ForkJoinTask<T> lazySubmit(ForkJoinTask<T> task) {
-        Objects.requireNonNull(task);
-        externalSubmissionQueue(true).push(task, null, false);
-        return task;
+        return poolSubmit(false,  Objects.requireNonNull(task));
     }
 
     // non-public for now
@@ -3559,7 +3561,7 @@ public class ForkJoinPool extends AbstractExecutorService
             for (Callable<T> t : tasks) {
                 ForkJoinTask<T> f = ForkJoinTask.adapt(t);
                 futures.add(f);
-                poolSubmit(f);
+                poolSubmit(true, f);
             }
             for (int i = futures.size() - 1; i >= 0; --i)
                 ((ForkJoinTask<?>)futures.get(i)).quietlyJoin();
@@ -3582,7 +3584,7 @@ public class ForkJoinPool extends AbstractExecutorService
             for (Callable<T> t : tasks) {
                 ForkJoinTask<T> f = ForkJoinTask.adaptInterruptible(t);
                 futures.add(f);
-                poolSubmit(f);
+                poolSubmit(true, f);
             }
             for (int i = futures.size() - 1; i >= 0; --i)
                 ((ForkJoinTask<?>)futures.get(i))
@@ -3944,7 +3946,7 @@ public class ForkJoinPool extends AbstractExecutorService
         onTimeout.task = task =
             new ForkJoinTask.CallableWithTimeout<V>(callable, timeoutTask);
         scheduleDelayedTask(timeoutTask);
-        return poolSubmit(task);
+        return poolSubmit(true, task);
     }
 
     /**
