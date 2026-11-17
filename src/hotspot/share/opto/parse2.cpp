@@ -279,7 +279,7 @@ void Parse::array_store(BasicType bt) {
           sync_kit(ideal);
           assert(array_type->is_not_flat() || ideal.ctrl()->in(0)->as_If()->is_flat_array_check(&_gvn), "Should be found");
           inc_sp(3);
-          access_store_at(array, adr, adr_type, stored_value_casted, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY, false);
+          access_store_at(array, adr, adr_type, stored_value_casted, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY, false, nullptr);
           dec_sp(3);
           ideal.sync_kit(this);
         }

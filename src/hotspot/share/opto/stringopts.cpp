@@ -1452,7 +1452,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   Node* ch = __ AddI(r, __ intcon('0'));
   Node* st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
                                 ch, bt, MemNode::unordered, false /* require_atomic_access */,
-                                false /* unaligned */, (bt != T_BYTE) /* mismatched */);
+                                false /* unaligned */, (bt != T_BYTE) /* mismatched */, false, false, 0);
 
   iff = kit.create_and_map_if(head, __ Bool(__ CmpI(q, __ intcon(0)), BoolTest::ne),
                               PROB_FAIR, COUNT_UNKNOWN);
@@ -1491,7 +1491,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
     Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
     st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
                             sign, bt, MemNode::unordered, false /* require_atomic_access */, false /* unaligned */,
-                            (bt != T_BYTE) /* mismatched */);
+                            (bt != T_BYTE) /* mismatched */, false, false, 0);
 
     final_merge->init_req(merge_index + 1, kit.control());
     final_mem->init_req(merge_index + 1, st);
