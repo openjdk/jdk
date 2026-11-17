@@ -78,21 +78,21 @@ public class SSLHandshake {
     boolean resume;
 
     @Param({
-            "TLSv1.2-secp256r1-ecdsa_p256",
-            "TLSv1.3-x25519-ecdsa_p256",
-            "TLSv1.3-secp256r1-ecdsa_p256",
-            "TLSv1.3-secp384r1-ecdsa_p256",
-            "TLSv1.3-X25519MLKEM768-ecdsa_p256",
-            "TLSv1.3-SecP256r1MLKEM768-ecdsa_p256",
-            "TLSv1.3-SecP384r1MLKEM1024-ecdsa_p256",
-            "TLSv1.3-x25519-mldsa65",
-            "TLSv1.3-secp256r1-mldsa65",
-            "TLSv1.3-secp384r1-mldsa65",
-            "TLSv1.3-X25519MLKEM768-mldsa65",
-            "TLSv1.3-SecP256r1MLKEM768-mldsa65",
-            "TLSv1.3-SecP384r1MLKEM1024-mldsa65"
+            "12/P256/ECDSA",
+            "13/X25519/ECDSA",
+            "13/P256/ECDSA",
+            "13/P384/ECDSA",
+            "13/X+K768/ECDSA",
+            "13/P256+K768/ECDSA",
+            "13/P384+K1024/ECDSA",
+            "13/X25519/MLDSA65",
+            "13/P256/MLDSA65",
+            "13/P384/MLDSA65",
+            "13/X+K768/MLDSA65",
+            "13/P256+K768/MLDSA65",
+            "13/P384+K1024/MLDSA65"
     })
-    String handshakeProfile;
+    String tlsProfile;
 
     private String tlsVersion;
     private String namedGroup;
@@ -145,10 +145,32 @@ public class SSLHandshake {
 
     @Setup(Level.Trial)
     public void init() throws Exception {
-        String[] components = handshakeProfile.split("-", 3);
-        tlsVersion = components[0];
-        namedGroup = components[1];
-        authProfile = components[2];
+        String[] components = tlsProfile.split("/", 3);
+        tlsVersion = switch (components[0]) {
+            case "12" -> "TLSv1.2";
+            case "13" -> "TLSv1.3";
+            default -> throw new IllegalArgumentException(
+                    "Unknown TLS version: " + components[0]);
+        };
+
+        namedGroup = switch (components[1]) {
+            case "X25519" -> "x25519";
+            case "P256" -> "secp256r1";
+            case "P384" -> "secp384r1";
+            case "X+K768" -> "X25519MLKEM768";
+            case "P256+K768" -> "SecP256r1MLKEM768";
+            case "P384+K1024" -> "SecP384r1MLKEM1024";
+            default -> throw new IllegalArgumentException(
+                    "Unknown named group: " + components[1]);
+        };
+
+        authProfile = switch (components[2]) {
+            case "ECDSA" -> TestCertificates.AUTH_PROFILE_ECDSA_P256;
+            case "MLDSA65" -> TestCertificates.AUTH_PROFILE_MLDSA65;
+            default -> throw new IllegalArgumentException(
+                    "Unknown authentication profile: " + components[2]);
+        };
+
         sigSchemes = getSigSchemes(authProfile, tlsVersion);
 
         KeyStore ts = TestCertificates.getTrustStore(authProfile);
