@@ -66,7 +66,7 @@ public class TestCCMismatchNativeMethods {
     static public int test5(I i, V1 v1) {
         return i.add(v1);
     }
-    
+
     static final Random RAND = Utils.getRandomInstance();
 
     static class MyClass {
@@ -78,9 +78,9 @@ public class TestCCMismatchNativeMethods {
             super();
         }
     }
-    
+
     static MyClass myObject = new MyClass();
-    
+
     public static void main(String[] args) {
         A1 a1 = new A1();
         B1 b1 = new B1();
@@ -142,7 +142,7 @@ public class TestCCMismatchNativeMethods {
         } catch (OutOfMemoryError oome) {
             oom = true;
         }
-        
+
     }
 }
 
@@ -206,7 +206,7 @@ value class V1 implements I {
         this.x4 = x4;
         this.x5 = x5;
     }
-    
+
     public int sum() {
         return x0 + x1 + x2 + x3 + x4 + x5;
     }
