@@ -1722,13 +1722,14 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
     return MAP_ARCHIVE_MMAP_FAILURE;
   }
 
-  PRODUCT_ONLY(if (ArchiveRelocationMode == 1 && use_requested_addr) {
-      // For product build only -- this is for benchmarking the cost of doing relocation.
-      // For debug builds, the check is done below, after reserving the space, for better test coverage
-      // (see comment below).
+  if (ArchiveRelocationMode == 1 && use_requested_addr) {
+    if (AOTStressArchiveUnmapping) {
+      aot_log_info(aot)("Map at requested address to stress test unmapping");
+    } else {
       aot_log_info(aot)("ArchiveRelocationMode == 1: always map archive(s) at an alternative address");
       return MAP_ARCHIVE_MMAP_FAILURE;
-    });
+    }
+  }
 
   if (ArchiveRelocationMode == 2 && !use_requested_addr) {
     aot_log_info(aot)("ArchiveRelocationMode == 2: never map archive(s) at an alternative address");
@@ -1841,19 +1842,18 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
     MapArchiveResult dynamic_result = (static_result == MAP_ARCHIVE_SUCCESS) ?
                                      map_archive(dynamic_mapinfo, mapped_base_address, archive_space_rs) : MAP_ARCHIVE_OTHER_FAILURE;
 
-    DEBUG_ONLY(if (ArchiveRelocationMode == 1 && use_requested_addr) {
-      // This is for simulating mmap failures at the requested address. In
-      //  debug builds, we do it here (after all archives have possibly been
-      //  mapped), so we can thoroughly test the code for failure handling
-      //  (releasing all allocated resource, etc).
-      aot_log_info(aot)("ArchiveRelocationMode == 1: always map archive(s) at an alternative address");
+    if (ArchiveRelocationMode == 1 && use_requested_addr && AOTStressArchiveUnmapping) {
+      // This is for simulating mmap failures at the requested address. We do it here
+      // (after all archives have possibly been mapped), so we can thoroughly test the
+      // code for failure handling (releasing all allocated resource, etc).
+      aot_log_info(aot)("Simulate mapping failure to stress test unmapping");
       if (static_result == MAP_ARCHIVE_SUCCESS) {
         static_result = MAP_ARCHIVE_MMAP_FAILURE;
       }
       if (dynamic_result == MAP_ARCHIVE_SUCCESS) {
         dynamic_result = MAP_ARCHIVE_MMAP_FAILURE;
       }
-    });
+    }
 
     if (static_result == MAP_ARCHIVE_SUCCESS) {
       if (dynamic_result == MAP_ARCHIVE_SUCCESS) {

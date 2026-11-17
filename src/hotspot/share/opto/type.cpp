@@ -5989,6 +5989,46 @@ bool TypeAryPtr::can_be_value_array() const {
   return elem()->make_ptr() && elem()->make_ptr()->is_instptr() && elem()->make_ptr()->as_instptr()->_klass->can_be_value_klass();
 }
 
+// Does 'this' array and 'other' array have compatible layouts for applying arraycopy?
+// - Return true : We know that the layouts are compatible.
+// - Return false: We either don't know or have shown that they are not compatible.
+bool TypeAryPtr::has_compatible_arraycopy_layout(const TypeAryPtr* other) const {
+  BasicType src_elem_bt = elem()->array_element_basic_type();
+  BasicType dest_elem_bt = other->elem()->array_element_basic_type();
+  if (::is_reference_type(src_elem_bt, true)) { src_elem_bt = T_OBJECT; }
+  if (::is_reference_type(dest_elem_bt, true)) { dest_elem_bt = T_OBJECT; }
+  if (src_elem_bt != dest_elem_bt) {
+    // Different element types and thus not the same array -> incompatible
+    return false;
+  }
+  if (!is_java_primitive(src_elem_bt) && src_elem_bt != T_OBJECT) {
+    // Unsupported or unknown element type -> we don't know if they have compatible layouts
+    return false;
+  }
+
+  if (is_not_flat() && other->is_not_flat()) {
+    // Both are type arrays or have reference layouts -> compatible
+    return true;
+  }
+
+  // 'this' and 'other' could both be exact, but we might still not know all of their array properties. In this case,
+  // exact_klass() could return the same refined array klass even though we have different layouts at runtime. We can
+  // therefore not assume compatibility if the array properties are unknown to be matching.
+  // Note that we do not need to care about atomicity for flat arrays. Atomic flat layouts can only have an element size
+  // of 1, 2, 4, or 8 bytes. We can use the corresponding primitive arraycopy stubs which copy the elements atomically.
+  // Flat arrays with elements larger than 8 bytes cannot have an atomic layout.
+  bool same_known_nullness = (is_null_free() && other->is_null_free()) ||
+                             (is_not_null_free() && other->is_not_null_free());
+  if (is_flat() && other->is_flat() &&
+      same_known_nullness &&
+      klass_is_exact() && other->klass_is_exact() && exact_klass() == other->exact_klass()) {
+    // Same refined array klass and same flatness and nullness -> same physical layout -> compatible
+    return true;
+  }
+  // Otherwise, we don't have more information and must assume incompatibility.
+  return false;
+}
+
 const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, const Type* elem, ciKlass* k, Offset offset, bool not_flat, bool not_null_free, bool flat, bool null_free, bool atomic, bool refined_type) {
   if (ptr == TypePtr::Constant && elem->is_klassptr()) {
     // If an array klass ptr is a constant, its element is also a constant
@@ -6132,7 +6172,7 @@ ciKlass* TypeAryPtr::exact_klass_helper() const {
       k = ciObjArrayKlass::make(k->as_array_klass()->element_klass(), false);
     }
     if (klass_is_exact()) {
-      return ciObjArrayKlass::make(k, true, is_null_free(), is_atomic());
+      return ciObjArrayKlass::make(k, true, is_null_free(), is_atomic(), is_not_flat());
     } else {
       // We may reach here if called recursively, must be an unrefined type then
       return ciObjArrayKlass::make(k, false);
