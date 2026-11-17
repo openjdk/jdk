@@ -1071,7 +1071,7 @@ class ServerImpl {
     }
 
     void requestStarted(HttpConnection c) {
-        c.reqStartedTime = monotonicInstantMillis();
+        c.reqStartedTime = monotonicMilliTicks();
         c.setState(State.REQUEST);
         reqConnections.add(c);
     }
@@ -1085,7 +1085,7 @@ class ServerImpl {
                 // instead set boolean and close outside the synchronized block
                 close = true;
             } else {
-                c.idleStartTime = monotonicInstantMillis();
+                c.idleStartTime = monotonicMilliTicks();
                 c.setState(State.IDLE);
                 idleConnections.add(c);
             }
@@ -1098,7 +1098,7 @@ class ServerImpl {
     }
 
     void markNewlyAccepted(HttpConnection c) {
-        c.idleStartTime = monotonicInstantMillis();
+        c.idleStartTime = monotonicMilliTicks();
         c.setState(State.NEWLY_ACCEPTED);
         newlyAcceptedConnections.add(c);
     }
@@ -1114,7 +1114,7 @@ class ServerImpl {
         State s = c.getState();
         assert s == State.REQUEST : "State is not REQUEST ("+s+")";
         reqConnections.remove(c);
-        c.rspStartedTime = monotonicInstantMillis();
+        c.rspStartedTime = monotonicMilliTicks();
         rspConnections.add(c);
         c.setState(State.RESPONSE);
     }
@@ -1152,7 +1152,7 @@ class ServerImpl {
         }
 
         private void closeConnections(Set<HttpConnection> connections, long idleInterval) {
-            long currentTime = monotonicInstantMillis();
+            long currentTime = monotonicMilliTicks();
             ArrayList<HttpConnection> toClose = new ArrayList<>();
 
             connections.forEach(c -> {
@@ -1193,7 +1193,7 @@ class ServerImpl {
 
         private void run0() {
             ArrayList<HttpConnection> toClose = new ArrayList<>();
-            final long currentTime = monotonicInstantMillis();
+            final long currentTime = monotonicMilliTicks();
             synchronized (reqConnections) {
                 if (MAX_REQ_TIME != -1) {
                     for (HttpConnection c : reqConnections) {
