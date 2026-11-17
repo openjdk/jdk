@@ -139,9 +139,12 @@ instruct g1StoreLSpecialOneOopOff4(memory mem, rRegL src, immI_4 off, rRegP tmp1
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
   format %{ "movq    $mem, $src\t# g1StoreLSpecialOneOopOff4" %}
   ins_encode %{
-    // Adjust address to point to narrow oop
     Address dst = $mem$$Address;
-    __ lea($tmp1$$Register, dst.plus_disp(4));
+    // Adjust address to point to narrow oop if we need any barrier. Otherwise, no need to touch tmp1 at all.
+    // We don't save any instruction, but we make the generated assembly less confusing for the poor soul who
+    // will step through that during debugging.
+    int off = ((barrier_data() & G1C2BarrierPre) == 0 && (barrier_data() & G1C2BarrierPost) == 0) ? 0 : 4;
+    __ lea($tmp1$$Register, dst.plus_disp(off));
     write_barrier_pre(masm, this,
                       $tmp1$$Register /* obj */,
                       $tmp2$$Register /* pre_val */,
@@ -149,7 +152,7 @@ instruct g1StoreLSpecialOneOopOff4(memory mem, rRegL src, immI_4 off, rRegP tmp1
                       RegSet::of($tmp1$$Register, $src$$Register) /* preserve */);
 
     // The address of the oop is the address of the store plus the offset of the oop
-    __ movq(Address($tmp1$$Register, -4), $src$$Register);
+    __ movq(Address($tmp1$$Register, -off), $src$$Register);
 
     // Shift long value to extract the narrow oop field value
     if ((barrier_data() & G1C2BarrierPost) != 0) {
