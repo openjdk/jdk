@@ -33,6 +33,7 @@ import static compiler.valhalla.valuetypes.ValueTypes.rI;
 
 /*
  * @test
+ * @bug 8216183 8220269 8254985 8253416 8273594 8293702 8394773
  * @key randomness
  * @summary Test the handling of fields of unloaded value classes.
  * @library /test/lib /
@@ -64,6 +65,7 @@ public class TestUnloadedValueTypeField {
                             "-XX:+UnlockDiagnosticVMOptions",
                             // Prevent IR Test Framework from loading classes
                             "-DIgnoreCompilerControls=true",
+                            "-XX:CompileCommand=dontinline,compiler.valhalla.valuetypes.TestUnloadedValueTypeField$MyValue29::*init*",
                             // Some tests trigger frequent re-compilation. Don't mark them as non-compilable.
                             "-XX:PerMethodRecompilationCutoff=-1", "-XX:PerBytecodeRecompilationCutoff=-1")
                   .start();
@@ -1032,5 +1034,30 @@ public class TestUnloadedValueTypeField {
         } catch (NullPointerException e) {
             // Expected
         }
+    }
+
+    static class MyObject29 { }
+
+    @LooselyConsistentValue
+    static value class MyValue29 {
+        MyObject29 obj = new MyObject29();
+        static void load() { }
+    }
+
+    static {
+        // Load the value class without loading the type of 'obj'
+        MyValue29.load();
+    }
+
+    // Test field load with an unloaded type from a scalarized value object
+    @Test
+    public int test29(boolean b) {
+        return (b ? new MyValue29().obj : null).hashCode();
+    }
+
+    @Run(test = "test29")
+    @Warmup(0)
+    public void test29_verifier() {
+        test29(true);
     }
 }

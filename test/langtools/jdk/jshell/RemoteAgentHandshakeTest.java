@@ -24,6 +24,8 @@
 /*
  * @test 8384736
  * @summary Verify the correct handshake is used for remote agents.
+ * @modules jdk.jshell
+ *          jdk.jfr
  * @run junit RemoteAgentHandshakeTest
  */
 
@@ -32,12 +34,14 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import jdk.jfr.FlightRecorder;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.jshell.JShell;
 import jdk.jshell.execution.JdiExecutionControlProvider;
 import jdk.jshell.execution.RemoteExecutionControl;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class RemoteAgentHandshakeTest {
 
@@ -71,6 +75,8 @@ public class RemoteAgentHandshakeTest {
 
     @Test
     public void testDefaultAgentUsesNewHandshake() throws Exception {
+        assumeTrue(FlightRecorder.isAvailable());
+
         try (var rs = new RecordingStream()) {
             rs.enable("jdk.ProcessStart");
             rs.enable("jdk.CPULoad").withPeriod(Duration.ofMillis(10));

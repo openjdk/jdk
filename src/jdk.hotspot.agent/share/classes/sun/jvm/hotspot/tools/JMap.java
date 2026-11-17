@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,6 @@ public class JMap extends Tool {
         System.out.println("                                                 \tIf gz specified, the heap dump is written in gzipped format");
         System.out.println("                                                 \tusing the given compression level.");
         System.err.println("                                                 \t1 (recommended) is the fastest, 9 the strongest compression.");
-        System.out.println("    -heap:format=x[,file=<dumpfile>]             \tTo dump java heap in GXL format.");
-        System.out.println("                                                 \tPlease be aware that \"gz\" option is not valid for heap dump in GXL format.");
         System.out.println("    -histo\tTo print histogram of java object heap.");
         System.out.println("    -clstats\tTo print class loader statistics.");
         System.out.println("    -finalizerinfo\tTo print information on objects awaiting finalization.");
@@ -73,7 +71,7 @@ public class JMap extends Tool {
     public static final int MODE_CLSTATS = 2;
     public static final int MODE_PMAP = 3;
     public static final int MODE_HEAP_GRAPH_HPROF_BIN = 4;
-    public static final int MODE_HEAP_GRAPH_GXL = 5;
+    public static final int MODE_HEAP_GRAPH_GXL = 5; // retired
     public static final int MODE_FINALIZERINFO = 6;
 
     private static String dumpfile = "heap.bin";
@@ -101,10 +99,6 @@ public class JMap extends Tool {
 
         case MODE_HEAP_GRAPH_HPROF_BIN:
             writeHeapHprofBin(dumpfile, gzLevel);
-            return;
-
-        case MODE_HEAP_GRAPH_GXL:
-            writeHeapGXL(dumpfile);
             return;
 
         case MODE_FINALIZERINFO:
@@ -143,8 +137,6 @@ public class JMap extends Tool {
                         if (keyValue[0].equals("format")) {
                             if (keyValue[1].equals("b")) {
                                 mode = MODE_HEAP_GRAPH_HPROF_BIN;
-                            } else if (keyValue[1].equals("x")) {
-                                mode = MODE_HEAP_GRAPH_GXL;
                             } else {
                                 System.err.println("unknown heap format:" + keyValue[0]);
 
@@ -158,10 +150,6 @@ public class JMap extends Tool {
                             }
                             dumpfile = keyValue[1];
                         } else if (keyValue[0].equals("gz")) {
-                            if (mode == MODE_HEAP_GRAPH_GXL) {
-                                System.err.println("\"gz\" option is not compatible with heap dump in GXL format");
-                                System.exit(1);
-                            }
                             if (keyValue.length == 1) {
                                 System.err.println("Argument is expected for \"gz\"");
                                 System.exit(1);
@@ -223,21 +211,6 @@ public class JMap extends Tool {
 
     public boolean writeHeapHprofBin() {
         return writeHeapHprofBin("heap.bin", -1);
-    }
-
-    private boolean writeHeapGXL(String fileName) {
-        try {
-            HeapGraphWriter hgw = new HeapGXLWriter();
-            hgw.write(fileName);
-            System.out.println("heap written to " + fileName);
-            return true;
-        } catch (IOException exp) {
-            throw new RuntimeException(exp);
-        }
-    }
-
-    public boolean writeHeapGXL() {
-        return writeHeapGXL("heap.xml");
     }
 
     private int mode;

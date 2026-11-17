@@ -180,7 +180,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
   }
 
   if (request.generation->is_global()) {
-    _heap->set_unload_classes(request.generation->heuristics()->should_unload_classes());
+    _heap->set_unload_classes(request.generation->heuristics()->can_unload_classes());
   } else {
     _heap->set_unload_classes(false);
   }

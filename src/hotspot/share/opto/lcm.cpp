@@ -47,7 +47,7 @@ static bool accesses_heap_base_zone(Node *val) {
       if (val->as_Mach()->ideal_Opcode() == Op_DecodeN) {
         // This assumes all Decodes with TypePtr::NotNull are matched to nodes that
         // decode null to point to the heap base (Decode_NN).
-        if (val->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull) {
+        if (val->bottom_type()->as_oopptr()->ptr() == TypePtr::NotNull) {
           return true;
         }
       }
@@ -262,7 +262,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
           continue;             // Not an memory op; skip it
         }
         if (val == base ||
-            (val == index && val->bottom_type()->isa_narrowoop())) {
+            (val == index && val->bottom_type()->is_narrowoop())) {
           break;                // Found it
         } else {
           continue;             // Skip it
@@ -293,7 +293,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       if (base == nullptr || base == NodeSentinel) {
         // Narrow oop address doesn't have base, only index.
         // Give up if offset is beyond page size or if heap base is not protected.
-        if (val->bottom_type()->isa_narrowoop() &&
+        if (val->bottom_type()->is_narrowoop() &&
             (MacroAssembler::needs_explicit_null_check(offset) ||
              !CompressedOops::use_implicit_null_checks()))
           continue;
@@ -305,7 +305,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
           tptr = base->get_ptr_type();
         } else {
           // only regular oops are expected here
-          tptr = base->bottom_type()->is_ptr();
+          tptr = base->bottom_type()->as_ptr();
         }
         // Give up if offset is not a compile-time constant.
         if (offset == Type::OffsetBot || tptr->offset() == Type::OffsetBot)

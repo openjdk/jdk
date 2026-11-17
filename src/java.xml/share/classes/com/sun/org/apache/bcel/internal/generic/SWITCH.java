@@ -78,6 +78,13 @@ public final class SWITCH implements CompoundInstruction {
 
     private final Select instruction;
 
+    /**
+     * Constructs a SWITCH with default maxGap of 1.
+     *
+     * @param match array of match values.
+     * @param targets The instructions to be branched to for each case.
+     * @param target The default target.
+     */
     public SWITCH(final int[] match, final InstructionHandle[] targets, final InstructionHandle target) {
         this(match, targets, target, 1);
     }
@@ -89,10 +96,10 @@ public final class SWITCH implements CompoundInstruction {
      *
      * Note, that the key array always will be sorted, though we leave the original arrays unaltered.
      *
-     * @param match array of match values (case 2: ... case 7: ..., etc.)
-     * @param targets the instructions to be branched to for each case
-     * @param target the default target
-     * @param maxGap maximum gap that may between case branches
+     * @param match array of match values (case 2: ... case 7: ..., etc.).
+     * @param targets The instructions to be branched to for each case.
+     * @param target The default target.
+     * @param maxGap maximum gap that may between case branches.
      */
     public SWITCH(final int[] match, final InstructionHandle[] targets, final InstructionHandle target, final int maxGap) {
         final int[] matchClone = match.clone();
@@ -107,18 +114,18 @@ public final class SWITCH implements CompoundInstruction {
                 final int[] mVec = new int[maxSize];
                 final InstructionHandle[] tVec = new InstructionHandle[maxSize];
                 int count = 1;
-                mVec[0] = match[0];
-                tVec[0] = targets[0];
+                mVec[0] = matchClone[0];
+                tVec[0] = targetsClone[0];
                 for (int i = 1; i < matchLength; i++) {
-                    final int prev = match[i - 1];
-                    final int gap = match[i] - prev;
+                    final int prev = matchClone[i - 1];
+                    final int gap = matchClone[i] - prev;
                     for (int j = 1; j < gap; j++) {
                         mVec[count] = prev + j;
                         tVec[count] = target;
                         count++;
                     }
-                    mVec[count] = match[i];
-                    tVec[count] = targets[i];
+                    mVec[count] = matchClone[i];
+                    tVec[count] = targetsClone[i];
                     count++;
                 }
                 instruction = new TABLESWITCH(Arrays.copyOf(mVec, count), Arrays.copyOf(tVec, count), target);
@@ -128,6 +135,11 @@ public final class SWITCH implements CompoundInstruction {
         }
     }
 
+    /**
+     * Gets the instruction.
+     *
+     * @return The instruction.
+     */
     public Instruction getInstruction() {
         return instruction;
     }

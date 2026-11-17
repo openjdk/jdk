@@ -3617,3 +3617,15 @@ void C2_MacroAssembler::slidedown_v(VectorRegister dst, VectorRegister src,
     vslidedown_vx(dst, src, tmp);
   }
 }
+
+// Move elements up a vector register group.
+// Offset is the start index (offset) for the destination.
+void C2_MacroAssembler::slideup_v(VectorRegister dst, VectorRegister src,
+                                  uint32_t offset, Register tmp) {
+  if (is_uimm5(offset)) {
+    vslideup_vi(dst, src, offset);
+  } else {
+    mv(tmp, offset);
+    vslideup_vx(dst, src, tmp);
+  }
+}

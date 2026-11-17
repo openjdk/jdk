@@ -30,7 +30,6 @@ import com.sun.org.apache.bcel.internal.Const;
  * This class is derived from the abstract {@link Constant} and represents a reference to a float object.
  *
  * @see Constant
- * @LastModified: Sept 2025
  */
 public final class ConstantFloat extends Constant implements ConstantObject {
 
@@ -49,15 +48,17 @@ public final class ConstantFloat extends Constant implements ConstantObject {
     /**
      * Initialize instance from file data.
      *
-     * @param file Input stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Input stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     ConstantFloat(final DataInput file) throws IOException {
         this(file.readFloat());
     }
 
     /**
-     * @param bytes Data
+     * Constructs a ConstantFloat.
+     *
+     * @param bytes Data.
      */
     public ConstantFloat(final float bytes) {
         super(Const.CONSTANT_Float);
@@ -68,7 +69,7 @@ public final class ConstantFloat extends Constant implements ConstantObject {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -76,10 +77,10 @@ public final class ConstantFloat extends Constant implements ConstantObject {
     }
 
     /**
-     * Dump constant float to file stream in binary format.
+     * Dumps constant float to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -88,14 +89,19 @@ public final class ConstantFloat extends Constant implements ConstantObject {
     }
 
     /**
-     * @return data, i.e., 4 bytes.
+     * Gets the data.
+     *
+     * @return data, that is, 4 bytes.
      */
     public float getBytes() {
         return bytes;
     }
 
     /**
-     * @return Float object
+     * Gets the Float object.
+     *
+     * @param cp The constant pool (not used).
+     * @return Float object.
      */
     @Override
     public Object getConstantValue(final ConstantPool cp) {
@@ -103,7 +109,9 @@ public final class ConstantFloat extends Constant implements ConstantObject {
     }
 
     /**
-     * @param bytes the raw bytes that represent this float
+     * Sets the raw bytes that represent the float value.
+     *
+     * @param bytes The raw bytes that represent the float value.
      */
     public void setBytes(final float bytes) {
         this.bytes = bytes;

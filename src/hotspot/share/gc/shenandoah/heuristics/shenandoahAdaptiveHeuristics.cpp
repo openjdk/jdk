@@ -209,6 +209,7 @@ void ShenandoahAdaptiveHeuristics::record_concurrent_completion() {
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t available = _space_info->soft_mutator_available();
+  const size_t used = _space_info->used();
 
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT,
                       PROPERFMTARGS(available), PROPERFMTARGS(capacity));
@@ -219,6 +220,10 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   }
 
   _last_trigger = OTHER;
+
+  if (trigger_allocation_threshold(used, capacity)) {
+    return true;
+  }
 
   if (trigger_min_free_threshold(available, capacity)) {
     return true;
@@ -244,17 +249,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   }
 
   return ShenandoahHeuristics::should_start_gc();
-}
-
-bool ShenandoahAdaptiveHeuristics::trigger_min_free_threshold(size_t available, size_t capacity) {
-  const size_t min_threshold = min_free_threshold(capacity);
-  if (available < min_threshold) {
-    log_trigger("Occupancy. " PROPERFMT " free, below " PROPERFMT " threshold",
-                PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
-    accept_trigger_with_type(OTHER);
-    return true;
-  }
-  return false;
 }
 
 bool ShenandoahAdaptiveHeuristics::trigger_learning(size_t available, size_t capacity) {
@@ -421,7 +415,7 @@ void ShenandoahAdaptiveHeuristics::adjust_margin_of_error(double amount) {
   log_debug(gc, ergo)("Margin of error now %.2f", _margin_of_error_sd);
 }
 
-size_t ShenandoahAdaptiveHeuristics::min_free_threshold(size_t capacity) const {
+size_t ShenandoahAdaptiveHeuristics::min_free_threshold(size_t capacity) {
   return capacity / 100 * ShenandoahMinFreeThreshold;
 }
 
