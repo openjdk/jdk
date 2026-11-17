@@ -2147,7 +2147,7 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
 
   return try_fold(phase, can_reshape);
 }
- 
+
 // Find better inputs for a load
 bool LoadNode::optimize_inputs(PhaseGVN* phase, bool can_reshape) {
   Node* ctrl = in(MemNode::Control);
