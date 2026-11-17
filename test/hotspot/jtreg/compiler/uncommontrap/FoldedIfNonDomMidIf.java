@@ -35,7 +35,7 @@
  * @bug 8201368
  * @summary IfNode::fold_compares() may lead to incorrect execution
  *
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement
  *                   -XX:-BackgroundCompilation

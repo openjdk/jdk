@@ -42,9 +42,11 @@
 #include "nativeInst_riscv.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadIdentifier.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_riscv.inline.hpp"
 
@@ -1481,7 +1483,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   Assembler::IncompressibleScope scope(_masm);
   address call = __ reloc_call(Address(op->addr(), rtype));
   if (call == nullptr) {
-    bailout("reloc call address stub overflow");
+    bailout("address stub overflow");
     return;
   }
   add_call_info(code_offset(), op->info(), op->maybe_return_as_fields());
@@ -1492,7 +1494,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   Assembler::IncompressibleScope scope(_masm);
   address call = __ ic_call(op->addr());
   if (call == nullptr) {
-    bailout("reloc call address stub overflow");
+    bailout("address stub overflow");
     return;
   }
   add_call_info(code_offset(), op->info(), op->maybe_return_as_fields());
@@ -1513,7 +1515,7 @@ void LIR_Assembler::emit_static_call_stub() {
   __ relocate(static_stub_Relocation::spec(call_pc));
   __ emit_static_call_stub();
 
-  assert(__ offset() - start + CompiledDirectCall::to_trampoline_stub_size()
+  assert(__ offset() - start + MacroAssembler::max_address_stub_size()
          <= call_stub_size(), "stub too big");
   __ end_a_stub();
 }

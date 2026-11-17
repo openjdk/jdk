@@ -58,10 +58,6 @@ public:
 
   bool should_start_gc() override;
 
-  const char* name() override     { return "Adaptive"; }
-  bool is_diagnostic() override   { return false; }
-  bool is_experimental() override { return false; }
-
   // In preparation for a span during which GC will be idle, compute the headroom adjustment that will be used to
   // detect when GC needs to trigger.
   void compute_headroom_adjustment() override;
@@ -114,14 +110,13 @@ protected:
   // For example, we might trigger a concurrent gc if we are likely to drop below
   // this threshold, or we might consider this when dynamically resizing generations
   // in the generational case. Controlled by global flag ShenandoahMinFreeThreshold.
-  size_t min_free_threshold(size_t capacity) const;
+  static size_t min_free_threshold(size_t capacity);
 
   void accept_trigger_with_type(Trigger trigger_type) {
     _last_trigger = trigger_type;
     accept_trigger();
   }
 
-  bool trigger_min_free_threshold(size_t available, size_t capacity);
   bool trigger_learning(size_t available, size_t capacity);
   bool trigger_average_allocation_rate(const ShenandoahAnticipatedConsumption& rate, size_t allocatable_bytes);
   bool trigger_accelerating_allocation_rate(const ShenandoahAnticipatedConsumption& rate, size_t allocatable_bytes);
