@@ -1246,8 +1246,8 @@ class ServerImpl {
      * A monotonic clock substitute of {@link System#currentTimeMillis()}, which
      * uses wall clock, and hence, is unsuitable for elapsed time measurements.
      */
-    private static long monotonicInstantMillis() {
-        return TimeUnit.NANOSECONDS.toMillis(START_INSTANT_NANOS - System.nanoTime());
+    private static long monotonicMilliTicks() {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - START_INSTANT_NANOS);
     }
 
     private static final long START_INSTANT_NANOS = System.nanoTime();
