@@ -3665,9 +3665,13 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
                              enum atomic_memory_order order,
                              bool weak,
                              Register result) {
-  // Requirement for the !UseLSE branch
-  assert_different_registers(addr, rscratch1);
-  assert_different_registers(new_val, rscratch1);
+  // Be careful to not use overlapping register with rscratch1 and result
+  assert_different_registers(rscratch1, addr);
+  assert_different_registers(rscratch1, expected);
+  assert_different_registers(rscratch1, new_val);
+  assert_different_registers(result, addr);
+  assert_different_registers(result, expected);
+  assert_different_registers(result, new_val);
 
   bool acquire, release;
 
@@ -3710,7 +3714,6 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
     load_exclusive(result, addr, size, acquire);
     compare_eq(result, expected, size);
     br(Assembler::NE, done);
-    // addr and new_val should not be rscratch1
     store_exclusive(rscratch1, new_val, addr, size, release);
     if (weak) {
       cmpw(rscratch1, 0u);  // If the store fails, return NE to our caller.
