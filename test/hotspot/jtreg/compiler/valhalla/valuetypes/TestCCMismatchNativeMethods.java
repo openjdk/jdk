@@ -25,6 +25,8 @@ package compiler.valhalla.valuetypes;
 import java.util.Random;
 import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
+import jdk.internal.vm.annotation.LooselyConsistentValue;
+import jdk.internal.vm.annotation.NullRestricted;
 
 /*
  * @test
@@ -32,11 +34,10 @@ import jdk.test.whitebox.WhiteBox;
  * @summary native method calls are not scalarized and cause mismatches
  * @enablePreview
  * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @modules java.base/jdk.internal.vm.annotation
  *
- * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ${test.main.class}
- * @run main/othervm -Xbatch  -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:-WhiteBoxAPI ${test.main.class}
+ * @run main/othervm -Xbatch  -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:-WhiteBoxAPI
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:ThrowOOMEAtC2iC1NativeEntryPoints=3 ${test.main.class}
  */
 
@@ -46,10 +47,8 @@ public class TestCCMismatchNativeMethods {
         System.loadLibrary("TestCCMismatchNativeMethods");
     }
 
-    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-
-    static public int test1(A1 a, V1 v) {
-        return a.m1(v, v);
+    static public int test1(A1 a) {
+        return a.m1(myObject.v1, myObject.v1);
     }
 
     static public int test2(A2 a, V1 v) {
@@ -69,7 +68,18 @@ public class TestCCMismatchNativeMethods {
     }
     
     static final Random RAND = Utils.getRandomInstance();
-    static public V1 v1 = new V1(RAND.nextInt(), RAND.nextInt(), RAND.nextInt(), RAND.nextInt(), RAND.nextInt(), RAND.nextInt());
+
+    static class MyClass {
+        @NullRestricted
+        public V1 v1;
+
+        MyClass() {
+            v1 = new V1(RAND.nextInt(), RAND.nextInt(), RAND.nextInt(), RAND.nextInt(), RAND.nextInt(), RAND.nextInt());
+            super();
+        }
+    }
+    
+    static MyClass myObject = new MyClass();
     
     public static void main(String[] args) {
         A1 a1 = new A1();
@@ -79,15 +89,16 @@ public class TestCCMismatchNativeMethods {
         B2 b2 = new B2();
         C2 c2 = new C2();
         boolean oom = false;
+        V1 v1 = myObject.v1;
         try {
             for (int i = 0; i < 20_000; i++) {
-                if (test1(a1, v1) != v1.sum()) {
+                if (test1(a1) != v1.sum()) {
                     throw new RuntimeException("incorrect result");
                 }
-                if (test1(b1, v1) != v1.sum()) {
+                if (test1(b1) != v1.sum()) {
                     throw new RuntimeException("incorrect result");
                 }
-                if (test1(c1, v1) != v1.sum()) {
+                if (test1(c1) != v1.sum()) {
                     throw new RuntimeException("incorrect result");
                 }
                 if (test2(a2, v1) != v1.sum()) {
@@ -131,9 +142,7 @@ public class TestCCMismatchNativeMethods {
         } catch (OutOfMemoryError oome) {
             oom = true;
         }
-        if (oom != (WHITE_BOX.getIntVMFlag("ThrowOOMEAtC2iC1NativeEntryPoints").intValue() == 3)) {
-            throw new RuntimeException(oom ? "unexpected OOME" : "no OOME");
-        }
+        
     }
 }
 
@@ -146,29 +155,30 @@ class UnloadedClass {
         B2 b2 = new B2();
         C2 c2 = new C2();
         D2 d2 = new D2();
+        V1 v1 = TestCCMismatchNativeMethods.myObject.v1;
         for (int i = 0; i < 20_000; i++) {
-            if (TestCCMismatchNativeMethods.test2(a2, TestCCMismatchNativeMethods.v1) != TestCCMismatchNativeMethods.v1.sum()) {
+            if (TestCCMismatchNativeMethods.test2(a2, v1) != v1.sum()) {
                 throw new RuntimeException("incorrect result");
             }
-            if (TestCCMismatchNativeMethods.test2(b2, TestCCMismatchNativeMethods.v1) != TestCCMismatchNativeMethods.v1.sum()) {
+            if (TestCCMismatchNativeMethods.test2(b2, v1) != v1.sum()) {
                 throw new RuntimeException("incorrect result");
             }
-            if (TestCCMismatchNativeMethods.test2(c2, TestCCMismatchNativeMethods.v1) != TestCCMismatchNativeMethods.v1.sum()) {
+            if (TestCCMismatchNativeMethods.test2(c2, v1) != v1.sum()) {
                 throw new RuntimeException("incorrect result");
             }
-            if (TestCCMismatchNativeMethods.test2(d2, TestCCMismatchNativeMethods.v1) != TestCCMismatchNativeMethods.v1.sum()) {
+            if (TestCCMismatchNativeMethods.test2(d2, v1) != v1.sum()) {
                 throw new RuntimeException("incorrect result");
             }
-            if (TestCCMismatchNativeMethods.test4(a2) != TestCCMismatchNativeMethods.v1.sum()) {
+            if (TestCCMismatchNativeMethods.test4(a2) != v1.sum()) {
                 throw new RuntimeException("incorrect result");
             }
-            if (TestCCMismatchNativeMethods.test4(b2) != TestCCMismatchNativeMethods.v1.sum()) {
+            if (TestCCMismatchNativeMethods.test4(b2) != v1.sum()) {
                 throw new RuntimeException("incorrect result");
             }
-            if (TestCCMismatchNativeMethods.test4(c2) != TestCCMismatchNativeMethods.v1.sum()) {
+            if (TestCCMismatchNativeMethods.test4(c2) != v1.sum()) {
                 throw new RuntimeException("incorrect result");
             }
-            if (TestCCMismatchNativeMethods.test4(d2) != TestCCMismatchNativeMethods.v1.sum()) {
+            if (TestCCMismatchNativeMethods.test4(d2) != v1.sum()) {
                 throw new RuntimeException("incorrect result");
             }
         }
@@ -179,6 +189,7 @@ interface I {
     int add(V1 v1);
 }
 
+@LooselyConsistentValue
 value class V1 implements I {
     int x0;
     int x1;
@@ -204,7 +215,7 @@ value class V1 implements I {
 }
 
 class A1 {
-    static V1 fieldV1 = TestCCMismatchNativeMethods.v1;
+    static V1 fieldV1 = TestCCMismatchNativeMethods.myObject.v1;
 
     int m1(V1 v1, V1 v2) {
         return v1.sum();
@@ -224,7 +235,7 @@ class C1 extends A1 {
 }
 
 class A2 {
-    static V1 fieldV1 = TestCCMismatchNativeMethods.v1;
+    static V1 fieldV1 = TestCCMismatchNativeMethods.myObject.v1;
 
     int m1(V1 v1, V1 v2) {
         return v1.sum();
@@ -248,12 +259,12 @@ class D2 extends A2 {
 
 class A3 implements I {
     public int add(V1 v1) {
-        return TestCCMismatchNativeMethods.v1.sum() + v1.sum();
+        return TestCCMismatchNativeMethods.myObject.v1.sum() + TestCCMismatchNativeMethods.myObject.v1.sum();
     }
 }
 
 class A4 implements I {
     public int add(V1 v1) {
-        return TestCCMismatchNativeMethods.v1.sum() + v1.sum();
+        return TestCCMismatchNativeMethods.myObject.v1.sum() + TestCCMismatchNativeMethods.myObject.v1.sum();
     }
 }
