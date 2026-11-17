@@ -63,20 +63,20 @@ bool ZLargePages::pd_collapse(void* addr, size_t bytes) {
 static bool madv_collapse_available() {
   const size_t size = 2 * M;
   const size_t chunk_size = 2 * size;
-  void* const res = ::mmap(nullptr, chunk_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  char* const res = (char*)::mmap(nullptr, chunk_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
   if (res == MAP_FAILED) {
     return false;
   }
 
-  void* const aligned = align_up(res, size);
+  char* const aligned = align_up(res, size);
 
   assert(size >= os::vm_page_size(), "Unexpected page size");
-  os::pretouch_memory(aligned, (void*)(((char*)aligned) + os::vm_page_size()));
+  os::pretouch_memory(aligned, aligned + os::vm_page_size());
 
   const bool result = ZLargePages::pd_collapse(aligned, size);
 
-  munmap(res, chunk_size);
+  ::munmap(res, chunk_size);
 
   return result;
 }
