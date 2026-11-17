@@ -4204,10 +4204,7 @@ LoopNode* CountedLoopNode::skip_strip_mined(int expect_skeleton) {
 OuterStripMinedLoopNode* CountedLoopNode::outer_loop() const {
   assert(is_strip_mined(), "not a strip mined loop");
   Node* c = in(EntryControl);
-  if (!is<OuterStripMinedLoopNode>(c) || c->is_top()) {
-    return nullptr;
-  }
-  return c->as_OuterStripMinedLoop();
+  return isa<OuterStripMinedLoopNode>(c);
 }
 
 IfTrueNode* OuterStripMinedLoopNode::outer_loop_tail() const {

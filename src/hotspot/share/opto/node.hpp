@@ -1607,22 +1607,7 @@ NODE_METHODS(NODE_IS_CASES)
 
 template <typename T>
 T* Node::isa(Node* n) {
-  if (n == nullptr) {
-    return nullptr;
-  }
-  if constexpr (false) {
-    return nullptr;
-  }
-#define NODE_ISA_NONCONST_CASES(type)                  \
-  else if constexpr (std::is_same_v<T, type##Node>) {  \
-    return n->isa_##type();                            \
-  }
-NODE_METHODS(NODE_ISA_NONCONST_CASES)
-#undef NODE_ISA_NONCONST_CASES
-  else {
-    static_assert(DependentAlwaysFalse<T>, "Node::isa<T>(Node*) does not support this type.");
-    return nullptr;
-  }
+  return const_cast<T*>(Node::isa<T>(const_cast<const Node*>(n)));
 }
 
 template <typename T>
@@ -1652,20 +1637,7 @@ T* Node::isa(std::nullptr_t) {
 
 template <typename T>
 T* Node::as(Node* n) {
-  assert(n != nullptr, "invalid null node");
-  if constexpr (false) {
-    return nullptr;
-  }
-#define NODE_AS_NONCONST_CASES(type)                   \
-  else if constexpr (std::is_same_v<T, type##Node>) {  \
-    return n->as_##type();                             \
-  }
-NODE_METHODS(NODE_AS_NONCONST_CASES)
-#undef NODE_AS_NONCONST_CASES
-  else {
-    static_assert(DependentAlwaysFalse<T>, "Node::as<T>(Node*) does not support this type.");
-    return nullptr;
-  }
+  return const_cast<T*>(Node::as<T>(const_cast<const Node*>(n)));
 }
 
 template <typename T>

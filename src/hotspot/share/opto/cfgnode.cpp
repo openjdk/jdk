@@ -2377,8 +2377,10 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Note: During parsing, phis are often transformed before their regions.
   // This means we have to use type_or_null to defend against untyped regions.
-  if( phase->type_or_null(region) == Type::TOP ) // Dead code?
+  if (phase->type_or_null(region) == Type::TOP) {
+    // Dead code?
     return nullptr;                // No change
+  }
 
   Node *top = phase->C->top();
   bool new_phi = (outcnt() == 0); // transforming new Phi
