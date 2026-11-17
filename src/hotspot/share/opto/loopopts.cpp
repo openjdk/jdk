@@ -2322,7 +2322,7 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
 // "Nearly" because all Nodes have been cloned from the original in the loop,
 // but the fall-in edges to the Cmp are different.  Clone bool/Cmp pairs
 // through the Phi recursively, and return a Bool.
-CmpNode*PhaseIdealLoop::clone_bool(PhiNode* phi) {
+CmpNode* PhaseIdealLoop::clone_bool(PhiNode* phi) {
   uint i;
   // Convert this Phi into a Phi merging Bools
   for( i = 1; i < phi->req(); i++ ) {
@@ -2337,22 +2337,29 @@ CmpNode*PhaseIdealLoop::clone_bool(PhiNode* phi) {
   Node *sample_cmp = phi->in(1);
 
   // Make Phis to merge the Cmp's inputs.
-  PhiNode *phi1 = new PhiNode( phi->in(0), Type::TOP );
-  PhiNode *phi2 = new PhiNode( phi->in(0), Type::TOP );
-  for( uint j = 1; j < phi->req(); j++ ) {
-    Node *cmp_top = phi->in(j); // Inputs are all Cmp or TOP
-    Node *n1, *n2;
-    if( cmp_top->is_Cmp() ) {
-      n1 = cmp_top->in(1);
-      n2 = cmp_top->in(2);
+  // The Cmp could be a FlatArrayCheck node: input 1 is then memory and a memory Phi with the right address type
+  // needs to be created.
+  PhiNode* phi1 = nullptr;
+  PhiNode* phi2 = new PhiNode(phi->in(0), Type::TOP);
+  for (uint j = 1; j < phi->req(); j++) {
+    Node* cmp = phi->in(j); // Inputs are all Cmp
+    Node* n1, *n2;
+    assert(cmp->is_Cmp(), "");
+    n1 = cmp->in(1);
+    n2 = cmp->in(2);
+
+    if (phi1 == nullptr) {
+      phi1 = PhiNode::make(phi->in(0), n1);
     } else {
-      n1 = n2 = cmp_top;
+      phi1->set_req(j, n1);
+      phi1->set_type(phi1->type()->meet_speculative(n1->bottom_type()));
     }
-    phi1->set_req( j, n1 );
-    phi2->set_req( j, n2 );
-    phi1->set_type(phi1->type()->meet_speculative(n1->bottom_type()));
+    phi2->set_req(j, n2);
+    assert(phi1->bottom_type() != Type::MEMORY || cmp->is_FlatArrayCheck(), "only FlatArrayCheck has a memory input");
     phi2->set_type(phi2->type()->meet_speculative(n2->bottom_type()));
+    assert(phi2->bottom_type() != Type::MEMORY, "no memory input to a Cmp");
   }
+  assert(phi1 != nullptr, "");
 
   // See if these Phis have been made before.
   // Register with optimizer
