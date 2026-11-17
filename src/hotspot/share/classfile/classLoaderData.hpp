@@ -121,7 +121,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // The CLDs are not placed in the Java heap, so the Card Table can't be used to mark when
   // CLDs were modified. In addition to that, G1's eager reclaim mechanism also requires
   // checking if the CLD contains oops to humongous objects.
-  bool _has_modified_or_humongous_oops;     // Card Table Equivalent
+  bool _has_modified_or_humongous_oops;
 
   int _keep_alive_ref_count; // if this CLD should not be considered eligible for unloading.
                              // Used for non-strong hidden classes and the
@@ -195,7 +195,8 @@ public:
 private:
   void clear_modified_or_humongous_oops()      { _has_modified_or_humongous_oops = false; }
  public:
-  void record_modified_or_humongous_oops() { _has_modified_or_humongous_oops = true; }
+  void record_modified_oops()                  { _has_modified_or_humongous_oops = true; }
+  void record_humongous_oops()                 { _has_modified_or_humongous_oops = true; }
   bool has_modified_or_humongous_oops()        { return _has_modified_or_humongous_oops; }
 
   oop holder_no_keepalive() const;

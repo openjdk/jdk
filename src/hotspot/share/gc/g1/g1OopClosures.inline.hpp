@@ -211,13 +211,13 @@ inline void G1ScanRSForOptionalClosure::do_oop_work(T* p) {
 
 void G1ParCopyHelper::do_cld_barrier(oop new_obj) {
   if (_g1h->heap_region_containing(new_obj)->is_young()) {
-    _scanned_cld->record_modified_or_humongous_oops();
+    _scanned_cld->record_modified_oops();
   }
 }
 
 void G1ParCopyHelper::do_cld_barrier_non_cset(G1HeapRegionAttr attr) {
   if (attr.is_humongous()) {
-    _scanned_cld->record_modified_or_humongous_oops();
+    _scanned_cld->record_humongous_oops();
   }
 }
 

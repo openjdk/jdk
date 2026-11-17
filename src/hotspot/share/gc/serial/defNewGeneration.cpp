@@ -131,7 +131,7 @@ class CLDScanClosure: public CLDClosure {
     cld->oops_do(&oop_closure, ClassLoaderData::_claim_none, true /* should_clear_modified_or_humongous_oops */);
 
     if (oop_closure._has_oops_into_young_gen) {
-      cld->record_modified_or_humongous_oops();
+      cld->record_modified_oops();
     }
   }
 };

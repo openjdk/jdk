@@ -510,7 +510,7 @@ void ClassLoaderData::record_dependency(const Klass* k) {
     Handle dependency(Thread::current(), to);
     add_handle(dependency);
     // Added a potentially young gen oop to the ClassLoaderData
-    record_modified_or_humongous_oops();
+    record_modified_oops();
   }
 }
 
@@ -841,7 +841,7 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
 
 OopHandle ClassLoaderData::add_handle(Handle h) {
   MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  record_modified_or_humongous_oops();
+  record_modified_oops();
   return _handles.add(h());
 }
 
@@ -859,7 +859,7 @@ void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
   if (dest.resolve() != nullptr) {
     return;
   } else {
-    record_modified_or_humongous_oops();
+    record_modified_oops();
     dest = _handles.add(h());
   }
 }
