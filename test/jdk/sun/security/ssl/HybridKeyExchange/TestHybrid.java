@@ -98,6 +98,8 @@ public class TestHybrid {
             throw new RuntimeException("Accepted incorrect parameters for " +
                     group.name);
         } catch (InvalidAlgorithmParameterException expected) {
+            checkMessage(expected, "Expected NamedParameterSpec for " +
+                    group.name);
             System.out.println("Rejected incorrect parameters for " +
                     group.name);
         }
@@ -112,6 +114,7 @@ public class TestHybrid {
             throw new RuntimeException("Accepted unsupported key size for " +
                     group.name);
         } catch (InvalidParameterException expected) {
+            checkMessage(expected, "keysize not supported");
             System.out.println("Rejected unsupported key size for " +
                     group.name);
         }
@@ -132,8 +135,10 @@ public class TestHybrid {
         if (enc.key().getFormat() != null || enc.key().getEncoded() != null) {
             throw new RuntimeException("Hybrid secret must be opaque");
         }
-        testNotSerializable(kp.getPrivate(), "hybrid private key");
-        testNotSerializable(enc.key(), "hybrid shared secret");
+        testNotSerializable(kp.getPrivate(), "hybrid private key",
+                "Hybrid private key must not be serialized");
+        testNotSerializable(enc.key(), "hybrid shared secret",
+                "Hybrid shared secret must not be serialized");
         byte[] ciphertext = enc.encapsulation();
         SecretKey decapsulated = d.decapsulate(ciphertext, 0, secretSize,
                 "generic");
@@ -152,6 +157,8 @@ public class TestHybrid {
             throw new RuntimeException(
                     "Expected DecapsulateException not thrown");
         } catch (DecapsulateException expected) {
+            checkMessage(expected, "Invalid key encapsulation message length: " +
+                    badCiphertext.length + ", expected = " + ciphertext.length);
             System.out.println("Expected DecapsulateException thrown");
         }
 
@@ -160,6 +167,8 @@ public class TestHybrid {
                     new NamedParameterSpec(group.name), null);
             throw new RuntimeException("Accepted KEM parameters");
         } catch (InvalidAlgorithmParameterException expected) {
+            checkMessage(expected, "KEM parameters are not supported for " +
+                    group.name);
             System.out.println("Rejected KEM parameters");
         }
 
@@ -169,6 +178,7 @@ public class TestHybrid {
             throw new RuntimeException("Accepted " + group.name +
                     " key for " + otherGroup.name);
         } catch (InvalidKeyException expected) {
+            checkMessage(expected, "Incorrect public key algorithm");
             System.out.println("Rejected " + group.name +
                     " key for " + otherGroup.name);
         }
@@ -181,6 +191,8 @@ public class TestHybrid {
             encapsulator.encapsulate(-1, secretSize, "Generic");
             throw new RuntimeException("Accepted negative encapsulation range");
         } catch (IndexOutOfBoundsException expected) {
+            checkMessage(expected, "Invalid secret range: from = -1, to = " +
+                    secretSize + ", secret size = " + secretSize);
             System.out.println("Rejected negative encapsulation range");
         }
 
@@ -188,6 +200,8 @@ public class TestHybrid {
             decapsulator.decapsulate(ciphertext, 0, secretSize + 1, "Generic");
             throw new RuntimeException("Accepted oversized decapsulation range");
         } catch (IndexOutOfBoundsException expected) {
+            checkMessage(expected, "Invalid secret range: from = 0, to = " +
+                    (secretSize + 1) + ", secret size = " + secretSize);
             System.out.println("Rejected oversized decapsulation range");
         }
 
@@ -195,6 +209,7 @@ public class TestHybrid {
             encapsulator.encapsulate(0, secretSize - 1, "Generic");
             throw new RuntimeException("Accepted partial encapsulation range");
         } catch (UnsupportedOperationException expected) {
+            checkMessage(expected, "Partial hybrid secrets are not supported");
             System.out.println("Rejected partial encapsulation range");
         }
 
@@ -202,6 +217,7 @@ public class TestHybrid {
             decapsulator.decapsulate(ciphertext, 0, secretSize - 1, "Generic");
             throw new RuntimeException("Accepted partial decapsulation range");
         } catch (UnsupportedOperationException expected) {
+            checkMessage(expected, "Partial hybrid secrets are not supported");
             System.out.println("Rejected partial decapsulation range");
         }
 
@@ -209,6 +225,7 @@ public class TestHybrid {
             encapsulator.encapsulate(0, secretSize, null);
             throw new RuntimeException("Accepted null encapsulation algorithm");
         } catch (NullPointerException expected) {
+            checkMessage(expected, "algorithm must not be null");
             System.out.println("Rejected null encapsulation algorithm");
         }
 
@@ -216,6 +233,7 @@ public class TestHybrid {
             decapsulator.decapsulate(ciphertext, 0, secretSize, null);
             throw new RuntimeException("Accepted null decapsulation algorithm");
         } catch (NullPointerException expected) {
+            checkMessage(expected, "algorithm must not be null");
             System.out.println("Rejected null decapsulation algorithm");
         }
     }
@@ -228,31 +246,45 @@ public class TestHybrid {
         KEM kem = KEM.getInstance(group.name, provider);
 
         testInvalidLen(kem, group.name,
-                Arrays.copyOf(encoded, encoded.length - 1));
+                Arrays.copyOf(encoded, encoded.length - 1), encoded.length);
         testInvalidLen(kem, group.name,
-                Arrays.copyOf(encoded, encoded.length + 1));
+                Arrays.copyOf(encoded, encoded.length + 1), encoded.length);
     }
 
     private static void testInvalidLen(KEM kem, String alg,
-            byte[] encoded) throws Exception {
+            byte[] encoded, int expectedLength) throws Exception {
         try {
             kem.newEncapsulator(new RawPublicKey(alg, encoded));
             throw new RuntimeException("Accepted invalid RAW key length for " +
                     alg);
         } catch (InvalidKeyException expected) {
+            checkMessage(expected, "Invalid hybrid key length " +
+                    encoded.length + ", expected " + expectedLength);
             System.out.println("Rejected invalid RAW key length for " +
                     alg);
         }
     }
 
-    private static void testNotSerializable(Object obj, String name)
-            throws Exception {
+    private static void testNotSerializable(Object obj, String name,
+            String expectedMessage) throws Exception {
         try (var bytes = new ByteArrayOutputStream();
                 var output = new ObjectOutputStream(bytes)) {
             output.writeObject(obj);
             throw new RuntimeException("Serialized " + name);
         } catch (NotSerializableException expected) {
+            checkMessage(expected, expectedMessage);
             System.out.println("Rejected serialization of " + name);
+        }
+    }
+
+    private static void checkMessage(Throwable exception,
+            String expectedMessage) {
+        String actualMessage = exception.getMessage();
+        if (!expectedMessage.equals(actualMessage)) {
+            throw new RuntimeException("Unexpected " +
+                    exception.getClass().getSimpleName() + " message: expected \"" +
+                    expectedMessage + "\", got \"" + actualMessage + "\"",
+                    exception);
         }
     }
 
