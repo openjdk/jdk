@@ -29,7 +29,7 @@
  *      8243559 8225072 8258630 8259312 8256421 8225081 8225082 8225083 8245654
  *      8305975 8304760 8307134 8295894 8314960 8317373 8317374 8318759 8319187
  *      8321408 8316138 8341057 8303770 8350498 8359170 8361212 8372351 8387123
- *      8386371 8392771
+ *      8386371 8392771 8395690
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -48,12 +48,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 111;
+    private static final int COUNT = 107;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "5C:83:D7:C3:1A:F2:FE:79:22:93:F3:CA:CB:01:B6:79:F0:A3:1C:EF:7D:F8:FC:54:61:FE:AE:3B:11:32:D8:CB";
+            = "5F:8D:07:81:52:CB:9A:C6:8B:87:11:05:8C:11:7B:6C:07:32:EE:23:DA:8D:38:99:D1:93:96:70:5E:0C:80:E9";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -78,8 +78,6 @@ public class VerifyCACerts {
                     "C0:A6:F4:DC:63:A2:4B:FD:CF:54:EF:2A:6A:08:2A:0A:72:DE:35:80:3E:2F:F5:FF:52:7A:E5:D8:72:06:DF:D5");
             put("comodorsaca [jdk]",
                     "52:F0:E1:C4:E5:8E:C6:29:29:1B:60:31:7F:07:46:71:B8:5D:7E:A8:0D:5B:07:27:34:63:53:4B:32:B4:02:34");
-            put("comodoaaaca [jdk]",
-                    "D7:A7:A0:FB:5D:7E:27:31:D7:71:E9:48:4E:BC:DE:F7:1D:5F:0C:3E:0A:29:48:78:2B:C8:3E:E0:EA:69:9E:F4");
             put("comodoeccca [jdk]",
                     "17:93:92:7A:06:14:54:97:89:AD:CE:2F:8F:34:F7:F0:B6:6D:0F:3A:E3:A3:B8:4D:21:EC:15:DB:BA:4F:AD:C7");
             put("usertrustrsaca [jdk]",
@@ -250,12 +248,6 @@ public class VerifyCACerts {
                     "D4:8D:3D:23:EE:DB:50:A4:59:E5:51:97:60:1C:27:77:4B:9D:7B:18:C9:4D:5A:05:95:11:A1:02:50:B9:31:68");
             put("teliarootcav2 [jdk]",
                     "24:2B:69:74:2F:CB:1E:5B:2A:BF:98:89:8B:94:57:21:87:54:4E:5B:4D:99:11:78:65:73:62:1F:6A:74:B8:2C");
-            put("emsignrootcag1 [jdk]",
-                    "40:F6:AF:03:46:A9:9A:A1:CD:1D:55:5A:4E:9C:CE:62:C7:F9:63:46:03:EE:40:66:15:83:3D:C8:C8:D0:03:67");
-            put("emsigneccrootcag3 [jdk]",
-                    "86:A1:EC:BA:08:9C:4A:8D:3B:BE:27:34:C6:12:BA:34:1D:81:3E:04:3C:F9:E8:A8:62:CD:5C:57:A3:6B:BE:6B");
-            put("emsignrootcag2 [jdk]",
-                    "1A:A0:C2:70:9E:83:1B:D6:E3:B5:12:9A:00:BA:41:F7:EE:EF:02:08:72:F1:E6:50:4B:F0:F6:C3:F2:4F:3A:F3");
             put("certainlyrootr1 [jdk]",
                     "77:B8:2C:D8:64:4C:43:05:F7:AC:C5:CB:15:6B:45:67:50:04:03:3D:51:C6:0C:62:02:A8:E0:C3:34:67:D3:A0");
             put("certainlyroote1 [jdk]",

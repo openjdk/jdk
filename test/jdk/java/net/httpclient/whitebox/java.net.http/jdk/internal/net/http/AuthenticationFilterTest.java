@@ -195,7 +195,7 @@ public class AuthenticationFilterTest {
                 new HttpRequestBuilderImpl(reqURI);
         HttpRequestImpl origReq = new HttpRequestImpl(reqBuilder);
         HttpRequestImpl req = new HttpRequestImpl(origReq, ps);
-        MultiExchange<?> multi = new MultiExchange<Void>(origReq, req, client,
+        MultiExchange<?> multi = new MultiExchange<Void>(req, client,
                 BodyHandlers.replacing(null), null);
         Exchange<?> exchange = new Exchange<>(req, multi);
         out.println("\nSimulating unauthenticated request to " + uri);
@@ -264,7 +264,7 @@ public class AuthenticationFilterTest {
                 new HttpRequestBuilderImpl(reqURI2);
         HttpRequestImpl origReq2 = new HttpRequestImpl(reqBuilder2);
         HttpRequestImpl req2 = new HttpRequestImpl(origReq2, ps);
-        MultiExchange<?> multi2 = new MultiExchange<Void>(origReq2, req2, client,
+        MultiExchange<?> multi2 = new MultiExchange<Void>(req2, client,
                 HttpResponse.BodyHandlers.replacing(null), null);
         filter.request(req2, multi2);
         out.println("Check that filter has added credentials from cache for " + reqURI2
@@ -295,7 +295,7 @@ public class AuthenticationFilterTest {
                 new HttpRequestBuilderImpl(reqURI3);
         HttpRequestImpl origReq3 = new HttpRequestImpl(reqBuilder3);
         HttpRequestImpl req3 = new HttpRequestImpl(origReq3, ps);
-        MultiExchange<?> multi3 = new MultiExchange<Void>(origReq3, req3, client,
+        MultiExchange<?> multi3 = new MultiExchange<Void>(req3, client,
                 HttpResponse.BodyHandlers.replacing(null), null);
         filter.request(req3, multi3);
         HttpHeaders h3 = req3.getSystemHeadersBuilder().build();
@@ -338,7 +338,7 @@ public class AuthenticationFilterTest {
         HttpRequestBuilderImpl reqBuilder4 = new HttpRequestBuilderImpl(reqURI4);
         HttpRequestImpl origReq4 = new HttpRequestImpl(reqBuilder4);
         HttpRequestImpl req4 = new HttpRequestImpl(origReq4, fakeProxy);
-        MultiExchange<?> multi4 = new MultiExchange<Void>(origReq4, req4, client,
+        MultiExchange<?> multi4 = new MultiExchange<Void>(req4, client,
                 HttpResponse.BodyHandlers.replacing(null), null);
         out.println("Simulating new request to " + reqURI4 + " with a proxy " + req4.proxy());
         assertTrue((req4.proxy() == null) == (proxy != null),
@@ -378,7 +378,7 @@ public class AuthenticationFilterTest {
             HttpRequestBuilderImpl reqBuilder5 = new HttpRequestBuilderImpl(reqURI);
             HttpRequestImpl origReq5 = new HttpRequestImpl(reqBuilder5);
             HttpRequestImpl req5 = new HttpRequestImpl(origReq5, NO_PROXY);
-            MultiExchange<?> multi5 = new MultiExchange<Void>(origReq5, req5, client,
+            MultiExchange<?> multi5 = new MultiExchange<Void>(req5, client,
                     HttpResponse.BodyHandlers.replacing(null), null);
             out.println("Simulating new request to " + reqURI + " with a proxy " + req5.proxy());
             assertNull(req5.proxy(), "req5.proxy() should be null");
@@ -431,7 +431,7 @@ public class AuthenticationFilterTest {
             HttpRequestBuilderImpl reqBuilder6 = new HttpRequestBuilderImpl(reqURI);
             HttpRequestImpl origReq6 = new HttpRequestImpl(reqBuilder6);
             HttpRequestImpl req6 = new HttpRequestImpl(origReq6, ps);
-            MultiExchange<?> multi6 = new MultiExchange<Void>(origReq6, req6, client,
+            MultiExchange<?> multi6 = new MultiExchange<Void>(req6, client,
                     HttpResponse.BodyHandlers.replacing(null), null);
             out.println("Simulating new request to " + reqURI + " with a proxy " + req6.proxy());
             assertNotNull(req6.proxy(), "req6.proxy() should not be null");
@@ -454,7 +454,7 @@ public class AuthenticationFilterTest {
             HttpRequestBuilderImpl reqBuilder7 = new HttpRequestBuilderImpl(reqURI7);
             HttpRequestImpl origReq7 = new HttpRequestImpl(reqBuilder7);
             HttpRequestImpl req7 = new HttpRequestImpl(origReq7, ps);
-            MultiExchange<?> multi7 = new MultiExchange<Void>(origReq7, req7, client,
+            MultiExchange<?> multi7 = new MultiExchange<Void>(req7, client,
                     HttpResponse.BodyHandlers.replacing(null), null);
             out.println("Simulating new request to " + reqURI7 + " with a proxy " + req7.proxy());
             assertNull(req7.proxy(), "req7.proxy() should be null");

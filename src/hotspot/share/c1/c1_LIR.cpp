@@ -405,6 +405,10 @@ void LIR_Op1::verify() const {
   case lir_move:
     assert(in_opr()->is_valid() && result_opr()->is_valid(), "must be");
     break;
+  case lir_decode_heap_oop:
+    assert(in_opr()->is_register() && in_opr()->type() == T_LONG, "must be");
+    assert(result_opr()->is_register() && result_opr()->type() == T_OBJECT, "must be");
+    break;
   case lir_null_check:
     assert(in_opr()->is_register(), "must be");
     break;
@@ -480,6 +484,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_monaddr:        // input and result always valid, info always invalid
     case lir_null_check:     // input and info always valid, result always invalid
     case lir_move:           // input and result always valid, may have info
+    case lir_decode_heap_oop: // input and result always valid, info always invalid
     case lir_sqrt:           // FP Ops have no info, but input and result
     case lir_abs:
     case lir_neg:
@@ -1863,6 +1868,7 @@ const char * LIR_Op::name() const {
      case lir_branch:                s = "branch";        break;
      case lir_cond_float_branch:     s = "flt_cond_br";   break;
      case lir_move:                  s = "move";          break;
+     case lir_decode_heap_oop:       s = "decode_heap_oop"; break;
      case lir_abs:                   s = "abs";           break;
      case lir_neg:                   s = "neg";           break;
      case lir_sqrt:                  s = "sqrt";          break;

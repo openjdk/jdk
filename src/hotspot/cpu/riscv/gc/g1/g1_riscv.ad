@@ -78,7 +78,7 @@ static void write_barrier_post(MacroAssembler* masm,
 // TODO 8350865 (same applies to g1StoreLSpecialTwoOops)
 // - Do not set/overwrite barrier data here, also handle G1C2BarrierPostNotNull
 
-instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLNoSp src, immI0 off, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
+instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLNoSp src, immI_0 off, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC);
   match(Set mem (StoreLSpecial mem (Binary src off)));

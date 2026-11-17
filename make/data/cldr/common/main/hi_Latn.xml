@@ -92,7 +92,9 @@ annotations.
 			<type key="colNumeric" type="no">Digits ko alag-alag sort karein</type>
 			<type key="colNumeric" type="yes">Digits ko numerically sort karein</type>
 			<type key="colStrength" type="identical">Sabhi ko sort karein</type>
+			<type key="colStrength" type="identical" scope="core">Sabhi</type>
 			<type key="colStrength" type="primary">Sirf Base Letters ko sort karein</type>
+			<type key="colStrength" type="primary" scope="core">Sirf base letters</type>
 			<type key="colStrength" type="quaternary">Accents/Case/Width/Kana ko sort karein</type>
 			<type key="colStrength" type="secondary">Accents ko sort karein</type>
 			<type key="colStrength" type="tertiary">Accents/Case/Width ko sort karein</type>
@@ -105,18 +107,21 @@ annotations.
 			<type key="d0" type="upper">Uppercase</type>
 			<type key="em" type="default">Emoji Characters ke liye Default Presentation use karein</type>
 			<type key="em" type="emoji">Emoji Characters ke liye Emoji Presentation prefer karein</type>
-			<type key="em" type="text">Emoji Characters ke liye Text Presentation prefer karein</type>
-			<type key="fw" type="fri">Week kaa pahla din Friday</type>
-			<type key="fw" type="mon">Week kaa pahla din Monday</type>
-			<type key="fw" type="sat">Week kaa pahla din Saturday</type>
-			<type key="fw" type="sun">Week kaa pahla din Sunday</type>
-			<type key="fw" type="thu">Week kaa pahla din Thursday</type>
-			<type key="fw" type="tue">Week kaa pahla din Tuesday</type>
-			<type key="fw" type="wed">Week kaa pahla din Wednesday</type>
+			<type key="em" type="text">Emoji ke liye Text Presentation</type>
+			<type key="fw" type="fri">Week kaa pahla din: Friday</type>
+			<type key="fw" type="mon">Week kaa pahla din: Monday</type>
+			<type key="fw" type="sat">Week kaa pahla din: Saturday</type>
+			<type key="fw" type="sun">Week kaa pahla din: Sunday</type>
+			<type key="fw" type="thu">Week kaa pahla din: Thursday</type>
+			<type key="fw" type="tue">Week kaa pahla din: Tuesday</type>
+			<type key="fw" type="wed">Week kaa pahla din: Wednesday</type>
+			<type key="hc" type="c12">12 Hour System</type>
+			<type key="hc" type="c24">24 Hour System</type>
 			<type key="hc" type="h11">12 Hour System (0–11)</type>
 			<type key="hc" type="h12">12 Hour System (1–12)</type>
 			<type key="hc" type="h23">24 Hour System (0–23)</type>
 			<type key="hc" type="h24">24 Hour System (1–24)</type>
+			<type key="kv" type="currency" scope="core">Shift Spaces, punctuation, sabhi symbols</type>
 			<type key="lw" type="breakall">Sabhi Words mein Line Breaks allow karein</type>
 			<type key="lw" type="keepall">Sabhi Words mein Line Breaks se bachein</type>
 			<type key="lw" type="keepall" scope="core">Sabhi rakhein</type>
@@ -124,6 +129,7 @@ annotations.
 			<type key="lw" type="phrase">Phrases mein Line Breaks se bachein</type>
 			<type key="lw" type="phrase" scope="core">Phrases mein rakhein</type>
 			<type key="numbers" type="beng">Bangla Digits</type>
+			<type key="numbers" type="hanidays" scope="core">Traditional calendars ke liye Han-character day-of-month numbering</type>
 			<type key="numbers" type="hanidec">Chinese Decimal Numbers</type>
 			<type key="numbers" type="hanidec" scope="core">Positional decimal system ke liye digits ke taur par Chinese number ideographs kaa use</type>
 			<type key="numbers" type="hans">Simplified Chinese Numbers</type>
@@ -136,7 +142,9 @@ annotations.
 			<type key="numbers" type="orya">Odia Digits</type>
 			<type key="numbers" type="roman">Roman Numbers</type>
 			<type key="numbers" type="romanlow">Roman Lowercase Numbers</type>
+			<type key="numbers" type="segment" scope="core">Segment mein divided</type>
 			<type key="numbers" type="taml">Traditional Tamil Numbers</type>
+			<type key="numbers" type="traditional" scope="core">Traditional numbers</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="UK">U.K.</measurementSystemName>
@@ -221,7 +229,6 @@ annotations.
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bhms">h:mm.ss B</dateFormatItem>
 						<dateFormatItem id="EBh">E, B h</dateFormatItem>
 						<dateFormatItem id="Eh">E, h a</dateFormatItem>
 						<dateFormatItem id="hv">h a, v</dateFormatItem>
@@ -229,10 +236,6 @@ annotations.
 						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
-							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
 							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
@@ -252,8 +255,6 @@ annotations.
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d">E, d – E, d MMM y G</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -359,9 +360,7 @@ annotations.
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">midnight</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">noon</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">subah</dayPeriod>
 							<dayPeriod type="afternoon1">dopahar</dayPeriod>
 							<dayPeriod type="evening1">shaam</dayPeriod>
@@ -377,9 +376,7 @@ annotations.
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">aadhi raat</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">Madhyanh</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">subah</dayPeriod>
 							<dayPeriod type="afternoon1">dopahar</dayPeriod>
 							<dayPeriod type="evening1">shaam</dayPeriod>
@@ -387,15 +384,9 @@ annotations.
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">aadhi raat</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">Madhyanh</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">subah</dayPeriod>
 							<dayPeriod type="afternoon1">dopahar</dayPeriod>
 							<dayPeriod type="evening1">shaam</dayPeriod>
@@ -482,13 +473,15 @@ annotations.
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="EBh">E, B h</dateFormatItem>
 						<dateFormatItem id="Eh">E, h a</dateFormatItem>
 						<dateFormatItem id="GyMMMEEEEd">EEEE, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d MMMM, y G</dateFormatItem>
 						<dateFormatItem id="hv">h a, v</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM 'kaa' 'week' W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM 'kaa' 'week' W</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM, y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">Y 'kaa' 'week' w</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y 'kaa' 'week' w</dateFormatItem>
 					</availableFormats>
@@ -1296,6 +1289,13 @@ annotations.
 					<standard>Reunion Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Turkiye Time</generic>
+					<standard>Turkiye Standard Time</standard>
+					<daylight>Turkiye Summer Time</daylight>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -1306,14 +1306,6 @@ annotations.
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
-		<currencyFormats numberSystem="deva">
-			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
-					<pattern alt="noCurrency">#,##,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
@@ -1359,8 +1351,6 @@ annotations.
 			</currency>
 			<currency type="VES">
 				<displayName>Venezuelan bolivar</displayName>
-				<displayName count="one">Venezuelan bolivar</displayName>
-				<displayName count="other">Venezuelan bolivars</displayName>
 			</currency>
 			<currency type="XXX">
 				<displayName count="one">currency ki unknown unit</displayName>
@@ -1368,10 +1358,10 @@ annotations.
 			</currency>
 		</currencies>
 		<minimalPairs>
-			<ordinalMinimalPairs ordinal="few">{0}rd right lein.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="one">{0}st right lein.</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">{0}th right lein.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="two">{0}nd right lein.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="few">{0}rd right lein.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}th right lein.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -1671,7 +1661,6 @@ annotations.
 			<listPatternPart type="2">{0} yaa {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0} aur {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
@@ -1725,8 +1714,8 @@ annotations.
 			<nameField type="title">Shree</nameField>
 			<nameField type="given">Lalit</nameField>
 			<nameField type="given-informal">Lakhan</nameField>
-			<nameField type="given2">Kumaar</nameField>
-			<nameField type="surname-core">Bharati</nameField>
+			<nameField type="given2">Kumar</nameField>
+			<nameField type="surname-core">Bharti</nameField>
 		</sampleName>
 		<sampleName item="foreignGS">
 			<nameField type="given">Kathe</nameField>

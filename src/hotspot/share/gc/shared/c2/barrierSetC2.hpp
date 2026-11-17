@@ -93,7 +93,7 @@ public:
   C2AccessValuePtr(Node* node, const TypePtr* type) :
     C2AccessValue(node, type) {}
 
-  const TypePtr* type() const { return _type->is_ptr(); }
+  const TypePtr* type() const { return _type->as_ptr(); }
 };
 
 // This class wraps a bunch of context parameters that are passed around in the
