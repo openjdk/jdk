@@ -32,12 +32,11 @@ import com.sun.jdi.request.ModificationWatchpointRequest;
 /**
  * Notification of a field modification in the target VM.
  * <p>
- * This notification is not generated for an instance field if the current
- * frame of the event thread is a constructor for the object containing the
- * field and the constructor's declaring class or any of its superclasses has
- * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized}
- * instance fields. It is also not generated for a static field when the class
- * declaring the field is being initialized by the event thread and the class
+ * This notification is not generated for an instance field of {@code this}
+ * when executing a constructor whose declaring class or any of its superclasses
+ * has {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized}
+ * instance fields. It is also not generated for a static field when the thread
+ * modifying the field is initializing its declaring class and that class
  * declares strictly-initialized static fields.
  *
  * @apiNote The instance fields of {@linkplain Class#isValue() value classes} are
