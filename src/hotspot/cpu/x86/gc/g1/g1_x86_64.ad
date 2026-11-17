@@ -177,60 +177,58 @@ instruct g1StoreLSpecialTwoOops(memory mem, rRegL src, rRegP tmp1, rRegP tmp2, r
   format %{ "movq    $mem, $src\t# g1StoreLSpecialTwoOops" %}
   ins_encode %{
     __ lea($tmp1$$Register, $mem$$Address);
-    write_barrier_pre(masm, this,
-                      $tmp1$$Register /* obj */,
-                      $tmp2$$Register /* pre_val */,
-                      $tmp3$$Register /* tmp */,
-                      RegSet::of($tmp1$$Register, $src$$Register) /* preserve */);
-    if ((barrier_data() & G1C2BarrierPre) != 0 || (barrier_data() & G1C2BarrierPost) != 0) {
-      // Adjust address to point to the second narrow oop in the long value, but only if we need to generate
-      // a barrier
+    if ((barrier_data() & G1C2BarrierPre) == 0 && (barrier_data() & G1C2BarrierPost) == 0) {
+      // In case we need barriers, we need tmp1 to walk over both oops, either for pre- or post- barrier.
+      // But if we don't need any, we can save all these shenanigans and keep it simple.
+      __ movq(Address($tmp1$$Register, 0), $src$$Register);
+    } else {
+      write_barrier_pre(masm, this,
+                        $tmp1$$Register /* obj */,
+                        $tmp2$$Register /* pre_val */,
+                        $tmp3$$Register /* tmp */,
+                        RegSet::of($tmp1$$Register, $src$$Register) /* preserve */);
+      // Adjust address to point to the second narrow oop in the long value.
       __ addq($tmp1$$Register, 4);
-    }
-    write_barrier_pre(masm, this,
-                      $tmp1$$Register /* obj */,
-                      $tmp2$$Register /* pre_val */,
-                      $tmp3$$Register /* tmp */,
-                      RegSet::of($tmp1$$Register, $src$$Register) /* preserve */);
+      write_barrier_pre(masm, this,
+                        $tmp1$$Register /* obj */,
+                        $tmp2$$Register /* pre_val */,
+                        $tmp3$$Register /* tmp */,
+                        RegSet::of($tmp1$$Register, $src$$Register) /* preserve */);
 
-    if ((barrier_data() & G1C2BarrierPre) != 0 || (barrier_data() & G1C2BarrierPost) != 0) {
       // The address of the second oop is the address of the store plus the offset of the second oop
       __ movq(Address($tmp1$$Register, -4), $src$$Register);
-    } else {
-      // If no barrier is needed, we didn't adjust tmp1, so we don't need to adjust it here again.
-      __ movq(Address($tmp1$$Register, 0), $src$$Register);
-    }
 
-    // Do the post-barrier of the second oop first since we have its address in tmp1
-    if ((barrier_data() & G1C2BarrierPost) != 0) {
-      __ movq($tmp2$$Register, $src$$Register);
-      __ shrq($tmp2$$Register, 32);
-      if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
-        __ decode_heap_oop($tmp2$$Register);
-      } else {
-        __ decode_heap_oop_not_null($tmp2$$Register);
+      // Do the post-barrier of the second oop first since we have its address in tmp1
+      if ((barrier_data() & G1C2BarrierPost) != 0) {
+        __ movq($tmp2$$Register, $src$$Register);
+        __ shrq($tmp2$$Register, 32);
+        if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
+          __ decode_heap_oop($tmp2$$Register);
+        } else {
+          __ decode_heap_oop_not_null($tmp2$$Register);
+        }
       }
-    }
-    write_barrier_post(masm, this,
-                       $tmp1$$Register /* store_addr */,
-                       $tmp2$$Register /* new_val */,
-                       $tmp3$$Register /* tmp1 */);
+      write_barrier_post(masm, this,
+                         $tmp1$$Register /* store_addr */,
+                         $tmp2$$Register /* new_val */,
+                         $tmp3$$Register /* tmp1 */);
 
-    // Extract the first narrow oop
-    if ((barrier_data() & G1C2BarrierPost) != 0) {
-      // Retrieve the address of the first narrow oop
-      __ addq($tmp1$$Register, -4);
-      __ movl($tmp2$$Register, $src$$Register);
-      if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
-        __ decode_heap_oop($tmp2$$Register);
-      } else {
-        __ decode_heap_oop_not_null($tmp2$$Register);
+      // Extract the first narrow oop
+      if ((barrier_data() & G1C2BarrierPost) != 0) {
+        // Retrieve the address of the first narrow oop
+        __ addq($tmp1$$Register, -4);
+        __ movl($tmp2$$Register, $src$$Register);
+        if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
+          __ decode_heap_oop($tmp2$$Register);
+        } else {
+          __ decode_heap_oop_not_null($tmp2$$Register);
+        }
       }
-    }
-    write_barrier_post(masm, this,
-                       $tmp1$$Register /* store_addr */,
-                       $tmp2$$Register /* new_val */,
-                       $tmp3$$Register /* tmp1 */);
+      write_barrier_post(masm, this,
+                         $tmp1$$Register /* store_addr */,
+                         $tmp2$$Register /* new_val */,
+                         $tmp3$$Register /* tmp1 */);
+     }
   %}
   ins_pipe(ialu_mem_reg);
 %}
