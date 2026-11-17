@@ -2242,7 +2242,7 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
 
 // Binary src (Replicate scalar/immediate)
 static bool is_vector_scalar_binary_pattern(Node* n, Node* m) {
-  if (n == nullptr || !Node::is<Op_Replicate>(m)) {
+  if (n == nullptr || !Node::is_exact<Op_Replicate>(m)) {
     return false;
   }
 
@@ -2272,7 +2272,7 @@ static bool is_vector_scalar_binary_pattern(Node* n, Node* m) {
 // (XorV src (Replicate m1))
 // (XorVMask src (MaskAll m1))
 static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
-  return (Node::is<Op_XorV>(n) || Node::is<Op_XorVMask>(n)) &&
+  return (Node::is_exact<Op_XorV>(n) || Node::is_exact<Op_XorVMask>(n)) &&
          m != nullptr && VectorNode::is_all_ones_vector(m);
 }
 
