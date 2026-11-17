@@ -2388,17 +2388,19 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     DerValue[] valSet;
                     try {
                         valSet = vs.getSet(1);
-                        if (valSet.length == 0 && (attrId.equals(PKCS9FriendlyName_OID) ||
-                                attrId.equals(PKCS9LocalKeyId_OID))) {
-                            throw new IOException("Empty attribute value set");
-                        }
                     } catch (IOException e) {
                         throw new IOException("Attribute " + attrId +
                                 " should have a value " + e.getMessage());
                     }
                     if (attrId.equals(PKCS9FriendlyName_OID)) {
+                        if (valSet.length == 0) {
+                            throw new IOException("Empty attribute value set for " + attrId);
+                        }
                         alias = valSet[0].getBMPString();
                     } else if (attrId.equals(PKCS9LocalKeyId_OID)) {
+                        if (valSet.length == 0) {
+                            throw new IOException("Empty attribute value set for " + attrId);
+                        }
                         keyId = valSet[0].getOctetString();
                     } else if
                         (attrId.equals(TrustedKeyUsage_OID)) {
