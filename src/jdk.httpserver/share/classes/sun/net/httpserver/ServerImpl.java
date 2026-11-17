@@ -162,7 +162,7 @@ class ServerImpl {
                 new IdleTimeoutTask(),
                 IDLE_TIMER_TASK_SCHEDULE, IDLE_TIMER_TASK_SCHEDULE, TimeUnit.MILLISECONDS);
         if (reqRspTimeoutEnabled) {
-            scheduler.scheduleAtFixedRate(
+            scheduler.scheduleWithFixedDelay(
                     new ReqRspTimeoutTask(),
                     REQ_RSP_TIMER_SCHEDULE, REQ_RSP_TIMER_SCHEDULE, TimeUnit.MILLISECONDS);
             logger.log(Level.DEBUG, "HttpServer request/response timeout task schedule ms: ",
