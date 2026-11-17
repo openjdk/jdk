@@ -3095,17 +3095,17 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   if (is_reference_type(type)) {
     decorators |= IN_HEAP | ON_UNKNOWN_OOP_REF;
 
-    if (oldval != nullptr && oldval->is_ValueType()) {
+    if (ValueTypeNode* oldval_vt = Node::isa<ValueTypeNode>(oldval); oldval_vt != nullptr) {
       // Re-execute the unsafe access if allocation triggers deoptimization.
       PreserveReexecuteState preexecs(this);
       jvms()->set_should_reexecute(true);
-      oldval = oldval->as_ValueType()->buffer(this)->get_oop();
+      oldval = oldval_vt->buffer(this)->get_oop();
     }
-    if (newval != nullptr && newval->is_ValueType()) {
+    if (ValueTypeNode* newval_vt = Node::isa<ValueTypeNode>(newval); newval_vt != nullptr) {
       // Re-execute the unsafe access if allocation triggers deoptimization.
       PreserveReexecuteState preexecs(this);
       jvms()->set_should_reexecute(true);
-      newval = newval->as_ValueType()->buffer(this)->get_oop();
+      newval = newval_vt->buffer(this)->get_oop();
     }
 
     // Transformation of a value which could be null pointer (CastPP #null)
@@ -5790,9 +5790,7 @@ IfNode* LibraryCallKit::hashcode_fast_path_if_from_identity_hash_code_call(Phase
     IfProjNode* if_proj = region->in(i)->as_IfProj();
     if (if_proj->_con != 1) continue;
 
-    assert(if_proj->in(0) != nullptr, "");
-    assert(if_proj->in(0)->is_If(), "");
-    IfNode* iff = if_proj->in(0)->as_If();
+    IfNode* iff = Node::as<IfNode>(if_proj->in(0));
 
     assert(iff->in(1) != nullptr, "");
     if (!iff->in(1)->is_Bool()) continue;

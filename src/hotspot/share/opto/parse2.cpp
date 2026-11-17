@@ -2509,9 +2509,7 @@ IfNode* Parse::acmp_fast_path_if_from_substitutable_call(PhaseGVN* phase, CallSt
   IfProjNode* if_proj = call->in(TypeFunc::Control)->as_IfProj();
   if (if_proj->_con != 1) return nullptr;
 
-  assert(if_proj->in(0) != nullptr, "");
-  assert(if_proj->in(0)->is_If(), "");
-  IfNode* iff = if_proj->in(0)->as_If();
+  IfNode* iff = Node::as<IfNode>(if_proj->in(0));
 
   assert(iff->in(1) != nullptr, "");
   if (!iff->in(1)->is_Bool()) return nullptr;
@@ -2701,7 +2699,7 @@ static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
   } else {
     ldk = n;
   }
-  assert(ldk != nullptr && ldk->is_Load(), "should have found a LoadKlass or LoadNKlass node");
+  assert(Node::is<LoadNode>(ldk), "should have found a LoadKlass or LoadNKlass node");
 
   Node* adr = ldk->in(MemNode::Address);
   intptr_t off = 0;
@@ -2772,7 +2770,7 @@ static bool match_type_check(PhaseGVN& gvn,
     RegionNode* diamond = val->in(0)->as_Region();
     IfNode* if1 = diamond->in(1)->in(0)->as_If();
     BoolNode* b1 = if1->in(1)->isa_Bool();
-    if (b1 != nullptr && b1->in(1)->isa_SubTypeCheck()) {
+    if (b1 != nullptr && b1->in(1)->is_SubTypeCheck()) {
       assert(b1->_test._test == BoolTest::eq ||
              b1->_test._test == BoolTest::ne, "%d", b1->_test._test);
 
