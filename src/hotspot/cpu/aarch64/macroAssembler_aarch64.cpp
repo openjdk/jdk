@@ -7117,7 +7117,11 @@ int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_i
 
   if (vk != nullptr) {
     // Called from C1, where the return type is statically known.
-    mov_metadata(klass, vk->constant_encoding());
+    if (AOTCodeCache::is_on_for_dump()) {
+      mov_metadata(klass, vk->constant_encoding());
+    } else {
+      movptr(klass, (intptr_t)vk->get_ValueKlass());
+    }
     jint lh = vk->layout_helper();
     assert(lh != Klass::_lh_neutral_value, "value class in return type must have been resolved");
     if (UseTLAB && !Klass::layout_helper_needs_slow_path(lh)) {
