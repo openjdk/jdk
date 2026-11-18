@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8226374 8242929 8314323
+ * @bug 8226374 8242929 8314323 8371736
  * @library /javax/net/ssl/templates
  * @summary Restrict signature algorithms and named groups
  * @run main/othervm RestrictNamedGroup x25519
@@ -39,6 +39,9 @@
  * @run main/othervm RestrictNamedGroup X25519MLKEM768
  * @run main/othervm RestrictNamedGroup SecP256r1MLKEM768
  * @run main/othervm RestrictNamedGroup SecP384r1MLKEM1024
+ * @run main/othervm RestrictNamedGroup MLKEM512
+ * @run main/othervm RestrictNamedGroup MLKEM768
+ * @run main/othervm RestrictNamedGroup MLKEM1024
  */
 
 import java.security.Security;
