@@ -113,7 +113,9 @@ private:
   NOINLINE // Main hot loop, start inlining from here
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
 
-  bool try_process_remembered_set_chunk(uint worker_id, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q);
+  bool try_process_remembered_set_chunks(uint worker_id, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q);
+  template <typename ClosureType>
+  bool try_process_remembered_set_chunk(uint worker_id, ShenandoahHeap* heap, ClosureType* rset_closure);
 protected:
   template<ShenandoahGenerationType GENERATION, bool CANCELLABLE>
   void mark_loop(uint worker_id, TaskTerminator* terminator);

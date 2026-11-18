@@ -88,23 +88,37 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator) {
   }
 }
 
-bool ShenandoahMark::try_process_remembered_set_chunk(uint worker_id, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q) {
+bool ShenandoahMark::try_process_remembered_set_chunks(uint worker_id, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q) {
+  ShenandoahRedirtyCardsMarkClosure rset_closure(q, _generation->ref_processor());
+  _generation->ref_processor()->set_mark_closure(worker_id, &rset_closure);
+
+  uintx chunks_scanned = 0;
+  do {
+    // Always try to scan at least one chunk. Continue scanning until there is mark work,
+    // or until we have scanned too many empty chunks.
+    if (!try_process_remembered_set_chunk(worker_id, heap, &rset_closure)) {
+      return false;
+    }
+    ++chunks_scanned;
+  } while (q->is_empty() && chunks_scanned < ShenandoahRememberedSetLoopStride);
+  return true;
+}
+
+template <typename ClosureType>
+bool ShenandoahMark::try_process_remembered_set_chunk(uint worker_id, ShenandoahHeap* heap, ClosureType* rset_closure) {
   ShenandoahRegionChunk assignment;
   if (!_remembered_set_scanner.next(&assignment)) {
     return false;
   }
 
-  ShenandoahRedirtyCardsMarkClosure rset_closure(q, _generation->ref_processor());
-  _generation->ref_processor()->set_mark_closure(worker_id, &rset_closure);
-
   ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
-  scanner->process_chunk_for_mark(assignment, &rset_closure, worker_id);
+  scanner->process_chunk_for_mark(assignment, rset_closure, worker_id);
   return true;
 }
 
 template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
 void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req) {
-  uintx stride = ShenandoahMarkLoopStride;
+  const uintx stride = ShenandoahMarkLoopStride;
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahObjToScanQueueSet* queues = task_queues();
@@ -129,13 +143,13 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
 
     uint work = 0;
     if (GENERATION == YOUNG) {
-      if (try_process_remembered_set_chunk(worker_id, heap, q)) {
+      if (try_process_remembered_set_chunks(worker_id, heap, q)) {
         // This counts as work even if the scanned chunk did not put any oops in our queue.
         // We do not want this thread to enter termination just because there were no interesting
         // pointers on the scanned chunk.
         work++;
-        _generation->ref_processor()->set_mark_closure(worker_id, cl);
       }
+      _generation->ref_processor()->set_mark_closure(worker_id, cl);
     }
 
     for (uint i = 0; i < stride; i++) {

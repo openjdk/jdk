@@ -464,10 +464,16 @@
           "evacuated.")                                                     \
           range(0, 100)                                                     \
                                                                             \
+  product(uintx, ShenandoahRememberedSetLoopStride, 100, EXPERIMENTAL,      \
+          "How many empty chunks of the remembered set to scan before "     \
+          "checking for cancellation, yielding, etc." )                     \
+          range(1, max_uintx)                                               \
+                                                                            \
   product(uintx, ShenandoahMarkLoopStride, 1000, EXPERIMENTAL,              \
           "How many items to process during one marking iteration before "  \
           "checking for cancellation, yielding, etc. Larger values improve "\
           "marking performance at expense of responsiveness.")              \
+          range(1, max_uintx)                                               \
                                                                             \
   product(uintx, ShenandoahParallelRegionStride, 0, EXPERIMENTAL,           \
           "How many regions to process at once during parallel region "     \
