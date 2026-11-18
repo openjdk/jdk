@@ -2925,7 +2925,7 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   bge(cnt, tmp1, LOOP);
   beqz(cnt, SAME);
 
-  // Tail: one vl-bounded compare covers the rest.
+  // Tail: one vl-bounded m4 compare covers the rest.
   vsetvli(tmp1, cnt, sew, Assembler::m4, Assembler::ma, Assembler::ta);
   j(COMPARE_ONCE);
 
