@@ -70,11 +70,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_L})
     public static void testB64toL64(byte[] input, long[] output) {
         vectorRebracket(BSPEC64, LSPEC64, input, output);
@@ -98,11 +97,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_D})
     public static void testB64toD64(byte[] input, double[] output) {
         vectorRebracket(BSPEC64, DSPEC64, input, output);
@@ -138,11 +136,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_L})
     public static void testS64toL64(short[] input, long[] output) {
         vectorRebracket(SSPEC64, LSPEC64, input, output);
@@ -166,11 +163,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_D})
     public static void testS64toD64(short[] input, double[] output) {
         vectorRebracket(SSPEC64, DSPEC64, input, output);
@@ -206,11 +202,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_L})
     public static void testI64toL64(int[] input, long[] output) {
         vectorRebracket(ISPEC64, LSPEC64, input, output);
@@ -234,11 +229,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_D})
     public static void testI64toD64(int[] input, double[] output) {
         vectorRebracket(ISPEC64, DSPEC64, input, output);
@@ -250,11 +244,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_B})
     public static void testL64toB64(long[] input, byte[] output) {
         vectorRebracket(LSPEC64, BSPEC64, input, output);
@@ -266,11 +259,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_S})
     public static void testL64toS64(long[] input, short[] output) {
         vectorRebracket(LSPEC64, SSPEC64, input, output);
@@ -282,11 +274,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_I})
     public static void testL64toI64(long[] input, int[] output) {
         vectorRebracket(LSPEC64, ISPEC64, input, output);
@@ -298,11 +289,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_F})
     public static void testL64toF64(long[] input, float[] output) {
         vectorRebracket(LSPEC64, FSPEC64, input, output);
@@ -314,11 +304,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_D})
     public static void testL64toD64(long[] input, double[] output) {
         vectorRebracket(LSPEC64, DSPEC64, input, output);
@@ -366,11 +355,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_L})
     public static void testF64toL64(float[] input, long[] output) {
         vectorRebracket(FSPEC64, LSPEC64, input, output);
@@ -382,11 +370,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_D})
     public static void testF64toD64(float[] input, double[] output) {
         vectorRebracket(FSPEC64, DSPEC64, input, output);
@@ -398,11 +385,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_B})
     public static void testD64toB64(double[] input, byte[] output) {
         vectorRebracket(DSPEC64, BSPEC64, input, output);
@@ -414,11 +400,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_S})
     public static void testD64toS64(double[] input, short[] output) {
         vectorRebracket(DSPEC64, SSPEC64, input, output);
@@ -430,11 +415,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_I})
     public static void testD64toI64(double[] input, int[] output) {
         vectorRebracket(DSPEC64, ISPEC64, input, output);
@@ -446,11 +430,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_L})
     public static void testD64toL64(double[] input, long[] output) {
         vectorRebracket(DSPEC64, LSPEC64, input, output);
@@ -462,11 +445,10 @@ public class TestVectorRebracket {
     }
 
     @Test
-    // A vector with a single lane is never intrinsified: arch_supports_vector() rejects
-    // num_elem == 1 for every operation but Load/StoreVector, in shared code, so there is no
-    // platform, CPU feature or flag under which this reinterpret could be generated. The rule
-    // is therefore unconditional, and will start failing if one lane vectors are ever
-    // supported, at which point a positive rule has to be defined here.
+    // Never intrinsified: arch_supports_vector() rejects num_elem == 1 for all but
+    // Load/StoreVector, and that check is in shared code. No platform, CPU feature or flag
+    // can change it, so the rule needs no applyIf. If one lane vectors are ever supported
+    // it will fail, and a positive rule must replace it.
     @IR(failOn = {IRNode.VECTOR_REINTERPRET_F})
     public static void testD64toF64(double[] input, float[] output) {
         vectorRebracket(DSPEC64, FSPEC64, input, output);
