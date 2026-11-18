@@ -767,8 +767,9 @@ public final class SwitchBootstraps {
         });
 
         try {
-            // Preserve nestmate access. Allow obsolete helpers from relinking after
-            // redefinition or retransformation to unload independently of the loader.
+            // This class is linked at the indy callsite; so define a hidden nestmate.
+            // Allow obsolete helpers from relinking after redefinition or
+            // retransformation to unload independently of the loader.
             MethodHandles.Lookup lookup = JLA.hasBeenRedefined(caller.lookupClass())
                     ? caller.defineHiddenClass(classBytes, true, NESTMATE)
                     : caller.defineHiddenClass(classBytes, true, NESTMATE, STRONG);

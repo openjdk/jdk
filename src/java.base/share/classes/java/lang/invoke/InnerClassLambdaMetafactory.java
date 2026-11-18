@@ -355,6 +355,7 @@ import sun.invoke.util.Wrapper;
         // Define the generated class in this VM.
 
         try {
+            // This class is linked at the indy callsite; so define a hidden nestmate.
             // Redefinition or retransformation of the caller can cause lambda call
             // sites to be linked again, generating additional proxy classes.
             // If the caller or a superclass has been redefined, allow newly generated

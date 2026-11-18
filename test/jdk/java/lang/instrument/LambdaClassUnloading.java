@@ -103,14 +103,9 @@ public class LambdaClassUnloading {
         Reference.reachabilityFence(loader);
         System.out.println(arguments[0] + ": all " + classes.size() + " implementation classes reclaimed");
 
-        // The lambda test covers both redefinition and retransformation.
-        // Test unloading of the generated classes for record equals/hashCode
-        // and type switches using only retransformation.
-        if (retransform) {
-            testHelpers(retransform, "recordEquals");
-            testHelpers(retransform, "recordHashCode");
-            testHelpers(retransform, "typeSwitch");
-        }
+        testHelpers(retransform, "recordEquals");
+        testHelpers(retransform, "recordHashCode");
+        testHelpers(retransform, "typeSwitch");
     }
 
     private static List<WeakReference<Class<?>>> exercise(boolean retransform, byte[] originalBytes) throws Exception {
@@ -199,7 +194,7 @@ public class LambdaClassUnloading {
                 Asserts.assertEquals(new RecordHost("payload").hashCode(), "payload".hashCode());
             case "typeSwitch" -> {
                 Asserts.assertEquals(SwitchHost.typeSwitch("payload"), 7);
-                Asserts.assertEquals(SwitchHost.typeSwitch(Integer.valueOf(42)), 42);
+                Asserts.assertEquals(SwitchHost.typeSwitch(Integer.valueOf(4711)), 4711);
                 Asserts.assertEquals(SwitchHost.typeSwitch(Boolean.TRUE), -1);
             }
             default -> throw new IllegalArgumentException(kind);
@@ -239,6 +234,7 @@ public class LambdaClassUnloading {
     private static void track(List<WeakReference<Class<?>>> classes, IntSupplier instance, int expected) {
         Asserts.assertEquals(instance.getAsInt(), expected);
         Asserts.assertTrue(instance.getClass().isHidden(), "Expected a hidden lambda implementation class");
+        Asserts.assertFalse(alreadyTracked(classes, instance.getClass()), "Expected a new lambda implementation class");
         classes.add(new WeakReference<>(instance.getClass()));
     }
 
