@@ -24,6 +24,7 @@
 
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vmreg.inline.hpp"
+#include "register_ppc.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -141,7 +142,7 @@ static void move_float(MacroAssembler* masm, int out_stk_bias,
       // FP arguments can get passed in GP reg! (Only for VarArgs for which we don't use FP regs.)
       assert(from_reg.segment_mask() == to_reg.segment_mask(), "sanity");
       if (from_reg.segment_mask() == REG32_MASK) {
-        __ floatToIntBits(as_Register(to_reg), as_FloatRegister(from_reg), F0);
+        __ floatToIntBits(as_Register(to_reg), as_FloatRegister(from_reg), F0_SCRATCH);
       } else {
         __ mffprd(as_Register(to_reg), as_FloatRegister(from_reg));
       }
