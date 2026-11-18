@@ -135,6 +135,7 @@ public class TestDefaultArchiveLoading {
         }
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "-XX:-AlignArrayElements",
                 "-XX:" + coh + "UseCompactObjectHeaders",
                 "-XX:" + coops + "UseCompressedOops",
                 "-Xlog:cds",
