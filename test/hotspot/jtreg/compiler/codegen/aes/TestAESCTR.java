@@ -79,7 +79,7 @@ public class TestAESCTR {
 
                 // test the usedCtr path, force update() + doFinal()
                 System.setProperty("lastChunkSize", "7");
-                System.setProperty("encInputOffset ", "1");
+                System.setProperty("encInputOffset", "1");
                 WhiteBox.getWhiteBox().deoptimizeAll();
                 TestAESMain.main(args);
                 System.clearProperty("lastChunkSize");

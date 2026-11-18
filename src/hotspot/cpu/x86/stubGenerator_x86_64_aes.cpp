@@ -585,8 +585,6 @@ static address generate_counterModeAES(StubGenerator *stubgen,
 
   if (totalStackBytes > 0) {
     // Buy and align stack
-    __ push_ppx(rbp);
-    __ movq(rbp, rsp);
     __ andq(rsp, -64);
     __ subptr(rsp, totalStackBytes); // Enough to store all keys
   }
@@ -922,8 +920,12 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   }
 
   if (totalStackBytes > 0) {
-    __ movq(rsp, rbp);
-    __ pop_ppx(rbp);
+    // Restore rsp so pop_ppx can work; value at __ enter() minus push_ppxes
+#ifdef _WIN64
+    __ lea(rsp, Address(rbp, -5 * wordSize));
+#else
+    __ lea(rsp, Address(rbp, -3 * wordSize));
+#endif
   }
 
   __ pop_ppx(r14);
