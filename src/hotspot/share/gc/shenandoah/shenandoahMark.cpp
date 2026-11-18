@@ -95,8 +95,6 @@ bool ShenandoahMark::try_process_remembered_set_chunk(uint worker_id, Shenandoah
   }
 
   ShenandoahRedirtyCardsMarkClosure rset_closure(q, _generation->ref_processor());
-
-  // This might not be necessary, the common mark closure from the caller should be fine.
   _generation->ref_processor()->set_mark_closure(worker_id, &rset_closure);
 
   ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
@@ -129,13 +127,17 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
       satb_mq_set.apply_closure_to_completed_buffer(&drain_satb);
     }
 
+    uint work = 0;
     if (GENERATION == YOUNG) {
       if (try_process_remembered_set_chunk(worker_id, heap, q)) {
+        // This counts as work even if the scanned chunk did not put any oops in our queue.
+        // We do not want this thread to enter termination just because there were no interesting
+        // pointers on the scanned chunk.
+        work++;
         _generation->ref_processor()->set_mark_closure(worker_id, cl);
       }
     }
 
-    uint work = 0;
     for (uint i = 0; i < stride; i++) {
       if (q->pop(t) || queues->steal(worker_id, t)) {
         do_task<T, OT, GENERATION, STRING_DEDUP>(q, cl, live_data, req, &t, worker_id);
