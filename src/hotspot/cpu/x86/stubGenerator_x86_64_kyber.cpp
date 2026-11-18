@@ -275,10 +275,16 @@ static void montMul(const XMMRegister output[], const XMMRegister input1[], cons
 // |  B  |     |  D  |     | ...
 // +-----+-----+-----+-----+-----
 //
-// NOTE: size 0 and 1 are used for final and initial shuffles respectively of
-// kyberNtt and kyberInverseNtt. For size 0 and 1, input1[]
-// and input2[] are modified in-place (and output2 is used as a temporary)
-// NOTE 2: for AVX_256bit path, sizes 16 and 32 also modifies input2 in place
+// NOTE 1: case 0 and 1 are used for final and initial shuffles respectively of
+// kyberNtt and kyberInverseNtt. input1[] and input2[] are modified in-place (and
+// output2 is used as a temporary). Case 1 collects all even and odd 32-bit columns:
+//
+//   input1: a0 | a1 | a2 | ... ->  a0 | a2 | ... | b0 | ...
+//   input2: b0 | b1 | b2 | ... ->  a1 | a3 | ... | b1 | ...
+//
+// (case 0 is the opposite direction of case 1)
+//
+// NOTE 2: for AVX_256bit path, sizes 16 and 32 also modify input2 (used as temp)
 //
 // Using C++ lambdas for improved readability (to hide parameters that always repeat)
 static auto whole_shuffle(KRegister mergeMask1, KRegister mergeMask2,
@@ -929,13 +935,6 @@ address generate_kyberNttMult_avx(StubGenerator *stubgen, int vector_len,
   StubCodeMark mark(stubgen, stub_id);
   start = __ pc();
   __ enter();
-  // for each pair
-  //   res[i]   = Const2 * ( a[i]*b[i] + a[i+1]*b[i+1]*ZetaConst1[i] )
-  //   res[i+1] = Const2 * ( a[i]*b[i+1] + a[i+1]*b[i] )
-  // montMult(b, c) // High/Low split at 20 bit on java, 16 in intrinsic
-  //   a = b * c
-  //   aLow = aLow * Const1
-  //   r = aHigh - HighBits(aLow * Const2)
 
   const Register result = c_rarg0;
   const Register ntta = c_rarg1;
@@ -947,13 +946,13 @@ address generate_kyberNttMult_avx(StubGenerator *stubgen, int vector_len,
   int itrCnt = vector_len == Assembler::AVX_512bit ? 1 : 4;
 
   const XMMRegister A[] = {xmm0, xmm8, xmm1, xmm9, xmm16, xmm24, xmm17, xmm25};
-  const XMMRegister A1[] = {xmm0, xmm1, xmm16, xmm17};
-  const XMMRegister A2[] = {xmm2, xmm3, xmm18, xmm19};
-  const XMMRegister T1[] = {xmm8, xmm9, xmm24, xmm25};
+  const XMMRegister A0[] = {xmm0, xmm1, xmm16, xmm17};
+  const XMMRegister A1[] = {xmm2, xmm3, xmm18, xmm19};
+  const XMMRegister T0[] = {xmm8, xmm9, xmm24, xmm25};
   const XMMRegister B[] = {xmm4, xmm10, xmm5, xmm11, xmm20, xmm26, xmm21, xmm27};
-  const XMMRegister B1[] = {xmm4, xmm5, xmm20, xmm21};
-  const XMMRegister B2[] = {xmm6, xmm7, xmm22, xmm23};
-  const XMMRegister T2[] = {xmm10, xmm11, xmm26, xmm27};
+  const XMMRegister B0[] = {xmm4, xmm5, xmm20, xmm21};
+  const XMMRegister B1[] = {xmm6, xmm7, xmm22, xmm23};
+  const XMMRegister T1[] = {xmm10, xmm11, xmm26, xmm27};
   const XMMRegister montRSquareModq[] = {xmm12, xmm12, xmm12, xmm12};
   const XMMRegister shuffleWords = xmm13;
   const XMMRegister qInvModR = xmm14;
@@ -988,29 +987,32 @@ address generate_kyberNttMult_avx(StubGenerator *stubgen, int vector_len,
       __ vmovdqu(A[i], Address(ntta, 2 * memOffset + i * memStep), vector_len);
       __ vmovdqu(B[i], Address(nttb, 2 * memOffset + i * memStep), vector_len);
     }
+    shuffle(A1, A0, T0, 16);
+    shuffle(B1, B0, T1, 16);
 
-    shuffle(A2, A1, T1, 16);
-    shuffle(B2, B1, T2, 16);
-    montMul(T1, A1, B1, T2, qInvModR, kyber_q, vector_len, _masm, regCnt);
-    const XMMRegister* Scratch = A1;
-    montMul(T2, A1, B2, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
-    montMul(B1, B1, A2, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
+    // result[2m]   = (A0*B0 + A1*B1*ZETA[m]) * MONT_R_SQUARE_MOD_Q
+    // result[2m+1] = (A0*B1 + A1*B0)         * MONT_R_SQUARE_MOD_Q
+    montMul(T0, A0, B0, T1, qInvModR, kyber_q, vector_len, _masm, regCnt);
+    const XMMRegister* Scratch = A0;
+    montMul(T1, A0, B1, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
+    montMul(B0, B0, A1, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
 
     for (int i = 0; i < regCnt; i++) {
-      __ vpaddw(T2[i], T2[i], B1[i], vector_len);
+      __ vpaddw(T1[i], T1[i], B0[i], vector_len);
     }
     for (int i = 0; i < regCnt; i++) {
-      __ vmovdqu(B1[i], ExternalAddress(kyberNttMultZetasAddr(memOffset + i * memStep, vector_len)), vector_len, scratch);
+      __ vmovdqu(B0[i], ExternalAddress(kyberNttMultZetasAddr(memOffset + i * memStep, vector_len)), vector_len, scratch);
     }
 
-    montMul(T2, T2, montRSquareModq, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
-    montMul(B2, B2, A2, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
-    montMul(B2, B2, B1, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
+    montMul(T1, T1, montRSquareModq, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
+    montMul(B1, B1, A1, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
+    montMul(B1, B1, B0, Scratch, qInvModR, kyber_q, vector_len, _masm, regCnt);
     for (int i = 0; i < regCnt; i++) {
-      __ vpaddw(T1[i], T1[i], B2[i], vector_len);
+      __ vpaddw(T0[i], T0[i], B1[i], vector_len);
     }
-    montMul(A1, T1, montRSquareModq, T1, qInvModR, kyber_q, vector_len, _masm, regCnt);
-    shuffle(T1, A1, T2, 16);
+    montMul(A0, T0, montRSquareModq, T0, qInvModR, kyber_q, vector_len, _masm, regCnt);
+
+    shuffle(T0, A0, T1, 16);
     for (int i = 0; i < 2 * regCnt; i++) {
       __ vmovdqu(Address(result, 2 * memOffset + i * memStep), A[i], vector_len);
     }
