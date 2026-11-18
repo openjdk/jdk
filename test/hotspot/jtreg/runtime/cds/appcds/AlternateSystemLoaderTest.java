@@ -46,27 +46,77 @@ public class AlternateSystemLoaderTest {
         final String appName = "ExcludedClass";
         String appJar = ClassFileInstaller.getJarPath("app.jar");
 
-        SimpleCDSAppTester.of("AlternateSystemLoader")
-            .addVmArgs("-XX:-AOTClassLinking",
-                       "-Xlog:cds=debug,aot=debug,class+load",
-                       "-Djava.system.class.loader=ExcludedClass$AlternateSystemLoader")
+        SimpleCDSAppTester tester = SimpleCDSAppTester.of("AlternateSystemLoader");
+
+        // Train with alternate system loader
+        tester.addVmArgs("-XX:-AOTClassLinking",
+                         "-Xlog:cds=debug,aot=debug,class+load",
+                         "-Djava.system.class.loader=ExcludedClass$AlternateSystemLoader")
             .classpath(appJar)
             .appCommandLine(appName)
             .setTrainingChecker((OutputAnalyzer out) -> {
                 // Cache only classes loaded by the boot class loader
                 out.shouldContain("AOT optimizations are curtailed because -Djava.system.class.loader=ExcludedClass$AlternateSystemLoader is specified");
                 out.shouldContain("Skipping ExcludedClass: Not defined in boot class loader");
-            })
+            }).runAOTTraining();
+
+        // Assemble without alternate loader
+        tester.setVmArgs("-XX:-AOTClassLinking",
+                         "-Xlog:cds=debug,aot=debug,class+load")
+            .setAssemblyChecker((OutputAnalyzer out) -> {
+                out.shouldNotContain("AOT optimizations are curtailed because -Djava.system.class.loader=ExcludedClass$AlternateSystemLoader is specified");
+                out.shouldNotContain("ExcludedClass source: shared objects file");
+            }).runAOTAssembly();
+
+        tester.setProductionChecker((OutputAnalyzer out) -> {
+            // Do not load any unregistered classes or any classes defined in platform and system loaders
+            out.shouldNotContain("ExcludedClass source: shared objects file");
+        }).productionRun();
+
+        // Train without alternate loader
+        tester.setVmArgs("-XX:-AOTClassLinking",
+                         "-Xlog:cds=debug,aot=debug,class+load")
+            .classpath(appJar)
+            .appCommandLine(appName)
+            .setTrainingChecker((OutputAnalyzer out) -> {
+                out.shouldNotContain("Skipping ExcludedClass: Not defined in boot class loader");
+            }).runAOTTraining();
+
+        // Assemble with alternate loader
+        tester.setVmArgs("-XX:-AOTClassLinking",
+                         "-Xlog:cds=debug,aot=debug,class+load",
+                         "-Djava.system.class.loader=ExcludedClass$AlternateSystemLoader")
             .setAssemblyChecker((OutputAnalyzer out) -> {
                 // Load only boot classes
                 out.shouldContain("AOT optimizations are curtailed because -Djava.system.class.loader=ExcludedClass$AlternateSystemLoader is specified");
                 out.shouldNotContain("ExcludedClass source: shared objects file");
+            }).runAOTAssembly();
+        tester.setProductionChecker((OutputAnalyzer out) -> {
+            out.shouldNotContain("ExcludedClass source: shared objects file");
+        }).productionRun();
+
+        // Train and assemble without alternate loader
+        tester.setVmArgs("-XX:-AOTClassLinking",
+                         "-Xlog:cds=debug,aot=debug,class+load")
+            .classpath(appJar)
+            .appCommandLine(appName)
+            .setTrainingChecker((OutputAnalyzer out) -> {
+                out.shouldNotContain("AOT optimizations are curtailed because -Djava.system.class.loader=ExcludedClass$AlternateSystemLoader is specified");
+                out.shouldNotContain("Skipping ExcludedClass: Not defined in boot class loader");
             })
+            .setAssemblyChecker((OutputAnalyzer out) -> {
+                out.shouldNotContain("AOT optimizations are curtailed because -Djava.system.class.loader=ExcludedClass$AlternateSystemLoader is specified");
+                out.shouldContain("ExcludedClass source: shared objects file");
+            }).runAOTTrainingAndAssemblyWorkflow();
+
+        // Production run with alternate loader
+        tester.setVmArgs("-XX:-AOTClassLinking",
+                         "-Xlog:cds=debug,aot=debug,class+load",
+                         "-Djava.system.class.loader=ExcludedClass$AlternateSystemLoader")
             .setProductionChecker((OutputAnalyzer out) -> {
                 // Do not load any unregistered classes or any classes defined in platform and system loaders
                 out.shouldNotContain("ExcludedClass source: shared objects file");
-            })
-            .runAOTWorkflow();
+            }).productionRun();
     }
 }
 

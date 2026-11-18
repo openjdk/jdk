@@ -27,9 +27,9 @@ import java.io.File;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import jdk.test.lib.StringArrayUtils;
 import jdk.test.lib.cds.CDSAppTester.RunMode;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.StringArrayUtils;
 
 /*
  * A simpler way to use CDSAppTester. Example:
@@ -210,6 +210,17 @@ public class SimpleCDSAppTester {
 
     public SimpleCDSAppTester runAOTWorkflow() throws Exception {
         tester.runAOTWorkflow();
+        return this;
+    }
+
+    public SimpleCDSAppTester runAOTTraining() throws Exception {
+        tester.runAOTTraining();
+        return this;
+    }
+
+    // Ensure Training has already run
+    public SimpleCDSAppTester runAOTAssembly() throws Exception {
+        tester.runAOTAssembly();
         return this;
     }
 
