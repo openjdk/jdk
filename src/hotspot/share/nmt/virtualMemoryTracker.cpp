@@ -274,8 +274,11 @@ bool RegionIterator::next_committed(address& committed_start, size_t& committed_
 class SnapshotThreadStackWalker : public VirtualMemoryWalker {
 private:
   static bool scan_and_commit_gap(address gap_base, size_t gap_size) {
+    assert(is_aligned(gap_base, os::vm_page_size()), "gap_base should always be page aligned: " INTPTR_FORMAT, p2i(gap_base));
+    assert(gap_size > 0, "gap_size should never be empty");
     address committed_start;
     size_t  committed_size;
+    // Align the size to work with full pages (Alpine and AIX stack top is not page aligned)
     size_t aligned_gap_size = align_up(gap_size, os::vm_page_size());
 
     NativeCallStack ncs; // empty stack
@@ -285,6 +288,7 @@ private:
     while (itr.next_committed(committed_start, committed_size)) {
       assert(committed_start != nullptr, "Should not be null");
       assert(committed_size > 0, "Should not be 0");
+      // clamp
       if (gap_base + gap_size < committed_start + committed_size) {
         committed_size = gap_base + gap_size - committed_start;
       }
@@ -303,18 +307,24 @@ public:
     }
     if (rgn->mem_tag() == mtThreadStack) {
       DEBUG_ONLY(bool found_stack = false;)
+      const address rgn_end = rgn->end();
       address gap_start = rgn->base();
-      // Don't waste effort scanning known committed regions
-      VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*rgn, [&](VirtualMemoryRegion& crgn) {
-        if (crgn.base() > gap_start) {
-          DEBUG_ONLY(found_stack |=) scan_and_commit_gap(gap_start, crgn.base() - gap_start);
+      while (gap_start < rgn_end) {
+        // Don't waste effort scanning known committed regions.
+        address committed_base = rgn_end;
+        address committed_end = rgn_end;
+        VirtualMemoryRegion remaining(gap_start, pointer_delta(rgn_end, gap_start, 1));
+        VirtualMemoryTracker::Instance::tree()->visit_committed_regions(remaining, [&](VirtualMemoryRegion& crgn) {
+          committed_base = crgn.base();
+          committed_end = crgn.end();
+          return false;
+        });
+        // Add new committed regions here to avoid altering the tree while walking it.
+        if (committed_base > gap_start) {
+          DEBUG_ONLY(found_stack |=) scan_and_commit_gap(gap_start, pointer_delta(committed_base, gap_start, 1));
         }
-        gap_start = crgn.end();
-        return true;
-      });
-      // We may need to do one more search if the last committed region was a guard page
-      if (gap_start < rgn->end()) {
-        DEBUG_ONLY(found_stack |=) scan_and_commit_gap(gap_start, rgn->end() - gap_start);
+        assert(gap_start < committed_end, "Invariant. Otherwise infinite loop.");
+        gap_start = committed_end;
       }
 #ifdef ASSERT
       if (!found_stack) {
