@@ -2872,7 +2872,7 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
                                         bool islatin, Label &DIFF) {
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
 
-  Label COMPARE_M2, COMPARE_M4, LARGE, LOOP, COMPARE_ONCE, SAME;
+  Label COMPARE_ONCE, COMPARE_M2, COMPARE_M4, LARGE, LOOP, SAME;
   // Callers reserve v4-v11 as implicit vector TEMP operands in their .ad rules.
   // v4 and v8 start non-overlapping register groups aligned for LMUL=m4.
   const VectorRegister va = v4;
