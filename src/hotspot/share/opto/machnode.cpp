@@ -428,7 +428,7 @@ const TypePtr* MachNode::compute_adr_type_from_inputs() const {
   }
 
 #ifdef ASSERT
-  if (base != nullptr && base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_VerifyVectorAlignment) {
+  if (auto base_mach = isa<MachNode>(base); base_mach != nullptr && base_mach->ideal_Opcode() == Op_VerifyVectorAlignment) {
     // For VerifyVectorAlignment we just pass the type through
     return base->bottom_type()->as_ptr();
   }
