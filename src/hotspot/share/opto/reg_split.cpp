@@ -670,7 +670,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       for( insidx = 1; insidx <= b->end_idx(); insidx++ ) {
         n1 = b->get_node(insidx);
         // bail if this is not a phi
-        phi = n1->is_Phi() ? n1->as_Phi() : nullptr;
+        phi = n1->isa_Phi();
         if( phi == nullptr ) {
           // Keep track of index of first non-PhiNode instruction in block
           non_phi = insidx;
@@ -959,7 +959,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               insidx += b->number_of_nodes()-old_size;
             }
 
-            MachNode *mach = n->is_Mach() ? n->as_Mach() : nullptr;
+            MachNode* mach = n->isa_Mach();
             // Base pointers and oopmap references do not care where they live.
             if ((inpidx >= oopoff) ||
                 (mach && mach->ideal_Opcode() == Op_AddP && inpidx == AddPNode::Base)) {

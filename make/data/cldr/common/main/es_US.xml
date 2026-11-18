@@ -44,6 +44,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="inh">ingusetio</language>
 			<language type="kab">cabilio</language>
 			<language type="krc">karachay-balkar</language>
+			<language type="ku" menu="core">kurdo</language>
 			<language type="ku" menu="extension">kurdo kurmanyi</language>
 			<language type="lij">ligur</language>
 			<language type="lou">creole de Luisiana</language>
@@ -55,7 +56,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ojb">ojibwa del noroeste</language>
 			<language type="ojw">ojibwa del oeste</language>
 			<language type="pis">pijín</language>
-			<language type="rm">romanche</language>
 			<language type="se">sami del norte</language>
 			<language type="shu">árabe chadiano</language>
 			<language type="slh">lushootseed del sur</language>
@@ -100,29 +100,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="QO">Territorios alejados de Oceanía</territory>
 			<territory type="UM">Islas menores alejadas de EE. UU.</territory>
 		</territories>
+		<keys>
+			<key type="colReorder">reordenamiento de secuencia comandos/bloques</key>
+			<key type="dx">exclusiones del diccionario</key>
+			<key type="t0">traducción automática</key>
+		</keys>
 		<types>
 			<type key="calendar" type="dangi">calendario coreano</type>
 			<type key="calendar" type="dangi" scope="core">coreano</type>
+			<type key="calendar" type="indian" scope="core">calendario nacional de la India</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">hijri, avistamiento en Arabia Saudita</type>
 			<type key="calendar" type="roc" scope="core">chino</type>
 			<type key="collation" type="ducet" scope="core">predeterminado Unicode</type>
-			<type key="collation" type="phonetic" scope="core">fonético</type>
 			<type key="collation" type="pinyin" scope="core">sistema piyin</type>
 			<type key="collation" type="stroke" scope="core">trazos</type>
 			<type key="collation" type="unihan" scope="core">trazos radicales</type>
 			<type key="collation" type="zhuyin" scope="core">sistema zhuyin</type>
+			<type key="colStrength" type="identical" scope="core">todos</type>
+			<type key="colStrength" type="primary" scope="core">orden solo por raíz alfabética</type>
+			<type key="colStrength" type="quaternary" scope="core">raíz, acentos, formato, variantes, Kana</type>
+			<type key="colStrength" type="secondary" scope="core">raíz, acentos</type>
+			<type key="colStrength" type="tertiary" scope="core">raíz, acentos, formato, variantes</type>
 			<type key="em" type="emoji" scope="core">emoticón</type>
+			<type key="kv" type="currency" scope="core">espacios, signos de puntuación y todos los símbolos</type>
+			<type key="kv" type="punct" scope="core">espacios y signos de puntuación</type>
+			<type key="kv" type="space" scope="core">espacios y signos de puntuación</type>
+			<type key="kv" type="symbol" scope="core">espacios, signos de puntuación y símbolos no monetarios</type>
 			<type key="lw" type="breakall" scope="core">dividir todo</type>
 			<type key="lw" type="keepall" scope="core">mantener todo</type>
 			<type key="lw" type="normal" scope="core">regular</type>
 			<type key="lw" type="phrase" scope="core">mantener en frases</type>
+			<type key="numbers" type="arabext" scope="core">dígitos indoarábigos extendidos</type>
+			<type key="numbers" type="armnlow" scope="core">minúscula armenia</type>
 			<type key="numbers" type="cakm">dígitos chakma</type>
+			<type key="numbers" type="greklow" scope="core">minúscula griega</type>
 			<type key="numbers" type="gujr">dígitos en gujarati</type>
 			<type key="numbers" type="java">dígitos javaneses</type>
+			<type key="numbers" type="jpanyear" scope="core">numeración japonesa Gannen del primer año</type>
 			<type key="numbers" type="mtei">dígitos meetei mayek</type>
 			<type key="numbers" type="olck">dígitos ol chiki</type>
 			<type key="ss" type="none" scope="core">desactivado</type>
 			<type key="ss" type="standard" scope="core">activado</type>
+			<type key="t0" type="und">traducción automática sin especificar</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">desactivado</typeValue>
+			<typeValue type="yes">activado</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="UK">imperial</measurementSystemName>
 		</measurementSystemNames>
@@ -138,6 +162,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</delimiters>
 	<dates>
 		<calendars>
+			<calendar type="dangi">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>DD/MM/YYYY</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="generic">
 				<dateTimeFormats>
 					<availableFormats>
@@ -266,9 +297,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
@@ -313,6 +341,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">MMMM 'de' y – MMMM 'de' y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="iso8601">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -433,11 +468,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>hora de Chamorro</standard>
 				</long>
 			</metazone>
-			<metazone type="Cocos">
-				<long>
-					<standard>hora de las Islas Cocos</standard>
-				</long>
-			</metazone>
 			<metazone type="Cook">
 				<long>
 					<generic>hora de las Islas Cook</generic>
@@ -505,11 +535,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>hora de las islas Marquesas</standard>
 				</long>
 			</metazone>
-			<metazone type="Marshall_Islands">
-				<long>
-					<standard>hora de las Islas Marshall</standard>
-				</long>
-			</metazone>
 			<metazone type="Norfolk">
 				<long>
 					<generic>hora de la isla Norfolk</generic>
@@ -525,11 +550,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Pyongyang">
 				<long>
 					<standard>hora de Pyongyang</standard>
-				</long>
-			</metazone>
-			<metazone type="Solomon">
-				<long>
-					<standard>hora de las Islas Salomón</standard>
 				</long>
 			</metazone>
 			<metazone type="Wake">
@@ -620,6 +640,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZWG">
 				<displayName>oro de Zimbabue</displayName>
+				<displayName count="one">oro de Zimbabue</displayName>
+				<displayName count="other">oro de Zimbabue</displayName>
 			</currency>
 		</currencies>
 		<minimalPairs>
@@ -645,6 +667,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>partes por millón</displayName>
 				<unitPattern count="one">{0} parte por millón</unitPattern>
 				<unitPattern count="other">{0} partes por millón</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
+				<displayName>partes p/millón</displayName>
+				<unitPattern count="one">{0} parte p/millón</unitPattern>
+				<unitPattern count="other">{0} partes p/millón</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>por ciento</displayName>
@@ -767,7 +794,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="electric-siemens">
 				<displayName>simens</displayName>
-				<unitPattern count="one" draft="provisional">{0} siemens</unitPattern>
+				<unitPattern count="one">{0} siemens</unitPattern>
 				<unitPattern count="other">{0} siemens</unitPattern>
 			</unit>
 			<unit type="energy-calorie-it">
@@ -812,10 +839,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>‰</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<unitPattern count="one">{0} Glc</unitPattern>
-				<unitPattern count="other">{0} Glc</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>byte</displayName>
@@ -1015,7 +1038,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal. IT</unitPattern>
 			</unit>
 			<unit type="force-kilogram-force">
-				<displayName>kp</displayName>
 				<unitPattern count="one">{0} kp</unitPattern>
 				<unitPattern count="other">{0} kp</unitPattern>
 			</unit>

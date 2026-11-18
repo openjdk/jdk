@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,15 +28,19 @@ import java.util.Arrays;
 import com.sun.org.apache.bcel.internal.Const;
 
 /**
- * This class represents a reference to an unknown (i.e., application-specific) attribute of a class. It is instantiated
+ * This class represents a reference to an unknown (that is, application-specific) attribute of a class. It is instantiated
  * from the {@link Attribute#readAttribute(java.io.DataInput, ConstantPool)} method. Applications that need to read in
  * application-specific attributes should create an {@link UnknownAttributeReader} implementation and attach it via
  * {@link Attribute#addAttributeReader(String, UnknownAttributeReader)}.
  *
  * @see Attribute
  * @see UnknownAttributeReader
+ * @LastModified: Nov 2026
  */
 public final class Unknown extends Attribute {
+
+    //Unknown non-empty class-file attribute is not allowed
+    static final int MAX_LEN = 0;
 
     private byte[] bytes;
 
@@ -46,10 +49,10 @@ public final class Unknown extends Attribute {
     /**
      * Constructs a new instance for a non-standard attribute.
      *
-     * @param nameIndex Index in constant pool
-     * @param length Content length in bytes
-     * @param bytes Attribute contents
-     * @param constantPool Array of constants
+     * @param nameIndex Index in constant pool.
+     * @param length Content length in bytes.
+     * @param bytes Attribute contents.
+     * @param constantPool Array of constants.
      */
     public Unknown(final int nameIndex, final int length, final byte[] bytes, final ConstantPool constantPool) {
         super(Const.ATTR_UNKNOWN, nameIndex, length, constantPool);
@@ -58,17 +61,25 @@ public final class Unknown extends Attribute {
     }
 
     /**
-     * Constructs a new instance from an input stream.
+     * Constructs a new instance from a DataInput.
+     * <p>
+     * The size of an <a href="https://docs.oracle.com/javase/specs/jvms/se25/html/jvms-4.html#jvms-4.7">Attribute</a> unknown to the JVM specification is
+     * limited to 1 MB and is overridden with the system property {@code BCEL.Attribute.Unknown.max_attribute_length}.
+     * </p>
      *
-     * @param nameIndex Index in constant pool
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constantPool Array of constants
-     * @throws IOException if an I/O error occurs.
+     * @param nameIndex    Index in constant pool.
+     * @param length       Content length in bytes.
+     * @param input        Input stream.
+     * @param constantPool Array of constants.
+     * @throws IOException Thrown if an I/O error occurs.
+     * @see <a href="https://docs.oracle.com/javase/specs/jvms/se25/html/jvms-4.html#jvms-4.7">Attribute</a>
      */
     Unknown(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
         this(nameIndex, length, (byte[]) null, constantPool);
         if (length > 0) {
+            if (length > MAX_LEN) {
+                throw new IOException("Unknown non-empty class-file attribute is not allowed");
+            }
             bytes = new byte[length];
             input.readFully(bytes);
         }
@@ -87,7 +98,7 @@ public final class Unknown extends Attribute {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -95,7 +106,7 @@ public final class Unknown extends Attribute {
     }
 
     /**
-     * @return deep copy of this attribute
+     * @return deep copy of this attribute.
      */
     @Override
     public Attribute copy(final ConstantPool constantPool) {
@@ -110,8 +121,8 @@ public final class Unknown extends Attribute {
     /**
      * Dumps unknown bytes to file stream.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -122,6 +133,8 @@ public final class Unknown extends Attribute {
     }
 
     /**
+     * Gets the data bytes.
+     *
      * @return data bytes.
      */
     public byte[] getBytes() {
@@ -137,7 +150,9 @@ public final class Unknown extends Attribute {
     }
 
     /**
-     * @param bytes the bytes to set
+     * Sets the data bytes.
+     *
+     * @param bytes The bytes to set.
      */
     public void setBytes(final byte[] bytes) {
         this.bytes = bytes;
@@ -151,7 +166,7 @@ public final class Unknown extends Attribute {
         if (super.getLength() == 0 || bytes == null) {
             return "(Unknown attribute " + name + ")";
         }
-        String hex;
+        final String hex;
         final int limit = 10;
         if (super.getLength() > limit) {
             final byte[] tmp = Arrays.copyOf(bytes, limit);

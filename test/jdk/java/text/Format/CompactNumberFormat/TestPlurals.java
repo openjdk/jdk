@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8222756
+ * @bug 8222756 8384532
  * @summary Tests plurals support in CompactNumberFormat
  * @run junit/othervm TestPlurals
  */
@@ -49,6 +49,8 @@ public class TestPlurals {
     private final static String RULE_1 = "zero:n = 0; one:n = 1; two:n = 2; few:n = 3..4; many:n = 5..6,8";
     private final static String RULE_2 = "one:n   %   2   =    1   or   n   /   3   =   2;";
     private final static String RULE_3 = "one:n%2=0andn/3=2;";
+    private static final String RULE_E = "one:e = 0";
+    private static final String RULE_C = "one:c = 0";
 
 
     Object[][] pluralRules() {
@@ -80,6 +82,10 @@ public class TestPlurals {
             {RULE_3, 4, "4->other"},
             {RULE_3, 5, "5->other"},
             {RULE_3, 6, "6->one"},
+
+            // e/c compatibility tests
+            {RULE_E, 1, "1->one"},
+            {RULE_C, 1, "1->one"},
         };
     }
 

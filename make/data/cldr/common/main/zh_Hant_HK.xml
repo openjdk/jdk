@@ -200,29 +200,50 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<variant type="SCOTLAND">蘇格蘭標準英語</variant>
 		</variants>
 		<keys>
+			<key type="d0">轉換目的地</key>
+			<key type="fw">一星期的第一日</key>
 			<key type="ms">度量衡系統</key>
+			<key type="mu">測量單位</key>
 			<key type="x">專用區</key>
+			<key type="x0">專用區轉換</key>
 		</keys>
 		<types>
 			<type key="calendar" type="ethiopic">埃塞俄比亞曆</type>
 			<type key="calendar" type="ethiopic" scope="core">埃塞俄比亞曆</type>
 			<type key="calendar" type="ethiopic-amete-alem">埃塞俄比亞阿美德阿萊姆曆</type>
 			<type key="calendar" type="ethiopic-amete-alem" scope="core">埃塞俄比亞阿美德阿萊姆曆</type>
+			<type key="calendar" type="indian" scope="core">印度曆</type>
 			<type key="calendar" type="islamic-civil" scope="core">伊斯蘭曆（表格曆，民用紀元）</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">伊斯蘭曆，沙特觀月</type>
 			<type key="calendar" type="islamic-tbla" scope="core">伊斯蘭曆（表格式，天文紀元）</type>
 			<type key="collation" type="dictionary">詞典排序</type>
 			<type key="collation" type="dictionary" scope="core">詞典</type>
+			<type key="colStrength" type="primary" scope="core">只限基礎字母</type>
+			<type key="kv" type="currency" scope="core">Shift 鍵、空格、標點符號、所有符號</type>
+			<type key="kv" type="punct" scope="core">Shift 鍵、空格、標點符號</type>
+			<type key="kv" type="space" scope="core">Shift 鍵、空格、標點符號</type>
+			<type key="kv" type="symbol" scope="core">Shift 鍵、空格、標點符號、非貨幣符號。</type>
 			<type key="ms" type="uksystem">英制</type>
 			<type key="ms" type="ussystem">美制</type>
 			<type key="numbers" type="deva">天城體數字</type>
 			<type key="numbers" type="ethi">埃塞俄比亞數字</type>
 			<type key="numbers" type="geor">格魯吉亞數字</type>
+			<type key="numbers" type="greklow" scope="core">小寫希臘文</type>
+			<type key="numbers" type="hanidays" scope="core">傳統曆法漢字月日寫法</type>
+			<type key="numbers" type="hanidec" scope="core">使用漢字數字計數的位置十進制</type>
+			<type key="numbers" type="jpanyear" scope="core">日本元年紀年法</type>
 			<type key="numbers" type="knda">卡納達數字</type>
+			<type key="numbers" type="lanatham" scope="core">泰譚譚（教會用語）</type>
 			<type key="numbers" type="laoo">老撾數字</type>
+			<type key="numbers" type="mathmono" scope="core">數學等寬字體</type>
+			<type key="numbers" type="mathsans" scope="core">數學無襯線字體</type>
 			<type key="numbers" type="mlym">馬拉雅拉姆數字</type>
 			<type key="numbers" type="orya">奧里亞數字</type>
+			<type key="numbers" type="roman" scope="core">大寫羅馬數字</type>
+			<type key="numbers" type="romanlow" scope="core">小寫羅馬字</type>
 			<type key="numbers" type="taml">泰米爾數字</type>
 			<type key="numbers" type="tamldec">泰米爾數字</type>
+			<type key="numbers" type="tamldec" scope="core">現代泰米爾</type>
 		</types>
 	</localeDisplayNames>
 	<characters>
@@ -430,6 +451,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">Gy年QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">ah時至ah時</greatestDifference>
 							<greatestDifference id="h">ah時至h時</greatestDifference>
@@ -654,6 +679,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="iso8601">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="contributed">/</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="japanese">
 				<dateTimeFormats>
 					<availableFormats>
@@ -755,12 +787,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="weekday">
-				<displayName>星期幾</displayName>
-			</field>
-			<field type="weekday-short">
-				<displayName>星期幾</displayName>
-			</field>
-			<field type="weekday-narrow">
 				<displayName>星期幾</displayName>
 			</field>
 			<field type="sun">
@@ -1853,10 +1879,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>等份</displayName>
 				<unitPattern count="other">{0} 等份</unitPattern>
 			</unit>
-			<unit type="concentr-part-per-1e6">
-				<displayName>百萬分比</displayName>
-				<unitPattern count="other">{0} 百萬分比</unitPattern>
-			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>公升/公里</displayName>
 				<unitPattern count="other">{0} 公升/公里</unitPattern>
@@ -2418,11 +2440,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}等份</unitPattern>
 			</unit>
 			<unit type="concentr-part-per-1e6">
-				<displayName>百萬分比</displayName>
 				<unitPattern count="other">{0} ppm</unitPattern>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<unitPattern count="other">{0}葡萄糖</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<unitPattern count="other">{0}L/100km</unitPattern>
@@ -2481,6 +2499,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-mile">
 				<unitPattern count="other">{0}哩</unitPattern>
 			</unit>
+			<unit type="length-foot">
+				<perUnitPattern>{0} 每呎</perUnitPattern>
+			</unit>
 			<unit type="length-point">
 				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
@@ -2519,6 +2540,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-fluid-ounce-metric">
 				<displayName>公制液穴士</displayName>
+				<unitPattern count="other">{0} 公制液安士</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<unitPattern count="other">{0}英液安士</unitPattern>
@@ -2526,45 +2548,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-dessert-spoon-imperial">
 				<unitPattern count="other">{0}英制甜品匙</unitPattern>
 			</unit>
-			<unit type="angle-steradian">
-				<displayName>球面度</displayName>
-				<unitPattern count="other">{0}球面度</unitPattern>
-			</unit>
-			<unit type="concentr-katal">
-				<unitPattern count="other">{0}開特</unitPattern>
-			</unit>
-			<unit type="electric-coulomb">
-				<unitPattern count="other">{0} 庫侖</unitPattern>
-			</unit>
-			<unit type="electric-farad">
-				<unitPattern count="other">{0} 法拉</unitPattern>
-			</unit>
 			<unit type="energy-calorie-it">
 				<unitPattern count="other">{0} 卡路里-IT</unitPattern>
 			</unit>
 			<unit type="energy-becquerel">
-				<displayName>貝克</displayName>
 				<unitPattern count="other">{0}貝克</unitPattern>
 			</unit>
 			<unit type="energy-sievert">
-				<displayName>希</displayName>
 				<unitPattern count="other">{0}希</unitPattern>
 			</unit>
 			<unit type="energy-gray">
-				<displayName>戈</displayName>
 				<unitPattern count="other">{0}戈</unitPattern>
-			</unit>
-			<unit type="force-kilogram-force">
-				<displayName>公斤力</displayName>
-				<unitPattern count="other">{0}公斤力</unitPattern>
-			</unit>
-			<unit type="magnetic-tesla">
-				<displayName>特斯拉</displayName>
-				<unitPattern count="other">{0}特斯拉</unitPattern>
-			</unit>
-			<unit type="magnetic-weber">
-				<displayName>韋伯</displayName>
-				<unitPattern count="other">{0}韋伯</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
 				<unitPattern count="other">{0}夜</unitPattern>

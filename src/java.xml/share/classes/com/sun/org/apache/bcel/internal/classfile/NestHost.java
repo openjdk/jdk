@@ -41,11 +41,11 @@ public final class NestHost extends Attribute {
     /**
      * Constructs object from input stream.
      *
-     * @param nameIndex Index in constant pool
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constantPool Array of constants
-     * @throws IOException if an I/O error occurs.
+     * @param nameIndex Index in constant pool.
+     * @param length Content length in bytes.
+     * @param input Input stream.
+     * @param constantPool Array of constants.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     NestHost(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
         this(nameIndex, length, 0, constantPool);
@@ -53,13 +53,15 @@ public final class NestHost extends Attribute {
     }
 
     /**
-     * @param nameIndex Index in constant pool
-     * @param length Content length in bytes
-     * @param hostClassIndex Host class index
-     * @param constantPool Array of constants
+     * Constructs a new NestHost.
+     *
+     * @param nameIndex Index in constant pool.
+     * @param length Content length in bytes.
+     * @param hostClassIndex Host class index.
+     * @param constantPool Array of constants.
      */
     public NestHost(final int nameIndex, final int length, final int hostClassIndex, final ConstantPool constantPool) {
-        super(Const.ATTR_NEST_MEMBERS, nameIndex, length, constantPool);
+        super(Const.ATTR_NEST_HOST, nameIndex, length, constantPool);
         this.hostClassIndex = Args.requireU2(hostClassIndex, "hostClassIndex");
     }
 
@@ -77,7 +79,7 @@ public final class NestHost extends Attribute {
      * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
      * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -85,7 +87,7 @@ public final class NestHost extends Attribute {
     }
 
     /**
-     * @return deep copy of this attribute
+     * @return deep copy of this attribute.
      */
     @Override
     public Attribute copy(final ConstantPool constantPool) {
@@ -97,8 +99,8 @@ public final class NestHost extends Attribute {
     /**
      * Dumps NestHost attribute to file stream in binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     @Override
     public void dump(final DataOutputStream file) throws IOException {
@@ -107,6 +109,8 @@ public final class NestHost extends Attribute {
     }
 
     /**
+     * Gets the host class index.
+     *
      * @return index into constant pool of host class name.
      */
     public int getHostClassIndex() {
@@ -114,14 +118,16 @@ public final class NestHost extends Attribute {
     }
 
     /**
-     * @param hostClassIndex the host class index
+     * Sets the host class index.
+     *
+     * @param hostClassIndex The host class index.
      */
     public void setHostClassIndex(final int hostClassIndex) {
         this.hostClassIndex = hostClassIndex;
     }
 
     /**
-     * @return String representation
+     * @return String representation.
      */
     @Override
     public String toString() {

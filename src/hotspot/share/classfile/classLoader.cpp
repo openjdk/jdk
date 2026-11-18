@@ -1306,6 +1306,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
                                 const ClassFileStream* stream, bool redefined) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(stream != nullptr, "sanity");
+  assert(AOTClassLocationConfig::dumptime_is_ready(), "sanity");
 
   if (ik->is_hidden()) {
     record_hidden_class(ik);
@@ -1333,80 +1334,43 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
 
   assert(has_jrt_entry(), "CDS dumping does not support exploded JDK build");
 
-  ResourceMark rm(current);
   int classpath_index = -1;
-  bool found_invalid = false;
 
-  PackageEntry* pkg_entry = ik->package();
-
-  if (!AOTClassLocationConfig::dumptime_is_ready()) {
-    // The shared path table is set up after module system initialization.
-    // The path table contains no entry before that. Any classes loaded prior
-    // to the setup of the shared path table must be from the modules image.
-    assert(stream->from_boot_loader_modules_image(), "stream must be loaded by boot loader from modules image");
+  if (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:")) {
+    assert(AOTClassLocationConfig::dumptime()->class_location_at(0)->is_modules_image(), "sanity check");
     classpath_index = 0;
   } else {
-    // Save the path from the file: protocol or the module name from the jrt: protocol
-    // if no protocol prefix is found, path is the same as stream->source(). This path
-    // must be valid since the class has been successfully parsed.
+    ResourceMark rm(current);
     const char* path = ClassLoader::uri_to_path(src);
-    assert(path != nullptr, "sanity");
-    AOTClassLocationConfig::dumptime_iterate([&] (AOTClassLocation* cl) {
-      int i = cl->index();
-      // for index 0 and the stream->source() is the modules image or has the jrt: protocol.
-      // The class must be from the runtime modules image.
-      if (cl->is_modules_image() && (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:"))) {
-        classpath_index = i;
-      } else if (os::same_files(cl->path(), path)) {
-        // If the path (from the class stream source) is the same as the shared
-        // class or module path, then we have a match.
-        // src may come from the App/Platform class loaders, which would canonicalize
-        // the file name. We cannot use strcmp to check for equality against cs->path().
-        // We must use os::same_files (which is faster than canonicalizing cs->path()).
-
+    PackageEntry* pkg_entry = ik->package();
+    if ((pkg_entry != nullptr) && !pkg_entry->in_unnamed_module()) {
+      // A class in a named module from the --module-path. Note that classes from the modules image
+      // are handled above and get an index of 0.
+      classpath_index = AOTClassLocationConfig::dumptime_get_class_location_index(path, /*is_named_module=*/ true);
+    } else {
+      // A class in an unnamed module
+      int i = AOTClassLocationConfig::dumptime_get_class_location_index(path, /*is_named_module=*/ false);
+      assert(i != 0, "must not be from module image");
+      if (i > 0) {
+        AOTClassLocation const* cl = AOTClassLocationConfig::dumptime()->class_location_at(i);
         // null pkg_entry and pkg_entry in an unnamed module implies the class
         // is from the -cp or boot loader append path which consists of -Xbootclasspath/a
         // and jvmti appended entries.
         if ((pkg_entry == nullptr) || (pkg_entry->in_unnamed_module())) {
-          // Ensure the index is within the -cp range before assigning
-          // to the classpath_index.
           if (SystemDictionary::is_system_class_loader(loader) && cl->from_app_classpath()) {
             classpath_index = i;
-          } else {
-            if (cl->from_boot_classpath()) {
-              if (loader != nullptr) {
-                // Probably loaded by jdk/internal/loader/ClassLoaders$BootClassLoader. Don't archive
-                // such classes.
-                found_invalid = true;
-              } else {
-                classpath_index = i;
-              }
-            }
-          }
-        } else {
-          // A class from a named module from the --module-path. Ensure the index is
-          // within the --module-path range before assigning to the classpath_index.
-          if ((pkg_entry != nullptr) && !(pkg_entry->in_unnamed_module()) && cl->from_module_path()) {
+          } else if (loader == nullptr && cl->from_boot_classpath()) {
             classpath_index = i;
           }
         }
       }
-      if (classpath_index >= 0 || found_invalid) {
-        return false; // Break the AOTClassLocationConfig::dumptime_iterate() loop.
-      } else {
-        return true; // Keep iterating
-      }
-    });
+    }
   }
 
-  if (found_invalid) {
-    assert(classpath_index == -1, "sanity");
-  }
+  // Note: classpath_index will be -1 if it's not found inside AOTClassLocationConfig, and
+  // such a class will not be archived.
 
-  const char* const class_name = ik->name()->as_C_string();
-  const char* const file_name = file_name_for_class_name(class_name,
-                                                         ik->name()->utf8_length());
-  assert(file_name != nullptr, "invariant");
+  log_debug(aot, path)("classpath_index %s = %d", ik->external_name(), classpath_index);
   record_result_for_builtin_loader(checked_cast<s2>(classpath_index), ik, redefined);
 }
 
@@ -1637,6 +1601,12 @@ char* ClassLoader::get_canonical_path(const char* orig, Thread* thread) {
   ResourceMark rm(thread);
   // os::native_path writes into orig_copy
   char* orig_copy = ResourceArea::strdup(thread, orig);
+#if defined(_WINDOWS)
+  if (strncmp("\\\\?\\", orig_copy, 4) == 0) {
+    // Work around JDK-8397366
+    orig_copy += 4;
+  }
+#endif
   if ((CanonicalizeEntry)(os::native_path(orig_copy), canonical_path, JVM_MAXPATHLEN) < 0) {
     return nullptr;
   }
