@@ -561,7 +561,6 @@ public:
   // Self-forward accounting: set by an evacuating thread after it successfully
   // installs a self-forward mark on an object in this region. Tested and cleared
   // when the region is partially recycled in final-update-refs.
-  // Release/acquire is enough here: readers only run at a safepoint, after all evacuating threads stop
   bool has_self_forwards() const { return _has_self_forwards.load_acquire(); }
   void set_has_self_forwards()   { if (!_has_self_forwards.load_acquire()) _has_self_forwards.release_store(true); }
   void clear_has_self_forwards() { _has_self_forwards.release_store(false); }
