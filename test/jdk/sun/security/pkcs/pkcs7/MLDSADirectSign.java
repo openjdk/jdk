@@ -39,6 +39,7 @@ import jdk.test.lib.security.DerUtils;
 import jdk.test.lib.util.JarUtils;
 import sun.security.pkcs.PKCS7;
 import sun.security.tools.keytool.CertAndKeyGen;
+import sun.security.util.DerValue;
 import sun.security.util.KnownOIDs;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X500Name;
@@ -67,6 +68,30 @@ public class MLDSADirectSign {
         PrivateKey sk = cag.getPrivateKey();
         X509Certificate cert = cag.getSelfCertificate(new X500Name("CN=Me"), 1000);
 
+        // 1. Confirm SHA-512 is always used
+        byte[] pNoSignAttrs = PKCS7.generateSignedData("ML-DSA-65", null,
+                sk, new X509Certificate[] { cert },
+                new byte[100], true,
+                true,  // directSign, no signed attrs
+                null);
+
+        DerUtils.checkAlg(pNoSignAttrs, "10100", KnownOIDs.SHA_512);
+        // digestEncryptionAlgorithm DigestEncryptionAlgorithmIdentifier,
+        Asserts.assertEQ(DerValue.tag_Sequence,
+                DerUtils.innerDerValue(pNoSignAttrs, "10403").tag);
+
+        byte[] pSignAttrs = PKCS7.generateSignedData("ML-DSA-65", null,
+                sk, new X509Certificate[] { cert },
+                new byte[100], true,
+                false,  // not directSign, with signed attrs
+                null);
+
+        DerUtils.checkAlg(pSignAttrs, "10100", KnownOIDs.SHA_512);
+        // authenticatedAttributes [0] IMPLICIT Attributes OPTIONAL,
+        Asserts.assertEQ(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0),
+                DerUtils.innerDerValue(pSignAttrs, "10403").tag);
+
+        // 2. Confirm digestAlgorithm is totally ignored
         JarSigner signer = new JarSigner.Builder(sk, CertificateFactory
                 .getInstance("X.509").generateCertPath(List.of(cert)))
                 .build();
