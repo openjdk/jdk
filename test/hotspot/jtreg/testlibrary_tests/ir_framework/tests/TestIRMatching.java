@@ -27,14 +27,12 @@ import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
-import jdk.test.whitebox.WhiteBox;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /*
  * @test
@@ -432,6 +430,38 @@ public class TestIRMatching {
             addException(new RuntimeException("Should not find ids for \"" + methodName + "\"" + System.lineSeparator()));
         }
     }
+
+    // IR rules can also be defined in inner classes. In this case, the ourwe class is not allowed to also define
+    // IR rules (results in a format violation).
+    static class CountComparisons {
+        int iFld;
+
+        @Test
+        @IR(counts = {IRNode.STORE, "= 1",
+                IRNode.STORE, "=1",
+                IRNode.STORE, " = 1",
+                IRNode.STORE, "  =  1",
+                IRNode.STORE, ">= 1",
+                IRNode.STORE, ">=1",
+                IRNode.STORE, " >= 1",
+                IRNode.STORE, "  >=  1",
+                IRNode.STORE, "<= 1",
+                IRNode.STORE, "<=1",
+                IRNode.STORE, " <= 1",
+                IRNode.STORE, "  <=  1",
+                IRNode.STORE, "> 0",
+                IRNode.STORE, ">0",
+                IRNode.STORE, " > 0",
+                IRNode.STORE, "  >  0",
+                IRNode.STORE, "< 2",
+                IRNode.STORE, "<2",
+                IRNode.STORE, " < 2",
+                IRNode.STORE, "  <  2",
+        })
+        public void countComparison() {
+            iFld = 3;
+        }
+    }
 }
 
 class AndOr1 {
@@ -634,36 +664,6 @@ class FlagComparisons {
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "!= 50"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " !=  50"}) // Index 23
     public void testMatchNoneIf50() {}
-}
-
-class CountComparisons {
-    int iFld;
-
-    @Test
-    @IR(counts = {IRNode.STORE, "= 1",
-                  IRNode.STORE, "=1",
-                  IRNode.STORE, " = 1",
-                  IRNode.STORE, "  =  1",
-                  IRNode.STORE, ">= 1",
-                  IRNode.STORE, ">=1",
-                  IRNode.STORE, " >= 1",
-                  IRNode.STORE, "  >=  1",
-                  IRNode.STORE, "<= 1",
-                  IRNode.STORE, "<=1",
-                  IRNode.STORE, " <= 1",
-                  IRNode.STORE, "  <=  1",
-                  IRNode.STORE, "> 0",
-                  IRNode.STORE, ">0",
-                  IRNode.STORE, " > 0",
-                  IRNode.STORE, "  >  0",
-                  IRNode.STORE, "< 2",
-                  IRNode.STORE, "<2",
-                  IRNode.STORE, " < 2",
-                  IRNode.STORE, "  <  2",
-    })
-    public void countComparison() {
-        iFld = 3;
-    }
 }
 
 class GoodCount {

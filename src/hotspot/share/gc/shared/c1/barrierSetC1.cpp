@@ -138,29 +138,29 @@ LIR_Opr BarrierSetC1::atomic_add_at(LIRAccess& access, LIRItem& value) {
 }
 
 void BarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
+  LIRGenerator* gen = access.gen();
   DecoratorSet decorators = access.decorators();
   bool is_volatile = (decorators & MO_SEQ_CST) != 0;
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool mask_boolean = (decorators & C1_MASK_BOOLEAN) != 0;
-  LIRGenerator* gen = access.gen();
 
   if (mask_boolean) {
     value = gen->mask_boolean(access.base().opr(), value, access.access_emit_info());
   }
 
-  if (is_volatile) {
-    __ membar_release();
-  }
-
-  LIR_PatchCode patch_code = needs_patching ? lir_patch_normal : lir_patch_none;
   if (is_volatile && !needs_patching) {
     gen->volatile_field_store(value, access.resolved_addr()->as_address_ptr(), access.access_emit_info());
   } else {
-    __ store(value, access.resolved_addr()->as_address_ptr(), access.access_emit_info(), patch_code);
-  }
+    if (is_volatile) {
+      __ membar_release();
+    }
 
-  if (is_volatile && !support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar();
+    LIR_PatchCode patch_code = needs_patching ? lir_patch_normal : lir_patch_none;
+    __ store(value, access.resolved_addr()->as_address_ptr(), access.access_emit_info(), patch_code);
+
+    if (!support_IRIW_for_not_multiple_copy_atomic_cpu && is_volatile) {
+      __ membar();
+    }
   }
 }
 
@@ -171,26 +171,24 @@ void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool mask_boolean = (decorators & C1_MASK_BOOLEAN) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
-  bool needs_trailing_membar = is_volatile;
 
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu && is_volatile) {
-    __ membar();
-  }
-
-  LIR_PatchCode patch_code = needs_patching ? lir_patch_normal : lir_patch_none;
-  if (in_native) {
-    __ move_wide(access.resolved_addr()->as_address_ptr(), result);
-  } else if (is_volatile && !needs_patching) {
-    // volatile_field_load provides trailing membar semantics.
-    // Hence separate trailing membar is not needed.
-    needs_trailing_membar = false;
+  if (is_volatile && !in_native && !needs_patching) {
     gen->volatile_field_load(access.resolved_addr()->as_address_ptr(), result, access.access_emit_info());
   } else {
-    __ load(access.resolved_addr()->as_address_ptr(), result, access.access_emit_info(), patch_code);
-  }
+    if (support_IRIW_for_not_multiple_copy_atomic_cpu && is_volatile) {
+      __ membar();
+    }
 
-  if (needs_trailing_membar) {
-    __ membar_acquire();
+    if (in_native) {
+      __ move_wide(access.resolved_addr()->as_address_ptr(), result);
+    } else {
+      LIR_PatchCode patch_code = needs_patching ? lir_patch_normal : lir_patch_none;
+      __ load(access.resolved_addr()->as_address_ptr(), result, access.access_emit_info(), patch_code);
+    }
+
+    if (is_volatile) {
+      __ membar_acquire();
+    }
   }
 
   // Truncate boolean values returned by unsafe operations.

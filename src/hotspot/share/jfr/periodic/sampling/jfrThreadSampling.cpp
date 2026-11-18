@@ -383,15 +383,14 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
   assert(current != nullptr, "invariant");
 #ifdef LINUX
   tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
-  if (lock) {
-    tl->acquire_cpu_time_jfr_dequeue_lock();
-  }
   JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
+  if (lock) {
+    queue.acquire_dequeue_lock();
+  }
   for (u4 i = 0; i < queue.size(); i++) {
     record_cpu_time_thread(queue.at(i), now, tl, jt, current);
   }
   queue.clear();
-  assert(queue.is_empty(), "invariant");
   tl->set_has_cpu_time_jfr_requests(false);
   if (queue.lost_samples() > 0) {
     // Lost samples belong to the platform thread that owns the queue.
@@ -402,7 +401,7 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
     queue.resize_if_needed();
   }
   if (lock) {
-    tl->release_cpu_time_jfr_queue_lock();
+    queue.release_lock();
   }
 #endif
 }

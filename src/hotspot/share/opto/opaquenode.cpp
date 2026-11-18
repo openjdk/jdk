@@ -49,7 +49,7 @@ Node* Opaque1Node::Identity(PhaseGVN* phase) {
 CountedLoopNode* OpaqueZeroTripGuardNode::guarded_loop() const {
   Node* iff = if_node();
   ResourceMark rm;
-  Unique_Node_List wq;
+  Unique_Node_List<Node> wq;
   wq.push(iff);
   for (uint i = 0; i < wq.size(); ++i) {
     Node* nn = wq.at(i);

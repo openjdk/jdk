@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public abstract class OpenType<T> implements Serializable {
     /**
      * @deprecated Use {@link #ALLOWED_CLASSNAMES_LIST ALLOWED_CLASSNAMES_LIST} instead.
      */
-    @Deprecated
+    @Deprecated(since="6", forRemoval=true)
     public static final String[] ALLOWED_CLASSNAMES =
         ALLOWED_CLASSNAMES_LIST.toArray(new String[0]);
 

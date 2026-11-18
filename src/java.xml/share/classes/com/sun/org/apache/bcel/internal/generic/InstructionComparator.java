@@ -34,6 +34,9 @@ package com.sun.org.apache.bcel.internal.generic;
  */
 public interface InstructionComparator {
 
+    /**
+     * Default instruction comparator.
+     */
     InstructionComparator DEFAULT = (i1, i2) -> {
         if (i1.getOpcode() == i2.getOpcode()) {
             if (i1 instanceof BranchInstruction) {
@@ -56,5 +59,12 @@ public interface InstructionComparator {
         return false;
     };
 
+    /**
+     * Compares two instructions for equality.
+     *
+     * @param i1 The first instruction.
+     * @param i2 The second instruction.
+     * @return true if the instructions are equal, false otherwise.
+     */
     boolean equals(Instruction i1, Instruction i2);
 }

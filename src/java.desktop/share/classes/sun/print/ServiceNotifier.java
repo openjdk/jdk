@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ class ServiceNotifier extends Thread {
      * a minimum of 15 seconds. Ensures this won't take more than 10%
      * of available time.
      */
+    @Override
     public void run() {
 
        long minSleepTime = 15000;

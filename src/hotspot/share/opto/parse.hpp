@@ -453,6 +453,7 @@ class Parse : public GraphKit {
   void init_blocks();
   void load_state_from(Block* b);
   void store_state_to(Block* b) { b->record_state(this); }
+  void canonicalize_early_larval_aliases();
 
   // Parse all the basic blocks.
   void do_all_blocks();
@@ -534,6 +535,10 @@ class Parse : public GraphKit {
   // Helper function to setup Ideal Call nodes
   void do_call();
 
+  Node* null_assert_for_unloaded_type(Node* value, ciType* unloaded_type,
+                                      const char* reason, bool trap_at_next_bci,
+                                      ciMethod* callee = nullptr);
+
   // Helper function to uncommon-trap or bailout for non-compilable call-sites
   bool can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass *klass);
 
@@ -608,6 +613,9 @@ private:
   // helper function for call statistics
   void count_compiled_calls(bool at_method_entry, bool is_inline) PRODUCT_RETURN;
 
+  // AOT compiled code invocations count
+  void count_aot_code_calls() NOT_CDS_RETURN;
+
   Node_Notes* make_node_notes(Node_Notes* caller_nn);
 
   // Helper functions for handling normal and abnormal exits.
@@ -638,8 +646,12 @@ private:
   void stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store);
   // Increment counter used by StressUnstableIfTraps
   void increment_trap_stress_counter(Node*& counter, Node*& incr_store);
+  static volatile int _trap_stress_counter;
 
  public:
+  // Needed for AOT external address recording
+  static address trap_stress_counter_address() { return (address)&_trap_stress_counter; }
+
 #ifndef PRODUCT
   // Handle PrintOpto, etc.
   void show_parse_info();

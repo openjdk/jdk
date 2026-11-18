@@ -28,7 +28,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "oops/objArrayOop.hpp"
-#include "oops/oopCast.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 
 template<typename T>

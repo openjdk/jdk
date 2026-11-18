@@ -43,7 +43,11 @@ public interface LinuxDebugger extends JVMDebugger {
     // For AArch64
     //   - arch/arm64/kernel/vdso/vdso.lds.S in Linux kernel
     "__kernel_rt_sigreturn",
-    "VDSO_sigtramp"
+    "VDSO_sigtramp",
+
+    // For RISC-V
+    //   - arch/riscv/kernel/vdso/vdso.lds.S in Linux kernel
+    "__vdso_rt_sigreturn"
   );
 
   public String       addressValueToString(long address) throws DebuggerException;

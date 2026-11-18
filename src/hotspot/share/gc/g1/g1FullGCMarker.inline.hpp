@@ -91,7 +91,7 @@ inline void G1FullGCMarker::process_array_chunk(objArrayOop obj, size_t start, s
 
 inline void G1FullGCMarker::dispatch_task(const ScannerTask& task, bool stolen) {
   if (task.is_partial_array_state()) {
-    assert(_bitmap->is_marked(task.to_partial_array_state()->source()), "should be marked");
+    assert(_bitmap->is_marked(task.to_partial_array_state()->array()), "should be marked");
     process_partial_array(task.to_partial_array_state(), stolen);
   } else {
     oop obj = task.to_oop();

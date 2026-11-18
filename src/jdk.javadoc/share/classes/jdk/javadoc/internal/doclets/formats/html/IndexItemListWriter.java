@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,8 @@ public abstract class IndexItemListWriter extends HtmlDocletWriter {
                 .addMainContent(HtmlTree.DIV(HtmlStyles.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, getPageLabel())))
                 .addMainContent(mainContent)
-                .setFooter(getFooter()));
+                .setFooter(getFooter())
+                .toContent());
         printHtmlDocument(null, title.toLowerCase(Locale.ROOT), body);
 
         if (configuration.indexBuilder != null) {

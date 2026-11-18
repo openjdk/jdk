@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,10 @@ public class JmodFile implements AutoCloseable {
 
             this.zipEntry = e;
             this.section = section(name.substring(0, i));
-            this.name = name.substring(i+1);
+            this.name = name.substring(i + 1);
+            if (invalidEntryName(this.name)) {
+                throw new RuntimeException("invalid jmod entry: " + name);
+            }
         }
 
         /**
@@ -168,6 +171,52 @@ public class JmodFile implements AutoCloseable {
             return NAME_TO_SECTION.get(name);
         }
 
+        private static boolean invalidEntryName(String name) {
+            // JMOD entries are stored as section/name ZIP entries using '/'
+            // as the separator. Reject absolute paths, path names that contain
+            // '\' or '.' or '..' elements, and Windows drive-letter path elements.
+            if (name.startsWith("/") || name.indexOf('\\') >= 0) {
+                return true;
+            }
+            return hasDotOrDotDot(name) || hasWinDrive(name);
+        }
+
+        private static boolean hasDotOrDotDot(String name) {
+            int index = 0;
+            while (index < name.length()) {
+                int start = index;
+                while (index < name.length() && name.charAt(index) != '/') {
+                    index++;
+                }
+                if (name.charAt(start) == '.') {
+                    int length = index - start;
+                    if (length == 1 || (length == 2 && name.charAt(start + 1) == '.')) {
+                        return true;
+                    }
+                }
+                index++;
+            }
+            return false;
+        }
+
+        private static boolean isWinDriveLetter(char c) {
+            return ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'));
+        }
+
+        private static boolean hasWinDrive(String name) {
+            int i = 0;
+            while (i + 1 < name.length()) {
+                if (name.charAt(i + 1) == ':' && isWinDriveLetter(name.charAt(i))) {
+                    return true;
+                }
+                i = name.indexOf('/', i);
+                if (i < 0) {
+                    return false;
+                }
+                i++;
+            }
+            return false;
+        }
     }
 
     private final Path file;

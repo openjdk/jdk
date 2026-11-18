@@ -50,7 +50,6 @@
 #define   RISCV_HWPROBE_EXT_ZBA                 (1 << 3)
 #define   RISCV_HWPROBE_EXT_ZBB                 (1 << 4)
 #define   RISCV_HWPROBE_EXT_ZBS                 (1 << 5)
-#define   RISCV_HWPROBE_EXT_ZICBOZ              (1 << 6)
 #define   RISCV_HWPROBE_EXT_ZBC                 (1 << 7)
 #define   RISCV_HWPROBE_EXT_ZBKB                (1 << 8)
 #define   RISCV_HWPROBE_EXT_ZBKC                (1 << 9)
@@ -84,6 +83,7 @@
 #define   RISCV_HWPROBE_EXT_ZAWRS               (1ULL << 48)
 #define   RISCV_HWPROBE_EXT_ZABHA               (1ULL << 58)
 #define   RISCV_HWPROBE_EXT_ZALASR              (1ULL << 59)
+#define   RISCV_HWPROBE_EXT_ZICBOP              (1ULL << 60)
 
 #define RISCV_HWPROBE_KEY_CPUPERF_0     5
 #define   RISCV_HWPROBE_MISALIGNED_UNKNOWN      (0 << 0)
@@ -92,8 +92,6 @@
 #define   RISCV_HWPROBE_MISALIGNED_FAST         (3 << 0)
 #define   RISCV_HWPROBE_MISALIGNED_UNSUPPORTED  (4 << 0)
 #define   RISCV_HWPROBE_MISALIGNED_MASK         (7 << 0)
-
-#define RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE      6
 
 #define RISCV_HWPROBE_KEY_HIGHEST_VIRT_ADDRESS   7
 
@@ -138,7 +136,7 @@ static struct riscv_hwprobe query[] = {{RISCV_HWPROBE_KEY_MVENDORID, 0},
                                        {RISCV_HWPROBE_KEY_BASE_BEHAVIOR, 0},
                                        {RISCV_HWPROBE_KEY_IMA_EXT_0,     0},
                                        {RISCV_HWPROBE_KEY_CPUPERF_0,     0},
-                                       {RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE,      0},
+                                       {-1, 0}, // Unused key 6
                                        {RISCV_HWPROBE_KEY_HIGHEST_VIRT_ADDRESS,   0},
                                        {RISCV_HWPROBE_KEY_TIME_CSR_FREQ,          0},
                                        {RISCV_HWPROBE_KEY_MISALIGNED_SCALAR_PERF, 0},
@@ -240,10 +238,10 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZCB)) {
     VM_Version::ext_Zcb.enable_feature();
   }
-#ifndef PRODUCT
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOZ)) {
-    VM_Version::ext_Zicboz.enable_feature();
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOP)) {
+    VM_Version::ext_Zicbop.enable_feature();
   }
+#ifndef PRODUCT
   // Currently tests shows that cmove using Zicond instructions will bring
   // performance regression, but to get a test coverage all the time, will
   // still prefer to enabling it in debug version.
@@ -308,8 +306,5 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_valid(RISCV_HWPROBE_KEY_MISALIGNED_VECTOR_PERF)) {
     VM_Version::unaligned_vector.enable_feature(
        query[RISCV_HWPROBE_KEY_MISALIGNED_VECTOR_PERF].value);
-  }
-  if (is_valid(RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE)) {
-    VM_Version::zicboz_block_size.enable_feature(query[RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE].value);
   }
 }

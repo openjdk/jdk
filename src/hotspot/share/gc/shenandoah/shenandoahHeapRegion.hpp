@@ -29,7 +29,6 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
-#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -173,15 +172,17 @@ public:
   static int region_states_num() {
     return _REGION_STATES_NUM;
   }
+  static const uint32_t UndefinedRegionIndex = UINT32_MAX;
 
   // Allowed transitions from the outside code:
   void make_regular_allocation(ShenandoahAffiliation affiliation);
+  void make_regular_for_partial_recycling();
   void make_affiliated_maybe();
   void make_regular_bypass();
   void make_humongous_start();
-  void make_humongous_cont();
+  void make_humongous_cont(uint32_t start);
   void make_humongous_start_bypass(ShenandoahAffiliation affiliation);
-  void make_humongous_cont_bypass(ShenandoahAffiliation affiliation);
+  void make_humongous_cont_bypass(ShenandoahAffiliation affiliation, uint32_t start);
   void make_pinned();
   void make_unpinned();
   void make_cset();
@@ -220,6 +221,7 @@ public:
   // Macro-properties:
   bool is_alloc_allowed()          const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _regular || cur_state == _pinned; }
   bool is_stw_move_allowed()       const { auto cur_state = state(); return cur_state == _regular || cur_state == _cset || (ShenandoahHumongousMoves && cur_state == _humongous_start); }
+  bool is_update_required()        const { return is_active() && (!is_cset() || has_self_forwards()); }
 
   RegionState state()              const { return _state.load_acquire(); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
@@ -267,10 +269,7 @@ private:
 
   size_t _mixed_candidate_garbage_words;
 
-  // --- cache line boundary here --
-
-  // Live data can include humongous region size.
-  Atomic<size_t> _live_data;
+  double _empty_time;
 
   Atomic<size_t> _critical_pins;
 
@@ -284,15 +283,16 @@ private:
   uint32_t _gclab_allocs;
   uint32_t _plab_allocs;
 
-  // Tracks epochs of retrograde ageing (rejuvenation). Accumulates without clamping,
-  // so it needs a full-width type. Placed here to fill the slot before _empty_time.
-  CENSUS_NOISE(uint _youth;)
+  // If this is a humongous region, this index identifies the corresponding humongous start region.
+  // If this is not a humongous region, this field is not used. In debug builds, it is assigned the value
+  // UndefinedRegionIndex to facilitate debugging of state machine.
+  uint32_t _humongous_start_region_index;
 
-  double _empty_time;
+  // Live data can include humongous region size.
+  Atomic<size_t> _live_data;
 
   // Set when an evacuation failure self-forwarded at least one object in this
-  // region. The drain at degen/full GC entry scans flagged regions and CAS-
-  // clears the self_fwd bits. Safety-net reset on region recycle.
+  // region. The flag is cleared when the region is partially recycled during final-update-refs.
   Atomic<bool> _has_self_forwards;
 
   // Used to indicate that the region is being recycled; see try_recycle*()
@@ -491,7 +491,7 @@ public:
   bool block_is_obj(const HeapWord* p) const { return p < top(); }
 
   // Find humongous start region that this region belongs to
-  ShenandoahHeapRegion* humongous_start_region() const;
+  inline uint32_t humongous_start_region() const;
 
   HeapWord* top() const         { return _top;     }
   void set_top(HeapWord* v)     { _top = v;        }
@@ -528,9 +528,8 @@ public:
 
   void set_affiliation(ShenandoahAffiliation new_affiliation);
 
-  // Region ageing and rejuvenation
+  // Region ageing
   uint age() const { return _age; }
-  CENSUS_NOISE(uint youth() const { return _youth; })
 
   void increment_age() {
     const uint max_age = markWord::max_age;
@@ -542,11 +541,10 @@ public:
 
   void reset_age() {
     assert(get_top_before_promote() == nullptr, "Cannot reset age on region (%zu) scheduled for promotion", index());
-    CENSUS_NOISE(_youth += _age;)
     _age = 0;
   }
 
-  CENSUS_NOISE(void clear_youth() { _youth = 0; })
+  void partially_recycle();
 
   inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;
@@ -562,10 +560,10 @@ public:
 
   // Self-forward accounting: set by an evacuating thread after it successfully
   // installs a self-forward mark on an object in this region. Tested and cleared
-  // at the drain phase (degen/full GC entry) and again on region recycle.
+  // when the region is partially recycled in final-update-refs.
   // Release/acquire is enough here: readers only run at a safepoint, after all evacuating threads stop
   bool has_self_forwards() const { return _has_self_forwards.load_acquire(); }
-  void set_has_self_forwards()   { _has_self_forwards.release_store(true); }
+  void set_has_self_forwards()   { if (!_has_self_forwards.load_acquire()) _has_self_forwards.release_store(true); }
   void clear_has_self_forwards() { _has_self_forwards.release_store(false); }
 
 private:

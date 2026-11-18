@@ -68,7 +68,6 @@ class G1FullCollector : StackObj {
   G1FullGCMarker**          _markers;
   G1FullGCCompactionPoint** _compaction_points;
   G1MarkTasksQueueSet       _marking_task_queues;
-  PartialArrayStateManager* _partial_array_state_manager;
   PreservedMarksSet         _preserved_marks_set;
   G1FullGCCompactionPoint   _serial_compaction_point;
   G1FullGCCompactionPoint   _humongous_compaction_point;
@@ -111,8 +110,6 @@ public:
     assert(region_index < _heap->max_num_regions(), "sanity");
     return _live_stats[region_index].live_words();
   }
-
-  PartialArrayStateManager* partial_array_state_manager() const;
 
   void before_marking_update_attribute_table(G1HeapRegion* hr);
 

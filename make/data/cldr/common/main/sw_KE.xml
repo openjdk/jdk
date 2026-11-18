@@ -45,8 +45,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_US">Kiingereza cha Marekani</language>
 			<language type="en_US" alt="short">Kiingereza cha Marekani)</language>
 			<language type="es_419">Kihispania cha Amerika Kusini</language>
-			<language type="es_ES">Kihispania cha Ulaya</language>
-			<language type="es_MX">Kihispania cha Meksiko</language>
 			<language type="fa_AF">Kidari</language>
 			<language type="ff">Kifula</language>
 			<language type="fo">Kifaro</language>
@@ -75,7 +73,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ilo">Kiiloko</language>
 			<language type="inh">Kiingushi</language>
 			<language type="is">Kiaisilandi</language>
-			<language type="jbo">Kilojbani</language>
 			<language type="kac">Kikachini</language>
 			<language type="kbd">Kikabadi</language>
 			<language type="kea">Kikabuvedi</language>
@@ -121,15 +118,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="or">Kiodia</language>
 			<language type="pag">Kipangasini</language>
 			<language type="pcm">Kipijini cha Naijeria</language>
-			<language type="pt_BR">Kireno cha Brazili</language>
-			<language type="pt_PT">Kireno cha Ulaya</language>
 			<language type="rm">Kirumi</language>
 			<language type="rwk">Kirwa</language>
 			<language type="sba">Kingambei</language>
 			<language type="sc">Kisadini</language>
 			<language type="scn">Kisisilia</language>
 			<language type="ses">Kikoyraborosenni</language>
-			<language type="shn">Kishani</language>
 			<language type="shu">Kiarabu cha Chadi</language>
 			<language type="slh">Kilushootseed cha Kusini</language>
 			<language type="srn">Kisranantongo</language>
@@ -138,7 +132,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="su">Kisundani</language>
 			<language type="sw_CD">Kiswahili cha Kongo</language>
 			<language type="swb">Kikomoro</language>
-			<language type="syr">Kisiria</language>
 			<language type="tce">Kituchone cha Kusini</language>
 			<language type="tem">Kitimne</language>
 			<language type="tgx">Kitagi</language>
@@ -147,7 +140,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tok">Kitokipona</language>
 			<language type="ts">Kisonga</language>
 			<language type="ttm">Kituchone cha Kaskazini</language>
-			<language type="tw">Kitwi</language>
 			<language type="tzm">Kitamazight cha Atlas ya Kati</language>
 			<language type="udm">Kiudumurti</language>
 			<language type="ug">Kiuiguri</language>
@@ -178,7 +170,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hanb">Kihan chenye Kibopomofo</script>
 			<script type="Hans">Kilichorahisishwa</script>
 			<script type="Hans" alt="stand-alone">Kihan Kilichorahisishwa</script>
-			<script type="Hira">Kihiragana</script>
 			<script type="Hrkt">Silabi za Kijapani</script>
 			<script type="Jamo">Kijamo</script>
 			<script type="Khmr">Kikhema</script>
@@ -194,7 +185,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Zmth">Mwandiko wa kihisabati</script>
 		</scripts>
 		<territories>
-			<territory type="001">dunia</territory>
 			<territory type="011">Afrika Magharibi</territory>
 			<territory type="014">Afrika Mashariki</territory>
 			<territory type="015">Afrika Kaskazini</territory>
@@ -203,7 +193,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="035">Kusini Mashariki mwa Asia</territory>
 			<territory type="039">Ulaya Kusini</territory>
 			<territory type="057">Maikronesia</territory>
-			<territory type="061">Polinesia</territory>
 			<territory type="145">Asia Magharibi</territory>
 			<territory type="151">Ulaya Mashariki</territory>
 			<territory type="154">Ulaya Kaskazini</territory>
@@ -215,15 +204,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AQ">Antaktika</territory>
 			<territory type="AZ">Azabajani</territory>
 			<territory type="BB">Babados</territory>
-			<territory type="BJ">Benini</territory>
 			<territory type="BS">Bahamas</territory>
 			<territory type="BT">Bhutani</territory>
-			<territory type="BY">Belarusi</territory>
 			<territory type="CC">Visiwa vya Kokos (Keeling)</territory>
 			<territory type="CV">Kepuvede</territory>
 			<territory type="CW">Kurakao</territory>
 			<territory type="EA">Keuta na Melilla</territory>
-			<territory type="EC">Ekwado</territory>
 			<territory type="GA">Gaboni</territory>
 			<territory type="GP">Gwadelupe</territory>
 			<territory type="GS">Visiwa vya Jojia Kusini na Sandwich Kusini</territory>
@@ -235,10 +221,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="LB">Lebanoni</territory>
 			<territory type="LI">Lishenteni</territory>
 			<territory type="LS">Lesotho</territory>
-			<territory type="LU">Lasembagi</territory>
 			<territory type="LV">Lativia</territory>
-			<territory type="MA">Moroko</territory>
-			<territory type="MC">Monako</territory>
 			<territory type="MK">Masedonia</territory>
 			<territory type="MM">Myama (Burma)</territory>
 			<territory type="MS">Montserati</territory>
@@ -246,27 +229,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NE">Nijeri</territory>
 			<territory type="NO">Norwe</territory>
 			<territory type="NP">Nepali</territory>
-			<territory type="OM">Omani</territory>
 			<territory type="PF">Polinesia ya Ufaransa</territory>
 			<territory type="PG">Papua Guinea Mpya</territory>
-			<territory type="PL">Polandi</territory>
 			<territory type="PM">St. Pierre na Miquelon</territory>
 			<territory type="PR">Pwetoriko</territory>
 			<territory type="PS">Himaya za Palestina</territory>
-			<territory type="PY">Paragwai</territory>
-			<territory type="QA">Katari</territory>
 			<territory type="QO">Eneo la Oceania</territory>
 			<territory type="SG">Singapuri</territory>
 			<territory type="ST">Sao Tome na Prinsipe</territory>
 			<territory type="SV">Elsalvado</territory>
 			<territory type="SY">Shamu</territory>
-			<territory type="TD">Chadi</territory>
 			<territory type="TH">Thailandi</territory>
 			<territory type="TM">Turukimenstani</territory>
 			<territory type="TW">Taiwani</territory>
 			<territory type="UA">Ukreni</territory>
 			<territory type="US" alt="short">Marekani</territory>
-			<territory type="UY">Urugwai</territory>
 			<territory type="VA">Mji wa Vatikani</territory>
 			<territory type="VG">Visiwa vya Virgin vya Uingereza</territory>
 			<territory type="VI">Visiwa vya Virgin vya Marekani</territory>
@@ -429,6 +406,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<availableFormats>
 						<dateFormatItem id="GyMd">d/M/y G</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -665,13 +648,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saa za Majira ya Joto za Hovd</daylight>
 				</long>
 			</metazone>
-			<metazone type="Iran">
-				<long>
-					<generic>Saa za Irani</generic>
-					<standard>Saa za Wastani za Irani</standard>
-					<daylight>Saa za Mchana za Irani</daylight>
-				</long>
-			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Saa za Irkutsk</generic>
@@ -831,13 +807,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saa za Majira ya Joto za Sakhalin</daylight>
 				</long>
 			</metazone>
-			<metazone type="Samoa">
-				<long>
-					<generic>Saa za Samoa</generic>
-					<standard>Saa za Wastani za Samoa</standard>
-					<daylight>Saa za Mchana za Samoa</daylight>
-				</long>
-			</metazone>
 			<metazone type="Singapore">
 				<long>
 					<standard>Saa za Wastani za Singapoo</standard>
@@ -986,49 +955,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="one">¤ elfu 0</pattern>
-					<pattern type="1000" count="one" alt="alphaNextToNumber">¤ elfu 0</pattern>
 					<pattern type="1000" count="other">¤ elfu 0</pattern>
-					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ elfu 0</pattern>
 					<pattern type="10000" count="one">¤ elfu 00</pattern>
-					<pattern type="10000" count="one" alt="alphaNextToNumber">¤ elfu 00</pattern>
 					<pattern type="10000" count="other">¤ elfu 00</pattern>
-					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ elfu 00</pattern>
 					<pattern type="100000" count="one">¤ elfu 000</pattern>
-					<pattern type="100000" count="one" alt="alphaNextToNumber">¤ elfu 000</pattern>
 					<pattern type="100000" count="other">¤ elfu 000</pattern>
-					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ elfu 000</pattern>
 					<pattern type="1000000" count="one">¤ M0</pattern>
-					<pattern type="1000000" count="one" alt="alphaNextToNumber">¤ M0</pattern>
 					<pattern type="1000000" count="other">¤ M0</pattern>
 					<pattern type="10000000" count="one">¤ M00</pattern>
-					<pattern type="10000000" count="one" alt="alphaNextToNumber">¤ M00</pattern>
 					<pattern type="10000000" count="other">¤ M00</pattern>
-					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ M00</pattern>
 					<pattern type="100000000" count="one">¤ M000</pattern>
-					<pattern type="100000000" count="one" alt="alphaNextToNumber">¤ M000</pattern>
 					<pattern type="100000000" count="other">¤ M000</pattern>
 					<pattern type="1000000000" count="one">¤ B0</pattern>
-					<pattern type="1000000000" count="one" alt="alphaNextToNumber">¤ B0</pattern>
 					<pattern type="1000000000" count="other">¤ B0</pattern>
-					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ B0</pattern>
 					<pattern type="10000000000" count="one">¤ B00</pattern>
-					<pattern type="10000000000" count="one" alt="alphaNextToNumber">¤ B00</pattern>
 					<pattern type="10000000000" count="other">¤ B00</pattern>
-					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ B00</pattern>
 					<pattern type="100000000000" count="one">¤ B000</pattern>
-					<pattern type="100000000000" count="one" alt="alphaNextToNumber">¤ B000</pattern>
 					<pattern type="100000000000" count="other">¤ B000</pattern>
-					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ B000</pattern>
 					<pattern type="1000000000000" count="one">¤ T0</pattern>
-					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">¤ T0</pattern>
 					<pattern type="1000000000000" count="other">¤ T0</pattern>
 					<pattern type="10000000000000" count="one">¤ T00</pattern>
-					<pattern type="10000000000000" count="one" alt="alphaNextToNumber">¤ T00</pattern>
 					<pattern type="10000000000000" count="other">¤ T00</pattern>
 					<pattern type="100000000000000" count="one">¤ T000</pattern>
-					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">¤ T000</pattern>
 					<pattern type="100000000000000" count="other">¤ T000</pattern>
-					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ T000</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>

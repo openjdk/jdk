@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,7 +418,6 @@ Java_sun_java2d_pipe_ShapeSpanIterator_addSegment
     jfloat x1, y1, x2, y2, x3, y3;
     jboolean oom = JNI_FALSE;
     pathData *pd;
-    int numpts = 0;
 
     pd = GetSpanData(env, sr, STATE_HAVE_RULE, STATE_HAVE_RULE);
     if (pd == NULL) {

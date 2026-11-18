@@ -28,6 +28,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/checkedCast.hpp"
 
 G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
   _use_adaptive_sizing(true), _min_desired_num_regions(), _max_desired_num_regions(0) {
@@ -119,12 +120,12 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
 }
 
 uint G1YoungGenSizer::calculate_default_min_num_regions(uint new_num_regions) {
-  uint default_value = (new_num_regions * G1NewSizePercent) / 100;
+  uint default_value = checked_cast<uint>(((uint64_t)new_num_regions * G1NewSizePercent) / 100);
   return MAX2(1U, default_value);
 }
 
 uint G1YoungGenSizer::calculate_default_max_num_regions(uint new_num_regions) {
-  uint default_value = (new_num_regions * G1MaxNewSizePercent) / 100;
+  uint default_value = checked_cast<uint>(((uint64_t)new_num_regions * G1MaxNewSizePercent) / 100);
   return MAX2(1U, default_value);
 }
 

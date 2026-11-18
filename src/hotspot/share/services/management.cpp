@@ -38,7 +38,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/refArrayOop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"

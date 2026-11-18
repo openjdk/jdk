@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1031,6 +1032,10 @@ public final class SunPKCS11 extends AuthProvider {
         d(KG, "SunTls12MasterSecret",
                 "sun.security.pkcs11.P11TlsMasterSecretGenerator",
             m(CKM_TLS12_MASTER_KEY_DERIVE, CKM_TLS12_MASTER_KEY_DERIVE_DH));
+        d(KG, "SunTls12ExtendedMasterSecret",
+                "sun.security.pkcs11.P11Tls12ExtendedMasterSecretGenerator",
+                m(CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE,
+                        CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE_DH));
         d(KG, "SunTlsKeyMaterial",
                     "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
                 m(CKM_SSL3_KEY_AND_MAC_DERIVE, CKM_TLS_KEY_AND_MAC_DERIVE));
@@ -1215,24 +1220,6 @@ public final class SunPKCS11 extends AuthProvider {
                 ("Token info for token in slot " + slotID + ":");
             System.out.println(token.tokenInfo);
         }
-        Set<Long> brokenMechanisms = Set.of();
-        if (P11Util.isNSS(token)) {
-            CK_VERSION nssVersion = slotInfo.hardwareVersion;
-            if (nssVersion.major < 3 ||
-                    nssVersion.major == 3 && nssVersion.minor < 65) {
-                // RSA-PSS is broken in NSS prior to 3.65
-                brokenMechanisms = Set.of(CKM_RSA_PKCS_PSS,
-                        CKM_SHA1_RSA_PKCS_PSS,
-                        CKM_SHA224_RSA_PKCS_PSS,
-                        CKM_SHA256_RSA_PKCS_PSS,
-                        CKM_SHA384_RSA_PKCS_PSS,
-                        CKM_SHA512_RSA_PKCS_PSS,
-                        CKM_SHA3_224_RSA_PKCS_PSS,
-                        CKM_SHA3_256_RSA_PKCS_PSS,
-                        CKM_SHA3_384_RSA_PKCS_PSS,
-                        CKM_SHA3_512_RSA_PKCS_PSS);
-            }
-        }
 
         long[] supportedMechanisms = p11.C_GetMechanismList(slotID);
         Set<Long> supportedMechSet =
@@ -1270,12 +1257,6 @@ public final class SunPKCS11 extends AuthProvider {
                 }
                 continue;
             }
-            if (brokenMechanisms.contains(longMech)) {
-                if (showInfo) {
-                    System.out.println("DISABLED due to known issue with NSS");
-                }
-                continue;
-            }
 
             // we do not know of mechs with the upper 32 bits set
             if (longMech >>> 32 != 0) {
@@ -1300,8 +1281,7 @@ public final class SunPKCS11 extends AuthProvider {
                         for (int reqMech : d.requiredMechs) {
                             long longReqMech = reqMech & 0xFFFFFFFFL;
                             if (!config.isEnabled(longReqMech) ||
-                                    !supportedMechSet.contains(longReqMech) ||
-                                    brokenMechanisms.contains(longReqMech)) {
+                                    !supportedMechSet.contains(longReqMech)) {
                                 if (showInfo) {
                                     System.out.println("DISABLED " + d.type +
                                         " " + d.algorithm +
@@ -1408,6 +1388,7 @@ public final class SunPKCS11 extends AuthProvider {
                 PKCS11Exception, NoSuchAlgorithmException {
             String algorithm = getAlgorithm();
             String type = getType();
+
             if (type == MD) {
                 return new P11Digest(token, algorithm, mechanism);
             } else if (type == CIP) {
@@ -1455,6 +1436,9 @@ public final class SunPKCS11 extends AuthProvider {
                         || algorithm == "SunTls12MasterSecret") {
                     return new P11TlsMasterSecretGenerator(
                         token, algorithm, mechanism);
+                } else if (algorithm == "SunTls12ExtendedMasterSecret") {
+                    return new P11Tls12ExtendedMasterSecretGenerator(
+                            token, algorithm, mechanism);
                 } else if (algorithm == "SunTlsKeyMaterial"
                         || algorithm == "SunTls12KeyMaterial") {
                     return new P11TlsKeyMaterialGenerator(

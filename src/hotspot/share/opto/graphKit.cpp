@@ -81,8 +81,6 @@ GraphKit::GraphKit(JVMState* jvms, PhaseGVN* gvn)
 #ifdef ASSERT
   if (_gvn.is_IterGVN() != nullptr) {
     assert(_gvn.is_IterGVN()->delay_transform(), "Transformation must be delayed if IterGVN is used");
-    // Save the initial size of _for_igvn worklist for verification (see ~GraphKit)
-    _worklist_size = _gvn.C->igvn_worklist()->size();
   }
 #endif
 }
@@ -208,7 +206,11 @@ void GraphKit::verify_exception_state(SafePointNode* ex_map) {
 void GraphKit::stop_and_kill_map() {
   SafePointNode* dead_map = stop();
   if (dead_map != nullptr) {
-    dead_map->disconnect_inputs(C); // Mark the map as killed.
+    if (PhaseIterGVN* igvn = _gvn.is_IterGVN()) {
+      igvn->remove_dead_node(dead_map, PhaseIterGVN::NodeOrigin::Speculative);
+    } else {
+      dead_map->disconnect_inputs(C);
+    }
     assert(dead_map->is_killed(), "must be so marked");
   }
 }
@@ -300,7 +302,7 @@ void GraphKit::add_exception_state(SafePointNode* ex_map) {
     // No action needed.
     return;
   }
-  assert(ex_type->isa_instptr(), "exception must be an instance");
+  assert(ex_type->is_instptr(), "exception must be an instance");
   for (SafePointNode* e2 = _exceptions; e2 != nullptr; e2 = e2->next_exception()) {
     const Type* ex_type2 = _gvn.type(saved_ex_oop(e2));
     // We check sp also because call bytecodes can generate exceptions
@@ -1273,8 +1275,8 @@ Node* GraphKit::basic_plus_adr(Node* base, Node* ptr, Node* offset) {
   // problem.
   if (offset->is_Con()) {
     const Type* t = offset->bottom_type();
-    bool is_zero_int = t->isa_int() && t->is_int()->get_con() == 0;
-    bool is_zero_long = t->isa_long() && t->is_long()->get_con() == 0;
+    bool is_zero_int = t->is_int() && t->as_int()->get_con() == 0;
+    bool is_zero_long = t->is_long() && t->as_long()->get_con() == 0;
     assert(!is_zero_int && !is_zero_long,
            "Unexpected zero offset - should have matched MakeConX(0)");
   }
@@ -1328,7 +1330,7 @@ Node* GraphKit::load_array_length(Node* array) {
     Node *r_adr = basic_plus_adr(array, arrayOopDesc::length_offset_in_bytes());
     alen = _gvn.transform( new LoadRangeNode(nullptr, immutable_memory(), r_adr, TypeInt::POS));
   } else {
-    alen = array_ideal_length(alloc, _gvn.type(array)->is_oopptr(), false);
+    alen = array_ideal_length(alloc, _gvn.type(array)->as_oopptr(), false);
   }
   return alen;
 }
@@ -1830,7 +1832,7 @@ Node* GraphKit::access_load(Node* adr,   // actual address to load val at
   }
 
   SavedState old_state(this);
-  C2AccessValuePtr addr(adr, adr->bottom_type()->is_ptr());
+  C2AccessValuePtr addr(adr, adr->bottom_type()->as_ptr());
   C2ParseAccess access(this, decorators | C2_READ_ACCESS, bt, nullptr, addr);
   Node* load;
   if (access.is_raw()) {
@@ -1927,7 +1929,7 @@ void GraphKit::access_clone(Node* src, Node* dst, Node* size, bool is_array) {
 //-------------------------array_element_address-------------------------
 Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
                                       const TypeInt* sizetype, Node* ctrl) {
-  const TypeAryPtr* arytype = _gvn.type(ary)->is_aryptr();
+  const TypeAryPtr* arytype = _gvn.type(ary)->as_aryptr();
   uint shift;
   uint header;
   if (arytype->is_flat() && arytype->klass_is_exact()) {
@@ -1957,42 +1959,48 @@ Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
   return basic_plus_adr(ary, base, scale);
 }
 
-Node* GraphKit::cast_to_flat_array(Node* array, ciValueKlass* elem_vk) {
+// The three methods below, get_flat_array_klass(), get_flat_array_klass_exact() and
+// cast_to_flat_array() break down the processus to cast an array node into a flat array node.
+// The first step involves obtaining the ciObjArrayKlass instance representing the flat array.
+// The second step uses this ciObjArrayKlass instance to implement the cast on the array node.
+// If retrieving the flat array klass fails, the returned ciObjArrayKlass instance is marked
+// as being in an unloaded state, but it retains the array type name; this instance can be used
+// to create an uncommon trap with Reason unloaded.
+ciObjArrayKlass* GraphKit::get_flat_array_klass(ciValueKlass* elem_vk) {
   assert(elem_vk->maybe_flat_in_array(), "no flat array for %s", elem_vk->name()->as_utf8());
   if (!elem_vk->has_null_free_atomic_layout() && !elem_vk->has_nullable_atomic_layout()) {
-    return cast_to_flat_array_exact(array, elem_vk, true, false);
+    return get_flat_array_klass_exact(elem_vk, true, false);
   } else if (!elem_vk->has_nullable_atomic_layout() && !elem_vk->has_null_free_non_atomic_layout()) {
-    return cast_to_flat_array_exact(array, elem_vk, true, true);
+    return get_flat_array_klass_exact(elem_vk, true, true);
   } else if (!elem_vk->has_null_free_atomic_layout() && !elem_vk->has_null_free_non_atomic_layout()) {
-    return cast_to_flat_array_exact(array, elem_vk, false, true);
+    return get_flat_array_klass_exact(elem_vk, false, true);
   }
-
-  bool is_null_free = false;
-  if (!elem_vk->has_nullable_atomic_layout()) {
-    // Element does not have a nullable flat layout, cannot be nullable
-    is_null_free = true;
-  }
-
-  ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, false);
-  if (!array_klass->is_loaded()) {
-    return top();
-  }
-  const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
-  arytype = arytype->cast_to_flat(true)->cast_to_null_free(is_null_free);
-  return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+  return ciObjArrayKlass::make(elem_vk, false);
 }
 
-Node* GraphKit::cast_to_flat_array_exact(Node* array, ciValueKlass* elem_vk, bool is_null_free, bool is_atomic) {
+ciObjArrayKlass* GraphKit::get_flat_array_klass_exact(ciValueKlass* elem_vk, bool is_null_free, bool is_atomic) {
   assert(is_null_free || is_atomic, "nullable arrays must be atomic");
-  ciArrayKlass* array_klass = ciObjArrayKlass::make(elem_vk, true, is_null_free, is_atomic);
+  return ciObjArrayKlass::make(elem_vk, true, is_null_free, is_atomic);
+}
+
+Node* GraphKit::cast_to_flat_array(Node* array, ciObjArrayKlass* array_klass, bool exact) {
   if (!array_klass->is_loaded()) {
     return top();
   }
-  const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
-  assert(arytype->klass_is_exact(), "inconsistency");
-  assert(arytype->is_flat(), "inconsistency");
-  assert(arytype->is_null_free() == is_null_free, "inconsistency");
-  assert(arytype->is_not_null_free() == !is_null_free, "inconsistency");
+  assert(array_klass->element_klass()->is_value_klass(), "Must be");
+
+  const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->as_aryptr();
+  if (exact) {
+    assert(arytype->klass_is_exact(), "inconsistency");
+    assert(arytype->is_flat(), "inconsistency");
+    assert(arytype->is_null_free() == array_klass->is_elem_null_free(), "inconsistency");
+    assert(arytype->is_not_null_free() == !array_klass->is_elem_null_free(), "inconsistency");
+  } else {
+    arytype = arytype->cast_to_flat();
+    if (!array_klass->element_klass()->as_value_klass()->has_nullable_atomic_layout()) {
+      arytype = arytype->cast_to_null_free();
+    }
+  }
   return _gvn.transform(new CheckCastPPNode(control(), array, arytype, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
 }
 
@@ -2261,7 +2269,7 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
 
     // Make sure the call advertises its memory effects precisely.
     // This lets us build accurate anti-dependences in gcm.cpp.
-    assert(C->alias_type(call->adr_type()) == C->alias_type(hook_mem),
+    assert(C->alias_type(call->out_adr_type()) == C->alias_type(hook_mem),
            "call node must be constructed correctly");
   } else {
     assert(hook_mem == nullptr, "");
@@ -2271,14 +2279,14 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
 }
 
 // Keep track of MergeMems feeding into other MergeMems
-static void add_mergemem_users_to_worklist(Unique_Node_List& wl, Node* mem) {
+static void add_mergemem_users_to_worklist(Unique_Node_List<MergeMemNode>& wl, Node* mem) {
   if (!mem->is_MergeMem()) {
     return;
   }
   for (SimpleDUIterator i(mem); i.has_next(); i.next()) {
     Node* use = i.get();
     if (use->is_MergeMem()) {
-      wl.push(use);
+      wl.push(use->as_MergeMem());
     }
   }
 }
@@ -2299,7 +2307,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   // Find all the needed outputs of this call
   CallProjections* callprojs = call->extract_projections(true, do_asserts);
 
-  Unique_Node_List wl;
+  Unique_Node_List<MergeMemNode> wl;
   Node* final_mem = final_state->in(TypeFunc::Memory);
   Node* final_ctl = final_state->in(TypeFunc::Control);
   Node* final_io = final_state->in(TypeFunc::I_O);
@@ -2396,7 +2404,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   // Clean up any MergeMems that feed other MergeMems since the
   // optimizer doesn't like that.
   while (wl.size() > 0) {
-    Node* old_mem = wl.pop();
+    MergeMemNode* old_mem = wl.pop();
     Node* new_mem = _gvn.transform(old_mem);
     if (old_mem != new_mem) {
       C->gvn_replace_by(old_mem, new_mem);
@@ -2512,6 +2520,15 @@ Node* GraphKit::uncommon_trap(int trap_request,
                                                       trap_request), bci());
   }
 
+  if (PreloadReduceTraps && C->for_aot_preload() && (action != Deoptimization::Action_none)) {
+    ResourceMark rm;
+    ciMethod* cim = C->method();
+    log_debug(aot, codecache, deoptimization)("Uncommon trap in AOT preload code: reason=%s action=%s method=%s::%s bci=%d, %s",
+                  Deoptimization::trap_reason_name(reason), Deoptimization::trap_action_name(action),
+                  cim->holder()->name()->as_klass_external_name(), cim->name()->as_klass_external_name(),
+                  bci(), comment);
+  }
+
   CompileLog* log = C->log();
   if (log != nullptr) {
     int kid = (klass == nullptr)? -1: log->identify(klass);
@@ -2618,7 +2635,7 @@ Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, Prof
     assert(ptr_kind != ProfileAlwaysNull, "impossible here");
     const TypePtr* ptr = (ptr_kind != ProfileNeverNull && current_type->speculative_maybe_null()) ? TypePtr::BOTTOM : TypePtr::NOTNULL;
     // record the new speculative type's depth
-    speculative = xtype->cast_to_ptr_type(ptr->ptr())->is_ptr();
+    speculative = xtype->cast_to_ptr_type(ptr->ptr())->as_ptr();
     speculative = speculative->with_inline_depth(jvms()->depth());
   } else if (current_type->would_improve_ptr(ptr_kind)) {
     // Profiling report that null was never seen so we can change the
@@ -2629,7 +2646,7 @@ Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, Prof
       assert(ptr_kind == ProfileNeverNull, "nothing else is an improvement");
       const TypePtr* ptr = TypePtr::NOTNULL;
       if (speculative != nullptr) {
-        speculative = speculative->cast_to_ptr_type(ptr->ptr())->is_ptr();
+        speculative = speculative->cast_to_ptr_type(ptr->ptr())->as_ptr();
       } else {
         speculative = ptr;
       }
@@ -2741,7 +2758,7 @@ void GraphKit::record_profiled_parameters_for_speculation() {
     return;
   }
   for (int i = 0, j = 0; i < method()->arg_size() ; i++) {
-    if (_gvn.type(local(i))->isa_oopptr()) {
+    if (_gvn.type(local(i))->is_oopptr()) {
       ProfilePtrKind ptr_kind = ProfileMaybeNull;
       ciKlass* better_type = nullptr;
       if (method()->parameter_profiled_type(j, better_type, ptr_kind)) {
@@ -2858,7 +2875,7 @@ Node* GraphKit::opt_iff(Node* region, Node* iff) {
 Node* GraphKit::make_runtime_call(int flags,
                                   const TypeFunc* call_type, address call_addr,
                                   const char* call_name,
-                                  const TypePtr* adr_type,
+                                  const TypePtr* out_adr_type,
                                   // The following parms are all optional.
                                   // The first null ends the list.
                                   Node* parm0, Node* parm1,
@@ -2874,34 +2891,35 @@ Node* GraphKit::make_runtime_call(int flags,
     assert(!is_leaf, "must supply name for leaf");
     call_name = OptoRuntime::stub_name(call_addr);
   }
+
+  // Slow path call has no side-effects, uses few values
+  bool wide_in  = !(flags & RC_NARROW_MEM);
+  bool wide_out = (C->get_alias_index(out_adr_type) == Compile::AliasIdxBot);
+
+  const TypePtr* in_adr_type = wide_in ? TypePtr::BOTTOM : out_adr_type;
   CallNode* call;
   if (!is_leaf) {
-    call = new CallStaticJavaNode(call_type, call_addr, call_name, adr_type);
+    call = new CallStaticJavaNode(call_type, call_addr, call_name, out_adr_type, in_adr_type);
   } else if (flags & RC_NO_FP) {
-    call = new CallLeafNoFPNode(call_type, call_addr, call_name, adr_type);
+    call = new CallLeafNoFPNode(call_type, call_addr, call_name, out_adr_type, in_adr_type);
   } else  if (flags & RC_VECTOR){
-    uint num_bits = call_type->range_sig()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte;
-    call = new CallLeafVectorNode(call_type, call_addr, call_name, adr_type, num_bits);
+    uint num_bits = call_type->range_sig()->field_at(TypeFunc::Parms)->as_vect()->length_in_bytes() * BitsPerByte;
+    call = new CallLeafVectorNode(call_type, call_addr, call_name, out_adr_type, in_adr_type, num_bits);
   } else if (flags & RC_PURE) {
-    assert(adr_type == nullptr, "pure call does not touch memory");
+    assert(out_adr_type == nullptr, "pure call does not touch memory");
     call = new CallLeafPureNode(call_type, call_addr, call_name);
   } else {
-    call = new CallLeafNode(call_type, call_addr, call_name, adr_type);
+    call = new CallLeafNode(call_type, call_addr, call_name, out_adr_type, in_adr_type);
   }
 
   // The following is similar to set_edges_for_java_call,
   // except that the memory effects of the call are restricted to AliasIdxRaw.
-
-  // Slow path call has no side-effects, uses few values
-  bool wide_in  = !(flags & RC_NARROW_MEM);
-  bool wide_out = (C->get_alias_index(adr_type) == Compile::AliasIdxBot);
-
   Node* prev_mem = nullptr;
   if (wide_in) {
     prev_mem = set_predefined_input_for_runtime_call(call);
   } else {
     assert(!wide_out, "narrow in => narrow out");
-    Node* narrow_mem = memory(adr_type);
+    Node* narrow_mem = memory(in_adr_type);
     prev_mem = set_predefined_input_for_runtime_call(call, narrow_mem);
   }
 
@@ -2941,7 +2959,7 @@ Node* GraphKit::make_runtime_call(int flags,
     set_predefined_output_for_runtime_call(call);
   } else {
     // Slow path call has few side-effects, and/or sets few values.
-    set_predefined_output_for_runtime_call(call, prev_mem, adr_type);
+    set_predefined_output_for_runtime_call(call, prev_mem, out_adr_type);
   }
 
   if (has_io) {
@@ -3060,12 +3078,12 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
     return C->top();
   }
 
-  const TypeKlassPtr* klass_ptr_type = gvn.type(superklass)->is_klassptr();
+  const TypeKlassPtr* klass_ptr_type = gvn.type(superklass)->as_klassptr();
   // For a direct pointer comparison, we need the refined array klass pointer
   Node* vm_superklass = superklass;
-  if (klass_ptr_type->isa_aryklassptr() && klass_ptr_type->klass_is_exact()) {
-    assert(!klass_ptr_type->is_aryklassptr()->is_refined_type(), "Unexpected refined array klass pointer");
-    vm_superklass = gvn.makecon(klass_ptr_type->is_aryklassptr()->cast_to_refined_array_klass_ptr());
+  if (klass_ptr_type->is_aryklassptr() && klass_ptr_type->klass_is_exact()) {
+    assert(!klass_ptr_type->as_aryklassptr()->is_refined_type(), "Unexpected refined array klass pointer");
+    vm_superklass = gvn.makecon(klass_ptr_type->as_aryklassptr()->cast_to_refined_array_klass_ptr());
   }
 
   // Fast check for identical types, perhaps identical constants.
@@ -3075,8 +3093,8 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
     return C->top();             // false path is dead; no test needed.
 
   if (gvn.type(superklass)->singleton()) {
-    const TypeKlassPtr* superk = gvn.type(superklass)->is_klassptr();
-    const TypeKlassPtr* subk   = gvn.type(subklass)->is_klassptr();
+    const TypeKlassPtr* superk = gvn.type(superklass)->as_klassptr();
+    const TypeKlassPtr* subk   = gvn.type(subklass)->as_klassptr();
 
     // In the common case of an exact superklass, try to fold up the
     // test before generating code.  You may ask, why not just generate
@@ -3123,7 +3141,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   // First load the super-klass's check-offset
   Node* p1 = gvn.transform(AddPNode::make_off_heap(superklass, gvn.MakeConX(in_bytes(Klass::super_check_offset_offset()))));
   Node* m = C->immutable_memory();
-  Node* chk_off = gvn.transform(new LoadINode(nullptr, m, p1, gvn.type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered));
+  Node* chk_off = gvn.transform(new LoadINode(nullptr, m, p1, gvn.type(p1)->as_ptr(), TypeInt::INT, MemNode::unordered));
   int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
   const TypeInt* chk_off_t = chk_off->Value(&gvn)->isa_int();
   int chk_off_con = (chk_off_t != nullptr && chk_off_t->is_con()) ? chk_off_t->get_con() : cacheoff_con;
@@ -3150,9 +3168,9 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   // - it's a cache so, worse case, not reading the latest value
   //   wouldn't cause incorrect execution
   if (might_be_cache && mem != nullptr) {
-    kmem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(C->get_alias_index(gvn.type(p2)->is_ptr())) : mem;
+    kmem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(C->get_alias_index(gvn.type(p2)->as_ptr())) : mem;
   }
-  Node* nkls = gvn.transform(LoadKlassNode::make(gvn, kmem, p2, gvn.type(p2)->is_ptr(), TypeInstKlassPtr::OBJECT_OR_NULL));
+  Node* nkls = gvn.transform(LoadKlassNode::make(gvn, kmem, p2, gvn.type(p2)->as_ptr(), TypeInstKlassPtr::OBJECT_OR_NULL));
 
   // Compile speed common case: ARE a subtype and we canNOT fail
   if (superklass == nkls) {
@@ -3175,7 +3193,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
       total_prob += prob;
     }
     if (total_prob * 100. >= TypeProfileSubTypeCheckCommonThreshold) {
-      const TypeKlassPtr* superk = gvn.type(superklass)->is_klassptr();
+      const TypeKlassPtr* superk = gvn.type(superklass)->as_klassptr();
       for (int i = 0; profile.has_receiver(i); ++i) {
         ciKlass* klass = profile.receiver(i);
         const TypeKlassPtr* klass_t = TypeKlassPtr::make(klass);
@@ -3183,9 +3201,9 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
         if (result != Compile::SSC_always_true && result != Compile::SSC_always_false) {
           continue;
         }
-        if (klass_t->isa_aryklassptr()) {
+        if (klass_t->is_aryklassptr()) {
           // For a direct pointer comparison, we need the refined array klass pointer
-          klass_t = klass_t->is_aryklassptr()->cast_to_refined_array_klass_ptr();
+          klass_t = klass_t->as_aryklassptr()->cast_to_refined_array_klass_ptr();
         }
         float prob = profile.receiver_prob(i);
         ConNode* klass_node = gvn.makecon(klass_t);
@@ -3288,7 +3306,7 @@ Node* GraphKit::gen_subtype_check(Node* obj_or_subklass, Node* superklass) {
     MergeMemNode* mem = merged_memory();
     Node* ctrl = control();
     Node* subklass = obj_or_subklass;
-    if (!sub_t->isa_klassptr()) {
+    if (!sub_t->is_klassptr()) {
       subklass = load_object_klass(obj_or_subklass);
     }
 
@@ -3321,15 +3339,15 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
     return fail;
   }
   const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces);
-  if (tklass->isa_aryklassptr()) {
+  if (tklass->is_aryklassptr()) {
     // For a direct pointer comparison, we need the refined array klass pointer
-    tklass = tklass->is_aryklassptr()->cast_to_refined_array_klass_ptr();
+    tklass = tklass->as_aryklassptr()->cast_to_refined_array_klass_ptr();
   }
   Node* recv_klass = load_object_klass(receiver);
   fail = type_check(recv_klass, tklass, prob);
 
   if (!stopped()) {
-    const TypeOopPtr* receiver_type = _gvn.type(receiver)->isa_oopptr();
+    const TypeOopPtr* receiver_type = _gvn.type(receiver)->as_oopptr();
     const TypeOopPtr* recv_xtype = tklass->as_exact_instance_type();
     assert(recv_xtype->klass_is_exact(), "");
 
@@ -3415,11 +3433,37 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data, bool& speculatin
   return false;
 }
 
+void GraphKit::guard_klass_is_initialized(Node* klass) {
+  assert(C->do_clinit_barriers(), "should be called only for clinit barriers");
+  if (ClassInitBarrierMode == 0) {
+    return;
+  }
+  precond(ClassInitBarrierMode == 1); // catch new value
+  int init_state_off = in_bytes(InstanceKlass::init_state_offset());
+  Node* adr = basic_plus_adr(top(), klass, init_state_off);
+  Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
+                                    adr->bottom_type()->as_ptr(), TypeInt::BYTE,
+                                    T_BYTE, MemNode::acquire);
+  init_state = _gvn.transform(init_state);
+
+  Node* initialized_state = makecon(TypeInt::make(InstanceKlass::fully_initialized));
+
+  Node* chk = _gvn.transform(new CmpINode(initialized_state, init_state));
+  Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
+
+  { // uncommon trap on slow path
+    BuildCutout unless(this, tst, PROB_MAX);
+    // Do not deoptimize this nmethod. Go to Interpreter to initialize class.
+    uncommon_trap(Deoptimization::Reason_uninitialized, Deoptimization::Action_none);
+  }
+  C->set_has_clinit_barriers(true);
+}
+
 void GraphKit::guard_klass_being_initialized(Node* klass) {
   int init_state_off = in_bytes(InstanceKlass::init_state_offset());
   Node* adr = off_heap_plus_addr(klass, init_state_off);
   Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
-                                    adr->bottom_type()->is_ptr(), TypeInt::BYTE,
+                                    adr->bottom_type()->as_ptr(), TypeInt::BYTE,
                                     T_BYTE, MemNode::acquire);
   init_state = _gvn.transform(init_state);
 
@@ -3438,7 +3482,7 @@ void GraphKit::guard_init_thread(Node* klass) {
   Node* adr = off_heap_plus_addr(klass, init_thread_off);
 
   Node* init_thread = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
-                                     adr->bottom_type()->is_ptr(), TypePtr::NOTNULL,
+                                     adr->bottom_type()->as_ptr(), TypePtr::NOTNULL,
                                      T_ADDRESS, MemNode::unordered);
   init_thread = _gvn.transform(init_thread);
 
@@ -3453,9 +3497,14 @@ void GraphKit::guard_init_thread(Node* klass) {
 }
 
 void GraphKit::clinit_barrier(ciInstanceKlass* ik, ciMethod* context) {
+  if (C->do_clinit_barriers()) {
+    Node* klass = makecon(TypeKlassPtr::make(ik, Type::trust_interfaces));
+    guard_klass_is_initialized(klass);
+    return;
+  }
   if (ik->is_being_initialized()) {
     if (C->needs_clinit_barrier(ik, context)) {
-      Node* klass = makecon(TypeKlassPtr::make(ik));
+      Node* klass = makecon(TypeKlassPtr::make(ik, Type::trust_interfaces));
       guard_klass_being_initialized(klass);
       guard_init_thread(klass);
       insert_mem_bar(Op_MemBarCPUOrder);
@@ -3463,6 +3512,10 @@ void GraphKit::clinit_barrier(ciInstanceKlass* ik, ciMethod* context) {
   } else if (ik->is_initialized()) {
     return; // no barrier needed
   } else {
+    if (C->is_aot_compile()) {
+      ResourceMark rm;
+      log_debug(aot, compilation)("Emitting uncommon trap (clinit barrier) in AOT code for %s", ik->name()->as_klass_external_name());
+    }
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
                   nullptr);
@@ -3630,7 +3683,7 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   // Do we know the type check always succeed?
   bool known_statically = false;
   if (improved_klass_ptr_type->singleton()) {
-    const TypeKlassPtr* subk = _gvn.type(obj)->is_oopptr()->as_klass_type();
+    const TypeKlassPtr* subk = _gvn.type(obj)->as_oopptr()->as_klass_type();
     if (subk != nullptr && subk->is_loaded()) {
       int static_res = C->static_subtype_check(improved_klass_ptr_type, subk);
       known_statically = (static_res == Compile::SSC_always_true || static_res == Compile::SSC_always_false);
@@ -3638,7 +3691,7 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   }
 
   if (!known_statically) {
-    const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
+    const TypeOopPtr* obj_type = _gvn.type(obj)->as_oopptr();
     // We may not have profiling here or it may not help us. If we
     // have a speculative type use it to perform an exact cast.
     ciKlass* spec_obj_type = obj_type->speculative_type();
@@ -3699,7 +3752,7 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
   assert(new_cast_failure_map == nullptr || failure_control != nullptr,
          "failure_control must be set when new_failure_map is used");
   kill_dead_locals();           // Benefit all the uncommon traps
-  const TypeKlassPtr* klass_ptr_type = _gvn.type(superklass)->is_klassptr();
+  const TypeKlassPtr* klass_ptr_type = _gvn.type(superklass)->as_klassptr();
   const Type* obj_type = _gvn.type(obj);
 
   const TypeKlassPtr* improved_klass_ptr_type = klass_ptr_type->try_improve();
@@ -3715,8 +3768,8 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
   // for example, in some objArray manipulations, such as a[i]=a[j].)
   if (improved_klass_ptr_type->singleton()) {
     const TypeKlassPtr* kptr = nullptr;
-    if (obj_type->isa_oop_ptr()) {
-      kptr = obj_type->is_oopptr()->as_klass_type();
+    if (obj_type->is_oopptr()) {
+      kptr = obj_type->as_oopptr()->as_klass_type();
     } else if (obj->is_ValueType()) {
       ciValueKlass* vk = obj_type->value_klass();
       kptr = TypeInstKlassPtr::make(TypePtr::NotNull, vk, Type::Offset(0));
@@ -3733,6 +3786,13 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
           assert(safe_for_replace, "must be");
           obj = null_check(obj);
         }
+        if (!stopped() && toop->is_valueklassptr() && !maybe_larval) {
+          Node* vt = ValueTypeNode::make_from_oop(this, obj, toop->value_klass());
+          if (safe_for_replace) {
+            replace_in_map(obj, vt);
+          }
+          obj = vt;
+        }
         return obj;
       case Compile::SSC_always_false:
         if (null_free) {
@@ -3740,7 +3800,7 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
           obj = null_check(obj);
         }
         // It needs a null check because a null will *pass* the cast check.
-        if (obj_type->isa_oopptr() != nullptr && !obj_type->is_oopptr()->maybe_null()) {
+        if (obj_type->is_oopptr() && !obj_type->as_oopptr()->maybe_null()) {
           bool is_aastore = (java_bc() == Bytecodes::_aastore);
           Deoptimization::DeoptReason reason = is_aastore ?
             Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
@@ -3814,7 +3874,7 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
     // (for example obtained during profiling) to the type of the superklass and then do a
     // dynamic check that the type of the object is what we expect. To work correctly
     // for checkcast and aastore the type of superklass should be exact.
-    const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
+    const TypeOopPtr* obj_type = _gvn.type(obj)->as_oopptr();
     // We may not have profiling here or it may not help us. If we have
     // a speculative type use it to perform an exact cast.
     ciKlass* spec_obj_type = obj_type->speculative_type();
@@ -3868,7 +3928,8 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
   if (Arguments::is_valhalla_enabled() && (not_value || not_flat_in_array)) {
     // Check if obj has been loaded from an array. Keep obj unchanged for final
     // map replacement below.
-    Node* array_obj = obj->isa_DecodeN() ? obj->in(1) : obj;
+    Node* array_obj = obj->uncast();
+    array_obj = array_obj->isa_DecodeN() ? array_obj->in(1) : array_obj;
     Node* array = nullptr;
     if (array_obj->isa_Load()) {
       Node* address = array_obj->in(MemNode::Address);
@@ -3899,8 +3960,8 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
           replace_in_map(array, cast);
           array = cast;
         }
-        if (!ary_t->is_not_flat() && !ary_t->is_flat() && not_flat_in_array) {
-          // Casting array element to a non-flat-in-array type, mark array as not flat.
+        if (null_ctl == top() && !ary_t->is_not_flat() && !ary_t->is_flat() && not_flat_in_array) {
+          // Casting a non-null array element to a non-flat-in-array type, mark array as not flat.
           Node* cast = _gvn.transform(new CheckCastPPNode(control(), array, ary_t->cast_to_not_flat()));
           if (new_cast_failure_map != nullptr && *new_cast_failure_map == nullptr) {
             // Same as above.
@@ -4042,7 +4103,7 @@ Node* GraphKit::value_array_null_guard(Node* ary, Node* val, int nargs) {
   record_for_igvn(region);
   if (_gvn.type(val) == TypePtr::NULL_PTR) {
     // Since we were just successfully storing null, the array can't be null free.
-    const TypeAryPtr* ary_t = _gvn.type(ary)->is_aryptr();
+    const TypeAryPtr* ary_t = _gvn.type(ary)->as_aryptr();
     ary_t = ary_t->cast_to_not_null_free();
     Node* cast = _gvn.transform(new CheckCastPPNode(control(), ary, ary_t));
     replace_in_map(ary, cast);
@@ -4232,7 +4293,7 @@ Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
     }
 
     const TypeAryKlassPtr* aryklass_t = klass_t->isa_aryklassptr();
-    if (aryklass_t != nullptr && aryklass_t->elem()->isa_klassptr() != nullptr && aryklass_t->is_not_flat()) {
+    if (aryklass_t != nullptr && aryklass_t->elem()->is_klassptr() && aryklass_t->is_not_flat()) {
       // If we know that the array cannot be flat, then the layout_helper value is known
       constant_value = Klass::array_layout_helper(T_OBJECT);
       return nullptr;
@@ -4305,7 +4366,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
     set_memory(_gvn.transform(new NarrowMemProjNode(init, C->get_adr_type(mark_idx))), mark_idx);
     int klass_idx = C->get_alias_index(oop_type->add_offset(oopDesc::klass_offset_in_bytes()));
     set_memory(_gvn.transform(new NarrowMemProjNode(init, C->get_adr_type(klass_idx))), klass_idx);
-    if (oop_type->isa_aryptr()) {
+    if (oop_type->is_aryptr()) {
       // Initially all flat array accesses share a single slice
       // but that changes after parsing. Prepare the memory graph so
       // it can optimize flat array accesses properly once they
@@ -4318,8 +4379,8 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
         C->set_flat_accesses();
       }
       hook_memory_on_init(*this, elemidx, minit_in, _gvn.transform(new NarrowMemProjNode(init, alias_adr_type)));
-    } else if (oop_type->isa_instptr()) {
-      ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
+    } else if (oop_type->is_instptr()) {
+      ciInstanceKlass* ik = oop_type->as_instptr()->instance_klass();
       for (int i = 0, len = ik->nof_nonstatic_fields(); i < len; i++) {
         ciField* field = ik->nonstatic_field_at(i);
         if (field->offset_in_bytes() >= TrackedInitializationLimit * HeapWordSize)
@@ -4610,7 +4671,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     initial_slow_test = initial_slow_test->as_Bool()->as_int_value(&_gvn);
   }
 
-  const TypeKlassPtr* ary_klass = _gvn.type(klass_node)->isa_klassptr();
+  const TypeKlassPtr* ary_klass = _gvn.type(klass_node)->as_klassptr();
   const TypeOopPtr* ary_type = ary_klass->as_exact_instance_type();
 
   Node* raw_init_value = nullptr;
@@ -4632,8 +4693,8 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
   }
 
   Node* valid_length_test = _gvn.intcon(1);
-  if (ary_type->isa_aryptr()) {
-    jint max = ary_type->is_aryptr()->max_array_length();
+  if (ary_type->is_aryptr()) {
+    jint max = ary_type->as_aryptr()->max_array_length();
     Node* valid_length_cmp  = _gvn.transform(new CmpUNode(length, intcon(max)));
     valid_length_test = _gvn.transform(new BoolNode(valid_length_cmp, BoolTest::le));
   }
@@ -4651,9 +4712,9 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
   // (This happens via a non-constant argument to inline_native_newArray.)
   // In any case, the value of klass_node provides the desired array type.
   const TypeInt* length_type = _gvn.find_int_type(length);
-  if (ary_type->isa_aryptr() && length_type != nullptr) {
+  if (ary_type->is_aryptr() && length_type != nullptr) {
     // Try to get a better type than POS for the size
-    ary_type = ary_type->is_aryptr()->cast_to_size(length_type);
+    ary_type = ary_type->as_aryptr()->cast_to_size(length_type);
   }
 
   Node* javaoop = set_output_for_allocation(alloc, ary_type, deoptimize_on_exception);
@@ -4898,7 +4959,7 @@ void GraphKit::memory_effect(Node* res_mem, const TypePtr* src_type, const TypeP
   if (src_type != dst_type) {
     Node* all_mem = reset_memory();
     set_all_memory(all_mem);
-    Node* membar = new MemBarCPUOrderNode(C, C->get_alias_index(src_type), nullptr);
+    Node* membar = new MemBarCPUOrderNode(C, src_type, TypePtr::BOTTOM, nullptr);
     membar->init_req(TypeFunc::Control, control());
     membar->init_req(TypeFunc::Memory, all_mem);
     membar = _gvn.transform(membar);
@@ -4925,7 +4986,7 @@ void GraphKit::inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, 
   const TypePtr* src_type = TypeAryPtr::BYTES;
   const TypePtr* adr_type;
   Node* mem = capture_memory(adr_type, src_type, dst_type);
-  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, adr_type, src, dst, count);
+  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, dst_type, adr_type, src, dst, count);
   Node* res_mem = _gvn.transform(str);
   memory_effect(res_mem, src_type, dst_type);
 }
@@ -4981,7 +5042,7 @@ Node* GraphKit::make_constant_from_field(ciField* field, Node* obj) {
   }
   ciInstance* holder = nullptr;
   if (!field->is_static()) {
-    ciObject* const_oop = obj->bottom_type()->is_oopptr()->const_oop();
+    ciObject* const_oop = obj->bottom_type()->as_oopptr()->const_oop();
     if (const_oop != nullptr && const_oop->is_instance()) {
       holder = const_oop->as_instance();
     }
@@ -5003,7 +5064,7 @@ Node* GraphKit::make_constant_from_field(ciField* field, Node* obj) {
 Node* GraphKit::maybe_narrow_object_type(Node* obj, ciKlass* type, bool maybe_larval) {
   const Type* obj_type = obj->bottom_type();
   const TypeOopPtr* sig_type = TypeOopPtr::make_from_klass(type);
-  if (obj_type->isa_oopptr() && sig_type->is_loaded() && !obj_type->higher_equal(sig_type)) {
+  if (obj_type->is_oopptr() && sig_type->is_loaded() && !obj_type->higher_equal(sig_type)) {
     const Type* narrow_obj_type = obj_type->filter_speculative(sig_type); // keep speculative part
     Node* casted_obj = gvn().transform(new CheckCastPPNode(control(), obj, narrow_obj_type));
     obj = casted_obj;

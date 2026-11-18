@@ -69,7 +69,7 @@ const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
   //
   // A more detailed proof using Z3 can be found at:
   //   https://github.com/openjdk/jdk/pull/25928#discussion_r2256750507
-  const TypeInt* ti = t->is_int();
+  const TypeInt* ti = t->as_int();
   return TypeInt::make(count_leading_zeros_int(~ti->_bits._zeros),
                        count_leading_zeros_int(ti->_bits._ones),
                        ti->_widen);
@@ -84,7 +84,7 @@ const Type* CountLeadingZerosLNode::Value(PhaseGVN* phase) const {
 
   // The proof of correctness is same as the above comments
   // in `CountLeadingZerosINode::Value`.
-  const TypeLong* tl = t->is_long();
+  const TypeLong* tl = t->as_long();
   return TypeInt::make(count_leading_zeros_long(~tl->_bits._zeros),
                        count_leading_zeros_long(tl->_bits._ones),
                        tl->_widen);
@@ -113,7 +113,7 @@ const Type* CountTrailingZerosINode::Value(PhaseGVN* phase) const {
   //
   // A more detailed proof using Z3 can be found at:
   //   https://github.com/openjdk/jdk/pull/25928#discussion_r2256750507
-  const TypeInt* ti = t->is_int();
+  const TypeInt* ti = t->as_int();
   return TypeInt::make(count_trailing_zeros_int(~ti->_bits._zeros),
                        count_trailing_zeros_int(ti->_bits._ones),
                        ti->_widen);
@@ -128,7 +128,7 @@ const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
 
   // The proof of correctness is same as the above comments
   // in `CountTrailingZerosINode::Value`.
-  const TypeLong* tl = t->is_long();
+  const TypeLong* tl = t->as_long();
   return TypeInt::make(count_trailing_zeros_long(~tl->_bits._zeros),
                        count_trailing_zeros_long(tl->_bits._ones),
                        tl->_widen);
@@ -158,7 +158,7 @@ const Type* PopCountINode::Value(PhaseGVN* phase) const {
   if (t == Type::TOP) {
     return Type::TOP;
   }
-  const TypeInt* tint = t->is_int();
+  const TypeInt* tint = t->as_int();
   KnownBits<juint> bits = tint->_bits;
   return TypeInt::make(population_count(bits._ones), population_count(~bits._zeros), tint->_widen);
 
@@ -169,7 +169,7 @@ const Type* PopCountLNode::Value(PhaseGVN* phase) const {
   if (t == Type::TOP) {
     return Type::TOP;
   }
-  const TypeLong* tlong = t->is_long();
+  const TypeLong* tlong = t->as_long();
   KnownBits<julong> bits = tlong->_bits;
   return TypeInt::make(population_count(bits._ones), population_count(~bits._zeros), tlong->_widen);
 }

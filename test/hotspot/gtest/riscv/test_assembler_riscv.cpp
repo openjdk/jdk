@@ -136,7 +136,7 @@ class CmpxchgTester {
     if (using_narrow<ASMSIZE>()) {
         address entry = _masm.pc();
        _masm.cmpxchg_narrow_value(/*addr*/ c_rarg0, /*expected*/ c_rarg1, /*new_value*/c_rarg2,
-                        ASMSIZE, Assembler::relaxed, Assembler::relaxed,
+                        ASMSIZE, memory_order_relaxed,
                         /*result*/ c_rarg3, boolean_result, c_rarg4, c_rarg5, c_rarg6); /* Uses also t0-t1, caller saved */
       _masm.mv(c_rarg0, c_rarg3);
       _masm.ret();
@@ -145,28 +145,28 @@ class CmpxchgTester {
       switch(variant) {
         default:
           _masm.cmpxchg(/*addr*/ c_rarg0, /*expected*/ c_rarg1, /*new_value*/c_rarg2,
-                        ASMSIZE, Assembler::aq, Assembler::rl,
+                        ASMSIZE, memory_order_seq_cst,
                         /*result*/ c_rarg3, boolean_result);
           _masm.mv(c_rarg0, c_rarg3);
           break;
         case 1:
           // expected == result
           _masm.cmpxchg(/*addr*/ c_rarg0, /*expected*/ c_rarg1, /*new_value*/c_rarg2,
-                        ASMSIZE, Assembler::aq, Assembler::rl,
+                        ASMSIZE, memory_order_seq_cst,
                         /*result*/ c_rarg1, boolean_result);
           _masm.mv(c_rarg0, c_rarg1);
           break;
         case 2:
           // new_value == result
           _masm.cmpxchg(/*addr*/ c_rarg0, /*expected*/ c_rarg1, /*new_value*/c_rarg2,
-                        ASMSIZE, Assembler::aq, Assembler::rl,
+                        ASMSIZE, memory_order_seq_cst,
                         /*result*/ c_rarg2, boolean_result);
           _masm.mv(c_rarg0, c_rarg2);
           break;
         case 3:
           // expected == new_value
           _masm.cmpxchg(/*addr*/ c_rarg0, /*expected*/ c_rarg1, /*new_value*/ c_rarg1,
-                        ASMSIZE, Assembler::aq, Assembler::rl,
+                        ASMSIZE, memory_order_seq_cst,
                         /*result*/ c_rarg2, boolean_result);
           _masm.mv(c_rarg0, c_rarg2);
           break;
@@ -581,7 +581,7 @@ class WeakCmpxchgTester {
     if (using_narrow<ASMSIZE>()) {
         address entry = _masm.pc();
        _masm.weak_cmpxchg_narrow_value(/*addr*/ c_rarg0, /*expected*/ c_rarg1, /*new_value*/ c_rarg2,
-                                      ASMSIZE, Assembler::relaxed, Assembler::relaxed,
+                                      ASMSIZE, memory_order_relaxed,
                                       /*result*/ c_rarg3, c_rarg4, c_rarg5, c_rarg6); /* Uses also t0-t1, caller saved */
       _masm.mv(c_rarg0, c_rarg3);
       _masm.ret();
@@ -589,7 +589,7 @@ class WeakCmpxchgTester {
     } else {
         address entry = _masm.pc();
        _masm.weak_cmpxchg(/*addr*/ c_rarg0, /*expected*/ c_rarg1, /*new_value*/ c_rarg2,
-                          ASMSIZE, Assembler::relaxed, Assembler::relaxed, /*result*/ c_rarg3);
+                          ASMSIZE, memory_order_relaxed, /*result*/ c_rarg3);
       _masm.mv(c_rarg0, c_rarg3);
       _masm.ret();
       _weak = ((weak_cmpxchg_func)entry);

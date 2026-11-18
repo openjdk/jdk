@@ -792,7 +792,7 @@ public final class SunJCE extends Provider {
 
         ps("KeyGenerator", "SunTlsMasterSecret",
                 "com.sun.crypto.provider.TlsMasterSecretGenerator",
-                List.of("SunTls12MasterSecret", "SunTlsExtendedMasterSecret"),
+                List.of("SunTls12MasterSecret", "SunTlsExtendedMasterSecret", "SunTls12ExtendedMasterSecret"),
                 null);
 
         ps("KeyGenerator", "SunTlsKeyMaterial",

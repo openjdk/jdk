@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,24 @@
  *                   -Xbatch -XX:CompileCommand=dontinline,compiler.uncommontrap.TestNullAssertAtCheckCast::test*
  *                   -XX:CompileCommand=inline,compiler.uncommontrap.TestNullAssertAtCheckCast::cast
  *                   -XX:CompileCommand=inline,compiler.uncommontrap.TestNullAssertAtCheckCast::store
+ *                   compiler.uncommontrap.TestNullAssertAtCheckCast
+ */
+
+/*
+ * @test
+ * @bug 8257594
+ * @summary Test that failing checkcast does not trigger repeated recompilation until cutoff is hit.
+ * @requires vm.compiler2.enabled
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Xbatch -XX:CompileCommand=dontinline,compiler.uncommontrap.TestNullAssertAtCheckCast::test*
+ *                   -XX:CompileCommand=inline,compiler.uncommontrap.TestNullAssertAtCheckCast::cast
+ *                   -XX:CompileCommand=inline,compiler.uncommontrap.TestNullAssertAtCheckCast::store
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
  *                   compiler.uncommontrap.TestNullAssertAtCheckCast
  */
 

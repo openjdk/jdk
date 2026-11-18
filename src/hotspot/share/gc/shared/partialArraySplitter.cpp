@@ -22,17 +22,20 @@
  *
  */
 
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/partialArraySplitter.hpp"
 #include "gc/shared/partialArrayState.hpp"
 #include "utilities/macros.hpp"
 
-PartialArraySplitter::PartialArraySplitter(PartialArrayStateManager* manager,
-                                           uint num_workers)
-  : _allocator(manager),
+PartialArraySplitter::PartialArraySplitter(uint num_workers)
+  : _allocator(),
     _stepper(num_workers)
     TASKQUEUE_STATS_ONLY(COMMA _stats())
 {}
+
+void PartialArraySplitter::reset() {
+  _allocator.reset();
+  TASKQUEUE_STATS_ONLY(_stats.reset();)
+}
 
 #if TASKQUEUE_STATS
 PartialArrayTaskStats* PartialArraySplitter::stats() {

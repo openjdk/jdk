@@ -39,13 +39,13 @@
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 
 bool register_jfr_dcmds() {
@@ -191,7 +191,7 @@ static oop construct_dcmd_instance(JfrJavaArguments* args, TRAPS) {
   return args->result()->get_oop();
 }
 
-JfrDCmd::JfrDCmd(outputStream* output, bool heap, int num_arguments) : DCmd(output, heap), _args(nullptr), _num_arguments(num_arguments), _delimiter('\0') {}
+JfrDCmd::JfrDCmd(outputStream* output, bool heap, int num_arguments) : DCmd(output, heap), _args(nullptr), _args_length(0), _num_arguments(num_arguments), _delimiter('\0') {}
 
 void JfrDCmd::invoke(JfrJavaArguments& method, TRAPS) const {
   JavaValue constructor_result(T_OBJECT);
@@ -212,6 +212,7 @@ void JfrDCmd::invoke(JfrJavaArguments& method, TRAPS) const {
 
 void JfrDCmd::parse(CmdLine* line, char delim, TRAPS) {
   _args = line->args_addr();
+  _args_length = line->args_len();
   _delimiter = delim;
   // Error checking done in execute.
   // Will not matter from DCmdFactory perspective
@@ -229,8 +230,10 @@ void JfrDCmd::execute(DCmdSource source, TRAPS) {
 
   static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;C)[Ljava/lang/String;";
   JavaValue result(T_OBJECT);
+  stringStream arguments;
+  arguments.write(_args, _args_length);
   JfrJavaArguments execute(&result, javaClass(), "execute", signature, CHECK);
-  jstring argument = JfrJavaSupport::new_string(_args, CHECK);
+  jstring argument = JfrJavaSupport::new_string(arguments.base(), CHECK);
   jstring s = nullptr;
   if (source == DCmd_Source_Internal) {
     s = JfrJavaSupport::new_string("internal", CHECK);
