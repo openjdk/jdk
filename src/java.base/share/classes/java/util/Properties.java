@@ -223,9 +223,9 @@ public class Properties extends Hashtable<Object,Object> {
      *
      * @param      key the key to be placed into this property list.
      * @param      value the value corresponding to {@code key}.
-     * @return     the previous value of the specified key in this property
+     * @return     the previous value for the specified key in this property
      *             list, or {@code null} if it did not have one.
-     * @throws     NullPointerException if the key or value is {@code null}
+     * @throws     NullPointerException if {@code key} or {@code value} is {@code null}
      * @see #getProperty
      * @since    1.2
      */
@@ -1155,7 +1155,9 @@ public class Properties extends Hashtable<Object,Object> {
      * {@code null} if the property is not found.
      *
      * @param   key   the property key.
-     * @return  the value in this property list with the specified key value.
+     * @return  the value for the specified key in this property list, or
+     *          {@code null} if the key is not found
+     * @throws  NullPointerException if {@code key} is {@code null}
      * @see     #setProperty
      * @see     #defaults
      */
@@ -1170,12 +1172,13 @@ public class Properties extends Hashtable<Object,Object> {
      * Searches for the property with the specified key in this property list.
      * If the key is not found in this property list, the default property list,
      * and its defaults, recursively, are then checked. The method returns the
-     * default value argument if the property is not found.
+     * {@code defaultValue} argument if the property is not found.
      *
      * @param   key            the property key.
      * @param   defaultValue   a default value.
-     *
-     * @return  the value in this property list with the specified key value.
+     * @return  the value for the specified key in this property list, or
+     *          {@code defaultValue} if the key is not found
+     * @throws  NullPointerException if {@code key} is {@code null}
      * @see     #setProperty
      * @see     #defaults
      */
