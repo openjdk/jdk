@@ -29,6 +29,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/zipLibrary.hpp"
 
  // Entry points in zip.dll for loading zip/jar file entries
@@ -122,7 +123,14 @@ static void load_zip_library(bool vm_exit_on_failure) {
 //
 class ZipLibraryLoaderLock : public StackObj {
  private:
-  static Semaphore _lock;
+  static DeferredStatic<Semaphore> _lock;
+  friend class ZipLibrary;
+  // Called from Threads::create_vm() via initialize_loader_lock
+  static void initialize() {
+    int sem_count = 1;
+    _lock.initialize(sem_count);
+  }
+
   JavaThread* _jt;
  public:
    ZipLibraryLoaderLock() : _jt(nullptr) {
@@ -134,17 +142,21 @@ class ZipLibraryLoaderLock : public StackObj {
         ThreadStateTransition::transition_from_vm(jt, _thread_in_native, false);
       }
     }
-    _lock.wait();
+    _lock->wait();
   }
   ~ZipLibraryLoaderLock() {
-    _lock.signal();
+    _lock->signal();
     if (_jt != nullptr) {
       ThreadStateTransition::transition_from_native(_jt, _thread_in_vm, false);
     }
   }
 };
 
-Semaphore ZipLibraryLoaderLock::_lock(1);
+DeferredStatic<Semaphore> ZipLibraryLoaderLock::_lock;
+
+void ZipLibrary::initialize_loader_lock() {
+  ZipLibraryLoaderLock::initialize();
+}
 
 static void initialize(bool vm_exit_on_failure = true) {
   if (is_loaded()) {

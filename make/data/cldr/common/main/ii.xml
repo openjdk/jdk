@@ -312,6 +312,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMEd">y MMM dꑍ,E</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">MMM dꑍ–dꑍ</greatestDifference>
@@ -394,7 +399,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>ꋧꃅꎕꏦꄮꈉ{0}</gmtFormat>
-			<gmtZeroFormat>ꋧꃅꎕꏦꄮꈉ</gmtZeroFormat>
 			<regionFormat>{0}ꄮꈉ</regionFormat>
 			<regionFormat type="daylight">{0}ꃅꎸꄮꈉ</regionFormat>
 			<regionFormat type="standard">{0}ꎕꏦꄮꈉ</regionFormat>

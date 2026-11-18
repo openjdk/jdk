@@ -105,6 +105,12 @@ bool frame::safe_for_sender(JavaThread *thread) {
       if (_cb->is_nmethod() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
         return false;
       }
+
+      if (_cb->is_uncommon_trap_stub() &&
+          !(thread->has_last_Java_frame() && thread->frame_anchor()->walkable())) {
+        // RegisterSaver adjusts the stack pointer while spilling registers.
+        return false;
+      }
     }
 
     // Could just be some random pointer within the codeBlob

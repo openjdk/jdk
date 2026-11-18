@@ -45,15 +45,18 @@ public class MethodParameter implements Cloneable, Node {
     /** The access flags */
     private int accessFlags;
 
+    /**
+     * Constructs a MethodParameter.
+     */
     public MethodParameter() {
     }
 
     /**
      * Constructs an instance from a DataInput.
      *
-     * @param input Input stream
-     * @throws IOException if an I/O error occurs.
-     * @throws ClassFormatException if a class is malformed or cannot be interpreted as a class file
+     * @param input Input stream.
+     * @throws IOException Thrown if an I/O error occurs.
+     * @throws ClassFormatException Thrown if a class is malformed or cannot be interpreted as a class file
      */
     MethodParameter(final DataInput input) throws IOException {
         nameIndex = input.readUnsignedShort();
@@ -66,7 +69,9 @@ public class MethodParameter implements Cloneable, Node {
     }
 
     /**
-     * @return deep copy of this object
+     * Creates a deep copy of this object.
+     *
+     * @return deep copy of this object.
      */
     public MethodParameter copy() {
         try {
@@ -80,18 +85,28 @@ public class MethodParameter implements Cloneable, Node {
     /**
      * Dumps object to file stream on binary format.
      *
-     * @param file Output file stream
-     * @throws IOException if an I/O error occurs.
+     * @param file Output file stream.
+     * @throws IOException Thrown if an I/O error occurs.
      */
     public final void dump(final DataOutputStream file) throws IOException {
         file.writeShort(nameIndex);
         file.writeShort(accessFlags);
     }
 
+    /**
+     * Gets the access flags.
+     *
+     * @return The access flags.
+     */
     public int getAccessFlags() {
         return accessFlags;
     }
 
+    /**
+     * Gets the name index.
+     *
+     * @return The name index.
+     */
     public int getNameIndex() {
         return nameIndex;
     }
@@ -109,22 +124,47 @@ public class MethodParameter implements Cloneable, Node {
         return constantPool.getConstantUtf8(nameIndex).getBytes();
     }
 
+    /**
+     * Checks if this parameter is final.
+     *
+     * @return true if this parameter is final.
+     */
     public boolean isFinal() {
         return (accessFlags & Const.ACC_FINAL) != 0;
     }
 
+    /**
+     * Checks if this parameter is mandated.
+     *
+     * @return true if this parameter is mandated.
+     */
     public boolean isMandated() {
         return (accessFlags & Const.ACC_MANDATED) != 0;
     }
 
+    /**
+     * Checks if this parameter is synthetic.
+     *
+     * @return true if this parameter is synthetic.
+     */
     public boolean isSynthetic() {
         return (accessFlags & Const.ACC_SYNTHETIC) != 0;
     }
 
+    /**
+     * Sets the access flags.
+     *
+     * @param accessFlags The access flags.
+     */
     public void setAccessFlags(final int accessFlags) {
         this.accessFlags = accessFlags;
     }
 
+    /**
+     * Sets the name index.
+     *
+     * @param nameIndex The name index.
+     */
     public void setNameIndex(final int nameIndex) {
         this.nameIndex = nameIndex;
     }

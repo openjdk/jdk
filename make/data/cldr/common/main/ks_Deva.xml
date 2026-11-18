@@ -96,6 +96,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</characters>
 	<dates>
 		<calendars>
+			<calendar type="buddhist">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="chinese">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="coptic">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="dangi">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="ethiopic">
+				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -120,6 +155,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>-</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -366,6 +404,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator draft="provisional">/</numericDateSeparator>
+						<numericTimeSeparator draft="provisional">:</numericTimeSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -398,10 +440,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
 						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">MMMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">y MMMM d, EEE</dateFormatItem>
 					</availableFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -448,7 +489,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>जी एम टी {0}</gmtFormat>
-			<gmtZeroFormat>जी एम टी</gmtZeroFormat>
 			<regionFormat>{0} वख</regionFormat>
 			<regionFormat type="daylight">{0} डे लाइट वख</regionFormat>
 			<regionFormat type="standard">{0} मयॉरी वख</regionFormat>
@@ -456,6 +496,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<standard>कोऑर्डनैटिड यूनवर्सल वख</standard>
 				</long>
+				<short>
+					<standard>यू टी सी</standard>
+				</short>
 			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>नमोलुम शहर</exemplarCity>
@@ -524,6 +567,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<symbols numberSystem="arab">
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+		</symbols>
+		<symbols numberSystem="arabext">
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+		</symbols>
 		<currencyFormats numberSystem="arabext">
 			<currencyFormatLength>
 				<currencyFormat type="standard">

@@ -1347,7 +1347,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
   const char   *mnemo = nullptr;
   unsigned long opc = 0;
 
-  if (bottom_type()->isa_vect() != nullptr && ideal_reg() == Op_VecX) {
+  if (bottom_type()->is_vect() && ideal_reg() == Op_VecX) {
     if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
       if (masm != nullptr) {
         __ z_mvc(Address(Z_SP, 0,  dst_offset), Address(Z_SP, 0, src_offset), 16);
@@ -1622,15 +1622,13 @@ source_hpp %{
 class CallStubImpl {
  public:
 
-  // call trampolines
-  // Size of call trampoline stub. For add'l comments, see size_java_to_interp().
-  static uint size_call_trampoline() {
+  // Size of call stub.
+  static uint size_call_stub() {
     return 0; // no call trampolines on this platform
   }
 
-  // call trampolines
-  // Number of relocations needed by a call trampoline stub.
-  static uint reloc_call_trampoline() {
+  // Number of relocations needed by a call stub.
+  static uint reloc_call_stub() {
     return 0; // No call trampolines on this platform.
   }
 };
@@ -4980,7 +4978,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
   match(Set dst (DecodeN src));
   effect(KILL cr);
   predicate((n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull ||
-             n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
+             n->bottom_type()->as_oopptr()->ptr() == TypePtr::Constant) &&
             (CompressedOops::base()== nullptr || !ExpandLoadingBaseDecode_NN));
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
@@ -5047,7 +5045,7 @@ instruct decodeN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
 instruct decodeN_NN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
   match(Set dst (DecodeN src));
   predicate((n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull ||
-             n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
+             n->bottom_type()->as_oopptr()->ptr() == TypePtr::Constant) &&
             CompressedOops::base() != nullptr && ExpandLoadingBaseDecode_NN);
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
@@ -10521,7 +10519,7 @@ instruct indexOf_imm1_U(iRegP haystack, iRegI haycnt, immP needle, immI_1 needle
   format %{ "String IndexOf UL [0..$haycnt]($haystack), [0]($needle) -> $result" %}
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needle;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr;
 #ifdef VM_LITTLE_ENDIAN
@@ -10546,7 +10544,7 @@ instruct indexOf_imm1_L(iRegP haystack, iRegI haycnt, immP needle, immI_1 needle
   format %{ "String IndexOf L [0..$haycnt]($haystack), [0]($needle) -> $result" %}
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needle;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -10565,7 +10563,7 @@ instruct indexOf_imm1_UL(iRegP haystack, iRegI haycnt, immP needle, immI_1 needl
   format %{ "String IndexOf UL [0..$haycnt]($haystack), [0]($needle) -> $result" %}
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needle;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,

@@ -30,6 +30,7 @@
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotStreamedHeap.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "include/cds.h"
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
@@ -102,27 +103,32 @@ public:
   void print(outputStream* st, int region_index);
 };
 
-#define CDS_MUST_MATCH_FLAGS_DO(f) \
+#define AOT_MUST_MATCH_FLAGS_DO(f) \
+  f(CompactStrings) \
+  f(DiagnoseSyncOnValueBasedClasses) \
+  f(FlatArrayElementMaxOops) \
+  f(FlatteningBudget) \
+  f(ObjectAlignmentInBytes) \
+  f(RestrictReservedStack) \
   f(UseArrayFlattening) \
+  f(UseCompactObjectHeaders) \
   f(UseFieldFlattening) \
-  f(ValueTypePassFieldsAsArgs) \
-  f(ValueTypeReturnedAsFields) \
-  f(UseNullFreeNonAtomicValueFlattening) \
-  f(UseNullFreeAtomicValueFlattening) \
   f(UseNullableAtomicValueFlattening) \
   f(UseNullableNonAtomicValueFlattening) \
-  f(FlatteningBudget) \
-  f(RestrictReservedStack) \
-  f(DiagnoseSyncOnValueBasedClasses)
+  f(UseNullFreeAtomicValueFlattening) \
+  f(UseNullFreeNonAtomicValueFlattening) \
+  f(ValueTypePassFieldsAsArgs) \
+  f(ValueTypeReturnedAsFields) \
+  /* end */
 
-
-class CDSMustMatchFlags {
+class AOTMustMatchFlags {
 private:
-  size_t _max_name_width;
-#define DECLARE_CDS_MUST_MATCH_FLAG(n) \
-  decltype(n) _v_##n;
-  CDS_MUST_MATCH_FLAGS_DO(DECLARE_CDS_MUST_MATCH_FLAG);
-#undef DECLARE_CDS_MUST_MATCH_FLAG
+
+// std::remove_const_t is necessary because UseCompactObjectHeaders is a const in 32-bit builds.
+#define DECLARE_AOT_MUST_MATCH_FLAG(n) \
+  std::remove_const_t<decltype(n)> _v_##n;
+  AOT_MUST_MATCH_FLAGS_DO(DECLARE_AOT_MUST_MATCH_FLAG);
+#undef DECLARE_AOT_MUST_MATCH_FLAG
 
   inline static void do_print(outputStream* st, bool v);
   LP64_ONLY(inline static void do_print(outputStream* st, uint v);)
@@ -133,9 +139,15 @@ private:
   void print_info() const;
 
 public:
+  template <typename T> static bool check_flag(T saved, T actual, const char* name);
+
   void init();
   bool runtime_check() const;
   void print(outputStream* st) const;
+
+  int obj_alignment() const { return _v_ObjectAlignmentInBytes; }
+  bool compact_strings() const { return _v_CompactStrings; }
+  bool compact_headers()  const { return _v_UseCompactObjectHeaders; }
 };
 
 class FileMapHeader: private CDSFileMapHeaderBase {
@@ -147,11 +159,8 @@ private:
   // They are compared with the runtime states to see if the archive
   // can be used.
   size_t _core_region_alignment;                  // how shared archive should be aligned
-  int    _obj_alignment;                          // value of ObjectAlignmentInBytes
   address _narrow_oop_base;                       // compressed oop encoding base
   int    _narrow_oop_shift;                       // compressed oop encoding shift
-  bool   _compact_strings;                        // value of CompactStrings
-  bool   _compact_headers;                        // value of UseCompactObjectHeaders
   uintx  _max_heap_size;                          // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
   bool    _object_streaming_mode;                 // dump was created for object streaming
@@ -179,12 +188,15 @@ private:
   bool   _aot_class_linking_value;      // The value of the AOTClassLinking variable when this archive was created
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
   bool   _has_valhalla_patched_classes; // Is this archived dumped with --enable-preview?
-  CDSMustMatchFlags _must_match;        // These flags must be the same between dumptime and runtime
+  AOTMustMatchFlags _must_match;        // These flags must be the same between dumptime and runtime
   size_t _rw_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the rw region
   size_t _ro_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the ro region
 
   AOTMappedHeapHeader _mapped_heap_header;
   AOTStreamedHeapHeader _streamed_heap_header;
+
+  int    _cpu_features_size;
+  int    _cpu_features_offset;
 
   // The following are parameters that affect MethodData layout.
   uint    _type_profile_level;
@@ -200,6 +212,8 @@ private:
   template <typename T> T decode(narrowPtr narrowp) const {
     return AOTCompressedPointers::decode_not_null<T>(narrowp, reinterpret_cast<address>(mapped_base_address()));
   }
+
+  bool check_enable_preview() const;
 
 public:
   // Accessors -- fields declared in GenericCDSFileMapHeader
@@ -218,12 +232,13 @@ public:
   void set_base_archive_name_size(unsigned int s)           { _generic_header._base_archive_name_size = s;   }
 
   bool is_static()                         const { return magic() == CDS_ARCHIVE_MAGIC; }
+  bool is_aot_configuration()              const { return magic() == AOT_CONFIGURATION_MAGIC; }
   size_t core_region_alignment()           const { return _core_region_alignment; }
-  int obj_alignment()                      const { return _obj_alignment; }
+  int obj_alignment()                      const { return _must_match.obj_alignment(); }
   address narrow_oop_base()                const { return _narrow_oop_base; }
   int narrow_oop_shift()                   const { return _narrow_oop_shift; }
-  bool compact_strings()                   const { return _compact_strings; }
-  bool compact_headers()                   const { return _compact_headers; }
+  bool compact_strings()                   const { return _must_match.compact_strings(); }
+  bool compact_headers()                   const { return _must_match.compact_headers(); }
   uintx max_heap_size()                    const { return _max_heap_size; }
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
   char* cloned_vtables()                   const { return decode<char*>(_cloned_vtables); }
@@ -243,6 +258,15 @@ public:
   bool has_full_module_graph()             const { return _has_full_module_graph; }
   size_t rw_ptrmap_start_pos()             const { return _rw_ptrmap_start_pos; }
   size_t ro_ptrmap_start_pos()             const { return _ro_ptrmap_start_pos; }
+  int cpu_features_size()                  const { return _cpu_features_size; }
+  void* archived_cpu_features() {
+    if (_cpu_features_offset == -1) {
+      return nullptr;
+    }
+    char* cpu_features = ((char*)this) + _cpu_features_offset;
+    assert(is_aligned(cpu_features, VM_Version::cpu_features_alignment()), "sanity check");
+    return (void *)cpu_features;
+  }
 
   // Heap archiving
   const AOTMappedHeapHeader*   mapped_heap()   const { return &_mapped_heap_header; }
@@ -283,13 +307,10 @@ public:
   }
 
   void populate(FileMapInfo *info, size_t core_region_alignment, size_t header_size,
-                size_t base_archive_name_size, size_t base_archive_name_offset);
+                size_t base_archive_name_size, size_t base_archive_name_offset,
+                int cpu_features_size, int cpu_features_offset);
   static bool is_valid_region(int region) {
     return (0 <= region && region < NUM_CDS_REGIONS);
-  }
-
-  bool check_must_match_flags() const {
-    return _must_match.runtime_check();
   }
 
   void print(outputStream* st);
@@ -326,7 +347,7 @@ public:
   FileMapHeader *header() const       { return _header; }
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 const char** base_archive_name);
-  static void check_preimage_static_archive(const char* file);
+  static void check_aot_configuration(const char* file);
 
   bool init_from_file(int fd);
 
@@ -373,6 +394,9 @@ public:
 
   void set_requested_base(char* b)                  { header()->set_requested_base(b); }
   char* requested_base_address()           const    { return header()->requested_base_address(); }
+
+  int cpu_features_size() const;
+  void* archived_cpu_features() const;
 
   class DynamicArchiveHeader* dynamic_header() const {
     assert(!is_static(), "must be");

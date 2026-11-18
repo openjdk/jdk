@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +28,10 @@ package jdk.internal.net.http.frame;
 
 public class MalformedFrame extends Http2Frame {
 
+    // if streamid() == 0 means Connection Error; RFC 7540 5.4.1
+    // if streamid() != 0 means Stream Error; RFC 7540 5.4.2
+
     private int errorCode;
-    // if errorStream == 0 means Connection Error; RFC 7540 5.4.1
-    // if errorStream != 0 means Stream Error; RFC 7540 5.4.2
-    private int errorStream;
     private String msg;
 
     /**
@@ -49,16 +50,15 @@ public class MalformedFrame extends Http2Frame {
      * @param msg - internal debug message
      */
     public MalformedFrame(int errorCode, int errorStream, String msg) {
-        super(0, 0);
+        super(errorStream, 0);
         this.errorCode = errorCode;
-        this.errorStream = errorStream;
         this.msg = msg;
     }
 
     @Override
     public String toString() {
         return super.toString() + " MalformedFrame, Error: " + ErrorFrame.stringForCode(errorCode)
-                + " streamid: " + streamid + " reason: " + msg;
+                + " reason: " + msg;
     }
 
     public int getErrorCode() {
@@ -67,5 +67,9 @@ public class MalformedFrame extends Http2Frame {
 
     public String getMessage() {
         return msg;
+    }
+
+    public boolean isConnectionError() {
+        return streamid() == 0;
     }
 }
