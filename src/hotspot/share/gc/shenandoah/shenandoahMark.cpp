@@ -52,6 +52,7 @@ ShenandoahMark::ShenandoahMark(ShenandoahGeneration* generation, bool bootstrapp
   _generation(generation),
   _task_queues(generation->task_queues()),
   _old_gen_task_queues(generation->old_gen_task_queues()),
+  _remembered_set_scanner(ShenandoahHeap::heap()),
   _string_dedup(StringDedup::is_enabled()),
   _bootstrapping(bootstrapping) {
 }
@@ -87,6 +88,22 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator) {
   }
 }
 
+bool ShenandoahMark::try_process_remembered_set_chunk(uint worker_id, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q) {
+  ShenandoahRegionChunk assignment;
+  if (!_remembered_set_scanner.next(&assignment)) {
+    return false;
+  }
+
+  ShenandoahRedirtyCardsMarkClosure rset_closure(q, _generation->ref_processor());
+
+  // This might not be necessary, the common mark closure from the caller should be fine.
+  _generation->ref_processor()->set_mark_closure(worker_id, &rset_closure);
+
+  ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
+  scanner->process_chunk_for_mark(assignment, &rset_closure, worker_id);
+  return true;
+}
+
 template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
 void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req) {
   uintx stride = ShenandoahMarkLoopStride;
@@ -107,14 +124,20 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
     if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
       return;
     }
+
     while (satb_mq_set.completed_buffers_num() > 0) {
       satb_mq_set.apply_closure_to_completed_buffer(&drain_satb);
     }
 
+    if (GENERATION == YOUNG) {
+      if (try_process_remembered_set_chunk(worker_id, heap, q)) {
+        _generation->ref_processor()->set_mark_closure(worker_id, cl);
+      }
+    }
+
     uint work = 0;
     for (uint i = 0; i < stride; i++) {
-      if (q->pop(t) ||
-          queues->steal(worker_id, t)) {
+      if (q->pop(t) || queues->steal(worker_id, t)) {
         do_task<T, OT, GENERATION, STRING_DEDUP>(q, cl, live_data, req, &t, worker_id);
         work++;
       } else {

@@ -32,18 +32,20 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 class ShenandoahMarkingContext;
 
 // Base class for mark
 // Mark class does not maintain states. Instead, mark states are
-// maintained by task queues, mark bitmap and SATB buffers (concurrent mark)
+// maintained by task queues, mark bitmap and SATB buffers (concurrent mark) and rset chunk iterators
 class ShenandoahMark: public StackObj {
 protected:
   ShenandoahGeneration* const _generation;
   ShenandoahObjToScanQueueSet* const _task_queues;
   ShenandoahObjToScanQueueSet* const _old_gen_task_queues;
+  ShenandoahRegionChunkIterator _remembered_set_scanner;
   bool const _string_dedup;
   bool const _bootstrapping;
 
@@ -111,6 +113,7 @@ private:
   NOINLINE // Main hot loop, start inlining from here
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
 
+  bool try_process_remembered_set_chunk(uint worker_id, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q);
 protected:
   template<ShenandoahGenerationType GENERATION, bool CANCELLABLE>
   void mark_loop(uint worker_id, TaskTerminator* terminator);

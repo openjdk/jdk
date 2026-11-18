@@ -158,7 +158,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     TASKQUEUE_STATS_ONLY(_mark.task_queues()->reset_taskqueue_stats());
 
     // Concurrent remembered set scanning
-    entry_scan_remembered_set();
+    // entry_scan_remembered_set();
 
     // Concurrent mark roots
     entry_mark_roots();
