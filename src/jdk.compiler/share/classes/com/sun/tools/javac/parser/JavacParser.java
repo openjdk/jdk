@@ -2164,17 +2164,12 @@ public class JavacParser implements Parser {
             for (JCVariableDecl param: params) {
                 JCIdent restrictedTypeTree;
                 if (param.vartype != null &&
-                        (restrictedTypeTree = restrictedTypeName(param.vartype, false)) != null) {
-                    JCExpression vartype = param.vartype;
-                    if (vartype instanceof JCAnnotatedType at) {
-                        vartype = at.underlyingType;
-                    }
-                    if (vartype.hasTag(TYPEARRAY)) {
-                        log.error(DiagnosticFlag.SYNTAX, param.pos,
-                            Feature.VAR_SYNTAX_IMPLICIT_LAMBDAS.allowedInSource(source)
-                                ? Errors.RestrictedTypeNotAllowedArray(restrictedTypeTree.name)
-                                : Errors.RestrictedTypeNotAllowedHere(restrictedTypeTree.name));
-                    }
+                        (restrictedTypeTree = restrictedTypeName(param.vartype, false)) != null &&
+                        skipAnnotatedType(param.vartype).hasTag(TYPEARRAY)) {
+                    log.error(DiagnosticFlag.SYNTAX, param.pos,
+                        Feature.VAR_SYNTAX_IMPLICIT_LAMBDAS.allowedInSource(source)
+                            ? Errors.RestrictedTypeNotAllowedArray(restrictedTypeTree.name)
+                            : Errors.RestrictedTypeNotAllowedHere(restrictedTypeTree.name));
                 }
                 lambdaClassifier.addParameter(param);
                 if (lambdaClassifier.result() == LambdaParameterKind.ERROR) {
@@ -2196,6 +2191,10 @@ public class JavacParser implements Parser {
         return lambdaExpressionOrStatementRest(params, pos);
     }
 
+    private JCTree skipAnnotatedType(JCTree type) {
+        return type instanceof JCAnnotatedType at ? at.underlyingType
+                : type;
+    }
     enum LambdaParameterKind {
         VAR(0),
         EXPLICIT(1),
@@ -3849,7 +3848,7 @@ public class JavacParser implements Parser {
             if (restrictedTypeNameStartingAtSource(typeName, pos, !compound && localDecl) != null) {
                 if (typeName != names.var) {
                     reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedHere(typeName));
-                } else if (type.hasTag(TYPEARRAY) && !compound) {
+                } else if (skipAnnotatedType(type).hasTag(TYPEARRAY) && !compound) {
                     //error - 'var' and arrays
                     reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedArray(typeName));
                 } else {
