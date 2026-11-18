@@ -305,19 +305,19 @@ void MutableNUMASpace::select_tails(MemRegion new_region, MemRegion intersection
 }
 
 // A range of memory preferred for one locality group.
-class NUMAPretouchRegion {
+class PSNUMAPretouchRegion {
 public:
   uint _lgrp_id;
   char* _start_addr;
   char* _end_addr;
 
   // Needed by GrowableArray for spare slots.
-  NUMAPretouchRegion() :
+  PSNUMAPretouchRegion() :
       _lgrp_id(0),
       _start_addr(nullptr),
       _end_addr(nullptr) {}
 
-  NUMAPretouchRegion(uint lgrp_id, char* start_addr, char* end_addr) :
+  PSNUMAPretouchRegion(uint lgrp_id, char* start_addr, char* end_addr) :
       _lgrp_id(lgrp_id),
       _start_addr(start_addr),
       _end_addr(end_addr) {}
@@ -326,7 +326,7 @@ public:
 // Pretouches each NUMA range with its own cursor, so workers stay on the
 // node they run on. When that node is done, a worker helps the node with
 // the most bytes left. Ranges must already be biased via bias_region().
-class NUMAPretouchTask : public WorkerTask {
+class PSNUMAPretouchTask : public WorkerTask {
   class Queue {
   public:
     const uint _lgrp_id;
@@ -334,7 +334,7 @@ class NUMAPretouchTask : public WorkerTask {
     char* const _end_addr;
     Atomic<char*> _cur_addr;
 
-    Queue(const NUMAPretouchRegion& region) :
+    Queue(const PSNUMAPretouchRegion& region) :
         _lgrp_id(region._lgrp_id),
         _start_addr(region._start_addr),
         _end_addr(region._end_addr),
@@ -395,10 +395,10 @@ class NUMAPretouchTask : public WorkerTask {
   }
 
 public:
-  NUMAPretouchTask(const char* name,
-                   const GrowableArray<NUMAPretouchRegion>* regions,
-                   size_t page_size,
-                   size_t chunk_size) :
+  PSNUMAPretouchTask(const char* name,
+                     const GrowableArray<PSNUMAPretouchRegion>* regions,
+                     size_t page_size,
+                     size_t chunk_size) :
       WorkerTask(name),
       _queues(NEW_C_HEAP_ARRAY(Queue, regions->length(), mtGC)),
       _num_queues(regions->length()),
@@ -409,7 +409,7 @@ public:
     }
   }
 
-  ~NUMAPretouchTask() {
+  ~PSNUMAPretouchTask() {
     for (int i = 0; i < _num_queues; i++) {
       _queues[i].~Queue();
     }
@@ -432,42 +432,44 @@ public:
       }
 
       Queue* steal_queue = find_largest_remaining_queue();
-      if (steal_queue == nullptr || !claim_from(steal_queue, &start, &end)) {
+      if (steal_queue == nullptr) {
         break;
       }
-      os::pretouch_memory(start, end, _page_size);
+      if (claim_from(steal_queue, &start, &end)) {
+        os::pretouch_memory(start, end, _page_size);
+      }
     }
   }
 
-  static size_t region_chunks(const NUMAPretouchRegion& region, size_t chunk_size) {
+  static size_t num_region_chunks(const PSNUMAPretouchRegion& region, size_t chunk_size) {
     size_t bytes = pointer_delta(region._end_addr, region._start_addr, 1);
     return bytes == 0 ? 0 : ((bytes - 1) / chunk_size) + 1;
   }
 
   static void pretouch(const char* task_name,
-                       const GrowableArray<NUMAPretouchRegion>* regions,
+                       const GrowableArray<PSNUMAPretouchRegion>* regions,
                        size_t page_size,
                        WorkerThreads* pretouch_workers) {
     assert(pretouch_workers != nullptr, "precondition");
 
     size_t chunk_size = align_down_bounded(PretouchTask::chunk_size(), page_size);
     size_t total_bytes = 0;
-    size_t total_chunks = 0;
+    size_t num_total_chunks = 0;
 
     for (int i = 0; i < regions->length(); i++) {
-      const NUMAPretouchRegion& region = regions->at(i);
+      const PSNUMAPretouchRegion& region = regions->at(i);
       total_bytes += pointer_delta(region._end_addr, region._start_addr, 1);
-      total_chunks += region_chunks(region, chunk_size);
+      num_total_chunks += num_region_chunks(region, chunk_size);
     }
 
     if (total_bytes == 0) {
       return;
     }
 
-    NUMAPretouchTask task(task_name, regions, page_size, chunk_size);
-    uint num_workers = (uint)MIN2(total_chunks, (size_t)pretouch_workers->max_workers());
+    PSNUMAPretouchTask task(task_name, regions, page_size, chunk_size);
+    uint num_workers = (uint)MIN2(num_total_chunks, (size_t)pretouch_workers->max_workers());
     log_debug(gc, heap)("Running %s with %u workers for %zu work units across %d NUMA ranges pre-touching %zuB.",
-                        task.name(), num_workers, total_chunks, regions->length(), total_bytes);
+                        task.name(), num_workers, num_total_chunks, regions->length(), total_bytes);
 
     pretouch_workers->run_task(&task, num_workers);
   }
@@ -536,7 +538,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
   const bool use_parallel_numa_pretouch = AlwaysPreTouch &&
                                           pretouch_workers != nullptr &&
                                           old_region.is_empty();
-  GrowableArray<NUMAPretouchRegion> pretouch_regions(2 * lgrp_spaces()->length(), mtGC);
+  GrowableArray<PSNUMAPretouchRegion> pretouch_regions(2 * lgrp_spaces()->length(), mtGC);
 
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
@@ -608,10 +610,10 @@ void MutableNUMASpace::initialize(MemRegion mr,
     if (AlwaysPreTouch) {
       if (use_parallel_numa_pretouch) {
         if (!bottom_region.is_empty()) {
-          pretouch_regions.append(NUMAPretouchRegion(ls->lgrp_id(), (char*)bottom_region.start(), (char*)bottom_region.end()));
+          pretouch_regions.append(PSNUMAPretouchRegion(ls->lgrp_id(), (char*)bottom_region.start(), (char*)bottom_region.end()));
         }
         if (!top_region.is_empty()) {
-          pretouch_regions.append(NUMAPretouchRegion(ls->lgrp_id(), (char*)top_region.start(), (char*)top_region.end()));
+          pretouch_regions.append(PSNUMAPretouchRegion(ls->lgrp_id(), (char*)top_region.start(), (char*)top_region.end()));
         }
       } else {
         PretouchTask::pretouch("ParallelGC PreTouch bottom_region", (char*)bottom_region.start(), (char*)bottom_region.end(),
@@ -627,7 +629,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
   }
 
   if (use_parallel_numa_pretouch) {
-    NUMAPretouchTask::pretouch("ParallelGC NUMA PreTouch", &pretouch_regions, page_size(), pretouch_workers);
+    PSNUMAPretouchTask::pretouch("ParallelGC NUMA PreTouch", &pretouch_regions, page_size(), pretouch_workers);
   }
 
   set_adaptation_cycles(samples_count());
