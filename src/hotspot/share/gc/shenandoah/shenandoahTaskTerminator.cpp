@@ -25,6 +25,9 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahController.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskTerminator.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
