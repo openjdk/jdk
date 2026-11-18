@@ -1766,7 +1766,7 @@ void Parse::do_one_block() {
       // to produce successors for trapping blocks.
       int trap_index = block()->flow()->trap_index();
       assert(trap_index != 0, "trap index must be valid");
-      uncommon_trap(trap_index);
+      uncommon_trap_maybe_none(trap_index);
       break;
     }
 
