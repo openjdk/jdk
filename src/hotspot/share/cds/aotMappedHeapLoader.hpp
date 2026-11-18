@@ -154,9 +154,9 @@ private:
     return (_loaded_heap_bottom <= o && o < _loaded_heap_top);
   }
 
-  static objArrayOop root_segment(int segment_idx);
+  static refArrayOop root_segment(int segment_idx);
   static void get_segment_indexes(int idx, int& seg_idx, int& int_idx);
-  static void add_root_segment(objArrayOop segment_oop);
+  static void add_root_segment(refArrayOop segment_oop);
   static void init_root_segment_sizes(int max_size_elems);
 
   template<bool IS_MAPPED>
@@ -170,12 +170,12 @@ private:
   static bool map_heap_region_impl(FileMapInfo* info);
   static narrowOop encoded_heap_region_dumptime_address(FileMapInfo* info);
   static void patch_heap_embedded_pointers(FileMapInfo* info);
-  static void fixup_mapped_heap_region(FileMapInfo* info);
+  static void fixup_mapped_heap_region(FileMapInfo* info) NOT_G1GC_RETURN;
   static void dealloc_heap_region(FileMapInfo* info);
 
 public:
 
-  static bool map_heap_region(FileMapInfo* info);
+  static bool map_heap_region(FileMapInfo* info) NOT_G1GC_RETURN_(false);
   static bool load_heap_region(FileMapInfo* mapinfo);
   static void assert_in_loaded_heap(uintptr_t o) {
     assert(is_in_loaded_heap(o), "must be");

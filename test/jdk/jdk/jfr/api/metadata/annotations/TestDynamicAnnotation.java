@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,30 @@ import jdk.jfr.MetadataDefinition;
 public class TestDynamicAnnotation {
     @MetadataDefinition
     @interface CustomAnnotation {
-        String value();
+        String stringValue();
         int intValue();
     }
 
     public static void main(String[] args) throws Exception {
+        testCustomAnnotation();
+        testTypeMismatch();
+    }
+
+    private static void testTypeMismatch() throws Exception {
         Map<String, Object> values = new HashMap<>();
-        values.put("value", "MyValue");
+        values.put("stringValue", 1);
+        values.put("intValue", "text");
+        try {
+            new AnnotationElement(CustomAnnotation.class, values);
+            throw new Exception("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException iae) {
+            // As expected
+        }
+    }
+
+    public static void testCustomAnnotation() {
+        Map<String, Object> values = new HashMap<>();
+        values.put("stringValue", "text");
         values.put("intValue", 1);
         new AnnotationElement(CustomAnnotation.class, values);
     }

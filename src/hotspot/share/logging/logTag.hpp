@@ -135,7 +135,6 @@ class outputStream;
   LOG_TAG(module) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
-  LOG_TAG(monitortable) \
   LOG_TAG(native) \
   LOG_TAG(nestmates) \
   LOG_TAG(nmethod) \
@@ -163,6 +162,7 @@ class outputStream;
   LOG_TAG(plab) \
   LOG_TAG(placeholders) \
   LOG_TAG(preempt) \
+  LOG_TAG(preload)   /* Trace successful class preloading */ \
   LOG_TAG(preorder)  /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \
   LOG_TAG(promotion) \
@@ -219,6 +219,7 @@ class outputStream;
   NOT_PRODUCT(LOG_TAG(upcall)) \
   LOG_TAG(update) \
   LOG_TAG(valuebasedclasses) \
+  LOG_TAG(valuetypes) \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
   LOG_TAG(vmatree) \

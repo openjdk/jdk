@@ -84,7 +84,7 @@
 #define MLIB_SIGN_SHIFT 31
 
 /***************************************************************/
-#define D64mlib_u8(X)   mlib_U82D64[X]
+#define D64mlib_u8(X)   ((mlib_d64)(X))
 #define D64mlib_s16(X)  ((mlib_d64)(X))
 #define D64mlib_u16(X)  ((mlib_d64)(X))
 #define D64mlib_s32(X)  ((mlib_d64)(X))

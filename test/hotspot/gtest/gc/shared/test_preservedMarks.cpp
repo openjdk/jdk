@@ -27,7 +27,7 @@
 #include "unittest.hpp"
 
 static markWord originalMark() { return markWord(markWord::lock_mask_in_place); }
-static markWord changedMark()  { return markWord(0x4711); }
+static markWord changedMark()  { return markWord().copy_set_hash(0x4711); }
 
 #define ASSERT_MARK_WORD_EQ(a, b) ASSERT_EQ((a).value(), (b).value())
 

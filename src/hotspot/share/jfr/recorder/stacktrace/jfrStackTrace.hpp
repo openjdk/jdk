@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,9 @@ class JfrStackTrace : public JfrCHeapObj {
   bool full_stacktrace() const { return _reached_root; }
   bool record_inner(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id = -1);
   bool record(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id = -1);
+  void record_frame(const Method* method, int bci, u1 type);
   void record_interpreter_top_frame(const JfrSampleRequest& request);
+  void record_stack_repair_top_frame(const JfrSampleRequest& request);
 
   JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrStackTrace* next);
 

@@ -787,7 +787,7 @@ private:
     _element_basic_type(element_basic_type) {}
 
 public:
-  static VTransformVectorNodeProperties make_from_pack(const Node_List* pack, const VLoopAnalyzer& vloop_analyzer) {
+  static VTransformVectorNodeProperties make_from_pack(const Node_List<Node>* pack, const VLoopAnalyzer& vloop_analyzer) {
     Node* first = pack->at(0);
     int opc = first->Opcode();
     int vlen = pack->size();
@@ -814,7 +814,6 @@ public:
     VTransformNode(vtransform, req), _properties(properties) {}
 
   virtual VTransformVectorNode* isa_Vector() override { return this; }
-  void register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const;
   NOT_PRODUCT(virtual void print_spec() const override;)
 
 protected:
@@ -956,7 +955,6 @@ public:
                            const TypePtr* adr_type,
                            const LoadNode::ControlDependency control_dependency) :
     VTransformMemVectorNode(vtransform, 3, properties, vpointer, adr_type), _control_dependency(control_dependency) {}
-  LoadNode::ControlDependency control_dependency() const;
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
   virtual bool is_load_in_loop() const override { return true; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;

@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8304487 8325653 8332463
+ * @bug 8304487 8325653 8332463 8394375
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
  * @compile/fail/ref=PrimitivePatternsSwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW -XDexhaustivityMaxBaseChecks=0 PrimitivePatternsSwitchErrors.java
@@ -328,6 +328,36 @@ public class PrimitivePatternsSwitchErrors {
             case int i -> {}
             case float f -> {} // Error - dominated!
             default -> {}      // Error - unconditional and default
+        }
+    }
+
+    public static int nonExhaustiveBooleanConstantExpression(boolean b) {
+        final boolean yes = true;
+        return switch (b) { // error: not exhaustive
+            case yes -> 1;
+        };
+    }
+
+    public static void nonExhaustiveBooleanConstantStatement(boolean b) {
+        final boolean no = false;
+        switch (b) { // error: not exhaustive
+            case no -> {}
+        }
+    }
+
+    public static int nonExhaustiveBoxedBooleanConstantExpression(Boolean b) {
+        final boolean yes = true;
+        return switch (b) { // error: not exhaustive
+            case yes -> 1;
+            case null -> 2;
+        };
+    }
+
+    public static void nonExhaustiveBoxedBooleanConstantStatement(Boolean b) {
+        final boolean no = false;
+        switch (b) { // error: not exhaustive
+            case no -> {}
+            case null -> {}
         }
     }
 }

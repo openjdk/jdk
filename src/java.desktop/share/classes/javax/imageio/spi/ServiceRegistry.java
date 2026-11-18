@@ -837,10 +837,12 @@ class FilterIterator<T> implements Iterator<T> {
         next = null;
     }
 
+    @Override
     public boolean hasNext() {
         return next != null;
     }
 
+    @Override
     public T next() {
         if (next == null) {
             throw new NoSuchElementException();
@@ -850,6 +852,7 @@ class FilterIterator<T> implements Iterator<T> {
         return o;
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

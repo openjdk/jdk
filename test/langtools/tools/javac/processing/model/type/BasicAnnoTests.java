@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8013852 8031744 8225377 8323684
+ * @bug 8013852 8031744 8225377 8323684 8389859
  * @summary Annotations on types
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -103,7 +103,9 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
                       new NameToAnnotationEntry("BasicAnnoTests.TB",   BasicAnnoTests.TB.class),
                       new NameToAnnotationEntry("BasicAnnoTests.TC",   BasicAnnoTests.TC.class),
                       new NameToAnnotationEntry("BasicAnnoTests.TCs",  BasicAnnoTests.TCs.class),
-                      new NameToAnnotationEntry("BasicAnnoTests.TD",  BasicAnnoTests.TD.class));
+                      new NameToAnnotationEntry("BasicAnnoTests.TD",   BasicAnnoTests.TD.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.DTF",  BasicAnnoTests.DTF.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.DTP",  BasicAnnoTests.DTP.class));
 
     static class NameToAnnotationEntry extends  AbstractMap.SimpleEntry<String, Class<? extends Annotation>> {
         public NameToAnnotationEntry(String key, Class<? extends Annotation> entry) {
@@ -531,6 +533,16 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
         int value();
     }
 
+    @Target({ElementType.TYPE_USE, ElementType.FIELD})
+    public @interface DTF {
+        int value();
+    }
+
+    @Target({ElementType.TYPE_USE, ElementType.PARAMETER})
+    public @interface DTP {
+        int value();
+    }
+
     // Test cases
 
     // TODO: add more cases for arrays
@@ -696,6 +708,29 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     @Test(posn=6, annoType = TA.class, expect = "60")
     @Test(posn=6, annoType = TB.class, expect = "61")
     <T> void m60(@TA(60) @TB(61) String t) { }
+
+    // Test dual target annotations on uses of type variables
+    @Test(posn=6, annoType = DTP.class, expect = "61")
+    <T> void m61(@DTP(61) T t) { }
+
+    @Test(posn=7, annoType = DTP.class, expect = "62")
+    <T> void m62(@DTP(62) T[] t) { }
+
+    class Inner63<T> {
+        @Test(posn=0, annoType = DTF.class, expect = "63")
+        @DTF(63) T f;
+    }
+    // Test dual target annotations on uses of Class types
+    @Test(posn=6, annoType = DTP.class, expect = "64")
+    <T> void m64(@DTP(64) String t) { }
+
+    @Test(posn=7, annoType = DTP.class, expect = "65")
+    <T> void m65(@DTP(65) String[] t) { }
+
+    class Inner66<T> {
+        @Test(posn=0, annoType = DTF.class, expect = "66")
+        @DTF(66) String f;
+    }
 
     class Inner70<T> {
         @Test(posn=0, annoType = TA.class, expect = "70")

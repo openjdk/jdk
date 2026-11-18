@@ -72,35 +72,22 @@ public class TestFonts extends JavadocTester {
                 """
                     @font-face {
                       font-family: 'DejaVu Sans Mono';
-                      src: url('DejaVuLGCSansMono.woff2') format('woff2'),
-                           url('DejaVuLGCSansMono.woff') format('woff');
+                      src: url('DejaVuLGCSansMono.woff2') format('woff2');
                       font-weight: normal;
                       font-style: normal;
                     }""");
         checkFiles(true,
-                "resource-files/fonts/DejaVuLGCSans-Bold.woff",
                 "resource-files/fonts/DejaVuLGCSans-Bold.woff2",
-                "resource-files/fonts/DejaVuLGCSans-BoldOblique.woff",
                 "resource-files/fonts/DejaVuLGCSans-BoldOblique.woff2",
-                "resource-files/fonts/DejaVuLGCSans-Oblique.woff",
                 "resource-files/fonts/DejaVuLGCSans-Oblique.woff2",
-                "resource-files/fonts/DejaVuLGCSans.woff",
                 "resource-files/fonts/DejaVuLGCSans.woff2",
-                "resource-files/fonts/DejaVuLGCSansMono-Bold.woff",
                 "resource-files/fonts/DejaVuLGCSansMono-Bold.woff2",
-                "resource-files/fonts/DejaVuLGCSansMono-BoldOblique.woff",
                 "resource-files/fonts/DejaVuLGCSansMono-BoldOblique.woff2",
-                "resource-files/fonts/DejaVuLGCSansMono-Oblique.woff",
                 "resource-files/fonts/DejaVuLGCSansMono-Oblique.woff2",
-                "resource-files/fonts/DejaVuLGCSansMono.woff",
                 "resource-files/fonts/DejaVuLGCSansMono.woff2",
-                "resource-files/fonts/DejaVuLGCSerif-Bold.woff",
                 "resource-files/fonts/DejaVuLGCSerif-Bold.woff2",
-                "resource-files/fonts/DejaVuLGCSerif-BoldItalic.woff",
                 "resource-files/fonts/DejaVuLGCSerif-BoldItalic.woff2",
-                "resource-files/fonts/DejaVuLGCSerif-Italic.woff",
                 "resource-files/fonts/DejaVuLGCSerif-Italic.woff2",
-                "resource-files/fonts/DejaVuLGCSerif.woff",
                 "resource-files/fonts/DejaVuLGCSerif.woff2");
     }
 

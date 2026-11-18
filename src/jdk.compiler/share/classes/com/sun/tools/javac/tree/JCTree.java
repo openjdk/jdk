@@ -1872,6 +1872,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression meth;
         public List<JCExpression> args;
         public Type varargsElement;
+        public BoxingKind boxingKind;
         protected JCMethodInvocation(List<JCExpression> typeargs,
                         JCExpression meth,
                         List<JCExpression> args)
@@ -1908,6 +1909,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return(APPLY);
+        }
+        public enum BoxingKind {
+            NONE,
+            BOX,
+            UNBOX;
         }
     }
 
@@ -3448,6 +3454,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression expr;
         /**true if a expr should be run through Gen.genCond:*/
         public boolean needsCond;
+        public boolean needsLineNumberTableEntry;
         protected LetExpr(List<JCStatement> defs, JCExpression expr) {
             this.defs = defs;
             this.expr = expr;

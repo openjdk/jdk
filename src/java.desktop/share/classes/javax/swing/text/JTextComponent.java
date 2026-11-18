@@ -312,6 +312,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         addFocusListener(caretEvent);
         setEditable(true);
         setDragEnabled(false);
+        dragEnabledSet = false;
         setLayout(null); // layout is managed by View hierarchy
         updateUI();
     }
@@ -681,6 +682,12 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     public void setDragEnabled(boolean b) {
         checkDragEnabled(b);
         dragEnabled = b;
+        dragEnabledSet = true;
+    }
+
+    private void setDragEnabledUIResource(boolean b) {
+        checkDragEnabled(b);
+        dragEnabled = b;
     }
 
     private static void checkDragEnabled(boolean b) {
@@ -767,6 +774,13 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                                               Object state, boolean forDrop)
                 {
                     return textComp.setDropLocation(location, state, forDrop);
+                }
+                public boolean isDragEnabledSet(JTextComponent textComp) {
+                    return textComp.dragEnabledSet;
+                }
+                public void setDragEnabledUIResource(JTextComponent textComp,
+                                                     boolean value) {
+                    textComp.setDragEnabledUIResource(value);
                 }
             });
     }
@@ -3801,6 +3815,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         boolean newDragEnabled = f.get("dragEnabled", false);
         checkDragEnabled(newDragEnabled);
         dragEnabled = newDragEnabled;
+        dragEnabledSet = f.get("dragEnabledSet", false);
         DropMode newDropMode = (DropMode) f.get("dropMode",
                 DropMode.USE_SELECTION);
         checkDropMode(newDropMode);
@@ -3869,6 +3884,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     private Insets margin;
     private char focusAccelerator;
     private boolean dragEnabled;
+    private boolean dragEnabledSet;
 
     /**
      * The drop mode for this component.

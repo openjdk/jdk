@@ -516,7 +516,7 @@ public class JavadocHelperTest {
 
             Element el = getElement.apply(task);
 
-            try (JavadocHelper helper = JavadocHelper.create(task, Arrays.asList(srcZip))) {
+            try (JavadocHelper helper = JavadocHelper.create(task, Arrays.asList(srcZip), _ -> null)) {
                 String javadoc = helper.getResolvedDocComment(el);
 
                 assertEquals(expectedJavadoc, javadoc);
@@ -608,7 +608,7 @@ public class JavadocHelperTest {
                         List<ExportsDirective> exports =
                                 ElementFilter.exportsIn(me.getDirectives());
                         for (ExportsDirective ed : exports) {
-                            try (JavadocHelper helper = JavadocHelper.create(task, sources)) {
+                            try (JavadocHelper helper = JavadocHelper.create(task, sources, _ -> null)) {
                                 List<? extends Element> content =
                                         ed.getPackage().getEnclosedElements();
                                 for (TypeElement clazz : ElementFilter.typesIn(content)) {

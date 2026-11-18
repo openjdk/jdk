@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public final class OutputAnalyzer {
     private static final String jvmwarningmsg = ".* VM warning:.*";
 
     private static final String VM_DEPRECATED_MSG = ".* VM warning:.* deprecated.*";
-    private static final String OTHER_DEPRECATED_MSG = "^WARNING: .* is deprecated.*";
+    private static final String OTHER_DEPRECATED_MSG = "(?m)^WARNING: .* is deprecated.*";
 
     private static final String FATAL_ERROR_PAT = "# A fatal error has been detected.*";
 
@@ -561,6 +561,32 @@ public final class OutputAnalyzer {
      */
     public String firstMatch(String pattern) {
         return firstMatch(pattern, 0);
+    }
+
+    private List<Matcher> matchersForAllMatchingLinesInternal(Pattern needleRegex, List<String> haystack) {
+        List<Matcher> matchingMatchers = haystack.stream().
+                map(needleRegex::matcher).filter(Matcher::matches).collect(Collectors.toList());
+        return matchingMatchers;
+    }
+
+    /**
+     * Given a regular expression, matches the expression against every *line* of stderr output
+     * and returns a list of all matching matchers.
+     * @param needleRegex
+     * @return List of matchers
+     */
+    public  List<Matcher> matchersForAllMatchingLinesStderr(Pattern needleRegex) {
+        return matchersForAllMatchingLinesInternal(needleRegex, stderrAsLines());
+    }
+
+    /**
+     * Given a regular expression, matches the expression against every *line* of stdout output
+     * and returns a list of all matching matchers.
+     * @param needleRegex
+     * @return List of matchers
+     */
+    public  List<Matcher> matchersForAllMatchingLinesStdout(Pattern needleRegex) {
+        return matchersForAllMatchingLinesInternal(needleRegex, stdoutAsLines());
     }
 
     /**

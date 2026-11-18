@@ -73,6 +73,8 @@ public class ToolSimpleTest extends ReplToolTesting {
         test(
                 (a) -> assertCommand(a, "int z = /* blah", ""),
                 (a) -> assertCommand(a, "baz */ 5", "z ==> 5"),
+                (a) -> assertCommand(a, "/* hoge ", ""),
+                (a) -> assertCommand(a, "baz **/", ""),
                 (a) -> assertCommand(a, "/** hoge ", ""),
                 (a) -> assertCommand(a, "baz **/", ""),
                 (a) -> assertCommand(a, "int v", "v ==> 0")

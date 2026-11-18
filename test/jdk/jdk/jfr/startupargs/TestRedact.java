@@ -42,6 +42,7 @@ import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.CommonHelper;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -169,6 +170,7 @@ public class TestRedact {
         testRedactKey();
         testRedactArgument();
         testRedactMultiple();
+        testOptionVariable();
         testWildcards();
         testDefaults();
         testRedactFile();
@@ -315,15 +317,6 @@ public class TestRedact {
     private static void testEmpty() throws Exception {
         var environment = Map.of("API_TOKEN", "Zebra1");
         var properties = Map.of("API_KEY", "Zebra2");
-        Execution e1 = run(environment, properties,
-           "-XX:FlightRecorderOptions:redact-key=,redact-argument=", "Zebra3"
-        );
-        e1.output().shouldContain("Default redaction filters are replaced.");
-        e1.output().shouldContain("redact-key=none to disable filters without a warning");
-        e1.output().shouldContain("redact-argument=none to disable filters without a warning");
-        e1.assertUnredacted("Zebra1");
-        e1.assertUnredacted("Zebra2");
-        e1.assertUnredacted("Zebra3");
 
         Execution e2 = run(environment, properties,
            "-XX:FlightRecorderOptions:redact-argument=none,redact-key=none",  "Zebra3"
@@ -377,6 +370,12 @@ public class TestRedact {
         e.assertRedactedArgument("N4711");
         e.assertRedactedArgument("Smith:abc123");
         e.assertUnredacted("Banana");
+
+       String option = Platform.isWindows() ?
+           "-XX:FlightRecorderOptions:redact-argument='Foo,bar'" :
+           "-XX:FlightRecorderOptions:redact-argument=\"Foo,bar\"";
+        Execution e2 = run(option,"Foo,bar");
+        e2.assertRedactedArgument("Foo,bar");
     }
 
     private static void testRedactMultiple() throws Exception {
@@ -388,6 +387,69 @@ public class TestRedact {
         e.assertRedactedKey("bar");
         e.assertRedactedArgument("Baz");
         e.assertRedactedArgument("Quz");
+    }
+
+    private static void testOptionVariable() throws Exception {
+        // Simulate shell expansion with the three options:
+        // SYSTEM_PROPS, JVM_OPTIONS and PROGRAM_OPTIONS
+        String systemProperty = "-Dsecret=apple";
+        String jvmOption = "-XX:FlightRecorderOptions:stackdepth=32,redact-argument=+Aracuan";
+        String programOption = "Aracuan";
+        Execution e1 = run(
+                Map.of("SYSTEM_PROPS", systemProperty,
+                       "JVM_OPTIONS", jvmOption,
+                       "PROGRAM_OPTIONS", programOption),
+                Map.of("secret","apple"),
+                List.of(systemProperty, jvmOption),
+                programOption
+            );
+        e1.assertRedactedKey("SYSTEM_PROPS");
+        String redactedJVMOption = e1.environment.get("JVM_OPTIONS");
+        if (!redactedJVMOption.equals("-XX:FlightRecorderOptions:stackdepth=32,redact-argument=[REDACTED]")) {
+            throw new Exception("Expected partial redaction for environment variable with -XX:FlightRecorderOptions:redact-argument=");
+        }
+        e1.assertRedactedKey("PROGRAM_OPTIONS");
+        e1.assertRedactedKey("secret");
+        e1.assertRedactedArgument("Aracuan");
+
+        Execution e2 = run(
+                Map.of("PROGRAM_OPTIONS", "BLUE RED GREEN GREDELINE"),
+                Map.of(),
+                "-XX:FlightRecorderOptions:redact-argument=+*red*",
+                "BLUE", "RED", "GREEN", "GREDELINE"
+            );
+        String programOptions = e2.environment().get("PROGRAM_OPTIONS");
+        if (!programOptions.equals("BLUE [REDACTED] GREEN [REDACTED]")) {
+            e2.print();
+            throw new Exception("Missing redaction inside option variable");
+        }
+
+        Execution e3 = run(
+                Map.of("PROGRAM_OPTIONS", "ZEBRA FISH ZEBRACCOON FISH RACCOON"),
+                Map.of(),
+                "-XX:FlightRecorderOptions:redact-argument=+zebra;raccoon",
+                "ZEBRA", "FISH", "ZEBRACCOON", "FISH", "RACCOON"
+            );
+        programOptions = e3.environment().get("PROGRAM_OPTIONS");
+        if (!programOptions.equals("[REDACTED] FISH [REDACTED] FISH [REDACTED]")) {
+            e3.print();
+            throw new Exception("Incorrect redaction when option arguments overlap");
+        }
+
+        String option1 = "-XX:FlightRecorderOptions:redact-argument=Zebra,gibberish=,,,";
+        String option2 = "-XX:FlightRecorderOptions:redact-argument=Tiger";
+        Execution e4 = run(
+                Map.of("MY_JVM_OPTIONS", option1 + " " + option2),
+                Map.of(),
+                List.of(option1, option2),
+                "TIGER"
+            );
+        e4.assertRedactedArgument("TIGER");
+        String redacted = e4.environment().get("MY_JVM_OPTIONS");
+        if (!redacted.equals("[REDACTED] -XX:FlightRecorderOptions:redact-argument=[REDACTED]")) {
+            e4.print();
+            throw new Exception("Incorrect redaction with multiple options in environment variables");
+        }
     }
 
     private static void testRedactKey() throws Exception {
@@ -407,14 +469,20 @@ public class TestRedact {
         return run(Map.of(), Map.of(), options, args);
     }
 
-    private static Execution run(Map<String, String> environment, Map<String, String> properties, String options, String... args) throws Exception {
+    private static Execution run(Map<String, String> environment, Map<String, String> properties, String option, String... args) throws Exception {
+       return run(environment, properties, List.of(option), args);
+    }
+
+    private static Execution run(Map<String, String> environment, Map<String, String> properties, List<String> options, String... args) throws Exception {
         List<String> arguments = new ArrayList<>();
         Path file = Path.of("file.jfr");
         for (var entry : properties.entrySet()) {
             arguments.add("-D" + entry.getKey() + "=" + entry.getValue());
         }
         arguments.add("-XX:StartFlightRecording:filename=" + file.toAbsolutePath().toString());
-        arguments.add(options);
+        for (String option : options) {
+            arguments.add(option);
+        }
         arguments.add("jdk.jfr.startupargs.Application");
         arguments.addAll(Arrays.asList(args));
 

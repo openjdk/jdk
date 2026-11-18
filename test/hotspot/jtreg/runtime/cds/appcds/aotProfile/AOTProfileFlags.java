@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 /**
  * @test
+ * @bug 8396064
  * @summary Sanity test of combinations of the diagnostic flags [+-]AOTRecordTraining and [+-]AOTReplayTraining
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
@@ -74,6 +75,7 @@ public class AOTProfileFlags {
 
         // first make sure we have a valid aotConfigFile with default value of TypeProfileLevel
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xlog:aot",
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:+UnlockExperimentalVMOptions",
@@ -84,6 +86,7 @@ public class AOTProfileFlags {
         out.shouldHaveExitValue(0);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xlog:aot",
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
@@ -95,6 +98,7 @@ public class AOTProfileFlags {
         out.shouldHaveExitValue(0);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xlog:aot",
             "-XX:AOTCache=" + aotCacheFile,
             "-XX:+UnlockExperimentalVMOptions",
             trainingFlags,
@@ -105,6 +109,7 @@ public class AOTProfileFlags {
         out.shouldHaveExitValue(0);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xlog:aot",
             "-XX:AOTCache=" + aotCacheFile,
             "-XX:+UnlockExperimentalVMOptions",
             productionFlags,
@@ -118,9 +123,12 @@ public class AOTProfileFlags {
     public static void testFlagsMismatch() throws Exception {
         String errorPattern = ".*Profile.* setting .* does not equal the current .*Profile.* setting.*";
         trainAndRun("TypeProfileLevel", "-XX:TypeProfileLevel=222", "-XX:TypeProfileLevel=111", errorPattern);
-        trainAndRun("TypeProfileArgsLimit", "-XX:TypeProfileArgsLimit=2", "-XX:TypeProfileArgsLimit=3", errorPattern);
-        trainAndRun("TypeProfileParamsLimit", "-XX:TypeProfileParmsLimit=2", "-XX:TypeProfileParmsLimit=3", errorPattern);
+        trainAndRun("TypeProfileArgsLimit", "-XX:TypeProfileArgsLimit=2", "-XX:TypeProfileArgsLimit=3",
+                    "TypeProfileArgsLimit setting \\(2\\) does not equal the current TypeProfileArgsLimit setting \\(3\\)");
+        trainAndRun("TypeProfileParmsLimit", "-XX:TypeProfileParmsLimit=2", "-XX:TypeProfileParmsLimit=3",
+                    "TypeProfileParmsLimit setting \\(2\\) does not equal the current TypeProfileParmsLimit setting \\(3\\)");
         trainAndRun("TypeProfileWidth", "-XX:TypeProfileWidth=2", "-XX:TypeProfileWidth=3", errorPattern);
+        trainAndRun("ProfileExceptionHandlers", "-XX:+ProfileExceptionHandlers", "-XX:-ProfileExceptionHandlers", errorPattern);
         if (Platform.isDebugBuild()) {
           trainAndRun("ProfileTraps", "-XX:+ProfileTraps", "-XX:-ProfileTraps", errorPattern);
           trainAndRun("TypeProfileCasts", "-XX:+TypeProfileCasts", "-XX:-TypeProfileCasts", errorPattern);

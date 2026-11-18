@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -137,6 +137,36 @@ public class SecurityProperties {
             }
             return def;
         }
+    }
+
+    /**
+     * A convenience routine for fetching a numeric value from a Security
+     * or System property and returning it as a long. The value from the
+     * property is obtained according to the logic in
+     * {@link SecurityProperties#getOverridableProperty(String)}
+     *
+     * @param prop the property to query
+     * @param defaultValue the default value
+     * @param dbg a Debug object, if null no debug messages will be sent
+     * @return the value of the property as a {@code long}. If a non-numeric
+     * value is supplied, the default value will be returned.
+     */
+    public static long getOverridableLongProp(String prop, long defaultValue,
+            Debug dbg) {
+        long longVal = defaultValue;
+        try {
+            String propVal = SecurityProperties.getOverridableProperty(prop);
+            if (propVal != null) {
+                longVal = Long.parseLong(propVal);
+            }
+        } catch (NumberFormatException nfe) {
+            // We will use the default, but add a warning debug message
+            if (dbg != null) {
+                dbg.println("Warning: Non-numeric value found in property " +
+                        prop + ", using default value of " + defaultValue);
+            }
+        }
+        return longVal;
     }
 
     /**

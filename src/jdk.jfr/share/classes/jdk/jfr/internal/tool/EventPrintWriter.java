@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,6 +48,7 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.consumer.JdkJfrConsumer;
 
 abstract class EventPrintWriter extends StructuredWriter {
+    static final String UTF8_REPLACEMENT = StandardCharsets.UTF_8.newDecoder().replacement();
 
     enum ValueType {
         TIMESPAN, TIMESTAMP, UNSIGNED, OTHER

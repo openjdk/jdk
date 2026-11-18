@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ public class JVMTIUtils {
     public static int JVMTI_ERROR_THREAD_NOT_ALIVE = 15;
 
     public static int JVMTI_ERROR_WRONG_PHASE = 112;
+
+    public static int JVMTI_THREAD_STATE_SUSPENDED = 0x100000;
 
     public static class JvmtiException extends RuntimeException {
 
@@ -81,5 +83,7 @@ public class JVMTIUtils {
             throw new JvmtiException(err);
         }
     }
+
+    public static native int getThreadState(Thread t);
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,18 @@
 
 /*
  * @test
- * @bug 8276422
+ * @bug 8276422 8387729
  * @summary add command-line option to disable finalization
- * @run main/othervm                         FinalizationOption yes
- * @run main/othervm --finalization=enabled  FinalizationOption yes
- * @run main/othervm --finalization=disabled FinalizationOption no
+ * @library /test/lib
+ * @run main FinalizationOption enabled  default
+ * @run main FinalizationOption enabled  equals
+ * @run main FinalizationOption enabled  whitespace
+ * @run main FinalizationOption disabled equals
+ * @run main FinalizationOption disabled whitespace
  */
+
+import jdk.test.lib.process.ProcessTools;
+
 public class FinalizationOption {
     static volatile boolean finalizerWasCalled = false;
 
@@ -104,13 +110,54 @@ public class FinalizationOption {
         return passed;
     }
 
-    public static void main(String[] args) {
-        boolean finalizationEnabled = switch (args[0]) {
-            case "yes" -> true;
-            case "no"  -> false;
-            default -> {
-                throw new AssertionError("usage: FinalizationOption yes|no");
-            }
+    /*
+     * Each @run invocation enters main() twice:
+     *
+     * 1. jtreg invokes main() with two arguments. This calls launch()
+     *    to start a test process.
+     *
+     * 2. The launched test process invokes main() with one argument and
+     *    performs the actual test.
+     */
+    public static void main(String[] args) throws Exception {
+        switch (args.length) {
+            case 2:
+                launch(args[0], args[1]);
+                return;
+            case 1:
+                test(args[0]);
+                return;
+            default:
+                throw new AssertionError(
+                    "expected one or two arguments");
+        }
+    }
+
+    /**
+     * Launch a test process with the given command-line option form.
+     */
+    static void launch(String option, String form) throws Exception {
+        String[] javaArgs = switch (form) {
+            case "default"    -> new String[] {"FinalizationOption", option};
+            case "equals"     -> new String[] {"--finalization=" + option,
+                                               "FinalizationOption", option};
+            case "whitespace" -> new String[] {"--finalization", option,
+                                               "FinalizationOption", option};
+            default -> throw new AssertionError("Unexpected option form: " + form);
+        };
+
+        ProcessTools.executeTestJava(javaArgs).shouldHaveExitValue(0);
+    }
+
+    /**
+     * Perform the actual finalization test.
+     */
+    static void test(String option) throws Exception {
+        boolean finalizationEnabled = switch (option) {
+            case "enabled"  -> true;
+            case "disabled" -> false;
+            default -> throw new AssertionError(
+                "usage: FinalizationOption enabled|disabled");
         };
 
         boolean threadPass = checkFinalizerThread(finalizationEnabled);

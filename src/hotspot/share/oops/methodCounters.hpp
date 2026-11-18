@@ -30,6 +30,7 @@
 #include "oops/metadata.hpp"
 #include "utilities/align.hpp"
 
+class AOTCodeEntry;
 class MethodTrainingData;
 
 class MethodCounters : public Metadata {
@@ -48,6 +49,15 @@ class MethodCounters : public Metadata {
   Method* _method;
 
   Metadata*         _method_training_data;
+#if INCLUDE_CDS
+  // After JDK-8380476 FIXME: Jamming in a code reference here is a code
+  // smell.  Since access to this value is infrequent, it does not
+  // need to be a pointer.  (See AOTCodeCache::invalidate_entry.)
+  // Suggestion: Have finish_write build a two-column binary-search
+  // table in the AOT cache, to map method ID to preload method index.
+  // Searchable static indexes are a core competency for AOT.
+  AOTCodeEntry*     _aot_preload_code_entry;      // AOT Code Cache entry for preload code
+#endif
   jlong             _prev_time;                   // Previous time the rate was acquired
   float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
   int               _invoke_mask;                 // per-method Tier0InvokeNotifyFreqLog
@@ -71,7 +81,7 @@ class MethodCounters : public Metadata {
   static MethodCounters* allocate_no_exception(const methodHandle& mh);
   static MethodCounters* allocate_with_exception(const methodHandle& mh, TRAPS);
 
-  void deallocate_contents(ClassLoaderData* loader_data) {}
+  void deallocate_contents(ClassLoaderData* loader_data) NOT_CDS_RETURN;
 
   static int method_counters_size() {
     return align_up((int)sizeof(MethodCounters), wordSize) / wordSize;
@@ -165,6 +175,11 @@ class MethodCounters : public Metadata {
   }
 
 #if INCLUDE_CDS
+  void set_aot_preload_code_entry(AOTCodeEntry* entry);
+  AOTCodeEntry* aot_preload_code_entry() const   {
+    return _aot_preload_code_entry;
+  }
+
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
 #endif

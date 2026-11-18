@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2026 SAP SE. All rights reserved.
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -297,7 +297,7 @@ void DowncallLinker::StubGenerator::generate() {
   Label L_after_reguard;
 
   if (_needs_transition) {
-    __ li(tmp, _thread_in_native_trans);
+    __ li(tmp, _thread_in_Java);
     __ release();
     __ stw(tmp, in_bytes(JavaThread::thread_state_offset()), R16_thread);
     if (!UseSystemMemoryBarrier) {
@@ -310,11 +310,6 @@ void DowncallLinker::StubGenerator::generate() {
     __ cmpwi(CR0, tmp, 0);
     __ bne(CR0, L_safepoint_poll_slow_path);
     __ bind(L_after_safepoint_poll);
-
-    // change thread state
-    __ li(tmp, _thread_in_Java);
-    __ lwsync(); // Acquire safepoint and suspend state, release thread state.
-    __ stw(tmp, in_bytes(JavaThread::thread_state_offset()), R16_thread);
 
     __ block_comment("reguard stack check");
     __ lwz(tmp, in_bytes(JavaThread::stack_guard_state_offset()), R16_thread);
@@ -340,7 +335,7 @@ void DowncallLinker::StubGenerator::generate() {
       out_reg_spiller.generate_spill(_masm, out_spill_offset);
     }
 
-    __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, JavaThread::check_special_condition_for_native_trans), R0);
+    __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, SharedRuntime::check_special_condition_for_native_trans), R0);
     __ mr(R3_ARG1, R16_thread);
     __ call_c(call_target_address);
 
@@ -374,5 +369,5 @@ void DowncallLinker::StubGenerator::generate() {
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ flush();
+  // Code will be copied. No ICache sync required.
 }

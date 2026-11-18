@@ -126,7 +126,7 @@ extern Mutex*   NmtVirtualMemory_lock;           // guards NMT virtual memory up
 #if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
 #endif
-extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::_dumptime_table
+extern Mutex*   DumpTimeTable_lock;              // AOTSystemDictionary::_dumptime_table
 extern Mutex*   CDSLambda_lock;                  // LambdaProxyClassDictionary::find_lambda_proxy_class
 extern Mutex*   DumpRegion_lock;                 // Symbol::operator new(size_t sz, int len)
 extern Mutex*   ClassListFile_lock;              // ClassListWriter()
@@ -140,6 +140,7 @@ extern Mutex*   JfrStacktrace_lock;              // used to guard access to the 
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
 extern Mutex*   SuspendedThreadTask_lock;        // used to guard SuspendedThreadTask::run
+extern Mutex*   JfrEpochShift_lock;              // exclude non-java threads from interleaving with the JFR epoch shift
 #endif
 
 extern Mutex*   Metaspace_lock;                  // protects Metaspace virtualspace and chunk expansions

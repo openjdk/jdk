@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,11 @@ statistical output.
 
 All options and their functionality are subject to change or removal in future
 releases.
+
+If the target JVM is started with an alternate temporary file location, `jstat` must
+use the same temporary file location for communication; this is true by default
+but see the [`-XX:AltTempDir`](./java.html#-XX_AltTempDir) option.
+
 
 ## General Options
 

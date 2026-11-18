@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
- Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,14 @@
 
 Some classes, such as {@code java.lang.Integer} and
 {@code java.time.LocalDate}, are <em>value-based</em>.
-A value-based class has the following properties:
+In a future release, they may become value classes (JLS
+{@jls value-objects-8.1.1.5}).
+
+<p>A value-based class has the following properties:</p>
+
 <ul>
-    <li>the class declares only final instance fields (though these may contain references
-        to mutable objects);</li>
+    <li>all instance fields declared in the class and all of its superclasses
+        are final (though these may contain references to mutable objects);</li>
     <li>the class's implementations of {@code equals}, {@code hashCode},
         and {@code toString} compute their results solely from the values
         of the class's instance fields (and the members of the objects they
@@ -45,15 +49,15 @@ A value-based class has the following properties:
         {@code y} that are equal according to {@code equals()} produces no
         visible change in the behavior of the class's methods;</li>
     <li>the class performs no synchronization using an instance's monitor;</li>
-    <li>the class does not declare (or discourages use of) accessible constructors;</li>
+    <li>the class does not declare, or discourages use of, accessible constructors
+        (because each constructor call promises a unique identity);</li>
     <li>the class does not provide any instance creation mechanism that promises
         a unique identity on each method call&mdash;in particular, any factory
         method's contract must allow for the possibility that if two independently-produced
         instances are equal according to {@code equals()}, they may also be
         equal according to {@code ==};</li>
     <li>the class is final, and extends either {@code Object} or a hierarchy of
-        abstract classes that declare no instance fields or instance initializers
-        and whose constructors are empty.</li>
+        abstract classes.</li>
 </ul>
 
 <p>When two instances of a value-based class are equal (according to `equals`), a program
@@ -65,8 +69,16 @@ A value-based class has the following properties:
     because the programmer cannot guarantee exclusive ownership of the
     associated monitor.</p>
 
-<p>Identity-related behavior of value-based classes may change in a future release.
-    For example, synchronization may fail.</p>
+<p>When preview features are enabled, some value-based classes become value classes.
+    Instances of these classes become value objects, which have different identity-related
+    behaviors compared to identity objects:</p>
+<ul>
+    <li>Previously distinguishable instances, such as those created from distinct
+        constructor invocations (See JLS {@jls value-objects-15.9.4}), may be no
+        longer distinguishable via {@code ==}.
+    <li>The use of value objects for synchronization or with {@linkplain
+        java.lang.ref.Reference object references} results in {@link IdentityException}.
+</ul>
 
 </body>
 </html>

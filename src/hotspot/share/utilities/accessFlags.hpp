@@ -50,8 +50,8 @@ class AccessFlags {
   bool is_protected   () const         { return (_flags & JVM_ACC_PROTECTED   ) != 0; }
   bool is_static      () const         { return (_flags & JVM_ACC_STATIC      ) != 0; }
   bool is_final       () const         { return (_flags & JVM_ACC_FINAL       ) != 0; }
+  bool is_strict      () const         { return (_flags & JVM_ACC_STRICT_INIT ) != 0; }
   bool is_synchronized() const         { return (_flags & JVM_ACC_SYNCHRONIZED) != 0; }
-  bool is_super       () const         { return (_flags & JVM_ACC_SUPER       ) != 0; }
   bool is_volatile    () const         { return (_flags & JVM_ACC_VOLATILE    ) != 0; }
   bool is_bridge      () const         { return (_flags & JVM_ACC_BRIDGE      ) != 0; }
   bool is_transient   () const         { return (_flags & JVM_ACC_TRANSIENT   ) != 0; }
@@ -62,6 +62,7 @@ class AccessFlags {
   bool is_interface   () const         { return (_flags & JVM_ACC_INTERFACE   ) != 0; }
   bool is_abstract    () const         { return (_flags & JVM_ACC_ABSTRACT    ) != 0; }
   bool is_strictfp    () const         { return (_flags & JVM_ACC_STRICT      ) != 0; }
+  bool is_identity_class  () const     { return (_flags & JVM_ACC_IDENTITY    ) != 0; }
 
   // Attribute flags
   bool is_synthetic   () const         { return (_flags & JVM_ACC_SYNTHETIC   ) != 0; }

@@ -192,6 +192,10 @@ public abstract class VarHandleBaseByteArrayTest extends VarHandleBaseTest {
         VarHandleSource get() {
             return vhs;
         }
+
+        public String toString() {
+            return super.toString() + ", bs: " + bs + ", vhs: " + vhs;
+        }
     }
 
 

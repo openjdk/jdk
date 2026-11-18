@@ -171,9 +171,11 @@ possible to use [cross-compiling](#cross-compiling).
 
 In order to use Branch Protection features in the VM,
 `--enable-branch-protection` must be used. This option requires C++ compiler
-support (GCC 9.1.0+ or Clang 10+). The resulting build can be run on both
-machines with and without support for branch protection in hardware. Branch
-Protection is only supported for Linux targets.
+support for `-mbranch-protection=standard` in GCC 9.1.0+ or Clang 10+ on
+Linux/AArch64 or for `/guard:signret` in Visual Studio 2019+ on Windows/ARM64.
+The resulting build can be run on both machines with and without support for
+branch protection in hardware. Branch Protection is fully supported for the
+Linux/AArch64 target and only partially supported for the Windows/ARM64 target.
 
 ### Building on 32-bit ARM
 
@@ -711,7 +713,7 @@ In order to build man pages and the full docs (see the `--enable-full-docs`
 configure option) [Pandoc](https://pandoc.org) is required. For full docs also
 [Graphviz](https://www.graphviz.org) is required. Any recent versions should
 work. For reference, and subject to change, Oracle builds use Graphviz
-9.0.0 and Pandoc 2.19.2.
+9.0.0 and Pandoc 3.6.4.
 
 ## Running Configure
 
@@ -1555,6 +1557,15 @@ the same sources. Your mileage may vary however, so we recommend evaluating it
 for yourself. To enable it, make sure it's on the path and configure with
 `--enable-ccache`.
 
+### Sccache
+
+The JDK build supports building with sccache when using gcc, clang, or Microsoft
+toolchains.  To enable it, make sure the sccache binary is on the path (or
+specify the path to the binary using the `SCCACHE` argument to the configure
+script) and configure with `--enable-sccache`.  To optionally specify where
+sccache stores its cache files, use `--with-sccache-dir`.  Precompiled headers
+are disabled when sccache is enabled.
+
 ### Precompiled Headers
 
 By default, the Hotspot build uses pre-compiled headers (PCH) on the toolchains
@@ -1709,7 +1720,7 @@ certain well-known problems, but it can never find all possible errors.
 * Checking for warnings from configure...
  ---
 The following warnings were produced. Repeated here for convenience:
-WARNING: pandoc is version 3.1.9, not the recommended version 2.19.2
+WARNING: pandoc is version 3.1.9, not the recommended version 3.6.4
  ---
 ! Inspect the warnings, fix any problems, and re-run configure
 

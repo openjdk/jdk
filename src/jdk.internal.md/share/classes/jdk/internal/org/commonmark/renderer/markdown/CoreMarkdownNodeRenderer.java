@@ -32,14 +32,12 @@
 
 package jdk.internal.org.commonmark.renderer.markdown;
 
-import jdk.internal.org.commonmark.text.AsciiMatcher;
 import jdk.internal.org.commonmark.node.*;
-import jdk.internal.org.commonmark.text.CharMatcher;
 import jdk.internal.org.commonmark.renderer.NodeRenderer;
+import jdk.internal.org.commonmark.text.AsciiMatcher;
+import jdk.internal.org.commonmark.text.CharMatcher;
 import jdk.internal.org.commonmark.text.Characters;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -83,7 +81,7 @@ public class CoreMarkdownNodeRenderer extends AbstractVisitor implements NodeRen
 
     @Override
     public Set<Class<? extends Node>> getNodeTypes() {
-        return new HashSet<>(Arrays.asList(
+        return Set.of(
                 BlockQuote.class,
                 BulletList.class,
                 Code.class,
@@ -104,7 +102,7 @@ public class CoreMarkdownNodeRenderer extends AbstractVisitor implements NodeRen
                 StrongEmphasis.class,
                 Text.class,
                 ThematicBreak.class
-        ));
+        );
     }
 
     @Override
@@ -121,8 +119,12 @@ public class CoreMarkdownNodeRenderer extends AbstractVisitor implements NodeRen
 
     @Override
     public void visit(ThematicBreak thematicBreak) {
-        // Let's use ___ as it doesn't introduce ambiguity with * or - list item markers
-        writer.raw("___");
+        String literal = thematicBreak.getLiteral();
+        if (literal == null) {
+            // Let's use ___ as it doesn't introduce ambiguity with * or - list item markers
+            literal = "___";
+        }
+        writer.raw(literal);
         writer.block();
     }
 
@@ -287,7 +289,7 @@ public class CoreMarkdownNodeRenderer extends AbstractVisitor implements NodeRen
             throw new IllegalStateException("Unknown list holder type: " + listHolder);
         }
         Integer contentIndent = listItem.getContentIndent();
-        String spaces = contentIndent != null ? repeat(" ", contentIndent - marker.length()) : " ";
+        String spaces = contentIndent != null ? repeat(" ", Math.max(contentIndent - marker.length(), 1)) : " ";
         writer.writePrefix(marker);
         writer.writePrefix(spaces);
         writer.pushPrefix(repeat(" ", marker.length() + spaces.length()));
@@ -400,9 +402,11 @@ public class CoreMarkdownNodeRenderer extends AbstractVisitor implements NodeRen
                     break;
                 }
                 case '=': {
-                    // Would be ambiguous with a Setext heading, escape
-                    writer.raw("\\=");
-                    literal = literal.substring(1);
+                    // Would be ambiguous with a Setext heading, escape unless it's the first line in the block
+                    if (text.getPrevious() != null) {
+                        writer.raw("\\=");
+                        literal = literal.substring(1);
+                    }
                     break;
                 }
                 case '0':
@@ -502,9 +506,9 @@ public class CoreMarkdownNodeRenderer extends AbstractVisitor implements NodeRen
         if (parts[parts.length - 1].isEmpty()) {
             // But we don't want the last empty string, as "\n" is used as a line terminator (not a separator),
             // so return without the last element.
-            return Arrays.asList(parts).subList(0, parts.length - 1);
+            return List.of(parts).subList(0, parts.length - 1);
         } else {
-            return Arrays.asList(parts);
+            return List.of(parts);
         }
     }
 

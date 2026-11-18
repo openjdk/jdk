@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @bug 8387014
+ * @summary Test that UTF-16 string concat overflow does not produce a negative size backing array
+ * @requires vm.compiler2.enabled & os.maxMemory > 4G
+ * @library /test/lib /
+ * @run main/othervm -Xmx4g ${test.main.class}
+ * @run main/othervm -Xmx4g -Xint ${test.main.class}
+ * @run main/othervm -Xmx4g -XX:-TieredCompilation -Xcomp
+ *                   -XX:CompileOnly=${test.main.class}::f
+ *                   ${test.main.class}
+ */
+
+package compiler.stringopts;
+
+import jdk.test.lib.Asserts;
+
+public class TestStackedConcatsManyUTF16Overflow {
+
+    public static void main (String... args) {
+        new StringBuilder(); // Trigger loading of the StringBuilder class.
+        try {
+            String s = f();
+            String z = "🙂";
+            for (int i = 0; i < 29; i++) {
+                z = z + z;
+            }
+            Asserts.assertEQ(s, z);
+        } catch (OutOfMemoryError e) {
+          Asserts.assertTrue(e.getMessage().equals("Required array length 1073741824 + 1073741824 is too large"));
+          // Specifically, we should not get "`main' threw exception: java.lang.NegativeArraySizeException: -2147483648"
+          return;
+        }
+        throw new RuntimeException("Unreachable.");
+    }
+
+    static String f() {
+
+        String s = "🙂"; // length() 2 UTF-16 string
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s).toString();
+
+        s = new StringBuilder().append(s).append(s).toString();
+
+        return s;
+    }
+}

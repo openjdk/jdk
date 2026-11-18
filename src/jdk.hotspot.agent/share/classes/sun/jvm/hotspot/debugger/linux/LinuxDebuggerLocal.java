@@ -71,7 +71,7 @@ import sun.jvm.hotspot.utilities.PlatformInfo;
 public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     private boolean useGCC32ABI;
     private boolean attached;
-    private long    p_ps_prochandle; // native debugger handle
+    protected long  p_ps_prochandle; // native debugger handle
     private boolean isCore;
 
     // CDebugger support
@@ -298,6 +298,10 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
         }
     }
 
+    protected void onAttach() {
+       // Do nothing by default: it should be implemented by inherited classes.
+    }
+
     /** From the Debugger interface via JVMDebugger */
     public synchronized void attach(int processID) throws DebuggerException {
         checkAttached();
@@ -322,6 +326,8 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
               debugger.attached = true;
               debugger.isCore = false;
               findABIVersion();
+
+              onAttach();
            }
         }
 
@@ -339,6 +345,8 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
         attached = true;
         isCore = true;
         findABIVersion();
+
+        onAttach();
     }
 
     /** From the Debugger interface via JVMDebugger */

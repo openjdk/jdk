@@ -751,6 +751,18 @@ $(eval $(call SetupTarget, test-image-lib, \
     DEPS := build-test-lib, \
 ))
 
+$(eval $(call SetupTarget, build-hotspot-compiler-testlibrary, \
+    MAKEFILE := hotspot/test/BuildCompilerTestlibrary, \
+    TARGET := build-hotspot-compiler-testlibrary, \
+    DEPS := exploded-image build-test-lib, \
+))
+
+$(eval $(call SetupTarget, test-image-hotspot-compiler-testlibrary, \
+    MAKEFILE := hotspot/test/BuildCompilerTestlibrary, \
+    TARGET := test-image-hotspot-compiler-testlibrary, \
+    DEPS := build-hotspot-compiler-testlibrary, \
+))
+
 $(eval $(call SetupTarget, build-test-setup-aot, \
     MAKEFILE := test/BuildTestSetupAOT, \
     DEPS := interim-langtools exploded-image, \
@@ -793,6 +805,20 @@ ifeq ($(BUILD_JTREG_TEST_THREAD_FACTORY), true)
       DEPS := build-test-test-thread-factory, \
   ))
 endif
+
+# Builds the value class plugin jtreg extension (JEP 401)
+$(eval $(call SetupTarget, build-test-value-class-plugin, \
+    MAKEFILE := test/BuildJtregValueClassPlugin, \
+    TARGET := build, \
+    DEPS := interim-langtools exploded-image, \
+))
+
+# Copies the value class plugin into the test image
+$(eval $(call SetupTarget, test-image-value-class-plugin, \
+    MAKEFILE := test/BuildJtregValueClassPlugin, \
+    TARGET := images, \
+    DEPS := build-test-value-class-plugin, \
+))
 
 $(eval $(call SetupTarget, build-microbenchmark, \
     MAKEFILE := test/BuildMicrobenchmark, \
@@ -1289,7 +1315,7 @@ all-docs-bundles: docs-jdk-bundles docs-javase-bundles docs-reference-bundles
 test-image: prepare-test-image test-image-jdk-jtreg-native \
     test-image-demos-jdk test-image-libtest-jtreg-native \
     test-image-lib test-image-lib-native \
-    test-image-setup-aot
+    test-image-setup-aot test-image-hotspot-compiler-testlibrary
 
 ifneq ($(JVM_TEST_IMAGE_TARGETS), )
   # If JVM_TEST_IMAGE_TARGETS is externally defined, use it instead of the
@@ -1309,6 +1335,8 @@ endif
 ifeq ($(BUILD_JTREG_TEST_THREAD_FACTORY), true)
   test-image: test-image-test-thread-factory
 endif
+
+test-image: test-image-value-class-plugin
 
 ifneq ($(JMH_CORE_JAR), )
   test-image: build-microbenchmark
@@ -1404,6 +1432,9 @@ clean: $(CLEAN_DIR_TARGETS)
 clean-docs:
 	$(call CleanDocs)
 
+clean-microbenchmark:
+	$(call CleanMicrobenchmark)
+
 clean-compile-commands:
 	$(call CleanMakeSupportDir,compile-commands)
 
@@ -1452,7 +1483,8 @@ dist-clean: clean
 	)
 	$(ECHO) Cleaned everything, you will have to re-run configure.
 
-ALL_TARGETS += clean clean-docs clean-compile-commands dist-clean $(CLEAN_DIR_TARGETS) \
+ALL_TARGETS += clean clean-docs clean-microbenchmark clean-compile-commands \
+    dist-clean $(CLEAN_DIR_TARGETS) \
     $(CLEAN_SUPPORT_DIR_TARGETS) $(CLEAN_TEST_TARGETS) $(CLEAN_PHASE_TARGETS) \
     $(CLEAN_MODULE_TARGETS) $(CLEAN_MODULE_PHASE_TARGETS)
 

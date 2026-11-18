@@ -37,7 +37,7 @@ void G1ConcurrentRefineStats::add_atomic(const G1LocalRefineStats* other) {
 }
 
 void G1ConcurrentRefineStats::reset() {
-  _sweep_duration.store_relaxed(0);
+  _sweep_work_duration.store_relaxed(0);
   _yield_during_sweep_duration.store_relaxed(0);
   _cards_scanned.store_relaxed(0);
   _cards_clean.store_relaxed(0);

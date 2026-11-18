@@ -533,7 +533,7 @@ public final class VectorOperators {
     public static final Binary SUB = binary("SUB", "-", VectorSupport.VECTOR_OP_SUB, VO_ALL);
     /** Produce {@code a*b}. */
     public static final Associative MUL = assoc("MUL", "*", VectorSupport.VECTOR_OP_MUL, VO_ALL+VO_ASSOC);
-    /** Produce {@code a/b}. Floating only. */
+    /** Produce {@code a/b}. */
     public static final Binary DIV = binary("DIV", "/", VectorSupport.VECTOR_OP_DIV, VO_ALL| VO_SPECIAL);
     /** Produce {@code min(a,b)}. */
     public static final Associative MIN = assoc("MIN", "min", VectorSupport.VECTOR_OP_MIN, VO_ALL+VO_ASSOC);
@@ -548,8 +548,6 @@ public final class VectorOperators {
     public static final /*bitwise*/ Binary AND_NOT = binary("AND_NOT", "&~", -1 /*VectorSupport.VECTOR_OP_AND_NOT*/, VO_NOFP); // FIXME
     /** Produce {@code a|b}.  Integral only. */
     public static final /*bitwise*/ Associative OR = assoc("OR", "|", VectorSupport.VECTOR_OP_OR, VO_NOFP+VO_ASSOC);
-    /*package-private*/ /** Version of OR which works on float and double too. */
-    static final Associative OR_UNCHECKED = assoc("OR_UNCHECKED", "|", VectorSupport.VECTOR_OP_OR, VO_ASSOC+VO_PRIVATE);
 
     /** Produce {@code a^b}.  Integral only. */
     public static final /*bitwise*/ Associative XOR = assoc("XOR", "^", VectorSupport.VECTOR_OP_XOR, VO_NOFP+VO_ASSOC);

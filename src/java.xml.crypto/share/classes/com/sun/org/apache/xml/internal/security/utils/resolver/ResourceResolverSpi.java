@@ -51,4 +51,29 @@ public abstract class ResourceResolverSpi {
      */
     public abstract boolean engineCanResolveURI(ResourceResolverContext context);
 
+    /**
+     * Returns the scheme for a URI.
+     *
+     * @param uri the URI
+     * @return the scheme, or {@code null} if none
+     */
+    protected static final String scheme(String uri) {
+        if (uri == null) {
+            return null;
+        }
+        char[] uriChars = uri.toCharArray();
+        // Similar to java.net.URI::parse. Find ':' before any of '/', '?',
+        // or '#', and treat the characters before it as scheme.
+        for (int i = 0; i < uriChars.length; i++) {
+            if (uriChars[i] == '/' || uriChars[i] == '?' || uriChars[i] == '#') {
+                return null;
+            }
+            if (uriChars[i] == ':') {
+                // No validation on the output since we only care if it's
+                // empty or equal to specific values.
+                return uri.substring(0, i);
+            }
+        }
+        return null;
+    }
 }

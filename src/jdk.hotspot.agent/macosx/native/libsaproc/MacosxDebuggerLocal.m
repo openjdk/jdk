@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1188,6 +1188,20 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(
   task_t gTask = getTask(env, this_obj);
   kern_return_t k_res = 0;
 
+  // reply to the previous exception message
+  k_res = mach_msg(&rep_msg.header,
+                   MACH_SEND_MSG| MACH_SEND_INTERRUPT,
+                   rep_msg.header.msgh_size,
+                   0,
+                   MACH_PORT_NULL,
+                   MACH_MSG_TIMEOUT_NONE,
+                   MACH_PORT_NULL);
+  if (k_res != MACH_MSG_SUCCESS) {
+    print_error("detach: mach_msg() for replying to pending exceptions failed: '%s' (%d)\n",
+                 mach_error_string(k_res), k_res);
+    detach_cleanup(gTask, env, this_obj, true);
+  }
+
   // Restore the pre-saved original exception ports registered with the target process
   for (uint32_t i = 0; i < exception_saved_state.saved_exception_types_count; ++i) {
     k_res = task_set_exception_ports(gTask,
@@ -1210,26 +1224,19 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(
     detach_cleanup(gTask, env, this_obj, true);
   }
   else {
+    // Sleep 10ms before doing the PT_DETACH. This is necessary to give the Mach
+    // state of the task (process) time to settle after having done the Mach
+    // exception reply and restoring the Mach exception ports. If this delay
+    // is not done, sometimes the SIGSTOP generated during the attach ends
+    // up triggering again, changing the bsd process status of the process
+    // to SSTOP, resulting in it remaining suspended after the detach.
+    usleep(10000);
     errno = 0;
     ptrace(PT_DETACH, pid, (caddr_t)1, 0);
     if (errno != 0) {
       print_error("detach: ptrace(PT_DETACH,...) failed: %s", strerror(errno));
       detach_cleanup(gTask, env, this_obj, true);
     }
-  }
-
-  // reply to the previous exception message
-  k_res = mach_msg(&rep_msg.header,
-                   MACH_SEND_MSG| MACH_SEND_INTERRUPT,
-                   rep_msg.header.msgh_size,
-                   0,
-                   MACH_PORT_NULL,
-                   MACH_MSG_TIMEOUT_NONE,
-                   MACH_PORT_NULL);
-  if (k_res != MACH_MSG_SUCCESS) {
-    print_error("detach: mach_msg() for replying to pending exceptions failed: '%s' (%d)\n",
-                 mach_error_string(k_res), k_res);
-    detach_cleanup(gTask, env, this_obj, true);
   }
 
   detach_cleanup(gTask, env, this_obj, false);

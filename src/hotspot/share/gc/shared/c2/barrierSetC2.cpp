@@ -48,6 +48,10 @@ void* C2ParseAccess::barrier_set_state() const {
 
 PhaseGVN& C2ParseAccess::gvn() const { return _kit->gvn(); }
 
+Node* C2ParseAccess::control() const {
+  return _ctl == nullptr ? _kit->control() : _ctl;
+}
+
 bool C2Access::needs_cpu_membar() const {
   bool mismatched   = (_decorators & C2_MISMATCHED) != 0;
   bool is_unordered = (_decorators & MO_UNORDERED) != 0;
@@ -207,7 +211,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   if (access.is_parse_access()) {
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
     GraphKit* kit = parse_access.kit();
-    Node* control = control_dependent ? kit->control() : nullptr;
+    Node* control = control_dependent ? parse_access.control() : nullptr;
 
     if (immutable) {
       Compile* C = Compile::current();
@@ -743,7 +747,7 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   Node* n = kit->gvn().transform(ac);
   if (n == ac) {
     const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-    ac->set_adr_type(TypeRawPtr::BOTTOM);
+    ac->set_out_adr_type(TypeRawPtr::BOTTOM);
     kit->set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), raw_adr_type);
   } else {
     kit->set_all_memory(n);
@@ -869,7 +873,7 @@ void BarrierSetC2::clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
                                            TypeRawPtr::BOTTOM,
                                            src, dst, full_size_in_heap_words XTOP);
   phase->transform_later(call);
-  phase->igvn().replace_node(ac, call);
+  phase->replace_node(ac, call);
 }
 
 void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
@@ -893,7 +897,7 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
   Node* call = phase->make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, payload_src, payload_dst, length XTOP);
   phase->transform_later(call);
 
-  phase->igvn().replace_node(ac, call);
+  phase->replace_node(ac, call);
 }
 
 #undef XTOP
@@ -1059,12 +1063,12 @@ bool BarrierSetC2::is_allocation(const Node* node) {
   return offset == in_bytes(Thread::tlab_top_offset());
 }
 
-void BarrierSetC2::elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const {
+void BarrierSetC2::elide_dominated_barriers(const Node_List<MachNode>& accesses, const Node_List<Node>& access_dominators) const {
   Compile* const C = Compile::current();
   PhaseCFG* const cfg = C->cfg();
 
   for (uint i = 0; i < accesses.size(); i++) {
-    MachNode* const access = accesses.at(i)->as_Mach();
+    MachNode* const access = accesses.at(i);
     intptr_t access_offset;
     const Node* const access_obj = get_base_and_offset(access, access_offset);
     Block* const access_block = cfg->get_block_for_node(access);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public abstract class Connection {
      *          the connection while the readPacket is in progress.
      *
      * @throws  java.io.IOException
-     *          If the length of the packet (as indictaed by the first
+     *          If the length of the packet (as indicated by the first
      *          4 bytes) is less than 11 bytes, or an I/O error occurs.
      *
      *

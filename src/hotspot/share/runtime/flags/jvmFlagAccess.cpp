@@ -324,7 +324,7 @@ JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrig
   trace_flag_changed<ccstr, EventStringFlagChanged>(flag, old_value, *value, origin);
   char* new_value = nullptr;
   if (*value != nullptr) {
-    new_value = os::strdup_check_oom(*value);
+    new_value = os::strdup_check_oom(*value, mtInternal);
   }
   flag->set_ccstr(new_value);
   if (!flag->is_default() && old_value != nullptr) {

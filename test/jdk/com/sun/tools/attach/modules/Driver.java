@@ -25,10 +25,10 @@
  * @test
  * @modules jdk.attach
  * @build m/* Agent
- * @run main/othervm -Djdk.attach.allowAttachSelf m/p.Main jmx javaagent
- * @run main/othervm -Djdk.attach.allowAttachSelf m/p.Main javaagent jmx
- * @run main/othervm --limit-modules=jdk.attach -Djdk.attach.allowAttachSelf m/p.Main jmx javaagent
- * @run main/othervm --limit-modules=jdk.attach -Djdk.attach.allowAttachSelf m/p.Main javaagent jmx
+ * @run main/othervm -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf m/p.Main jmx javaagent
+ * @run main/othervm -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf m/p.Main javaagent jmx
+ * @run main/othervm --limit-modules=jdk.attach -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf m/p.Main jmx javaagent
+ * @run main/othervm --limit-modules=jdk.attach -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf m/p.Main javaagent jmx
  * @summary Basic test to ensure that a JMX agent or a tool agent can be loaded/started in
   *         a modular application.
  */

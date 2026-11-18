@@ -75,7 +75,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
 
 
     /**
-     * Cleans up any lingering state held by unrefeernced
+     * Cleans up any lingering state held by unreferenced
      * DesktopProperties.
      */
     public static void flushUnreferencedProperties() {

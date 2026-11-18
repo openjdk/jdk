@@ -78,10 +78,13 @@ public class LinuxResourceTest {
                     "Maintainer: APPLICATION_MAINTAINER",
                     "Priority: optional",
                     archProp.format(),
-                    "Provides: dont-install-me",
                     "Description: APPLICATION_DESCRIPTION",
                     "Installed-Size: APPLICATION_INSTALLED_SIZE",
-                    "Depends: PACKAGE_DEFAULT_DEPENDENCIES"
+                    "Depends: PACKAGE_DEFAULT_DEPENDENCIES",
+                    // The value of the last field must not be an empty string.
+                    // Otherwise newer versions of dpkg-deb fails with
+                    // "end of file before value of field 'Depends' (missing final newline)" error
+                    "Provides: dont-install-me"
             ));
 
             cmd.excludeStandardAsserts(StandardAssert.LINUX_PACKAGE_ARCH);

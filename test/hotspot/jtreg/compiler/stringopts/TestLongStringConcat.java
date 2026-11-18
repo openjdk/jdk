@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,15 @@
  * @bug 8237950
  * @summary Test very long chain of StringBuilder append calls.
  * @run main/othervm -Xbatch compiler.stringopts.TestLongStringConcat
+ */
+
+/*
+ * @test
+ * @bug 8391643
+ * @summary We missed ResourceMark in TypeInterfaces::intersection_with and
+ *          TypeInterfaces::union_with.
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+StressVerifyMeetJoin
+ *                   ${test.main.class}
  */
 
 package compiler.stringopts;

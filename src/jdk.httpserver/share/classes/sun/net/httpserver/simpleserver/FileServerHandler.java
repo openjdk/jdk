@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.net.httpserver.simpleserver;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -106,16 +107,22 @@ public final class FileServerHandler implements HttpHandler {
 
     private void handleSupportedMethod(HttpExchange exchange, Path path, boolean writeBody)
         throws IOException {
+        boolean requestURIEndsWithSlash = pathEndsWithSlash(exchange);
         if (Files.isDirectory(path)) {
-            if (missingSlash(exchange)) {
+            if (!requestURIEndsWithSlash) {
                 handleMovedPermanently(exchange);
                 return;
             }
-            if (indexFile(path) != null) {
-                serveFile(exchange, indexFile(path), writeBody);
+            Path indexFile = indexFile(path);
+            if (indexFile != null) {
+                serveFile(exchange, indexFile, writeBody);
             } else {
                 listFiles(exchange, path, writeBody);
             }
+        }
+        // Disallow non-directory paths ending with slash
+        else if (requestURIEndsWithSlash) {
+            handleNotFound(exchange);
         } else {
             serveFile(exchange, path, writeBody);
         }
@@ -124,10 +131,6 @@ public final class FileServerHandler implements HttpHandler {
     private void handleMovedPermanently(HttpExchange exchange) throws IOException {
         exchange.getResponseHeaders().set("Location", getRedirectURI(exchange.getRequestURI()));
         exchange.sendResponseHeaders(301, RSPBODY_EMPTY);
-    }
-
-    private void handleForbidden(HttpExchange exchange) throws IOException {
-        exchange.sendResponseHeaders(403, RSPBODY_EMPTY);
     }
 
     private void handleNotFound(HttpExchange exchange) throws IOException {
@@ -161,8 +164,8 @@ public final class FileServerHandler implements HttpHandler {
         return query == null ? redirectPath : redirectPath + "?" + query;
     }
 
-    private static boolean missingSlash(HttpExchange exchange) {
-        return !exchange.getRequestURI().getPath().endsWith("/");
+    private static boolean pathEndsWithSlash(HttpExchange exchange) {
+        return exchange.getRequestURI().getPath().endsWith("/");
     }
 
     private static String contextPath(HttpExchange exchange) {
@@ -219,7 +222,8 @@ public final class FileServerHandler implements HttpHandler {
             // resolve each path segment against the root
             Path path = root;
             for (var segment : pathSegment) {
-                if (!URIPathSegment.isSupported(segment)) {
+                if (!URIPathSegment.isSupported(segment) || segment.contains(File.separator)) {
+                    // checking for separator rules out anomalies like UNCs on Windows
                     return null;  // stop resolution, null results in 404 response
                 }
                 path = path.resolve(segment);

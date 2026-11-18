@@ -1,0 +1,5 @@
+InfiniteLoopGLBTest2.java:23:18: compiler.err.already.defined: kindname.method, f(), kindname.class, InfiniteLoopGLBTest2.C
+InfiniteLoopGLBTest2.java:10:31: compiler.err.not.within.bounds: ? super InfiniteLoopGLBTest2.A<java.lang.Double>, N
+InfiniteLoopGLBTest2.java:11:21: compiler.err.not.within.bounds: ? super InfiniteLoopGLBTest2.A<java.lang.Double>, N
+InfiniteLoopGLBTest2.java:12:18: compiler.err.cant.resolve.location.args: kindname.method, f, , compiler.misc.type.null, (compiler.misc.location: kindname.class, InfiniteLoopGLBTest2.B<compiler.misc.type.captureof: 1, ? extends compiler.misc.type.captureof: 2, ? super InfiniteLoopGLBTest2.A<java.lang.Double>,compiler.misc.type.captureof: 3, ? extends compiler.misc.type.captureof: 2, ? super InfiniteLoopGLBTest2.A<java.lang.Double>>, null)
+4 errors

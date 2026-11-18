@@ -122,6 +122,7 @@ Mutex*   JfrStacktrace_lock           = nullptr;
 Monitor* JfrMsg_lock                  = nullptr;
 Mutex*   JfrBuffer_lock               = nullptr;
 Mutex*   SuspendedThreadTask_lock     = nullptr;
+Mutex*   JfrEpochShift_lock           = nullptr;
 #endif
 
 Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
@@ -282,6 +283,7 @@ void mutex_init() {
   MUTEX_DEFN(JfrMsg_lock                     , PaddedMonitor, event);
   MUTEX_DEFN(JfrStacktrace_lock              , PaddedMutex  , event);
   MUTEX_DEFN(SuspendedThreadTask_lock        , PaddedMutex  , nosafepoint);
+  MUTEX_DEFN(JfrEpochShift_lock              , PaddedMutex  , service-5); // lets keep this just above event
 #endif
 
   MUTEX_DEFN(ContinuationRelativize_lock     , PaddedMonitor, nosafepoint-3);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,11 @@
  * @test
  * @requires vm.bits == 64
  * @modules java.base/sun.nio.ch
- * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M --enable-native-access=ALL-UNNAMED TestSegments
+ * @run junit/othervm -Xmx4G -XX:MaxDirectMemorySize=1M --enable-native-access=ALL-UNNAMED TestSegments
  */
 
 import java.lang.foreign.*;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
@@ -45,20 +43,29 @@ import java.util.function.Supplier;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static org.testng.Assert.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestSegments {
 
-    @Test(dataProvider = "badSizeAndAlignments", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("sizesAndAlignments")
     public void testBadAllocateAlign(long size, long align) {
-        Arena.ofAuto().allocate(size, align);
+        assertThrows(IllegalArgumentException.class, () -> {
+            Arena.ofAuto().allocate(size, align);
+        });
     }
 
     @Test
     public void testZeroLengthNativeSegment() {
         try (Arena arena = Arena.ofConfined()) {
             var segment = arena.allocate(0, 1);
-            assertEquals(segment.byteSize(), 0);
+            assertEquals(0, segment.byteSize());
             if (segment.address() == 0) {
                 fail("Segment address is zero");
             }
@@ -67,14 +74,14 @@ public class TestSegments {
             }
             MemoryLayout seq = MemoryLayout.sequenceLayout(0, JAVA_INT);
             segment = arena.allocate(seq);
-            assertEquals(segment.byteSize(), 0);
-            assertEquals(segment.address() % seq.byteAlignment(), 0);
+            assertEquals(0, segment.byteSize());
+            assertEquals(0, segment.address() % seq.byteAlignment());
             segment = arena.allocate(0, 4);
-            assertEquals(segment.byteSize(), 0);
-            assertEquals(segment.address() % 4, 0);
+            assertEquals(0, segment.byteSize());
+            assertEquals(0, segment.address() % 4);
             MemorySegment rawAddress = MemorySegment.ofAddress(segment.address());
-            assertEquals(rawAddress.byteSize(), 0);
-            assertEquals(rawAddress.address() % 4, 0);
+            assertEquals(0, rawAddress.byteSize());
+            assertEquals(0, rawAddress.address() % 4);
         }
     }
 
@@ -83,7 +90,7 @@ public class TestSegments {
         long byteAlignment = 1024;
         try (Arena arena = Arena.ofConfined()) {
             var segment = arena.allocate(0, byteAlignment);
-            assertEquals(segment.byteSize(), 0);
+            assertEquals(0, segment.byteSize());
             if (segment.address() == 0) {
                 fail("Segment address is zero");
             }
@@ -91,17 +98,21 @@ public class TestSegments {
         }
     }
 
-
-    @Test(expectedExceptions = { OutOfMemoryError.class,
-                                 IllegalArgumentException.class })
+    @Test
     public void testAllocateTooBig() {
-        Arena.ofAuto().allocate(Long.MAX_VALUE, 1);
+        // One of two ex. types may be thrown. Throwable is common ancestor.
+        Throwable t = assertThrows(Throwable.class,
+                () -> Arena.ofAuto().allocate(Long.MAX_VALUE, 1));
+        // must be either
+        assertTrue(t instanceof OutOfMemoryError || t instanceof IllegalArgumentException);
     }
 
-    @Test(expectedExceptions = OutOfMemoryError.class)
+    @Test
     public void testNativeAllocationTooBig() {
-        Arena scope = Arena.ofAuto();
-        MemorySegment segment = scope.allocate(1024L * 1024 * 8 * 2, 1); // 2M
+        assertThrows(OutOfMemoryError.class, () -> {
+            Arena scope = Arena.ofAuto();
+            MemorySegment segment = scope.allocate(1024L * 1024 * 8 * 2, 1); // 2M
+        });
     }
 
     @Test
@@ -127,88 +138,91 @@ public class TestSegments {
             for (int offset = 0 ; offset < 10 ; offset++) {
                 MemorySegment slice = segment.asSlice(offset);
                 for (long i = offset ; i < 10 ; i++) {
-                    assertEquals(
-                            byteHandle.get(segment, i),
-                            byteHandle.get(slice, i - offset)
+                    assertEquals(                            byteHandle.get(slice, i - offset), byteHandle.get(segment, i)
                     );
                 }
             }
         }
     }
 
-    @Test(dataProvider = "segmentFactories")
+    @ParameterizedTest
+    @MethodSource("segmentFactories")
     public void testDerivedScopes(Supplier<MemorySegment> segmentSupplier) {
         MemorySegment segment = segmentSupplier.get();
         assertEquals(segment.scope(), segment.scope());
         // one level
-        assertEquals(segment.asSlice(0).scope(), segment.scope());
-        assertEquals(segment.asReadOnly().scope(), segment.scope());
+        assertEquals(segment.scope(), segment.asSlice(0).scope());
+        assertEquals(segment.scope(), segment.asReadOnly().scope());
         // two levels
-        assertEquals(segment.asSlice(0).asReadOnly().scope(), segment.scope());
-        assertEquals(segment.asReadOnly().asSlice(0).scope(), segment.scope());
+        assertEquals(segment.scope(), segment.asSlice(0).asReadOnly().scope());
+        assertEquals(segment.scope(), segment.asReadOnly().asSlice(0).scope());
         // check fresh every time
         MemorySegment another = segmentSupplier.get();
-        assertNotEquals(segment.scope(), another.scope());
+        assertNotEquals(another.scope(), segment.scope());
     }
 
     @Test
     public void testEqualsOffHeap() {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(100, 1);
-            assertEquals(segment, segment.asReadOnly());
-            assertEquals(segment, segment.asSlice(0, 100));
-            assertNotEquals(segment, segment.asSlice(10, 90));
-            assertEquals(segment, segment.asSlice(0, 90));
-            assertEquals(segment, MemorySegment.ofAddress(segment.address()));
+            assertEquals(segment.asReadOnly(), segment);
+            assertEquals(segment.asSlice(0, 100), segment);
+            assertNotEquals(segment.asSlice(10, 90), segment);
+            assertEquals(segment.asSlice(0, 90), segment);
+            assertEquals(MemorySegment.ofAddress(segment.address()), segment);
             MemorySegment segment2 = arena.allocate(100, 1);
-            assertNotEquals(segment, segment2);
+            assertNotEquals(segment2, segment);
         }
     }
 
     @Test
     public void testEqualsOnHeap() {
         MemorySegment segment = MemorySegment.ofArray(new byte[100]);
-        assertEquals(segment, segment.asReadOnly());
-        assertEquals(segment, segment.asSlice(0, 100));
-        assertNotEquals(segment, segment.asSlice(10, 90));
-        assertEquals(segment, segment.asSlice(0, 90));
+        assertEquals(segment.asReadOnly(), segment);
+        assertEquals(segment.asSlice(0, 100), segment);
+        assertNotEquals(segment.asSlice(10, 90), segment);
+        assertEquals(segment.asSlice(0, 90), segment);
         MemorySegment segment2 = MemorySegment.ofArray(new byte[100]);
-        assertNotEquals(segment, segment2);
+        assertNotEquals(segment2, segment);
     }
 
     @Test
     public void testHashCodeOffHeap() {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(100, 1);
-            assertEquals(segment.hashCode(), segment.asReadOnly().hashCode());
-            assertEquals(segment.hashCode(), segment.asSlice(0, 100).hashCode());
-            assertEquals(segment.hashCode(), segment.asSlice(0, 90).hashCode());
-            assertEquals(segment.hashCode(), MemorySegment.ofAddress(segment.address()).hashCode());
+            assertEquals(segment.asReadOnly().hashCode(), segment.hashCode());
+            assertEquals(segment.asSlice(0, 100).hashCode(), segment.hashCode());
+            assertEquals(segment.asSlice(0, 90).hashCode(), segment.hashCode());
+            assertEquals(MemorySegment.ofAddress(segment.address()).hashCode(), segment.hashCode());
         }
     }
 
     @Test
     public void testHashCodeOnHeap() {
         MemorySegment segment = MemorySegment.ofArray(new byte[100]);
-        assertEquals(segment.hashCode(), segment.asReadOnly().hashCode());
-        assertEquals(segment.hashCode(), segment.asSlice(0, 100).hashCode());
-        assertEquals(segment.hashCode(), segment.asSlice(0, 90).hashCode());
+        assertEquals(segment.asReadOnly().hashCode(), segment.hashCode());
+        assertEquals(segment.asSlice(0, 100).hashCode(), segment.hashCode());
+        assertEquals(segment.asSlice(0, 90).hashCode(), segment.hashCode());
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test
     public void testSmallSegmentMax() {
         long offset = (long)Integer.MAX_VALUE + (long)Integer.MAX_VALUE + 2L + 6L; // overflows to 6 when cast to int
         Arena scope = Arena.ofAuto();
         MemorySegment memorySegment = scope.allocate(10, 1);
-        memorySegment.get(JAVA_INT, offset);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            memorySegment.get(JAVA_INT, offset);
+        });
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test
     public void testSmallSegmentMin() {
         long offset = ((long)Integer.MIN_VALUE * 2L) + 6L; // underflows to 6 when cast to int
         Arena scope = Arena.ofAuto();
         MemorySegment memorySegment = scope.allocate(10L, 1);
-        memorySegment.get(JAVA_INT, offset);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            memorySegment.get(JAVA_INT, offset);
+        });
     }
 
     @Test
@@ -241,13 +255,13 @@ public class TestSegments {
         }
     }
 
-    @Test(dataProvider = "segmentFactories")
+    @ParameterizedTest
+    @MethodSource("segmentFactories")
     public void testAccessModesOfFactories(Supplier<MemorySegment> segmentSupplier) {
         MemorySegment segment = segmentSupplier.get();
         assertFalse(segment.isReadOnly());
     }
 
-    @DataProvider(name = "scopes")
     public Object[][] scopes() {
         return new Object[][] {
                 { Arena.ofAuto(), false },
@@ -257,14 +271,16 @@ public class TestSegments {
         };
     }
 
-    @Test(dataProvider = "scopes")
+    @ParameterizedTest(autoCloseArguments = false)
+    @MethodSource("scopes")
     public void testIsAccessibleBy(Arena arena, boolean isConfined) {
         MemorySegment segment = MemorySegment.NULL.reinterpret(arena, null);
         assertTrue(segment.isAccessibleBy(Thread.currentThread()));
         assertTrue(segment.isAccessibleBy(new Thread()) != isConfined);
     }
 
-    @Test(dataProvider = "segmentFactories")
+    @ParameterizedTest
+    @MethodSource("segmentFactories")
     public void testToString(Supplier<MemorySegment> segmentSupplier) {
         var segment = segmentSupplier.get();
         String s = segment.toString();
@@ -281,7 +297,6 @@ public class TestSegments {
         assertFalse(s.contains("Optional"));
     }
 
-    @DataProvider(name = "segmentFactories")
     public Object[][] segmentFactories() {
         List<Supplier<MemorySegment>> l = List.of(
                 () -> MemorySegment.ofArray(new byte[] { 0x00, 0x01, 0x02, 0x03 }),
@@ -302,7 +317,8 @@ public class TestSegments {
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "segmentFactories")
+    @ParameterizedTest
+    @MethodSource("segmentFactories")
     public void testFill(Supplier<MemorySegment> segmentSupplier) {
         VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
 
@@ -310,27 +326,28 @@ public class TestSegments {
             MemorySegment segment = segmentSupplier.get();
             segment.fill(value);
             for (long l = 0; l < segment.byteSize(); l++) {
-                assertEquals((byte) byteHandle.get(segment, l), value);
+                assertEquals(value, (byte) byteHandle.get(segment, l));
             }
 
             // fill a slice
             var sliceSegment = segment.asSlice(1, segment.byteSize() - 2).fill((byte) ~value);
             for (long l = 0; l < sliceSegment.byteSize(); l++) {
-                assertEquals((byte) byteHandle.get(sliceSegment, l), ~value);
+                assertEquals(~value, (byte) byteHandle.get(sliceSegment, l));
             }
             // assert enclosing slice
-            assertEquals((byte) byteHandle.get(segment, 0L), value);
+            assertEquals(value, (byte) byteHandle.get(segment, 0L));
             for (long l = 1; l < segment.byteSize() - 2; l++) {
-                assertEquals((byte) byteHandle.get(segment, l), (byte) ~value);
+                assertEquals((byte) ~value, (byte) byteHandle.get(segment, l));
             }
-            assertEquals((byte) byteHandle.get(segment, segment.byteSize() - 1L), value);
+            assertEquals(value, (byte) byteHandle.get(segment, segment.byteSize() - 1L));
         }
     }
 
-    @Test(dataProvider = "segmentFactories")
+    @ParameterizedTest
+    @MethodSource("segmentFactories")
     public void testHeapBase(Supplier<MemorySegment> segmentSupplier) {
         MemorySegment segment = segmentSupplier.get();
-        assertEquals(segment.isNative(), !segment.heapBase().isPresent());
+        assertEquals(!segment.heapBase().isPresent(), segment.isNative());
         segment = segment.asReadOnly();
         assertTrue(segment.heapBase().isEmpty());
     }
@@ -339,7 +356,7 @@ public class TestSegments {
     public void testScopeConfinedArena() {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(100);
-            assertEquals(segment.scope(), arena.scope());
+            assertEquals(arena.scope(), segment.scope());
         }
     }
 
@@ -347,7 +364,7 @@ public class TestSegments {
     public void testScopeSharedArena() {
         try (Arena arena = Arena.ofShared()) {
             MemorySegment segment = arena.allocate(100);
-            assertEquals(segment.scope(), arena.scope());
+            assertEquals(arena.scope(), segment.scope());
         }
     }
 
@@ -355,29 +372,36 @@ public class TestSegments {
     public void testScopeAutoArena() {
         Arena arena = Arena.ofAuto();
         MemorySegment segment = arena.allocate(100);
-        assertEquals(segment.scope(), arena.scope());
+        assertEquals(arena.scope(), segment.scope());
     }
 
     @Test
     public void testScopeGlobalArena() {
         Arena arena = Arena.global();
         MemorySegment segment = arena.allocate(100);
-        assertEquals(segment.scope(), arena.scope());
+        assertEquals(arena.scope(), segment.scope());
     }
 
-    @Test(dataProvider = "segmentFactories", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("segmentFactories")
     public void testFillIllegalAccessMode(Supplier<MemorySegment> segmentSupplier) {
         MemorySegment segment = segmentSupplier.get();
-        segment.asReadOnly().fill((byte) 0xFF);
+        assertThrows(IllegalArgumentException.class, () -> {
+            segment.asReadOnly().fill((byte) 0xFF);
+        });
     }
 
-    @Test(dataProvider = "segmentFactories", expectedExceptions = IllegalArgumentException.class)
+    @ParameterizedTest
+    @MethodSource("segmentFactories")
     public void testFromStringIllegalAccessMode(Supplier<MemorySegment> segmentSupplier) {
         MemorySegment segment = segmentSupplier.get();
-        segment.asReadOnly().setString(0, "a");
+        assertThrows(IllegalArgumentException.class, () -> {
+            segment.asReadOnly().setString(0, "a");
+        });
     }
 
-    @Test(dataProvider = "segmentFactories")
+    @ParameterizedTest
+    @MethodSource("segmentFactories")
     public void testFillThread(Supplier<MemorySegment> segmentSupplier) throws Exception {
         MemorySegment segment = segmentSupplier.get();
         AtomicReference<RuntimeException> exception = new AtomicReference<>();
@@ -407,12 +431,13 @@ public class TestSegments {
         MemorySegment.ofBuffer(ByteBuffer.allocateDirect(0)).fill((byte) 0xFF);
     }
 
-    @Test(dataProvider = "heapFactories")
+    @ParameterizedTest
+    @MethodSource("heapFactories")
     public void testVirtualizedBaseAddress(IntFunction<MemorySegment> heapSegmentFactory, int factor) {
         MemorySegment segment = heapSegmentFactory.apply(10);
-        assertEquals(segment.address(), 0); // base address should be zero (no leaking of impl details)
+        assertEquals(0, segment.address()); // base address should be zero (no leaking of impl details)
         MemorySegment end = segment.asSlice(segment.byteSize(), 0);
-        assertEquals(end.address(), segment.byteSize()); // end address should be equal to segment byte size
+        assertEquals(segment.byteSize(), end.address()); // end address should be equal to segment byte size
     }
 
     @Test
@@ -420,18 +445,18 @@ public class TestSegments {
         AtomicInteger counter = new AtomicInteger();
         try (Arena arena = Arena.ofConfined()){
             // check size
-            assertEquals(MemorySegment.ofAddress(42).reinterpret(100).byteSize(), 100);
-            assertEquals(MemorySegment.ofAddress(42).reinterpret(100, Arena.ofAuto(), null).byteSize(), 100);
+            assertEquals(100, MemorySegment.ofAddress(42).reinterpret(100).byteSize());
+            assertEquals(100, MemorySegment.ofAddress(42).reinterpret(100, Arena.ofAuto(), null).byteSize());
             // check scope and cleanup
-            assertEquals(MemorySegment.ofAddress(42).reinterpret(100, arena, s -> counter.incrementAndGet()).scope(), arena.scope());
-            assertEquals(MemorySegment.ofAddress(42).reinterpret(arena, _ -> counter.incrementAndGet()).scope(), arena.scope());
+            assertEquals(arena.scope(), MemorySegment.ofAddress(42).reinterpret(100, arena, s -> counter.incrementAndGet()).scope());
+            assertEquals(arena.scope(), MemorySegment.ofAddress(42).reinterpret(arena, _ -> counter.incrementAndGet()).scope());
             // check read-only state
             assertFalse(MemorySegment.ofAddress(42).reinterpret(100).isReadOnly());
             assertTrue(MemorySegment.ofAddress(42).asReadOnly().reinterpret(100).isReadOnly());
             assertTrue(MemorySegment.ofAddress(42).asReadOnly().reinterpret(100, Arena.ofAuto(), null).isReadOnly());
             assertTrue(MemorySegment.ofAddress(42).asReadOnly().reinterpret(arena, _ -> counter.incrementAndGet()).isReadOnly());
         }
-        assertEquals(counter.get(), 3);
+        assertEquals(3, counter.get());
     }
 
     @Test
@@ -477,8 +502,8 @@ public class TestSegments {
             thrown = ex;
         }
         assertNotNull(thrown);
-        assertEquals(counter.get(), 1);
-        assertEquals(thrown.getSuppressed().length, 19);
+        assertEquals(1, counter.get());
+        assertEquals(19, thrown.getSuppressed().length);
         Throwable[] errors = new IllegalArgumentException[20];
         assertTrue(thrown instanceof IllegalArgumentException);
         errors[0] = thrown;
@@ -512,12 +537,11 @@ public class TestSegments {
         } catch (RuntimeException ex) {
             thrown = ex;
         }
-        assertEquals(thrown, iae);
-        assertEquals(counter.get(), 1);
-        assertEquals(thrown.getSuppressed().length, 0);
+        assertEquals(iae, thrown);
+        assertEquals(1, counter.get());
+        assertEquals(0, thrown.getSuppressed().length);
     }
 
-    @DataProvider(name = "badSizeAndAlignments")
     public Object[][] sizesAndAlignments() {
         return new Object[][] {
                 { -1, 8 },
@@ -526,7 +550,6 @@ public class TestSegments {
         };
     }
 
-    @DataProvider(name = "heapFactories")
     public Object[][] heapFactories() {
         return new Object[][] {
                 { (IntFunction<MemorySegment>) size -> MemorySegment.ofArray(new byte[size]), 1 },

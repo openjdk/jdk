@@ -37,6 +37,24 @@
  *                   compiler.uncommontrap.TestNullAssertAtCheckCast
  */
 
+/*
+ * @test
+ * @bug 8257594
+ * @summary Test that failing checkcast does not trigger repeated recompilation until cutoff is hit.
+ * @requires vm.compiler2.enabled
+ * @requires os.arch == "aarch64"
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Xbatch -XX:CompileCommand=dontinline,compiler.uncommontrap.TestNullAssertAtCheckCast::test*
+ *                   -XX:CompileCommand=inline,compiler.uncommontrap.TestNullAssertAtCheckCast::cast
+ *                   -XX:CompileCommand=inline,compiler.uncommontrap.TestNullAssertAtCheckCast::store
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+PreferCallBasedUncommonTraps
+ *                   compiler.uncommontrap.TestNullAssertAtCheckCast
+ */
+
 package compiler.uncommontrap;
 
 import jdk.test.whitebox.WhiteBox;

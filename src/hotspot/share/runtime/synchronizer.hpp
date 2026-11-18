@@ -125,13 +125,9 @@ public:
 public:
   static const char* inflate_cause_name(const InflateCause cause);
 
-  static ObjectMonitor* read_monitor(markWord mark);
   static ObjectMonitor* read_monitor(oop obj);
-  static ObjectMonitor* read_monitor(oop obj, markWord mark);
 
-  // Returns the identity hash value for an oop
-  // NOTE: It may cause monitor inflation
-  static intptr_t FastHashCode(Thread* current, oop obj);
+  static intptr_t get_next_hash(Thread* current, oop obj);
 
   // java.lang.Thread support
   static bool current_thread_holds_lock(JavaThread* current, Handle h_obj);
@@ -234,7 +230,6 @@ public:
   static bool fast_lock_spin_enter(oop obj, LockStack& lock_stack, JavaThread* current, bool observed_deflation);
 
  public:
-  static ObjectMonitor* inflate_into_object_header(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, Thread* current);
   static ObjectMonitor* inflate_locked_or_imse(oop object, ObjectSynchronizer::InflateCause cause, TRAPS);
   static ObjectMonitor* inflate_fast_locked_object(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current);
   static ObjectMonitor* inflate_and_enter(oop object, BasicLock* lock, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current);

@@ -523,25 +523,24 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>For compatibility reasons, two
  * non-conforming locales are treated as special cases.  These are
  * <b>{@code ja_JP_JP}</b> and <b>{@code th_TH_TH}</b>. These are ill-formed
- * in BCP 47 since the {@linkplain ##def_variant variants} are too short. To ease migration to BCP 47,
- * these are treated specially during construction.  These two cases (and only
- * these) cause a constructor to generate an extension, all other values behave
- * exactly as they did prior to Java 7.
+ * in BCP 47 since the {@linkplain ##def_variant variants} are too short. To ease
+ * migration to BCP 47, these are treated specially during creation. Creation
+ * of these two cases generates a compatibility extension.
  *
  * <p>Java has used {@code ja_JP_JP} to represent Japanese as used in
  * Japan together with the Japanese Imperial calendar. This is now
  * representable using a Unicode locale extension, by specifying the
  * Unicode locale key {@code ca} (for "calendar") and type
- * {@code japanese}. When the Locale constructor is called with the
- * arguments "ja", "JP", "JP", the extension "u-ca-japanese" is
- * automatically added.
+ * {@code japanese}. When a {@code Locale} is created with language "ja", an
+ * empty script, country "JP", variant "JP", and no extensions, the extension
+ * "u-ca-japanese" is automatically added.
  *
  * <p>Java has used {@code th_TH_TH} to represent Thai as used in
  * Thailand together with Thai digits. This is also now representable using
  * a Unicode locale extension, by specifying the Unicode locale key
- * {@code nu} (for "number") and value {@code thai}. When the Locale
- * constructor is called with the arguments "th", "TH", "TH", the
- * extension "u-nu-thai" is automatically added.
+ * {@code nu} (for "number") and value {@code thai}. When a {@code Locale} is
+ * created with language "th", an empty script, country "TH", variant "TH", and
+ * no extensions, the extension "u-nu-thai" is automatically added.
  *
  * <h3><a id="legacy_language_codes">Legacy language codes</a></h3>
  *
@@ -1612,9 +1611,9 @@ public final class Locale implements Cloneable, Serializable {
      * <li>Deprecated ISO language codes "iw", "ji", and "in" are
      * converted to "he", "yi", and "id", respectively.
      *
-     * <li>A locale with language "no", country "NO", and variant
-     * "NY", representing Norwegian Nynorsk (Norway), is converted
-     * to a language tag "nn-NO".</li></ul>
+     * <li>A locale with language "no", an empty script, country "NO", variant
+     * "NY", and no extensions, representing Norwegian Nynorsk (Norway), is
+     * converted to a language tag "nn-NO".</li></ul>
      *
      * <p><b>Note:</b> Although the language tag obtained by this
      * method is well-formed (satisfies the syntax requirements
@@ -2693,6 +2692,13 @@ public final class Locale implements Cloneable, Serializable {
          * <li>Locale("th", "TH", "TH") is treated as "th-TH-u-nu-thai"
          * <li>Locale("no", "NO", "NY") is treated as "nn-NO"</ul>
          *
+         * <p>For all three cases, compatibility handling only applies when the script
+         * is empty. Additionally, the Japanese case requires exactly the
+         * {@code u-ca-japanese} extension, the Thai case requires
+         * exactly the {@code u-nu-thai} extension, and the Norwegian case
+         * requires no extensions. If these conditions are not met, the two-letter
+         * variant is treated as ill-formed, and an {@code IllformedLocaleException} is thrown.
+         *
          * @param locale the locale
          * @return This builder.
          * @throws IllformedLocaleException if {@code locale} has
@@ -3208,18 +3214,20 @@ public final class Locale implements Cloneable, Serializable {
          *
          * @param range  a language range
          * @param weight a weight value between {@code MIN_WEIGHT} and
-         *     {@code MAX_WEIGHT}
+         *     {@code MAX_WEIGHT}, inclusive
          * @throws NullPointerException if the given {@code range} is
          *     {@code null}
          * @throws IllegalArgumentException if the given {@code range} does not
-         * comply with the syntax of the language range mentioned in RFC 4647
-         * or if the given {@code weight} is less than {@code MIN_WEIGHT}
-         * or greater than {@code MAX_WEIGHT}
+         * comply with the syntax of the language range mentioned in RFC 4647,
+         * or if the given {@code weight} is {@code Double.NaN}, less than {@code
+         * MIN_WEIGHT} or greater than {@code MAX_WEIGHT}
          */
         public LanguageRange(String range, double weight) {
             Objects.requireNonNull(range);
-            if (weight < MIN_WEIGHT || weight > MAX_WEIGHT) {
-                throw new IllegalArgumentException("weight=" + weight);
+            if (weight < MIN_WEIGHT || weight > MAX_WEIGHT || Double.isNaN(weight)) {
+                throw new IllegalArgumentException(
+                        "The weight " + weight + " must be between "
+                        + MIN_WEIGHT + " and " + MAX_WEIGHT + ", inclusive.");
             }
 
             range = range.toLowerCase(Locale.ROOT);
@@ -3305,9 +3313,9 @@ public final class Locale implements Cloneable, Serializable {
          * </pre>
          *
          * In a weighted list, each language range is given a weight value.
-         * The weight value is identical to the "quality value" in
+         * The weight value has the same numeric bounds as the "quality value"
          * <a href="https://tools.ietf.org/html/rfc2616">RFC 2616</a>, and it
-         * expresses how much the user prefers  the language. A weight value is
+         * expresses how much the user prefers the language. A weight value is
          * specified after a corresponding language range followed by
          * {@code ";q="}, and the default weight value is {@code MAX_WEIGHT}
          * when it is omitted.
@@ -3350,8 +3358,9 @@ public final class Locale implements Cloneable, Serializable {
          *     included in the given {@code ranges} and their equivalent
          *     language ranges if available. The list is modifiable.
          * @throws NullPointerException if {@code ranges} is null
-         * @throws IllegalArgumentException if a language range or a weight
-         *     found in the given {@code ranges} is ill-formed
+         * @throws IllegalArgumentException if, in the given {@code ranges}, a
+         *     language range is ill-formed, or a weight is out of range after
+         *     string to double conversion by {@link Double#parseDouble(String)}
          * @spec https://www.rfc-editor.org/info/rfc2616 RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
          */
         public static List<LanguageRange> parse(String ranges) {
@@ -3372,8 +3381,9 @@ public final class Locale implements Cloneable, Serializable {
          * @return a Language Priority List with customization. The list is
          *     modifiable.
          * @throws NullPointerException if {@code ranges} is null
-         * @throws IllegalArgumentException if a language range or a weight
-         *     found in the given {@code ranges} is ill-formed
+         * @throws IllegalArgumentException if, in the given {@code ranges}, a
+         *     language range is ill-formed, or a weight is out of range after
+         *     string to double conversion by {@link Double#parseDouble(String)}
          * @spec https://www.rfc-editor.org/info/rfc2616 RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
          * @see #parse(String)
          * @see #mapEquivalents(List, Map)

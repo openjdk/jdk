@@ -539,6 +539,10 @@ class Assembler : public AbstractAssembler {
     STXVL_OPCODE   = (31u << OPCODE_SHIFT |  397u << 1),
     LXVD2X_OPCODE  = (31u << OPCODE_SHIFT |  844u << 1),
     STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
+    LXVW4X_OPCODE  = (31u << OPCODE_SHIFT |  780u << 1),
+    STXVW4X_OPCODE = (31u << OPCODE_SHIFT |  908u << 1),
+    LXVB16X_OPCODE = (31u << OPCODE_SHIFT |  876u << 1),
+    STXVB16X_OPCODE= (31u << OPCODE_SHIFT | 1004u << 1),
     MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
     MTVSRDD_OPCODE = (31u << OPCODE_SHIFT |  435u << 1),
     MTVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  243u << 1),
@@ -680,7 +684,7 @@ class Assembler : public AbstractAssembler {
     VMHADDSHS_OPCODE=(4u  << OPCODE_SHIFT |   32u     ),
     VMHRADDSHS_OPCODE=(4u << OPCODE_SHIFT |   33u     ),
     VMLADDUHM_OPCODE=(4u  << OPCODE_SHIFT |   34u     ),
-    VMSUBUHM_OPCODE= (4u  << OPCODE_SHIFT |   36u     ),
+    VMSUMUBM_OPCODE= (4u  << OPCODE_SHIFT |   36u     ),
     VMSUMMBM_OPCODE= (4u  << OPCODE_SHIFT |   37u     ),
     VMSUMSHM_OPCODE= (4u  << OPCODE_SHIFT |   40u     ),
     VMSUMSHS_OPCODE= (4u  << OPCODE_SHIFT |   41u     ),
@@ -767,24 +771,24 @@ class Assembler : public AbstractAssembler {
     MTVSCR_OPCODE  = (4u  << OPCODE_SHIFT | 1604u     ),
     MFVSCR_OPCODE  = (4u  << OPCODE_SHIFT | 1540u     ),
 
-    // AES (introduced with Power 8)
+    // AES
     VCIPHER_OPCODE      = (4u  << OPCODE_SHIFT | 1288u),
     VCIPHERLAST_OPCODE  = (4u  << OPCODE_SHIFT | 1289u),
     VNCIPHER_OPCODE     = (4u  << OPCODE_SHIFT | 1352u),
     VNCIPHERLAST_OPCODE = (4u  << OPCODE_SHIFT | 1353u),
     VSBOX_OPCODE        = (4u  << OPCODE_SHIFT | 1480u),
 
-    // SHA (introduced with Power 8)
+    // SHA
     VSHASIGMAD_OPCODE   = (4u  << OPCODE_SHIFT | 1730u),
     VSHASIGMAW_OPCODE   = (4u  << OPCODE_SHIFT | 1666u),
 
-    // Vector Binary Polynomial Multiplication (introduced with Power 8)
+    // Vector Binary Polynomial Multiplication
     VPMSUMB_OPCODE      = (4u  << OPCODE_SHIFT | 1032u),
     VPMSUMD_OPCODE      = (4u  << OPCODE_SHIFT | 1224u),
     VPMSUMH_OPCODE      = (4u  << OPCODE_SHIFT | 1096u),
     VPMSUMW_OPCODE      = (4u  << OPCODE_SHIFT | 1160u),
 
-    // Vector Permute and Xor (introduced with Power 8)
+    // Vector Permute and Xor
     VPERMXOR_OPCODE     = (4u  << OPCODE_SHIFT |   45u),
 
     // Icache and dcache related instructions
@@ -913,7 +917,7 @@ class Assembler : public AbstractAssembler {
     bcondCRbiIs1_bhintIsTaken    = bcondCRbiIs1 | bhintatIsTaken,
   };
 
-  // Elemental Memory Barriers (>=Power 8)
+  // Elemental Memory Barriers
   enum Elemental_Membar_mask_bits {
     StoreStore = 1 << 0,
     StoreLoad  = 1 << 1,
@@ -1363,10 +1367,6 @@ class Assembler : public AbstractAssembler {
 
   static inline bool is_aligned(unsigned int addr, unsigned int a) {
     return (0 == addr % a);
-  }
-
-  void flush() {
-    AbstractAssembler::flush();
   }
 
   inline void emit_int32(int);  // shadows AbstractAssembler::emit_int32
@@ -1838,7 +1838,6 @@ class Assembler : public AbstractAssembler {
   inline void mfvrsave(Register d);
   // Timebase
   inline void mftb(Register d);
-  // Introduced with Power 8:
   // Data Stream Control Register
   inline void mtdscr(Register s1);
   inline void mfdscr(Register d );
@@ -2015,18 +2014,18 @@ class Assembler : public AbstractAssembler {
   inline void ptesync();
   inline void eieio();
   inline void isync();
-  inline void elemental_membar(int e); // Elemental Memory Barriers (>=Power 8)
+  inline void elemental_membar(int e); // Elemental Memory Barriers
 
   // Wait instructions for polling. Attention: May result in SIGILL.
   inline void wait();
   inline void waitrsv();
 
   // atomics
-  inline void lbarx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
-  inline void lharx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
+  inline void lbarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
+  inline void lharx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline void lwarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline void ldarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
-  inline void lqarx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
+  inline void lqarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline void lbarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void lharx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void lwarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
@@ -2052,7 +2051,6 @@ class Assembler : public AbstractAssembler {
   inline void smt_yield();
   inline void smt_mdoio();
   inline void smt_mdoom();
-  // >= Power8
   inline void smt_miso();
 
   // trap instructions
@@ -2292,7 +2290,7 @@ class Assembler : public AbstractAssembler {
   inline void vmhaddshs(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmhraddshs(VectorRegister d,VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmladduhm(VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
-  inline void vmsubuhm( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
+  inline void vmsumubm( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmsummbm( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmsumshm( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vmsumshs( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
@@ -2386,8 +2384,17 @@ class Assembler : public AbstractAssembler {
   inline void lxvd2x(   VectorSRegister d, Register a, Register b);
   inline void stxvd2x(  VectorSRegister d, Register a);
   inline void stxvd2x(  VectorSRegister d, Register a, Register b);
+  inline void lxvw4x(   VectorSRegister d, Register a);
+  inline void lxvw4x(   VectorSRegister d, Register a, Register b);
+  inline void stxvw4x(  VectorSRegister d, Register a);
+  inline void stxvw4x(  VectorSRegister d, Register a, Register b);
 
   // Power9
+  inline void lxvb16x(  VectorSRegister d, Register a);
+  inline void lxvb16x(  VectorSRegister d, Register a, Register b);
+  inline void stxvb16x( VectorSRegister d, Register a);
+  inline void stxvb16x( VectorSRegister d, Register a, Register b);
+
   inline void lxv(      VectorSRegister d, int si16, Register a);
   inline void stxv(     VectorSRegister d, int si16, Register a);
   inline void lxvx(     VectorSRegister d, Register a, Register b);
@@ -2477,24 +2484,24 @@ class Assembler : public AbstractAssembler {
   // Deliver A Random Number (introduced with POWER9)
   inline void darn( Register d, int l = 1 /*L=CRN*/);
 
-  // AES (introduced with Power 8)
+  // AES
   inline void vcipher(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vcipherlast( VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vncipher(    VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vncipherlast(VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vsbox(       VectorRegister d, VectorRegister a);
 
-  // SHA (introduced with Power 8)
+  // SHA
   inline void vshasigmad(VectorRegister d, VectorRegister a, bool st, int six);
   inline void vshasigmaw(VectorRegister d, VectorRegister a, bool st, int six);
 
-  // Vector Binary Polynomial Multiplication (introduced with Power 8)
+  // Vector Binary Polynomial Multiplication
   inline void vpmsumb(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vpmsumd(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vpmsumh(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vpmsumw(  VectorRegister d, VectorRegister a, VectorRegister b);
 
-  // Vector Permute and Xor (introduced with Power 8)
+  // Vector Permute and Xor
   inline void vpermxor( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
 
   // The following encoders use r0 as second operand. These instructions
@@ -2589,6 +2596,15 @@ class Assembler : public AbstractAssembler {
   inline void load_perm(VectorRegister perm, Register addr);
   inline void vec_perm(VectorRegister first_dest, VectorRegister second, VectorRegister perm);
   inline void vec_perm(VectorRegister dest, VectorRegister first, VectorRegister second, VectorRegister perm);
+
+  // Load/Store unaligned vectors with offs (multiple of 16). Byte versions require vp for Power8 LE.
+  inline void load_byte_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp,
+                                         VectorRegister vp); // vp should be pre-computed (see generator below)
+  inline void store_byte_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp,
+                                          VectorRegister vp, VectorRegister vtmp = vnoreg); // clobbers val if no vtmp provided
+  inline void compute_vp_for_byte_vector_unaligned(VectorRegister dest, VectorRegister vtmp);
+  inline void load_word_vector_unaligned(VectorRegister dest, int offs, Register base, Register tmp);
+  inline void store_word_vector_unaligned(VectorRegister val, int offs, Register base, Register tmp);
 
   // RegisterOrConstant versions.
   // These emitters choose between the versions using two registers and

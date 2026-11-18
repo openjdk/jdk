@@ -163,6 +163,7 @@ class IdealKit: public StackObj {
   void if_then(Node* left, BoolTest::mask relop, Node* right,
                float prob = PROB_FAIR, float cnt = COUNT_UNKNOWN,
                bool push_new_state = true);
+  void if_then(Node* bol, float prob = PROB_FAIR, float cnt = COUNT_UNKNOWN, bool push_new_state = true);
   void else_();
   void end_if();
   void loop(GraphKit* gkit, int nargs, IdealVariable& iv, Node* init, BoolTest::mask cmp, Node* limit,

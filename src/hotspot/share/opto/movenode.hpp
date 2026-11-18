@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,24 +30,23 @@
 //------------------------------CMoveNode--------------------------------------
 // Conditional move
 class CMoveNode : public TypeNode {
-  public:
+ public:
   enum { Control,               // When is it safe to do this cmove?
     Condition,             // Condition controlling the cmove
     IfFalse,               // Value if condition is false
     IfTrue };              // Value if condition is true
-  CMoveNode( Node *bol, Node *left, Node *right, const Type *t ) : TypeNode(t,4)
-  {
+  CMoveNode(Node* bol, Node* false_value, Node* true_value, const Type* t) : TypeNode(t, 4) {
     init_class_id(Class_CMove);
     // all inputs are nullified in Node::Node(int)
     // init_req(Control,nullptr);
-    init_req(Condition,bol);
-    init_req(IfFalse,left);
-    init_req(IfTrue,right);
+    init_req(Condition, bol);
+    init_req(IfFalse, false_value);
+    init_req(IfTrue, true_value);
   }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node* Identity(PhaseGVN* phase);
-  static CMoveNode* make(Node* bol, Node* left, Node* right, const Type* t);
+  Node* Ideal(PhaseGVN *phase, bool can_reshape) override;
+  const Type* Value(PhaseGVN* phase) const override;
+  Node* Identity(PhaseGVN* phase) override;
+  static CMoveNode* make(Node* bol, Node* false_value, Node* true_value, const Type* t);
   static bool supported(const Type* t);
   // Helper function to spot cmove graph shapes
   static Node* is_cmove_id(PhaseTransform* phase, Node* cmp, Node* t, Node* f, BoolNode* b);
@@ -56,47 +55,47 @@ class CMoveNode : public TypeNode {
 
 //------------------------------CMoveDNode-------------------------------------
 class CMoveDNode : public CMoveNode {
-  public:
-  CMoveDNode( Node *bol, Node *left, Node *right, const Type* t) : CMoveNode(bol,left,right,t){}
-  virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+ public:
+  CMoveDNode(Node* bol, Node* false_value, Node* true_value, const Type* t) : CMoveNode(bol, false_value, true_value, t) {}
+  int Opcode() const override;
+  Node* Ideal(PhaseGVN *phase, bool can_reshape) override;
 };
 
 //------------------------------CMoveFNode-------------------------------------
 class CMoveFNode : public CMoveNode {
-  public:
-  CMoveFNode( Node *bol, Node *left, Node *right, const Type* t ) : CMoveNode(bol,left,right,t) {}
-  virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+ public:
+  CMoveFNode(Node* bol, Node* false_value, Node* true_value, const Type* t) : CMoveNode(bol, false_value, true_value, t) {}
+  int Opcode() const override;
+  Node* Ideal(PhaseGVN *phase, bool can_reshape) override;
 };
 
 //------------------------------CMoveINode-------------------------------------
 class CMoveINode : public CMoveNode {
-  public:
-  CMoveINode( Node *bol, Node *left, Node *right, const TypeInt *ti ) : CMoveNode(bol,left,right,ti){}
-  virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+ public:
+  CMoveINode(Node* bol, Node* false_value, Node* true_value, const TypeInt* ti) : CMoveNode(bol, false_value, true_value, ti) {}
+  int Opcode() const override;
+  Node *Ideal(PhaseGVN *phase, bool can_reshape) override;
 };
 
 //------------------------------CMoveLNode-------------------------------------
 class CMoveLNode : public CMoveNode {
-  public:
-  CMoveLNode(Node *bol, Node *left, Node *right, const TypeLong *tl ) : CMoveNode(bol,left,right,tl){}
-  virtual int Opcode() const;
+ public:
+  CMoveLNode(Node* bol, Node* false_value, Node* true_value, const TypeLong* tl) : CMoveNode(bol, false_value, true_value, tl) {}
+  int Opcode() const override;
 };
 
 //------------------------------CMovePNode-------------------------------------
 class CMovePNode : public CMoveNode {
-  public:
-  CMovePNode(Node* bol, Node* left, Node* right, const TypePtr* t) : CMoveNode(bol, left, right, t) {}
-  virtual int Opcode() const;
+ public:
+  CMovePNode(Node* bol, Node* false_value, Node* true_value, const TypePtr* t) : CMoveNode(bol, false_value, true_value, t) {}
+  int Opcode() const override;
 };
 
 //------------------------------CMoveNNode-------------------------------------
 class CMoveNNode : public CMoveNode {
-  public:
-  CMoveNNode(Node* bol, Node* left, Node* right, const Type* t ) : CMoveNode(bol, left, right, t) {}
-  virtual int Opcode() const;
+ public:
+  CMoveNNode(Node* bol, Node* false_value, Node* true_value, const Type* t) : CMoveNode(bol, false_value, true_value, t) {}
+  int Opcode() const override;
 };
 
 //
