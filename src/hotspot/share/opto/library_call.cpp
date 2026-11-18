@@ -6267,7 +6267,7 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
 // can be sharply typed as an object array, a type array, or an instance.
 //
 bool LibraryCallKit::inline_native_clone(bool is_virtual) {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+  if (too_many_traps_or_recompiles(Deoptimization::Reason_intrinsic)) {
     return false;
   }
 
@@ -6290,8 +6290,8 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       if (obj_type->value_klass()->is_cloneable()) {
         set_result(obj);
       } else {
-        uncommon_trap_maybe_none(Deoptimization::Reason_intrinsic,
-                                 Deoptimization::Action_maybe_recompile);
+        uncommon_trap_exact(Deoptimization::Reason_intrinsic,
+                            Deoptimization::Action_maybe_recompile);
       }
       return true;
     }

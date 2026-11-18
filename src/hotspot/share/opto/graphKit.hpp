@@ -783,8 +783,8 @@ class GraphKit : public Phase {
   }
 
   // Relaxed counterpart of uncommon_trap_exact(): the action may be replaced with
-  // Action_none on too many recompiles. Use it where the recompile limit is known
-  // not to be exceeded, or where a possible deoptimization storm is not a concern.
+  // Action_none on too many recompiles. Every call site is a potential source of
+  // deoptimization storms.
   Node* uncommon_trap_maybe_none(Deoptimization::DeoptReason reason,
                                  Deoptimization::DeoptAction action,
                                  ciKlass* klass = nullptr, const char* reason_string = nullptr,
