@@ -88,10 +88,7 @@ void ShenandoahSTWMark::mark() {
 
   start_mark();
 
-  uint nworkers = heap->workers()->active_workers();
-  task_queues()->rebalance(nworkers);
-
-  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
+  task_queues()->rebalance();
 
   {
     // Mark
@@ -116,7 +113,6 @@ void ShenandoahSTWMark::mark() {
   end_mark();
 
   assert(task_queues()->is_empty(), "Should be empty");
-  TASKQUEUE_STATS_ONLY(task_queues()->print_and_reset_taskqueue_stats(""));
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {

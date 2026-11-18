@@ -106,6 +106,7 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/stack.inline.hpp"
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
@@ -230,14 +231,14 @@ jint ShenandoahHeap::initialize() {
                                           heap_rs.base(),
                                           heap_rs.size(), heap_rs.page_size());
 
-#if SHENANDOAH_OPTIMIZED_MARKTASK
-  // The optimized ShenandoahMarkTask takes some bits away from the full object bits.
+#if SHENANDOAH_OPTIMIZED_TASK
+  // The optimized ShenandoahTask takes some bits away from the full object bits.
   // Fail if we ever attempt to address more than we can.
-  if ((uintptr_t)heap_rs.end() >= ShenandoahMarkTask::max_addressable()) {
+  if ((uintptr_t)heap_rs.end() >= ShenandoahTask::max_addressable()) {
     FormatBuffer<512> buf("Shenandoah reserved [" PTR_FORMAT ", " PTR_FORMAT") for the heap, \n"
                           "but max object address is " PTR_FORMAT ". Try to reduce heap size, or try other \n"
                           "VM options that allocate heap at lower addresses (HeapBaseMinAddress, AllocateHeapAt, etc).",
-                p2i(heap_rs.base()), p2i(heap_rs.end()), ShenandoahMarkTask::max_addressable());
+                p2i(heap_rs.base()), p2i(heap_rs.end()), ShenandoahTask::max_addressable());
     vm_exit_during_initialization("Fatal Error", buf);
   }
 #endif
@@ -1879,7 +1880,7 @@ void ShenandoahHeap::reclaim_aux_bitmap_for_iteration() {
 class ShenandoahObjectIterateParScanClosure : public BasicOopIterateClosure {
 private:
   MarkBitMap* _bitmap;
-  ShenandoahObjToScanQueue* _queue;
+  ShenandoahTaskQueue* _queue;
 
   template <class T>
   void do_oop_work(T* p) {
@@ -1893,12 +1894,12 @@ private:
       }
       assert(oopDesc::is_oop(obj), "Must be a valid oop");
       if (_bitmap->par_mark(obj)) {
-        _queue->push(ShenandoahMarkTask(obj));
+        _queue->push(ShenandoahTask(obj));
       }
     }
   }
 public:
-  ShenandoahObjectIterateParScanClosure(MarkBitMap* bitmap, ShenandoahObjToScanQueue* q) :
+  ShenandoahObjectIterateParScanClosure(MarkBitMap* bitmap, ShenandoahTaskQueue* q) :
     _bitmap(bitmap), _queue(q) {}
   void do_oop(oop* p)       { do_oop_work(p); }
   void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -1916,7 +1917,7 @@ private:
   MarkBitMap*                  _aux_bit_map;
   ShenandoahHeap*              _heap;
   ShenandoahScanObjectStack    _roots_stack; // global roots stack
-  ShenandoahObjToScanQueueSet* _task_queues;
+  ShenandoahTaskQueueSet*      _task_queues;
 public:
   ShenandoahParallelObjectIterator(uint num_workers, MarkBitMap* bitmap) :
         _num_workers(num_workers),
@@ -1940,13 +1941,6 @@ public:
     _heap->reclaim_aux_bitmap_for_iteration();
     // Reclaim queue for workers
     if (_task_queues!= nullptr) {
-      for (uint i = 0; i < _num_workers; ++i) {
-        ShenandoahObjToScanQueue* q = _task_queues->queue(i);
-        if (q != nullptr) {
-          delete q;
-          _task_queues->register_queue(i, nullptr);
-        }
-      }
       delete _task_queues;
       _task_queues = nullptr;
     }
@@ -1961,12 +1955,7 @@ public:
 private:
   // Divide global root_stack into worker queues
   bool prepare_worker_queues() {
-    _task_queues = new ShenandoahObjToScanQueueSet((int) _num_workers);
-    // Initialize queues for every workers
-    for (uint i = 0; i < _num_workers; ++i) {
-      ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
-      _task_queues->register_queue(i, task_queue);
-    }
+    _task_queues = new ShenandoahTaskQueueSet(_num_workers);
     // Divide roots among the workers. Assume that object referencing distribution
     // is related with root kind, use round-robin to make every worker have same chance
     // to process every kind of roots
@@ -1979,26 +1968,26 @@ private:
     for (uint j = 0; j < roots_num; j++) {
       uint stack_id = j % _num_workers;
       oop obj = _roots_stack.pop();
-      _task_queues->queue(stack_id)->push(ShenandoahMarkTask(obj));
+      _task_queues->queue(stack_id)->push(ShenandoahTask(obj));
     }
     return true;
   }
 
   void object_iterate_parallel(ObjectClosure* cl,
                                uint worker_id,
-                               ShenandoahObjToScanQueueSet* queue_set) {
+                               ShenandoahTaskQueueSet* queue_set) {
     assert(SafepointSynchronize::is_at_safepoint(), "safe iteration is only available during safepoints");
     assert(queue_set != nullptr, "task queue must not be null");
 
-    ShenandoahObjToScanQueue* q = queue_set->queue(worker_id);
+    ShenandoahTaskQueue* q = queue_set->queue(worker_id);
     assert(q != nullptr, "object iterate queue must not be null");
 
-    ShenandoahMarkTask t;
+    ShenandoahTask t;
     ShenandoahObjectIterateParScanClosure oops(_aux_bit_map, q);
 
     // Work through the queue to traverse heap.
     // Steal when there is no task in queue.
-    while (q->pop(t) || queue_set->steal(worker_id, t)) {
+    while (q->pop(t)) {
       oop obj = t.obj();
       assert(oopDesc::is_oop(obj), "must be a valid oop");
       cl->do_object(obj);

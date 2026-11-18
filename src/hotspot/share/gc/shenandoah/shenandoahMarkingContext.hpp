@@ -32,7 +32,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 
-class ShenandoahObjToScanQueueSet;
+class ShenandoahTaskQueueSet;
 class ShenandoahHeapRegion;
 
 /**

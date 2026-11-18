@@ -314,25 +314,16 @@ void ShenandoahGeneration::cancel_marking() {
 
 ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type, uint max_workers) :
   _type(type),
-  _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
+  _task_queues(new ShenandoahTaskQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(this, MAX2(max_workers, 1U))),
   _evacuation_reserve(0),
   _free_set(nullptr),
   _heuristics(nullptr)
 {
   _is_marking_complete.set();
-  assert(max_workers > 0, "At least one queue");
-  for (uint i = 0; i < max_workers; ++i) {
-    ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
-    _task_queues->register_queue(i, task_queue);
-  }
 }
 
 ShenandoahGeneration::~ShenandoahGeneration() {
-  for (uint i = 0; i < _task_queues->size(); ++i) {
-    ShenandoahObjToScanQueue* q = _task_queues->queue(i);
-    delete q;
-  }
   delete _task_queues;
 }
 
@@ -341,7 +332,7 @@ void ShenandoahGeneration::post_initialize(ShenandoahHeap* heap) {
   assert(_free_set != nullptr, "bad initialization order");
 }
 
-ShenandoahObjToScanQueueSet* ShenandoahGeneration::old_gen_task_queues() const {
+ShenandoahTaskQueueSet* ShenandoahGeneration::old_gen_task_queues() const {
   return nullptr;
 }
 

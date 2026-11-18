@@ -65,8 +65,8 @@ public:
 
 class ShenandoahMarkRefsSuperClosure : public ShenandoahSuperClosure {
 private:
-  ShenandoahObjToScanQueue* _queue;
-  ShenandoahObjToScanQueue* _old_queue;
+  ShenandoahTaskQueue* _queue;
+  ShenandoahTaskQueue* _old_queue;
   ShenandoahMarkingContext* const _mark_context;
   bool _weak;
 
@@ -75,7 +75,7 @@ protected:
   void work(T *p);
 
 public:
-  inline ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q);
+  inline ShenandoahMarkRefsSuperClosure(ShenandoahTaskQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahTaskQueue* old_q);
 
   bool is_weak() const {
     return _weak;
@@ -102,7 +102,7 @@ private:
   void do_oop_work(T* p) { work<T, GENERATION, false>(p); }
 
 public:
-  ShenandoahMarkRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q) :
+  ShenandoahMarkRefsClosure(ShenandoahTaskQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahTaskQueue* old_q) :
           ShenandoahMarkRefsSuperClosure(q, rp, old_q) {};
 
   ALWAYSINLINE
@@ -119,7 +119,7 @@ private:
   void do_oop_work(T* p) { work<T, YOUNG, true>(p); }
 
 public:
-  ShenandoahRedirtyCardsMarkClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp)
+  ShenandoahRedirtyCardsMarkClosure(ShenandoahTaskQueue* q, ShenandoahReferenceProcessor* rp)
     : ShenandoahMarkRefsSuperClosure(q, rp, nullptr) {}
 
   ALWAYSINLINE

@@ -48,7 +48,7 @@ private:
   ShenandoahGenerationType const _type;
 
   // Marking task queues and completeness
-  ShenandoahObjToScanQueueSet* _task_queues;
+  ShenandoahTaskQueueSet* _task_queues;
   ShenandoahSharedFlag _is_marking_complete;
 
   ShenandoahReferenceProcessor* const _ref_processor;
@@ -181,8 +181,8 @@ public:
   ShenandoahMarkingContext* complete_marking_context();
 
   // Task queues
-  ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
-  virtual ShenandoahObjToScanQueueSet* old_gen_task_queues() const;
+  ShenandoahTaskQueueSet* task_queues() const { return _task_queues; }
+  virtual ShenandoahTaskQueueSet* old_gen_task_queues() const;
 
   // Scan remembered set at start of concurrent young-gen marking.
   void scan_remembered_set(bool is_concurrent);

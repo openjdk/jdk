@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016, 2019, Red Hat, Inc. All rights reserved.
  * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,74 +29,149 @@
 
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
-#include "gc/shared/taskqueue.inline.hpp"
-#include "utilities/stack.inline.hpp"
+void ShenandoahTaskQueue::push(ShenandoahTask task) {
+  if (!_chunk->push(task)) {
+    _qs->push_shared(_chunk);
+    _chunk = _qs->pop_free();
+    bool succ = _chunk->push(task);
+    assert(succ, "Must succeed");
+  }
+}
 
-template <class E, MemTag MT, unsigned int N>
-bool BufferedOverflowTaskQueue<E, MT, N>::pop(E &t) {
-  if (!_buf_empty) {
-    t = _elem;
-    _buf_empty = true;
+bool ShenandoahTaskQueue::pop(ShenandoahTask& task) {
+  if (_chunk->pop(task)) {
     return true;
   }
 
-  if (taskqueue_t::pop_local(t)) {
-    return true;
-  }
-
-  if (taskqueue_t::pop_overflow(t)) {
-    pop_more_overflow();
-    return true;
+  auto chunk = _qs->pop_shared();
+  if (chunk != nullptr) {
+    _qs->push_free(_chunk);
+    _chunk = chunk;
+    return _chunk->pop(task);
   }
 
   return false;
 }
 
-template <class E, MemTag MT, unsigned int N>
-void BufferedOverflowTaskQueue<E, MT, N>::pop_more_overflow() {
-  // Local queue is empty and we have overflow. Overflow queue is invisible
-  // for work stealing, so we want to transfer as much as practically possible
-  // from it. Pulling too little hinders work balancing. Pulling too much
-  // incurs stalls (important e.g. when we need to respond to yield/cancellation).
-  // Local queues must also have some space left for local pushes.
-  constexpr uint fill = MIN2<uint>(16*K, N/2);
-
-  E tmp;
-  assert(taskqueue_t::size() == 0, "Local queue is empty");
-  for (uint i = 0; (i < fill) && taskqueue_t::pop_overflow(tmp); i++) {
-    bool pushed = taskqueue_t::try_push_to_taskqueue(tmp);
-    assert(pushed, "Should always succeed pushing");
+inline void ShenandoahTaskQueue::share_work() {
+  if (_chunk->is_sliceable()) {
+    auto top_chunk = _qs->pop_free();
+    _chunk->slice_top(top_chunk);
+    _qs->push_shared(_chunk);
+    _chunk = top_chunk;
   }
 }
 
-template <class E, MemTag MT, unsigned int N>
-bool BufferedOverflowTaskQueue<E, MT, N>::push(E t) {
-  if (_buf_empty) {
-    _elem = t;
-    _buf_empty = false;
-  } else {
-    bool pushed = taskqueue_t::push(_elem);
-    assert(pushed, "overflow queue should always succeed pushing");
-    _elem = t;
+inline bool ShenandoahTaskQueueSet::is_shared_empty() {
+  return _shared_count.load_relaxed() == 0;
+}
+
+inline size_t ShenandoahTaskQueueSet::allocated() {
+  return _chunks_allocated.load_relaxed();
+}
+
+inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::pop_shared() {
+  if (_shared_count.load_relaxed() == 0) {
+    return nullptr;
   }
-  return true;
+  size_t idx = find_and_claim(_shared_bm);
+  if (idx == _max_chunks) {
+    return nullptr;
+  }
+  _shared_count.fetch_then_sub((size_t)1, memory_order_seq_cst);
+  return chunk_at(idx);
 }
 
-template <class E, MemTag MT, unsigned int N>
-void BufferedOverflowTaskQueue<E, MT, N>::clear() {
-    _buf_empty = true;
-    taskqueue_t::set_empty();
-    taskqueue_t::overflow_stack()->clear();
+inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::pop_free() {
+  size_t idx = find_and_claim(_free_bm);
+  if (idx == _max_chunks) {
+    return allocate_chunk();
+  }
+  return chunk_at(idx);
 }
 
-template <class E, MemTag MT, unsigned int N>
-inline size_t BufferedOverflowTaskQueue<E, MT, N>::full_size() {
-  return taskqueue_t::size() + taskqueue_t::overflow_stack()->size() + (_buf_empty ? 0 : 1);
+inline void ShenandoahTaskQueueSet::push_shared(ShenandoahTaskQueueChunk* chunk) {
+  assert(!chunk->is_empty(), "Do not share empty chunks");
+  // For the sake of proper termination, we need to bump shared work count
+  // before publishing the chunk.
+  _shared_count.fetch_then_add((size_t)1, memory_order_seq_cst);
+  size_t idx = index_of(chunk);
+  bool succ = _shared_bm.par_set_bit(idx, memory_order_release);
+  assert(succ, "Must succeed");
 }
 
-template <class E, MemTag MT, unsigned int N>
-inline size_t BufferedOverflowTaskQueue<E, MT, N>::capacity() const {
-  return N;
+inline void ShenandoahTaskQueueSet::push_free(ShenandoahTaskQueueChunk* chunk) {
+  assert(chunk->is_empty(), "Do not free non-empty chunks");
+  size_t idx = index_of(chunk);
+  bool succ = _free_bm.par_set_bit(idx, memory_order_release);
+  assert(succ, "Must succeed");
+}
+
+bool ShenandoahTaskQueueChunk::push(ShenandoahTask t) {
+  if (_top < MAX_SIZE) {
+    _tasks[_top++] = t;
+    return true;
+  }
+  return false;
+}
+
+bool ShenandoahTaskQueueChunk::pop(ShenandoahTask& t) {
+  if (_top > 0) {
+    t = _tasks[--_top];
+    return true;
+  }
+  return false;
+}
+
+inline void ShenandoahTaskQueueChunk::slice_top(ShenandoahTaskQueueChunk* to_chunk) {
+  assert(is_sliceable(), "Filtered by caller");
+  assert(to_chunk->is_empty(), "Must be empty");
+  size_t slice = _top / 2;
+  _top -= slice;
+  to_chunk->_top = slice;
+  memcpy(to_chunk->_tasks, &_tasks[_top], slice * sizeof(ShenandoahTask));
+}
+
+inline bool ShenandoahTaskQueueChunk::is_sliceable() {
+  return _top >= MIN_SIZE * 2;
+}
+
+inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::chunk_at(size_t idx) {
+  return reinterpret_cast<ShenandoahTaskQueueChunk*>(_chunks_base + idx * CHUNK_SIZE);
+}
+
+inline size_t ShenandoahTaskQueueSet::index_of(ShenandoahTaskQueueChunk* chunk) {
+  size_t off = pointer_delta((char*)chunk, _chunks_base, 1);
+  assert(is_aligned(off, CHUNK_SIZE), "Sanity: alignment");
+  return off / CHUNK_SIZE;
+}
+
+inline size_t ShenandoahTaskQueueSet::find_and_claim(BitMapView& bm) {
+  size_t end = chunks_end();
+  for (size_t idx = bm.find_first_set_bit(0, end); idx < end;
+              idx = bm.find_first_set_bit(idx + 1, end)) {
+    if (bm.par_clear_bit(idx, memory_order_acq_rel)) {
+      return idx;
+    }
+  }
+  return _max_chunks;
+}
+
+inline size_t ShenandoahTaskQueueSet::chunks_end() {
+  return MIN2(_chunks_allocated.load_relaxed(), _max_chunks);
+}
+
+inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::allocate_chunk() {
+  size_t idx = _chunks_allocated.fetch_then_add((size_t)1, memory_order_relaxed);
+  if (idx >= _chunks_committed.load_acquire()) {
+    expand_to(idx);
+  }
+  assert(idx < _chunks_committed.load_relaxed(), "Sanity");
+  return new (chunk_at(idx)) ShenandoahTaskQueueChunk();
+}
+
+inline bool ShenandoahTaskTerminator::has_waiters() {
+  return _active_workers.load_relaxed() < _total_workers;
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP

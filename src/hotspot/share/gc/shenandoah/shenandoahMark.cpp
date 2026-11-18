@@ -57,9 +57,9 @@ ShenandoahMark::ShenandoahMark(ShenandoahGeneration* generation, bool bootstrapp
 }
 
 template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
-void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, StringDedup::Requests* const req) {
-  ShenandoahObjToScanQueue* q = get_queue(w);
-  ShenandoahObjToScanQueue* old_q = _bootstrapping ? get_old_queue(w) : nullptr;
+void ShenandoahMark::mark_loop_prework(uint w, ShenandoahTaskTerminator *t, StringDedup::Requests* const req) {
+  ShenandoahTaskQueue* q = get_queue(w);
+  ShenandoahTaskQueue* old_q = _bootstrapping ? get_old_queue(w) : nullptr;
   ShenandoahReferenceProcessor *rp = _generation->ref_processor();
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahLiveData* ld = heap->get_liveness_cache(w);
@@ -78,7 +78,7 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, StringDedup::R
 }
 
 template<bool CANCELLABLE, bool STRING_DEDUP>
-void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator,
+void ShenandoahMark::mark_loop(uint worker_id, ShenandoahTaskTerminator* terminator,
                                ShenandoahGenerationType generation_type, StringDedup::Requests* const req) {
   switch (generation_type) {
     case YOUNG:
@@ -98,7 +98,7 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator,
   }
 }
 
-void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
+void ShenandoahMark::mark_loop(uint worker_id, ShenandoahTaskTerminator* terminator, ShenandoahGenerationType generation_type,
                                bool cancellable) {
   if (_string_dedup) {
     StringDedup::Requests req;
@@ -117,14 +117,14 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, Shena
 }
 
 template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
-void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req) {
+void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, ShenandoahTaskTerminator *terminator, StringDedup::Requests* const req) {
   uintx stride = ShenandoahMarkLoopStride;
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahObjToScanQueueSet* queues = task_queues();
-  ShenandoahObjToScanQueue* q = get_queue(worker_id);
-  ShenandoahObjToScanQueue* old_q = get_old_queue(worker_id);
-  ShenandoahMarkTask t;
+  ShenandoahTaskQueueSet* queues = task_queues();
+  ShenandoahTaskQueue* q = get_queue(worker_id);
+  ShenandoahTaskQueue* old_q = get_old_queue(worker_id);
+  ShenandoahTask t;
 
   assert(_generation->type() == GENERATION, "Sanity: %d != %d", _generation->type(), GENERATION);
   _generation->ref_processor()->set_mark_closure(worker_id, cl);
@@ -140,10 +140,15 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
       satb_mq_set.apply_closure_to_completed_buffer(&drain_satb);
     }
 
+    if (terminator->has_waiters() && queues->is_shared_empty()) {
+      // There are waiters without apparent shared work in the queues.
+      // Share some of our work now.
+      q->share_work();
+    }
+
     uint work = 0;
     for (uint i = 0; i < stride; i++) {
-      if (q->pop(t) ||
-          queues->steal(worker_id, t)) {
+      if (q->pop(t)) {
         do_task<T, OT, GENERATION, STRING_DEDUP>(q, cl, live_data, req, &t, worker_id);
         work++;
       } else {
@@ -155,8 +160,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
       // No work encountered in current stride, try to terminate.
       // Need to leave the STS here otherwise it might block safepoints.
       SuspendibleThreadSetLeaver stsl(CANCELLABLE);
-      ShenandoahTerminatorTerminator tt(heap);
-      if (terminator->offer_termination(&tt)) return;
+      if (terminator->offer_termination(CANCELLABLE)) return;
     }
   }
 }
