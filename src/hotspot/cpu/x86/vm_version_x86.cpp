@@ -1180,8 +1180,9 @@ void VM_Version::amd_config() {
   }
 #endif
 
-  // For AMD Processors use XMM/YMM MOVDQU instructions
-  // for Object Initialization as default
+  // For true AMD Processors use XMM/YMM MOVDQU instructions
+  // for Object Initialization as default - but not for
+  // is_amd_family alternatives.
   if (is_amd()) {
     if (cpu_family() >= 0x19) {
       if (FLAG_IS_DEFAULT(UseFastStosb)) {
