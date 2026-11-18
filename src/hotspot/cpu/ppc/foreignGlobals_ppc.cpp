@@ -24,7 +24,6 @@
 
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vmreg.inline.hpp"
-#include "register_ppc.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
