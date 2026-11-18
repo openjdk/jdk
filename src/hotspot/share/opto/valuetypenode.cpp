@@ -2190,11 +2190,12 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   kit.insert_mem_bar(Op_MemBarCPUOrder);
   if (UseShenandoahGC && (oop_off_1 != -1)) {
     assert(payload_bt == T_LONG, "Unexpected payload type");
-    int oop_offset = (oop_off_2 == -1) ? oop_off_1 : -1;
     payload = kit.access_load_at(base, ptr, adr_type, Type::get_const_basic_type(payload_bt), payload_bt,
                                  _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD | C2_SPECIAL_ACCESS, kit.control());
-    // FIXME: Hook up oop_offset
     assert(payload->Opcode() == Op_LoadLSpecial, "must be special");
+
+    int oop_offset = (oop_off_2 == -1) ? oop_off_1 : -1;
+    payload->add_req(igvn.intcon(oop_offset));
   } else {
     assert((oop_off_1 == -1 && oop_off_2 == -1) || !UseShenandoahGC,
            "No embedded oop fields, or GC does not care about the loads");

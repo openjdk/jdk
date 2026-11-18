@@ -99,6 +99,7 @@ class ShenandoahBarrierSetC2 : public BarrierSetC2 {
   static bool is_Load(int opcode);
   static bool is_Store(int opcode);
   static bool is_LoadStore(int opcode);
+  static bool is_Special(int opcode);
 
 protected:
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;

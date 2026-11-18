@@ -192,6 +192,16 @@ bool ShenandoahBarrierSetC2::is_LoadStore(int opcode) {
   }
 }
 
+bool ShenandoahBarrierSetC2::is_Special(int opcode) {
+  switch (opcode) {
+    case Op_LoadLSpecial:
+    case Op_StoreLSpecial:
+      return true;
+    default:
+      return false;
+  }
+}
+
 bool ShenandoahBarrierSetC2::can_remove_load_barrier(Node* root) {
   // Check if all outs feed into nodes that do not expose the oops to the rest
   // of the runtime system. In this case, we can elide the LRB barrier. We bail
@@ -435,6 +445,11 @@ void ShenandoahBarrierSetC2::elide_dominated_barrier(MachNode* node, MachNode* d
   uint8_t bd = orig_bd;
   int node_opcode = node->ideal_Opcode();
 
+  if (is_Special(node_opcode)) {
+    // Do not eliminate barriers on special nodes for now.
+    return;
+  }
+
   if (dominator == nullptr) {
     // Must be allocation node.
     if (is_Load(node_opcode) || is_LoadStore(node_opcode)) {
@@ -452,6 +467,11 @@ void ShenandoahBarrierSetC2::elide_dominated_barrier(MachNode* node, MachNode* d
     if (is_Load(node_opcode) || is_Store(node_opcode)) {
       int dom_opcode = dominator->ideal_Opcode();
       uint8_t dom_bd = dominator->barrier_data();
+
+      if (is_Special(dom_opcode)) {
+        // Do not eliminate barriers from special node dominators for now.
+        return;
+      }
 
       if (is_Load(dom_opcode) || is_LoadStore(dom_opcode)) {
         // If dominating load is set up to perform LRB fixups, no further LRB is needed.
@@ -552,6 +572,11 @@ uint ShenandoahBarrierSetC2::estimated_barrier_size(const Node* node) const {
     if (UseCondCardMark) {
       nodes += 4;
     }
+  }
+
+  if (is_Special(node->Opcode())) {
+    // Pessimistically assume special nodes have twice the barriers.
+    nodes *= 2;
   }
 
   return nodes;
