@@ -4853,50 +4853,53 @@ private:
 
   // Performs the actual reassociation of a validated reduction chain of
   // length 'chain_length', moving 'phi' from the innermost position to the
-  // outermost position of a freshly cloned chain.
+  // outermost position of a freshly built chain.
   //
-  // The algorithm works in three phases:
+  // The algorithm works in two phases:
   //
-  // --- Phase 1: Collect ---
-  // Walk from 'node' (the chain_head, outermost) downward through the
-  // chain-direction input (whichever of in(1)/in(2) has the same opcode)
-  // until all 'chain_length' nodes have been accumulated:
+  // --- Phase 1: Collect inputs ---
+  // Walk from 'node' (chain_head, outermost) inward toward phi, visiting
+  // exactly 'chain_length' nodes.  At each node n the "chain direction"
+  // is in(1) when in(1) carries the same opcode or IS phi; otherwise it
+  // is in(2).  The other side is the "data" input and is recorded:
   //
-  //   chain_nodes[0]            = chain_head          (OP(A, ...)
-  //   chain_nodes[1]            = chain_head - 1      (OP(B, ...)
-  //   ...                                              ...)
-  //   chain_nodes[chain_length-1] = innermost node    (OP(C, Phi))
+  //   node (chain_head)      node−1              innermost
+  //   OP( ─chain─ , A )   OP( ─chain─ , B )   OP( C , Phi )
+  //                ↓                   ↓             ↓
+  //          input_nodes[0]=A   input_nodes[1]=B   input_nodes[2]=C
   //
-  // --- Phase 2: Clone ---
-  // Every collected node is cloned and registered under the loop head's
-  // control.  Clones are looked up by the original node's _idx via
-  // 'cloned_nodes'.  Creating fresh nodes avoids mutating nodes that may
-  // still be reachable by other paths while IGVN is running.
+  // After the walk input_nodes holds data values ordered outermost-first.
+  // Note: the chain-direction taken in the final step (at the innermost
+  // node) is irrelevant because the loop ends immediately afterward.
   //
-  // --- Phase 3: Rewire ---
-  // Edges are updated on the clones to achieve the desired shape:
+  // --- Phase 2: Rewire ---
+  // Build 'chain_length' fresh nodes (all cloned from 'node') and wire
+  // them up so that phi sits at in(2) of the new head and the data inputs
+  // are threaded inward via in(1) links.  For chain_length == 3:
   //
-  //   For each clone that does NOT directly hold 'phi':
-  //     - The chain-direction input is redirected to the clone of its
-  //       original chain child.  The non-chain input (the data value like
-  //       A or B) is left unchanged, keeping it at the same position.
+  //   head    = OP( clone_0 , phi )   ← phi pinned at in(2)
+  //   clone_0 = OP( clone_1 , A   )   ← input_nodes[0] at in(2)
+  //   clone_1 = OP( C       , B   )   ← input_nodes[2] at in(1),
+  //                                       input_nodes[1] at in(2)
   //
-  //   For the clone of the innermost node (which held 'phi'):
-  //     - Its non-Phi data input (e.g. C) is "donated" to the clone of
-  //       chain_nodes[chain_length-2] (the "prev" node), filling that
-  //       node's chain slot.  This splices C into the inner sub-chain.
-  //     - Its own chain slot is instead wired to the clone of chain_nodes[0]
-  //       (the original chain_head), making the full sub-chain
-  //       OP(A, OP(B, C)) the new other operand beside Phi.
+  // The resulting chain OP(OP(OP(C, B), A), phi) is semantically
+  // equivalent to OP(phi, OP(A, OP(B, C))) because MinL/MaxL are
+  // associative and commutative; the critical change is that phi now
+  // sits at depth 1 from the top rather than depth chain_length.
   //
-  // After rewiring, the clone of chain_nodes[chain_length-1] becomes the
-  // new outermost node OP(Phi, OP(A, OP(B, C))) and is returned to the
-  // caller, which splices it into the graph via replace_in_uses().
+  // Each newly built node is registered under the loop head's control as
+  // soon as its in(1) is finalized: 'prev' is registered inside the loop
+  // body immediately after prev->set_req(1, ...) is called, and the last
+  // clone is registered after the loop.
   //
-  // Restriction: 'node' must be chain_nodes[0] (the topmost node) and
-  // chain_nodes[chain_length-1] must be the unique node whose inputs
-  // include 'phi'.  Violating this assumption corrupts the edge rewiring
-  // in Phase 3 (specifically the "prev" back-reference at index i-1).
+  // The new head is returned to the caller, which splices it in via
+  // replace_in_uses().
+  //
+  // Restriction: 'node' must be chain_head (the outermost node of the
+  // validated chain).  Following the chain direction from 'node' must
+  // reach 'phi' in exactly 'chain_length' steps; a mismatch causes
+  // input_nodes to be populated with wrong values and produces an
+  // incorrectly wired result.
   Node* do_reassociate_chain(Node* node, int opcode, PhiNode* phi, uint chain_length) {
     // Accumulate inputs
     Unique_Node_List<Node> input_nodes;
