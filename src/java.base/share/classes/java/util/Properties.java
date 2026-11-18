@@ -221,10 +221,11 @@ public class Properties extends Hashtable<Object,Object> {
      * property keys and values. The value returned is the previous value
      * associated with the given key, or {@code null} if it did not have one.
      *
-     * @param key the key to be placed into this property list.
-     * @param value the value corresponding to {@code key}.
+     * @param      key the key to be placed into this property list.
+     * @param      value the value corresponding to {@code key}.
      * @return     the previous value of the specified key in this property
      *             list, or {@code null} if it did not have one.
+     * @throws     NullPointerException if the key or value is {@code null}
      * @see #getProperty
      * @since    1.2
      */
