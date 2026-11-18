@@ -158,6 +158,7 @@ bool ShenandoahBarrierSetC2::is_Load(int opcode) {
   switch (opcode) {
     case Op_LoadN:
     case Op_LoadP:
+    case Op_LoadLSpecial:
       return true;
     default:
       return false;
@@ -168,6 +169,7 @@ bool ShenandoahBarrierSetC2::is_Store(int opcode) {
   switch (opcode) {
     case Op_StoreN:
     case Op_StoreP:
+    case Op_StoreLSpecial:
       return true;
     default:
       return false;
@@ -315,6 +317,11 @@ uint8_t ShenandoahBarrierSetC2::refine_store(Node* n, uint8_t bd) {
   assert(bd != 0, "Checked by caller");
   assert(n->is_Mem() || n->is_LoadStore(), "Sanity");
 
+  if (n->Opcode() == Op_StoreLSpecial) {
+    // Skip any refinement for special nodes for now.
+    return bd;
+  }
+
   const Node* newval = n->in(MemNode::ValueIn);
   assert(newval != nullptr, "Should be present");
 
@@ -377,16 +384,6 @@ void ShenandoahBarrierSetC2::final_refinement(Compile* compile) const {
       if (is_store || is_load_store) {
         bd = refine_store(n, bd);
       }
-    }
-
-    // In the absence of proper C2 interface, we need to make sure these
-    // nodes are tagged with their relevant accesses.
-    if (opc == Op_LoadLSpecial) {
-      if (ShenandoahLoadRefBarrier) bd |= ShenandoahBitStrong;
-    }
-    if (opc == Op_StoreLSpecial) {
-      if (ShenandoahSATBBarrier) bd |= ShenandoahBitKeepAlive;
-      if (ShenandoahCardBarrier) bd |= ShenandoahBitCardMark;
     }
 
     // If there are no real barrier flags on the node, strip away additional fluff.
@@ -817,7 +814,7 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
     } else if (is_LoadStore(opc)) {
       bd = n->as_LoadStore()->barrier_data();
       adr_type = n->as_LoadStore()->out_adr_type();
-    } else if (n->is_Mem() && (opc != Op_LoadLSpecial && opc != Op_StoreLSpecial)) {
+    } else if (n->is_Mem()) {
       bd = MemNode::barrier_data(n);
       verify_gc_barrier_assert(bd == 0, "Other mem nodes should have no barrier data", bd, n);
     }

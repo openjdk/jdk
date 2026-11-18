@@ -2191,8 +2191,10 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   if (UseShenandoahGC && (oop_off_1 != -1)) {
     assert(payload_bt == T_LONG, "Unexpected payload type");
     int oop_offset = (oop_off_2 == -1) ? oop_off_1 : -1;
-    payload = igvn.transform(new LoadLSpecialNode(kit.control(), kit.memory(adr_type), ptr, adr_type,
-                                                  igvn.intcon(oop_offset), MemNode::unordered, LoadNode::UnknownControl));
+    payload = kit.access_load_at(base, ptr, adr_type, Type::get_const_basic_type(payload_bt), payload_bt,
+                                 _decorators | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD | C2_SPECIAL_ACCESS, kit.control());
+    // FIXME: Hook up oop_offset
+    assert(payload->Opcode() == Op_LoadLSpecial, "must be special");
   } else {
     assert((oop_off_1 == -1 && oop_off_2 == -1) || !UseShenandoahGC,
            "No embedded oop fields, or GC does not care about the loads");
@@ -2436,48 +2438,22 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   ciValueKlass* vk = igvn.type(value)->value_klass();
 
   assert((oop_off_1 == -1 && oop_off_2 == -1) ||  // No oops
-       (oop_off_1 == 0  && oop_off_2 == -1) ||  // One oop at either offset
-       (oop_off_1 == 4  && oop_off_2 == -1) ||
-       (oop_off_1 == 0  && oop_off_2 == 4)  ||  // Two oops at either offsets
-       (oop_off_1 == 4  && oop_off_2 == 0),
-       "invalid layout for %s: oop_off_1=%d, oop_off_2=%d",
-       vk->name()->as_utf8(), oop_off_1, oop_off_2);
+         (oop_off_1 == 0  && oop_off_2 == -1) ||  // One oop at either offset
+         (oop_off_1 == 4  && oop_off_2 == -1) ||
+         (oop_off_1 == 0  && oop_off_2 == 4)  ||  // Two oops at either offsets
+         (oop_off_1 == 4  && oop_off_2 == 0),
+         "invalid layout for %s: oop_off_1=%d, oop_off_2=%d",
+         vk->name()->as_utf8(), oop_off_1, oop_off_2);
 
   assert((oop_off_1 == -1) == oop_1->is_top(), "oop_off_1 == -1 iff. oop_1 is top, but oop_off_1=%d, is oop_1 top=%d", oop_off_1, oop_1->is_top());
   assert((oop_off_2 == -1) == oop_2->is_top(), "oop_off_2 == -1 iff. oop_2 is top, but oop_off_2=%d, is oop_2 top=%d", oop_off_2, oop_2->is_top());
   BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
   const TypePtr* adr_type = TypeRawPtr::BOTTOM;
 
-  // --- new
   kit.insert_mem_bar(Op_MemBarCPUOrder);
   if ((UseG1GC || UseShenandoahGC) && (oop_off_1 != -1)) {
     assert(payload_bt == T_LONG, "Unexpected payload type");
-    Node* oop_offset = (oop_off_2 == -1) ? igvn.intcon(oop_off_1) : nullptr;
-    Node* mem = kit.reset_memory();
-    kit.set_all_memory(mem);
-    Node* store = igvn.transform(new StoreLSpecialNode(kit.control(), mem, ptr, adr_type, payload, oop_offset, MemNode::unordered));
-    kit.set_memory(store, adr_type);
-  } else {
-    assert((oop_off_1 == -1 && oop_off_2 == -1) || (!UseG1GC && !UseShenandoahGC),
-           "No embedded oop fields, or GC does not care about the stores");
-    kit.access_store_at(base, ptr, adr_type, payload, Type::get_const_basic_type(payload_bt), payload_bt, _decorators | C2_MISMATCHED, true, value);
-  }
-  kit.insert_mem_bar(Op_MemBarCPUOrder);
-// --- new
-
-
-  kit.insert_mem_bar(Op_MemBarCPUOrder);
-  if (!UseG1GC || oop_off_1 == -1) {
-    // No oop fields or no late barrier expansion. Emit an atomic store of the payload and add GC barriers if needed.
-    assert(oop_off_2 == -1 || !UseG1GC, "sanity");
-    // ZGC does not support compressed oops, so only one oop can be in the payload which is written by a "normal" oop store.
-    assert((oop_off_1 == -1 && oop_off_2 == -1) || !UseZGC, "ZGC does not support embedded oops in flat fields");
-    kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, Type::get_const_basic_type(payload_bt), payload_bt, _decorators | C2_MISMATCHED, true, value);
-  } else {
-    // Contains oops and requires late barrier expansion. Emit a special store node that allows to emit GC barriers in the backend.
-    assert(UseG1GC, "Unexpected GC");
-    assert(payload_bt == T_LONG, "Unexpected payload type");
-    Node* store_special = kit.access_store_at(base, ptr, TypeRawPtr::BOTTOM, payload, TypeLong::LONG, T_LONG, _decorators | C2_MISMATCHED | C2_SPECIAL_ACCESS, true, value);
+    Node* store_special = kit.access_store_at(base, ptr, adr_type, payload, TypeLong::LONG, T_LONG, _decorators | C2_MISMATCHED | C2_SPECIAL_ACCESS, true, value);
     assert(store_special->Opcode() == Op_StoreLSpecial, "must be special");
 
     // If one oop, set the offset (if no offset is set, two oops are assumed by the backend)
@@ -2486,6 +2462,10 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
     assert(!oop_1->is_top(), "if no oop, the store shouldn't be special");
     store_special->add_req(oop_1);
     store_special->add_req(oop_2);
+  } else {
+    assert((oop_off_1 == -1 && oop_off_2 == -1) || (!UseG1GC && !UseShenandoahGC),
+           "No embedded oop fields, or GC does not care about the stores");
+    kit.access_store_at(base, ptr, adr_type, payload, Type::get_const_basic_type(payload_bt), payload_bt, _decorators | C2_MISMATCHED, true, value);
   }
   kit.insert_mem_bar(Op_MemBarCPUOrder);
 
