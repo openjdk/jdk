@@ -1607,7 +1607,7 @@ void Parse::do_method_entry() {
     }
   }
 
-  CDS_ONLY( count_aot_code_calls(); )
+  count_aot_code_calls();
 }
 
 //------------------------------init_blocks------------------------------------

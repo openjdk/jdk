@@ -254,7 +254,7 @@ public:
   int get_module_shared_path_index(Symbol* location) const;
 
   // Functions used only during dumptime
-  static void dumptime_init(JavaThread* current);
+  static void dumptime_init(JavaThread* current) NOT_CDS_RETURN;
 
   static void dumptime_set_has_app_classes() {
     _dumptime_instance->_has_app_classes = true;
