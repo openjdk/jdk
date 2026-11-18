@@ -539,7 +539,7 @@ static address generate_counterModeAES(StubGenerator *stubgen,
   // - 15 keys         Regs  | Regs&Stack
 
   // Constants/parameters
-  int totalRegs = VM_Version::supports_avx512vl() ? 32 : 16;
+  int totalRegs = VM_Version::supports_avx512vlbw() ? 32 : 16;
   int keyRegs = totalRegs - 5 - maxParallel; // 5 temps
   keyRegs = keyRegs > 15 ? 15 : keyRegs;
   int blocksPerReg = vector_len == Assembler::AVX_512bit ? 4 :
