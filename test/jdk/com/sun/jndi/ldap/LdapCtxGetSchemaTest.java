@@ -290,25 +290,24 @@ class LdapCtxGetSchemaTest {
                 throws IOException {
 
             final byte msgId = (byte) request.getMessageID();
-            switch (request.getOperation()) {
-                case SEARCH_REQUEST: {
-                    System.err.println("handling SEARCH_REQUEST with id: " + msgId + " from " + socket);
-                    // create the response
-                    final BerEncoder ber = new BerEncoder();
-                    makeSearchResultEntry(ber, msgId);
-                    makeSearchResultDone(ber, msgId);
-                    final byte[] resp = ber.getTrimmedBuf();
-                    System.err.println("response for message id " + msgId + ": " + toHexString(resp));
-                    // write out a search response
-                    out.write(resp);
-                    out.flush();
-                    break;
-                }
-                default: {
-                    throw new IOException("unexpected operation type: " + request.getOperation()
-                            + ", request: " + request);
-                }
+            if (request.getOperation() == LdapMessage.Operation.SEARCH_REQUEST) {
+                System.err.println("handling SEARCH_REQUEST with id: " + msgId + " from " + socket);
+                // create the response
+                final BerEncoder ber = new BerEncoder();
+                makeSearchResultEntry(ber, msgId);
+                makeSearchResultDone(ber, msgId);
+                final byte[] resp = ber.getTrimmedBuf();
+                System.err.println("response for message id " + msgId + ": " + toHexString(resp));
+                // write out a search response
+                out.write(resp);
+                out.flush();
+                return;
             }
+            // other request types aren't of interest to this test, let the common implementation
+            // in the BaseLdapServer handle it
+            System.err.println("ignoring request " + request + " with msg id " + msgId
+                    + " on socket " + socket);
+            super.handleRequestEx(socket, request, out, connWrapper);
         }
     }
 }
