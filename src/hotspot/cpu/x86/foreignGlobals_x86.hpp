@@ -32,7 +32,6 @@ struct ABIDescriptor {
   GrowableArray<Register> _integer_return_registers;
   GrowableArray<XMMRegister> _vector_argument_registers;
   GrowableArray<XMMRegister> _vector_return_registers;
-  size_t _X87_return_registers_noof;
 
   GrowableArray<Register> _integer_additional_volatile_registers;
   GrowableArray<XMMRegister> _vector_additional_volatile_registers;

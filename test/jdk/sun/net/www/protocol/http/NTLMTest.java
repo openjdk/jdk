@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,9 @@ public class NTLMTest
 
                 "HTTP/1.1 401 Unauthorized\r\n" +
                 "Content-Length: 0\r\n" +
-                "WWW-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==\r\n\r\n"};
+                "WWW-Authenticate: NTLM TlRMTVNTUAACAAAAAgACADgAAAAVgoriXva3" +
+                        "eirBoiYAAAAAAAAAACgAKAA6AAAACgD0ZQAAAA9EAAIAAgBEAAE" +
+                        "AAgBEAAQAAgBkAAMAAgBkAAcACAAAAAAAAAAAAAAAAAA=\r\n\r\n"};
 
     static String[] proxyResp = new String[] {
                 "HTTP/1.1 407 Proxy Authentication Required\r\n" +
@@ -99,7 +101,9 @@ public class NTLMTest
 
                 "HTTP/1.1 407 Proxy Authentication Required\r\n" +
                 "Content-Length: 0\r\n" +
-                "Proxy-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAAU3J2Tm9uY2UAAAAAAAAAAA==\r\n\r\n"};
+                "Proxy-Authenticate: NTLM TlRMTVNTUAACAAAAAgACADgAAAAVgoriXva3" +
+                        "eirBoiYAAAAAAAAAACgAKAA6AAAACgD0ZQAAAA9EAAIAAgBEAAEAA" +
+                        "gBEAAQAAgBkAAMAAgBkAAcACAAAAAAAAAAAAAAAAAA=\r\n\r\n"};
 
     static class NTLMServer extends Thread implements AutoCloseable {
         final ServerSocket ss;

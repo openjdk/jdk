@@ -171,6 +171,10 @@ public class Names {
     public final Name Varargs;
     public final Name PermittedSubclasses;
 
+    // members of java.lang.Boolean
+    public final Name FALSE;
+    public final Name TRUE;
+
     // members of java.lang.annotation.ElementType
     public final Name ANNOTATION_TYPE;
     public final Name CONSTRUCTOR;
@@ -368,6 +372,10 @@ public class Names {
         Value = fromString("Value");
         Varargs = fromString("Varargs");
         PermittedSubclasses = fromString("PermittedSubclasses");
+
+        // members of java.lang.Boolean
+        FALSE = fromString("FALSE");
+        TRUE = fromString("TRUE");
 
         // members of java.lang.annotation.ElementType
         ANNOTATION_TYPE = fromString("ANNOTATION_TYPE");

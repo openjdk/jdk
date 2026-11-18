@@ -115,30 +115,40 @@ class oopDesc {
   // to be able to figure out the size of an object knowing its klass.
   inline size_t size_given_klass(Klass* klass);
 
-  // type test operations (inlined in oop.inline.hpp)
+  // Type test operations (inlined in oop.inline.hpp)
   inline bool is_instance()         const;
   inline bool is_value()            const;
   inline bool is_instanceRef()      const;
   inline bool is_stackChunk()       const;
   inline bool is_array()            const;
-  inline bool is_objArray()         const;
   inline bool is_typeArray()        const;
-  inline bool is_flatArray()        const;
+  inline bool is_objArray()         const;
   inline bool is_refArray()         const;
+  inline bool is_flatArray()        const;
+
+  // Templatized type test operation
+  template <typename OopType>
+  inline bool is() const;
+
+  // Type test operations that don't require inclusion of oop.inline.hpp.
+  bool is_instance_noinline()       const;
+  bool is_value_noinline()          const;
+  bool is_instanceRef_noinline()    const;
+  bool is_stackChunk_noinline()     const;
+  bool is_array_noinline()          const;
+  bool is_typeArray_noinline()      const;
+  bool is_objArray_noinline()       const;
+  bool is_refArray_noinline()       const;
+  bool is_flatArray_noinline()      const;
+
+  // Type test for either flatArray or refArray
   inline bool is_refined_objArray() const;
+
+  // Type test for arrays containing oops in the elements
   inline bool is_array_with_oops()  const;
 
-  inline bool is_value_type()      const;
-
-  // type test operations that don't require inclusion of oop.inline.hpp.
-  bool is_instance_noinline()         const;
-  bool is_instanceRef_noinline()      const;
-  bool is_stackChunk_noinline()       const;
-  bool is_array_noinline()            const;
-  bool is_objArray_noinline()         const;
-  bool is_refArray_noinline()         const;
-  bool is_typeArray_noinline()        const;
-  bool is_flatArray_noinline()        const;
+  // Type test for value class instances via the mark word
+  inline bool is_value_type()       const;
 
  protected:
   inline oop        as_oop() const { return const_cast<oopDesc*>(this); }

@@ -120,7 +120,7 @@ class VectorNode : public TypeNode {
     init_req(4, n3);
   }
 
-  const TypeVect* vect_type() const { return type()->is_vect(); }
+  const TypeVect* vect_type() const { return type()->as_vect(); }
   uint length() const { return vect_type()->length(); } // Vector length
   uint length_in_bytes() const { return vect_type()->length_in_bytes(); }
 
@@ -146,6 +146,7 @@ class VectorNode : public TypeNode {
   static bool is_minmax_opcode(int opc);
 
   bool should_swap_inputs_to_help_global_value_numbering();
+  static bool is_associative_and_commutative_vector_operation(int opcode);
   Node* reassociate_vector_operation(PhaseGVN* phase);
   static Node* create_reassociated_node(Node* parent, Node* child, Node* cinput1, Node* cinput2,
                                         Node* pinput2, PhaseGVN* phase);
@@ -172,6 +173,10 @@ class VectorNode : public TypeNode {
   // are all 1s or all 0s, indicating a "mask all" or "mask none" pattern.
   static bool is_maskall_type(const TypeLong* type, int vlen);
   static bool is_muladds2i(const Node* n);
+  static bool is_unpredicated_vector_long_multiply(const Node* n);
+  static bool is_vector_long_mul_or_muladdsub(const Node* n);
+  static bool is_vector_long_multiply_addsub(const Node* n);
+  static bool phi_has_vector_long_mul_or_muladdsub_input(Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
@@ -300,9 +305,9 @@ class ReductionNode : public Node {
   const Type* _bottom_type;
   const TypeVect* _vect_type;
  public:
-  ReductionNode(Node *ctrl, Node* in1, Node* in2) : Node(ctrl, in1, in2),
+  ReductionNode(Node* ctrl, Node* in1, Node* in2) : Node(ctrl, in1, in2),
                _bottom_type(Type::get_const_basic_type(in1->bottom_type()->basic_type())),
-               _vect_type(in2->bottom_type()->is_vect()) {
+               _vect_type(in2->bottom_type()->as_vect()) {
     init_class_id(Class_Reduction);
   }
 
@@ -1184,7 +1189,7 @@ class LoadVectorNode : public LoadNode {
     set_mismatched_access();
   }
 
-  const TypeVect* vect_type() const { return type()->is_vect(); }
+  const TypeVect* vect_type() const { return type()->as_vect(); }
   uint length() const { return vect_type()->length(); } // Vector length
 
   virtual int Opcode() const;
@@ -1214,15 +1219,19 @@ class LoadVectorNode : public LoadNode {
 #endif
 };
 
-// Load Vector from memory via index map
+// Gather:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   output[i] = adr[indices[i]]
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
   LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
     add_req(indices);
-    DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
-    assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
     assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
   }
 
@@ -1243,7 +1252,7 @@ class StoreVectorNode : public StoreNode {
   DEBUG_ONLY( bool _must_verify_alignment = false; );
  public:
   StoreVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val)
-    : StoreNode(c, mem, adr, at, val, MemNode::unordered), _vect_type(val->bottom_type()->is_vect()) {
+    : StoreNode(c, mem, adr, at, val, MemNode::unordered), _vect_type(val->bottom_type()->as_vect()) {
     init_class_id(Class_StoreVector);
     set_mismatched_access();
   }
@@ -1277,8 +1286,13 @@ class StoreVectorNode : public StoreNode {
 #endif
 };
 
-// Store Vector into memory via index map
- class StoreVectorScatterNode : public StoreVectorNode {
+// Scatter:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   adr[indices[i]] = val[i]
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
+class StoreVectorScatterNode : public StoreVectorNode {
   public:
    enum { Indices = 4 };
    StoreVectorScatterNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices)
@@ -1338,7 +1352,12 @@ class LoadVectorMaskedNode : public LoadVectorNode {
   }
 };
 
-// Load Vector from memory via index map under the influence of a predicate register(mask).
+// Masked Gather:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   output[i] = mask[i] ? adr[indices[i]] : 0
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
   LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
@@ -1347,7 +1366,7 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
-    assert(is_subword_type(vt->element_basic_type()) || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
   }
 
   virtual int Opcode() const;
@@ -1360,7 +1379,12 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
   }
 };
 
-// Store Vector into memory via index map under the influence of a predicate register(mask).
+// Masked Scatter:
+//   indices: int-vector of indices
+//   adr: memory address (e.g. array base plus offset)
+//   if (mask[i]) { adr[indices[i]] = val[i] }
+//
+// Note: assumes that indices are all in-bounds, performs no index checking.
 class StoreVectorScatterMaskedNode : public StoreVectorNode {
   public:
    enum { Indices = 4,
@@ -1370,7 +1394,7 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatterMasked);
      assert(indices->bottom_type()->is_vect(), "indices must be in vector");
-     assert(mask->bottom_type()->isa_pvectmask(), "sanity");
+     assert(mask->bottom_type()->is_pvectmask(), "sanity");
      add_req(indices);
      add_req(mask);
      assert(req() == MemNode::ValueIn + 3, "match_edge expects that last input is in MemNode::ValueIn+2");
@@ -1433,11 +1457,10 @@ class VectorMaskGenNode : public TypeNode {
 // be either "BVectMask" or "PVectMask" depending on the platform.
 class VectorMaskOpNode : public TypeNode {
  private:
-  int _mopc;
   const TypeVect* _vect_type;
  public:
-  VectorMaskOpNode(Node* mask, const Type* ty, int mopc):
-    TypeNode(ty, 2), _mopc(mopc), _vect_type(mask->bottom_type()->is_vect()) {
+  VectorMaskOpNode(Node* mask, const Type* ty):
+    TypeNode(ty, 2), _vect_type(mask->bottom_type()->as_vect()) {
     assert(Matcher::has_predicated_vectors() || _vect_type->element_basic_type() == T_BOOLEAN, "");
     init_req(1, mask);
   }
@@ -1447,7 +1470,6 @@ class VectorMaskOpNode : public TypeNode {
   virtual  uint  size_of() const { return sizeof(VectorMaskOpNode); }
   virtual uint  ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  int get_mask_Opcode() const { return _mopc;}
   static Node* make(Node* mask, const Type* ty, int mopc);
 };
 
@@ -1455,7 +1477,7 @@ class VectorMaskOpNode : public TypeNode {
 class VectorMaskTrueCountNode : public VectorMaskOpNode {
  public:
   VectorMaskTrueCountNode(Node* mask, const Type* ty):
-    VectorMaskOpNode(mask, ty, Op_VectorMaskTrueCount) {}
+    VectorMaskOpNode(mask, ty) {}
   virtual int Opcode() const;
 };
 
@@ -1464,7 +1486,7 @@ class VectorMaskTrueCountNode : public VectorMaskOpNode {
 class VectorMaskFirstTrueNode : public VectorMaskOpNode {
  public:
   VectorMaskFirstTrueNode(Node* mask, const Type* ty):
-    VectorMaskOpNode(mask, ty, Op_VectorMaskFirstTrue) {}
+    VectorMaskOpNode(mask, ty) {}
   virtual int Opcode() const;
 };
 
@@ -1473,7 +1495,7 @@ class VectorMaskFirstTrueNode : public VectorMaskOpNode {
 class VectorMaskLastTrueNode : public VectorMaskOpNode {
  public:
   VectorMaskLastTrueNode(Node* mask, const Type* ty):
-    VectorMaskOpNode(mask, ty, Op_VectorMaskLastTrue) {}
+    VectorMaskOpNode(mask, ty) {}
   virtual int Opcode() const;
 };
 
@@ -1484,7 +1506,7 @@ class VectorMaskLastTrueNode : public VectorMaskOpNode {
 class VectorMaskToLongNode : public VectorMaskOpNode {
  public:
   VectorMaskToLongNode(Node* mask, const Type* ty):
-    VectorMaskOpNode(mask, ty, Op_VectorMaskToLong) {}
+    VectorMaskOpNode(mask, ty) {}
   virtual int Opcode() const;
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
   Node* Ideal_MaskAll(PhaseGVN* phase);
@@ -1758,9 +1780,9 @@ class VectorMaskCmpNode : public VectorNode {
   VectorMaskCmpNode(BoolTest::mask predicate, Node* in1, Node* in2, ConINode* predicate_node, const TypeVect* vt) :
       VectorNode(in1, in2, predicate_node, vt),
       _predicate(predicate) {
-    assert(in1->bottom_type()->is_vect()->element_basic_type() == in2->bottom_type()->is_vect()->element_basic_type(),
+    assert(in1->bottom_type()->as_vect()->element_basic_type() == in2->bottom_type()->as_vect()->element_basic_type(),
            "VectorMaskCmp inputs must have same type for elements");
-    assert(in1->bottom_type()->is_vect()->length() == in2->bottom_type()->is_vect()->length(),
+    assert(in1->bottom_type()->as_vect()->length() == in2->bottom_type()->as_vect()->length(),
            "VectorMaskCmp inputs must have same number of elements");
     assert((BoolTest::mask)predicate_node->get_int() == predicate, "Unmatched predicates");
     init_class_id(Class_VectorMaskCmp);
@@ -1782,7 +1804,7 @@ class VectorMaskCmpNode : public VectorNode {
 class VectorMaskWrapperNode : public VectorNode {
  public:
   VectorMaskWrapperNode(Node* vector, Node* mask)
-    : VectorNode(vector, mask, vector->bottom_type()->is_vect()) {
+    : VectorNode(vector, mask, vector->bottom_type()->as_vect()) {
     assert(mask->is_VectorMaskCmp(), "VectorMaskWrapper requires that second argument be a mask");
   }
 
@@ -1802,7 +1824,7 @@ class VectorTestNode : public CmpNode {
 
  public:
   VectorTestNode(Node* in1, Node* in2, BoolTest::mask predicate) : CmpNode(in1, in2), _predicate(predicate) {
-    assert(in2->bottom_type()->is_vect() == in2->bottom_type()->is_vect(), "same vector type");
+    assert(in2->bottom_type()->as_vect() == in2->bottom_type()->as_vect(), "same vector type");
   }
   virtual int Opcode() const;
   virtual uint hash() const { return Node::hash() + _predicate; }
@@ -1840,7 +1862,7 @@ class VectorSliceNode : public VectorNode {
 class VectorBlendNode : public VectorNode {
  public:
   VectorBlendNode(Node* vec1, Node* vec2, Node* mask)
-    : VectorNode(vec1, vec2, mask, vec1->bottom_type()->is_vect()) {
+    : VectorNode(vec1, vec2, mask, vec1->bottom_type()->as_vect()) {
   }
 
   virtual int Opcode() const;
@@ -1855,14 +1877,14 @@ class VectorBitwiseBlendNode : public VectorNode {
  public:
   VectorBitwiseBlendNode(Node* vec_false, Node* vec_true, Node* sel, const TypeVect* vt)
     : VectorNode(vec_false, vec_true, sel, vt) {
-    assert(vec_false->bottom_type()->isa_vect() != nullptr &&
-           vec_true->bottom_type()->isa_vect() != nullptr &&
-           sel->bottom_type()->isa_vect() != nullptr,
+    assert(vec_false->bottom_type()->is_vect() &&
+           vec_true->bottom_type()->is_vect() &&
+           sel->bottom_type()->is_vect(),
            "inputs must all be vectors");
     uint vlen = vt->length();
-    assert(vec_false->bottom_type()->is_vect()->length() == vlen &&
-           vec_true->bottom_type()->is_vect()->length() == vlen &&
-           sel->bottom_type()->is_vect()->length() == vlen,
+    assert(vec_false->bottom_type()->as_vect()->length() == vlen &&
+           vec_true->bottom_type()->as_vect()->length() == vlen &&
+           sel->bottom_type()->as_vect()->length() == vlen,
            "mismatched vector length");
   }
   virtual int Opcode() const;
@@ -1875,7 +1897,7 @@ class VectorBitwiseBlendNode : public VectorNode {
 class VectorRearrangeNode : public VectorNode {
  public:
   VectorRearrangeNode(Node* vec1, Node* shuffle)
-    : VectorNode(vec1, shuffle, vec1->bottom_type()->is_vect()) {
+    : VectorNode(vec1, shuffle, vec1->bottom_type()->as_vect()) {
   }
 
   virtual int Opcode() const;
@@ -1893,8 +1915,8 @@ class SelectFromTwoVectorNode : public VectorNode {
 public:
   SelectFromTwoVectorNode(Node* indexes, Node* src1, Node* src2, const TypeVect* vt)
   : VectorNode(indexes, src1, src2, vt) {
-      assert(is_integral_type(indexes->bottom_type()->is_vect()->element_basic_type()),
-             "indexes must be an integral vector");
+    assert(is_integral_type(indexes->bottom_type()->as_vect()->element_basic_type()),
+           "indexes must be an integral vector");
   }
 
   virtual int Opcode() const;
@@ -1926,7 +1948,7 @@ class VectorLoadShuffleNode : public VectorNode {
 class VectorLoadMaskNode : public VectorNode {
  public:
   VectorLoadMaskNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN, "must be boolean");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_BOOLEAN, "must be boolean");
   }
 
   virtual int Opcode() const;
@@ -1958,11 +1980,11 @@ class VectorStoreMaskNode : public VectorNode {
 class VectorMaskCastNode : public VectorNode {
  public:
   VectorMaskCastNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
-    const TypeVect* in_vt = in->bottom_type()->is_vect();
+    const TypeVect* in_vt = in->bottom_type()->as_vect();
     assert(in_vt->length() == vt->length(), "vector length must match");
     assert((in_vt->element_basic_type() == T_BOOLEAN) == (vt->element_basic_type() == T_BOOLEAN),
            "Cast from/to BVectMask not allowed, use VectorLoadMask/VectorStoreMask instead");
-    assert((in_vt->isa_pvectmask() == nullptr) == (vt->isa_pvectmask() == nullptr),
+    assert(in_vt->is_pvectmask() == vt->is_pvectmask(),
            "Both BVectMask, or both NVectMask, or both PVectMask");
   }
   Node* Identity(PhaseGVN* phase);
@@ -1979,7 +2001,7 @@ class VectorReinterpretNode : public VectorNode {
  public:
   VectorReinterpretNode(Node* in, const TypeVect* src_vt, const TypeVect* dst_vt)
      : VectorNode(in, dst_vt), _src_vt(src_vt) {
-     assert((!dst_vt->isa_pvectmask() && !src_vt->isa_pvectmask()) ||
+     assert((!dst_vt->is_pvectmask() && !src_vt->is_pvectmask()) ||
             (type2aelembytes(src_vt->element_basic_type()) >= type2aelembytes(dst_vt->element_basic_type())),
             "unsupported mask widening reinterpretation");
      init_class_id(Class_VectorReinterpret);
@@ -2014,7 +2036,7 @@ class VectorCastNode : public VectorNode {
 class VectorCastB2XNode : public VectorCastNode {
  public:
   VectorCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be byte");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_BYTE, "must be byte");
   }
   virtual int Opcode() const;
 };
@@ -2023,7 +2045,7 @@ class VectorCastB2XNode : public VectorCastNode {
 class VectorCastS2XNode : public VectorCastNode {
  public:
   VectorCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_SHORT, "must be short");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_SHORT, "must be short");
   }
   virtual int Opcode() const;
 };
@@ -2032,7 +2054,7 @@ class VectorCastS2XNode : public VectorCastNode {
 class VectorCastI2XNode : public VectorCastNode {
  public:
   VectorCastI2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_INT, "must be int");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_INT, "must be int");
   }
   virtual int Opcode() const;
 };
@@ -2041,7 +2063,7 @@ class VectorCastI2XNode : public VectorCastNode {
 class VectorCastL2XNode : public VectorCastNode {
  public:
   VectorCastL2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_LONG, "must be long");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_LONG, "must be long");
   }
   virtual int Opcode() const;
 };
@@ -2050,7 +2072,7 @@ class VectorCastL2XNode : public VectorCastNode {
 class VectorCastF2XNode : public VectorCastNode {
  public:
   VectorCastF2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_FLOAT, "must be float");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_FLOAT, "must be float");
   }
   virtual int Opcode() const;
 };
@@ -2059,7 +2081,7 @@ class VectorCastF2XNode : public VectorCastNode {
 class VectorCastD2XNode : public VectorCastNode {
  public:
   VectorCastD2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE, "must be double");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_DOUBLE, "must be double");
   }
   virtual int Opcode() const;
 };
@@ -2068,7 +2090,7 @@ class VectorCastD2XNode : public VectorCastNode {
 class VectorCastHF2FNode : public VectorCastNode {
  public:
   VectorCastHF2FNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_SHORT, "must be short");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_SHORT, "must be short");
   }
   virtual int Opcode() const;
 };
@@ -2077,7 +2099,7 @@ class VectorCastHF2FNode : public VectorCastNode {
 class VectorCastF2HFNode : public VectorCastNode {
  public:
   VectorCastF2HFNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_FLOAT, "must be float");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_FLOAT, "must be float");
   }
   virtual int Opcode() const;
 };
@@ -2091,7 +2113,7 @@ class VectorCastF2HFNode : public VectorCastNode {
 class VectorUCastB2XNode : public VectorCastNode {
  public:
   VectorUCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be byte");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_BYTE, "must be byte");
     assert(vt->element_basic_type() == T_SHORT ||
            vt->element_basic_type() == T_INT ||
            vt->element_basic_type() == T_LONG, "must be");
@@ -2104,7 +2126,7 @@ class VectorUCastB2XNode : public VectorCastNode {
 class VectorUCastS2XNode : public VectorCastNode {
  public:
   VectorUCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_SHORT, "must be short");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_SHORT, "must be short");
     assert(vt->element_basic_type() == T_INT ||
            vt->element_basic_type() == T_LONG, "must be");
   }
@@ -2115,7 +2137,7 @@ class VectorUCastS2XNode : public VectorCastNode {
 class VectorUCastI2XNode : public VectorCastNode {
  public:
   VectorUCastI2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_INT, "must be int");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_INT, "must be int");
     assert(vt->element_basic_type() == T_LONG, "must be");
   }
   virtual int Opcode() const;
@@ -2125,7 +2147,7 @@ class VectorUCastI2XNode : public VectorCastNode {
 class RoundVFNode : public VectorNode {
  public:
   RoundVFNode(Node* in, const TypeVect* vt) :VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_FLOAT, "must be float");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_FLOAT, "must be float");
   }
   virtual int Opcode() const;
 };
@@ -2134,7 +2156,7 @@ class RoundVFNode : public VectorNode {
 class RoundVDNode : public VectorNode {
  public:
   RoundVDNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE, "must be double");
+    assert(in->bottom_type()->as_vect()->element_basic_type() == T_DOUBLE, "must be double");
   }
   virtual int Opcode() const;
 };
@@ -2168,7 +2190,6 @@ class VectorBoxNode : public Node {
   VectorBoxNode(Compile* C, Node* box, Node* val,
                 const TypeInstPtr* box_type, const TypeVect* vt)
     : Node(nullptr, box, val), _box_type(box_type), _vec_type(vt) {
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
@@ -2189,7 +2210,6 @@ class VectorBoxAllocateNode : public CallStaticJavaNode {
  public:
   VectorBoxAllocateNode(Compile* C, const TypeInstPtr* vbox_type)
     : CallStaticJavaNode(C, VectorBoxNode::vec_box_type(vbox_type), nullptr, nullptr) {
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
@@ -2208,7 +2228,6 @@ public:
     : VectorNode(mem, obj, vec_type) {
     init_req(0, ctrl);
     init_class_id(Class_VectorUnbox);
-    init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
@@ -2221,6 +2240,7 @@ public:
 private:
   uint size_of() const { return sizeof(*this); }
   bool depends_only_on_test_impl() const { return false; }
+  const TypePtr* in_adr_type_impl() const final { return TypePtr::BOTTOM; }
 };
 
 // Lane-wise right rotation of the first input by the second input.
@@ -2248,7 +2268,7 @@ class CountLeadingZerosVNode : public VectorNode {
  public:
   CountLeadingZerosVNode(Node* in, const TypeVect* vt)
   : VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == vt->element_basic_type(),
+    assert(in->bottom_type()->as_vect()->element_basic_type() == vt->element_basic_type(),
            "must be the same");
   }
 
@@ -2260,7 +2280,7 @@ class CountTrailingZerosVNode : public VectorNode {
  public:
   CountTrailingZerosVNode(Node* in, const TypeVect* vt)
   : VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == vt->element_basic_type(),
+    assert(in->bottom_type()->as_vect()->element_basic_type() == vt->element_basic_type(),
            "must be the same");
   }
 

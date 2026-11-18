@@ -29,7 +29,6 @@
 #include "opto/type.hpp"
 
 Int128TBinaryNode::Int128TBinaryNode(Node* lo1, Node* hi1, Node* lo2, Node* hi2) : MultiNode(5) {
-  init_flags(Flag_is_macro);
   init_req(1, lo1);
   init_req(2, hi1);
   init_req(3, lo2);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,9 +73,7 @@ public class ObjArray extends Array {
     tty.print("ObjArray");
   }
 
-  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    int length = (int) getLength();
+  protected void iterateFieldsInternal(OopVisitor visitor, int length) {
     long baseOffset = baseOffsetInBytes(BasicType.T_OBJECT);
     for (int index = 0; index < length; index++) {
       long offset = baseOffset + (index * elementSize);
@@ -87,5 +85,11 @@ public class ObjArray extends Array {
       }
       visitor.doOop(field, false);
     }
+  }
+
+  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
+    super.iterateFields(visitor, doVMFields);
+    int length = (int) getLength();
+    iterateFieldsInternal(visitor, length);
   }
 }

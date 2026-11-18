@@ -790,7 +790,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="GD">Grenada</territory>
 			<territory type="GE">Georgia</territory>
 			<territory type="GF">Guyane Ffrengig</territory>
-			<territory type="GG">Ynys y Garn</territory>
+			<territory type="GG">Guernsey</territory>
 			<territory type="GH">Ghana</territory>
 			<territory type="GI">Gibraltar</territory>
 			<territory type="GL">Yr Ynys Las</territory>
@@ -1010,15 +1010,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">Calendr</key>
 			<key type="cf">Fformat Arian</key>
+			<key type="colAlternate">Anwybyddu Trefnu yn ôl Symbolau</key>
+			<key type="colBackwards">Trefnu yn ôl Acen Am Yn Ôl</key>
+			<key type="colCaseFirst">Trefnu yn ôl Priflythrennau/Llythrennau Bychain</key>
+			<key type="colCaseLevel">Trefnu sy’n Sensitif i Lythrennau</key>
 			<key type="collation">Trefn</key>
-			<key type="currency">Math o Arian</key>
+			<key type="colNormalization">Trefnu Arferol</key>
+			<key type="colNumeric">Trefnu Rhifol</key>
+			<key type="colReorder">Aildrefnu Sgript/Bloc</key>
+			<key type="colStrength">Cryfder Trefnu</key>
+			<key type="currency">Arian cyfred</key>
+			<key type="d0">Trawsnewid Cyrchfan</key>
+			<key type="dx">Eithriadau Toriadau Geiriadur</key>
 			<key type="em">Cyflwyniad Emoji</key>
+			<key type="fw">Diwrnod cyntaf yr wythnos</key>
+			<key type="h0">Wedi cymysgu</key>
 			<key type="hc">Cylched Awr (12 vs 24)</key>
+			<key type="i0">Dull Mewnbwn</key>
+			<key type="k0">Bysellfwrdd</key>
+			<key type="kv">Anwybyddu’r Uchaf</key>
 			<key type="lb">Arddull Toriad Llinell</key>
 			<key type="lw">Toriadau Llinell o fewn Geiriau</key>
+			<key type="m0">Rheolau Trawsnewid</key>
 			<key type="ms">System Fesur</key>
+			<key type="mu">Uned Mesur</key>
 			<key type="numbers">Rhifau</key>
+			<key type="rg">Rhanbarth ar gyfer Data Atodol</key>
+			<key type="s0">Trawsnewid Ffynhonnell</key>
+			<key type="sd">Israniad Rhanbarth</key>
 			<key type="ss">Toriad Brawddeg ar ôl Byrfodd</key>
+			<key type="t">Trawsnewid</key>
+			<key type="t0">Cyfieithiad Peirianyddol</key>
+			<key type="timezone">Cylchfa Amser</key>
+			<key type="va">Amrywiad Lleoliad</key>
+			<key type="x">Defnydd Preifat</key>
+			<key type="x0">Trawsnewid Defnydd Preifat</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Calendr Bwdaidd</type>
@@ -1038,13 +1064,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">Calendr Hebreaidd</type>
 			<type key="calendar" type="hebrew" scope="core">Hebreaidd</type>
 			<type key="calendar" type="indian">Calendr Cenedlaethol India</type>
+			<type key="calendar" type="indian" scope="core">Cenedlaethol Indiaidd</type>
 			<type key="calendar" type="islamic">Calendr Hijri</type>
 			<type key="calendar" type="islamic" scope="core">Hijri</type>
 			<type key="calendar" type="islamic-civil">Calendr Hijri (tabl, cyfnod sifil)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Hijri (tabl, cyfnod sifil)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Gweld Hijri, Sawdi Arabia</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hijri (cyfnod seryddol, tablaidd)</type>
 			<type key="calendar" type="islamic-umalqura">Calendr Hijri (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hijri (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Calendr ISO-8601</type>
+			<type key="calendar" type="iso8601" scope="core">Gregoraidd</type>
 			<type key="calendar" type="japanese">Calendr Japan</type>
 			<type key="calendar" type="japanese" scope="core">Japaneaidd</type>
 			<type key="calendar" type="persian">Calendr Persia</type>
@@ -1055,21 +1085,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="cf" type="account" scope="core">Cyfrifeg</type>
 			<type key="cf" type="standard">Fformat Arian Safonol</type>
 			<type key="cf" type="standard" scope="core">Safonol</type>
+			<type key="colCaseFirst" type="lower" scope="core">Llythrennau Bychain</type>
+			<type key="colCaseFirst" type="no" scope="core">Llythrennau Bychain</type>
+			<type key="colCaseFirst" type="upper" scope="core">Priflythrennau</type>
+			<type key="collation" type="compat" scope="core">Cydweddoldeb</type>
 			<type key="collation" type="dictionary">Trefn Geiriadur</type>
+			<type key="collation" type="dictionary" scope="core">Geiriadur</type>
 			<type key="collation" type="ducet">Trefn Rhagosodedig Unicode</type>
 			<type key="collation" type="ducet" scope="core">Unicode Rhagosodedig</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
 			<type key="collation" type="eor">Rheolau trefnu Ewropeaidd</type>
+			<type key="collation" type="eor" scope="core">Rheolau Ewropeaidd</type>
 			<type key="collation" type="phonebook">Trefn Llyfr Ffôn</type>
+			<type key="collation" type="phonebook" scope="core">Llyfr ffôn</type>
+			<type key="collation" type="phonetic" scope="core">Ffonetig</type>
 			<type key="collation" type="pinyin">Trefn Pinyin</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">Chwilio at Ddibenion Cyffredinol</type>
 			<type key="collation" type="search" scope="core">Chwilio</type>
+			<type key="collation" type="searchjl" scope="core">Cytsain gyntaf Corëeg</type>
 			<type key="collation" type="standard">Trefn Safonol</type>
 			<type key="collation" type="standard" scope="core">Safonol</type>
+			<type key="collation" type="stroke" scope="core">Trawiad</type>
 			<type key="collation" type="traditional">Trefn Traddodiadol</type>
+			<type key="collation" type="traditional" scope="core">Traddodiadol</type>
+			<type key="collation" type="unihan" scope="core">Trawiadau Radical</type>
 			<type key="collation" type="zhuyin">Trefn Zhuyin</type>
+			<type key="collation" type="zhuyin" scope="core">Zhuyin</type>
+			<type key="colReorder" type="currency" scope="core">Arian cyfred</type>
+			<type key="colReorder" type="digit" scope="core">Digidau</type>
+			<type key="colReorder" type="punct" scope="core">Atalnodi</type>
+			<type key="colReorder" type="space" scope="core">Bwlch gwyn</type>
+			<type key="colReorder" type="symbol" scope="core">Symbol</type>
+			<type key="colStrength" type="identical" scope="core">Y cyfan</type>
+			<type key="colStrength" type="primary" scope="core">Llythrennau Sylfaen yn Unig</type>
+			<type key="colStrength" type="quaternary" scope="core">Sylfaen, Acenion, Prif Lythrennau/Llythrennau Bychain, Amrywiannau, Cana</type>
+			<type key="colStrength" type="secondary" scope="core">Sylfaen, Acenion</type>
+			<type key="colStrength" type="tertiary" scope="core">Sylfaen, Acenion, Prif Lythrennau/Llythrennau Bychain, Amrywiannau</type>
+			<type key="d0" type="fwidth">I Led Llawn</type>
+			<type key="d0" type="hwidth">I Hanner Lled</type>
 			<type key="em" type="default" scope="core">Rhagosodedig</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
 			<type key="em" type="text" scope="core">Testun</type>
+			<type key="hc" type="c12">System 12 Awr</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">System 24 Awr</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">System 12 Awr (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">System 12 Awr (1–12)</type>
@@ -1078,6 +1139,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">System 24 Awr (1–24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Shift Spaces, atalnodi, pob symbol</type>
+			<type key="kv" type="punct" scope="core">Shift spaces, atalnodi</type>
+			<type key="kv" type="space" scope="core">Shift spaces, atalnodi</type>
+			<type key="kv" type="symbol" scope="core">Shift spaces, atalnodi, symbolau nad ydynt yn arian cyfred</type>
 			<type key="lb" type="loose">Arddull Toriad Llinell Rhydd</type>
 			<type key="lb" type="loose" scope="core">Rhydd</type>
 			<type key="lb" type="normal">Arddull Toriad Llinell Arferol</type>
@@ -1088,6 +1153,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="lw" type="keepall" scope="core">Cadw’r cyfan</type>
 			<type key="lw" type="normal" scope="core">Normal</type>
 			<type key="lw" type="phrase" scope="core">Cadw mewn brawddegau</type>
+			<type key="m0" type="bgn">Trawslythreniad US BGN</type>
+			<type key="m0" type="ungegn">Trawslythreniad UN GEGN</type>
 			<type key="ms" type="metric">System Fetrig</type>
 			<type key="ms" type="metric" scope="core">Metrig</type>
 			<type key="ms" type="uksystem">System Fesur Imperialaidd</type>
@@ -1096,49 +1163,84 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="ms" type="ussystem" scope="core">UDA</type>
 			<type key="numbers" type="arab">Digidau Arabig-Indig</type>
 			<type key="numbers" type="arabext">Digidau Arabig-Indig Estynedig</type>
+			<type key="numbers" type="arabext" scope="core">Arabig-Indig Estynedig</type>
 			<type key="numbers" type="armn">Rhifolion Armenaidd</type>
 			<type key="numbers" type="armnlow">Rhifolion Armenaidd mewn Llythrennau Bychain</type>
+			<type key="numbers" type="armnlow" scope="core">Llythrennau Bychain Armenaidd</type>
 			<type key="numbers" type="beng">Digidau Bengalaidd</type>
 			<type key="numbers" type="cakm">Digidau Chakma</type>
 			<type key="numbers" type="deva">Digidau Devanagarig</type>
 			<type key="numbers" type="ethi">Rhifolion Ethiopig</type>
+			<type key="numbers" type="finance" scope="core">Ariannol</type>
 			<type key="numbers" type="fullwide">Digidau Lled Llawn</type>
+			<type key="numbers" type="fullwide" scope="core">Lled llawn</type>
 			<type key="numbers" type="geor">Rhifolion Georgaidd</type>
 			<type key="numbers" type="grek">Rhifolion Groegaidd</type>
 			<type key="numbers" type="greklow">Rhifolion Groegaidd mewn Llythrennau Bychain</type>
+			<type key="numbers" type="greklow" scope="core">Llythrennau Bychain Groegaidd</type>
 			<type key="numbers" type="gujr">Digidau Gwjarataidd</type>
 			<type key="numbers" type="guru">Digidau Gwrmwcaidd</type>
+			<type key="numbers" type="hanidays" scope="core">Rhifo diwrnod y mis gyda nod Han ar gyfer calendrau traddodiadol</type>
 			<type key="numbers" type="hanidec">Rhifolion Degol Tsieineaidd</type>
+			<type key="numbers" type="hanidec" scope="core">System degol gosodiadol yn defnyddio ideograffau rhif Tsieineaidd fel digidau</type>
 			<type key="numbers" type="hans">Rhifolion Tsieineaidd Symledig</type>
 			<type key="numbers" type="hansfin">Rhifolion Ariannol Tsieineaidd Symledig</type>
+			<type key="numbers" type="hansfin" scope="core">Ariannol Tsieineaidd Symledig</type>
 			<type key="numbers" type="hant">Rhifolion Tsieineaidd Traddodiadol</type>
 			<type key="numbers" type="hantfin">Rhifolion Ariannol Tsieineaidd Traddodiadol</type>
+			<type key="numbers" type="hantfin" scope="core">Ariannol Tsieineaidd Traddodiadol</type>
 			<type key="numbers" type="hebr">Rhifolion Hebreig</type>
 			<type key="numbers" type="java">Digidau Jafanaidd</type>
 			<type key="numbers" type="jpan">Rhifolion Japaneaidd</type>
 			<type key="numbers" type="jpanfin">Rhifolion Ariannol Japaneaidd</type>
+			<type key="numbers" type="jpanfin" scope="core">Ariannol Japaneaidd</type>
+			<type key="numbers" type="jpanyear" scope="core">Rhifo Gannen blwyddyn gyntaf Japaneaidd</type>
 			<type key="numbers" type="khmr">Digidau Chmeraidd</type>
 			<type key="numbers" type="knda">Digidau Kannaraidd</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (eglwysig)</type>
 			<type key="numbers" type="laoo">Digidau Laoaidd</type>
 			<type key="numbers" type="latn">Digidau Gorllewinol</type>
+			<type key="numbers" type="mathbold" scope="core">Trwm mathemategol</type>
+			<type key="numbers" type="mathdbl" scope="core">Double-struck mathemategol</type>
+			<type key="numbers" type="mathmono" scope="core">Monospace mathemategol</type>
+			<type key="numbers" type="mathsanb" scope="core">Sans-serif trwm mathemategol</type>
+			<type key="numbers" type="mathsans" scope="core">Sans-serif mathemategol</type>
 			<type key="numbers" type="mlym">Digidau Malayalamaidd</type>
 			<type key="numbers" type="mong">Digidau Mongolia</type>
 			<type key="numbers" type="mtei">Digidau Meetei Mayek</type>
 			<type key="numbers" type="mymr">Digidau Myanmar</type>
+			<type key="numbers" type="mymrepka" scope="core">Pwo Karen Dwyreiniol Myanmar</type>
+			<type key="numbers" type="mymrpao" scope="core">Pao Myanmar</type>
+			<type key="numbers" type="mymrshan" scope="core">Shan Myanmar</type>
+			<type key="numbers" type="mymrtlng" scope="core">Tai Laing Myanmar</type>
+			<type key="numbers" type="native">Digidau Brodorol</type>
+			<type key="numbers" type="native" scope="core">Digidau brodorol</type>
 			<type key="numbers" type="olck">Ol Chiki Digidau</type>
 			<type key="numbers" type="orya">Digidau Orïaidd</type>
+			<type key="numbers" type="outlined" scope="core">Wedi’i amlinellu</type>
 			<type key="numbers" type="roman">Rhifolion Rhufeinig</type>
+			<type key="numbers" type="roman" scope="core">Priflythrennau Rhufeinig</type>
 			<type key="numbers" type="romanlow">Rhifolion Rhufeinig mewn Llythrennau Bychain</type>
+			<type key="numbers" type="romanlow" scope="core">Llythrennau Bychain Rhufeinig</type>
+			<type key="numbers" type="segment" scope="core">Wedi’i segmentu</type>
 			<type key="numbers" type="takr">Digidau Takri</type>
 			<type key="numbers" type="taml">Rhifolion Tamilaidd Traddodiadol</type>
 			<type key="numbers" type="tamldec">Digidau Tamilaidd</type>
+			<type key="numbers" type="tamldec" scope="core">Tamilaidd Modern</type>
 			<type key="numbers" type="telu">Digidau Telugu</type>
 			<type key="numbers" type="thai">Digidau Thai</type>
 			<type key="numbers" type="tibt">Digidau Tibetaidd</type>
+			<type key="numbers" type="traditional" scope="core">Rhifolion traddodiadol</type>
 			<type key="numbers" type="vaii">Digidau Vai</type>
 			<type key="ss" type="none" scope="core">Wedi’i ddiffodd</type>
 			<type key="ss" type="standard" scope="core">Ymlaen</type>
+			<type key="t0" type="und">Cyfieithu Peirianyddol Heb ei Nodi</type>
+			<type key="va" type="posix" scope="core">Amrywiad POSIX</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Wedi’i ddiffodd</typeValue>
+			<typeValue type="yes">Ymlaen</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metrig</measurementSystemName>
 			<measurementSystemName type="UK">DU</measurementSystemName>
@@ -1220,8 +1322,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyM">M/y G</dateFormatItem>
-						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
-						<dateFormatItem id="GyMEd">E, M/d/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
@@ -1234,15 +1336,58 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">M/y G – M/y G</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="G">d/M/y G – d/M/y G</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="G">E, d/M/y G – E, d/M/y G</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -1301,22 +1446,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL–LLLL</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d – d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
@@ -1413,6 +1562,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="fri">Gwen</day>
 							<day type="sat">Sad</day>
 						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">Su</day>
+							<day type="mon">Ll</day>
+							<day type="tue">Ma</day>
+							<day type="wed">Me</day>
+							<day type="thu">I</day>
+							<day type="fri">G</day>
+							<day type="sat">Sa</day>
+						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">Su</day>
 							<day type="mon">Ll</day>
@@ -1443,13 +1601,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="sat">Sad</day>
 						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun">S</day>
+							<day type="sun">Su</day>
 							<day type="mon">Ll</day>
-							<day type="tue">M</day>
-							<day type="wed">M</day>
+							<day type="tue">Ma</day>
+							<day type="wed">Me</day>
 							<day type="thu">I</day>
 							<day type="fri">G</day>
-							<day type="sat">S</day>
+							<day type="sat">Sa</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1574,6 +1732,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<numericSeparators>
+						<numericDateSeparator>/</numericDateSeparator>
+					</numericSeparators>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
@@ -1625,11 +1786,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyM">M/y G</dateFormatItem>
-						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
-						<dateFormatItem id="GyMEd">E, M/d/y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d, MMMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d MMMM, y G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
@@ -1638,6 +1802,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="zero">'wythnos' W 'o' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">'wythnos' W 'o' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="two">'wythnos' W 'o' MMMM</dateFormatItem>
@@ -1651,6 +1817,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd">d MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">E, d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQ">Q y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
@@ -1661,7 +1829,53 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yw" count="many">'wythnos' w 'o' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'wythnos' w 'o' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day-Of-Week">{1}, {0}</appendItem>
+						<appendItem request="Era">{0} {1}</appendItem>
+						<appendItem request="Time-Day-Of-Week">{1}, {0}</appendItem>
+					</appendItems>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">M/y G – M/y G</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="G">d/M/y G – d/M/y G</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="G">E, d/M/y G – E, d/M/y G</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d – d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y –d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
@@ -1716,6 +1930,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
 							<greatestDifference id="M">LLLL–LLLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d">d – d MMMM</greatestDifference>
+							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y – y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -2605,24 +2826,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Ffaro</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Amser Haf Prydain</daylight>
-				</long>
 				<exemplarCity>Llundain</exemplarCity>
 			</zone>
 			<zone type="Asia/Tbilisi">
 				<exemplarCity>Tiflis</exemplarCity>
 			</zone>
-			<zone type="Europe/Guernsey">
-				<exemplarCity>Ynys y Garn</exemplarCity>
+			<zone type="Europe/Athens">
+				<exemplarCity>Athen</exemplarCity>
 			</zone>
 			<zone type="Atlantic/South_Georgia">
 				<exemplarCity>De Georgia</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Amser Safonol Iwerddon</daylight>
-				</long>
 				<exemplarCity>Dulyn</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -2658,14 +2873,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Merida">
 				<exemplarCity>Merida</exemplarCity>
 			</zone>
-			<zone type="Asia/Gaza">
-				<exemplarCity>Gasa</exemplarCity>
-			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity>Bwcarést</exemplarCity>
 			</zone>
 			<zone type="Europe/Istanbul">
-				<exemplarCity>Caergystennin</exemplarCity>
+				<exemplarCity>Istanbwl</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
@@ -2691,6 +2903,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Saigon">
 				<exemplarCity>Dinas Hô Chi Minh</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Amser Acrys</generic>
+					<standard>Amser Safonol Acrys</standard>
+					<daylight>Amser Haf Acrys</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Amser Afghanistan</standard>
@@ -2864,6 +3083,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Amser Brasília</generic>
 					<standard>Amser Safonol Brasília</standard>
 					<daylight>Amser Haf Brasília</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Amser Prydain</generic>
+					<daylight>Amser Haf Prydain</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -3057,6 +3282,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>GMT</standard>
 				</short>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Amser yr Ynys Las</generic>
+					<standard>Amser Safonol yr Ynys Las</standard>
+					<daylight>Amser Haf yr Ynys Las</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Amser Dwyrain yr Ynys Las</generic>
@@ -3083,7 +3315,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Amser Safonol Hawaii-Aleutian</standard>
+					<standard>Amser Hawaii</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3144,6 +3376,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Amser Haf Iran</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Amser Iwerddon</generic>
+					<daylight>Amser Safonol Iwerddon</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Amser Irkutsk</generic>
@@ -3163,6 +3401,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Amser Japan</generic>
 					<standard>Amser Safonol Japan</standard>
 					<daylight>Amser Haf Japan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>Amser Kamchatka</generic>
+					<standard>Amser Safonol Kamchatka</standard>
+					<daylight>Amser Haf Kamchatka</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -3407,7 +3652,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Pyongyang">
 				<long>
-					<standard>Amser Pyongyang</standard>
+					<standard>Amser Gogledd Korea</standard>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -3436,9 +3681,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Amser Samoa</generic>
 					<standard>Amser Safonol Samoa</standard>
-					<daylight>Amser Haf Samoa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3478,9 +3721,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Taipei">
 				<long>
-					<generic>Amser Taipei</generic>
-					<standard>Amser Safonol Taipei</standard>
-					<daylight>Amser Haf Taipei</daylight>
+					<generic>Amser Taiwan</generic>
+					<standard>Amser Safonol Taiwan</standard>
+					<daylight>Amser Haf Taiwan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
@@ -3505,6 +3748,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Amser Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Amser Türkiye</generic>
+					<standard>Amser Safonol Türkiye</standard>
+					<daylight>Amser Haf Türkiye</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Amser Tyrcmenistan</generic>
@@ -3522,6 +3772,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Amser Uruguay</generic>
 					<standard>Amser Safonol Uruguay</standard>
 					<daylight>Amser Haf Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Amser Ürümqi</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -3615,33 +3870,81 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000" count="few">000K</pattern>
 					<pattern type="100000" count="many">000K</pattern>
 					<pattern type="100000" count="other">000 mil</pattern>
+					<pattern type="1000000" count="zero">0M</pattern>
 					<pattern type="1000000" count="one">0 miliwn</pattern>
+					<pattern type="1000000" count="two">0M</pattern>
+					<pattern type="1000000" count="few">0M</pattern>
+					<pattern type="1000000" count="many">0M</pattern>
 					<pattern type="1000000" count="other">0 miliwn</pattern>
+					<pattern type="10000000" count="zero">00M</pattern>
 					<pattern type="10000000" count="one">00 miliwn</pattern>
+					<pattern type="10000000" count="two">00M</pattern>
+					<pattern type="10000000" count="few">00M</pattern>
+					<pattern type="10000000" count="many">00M</pattern>
 					<pattern type="10000000" count="other">00 miliwn</pattern>
+					<pattern type="100000000" count="zero">000M</pattern>
 					<pattern type="100000000" count="one">000 miliwn</pattern>
+					<pattern type="100000000" count="two">000M</pattern>
+					<pattern type="100000000" count="few">000M</pattern>
+					<pattern type="100000000" count="many">000M</pattern>
 					<pattern type="100000000" count="other">000 miliwn</pattern>
+					<pattern type="1000000000" count="zero">0B</pattern>
 					<pattern type="1000000000" count="one">0 biliwn</pattern>
+					<pattern type="1000000000" count="two">0B</pattern>
+					<pattern type="1000000000" count="few">0B</pattern>
+					<pattern type="1000000000" count="many">0B</pattern>
 					<pattern type="1000000000" count="other">0 biliwn</pattern>
+					<pattern type="10000000000" count="zero">00B</pattern>
 					<pattern type="10000000000" count="one">00 biliwn</pattern>
+					<pattern type="10000000000" count="two">00B</pattern>
+					<pattern type="10000000000" count="few">00B</pattern>
+					<pattern type="10000000000" count="many">00B</pattern>
 					<pattern type="10000000000" count="other">00 biliwn</pattern>
+					<pattern type="100000000000" count="zero">000B</pattern>
 					<pattern type="100000000000" count="one">000 biliwn</pattern>
+					<pattern type="100000000000" count="two">000B</pattern>
+					<pattern type="100000000000" count="few">000B</pattern>
+					<pattern type="100000000000" count="many">000B</pattern>
 					<pattern type="100000000000" count="other">000 biliwn</pattern>
+					<pattern type="1000000000000" count="zero">0T</pattern>
 					<pattern type="1000000000000" count="one">0 triliwn</pattern>
+					<pattern type="1000000000000" count="two">0T</pattern>
+					<pattern type="1000000000000" count="few">0T</pattern>
+					<pattern type="1000000000000" count="many">0T</pattern>
 					<pattern type="1000000000000" count="other">0 triliwn</pattern>
+					<pattern type="10000000000000" count="zero">00T</pattern>
 					<pattern type="10000000000000" count="one">00 triliwn</pattern>
+					<pattern type="10000000000000" count="two">00T</pattern>
+					<pattern type="10000000000000" count="few">00T</pattern>
+					<pattern type="10000000000000" count="many">00T</pattern>
 					<pattern type="10000000000000" count="other">00 triliwn</pattern>
+					<pattern type="100000000000000" count="zero">000T</pattern>
 					<pattern type="100000000000000" count="one">000T</pattern>
+					<pattern type="100000000000000" count="two">000T</pattern>
+					<pattern type="100000000000000" count="few">000T</pattern>
+					<pattern type="100000000000000" count="many">000T</pattern>
 					<pattern type="100000000000000" count="other">000 triliwn</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
+					<pattern type="1000000000" count="zero">0B</pattern>
 					<pattern type="1000000000" count="one">0B</pattern>
+					<pattern type="1000000000" count="two">0B</pattern>
+					<pattern type="1000000000" count="few">0B</pattern>
+					<pattern type="1000000000" count="many">0B</pattern>
 					<pattern type="1000000000" count="other">0B</pattern>
+					<pattern type="10000000000" count="zero">00B</pattern>
 					<pattern type="10000000000" count="one">00B</pattern>
+					<pattern type="10000000000" count="two">00B</pattern>
+					<pattern type="10000000000" count="few">00B</pattern>
+					<pattern type="10000000000" count="many">00B</pattern>
 					<pattern type="10000000000" count="other">00B</pattern>
+					<pattern type="100000000000" count="zero">000B</pattern>
 					<pattern type="100000000000" count="one">000B</pattern>
+					<pattern type="100000000000" count="two">000B</pattern>
+					<pattern type="100000000000" count="few">000B</pattern>
+					<pattern type="100000000000" count="many">000B</pattern>
 					<pattern type="100000000000" count="other">000B</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
@@ -4349,15 +4652,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">yuan Tsieina (ar y môr)</displayName>
 				<displayName count="many">yuan Tsieina (ar y môr)</displayName>
 				<displayName count="other">yuan Tsieina (ar y môr)</displayName>
-			</currency>
-			<currency type="CNX">
-				<displayName>Doler Banc Pobl Tsieina</displayName>
-				<displayName count="zero">doler Banc Pobl Tsieina</displayName>
-				<displayName count="one">ddoler Banc Pobl Tsieina</displayName>
-				<displayName count="two">ddoler Banc Pobl Tsieina</displayName>
-				<displayName count="few">doler Banc Pobl Tsieina</displayName>
-				<displayName count="many">doler Banc Pobl Tsieina</displayName>
-				<displayName count="other">doler Banc Pobl Tsieina</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Yuan Tsieina</displayName>
@@ -5986,12 +6280,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="XCG">
 				<displayName>guilder Caribïaidd</displayName>
-				<displayName count="zero">guilder Caribïaidd</displayName>
-				<displayName count="one">guilder Caribïaidd</displayName>
-				<displayName count="two">guilder Caribïaidd</displayName>
-				<displayName count="few">guilder Caribïaidd</displayName>
-				<displayName count="many">guilder Caribïaidd</displayName>
-				<displayName count="other">guilder Caribïaidd</displayName>
 			</currency>
 			<currency type="XEU">
 				<displayName>Uned Arian Cyfred Ewropeaidd</displayName>
@@ -6130,12 +6418,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWG">
 				<displayName>Zimbabwean Gold</displayName>
-				<displayName count="zero">Zimbabwean Gold</displayName>
-				<displayName count="one">Zimbabwean Gold</displayName>
-				<displayName count="two">Zimbabwean Gold</displayName>
-				<displayName count="few">Zimbabwean Gold</displayName>
-				<displayName count="many">Zimbabwean Gold</displayName>
-				<displayName count="other">Zimbabwean Gold</displayName>
 			</currency>
 			<currency type="ZWL">
 				<displayName>Doler Zimbabwe (2009)</displayName>
@@ -6166,12 +6448,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="few">{0} chi, {0} cath</pluralMinimalPairs>
 			<pluralMinimalPairs count="many">{0} chi, {0} chath</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} ci, {0} cath</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="few">{0}ydd ci</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="many">{0}ed ci</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="one">ci {0}af</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">ci rhif {0}</ordinalMinimalPairs>
-			<ordinalMinimalPairs ordinal="two">{0}il gi</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="zero">{0}fed ci</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">Cymerwch y troad {0}af ar y dde.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="two">Cymerwch yr {0}il droad ar y dde</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="few">Cymerwch y {0}ydd troad ar y dde.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="many">{0}ed ci</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Cymerwch droad rhif {0} ar y dde.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -6443,7 +6725,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} milimôl y litr</unitPattern>
 			</unit>
 			<unit type="concentr-part">
-				<displayName>rhan</displayName>
 				<unitPattern count="zero">{0} rhan</unitPattern>
 				<unitPattern count="one">{0} rhan</unitPattern>
 				<unitPattern count="two">{0} ran</unitPattern>
@@ -8801,20 +9082,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} kt</unitPattern>
 				<unitPattern count="other">{0}kt</unitPattern>
 			</unit>
-			<unit type="concentr-part">
-				<displayName>rhan</displayName>
-				<unitPattern count="zero">{0} rhan</unitPattern>
-				<unitPattern count="one">{0} rhan</unitPattern>
-				<unitPattern count="two">{0} rhan</unitPattern>
-				<unitPattern count="few">{0} rhan</unitPattern>
-				<unitPattern count="many">{0} rhan</unitPattern>
-				<unitPattern count="other">{0} rhan</unitPattern>
-			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
-			</unit>
-			<unit type="concentr-ofglucose">
-				<displayName>Glc</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
@@ -9453,9 +9722,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0}mmHg</unitPattern>
 				<unitPattern count="other">{0}mmHg</unitPattern>
 			</unit>
-			<unit type="pressure-ofhg">
-				<displayName>o Hg</displayName>
-			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<unitPattern count="zero">{0}psi</unitPattern>
 				<unitPattern count="one">{0}psi</unitPattern>
@@ -9679,11 +9945,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-gallon-imperial">
 				<displayName>Imp gal</displayName>
 				<unitPattern count="zero">{0} gal Imp.</unitPattern>
-				<unitPattern count="one">{0}galIm</unitPattern>
+				<unitPattern count="one">{0}gal-Im</unitPattern>
 				<unitPattern count="two">{0} gal Imp.</unitPattern>
 				<unitPattern count="few">{0} gal Imp.</unitPattern>
 				<unitPattern count="many">{0} gal Imp.</unitPattern>
-				<unitPattern count="other">{0}galIm</unitPattern>
+				<unitPattern count="other">{0}gal-Im</unitPattern>
 				<perUnitPattern>{0}/galIm</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
@@ -9722,11 +9988,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-tablespoon">
 				<unitPattern count="zero">{0} tbsp</unitPattern>
-				<unitPattern count="one">{0}tbsp</unitPattern>
+				<unitPattern count="one">{0} Llond llwy fwrdd</unitPattern>
 				<unitPattern count="two">{0} tbsp</unitPattern>
 				<unitPattern count="few">{0} tbsp</unitPattern>
 				<unitPattern count="many">{0} tbsp</unitPattern>
-				<unitPattern count="other">{0}tbsp</unitPattern>
+				<unitPattern count="other">{0} Llond llwy fwrdd</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>dsp Imp</displayName>
@@ -9779,89 +10045,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} qt Imp.</unitPattern>
 				<unitPattern count="many">{0} qt Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
-			</unit>
-			<unit type="angle-steradian">
-				<unitPattern count="zero">{0} sr</unitPattern>
-				<unitPattern count="one">{0} sr</unitPattern>
-				<unitPattern count="two">{0} sr</unitPattern>
-				<unitPattern count="few">{0} sr</unitPattern>
-				<unitPattern count="many">{0} sr</unitPattern>
-				<unitPattern count="other">{0} sr</unitPattern>
-			</unit>
-			<unit type="electric-coulomb">
-				<unitPattern count="zero">{0} C</unitPattern>
-				<unitPattern count="one">{0} C</unitPattern>
-				<unitPattern count="two">{0} C</unitPattern>
-				<unitPattern count="few">{0} C</unitPattern>
-				<unitPattern count="many">{0} C</unitPattern>
-				<unitPattern count="other">{0} C</unitPattern>
-			</unit>
-			<unit type="electric-farad">
-				<unitPattern count="zero">{0} F</unitPattern>
-				<unitPattern count="one">{0} F</unitPattern>
-				<unitPattern count="two">{0} F</unitPattern>
-				<unitPattern count="few">{0} F</unitPattern>
-				<unitPattern count="many">{0} F</unitPattern>
-				<unitPattern count="other">{0} F</unitPattern>
-			</unit>
-			<unit type="electric-henry">
-				<unitPattern count="zero">{0} H</unitPattern>
-				<unitPattern count="one">{0} H</unitPattern>
-				<unitPattern count="two">{0} H</unitPattern>
-				<unitPattern count="few">{0} H</unitPattern>
-				<unitPattern count="many">{0} H</unitPattern>
-				<unitPattern count="other">{0} H</unitPattern>
-			</unit>
-			<unit type="electric-siemens">
-				<unitPattern count="zero">{0} S</unitPattern>
-				<unitPattern count="one">{0} S</unitPattern>
-				<unitPattern count="two">{0} S</unitPattern>
-				<unitPattern count="few">{0} S</unitPattern>
-				<unitPattern count="many">{0} S</unitPattern>
-				<unitPattern count="other">{0} S</unitPattern>
-			</unit>
-			<unit type="energy-calorie-it">
-				<displayName>cal-IT</displayName>
-			</unit>
-			<unit type="energy-becquerel">
-				<unitPattern count="zero">{0} Bq</unitPattern>
-				<unitPattern count="one">{0} Bq</unitPattern>
-				<unitPattern count="two">{0} Bq</unitPattern>
-				<unitPattern count="few">{0} Bq</unitPattern>
-				<unitPattern count="many">{0} Bq</unitPattern>
-				<unitPattern count="other">{0} Bq</unitPattern>
-			</unit>
-			<unit type="energy-sievert">
-				<unitPattern count="zero">{0} Sv</unitPattern>
-				<unitPattern count="one">{0} Sv</unitPattern>
-				<unitPattern count="two">{0} Sv</unitPattern>
-				<unitPattern count="few">{0} Sv</unitPattern>
-				<unitPattern count="many">{0} Sv</unitPattern>
-				<unitPattern count="other">{0} Sv</unitPattern>
-			</unit>
-			<unit type="energy-gray">
-				<unitPattern count="zero">{0} Gy</unitPattern>
-				<unitPattern count="one">{0} Gy</unitPattern>
-				<unitPattern count="two">{0} Gy</unitPattern>
-				<unitPattern count="few">{0} Gy</unitPattern>
-				<unitPattern count="many">{0} Gy</unitPattern>
-				<unitPattern count="other">{0} Gy</unitPattern>
-			</unit>
-			<unit type="magnetic-tesla">
-				<unitPattern count="zero">{0} T</unitPattern>
-				<unitPattern count="one">{0} T</unitPattern>
-				<unitPattern count="two">{0} T</unitPattern>
-				<unitPattern count="few">{0} T</unitPattern>
-				<unitPattern count="many">{0} T</unitPattern>
-				<unitPattern count="other">{0} T</unitPattern>
-			</unit>
-			<unit type="magnetic-weber">
-				<unitPattern count="zero">{0} Wb</unitPattern>
-				<unitPattern count="one">{0} Wb</unitPattern>
-				<unitPattern count="two">{0} Wb</unitPattern>
-				<unitPattern count="few">{0} Wb</unitPattern>
-				<unitPattern count="many">{0} Wb</unitPattern>
-				<unitPattern count="other">{0} Wb</unitPattern>
 			</unit>
 			<unit type="speed-light-speed">
 				<unitPattern count="zero">{0} golau</unitPattern>

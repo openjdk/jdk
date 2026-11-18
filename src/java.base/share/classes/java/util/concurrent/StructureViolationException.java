@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,13 @@
  */
 package java.util.concurrent;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Thrown when a structure violation is detected.
  *
  * @see StructuredTaskScope#close()
  *
- * @since 21
+ * @since 28
  */
-@PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
 public final class StructureViolationException extends RuntimeException {
     @java.io.Serial
     private static final long serialVersionUID = -7705327650798235468L;

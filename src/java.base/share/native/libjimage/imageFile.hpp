@@ -391,8 +391,8 @@ public:
     // Return the ith entry from the table.
     inline ImageFileReader* get(u4 i) { return _table[i]; }
 
-    // Add a new image entry to the table.
-    void add(ImageFileReader* image);
+    // Add a new image entry to the table. Return false if allocation fails.
+    bool add(ImageFileReader* image);
 
     // Remove an image entry from the table.
     void remove(ImageFileReader* image);

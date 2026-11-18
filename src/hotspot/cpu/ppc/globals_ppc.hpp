@@ -96,7 +96,7 @@ define_pd_global(bool, ValueTypeReturnedAsFields, false);
   product(bool, ReoptimizeCallSequences, true, DIAGNOSTIC,                  \
           "Reoptimize code-sequences of calls at runtime.")                 \
                                                                             \
-  /* Power 8: Configure Data Stream Control Register. */                    \
+  /* Configure Data Stream Control Register. */                             \
   product(uint64_t, DSCR_PPC64, (uint64_t)-1,                               \
           "Power8 or later: Specify encoded value for Data Stream Control " \
           "Register")                                                       \

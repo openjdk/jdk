@@ -24,9 +24,11 @@
 
 /*
  * @test
- * @summary "AOT" aliases for traditional CDS command-line options
- * @requires vm.cds
+ * @bug 8362530 8396140
+ * @summary General use of AOT flags
+ * @requires vm.cds.supports.aot.code.caching
  * @requires vm.flagless
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
@@ -34,6 +36,8 @@
  */
 
 import java.io.File;
+
+import jdk.internal.misc.PreviewFeatures;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -52,9 +56,14 @@ public class AOTFlags {
     }
 
     static void positiveTests() throws Exception {
+        String hasTrainingDataPattern = "MethodTrainingData *= *[1-9]";
+        String hasAOTCodePattern = "Shared file region .ac. .: *[1-9]";
+        String noAOTCodePattern = "Shared file region .ac. .: *0";
+        String hasMappedAOTCodePattern = "Mapped [0-9]+ bytes at address 0x[0-9a-f]+ from AOT Code Cache";
+
         //----------------------------------------------------------------------
         printTestCase("Training Run");
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-Xlog:aot=debug",
@@ -63,11 +72,13 @@ public class AOTFlags {
         OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "train");
         out.shouldContain("Hello World");
         out.shouldContain("AOTConfiguration recorded: " + aotConfigFile);
+        out.shouldMatch(hasTrainingDataPattern);
+        out.shouldMatch(noAOTCodePattern);
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
         printTestCase("Assembly Phase (AOTClassLinking unspecified -> should be enabled by default)");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
@@ -78,23 +89,43 @@ public class AOTFlags {
         out = CDSTestUtils.executeAndLog(pb, "asm");
         out.shouldContain("AOTCache creation is complete");
         out.shouldMatch("hello[.]aot");
+        out.shouldMatch(hasTrainingDataPattern);
+        out.shouldMatch(hasAOTCodePattern);
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
         printTestCase("Production Run with AOTCache");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:aot",
+            "-Xlog:aot+codecache*",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
         out.shouldContain("Using AOT-linked classes: true (static archive: has aot-linked classes)");
         out.shouldContain("Opened AOT cache hello.aot.");
         out.shouldContain("Hello World");
+        out.shouldMatch(hasMappedAOTCodePattern);
+        out.shouldHaveExitValue(0);
+
+        //----------------------------------------------------------------------
+        printTestCase("Production Run with PrintSharedArchiveAndExit");
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:AOTCache=" + aotCacheFile,
+            "-XX:AOTMode=required",
+            "-XX:+PrintSharedArchiveAndExit",
+            "-Xlog:aot",
+            "-Xlog:aot+codecache*",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "prod");
+        out.shouldContain("Using AOT-linked classes: true (static archive: has aot-linked classes)");
+        out.shouldContain("Opened AOT cache hello.aot.");
+        out.shouldContain("AOT Code Cache entries");
+        out.shouldMatch(hasMappedAOTCodePattern);
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
         printTestCase("AOTMode=off");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "--show-version",
             "-Xlog:aot",
@@ -108,7 +139,7 @@ public class AOTFlags {
 
         //----------------------------------------------------------------------
         printTestCase("AOTMode=auto");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "--show-version",
             "-Xlog:aot",
@@ -123,7 +154,7 @@ public class AOTFlags {
         //----------------------------------------------------------------------
         for (String mode : onOrRequired) {
             printTestCase("AOTMode=" + mode);
-            pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:AOTCache=" + aotCacheFile,
                 "--show-version",
                 "-Xlog:aot",
@@ -138,12 +169,12 @@ public class AOTFlags {
 
         //----------------------------------------------------------------------
         printTestCase("Assembly Phase with -XX:-AOTClassLinking");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:-AOTClassLinking",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
-            "-Xlog:aot",
+            "-Xlog:aot=debug",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+AOTCompatibleOopCompression", // avoid production run failure due to incompatible CompressedOops::base
             "-cp", appJar);
@@ -151,23 +182,27 @@ public class AOTFlags {
         out.shouldContain("AOTClassLinking is updated to true (the same as when AOT configuration file");
         out.shouldContain("AOTCache creation is complete");
         out.shouldMatch("hello[.]aot");
+        out.shouldMatch(hasTrainingDataPattern);
+        out.shouldMatch(hasAOTCodePattern);
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
         printTestCase("Production Run with AOTCache created from the last step");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:aot",
+            "-Xlog:aot+codecache*",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
         out.shouldContain("Using AOT-linked classes: true");
         out.shouldContain("Opened AOT cache hello.aot.");
         out.shouldContain("Hello World");
+        out.shouldMatch(hasMappedAOTCodePattern);
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
         printTestCase("Training run with -XX:-AOTClassLinking, but assembly run with -XX:+AOTClassLinking");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:-AOTClassLinking",
             "-XX:AOTConfiguration=" + aotConfigFile,
@@ -178,7 +213,7 @@ public class AOTFlags {
         out.shouldContain("AOTConfiguration recorded: " + aotConfigFile);
         out.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:+AOTClassLinking",
             "-XX:AOTConfiguration=" + aotConfigFile,
@@ -196,7 +231,7 @@ public class AOTFlags {
         printTestCase("One step training run (JEP-514");
 
         // Set all AOTMode/AOTCacheOutput/AOTConfiguration
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTCacheOutput=" + aotCacheFile,
             "-XX:AOTConfiguration=" + aotConfigFile,
@@ -209,7 +244,7 @@ public class AOTFlags {
         out.shouldHaveExitValue(0);
 
         // Set AOTCacheOutput/AOTConfiguration only; Ergo for: AOTMode=record
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCacheOutput=" + aotCacheFile,
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-Xlog:aot=debug",
@@ -221,7 +256,7 @@ public class AOTFlags {
         out.shouldHaveExitValue(0);
 
         // Set AOTCacheOutput/AOTConfiguration/AOTMode=auto; Ergo changes: AOTMode=record
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=auto",
             "-XX:AOTCacheOutput=" + aotCacheFile,
             "-XX:AOTConfiguration=" + aotConfigFile,
@@ -234,7 +269,7 @@ public class AOTFlags {
         out.shouldHaveExitValue(0);
 
         // Set AOTCacheOutput only; Ergo for: AOTMode=record, AOTConfiguration=<temp>
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCacheOutput=" + aotCacheFile,
             "-Xlog:aot=debug",
             "-cp", appJar, helloClass);
@@ -245,7 +280,7 @@ public class AOTFlags {
         out.shouldHaveExitValue(0);
 
         // Set AOTCacheOutput/AOTMode=auto only; Ergo for: AOTMode=record, AOTConfiguration=<temp>
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=auto",
             "-XX:AOTCacheOutput=" + aotCacheFile,
             "-Xlog:aot=debug",
@@ -257,7 +292,7 @@ public class AOTFlags {
         out.shouldHaveExitValue(0);
 
         // Quoating of space characters in child JVM process
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTCacheOutput=" + aotCacheFile,
             "-Dmy.prop=My string -Xshare:off here", // -Xshare:off should not be treated as a single VM opt for the child JVM
             "-Xlog:aot=debug",
@@ -270,7 +305,7 @@ public class AOTFlags {
 
         // Training run with -XX:+PrintTieredEvents (see JDK-8362530).
         printTestCase("Training run with -XX:+PrintTieredEvents");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:+PrintTieredEvents",
             "-XX:AOTConfiguration=" + aotConfigFile,
@@ -286,7 +321,7 @@ public class AOTFlags {
             + "-Xshare:off, -Xshare:dump, DumpLoadedClassList, SharedClassListFile, "
             + "or SharedArchiveFile";
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-Xshare:off",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-cp", appJar, helloClass);
@@ -295,7 +330,7 @@ public class AOTFlags {
         out.shouldContain("Option AOTConfiguration" + mixOldNewErrSuffix);
         out.shouldNotHaveExitValue(0);
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:SharedArchiveFile=" + aotCacheFile,
             "-XX:AOTCache=" + aotCacheFile,
             "-cp", appJar, helloClass);
@@ -305,7 +340,7 @@ public class AOTFlags {
 
         //----------------------------------------------------------------------
         printTestCase("Use AOTConfiguration without AOTMode/AOTCacheOutput");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-cp", appJar, helloClass);
 
@@ -316,7 +351,7 @@ public class AOTFlags {
         //----------------------------------------------------------------------
         for (String mode : onOrRequired) {
             printTestCase("Use AOTConfiguration with AOTMode=" + mode);
-            pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:AOTMode=" + mode,
                 "-XX:AOTConfiguration=" + aotConfigFile,
                 "-cp", appJar, helloClass);
@@ -328,14 +363,14 @@ public class AOTFlags {
 
         //----------------------------------------------------------------------
         printTestCase("Use AOTMode without AOTCacheOutput or AOTConfiguration");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-cp", appJar, helloClass);
 
         out = CDSTestUtils.executeAndLog(pb, "neg");
         out.shouldContain("At least one of AOTCacheOutput and AOTConfiguration must be specified when using -XX:AOTMode=record");
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-cp", appJar, helloClass);
 
@@ -345,7 +380,7 @@ public class AOTFlags {
 
         //----------------------------------------------------------------------
         printTestCase("Bad AOTMode");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=foo",
             "-cp", appJar, helloClass);
 
@@ -354,20 +389,56 @@ public class AOTFlags {
         out.shouldNotHaveExitValue(0);
 
         //----------------------------------------------------------------------
-        printTestCase("AOTCache specified with -XX:AOTMode=record");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        printTestCase("Iterative: Non-existent AOTCache specified with -XX:AOTMode=record");
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
-            "-XX:AOTCache=" + aotCacheFile,
+            "-XX:AOTCache=" + aotCacheFile + "-no-such-file",
             "-cp", appJar, helloClass);
 
-        out = CDSTestUtils.executeAndLog(pb, "neg");
-        out.shouldContain("AOTCache must not be specified when using -XX:AOTMode=record");
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldContain("Unable to use AOT cache.");
+        out.shouldNotHaveExitValue(0);
+
+        //----------------------------------------------------------------------
+        printTestCase("Iterative: cannot use AOTCache created with -XX:-AOTClassLinking");
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:AOTCacheOutput=hello-noaotlink.aot",
+            "-XX:-AOTClassLinking",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldHaveExitValue(0);
+
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:AOTCache=hello-noaotlink.aot",
+            "-XX:AOTCacheOutput=" + aotCacheFile,
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldContain("AOT cache was created with AOTClassLinking disabled. It cannot be used when AOTClassLinking is enabled");
+        out.shouldNotHaveExitValue(0);
+
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:AOTCache=hello-noaotlink.aot",
+            "-XX:AOTMode=record",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            "-XX:-AOTClassLinking",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldContain("AOTClassLinking cannot be disabled when both AOTCache and AOTConfiguration are specified");
+        out.shouldNotHaveExitValue(0);
+
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:AOTCache=hello-noaotlink.aot",
+            "-XX:AOTCacheOutput=" + aotCacheFile,
+            "-XX:-AOTClassLinking",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "re-train-neg");
+        out.shouldContain("AOTClassLinking cannot be disabled when both AOTCache and AOTCacheOutput are specified");
         out.shouldNotHaveExitValue(0);
 
         //----------------------------------------------------------------------
         printTestCase("AOTCache/AOTCacheOutput not specified with -XX:AOTMode=create");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-cp", appJar, helloClass);
@@ -378,7 +449,7 @@ public class AOTFlags {
 
         //----------------------------------------------------------------------
         printTestCase("AOTCache and AOTCacheOutput have different values");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=aaa",
@@ -391,7 +462,7 @@ public class AOTFlags {
 
         //----------------------------------------------------------------------
         printTestCase("No such config file");
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=no-such-file",
             "-XX:AOTCache=" + aotCacheFile,
@@ -405,7 +476,7 @@ public class AOTFlags {
         printTestCase("AOTConfiguration file cannot be used as a CDS archive");
 
         // first make sure we have a valid aotConfigFile
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-cp", appJar, helloClass);
@@ -415,7 +486,7 @@ public class AOTFlags {
 
         // Cannot use this config file as a AOT cache
         for (String mode : onOrRequired) {
-            pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:AOTMode=" + mode,
                 "-XX:AOTCache=" + aotConfigFile,
                 "-cp", appJar, helloClass);
@@ -426,7 +497,7 @@ public class AOTFlags {
         }
 
         // Cannot use this config file as a CDS archive
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-Xshare:on",
             "-XX:SharedArchiveFile=" + aotConfigFile,
             "-cp", appJar, helloClass);
@@ -438,7 +509,7 @@ public class AOTFlags {
         //----------------------------------------------------------------------
         printTestCase("Classpath mismatch when creating archive");
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
@@ -453,7 +524,7 @@ public class AOTFlags {
         //----------------------------------------------------------------------
         printTestCase("Cannot use multiple paths in AOTConfiguration");
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile + File.pathSeparator + "dummy",
             "-cp", "noSuchJar.jar");
@@ -465,7 +536,7 @@ public class AOTFlags {
         //----------------------------------------------------------------------
         printTestCase("Cannot use multiple paths in AOTCache");
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile + File.pathSeparator + "dummy",
@@ -479,7 +550,7 @@ public class AOTFlags {
         printTestCase("Cannot use a classic CDS archive with -XX:+AOTClassLinking");
         String staticArchive = "static.jsa";
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-Xshare:dump",
             "-XX:SharedArchiveFile=" + staticArchive,
             "-XX:+AOTClassLinking");
@@ -492,13 +563,13 @@ public class AOTFlags {
         staticArchive = "static.jsa";
         String dynamicArchive = "dynamic.jsa";
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-Xshare:dump",
             "-XX:SharedArchiveFile=" + staticArchive);
         out = CDSTestUtils.executeAndLog(pb, "static");
         out.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:SharedArchiveFile=" + staticArchive,
             "-XX:ArchiveClassesAtExit=" + dynamicArchive,
             "--version");
@@ -506,7 +577,7 @@ public class AOTFlags {
         out.shouldHaveExitValue(0);
 
         for (String mode : onOrRequired) {
-            pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            pb = ProcessTools.createTestJavaProcessBuilder(
                 "-Xlog:aot",
                 "-XX:AOTMode=" + mode,
                 "-XX:AOTCache=" + dynamicArchive,
@@ -518,6 +589,179 @@ public class AOTFlags {
             out.shouldHaveExitValue(1);
         }
 
+        // Valhalla Flags
+        // Note that createLimitedTestJavaProcessBuilder is used so the use of
+        // --enable-preview can be controlled.
+
+        //----------------------------------------------------------------------
+        if (PreviewFeatures.isEnabled()) {
+            printTestCase("Training-Assembly Preview mismatch");
+            // Disable individual Valhalla flags to check just preview mode
+            pb = ProcessTools.createTestJavaProcessBuilder(
+                "--enable-preview",
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:-UseArrayFlattening",
+                "-XX:-UseFieldFlattening",
+                "-XX:-ValueTypePassFieldsAsArgs",
+                "-XX:-ValueTypeReturnedAsFields",
+                "-XX:-UseNullFreeNonAtomicValueFlattening",
+                "-XX:-UseNullFreeAtomicValueFlattening",
+                "-XX:-UseNullableAtomicValueFlattening",
+                "-XX:-UseNullableNonAtomicValueFlattening",
+                "-XX:AOTMode=record",
+                "-XX:AOTConfiguration=" + aotConfigFile,
+                "-Xlog:aot=debug",
+                "-cp", appJar, helloClass);
+
+            out = CDSTestUtils.executeAndLog(pb, "neg");
+            out.shouldHaveExitValue(0);
+
+            // Assembly run without preview specified
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:AOTMode=create",
+                "-XX:AOTConfiguration=" + aotConfigFile,
+                "-XX:AOTCache=" + aotCacheFile,
+                "-Xlog:aot=debug",
+                "-cp", appJar, helloClass);
+            out = CDSTestUtils.executeAndLog(pb, "neg");
+            out.shouldContain("This archive was created with --enable-preview. It is incompatible with the current JVM setting");
+            out.shouldNotHaveExitValue(0);
+
+            printTestCase("Assembly-Production Preview mismatch");
+            // Disable individual Valhalla flags to check just preview mode
+            pb = ProcessTools.createTestJavaProcessBuilder(
+                "--enable-preview",
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:-UseArrayFlattening",
+                "-XX:-UseFieldFlattening",
+                "-XX:-ValueTypePassFieldsAsArgs",
+                "-XX:-ValueTypeReturnedAsFields",
+                "-XX:-UseNullFreeNonAtomicValueFlattening",
+                "-XX:-UseNullFreeAtomicValueFlattening",
+                "-XX:-UseNullableAtomicValueFlattening",
+                "-XX:-UseNullableNonAtomicValueFlattening",
+                "-XX:AOTMode=create",
+                "-XX:AOTConfiguration=" + aotConfigFile,
+                "-XX:AOTCache=" + aotCacheFile,
+                "-Xlog:aot=debug",
+                "-cp", appJar, helloClass);
+
+            out = CDSTestUtils.executeAndLog(pb, "neg");
+            out.shouldHaveExitValue(0);
+
+            // Production run without preview specified
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:AOTMode=required",
+                "-XX:AOTCache=" + aotCacheFile,
+                "-Xlog:aot=debug",
+                "-cp", appJar, helloClass);
+            out = CDSTestUtils.executeAndLog(pb, "neg");
+            out.shouldContain("This archive was created with --enable-preview. It is incompatible with the current JVM setting");
+            out.shouldNotHaveExitValue(0);
+
+            printTestCase("Training-Assembly Preview mismatch 2");
+            // Train without preview
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:AOTMode=record",
+                "-XX:AOTConfiguration=" + aotConfigFile,
+                "-Xlog:aot=debug",
+                "-cp", appJar, helloClass);
+
+            out = CDSTestUtils.executeAndLog(pb, "neg");
+            out.shouldHaveExitValue(0);
+
+            // Assembly run with preview but individual flags disabled
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "--enable-preview",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:-UseArrayFlattening",
+                "-XX:-UseFieldFlattening",
+                "-XX:-ValueTypePassFieldsAsArgs",
+                "-XX:-ValueTypeReturnedAsFields",
+                "-XX:-UseNullFreeNonAtomicValueFlattening",
+                "-XX:-UseNullFreeAtomicValueFlattening",
+                "-XX:-UseNullableAtomicValueFlattening",
+                "-XX:-UseNullableNonAtomicValueFlattening",
+                "-XX:AOTMode=create",
+                "-XX:AOTConfiguration=" + aotConfigFile,
+                "-XX:AOTCache=" + aotCacheFile,
+                "-Xlog:aot=debug",
+                "-cp", appJar, helloClass);
+            out = CDSTestUtils.executeAndLog(pb, "neg");
+            out.shouldContain("This archive was not created with --enable-preview. It is incompatible with the current JVM setting");
+            out.shouldNotHaveExitValue(0);
+
+            printTestCase("Assembly-Production Preview mismatch 2");
+            // Assembly run without preview
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:AOTMode=create",
+                "-XX:AOTConfiguration=" + aotConfigFile,
+                "-XX:AOTCache=" + aotCacheFile,
+                "-Xlog:aot=debug",
+                "-cp", appJar, helloClass);
+
+            out = CDSTestUtils.executeAndLog(pb, "neg");
+            out.shouldHaveExitValue(0);
+
+            // Production run with preview but individual flags disabled
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "--enable-preview",
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:-UseArrayFlattening",
+                "-XX:-UseFieldFlattening",
+                "-XX:-ValueTypePassFieldsAsArgs",
+                "-XX:-ValueTypeReturnedAsFields",
+                "-XX:-UseNullFreeNonAtomicValueFlattening",
+                "-XX:-UseNullFreeAtomicValueFlattening",
+                "-XX:-UseNullableAtomicValueFlattening",
+                "-XX:-UseNullableNonAtomicValueFlattening",
+                "-XX:AOTMode=required",
+                "-XX:AOTCache=" + aotCacheFile,
+                "-Xlog:aot=debug",
+                "-cp", appJar, helloClass);
+            out = CDSTestUtils.executeAndLog(pb, "neg");
+            out.shouldContain("This archive was not created with --enable-preview. It is incompatible with the current JVM setting");
+            out.shouldNotHaveExitValue(0);
+
+            String[] valhallaFlags = {
+                "UseArrayFlattening",
+                "UseFieldFlattening",
+                "ValueTypePassFieldsAsArgs",
+                "ValueTypeReturnedAsFields",
+                "UseNullFreeNonAtomicValueFlattening",
+                "UseNullFreeAtomicValueFlattening",
+                "UseNullableAtomicValueFlattening",
+                "UseNullableNonAtomicValueFlattening",
+                "RestrictReservedStack"
+            };
+
+            String[] valhallaNumericFlags = {
+                "FlatteningBudget",
+                "DiagnoseSyncOnValueBasedClasses",
+                "FlatArrayElementMaxOops"
+            };
+
+            for (String flag : valhallaFlags) {
+                testMismatch(flag, false);
+            }
+
+            for (String flag : valhallaNumericFlags) {
+                testMismatch(flag, true);
+            }
+        }
+
         //----------------------------------------------------------------------
         testEmptyValue("AOTCache");
         testEmptyValue("AOTConfiguration");
@@ -525,9 +769,113 @@ public class AOTFlags {
         testEmptyValue("AOTCacheOutput");
     }
 
+    // Test mismatch in both directions
+    static void testMismatch(String flag, boolean numericFlag) throws Exception {
+        testTrainingAssemblyMismatchHelper(flag, numericFlag, true);
+        testTrainingAssemblyMismatchHelper(flag, numericFlag, false);
+
+        testAssemblyProductionMismatchHelper(flag, numericFlag, true);
+        testAssemblyProductionMismatchHelper(flag, numericFlag, false);
+    }
+
+    // Run training run with flag enabled and assembly run with the flag disabled
+    static void testTrainingAssemblyMismatchHelper(String flag, boolean numericFlag, boolean reverse) throws Exception {
+        String flagMode0;
+        String flagMode1;
+        if (numericFlag) {
+            flagMode0 = "-XX:" + flag + "=0";
+            flagMode1 = "-XX:" + flag + "=1";
+        } else {
+            flagMode0 = "-XX:+" + flag;
+            flagMode1 = "-XX:-" + flag;
+        }
+
+        // Training
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:AOTMode=record",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            reverse ? flagMode0 : flagMode1,
+            "-Xlog:cds=debug,aot=debug",
+            "-cp", appJar, helloClass);
+
+        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "neg");
+        out.shouldHaveExitValue(0);
+
+        // Assembly
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:AOTMode=create",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            "-XX:AOTCache=" + aotCacheFile,
+            reverse ? flagMode1 : flagMode0,
+            "-Xlog:cds=debug,aot=debug",
+            "-cp", appJar, helloClass);
+
+        out = CDSTestUtils.executeAndLog(pb, "neg");
+        out.shouldContain("VM option " + flag + " is different between");
+        out.shouldNotHaveExitValue(0);
+    }
+
+    // Run assembly run with flag enabled and production run with the flag disabled
+    static void testAssemblyProductionMismatchHelper(String flag, boolean numericFlag, boolean reverse) throws Exception {
+        String flagMode0;
+        String flagMode1;
+        if (numericFlag) {
+            flagMode0 = "-XX:" + flag + "=0";
+            flagMode1 = "-XX:" + flag + "=1";
+        } else {
+            flagMode0 = "-XX:+" + flag;
+            flagMode1 = "-XX:-" + flag;
+        }
+
+        // Training must have same configuration as assembly
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:AOTMode=record",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            reverse ? flagMode0 : flagMode1,
+            "-Xlog:cds=debug,aot=debug",
+            "-cp", appJar, helloClass);
+
+        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "neg");
+        out.shouldHaveExitValue(0);
+
+        // Assembly
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:AOTMode=create",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            "-XX:AOTCache=" + aotCacheFile,
+            reverse ? flagMode0 : flagMode1,
+            "-Xlog:cds=debug,aot=debug",
+            "-cp", appJar, helloClass);
+
+        out = CDSTestUtils.executeAndLog(pb, "neg");
+        out.shouldHaveExitValue(0);
+
+        // Production
+        pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:AOTMode=required",
+            "-XX:AOTCache=" + aotCacheFile,
+            reverse ? flagMode1 : flagMode0,
+            "-Xlog:cds=debug,aot=debug",
+            "-cp", appJar, helloClass);
+
+        out = CDSTestUtils.executeAndLog(pb, "neg");
+        out.shouldContain("VM option " + flag + " is different between");
+        out.shouldNotHaveExitValue(0);
+    }
+
     static void testEmptyValue(String option) throws Exception {
         printTestCase("Empty values for " + option);
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:" + option + "=", "--version");
         OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "neg");
         out.shouldContain("Improperly specified VM option '" + option + "='");

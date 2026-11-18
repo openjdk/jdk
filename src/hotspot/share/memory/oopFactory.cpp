@@ -37,7 +37,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopCast.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/refArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -123,7 +122,7 @@ objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
 
 refArrayOop oopFactory::new_refArray(Klass* klass, int length, ArrayProperties properties, TRAPS) {
   ArrayKlass* ak = klass->array_klass(CHECK_NULL);
-  ArrayDescription ad(Klass::RefArrayKlassKind, properties, LayoutKind::REFERENCE);
+  ArrayDescription ad = ArrayDescription::reference(properties);
   ObjArrayKlass* oak = ObjArrayKlass::cast(ak)->klass_from_description(ad, CHECK_NULL);
   // Cast below must pass because the array description required a RefArrayKlass
   RefArrayKlass* rak = RefArrayKlass::cast(oak);

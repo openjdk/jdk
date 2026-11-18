@@ -23,29 +23,29 @@
  */
 
 /*
- * @test id=default
+ * @test id=satb
  * @key randomness
  * @summary Test clone barriers work correctly
  * @library /test/lib
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
- *                   -XX:+UseShenandoahGC
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
  *                   TestClone
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
- *                   -XX:+UseShenandoahGC
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
  *                   -Xint
  *                   TestClone
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
- *                   -XX:+UseShenandoahGC
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
  *                   -XX:-TieredCompilation
  *                   TestClone
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
- *                   -XX:+UseShenandoahGC
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
  *                   -XX:TieredStopAtLevel=1
  *                   TestClone
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
- *                   -XX:+UseShenandoahGC
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb
  *                   -XX:TieredStopAtLevel=4
  *                   TestClone
  */

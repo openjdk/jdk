@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -668,13 +668,27 @@ public final class Http3Connection implements AutoCloseable {
                     closeCause == null ? "" : closeCause.toString());
             debug.log("State is: " + describeClosedState(closedState));
         }
+        // record the error in each unfinished exchange
         exchanges.values().forEach(e -> e.recordError(closeCause));
         // close the underlying QUIC connection
         connection.close(error.code(), logMsg, closeCause);
         final TerminationCause tc = connection.quicConnection.terminationCause();
         assert tc != null : "termination cause is null";
-        // close all HTTP streams
-        exchanges.values().forEach(exchange -> exchange.cancelImpl(tc.getCloseCause(), error));
+
+        // Figure out whether this is an orderly close.
+        boolean orderlyClose = tc.isAppLayer() && tc.getCloseCode() == H3_NO_ERROR.code();
+        if (orderlyClose) {
+            // For an orderly close, we will let the caller pull the bytes
+            // from exchanges which have received all promised bytes
+            // (but haven't processed them yet), but cancel all exchanges
+            // for which not all bytes have been received.
+            exchanges.values().stream()
+                    .filter(Http3ExchangeImpl::shouldCancelOnOrderlyClose)
+                    .forEach(exchange -> exchange.cancelImpl(tc.getCloseCause(), error));
+        } else {
+            // close all HTTP streams
+            exchanges.values().forEach(exchange -> exchange.cancelImpl(tc.getCloseCause(), error));
+        }
         pushManager.cancelAllPromises(tc.getCloseCause(), error);
         discardConnectionState();
         // No longer wait for reading HTTP/3 stream types:
@@ -717,6 +731,13 @@ public final class Http3Connection implements AutoCloseable {
         final Optional<Http3Error> error = Http3Error.fromCode(errorCode);
         assert error.isPresent() : "not a HTTP3 error code: " + errorCode;
         close(error.get(), logMsg, throwable);
+        if (exchange instanceof Http3ExchangeImpl<?> impl) {
+            // if the error originates from the exchange itself,
+            // makes sure it gets cancelled even if it has buffered
+            // all data, as processing buffered data can still trigger
+            // malformed frame errors
+            impl.cancelImpl(throwable, error.get());
+        }
     }
 
     public String toString() {

@@ -47,7 +47,7 @@ static Node* ideal_mem_intrinsic_node(PhaseGVN* phase, bool can_reshape, Node* n
   }
 
   // If mem input is a MergeMem, get the desired slice
-  if (const TypePtr* adr_type = n->adr_type(); can_reshape && adr_type != TypePtr::BOTTOM) {
+  if (const TypePtr* adr_type = n->in_adr_type(); can_reshape && adr_type != TypePtr::BOTTOM) {
     Node* mem = n->in(MemNode::Memory);
     uint alias_idx = phase->C->get_alias_index(adr_type);
     Node* new_mem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(alias_idx) : mem;
@@ -125,8 +125,8 @@ SignumFNode* SignumFNode::make(PhaseGVN& gvn, Node* in) {
 Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* src = in(1);
   Node* mask = in(2);
-  if (bottom_type()->isa_int()) {
-    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->isa_int() && phase->type(mask->in(1))->is_int()->is_con()) {
+  if (bottom_type()->is_int()) {
+    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->is_int() && phase->type(mask->in(1))->as_int()->is_con()) {
       // compress(x, 1 << n) == (x >> n & 1)
       if (phase->type(mask->in(1))->higher_equal(TypeInt::ONE)) {
         Node* rshift = phase->transform(new RShiftINode(in(1), mask->in(2)));
@@ -143,8 +143,8 @@ Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new AndINode(compr, src->in(1));
     }
   } else {
-    assert(bottom_type()->isa_long(), "");
-    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->isa_long() && phase->type(mask->in(1))->is_long()->is_con()) {
+    assert(bottom_type()->is_long(), "");
+    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->is_long() && phase->type(mask->in(1))->as_long()->is_con()) {
       // compress(x, 1 << n) == (x >> n & 1)
       if (phase->type(mask->in(1))->higher_equal(TypeLong::ONE)) {
         Node* rshift = phase->transform(new RShiftLNode(in(1), mask->in(2)));
@@ -183,8 +183,8 @@ Node* CompressBitsNode::Identity(PhaseGVN* phase) {
 Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* src = in(1);
   Node* mask = in(2);
-  if (bottom_type()->isa_int()) {
-    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->isa_int() && phase->type(mask->in(1))->is_int()->is_con()) {
+  if (bottom_type()->is_int()) {
+    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->is_int() && phase->type(mask->in(1))->as_int()->is_con()) {
       // expand(x, 1 << n) == (x & 1) << n
       if (phase->type(mask->in(1))->higher_equal(TypeInt::ONE)) {
         Node* andnode = phase->transform(new AndINode(in(1), phase->makecon(TypeInt::ONE)));
@@ -200,8 +200,8 @@ Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new AndINode(src->in(1), mask);
     }
   } else {
-    assert(bottom_type()->isa_long(), "");
-    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->isa_long() && phase->type(mask->in(1))->is_long()->is_con()) {
+    assert(bottom_type()->is_long(), "");
+    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->is_long() && phase->type(mask->in(1))->as_long()->is_con()) {
       // expand(x, 1 << n) == (x & 1) << n
       if (phase->type(mask->in(1))->higher_equal(TypeLong::ONE)) {
         Node* andnode = phase->transform(new AndLNode(in(1), phase->makecon(TypeLong::ONE)));
@@ -314,10 +314,10 @@ const Type* CompressBitsNode::Value(PhaseGVN* phase) const {
 
   BasicType bt = bottom_type()->basic_type();
   if (bt == T_INT) {
-    return RangeInference::infer_compress_bits(t1->is_int(), t2->is_int());
+    return RangeInference::infer_compress_bits(t1->as_int(), t2->as_int());
   } else {
     assert(bt == T_LONG, "unexpected BasicType %s", type2name(bt));
-    return RangeInference::infer_compress_bits(t1->is_long(), t2->is_long());
+    return RangeInference::infer_compress_bits(t1->as_long(), t2->as_long());
   }
 }
 
@@ -341,8 +341,8 @@ const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
   }
 
   BasicType bt = bottom_type()->basic_type();
-  const TypeInteger* src_type = t1->is_integer(bt);
-  const TypeInteger* mask_type = t2->is_integer(bt);
+  const TypeInteger* src_type = t1->as_integer(bt);
+  const TypeInteger* mask_type = t2->as_integer(bt);
   int w = bt == T_INT ? 32 : 64;
 
   // Constant fold if both src and mask are constants.

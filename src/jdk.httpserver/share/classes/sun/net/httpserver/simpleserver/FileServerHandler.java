@@ -25,6 +25,7 @@
 
 package sun.net.httpserver.simpleserver;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -221,7 +222,8 @@ public final class FileServerHandler implements HttpHandler {
             // resolve each path segment against the root
             Path path = root;
             for (var segment : pathSegment) {
-                if (!URIPathSegment.isSupported(segment)) {
+                if (!URIPathSegment.isSupported(segment) || segment.contains(File.separator)) {
+                    // checking for separator rules out anomalies like UNCs on Windows
                     return null;  // stop resolution, null results in 404 response
                 }
                 path = path.resolve(segment);

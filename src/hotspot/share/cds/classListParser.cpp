@@ -25,6 +25,7 @@
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/lambdaFormInvokers.hpp"
@@ -35,7 +36,6 @@
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecode.hpp"
@@ -515,7 +515,7 @@ void ClassListParser::check_supertype_obstruction(int specified_supertype_id, co
   if (specified_supertype->defined_by_other_loaders()) {
     return; // Only registered supertypes can be obstructed
   }
-  const InstanceKlass* obstructor = SystemDictionaryShared::get_unregistered_class(specified_supertype->name());
+  const InstanceKlass* obstructor = AOTSystemDictionary::get_unregistered_class(specified_supertype->name());
   if (obstructor == nullptr) {
     return; // No unregistered types with the same name have been loaded, i.e. no obstruction
   }
@@ -585,7 +585,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
 
   assert(k->defined_by_other_loaders(), "must be");
 
-  bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
+  bool added = AOTSystemDictionary::add_unregistered_class(THREAD, k);
   if (!added) {
     // We allow only a single unregistered class for each unique name.
     error("Duplicated class %s", _class_name);
@@ -768,14 +768,11 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
   if (is_id_specified()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     int id = this->id();
-    SystemDictionaryShared::update_shared_entry(ik, id);
+    AOTSystemDictionary::update_shared_entry(ik, id);
     bool created;
     id2klass_table()->put_if_absent(id, ik, &created);
     if (!created) {
       error("Duplicated ID %d for class %s", id, _class_name);
-    }
-    if (id2klass_table()->maybe_grow()) {
-      log_info(aot, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->table_size());
     }
   }
 
@@ -878,7 +875,7 @@ void ClassListParser::parse_constant_pool_tag() {
     }
   }
 
-  if (SystemDictionaryShared::should_be_excluded(ik)) {
+  if (AOTSystemDictionary::should_be_excluded(ik)) {
     if (log_is_enabled(Warning, aot, resolve)) {
       ResourceMark rm;
       log_warning(aot, resolve)("Cannot aot-resolve constants for %s because it is excluded", ik->external_name());

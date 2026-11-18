@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ class ZNUMA : public AllStatic {
 
 private:
   static bool     _enabled;
+  static uint32_t _node_count;
+  static uint32_t _bound_node_count;
   static uint32_t _count;
 
   static void pd_initialize();
@@ -45,6 +47,9 @@ public:
   static bool is_enabled();
   static bool is_faked();
 
+  static bool is_bound();
+
+  static uint32_t bound_count();
   static uint32_t count();
   static uint32_t id();
 

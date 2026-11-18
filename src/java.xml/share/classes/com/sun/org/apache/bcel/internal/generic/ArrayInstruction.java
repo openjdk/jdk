@@ -35,7 +35,9 @@ public abstract class ArrayInstruction extends Instruction implements ExceptionT
     }
 
     /**
-     * @param opcode of instruction
+     * Constructs an ArrayInstruction.
+     *
+     * @param opcode of instruction.
      */
     protected ArrayInstruction(final short opcode) {
         super(opcode, (short) 1);
@@ -47,7 +49,7 @@ public abstract class ArrayInstruction extends Instruction implements ExceptionT
     }
 
     /**
-     * @return type associated with the instruction
+     * @return type associated with the instruction.
      */
     @Override
     public Type getType(final ConstantPoolGen cp) {

@@ -28,11 +28,12 @@ import java.util.Map;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.util.CoreUtils;
 import jdk.test.lib.Platform;
+import jdk.test.lib.SA.SATestUtils;
 import jtreg.SkippedException;
 
 /**
  * @test id=process
- * @bug 8190198
+ * @bug 8190198 8390621
  * @summary Test clhsdb pstack command on a live process
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
@@ -43,10 +44,11 @@ import jtreg.SkippedException;
 
 /**
  * @test id=core
- * @bug 8190198
+ * @bug 8190198 8390621
  * @summary Test clhsdb pstack command on a core file
  * @requires vm.hasSA
  * @requires !vm.ubsan
+ * @requires !vm.asan
  * @requires vm.gc != "Z"
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbPstack true
@@ -56,7 +58,14 @@ public class ClhsdbPstack {
 
     public static void main(String[] args) throws Exception {
         if (Platform.isMusl()) {
-            throw new SkippedException("This test does not work on musl libc.");
+            if (!Platform.isX64()) {
+                throw new SkippedException("This platform is not supported.");
+            }
+
+            var libc = SATestUtils.getLibCPath();
+            if (SATestUtils.getDebugInfo(libc) == null) {
+                throw new SkippedException("libc debug info is not available.");
+            }
         }
 
         boolean withCore = Boolean.parseBoolean(args[0]);
