@@ -494,12 +494,19 @@ void JfrCPUSamplerThread::stackwalk_threads_in_native() {
   MutexLocker tlock(Threads_lock);
   ThreadsListHandle tlh;
   Thread* current = Thread::current();
+  bool revisit_needed = false;
   for (size_t i = 0; i < tlh.list()->length(); i++) {
     JavaThread* jt = tlh.list()->thread_at(i);
     JfrThreadLocal* tl = jt->jfr_thread_local();
     if (tl->wants_async_processing_of_cpu_time_jfr_requests()) {
-      if (jt->thread_state() != _thread_in_native || !tl->cpu_sampler_state().try_acquire_dequeue_lock()) {
+      if (jt->thread_state() != _thread_in_native) {
         tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
+        continue;
+      }
+      JfrCPUSamplerState& css = tl->cpu_sampler_state();
+      if (!css.try_acquire_dequeue_lock()) {
+        // Locked by another thread for self-draining or for a timer update
+        revisit_needed = true;
         continue;
       }
       if (jt->has_last_Java_frame()) {
@@ -507,8 +514,12 @@ void JfrCPUSamplerThread::stackwalk_threads_in_native() {
       } else {
         tl->set_do_async_processing_of_cpu_time_jfr_requests(false);
       }
-      tl->cpu_sampler_state().release_lock();
+      css.release_lock();
     }
+  }
+  if (revisit_needed) {
+    // Revisit threads on the next iteration in the unlikely case of a lock collision
+    trigger_async_processing_of_cpu_time_jfr_requests();
   }
 }
 
