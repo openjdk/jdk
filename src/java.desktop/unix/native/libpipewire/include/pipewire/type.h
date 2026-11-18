@@ -21,16 +21,16 @@ extern "C" {
  */
 
 enum {
-	PW_TYPE_FIRST = SPA_TYPE_VENDOR_PipeWire,
+    PW_TYPE_FIRST = SPA_TYPE_VENDOR_PipeWire,
 };
 
-#define PW_TYPE_INFO_BASE		"PipeWire:"
+#define PW_TYPE_INFO_BASE        "PipeWire:"
 
-#define PW_TYPE_INFO_Object		PW_TYPE_INFO_BASE "Object"
-#define PW_TYPE_INFO_OBJECT_BASE	PW_TYPE_INFO_Object ":"
+#define PW_TYPE_INFO_Object        PW_TYPE_INFO_BASE "Object"
+#define PW_TYPE_INFO_OBJECT_BASE    PW_TYPE_INFO_Object ":"
 
-#define PW_TYPE_INFO_Interface		PW_TYPE_INFO_BASE "Interface"
-#define PW_TYPE_INFO_INTERFACE_BASE	PW_TYPE_INFO_Interface ":"
+#define PW_TYPE_INFO_Interface        PW_TYPE_INFO_BASE "Interface"
+#define PW_TYPE_INFO_INTERFACE_BASE    PW_TYPE_INFO_Interface ":"
 
 const struct spa_type_info * pw_type_info(void);
 

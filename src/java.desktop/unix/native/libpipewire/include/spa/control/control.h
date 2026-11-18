@@ -23,15 +23,15 @@ extern "C" {
 
 /** Different Control types */
 enum spa_control_type {
-	SPA_CONTROL_Invalid,
-	SPA_CONTROL_Properties,		/**< SPA_TYPE_OBJECT_Props */
-	SPA_CONTROL_Midi,		/**< spa_pod_bytes with raw midi data (deprecated, use SPA_CONTROL_UMP) */
-	SPA_CONTROL_OSC,		/**< spa_pod_bytes with an OSC packet */
-	SPA_CONTROL_UMP,		/**< spa_pod_bytes with raw UMP (universal MIDI packet)
-					  *  data. The UMP 32 bit words are stored in native endian
-					  *  format. */
+    SPA_CONTROL_Invalid,
+    SPA_CONTROL_Properties,        /**< SPA_TYPE_OBJECT_Props */
+    SPA_CONTROL_Midi,        /**< spa_pod_bytes with raw midi data (deprecated, use SPA_CONTROL_UMP) */
+    SPA_CONTROL_OSC,        /**< spa_pod_bytes with an OSC packet */
+    SPA_CONTROL_UMP,        /**< spa_pod_bytes with raw UMP (universal MIDI packet)
+                      *  data. The UMP 32 bit words are stored in native endian
+                      *  format. */
 
-	_SPA_CONTROL_LAST,		/**< not part of ABI */
+    _SPA_CONTROL_LAST,        /**< not part of ABI */
 };
 
 /**

@@ -18,13 +18,13 @@ extern "C" {
  * \{
  */
 
-#define SPA_TYPE_INFO_PARAM_Dict	SPA_TYPE_INFO_PARAM_BASE "Dict"
-#define SPA_TYPE_INFO_PARAM_DICT_BASE	SPA_TYPE_INFO_PARAM_Dict ":"
+#define SPA_TYPE_INFO_PARAM_Dict    SPA_TYPE_INFO_PARAM_BASE "Dict"
+#define SPA_TYPE_INFO_PARAM_DICT_BASE    SPA_TYPE_INFO_PARAM_Dict ":"
 
 static const struct spa_type_info spa_type_param_dict[] = {
-	{ SPA_PARAM_DICT_START, SPA_TYPE_Id, SPA_TYPE_INFO_PARAM_DICT_BASE, spa_type_param, },
-	{ SPA_PARAM_DICT_info, SPA_TYPE_Struct, SPA_TYPE_INFO_PARAM_DICT_BASE "info", NULL, },
-	{ 0, 0, NULL, NULL },
+    { SPA_PARAM_DICT_START, SPA_TYPE_Id, SPA_TYPE_INFO_PARAM_DICT_BASE, spa_type_param, },
+    { SPA_PARAM_DICT_info, SPA_TYPE_Struct, SPA_TYPE_INFO_PARAM_DICT_BASE "info", NULL, },
+    { 0, 0, NULL, NULL },
 };
 
 /**

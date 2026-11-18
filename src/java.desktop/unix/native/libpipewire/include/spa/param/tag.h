@@ -18,19 +18,19 @@ extern "C" {
 
 /** properties for SPA_TYPE_OBJECT_ParamTag */
 enum spa_param_tag {
-	SPA_PARAM_TAG_START,
-	SPA_PARAM_TAG_direction,		/**< direction, input/output (Id enum spa_direction) */
-	SPA_PARAM_TAG_info,			/**< Struct(
-						  *      Int: n_items
-						  *      (String: key
-						  *       String: value)*
-						  *  ) */
+    SPA_PARAM_TAG_START,
+    SPA_PARAM_TAG_direction,        /**< direction, input/output (Id enum spa_direction) */
+    SPA_PARAM_TAG_info,            /**< Struct(
+                          *      Int: n_items
+                          *      (String: key
+                          *       String: value)*
+                          *  ) */
 };
 
 /** helper structure for managing tag objects */
 struct spa_tag_info {
-	enum spa_direction direction;
-	const struct spa_pod *info;
+    enum spa_direction direction;
+    const struct spa_pod *info;
 };
 
 #define SPA_TAG_INFO(dir,...) ((struct spa_tag_info) { .direction = (dir), ## __VA_ARGS__ })

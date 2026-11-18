@@ -18,17 +18,17 @@ extern "C" {
 
 /** properties for SPA_TYPE_OBJECT_ParamDict */
 enum spa_param_dict {
-	SPA_PARAM_DICT_START,
-	SPA_PARAM_DICT_info,		/**< Struct(
-					  *      Int: n_items
-					  *      (String: key
-					  *       String: value)*
-					  *  ) */
+    SPA_PARAM_DICT_START,
+    SPA_PARAM_DICT_info,        /**< Struct(
+                      *      Int: n_items
+                      *      (String: key
+                      *       String: value)*
+                      *  ) */
 };
 
 /** helper structure for managing info objects */
 struct spa_param_dict_info {
-	const struct spa_pod *info;
+    const struct spa_pod *info;
 };
 
 /**

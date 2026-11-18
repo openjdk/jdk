@@ -20,10 +20,10 @@ extern "C" {
  * Possible high-definition DTS extensions on top of core DTS.
  */
 enum spa_audio_dts_ext_type {
-	SPA_AUDIO_DTS_EXT_UNKNOWN,
-	SPA_AUDIO_DTS_EXT_NONE,		/**< No extension present; this is just regular DTS data */
-	SPA_AUDIO_DTS_EXT_HD_HRA,	/**< DTS-HD High Resolution Audio (lossy HD audio extension) */
-	SPA_AUDIO_DTS_EXT_HD_MA,	/**< DTS-HD Master Audio (lossless HD audio extension) */
+    SPA_AUDIO_DTS_EXT_UNKNOWN,
+    SPA_AUDIO_DTS_EXT_NONE,        /**< No extension present; this is just regular DTS data */
+    SPA_AUDIO_DTS_EXT_HD_HRA,    /**< DTS-HD High Resolution Audio (lossy HD audio extension) */
+    SPA_AUDIO_DTS_EXT_HD_MA,    /**< DTS-HD Master Audio (lossless HD audio extension) */
 };
 
 /**
@@ -33,12 +33,12 @@ enum spa_audio_dts_ext_type {
  * combination with the core DTS content (if any).
  */
 struct spa_audio_info_dts {
-	uint32_t rate;					/*< sample rate */
-	uint32_t channels;				/*< number of channels */
-	enum spa_audio_dts_ext_type ext_type;		/*< DTS-HD extension type */
+    uint32_t rate;                    /*< sample rate */
+    uint32_t channels;                /*< number of channels */
+    enum spa_audio_dts_ext_type ext_type;        /*< DTS-HD extension type */
 };
 
-#define SPA_AUDIO_INFO_DTS_INIT(...)		((struct spa_audio_info_dts) { __VA_ARGS__ })
+#define SPA_AUDIO_INFO_DTS_INIT(...)        ((struct spa_audio_info_dts) { __VA_ARGS__ })
 
 /**
  * \}

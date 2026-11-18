@@ -18,13 +18,13 @@ extern "C" {
 
 /** properties for SPA_TYPE_OBJECT_PeerParam */
 enum spa_peer_param {
-	SPA_PEER_PARAM_START,	/**< id of peer as key, SPA_TYPE_Pod as value */
-	SPA_PEER_PARAM_END = 0xfffffffe,
+    SPA_PEER_PARAM_START,    /**< id of peer as key, SPA_TYPE_Pod as value */
+    SPA_PEER_PARAM_END = 0xfffffffe,
 };
 
 struct spa_peer_param_info {
-	uint32_t peer_id;
-	const struct spa_pod *param;
+    uint32_t peer_id;
+    const struct spa_pod *param;
 };
 /**
  * \}

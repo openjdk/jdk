@@ -18,13 +18,13 @@ extern "C" {
  * \{
  */
 
-#define SPA_TYPE_INFO_PeerParam		SPA_TYPE_INFO_OBJECT_BASE "PeerParam"
-#define SPA_TYPE_INFO_PEER_PARAM_BASE	SPA_TYPE_INFO_PeerParam ":"
+#define SPA_TYPE_INFO_PeerParam        SPA_TYPE_INFO_OBJECT_BASE "PeerParam"
+#define SPA_TYPE_INFO_PEER_PARAM_BASE    SPA_TYPE_INFO_PeerParam ":"
 
 static const struct spa_type_info spa_type_peer_param[] = {
-	{ SPA_PEER_PARAM_START, SPA_TYPE_Id, SPA_TYPE_INFO_PEER_PARAM_BASE, spa_type_param, },
-	{ SPA_ID_INVALID, SPA_TYPE_Id, SPA_TYPE_INFO_PEER_PARAM_BASE, NULL, },
-	{ 0, 0, NULL, NULL },
+    { SPA_PEER_PARAM_START, SPA_TYPE_Id, SPA_TYPE_INFO_PEER_PARAM_BASE, spa_type_param, },
+    { SPA_ID_INVALID, SPA_TYPE_Id, SPA_TYPE_INFO_PEER_PARAM_BASE, NULL, },
+    { 0, 0, NULL, NULL },
 };
 
 /**
