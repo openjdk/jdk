@@ -1080,7 +1080,7 @@ Java_sun_font_FontConfigManager_getFontConfig
             int weight, slant;
 
             fontformat = NULL;
-            if (fontCount == 0) {
+            if ((fontCount == 0) && (j < (nfonts / 2))) {
                 // Query to see if it is a variable font.  0x8000000 is used as the
                 // font index to tell fontconfig you want the variable font info.
                 // NULL is returned from FcFreeTypeQuery if it is not a variable font.
