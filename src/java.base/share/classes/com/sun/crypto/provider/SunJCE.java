@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,8 @@ import static sun.security.util.SecurityProviderConstants.*;
  * - ML-KEM
  *
  * - HKDF-SHA256, HKDF-SHA384, and HKDF-SHA512
+ *
+ * - Argon2id
  */
 
 public final class SunJCE extends Provider {
@@ -88,7 +90,7 @@ public final class SunJCE extends Provider {
 
     private static final String info = "SunJCE Provider " +
     "(implements RSA, DES, Triple DES, AES, Blowfish, ARCFOUR, RC2, PBE, "
-    + "Diffie-Hellman, HMAC, ChaCha20, DHKEM, ML-KEM, and HKDF)";
+    + "Diffie-Hellman, HMAC, ChaCha20, DHKEM, ML-KEM, HKDF, and Argon2id)";
 
     /* Are we debugging? -- for developers */
     static final boolean debug = false;
@@ -460,6 +462,7 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.HKDFKeyDerivation$HKDFSHA384");
         ps("KDF", "HKDF-SHA512",
                 "com.sun.crypto.provider.HKDFKeyDerivation$HKDFSHA512");
+        ps("KDF", "Argon2id", "com.sun.crypto.provider.Argon2ID");
 
         /*
          * Algorithm Parameter engines
