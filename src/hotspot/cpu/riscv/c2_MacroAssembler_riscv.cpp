@@ -2872,48 +2872,50 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
                                         bool islatin, Label &DONE) {
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
 
-  Label try_m2, try_m4, large_input, compare_full_chunks_loop, compare_once, all_equal;
+  Label try_m2, try_m4, large_input, LOOP, TAIL, SAME;
   // v4 and v8 start non-overlapping register groups aligned for LMUL=m4.
   const VectorRegister va = v4;
   const VectorRegister vb = v8;
+  // LMUL=m4: group 4 vector registers
+  const int LMUL = 4;
   const int elems_m1 = MaxVectorSize / (islatin ? 1 : 2);
-  const int elems_m4 = 4 * elems_m1;
-  const int bytes_m4 = 4 * MaxVectorSize;
+  const int elems_m4 = LMUL * elems_m1;
+  const int bytes_m4 = LMUL * MaxVectorSize;
 
-  beqz(cnt, all_equal);
+  beqz(cnt, SAME);
 
   // Short input: one vl-bounded m1 compare, no loop.
   mv(tmp1, elems_m1);
   bgt(cnt, tmp1, try_m2);
   vsetvli(tmp1, cnt, sew, Assembler::m1, Assembler::ma, Assembler::ta);
-  bind(compare_once);
+  bind(TAIL);
   vlex_v(va, a1, sew);
   vlex_v(vb, a2, sew);
   vmsne_vv(va, va, vb);
   vfirst_m(tmp2, va);
   bgez(tmp2, DONE);
-  j(all_equal);
+  j(SAME);
 
   // Medium input: one vl-bounded m2 compare.
   bind(try_m2);
   mv(tmp1, 2 * elems_m1);
   bgt(cnt, tmp1, try_m4);
   vsetvli(tmp1, cnt, sew, Assembler::m2, Assembler::ma, Assembler::ta);
-  j(compare_once);
+  j(TAIL);
 
   // Medium input: one vl-bounded m4 compare.
   bind(try_m4);
   mv(tmp1, elems_m4);
   bgt(cnt, tmp1, large_input);
   vsetvli(tmp1, cnt, sew, Assembler::m4, Assembler::ma, Assembler::ta);
-  j(compare_once);
+  j(TAIL);
 
   // Long input: full m4 groups at fixed vl, then one vl-bounded
   // compare covering the tail.
   bind(large_input);
   vsetvli(tmp1, x0, sew, Assembler::m4, Assembler::ma, Assembler::ta);
 
-  bind(compare_full_chunks_loop);
+  bind(LOOP);
   vlex_v(va, a1, sew);
   vlex_v(vb, a2, sew);
   vmsne_vv(va, va, vb);
@@ -2922,14 +2924,14 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   sub(cnt, cnt, tmp1);
   add(a1, a1, bytes_m4, tmp2);
   add(a2, a2, bytes_m4, tmp2);
-  bge(cnt, tmp1, compare_full_chunks_loop);
-  beqz(cnt, all_equal);
+  bge(cnt, tmp1, LOOP);
+  beqz(cnt, SAME);
 
   // Tail: one vl-bounded compare covers the rest.
   vsetvli(tmp1, cnt, sew, Assembler::m4, Assembler::ma, Assembler::ta);
-  j(compare_once);
+  j(TAIL);
 
-  bind(all_equal);
+  bind(SAME);
   if (result != zr) {
     mv(result, true);
   }
