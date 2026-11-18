@@ -23,15 +23,22 @@
 
 /**
  * @test
- * @bug 8337821 8393397
+ * @bug 8337821 8393397 8394272
  * @summary Test that C2's register allocator gracefully handles pathological
  *          input resulting from extreme inlining. See 8393397 for the
- *          inlining issue (observed on aarch64).
+ *          inlining issue (observed on aarch64). The memory limit below bounds
+ *          the compilation of the same method, which exceeds it when the
+ *          fallback implementation of every failed vector intrinsic is inlined.
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @run main/othervm -Xbatch
  *                   -esa
  *                   -XX:CompileCommand=CompileOnly,jdk.incubator.vector.Float16Vector::lambda$rearrangeTemplate$0
+ *                   compiler.vectorapi.TestFloat16RearrangeInlining
+ * @run main/othervm -Xbatch
+ *                   -esa
+ *                   -XX:CompileCommand=CompileOnly,jdk.incubator.vector.Float16Vector::lambda$rearrangeTemplate$0
+ *                   -XX:CompileCommand=MemLimit,jdk.incubator.vector.Float16Vector::lambda$rearrangeTemplate$0,128m~crash
  *                   compiler.vectorapi.TestFloat16RearrangeInlining
  * @run main compiler.vectorapi.TestFloat16RearrangeInlining
  */

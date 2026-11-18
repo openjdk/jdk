@@ -49,7 +49,7 @@
  *
  * @requires vm.compiler2.enabled & vm.compMode != "Xcomp"
  * @requires vm.opt.DeoptimizeALot != true
- * @requires os.arch == "aarch64"
+ * @requires os.arch == "aarch64" | os.arch == "riscv64"
  *
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox

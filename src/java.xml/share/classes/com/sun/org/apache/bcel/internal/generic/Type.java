@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,8 +32,8 @@ import jdk.xml.internal.Utils;
 
 /**
  * Abstract super class for all possible Java types, namely basic types such as int, object types like String and array
- * types, e.g. int[]
- * @LastModified: Sept 2025
+ * types, for example int[]
+ * @LastModified: Nov 2026
  */
 public abstract class Type {
 
@@ -42,27 +42,54 @@ public abstract class Type {
      */
     public static final BasicType VOID = new BasicType(Const.T_VOID);
 
+    /** Predefined constant for boolean type. */
     public static final BasicType BOOLEAN = new BasicType(Const.T_BOOLEAN);
+
+    /** Predefined constant for int type. */
     public static final BasicType INT = new BasicType(Const.T_INT);
+
+    /** Predefined constant for short type. */
     public static final BasicType SHORT = new BasicType(Const.T_SHORT);
+
+    /** Predefined constant for byte type. */
     public static final BasicType BYTE = new BasicType(Const.T_BYTE);
+
+    /** Predefined constant for long type. */
     public static final BasicType LONG = new BasicType(Const.T_LONG);
+
+    /** Predefined constant for double type. */
     public static final BasicType DOUBLE = new BasicType(Const.T_DOUBLE);
+
+    /** Predefined constant for float type. */
     public static final BasicType FLOAT = new BasicType(Const.T_FLOAT);
+
+    /** Predefined constant for char type. */
     public static final BasicType CHAR = new BasicType(Const.T_CHAR);
+
+    /** Predefined constant for Object type. */
     public static final ObjectType OBJECT = new ObjectType("java.lang.Object");
+
+    /** Predefined constant for Class type. */
     public static final ObjectType CLASS = new ObjectType("java.lang.Class");
+
+    /** Predefined constant for String type. */
     public static final ObjectType STRING = new ObjectType("java.lang.String");
+
+    /** Predefined constant for StringBuffer type. */
     public static final ObjectType STRINGBUFFER = new ObjectType("java.lang.StringBuffer");
+
+    /** Predefined constant for Throwable type. */
     public static final ObjectType THROWABLE = new ObjectType("java.lang.Throwable");
 
     /**
      * Empty array.
      */
     public static final Type[] NO_ARGS = {};
+    /** Predefined constant for null type. */
     public static final ReferenceType NULL = new ReferenceType() {
     };
 
+    /** Predefined constant for unknown type. */
     public static final Type UNKNOWN = new Type(Const.T_UNKNOWN, "<unknown object>") {
     };
 
@@ -80,8 +107,8 @@ public abstract class Type {
     /**
      * Convert arguments of a method (signature) to an array of Type objects.
      *
-     * @param signature signature string such as (Ljava/lang/String;)V
-     * @return array of argument types
+     * @param signature signature string such as (Ljava/lang/String;)V.
+     * @return array of argument types.
      */
     public static Type[] getArgumentTypes(final String signature) {
         final List<Type> vec = new ArrayList<>();
@@ -126,10 +153,10 @@ public abstract class Type {
     }
 
     /**
-     * Convert type to Java method signature, e.g. int[] f(java.lang.String x) becomes (Ljava/lang/String;)[I
+     * Convert type to Java method signature, for example int[] f(java.lang.String x) becomes (Ljava/lang/String;)[I
      *
-     * @param returnType what the method returns
-     * @param argTypes what are the argument types
+     * @param returnType what the method returns.
+     * @param argTypes what are the argument types.
      * @return method signature for given type(s).
      */
     public static String getMethodSignature(final Type returnType, final Type[] argTypes) {
@@ -147,8 +174,8 @@ public abstract class Type {
     /**
      * Convert return value of a method (signature) to a Type object.
      *
-     * @param signature signature string such as (Ljava/lang/String;)V
-     * @return return type
+     * @param signature signature string such as (Ljava/lang/String;)V.
+     * @return return type.
      */
     public static Type getReturnType(final String signature) {
         try {
@@ -165,6 +192,12 @@ public abstract class Type {
         return size(getTypeSize(signature.substring(index)));
     }
 
+    /**
+     * Gets the signature for a method.
+     *
+     * @param meth The method.
+     * @return The method signature.
+     */
     public static String getSignature(final java.lang.reflect.Method meth) {
         final StringBuilder sb = new StringBuilder("(");
         final Class<?>[] params = meth.getParameterTypes(); // avoid clone
@@ -179,8 +212,8 @@ public abstract class Type {
     /**
      * Convert runtime {@link Class} to BCEL Type object.
      *
-     * @param cls Java class
-     * @return corresponding Type object
+     * @param cls Java class.
+     * @return corresponding Type object.
      */
     public static Type getType(final Class<?> cls) {
         Objects.requireNonNull(cls, "cls");
@@ -226,8 +259,8 @@ public abstract class Type {
     /**
      * Convert signature to a Type object.
      *
-     * @param signature signature string such as Ljava/lang/String;
-     * @return type object
+     * @param signature signature string such as Ljava/lang/String;.
+     * @return type object.
      */
     public static Type getType(final String signature) throws StringIndexOutOfBoundsException {
         final byte type = Utility.typeOfSignature(signature);
@@ -258,8 +291,8 @@ public abstract class Type {
     /**
      * Convert runtime {@code java.lang.Class[]} to BCEL Type objects.
      *
-     * @param classes an array of runtime class objects
-     * @return array of corresponding Type objects
+     * @param classes An array of runtime class objects.
+     * @return array of corresponding Type objects.
      */
     public static Type[] getTypes(final Class<?>[] classes) {
         final Type[] ret = new Type[classes.length];
@@ -330,13 +363,19 @@ public abstract class Type {
     @Deprecated
     protected String signature; // signature for the type TODO should be private
 
+    /**
+     * Constructs a Type.
+     *
+     * @param type The type constant.
+     * @param signature The type signature.
+     */
     protected Type(final byte type, final String signature) {
         this.type = type;
         this.signature = signature;
     }
 
     /**
-     * @return whether the Types are equal
+     * @return whether the Types are equal.
      */
     @Override
     public boolean equals(final Object o) {
@@ -347,11 +386,18 @@ public abstract class Type {
         return false;
     }
 
+    /**
+     * Gets the class name.
+     *
+     * @return The class name.
+     */
     public String getClassName() {
         return toString();
     }
 
     /**
+     * Gets the signature for this type.
+     *
      * @return signature for given type.
      */
     public String getSignature() {
@@ -359,7 +405,9 @@ public abstract class Type {
     }
 
     /**
-     * @return stack size of this type (2 for long and double, 0 for void, 1 otherwise)
+     * Gets the stack size of this type.
+     *
+     * @return stack size of this type (2 for long and double, 0 for void, 1 otherwise).
      */
     public int getSize() {
         switch (type) {
@@ -374,14 +422,18 @@ public abstract class Type {
     }
 
     /**
-     * @return type as defined in Constants
+     * Gets the type as defined in Constants.
+     *
+     * @return type as defined in Constants.
      */
     public byte getType() {
         return type;
     }
 
     /**
-     * @return hash code of Type
+     * Gets the hash code of this Type.
+     *
+     * @return hash code of Type.
      */
     @Override
     public int hashCode() {
@@ -392,6 +444,7 @@ public abstract class Type {
      * boolean, short and char variable are considered as int in the stack or local variable area. Returns {@link #INT}
      * for {@link #BOOLEAN}, {@link #SHORT} or {@link #CHAR}, otherwise returns the given type.
      *
+     * @return The normalized type.
      * @since 6.0
      */
     public Type normalizeForStackOrLocal() {
@@ -402,7 +455,7 @@ public abstract class Type {
     }
 
     /**
-     * @return Type string, e.g. 'int[]'
+     * @return Type string, for example 'int[]'.
      */
     @Override
     public String toString() {

@@ -1011,6 +1011,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="traditional">Rabyati Red o band</type>
 			<type key="collation" type="unihan">Trondén-stróki Red o band</type>
 			<type key="collation" type="zhuyin">Zhuin Red o band</type>
+			<type key="hc" type="c12">12 Sáhati</type>
+			<type key="hc" type="c24">24 Sáhati</type>
 			<type key="hc" type="h11">12 Sáhati (0–11)</type>
 			<type key="hc" type="h12">12 Sáhati (1–12)</type>
 			<type key="hc" type="h23">24 Sáhati (0–23)</type>
@@ -1357,6 +1359,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMMMd">MM,dd,y</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="mixed" draft="provisional">{0} – {1}</intervalFormatRange>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+							<intervalFormatRange type="numeric" draft="provisional">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="islamic">
@@ -2381,9 +2390,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Librewilay</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>Bartániái garmági wahd</daylight>
-				</long>
 				<exemplarCity>Landan</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2448,11 +2454,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Asia/Jayapura">
 				<exemplarCity>Jaypur</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Áeri anjári wahd</daylight>
-				</long>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>Urshalim</exemplarCity>
@@ -3106,6 +3107,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Brázilay garmági wahd</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>Bartániái garmági wahd</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>Brunáiay wahd</standard>
@@ -3364,6 +3370,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Éránay wahd</generic>
 					<standard>Éránay anjári wahd</standard>
 					<daylight>Éránay róchi wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>Áeri anjári wahd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -3651,9 +3662,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samóáway wahd</generic>
 					<standard>Samóáway anjári wahd</standard>
-					<daylight>Samóáway róchi wahd</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

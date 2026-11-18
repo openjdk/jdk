@@ -369,42 +369,42 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
     const Type *t = n->bottom_type();
     switch (t->base()) {
     case Type::Int:
-      st->print(" %s%d]=#" INT32_FORMAT,msg,i,t->is_int()->get_con());
+      st->print(" %s%d]=#" INT32_FORMAT, msg, i, t->as_int()->get_con());
       break;
     case Type::AnyPtr:
       assert( t == TypePtr::NULL_PTR || n->in_dump(), "" );
-      st->print(" %s%d]=#null",msg,i);
+      st->print(" %s%d]=#null", msg, i);
       break;
     case Type::AryPtr:
     case Type::InstPtr:
-      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,p2i(t->isa_oopptr()->const_oop()));
+      st->print(" %s%d]=#Ptr" INTPTR_FORMAT, msg, i, p2i(t->as_oopptr()->const_oop()));
       break;
     case Type::KlassPtr:
     case Type::AryKlassPtr:
     case Type::InstKlassPtr:
-      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,p2i(t->make_ptr()->isa_klassptr()->exact_klass()));
+      st->print(" %s%d]=#Ptr" INTPTR_FORMAT, msg, i, p2i(t->make_ptr()->as_klassptr()->exact_klass()));
       break;
     case Type::MetadataPtr:
-      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,p2i(t->make_ptr()->isa_metadataptr()->metadata()));
+      st->print(" %s%d]=#Ptr" INTPTR_FORMAT, msg, i, p2i(t->make_ptr()->as_metadataptr()->metadata()));
       break;
     case Type::NarrowOop:
-      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,p2i(t->make_ptr()->isa_oopptr()->const_oop()));
+      st->print(" %s%d]=#Ptr" INTPTR_FORMAT, msg, i, p2i(t->make_ptr()->as_oopptr()->const_oop()));
       break;
     case Type::RawPtr:
-      st->print(" %s%d]=#Raw" INTPTR_FORMAT,msg,i,p2i(t->is_rawptr()));
+      st->print(" %s%d]=#Raw" INTPTR_FORMAT, msg, i, p2i(t->as_rawptr()));
       break;
     case Type::DoubleCon:
-      st->print(" %s%d]=#%fD",msg,i,t->is_double_constant()->_d);
+      st->print(" %s%d]=#%fD", msg, i, t->as_double_constant()->_d);
       break;
     case Type::FloatCon:
-      st->print(" %s%d]=#%fF",msg,i,t->is_float_constant()->_f);
+      st->print(" %s%d]=#%fF", msg, i, t->as_float_constant()->_f);
       break;
     case Type::Long:
-      st->print(" %s%d]=#" INT64_FORMAT,msg,i,(int64_t)(t->is_long()->get_con()));
+      st->print(" %s%d]=#" INT64_FORMAT, msg, i, (int64_t)(t->as_long()->get_con()));
       break;
     case Type::Half:
     case Type::Top:
-      st->print(" %s%d]=_",msg,i);
+      st->print(" %s%d]=_", msg, i);
       break;
     default: ShouldNotReachHere();
     }
@@ -473,7 +473,7 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
       st->cr();
       st->print("        # ScObj" INT32_FORMAT " ", i);
       SafePointScalarObjectNode* spobj = scobjs.at(i);
-      ciKlass* cik = spobj->bottom_type()->is_oopptr()->exact_klass();
+      ciKlass* cik = spobj->bottom_type()->as_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
       ciInstanceKlass *iklass = nullptr;
@@ -865,7 +865,7 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const {
     // different signatures. Look for the second pointer argument,
     // that is the destination of the copy.
     for (uint i = TypeFunc::Parms, j = 0; i < args->cnt(); i++) {
-      if (args->field_at(i)->isa_ptr()) {
+      if (args->field_at(i)->is_ptr()) {
         j++;
         if (j == 2) {
           dest = in(i);
@@ -874,11 +874,11 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const {
       }
     }
     guarantee(dest != nullptr, "Call had only one ptr in, broken IR!");
-    if (phase->type(dest)->isa_rawptr()) {
+    if (phase->type(dest)->is_rawptr()) {
       // may happen for an arraycopy that initializes a newly allocated object. Conservatively return true;
       return true;
     }
-    if (!dest->is_top() && may_modify_arraycopy_helper(phase->type(dest)->is_oopptr(), t_oop, phase)) {
+    if (!dest->is_top() && may_modify_arraycopy_helper(phase->type(dest)->as_oopptr(), t_oop, phase)) {
       return true;
     }
     return false;
@@ -889,11 +889,11 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const {
     return false;
   }
   if (t_oop->is_ptr_to_boxed_value() && is_CallStaticJava()) {
-    ciKlass* boxing_klass = t_oop->is_instptr()->instance_klass();
+    ciKlass* boxing_klass = t_oop->as_instptr()->instance_klass();
     if (as_CallStaticJava()->is_boxing_method()) {
       // Skip unrelated boxing methods.
       Node* proj = proj_out_or_null(TypeFunc::Parms);
-      if ((proj == nullptr) || (phase->type(proj)->is_instptr()->instance_klass() != boxing_klass)) {
+      if ((proj == nullptr) || (phase->type(proj)->as_instptr()->instance_klass() != boxing_klass)) {
         return false;
       }
     }
@@ -983,7 +983,7 @@ CallProjections* CallNode::extract_projections(bool separate_io_proj, bool do_as
         // For Control (fallthrough) and I_O (catch_all_index) we have CatchProj -> Catch -> Proj
         projs->fallthrough_proj = pn;
         const Node* cn = pn->unique_ctrl_out_or_null();
-        if (cn != nullptr && cn->is_Catch()) {
+        if (is<CatchNode>(cn)) {
           for (DUIterator_Fast kmax, k = cn->fast_outs(kmax); k < kmax; k++) {
             CatchProjNode* cpn = cn->fast_out(k)->as_CatchProj();
             assert(allow_handlers || !cpn->is_handler_proj(), "not allowed");
@@ -1097,8 +1097,7 @@ void CallJavaNode::copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt
   for (uint i = old_dbg_start; i < sfpt->req(); i++) {
     Node* old_in = sfpt->in(i);
     // Clone old SafePointScalarObjectNodes, adjusting their field contents.
-    if (old_in != nullptr && old_in->is_SafePointScalarObject()) {
-      SafePointScalarObjectNode* old_sosn = old_in->as_SafePointScalarObject();
+    if (SafePointScalarObjectNode* old_sosn = isa<SafePointScalarObjectNode>(old_in); old_sosn != nullptr) {
       bool new_node;
       Node* new_in = old_sosn->clone(sosn_map, new_node);
       if (new_node) { // New node?
@@ -1253,21 +1252,21 @@ int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
 #ifndef PRODUCT
   if (!(call->req() > TypeFunc::Parms &&
         call->in(TypeFunc::Parms) != nullptr &&
-        call->in(TypeFunc::Parms)->bottom_type()->isa_int() &&
-        call->in(TypeFunc::Parms)->bottom_type()->is_int()->is_con())) {
+        call->in(TypeFunc::Parms)->bottom_type()->is_int() &&
+        call->in(TypeFunc::Parms)->bottom_type()->as_int()->is_con())) {
     assert(in_dump() != 0, "OK if dumping");
     tty->print("[bad uncommon trap]");
     return 0;
   }
 #endif
-  return call->in(TypeFunc::Parms)->bottom_type()->is_int()->get_con();
+  return call->in(TypeFunc::Parms)->bottom_type()->as_int()->get_con();
 }
 
 // Split if can cause the flat array branch of an array load with unknown type (see
 // Parse::array_load) to end in an uncommon trap. In that case, the call to
 // 'load_unknown_value' is useless. Replace it with an uncommon trap with the same JVMState.
 bool CallStaticJavaNode::remove_unknown_flat_array_load(PhaseIterGVN* igvn, Node* ctl, Node* mem, Node* unc_arg) {
-  if (ctl == nullptr || ctl->is_top() || mem == nullptr || mem->is_top() || !mem->is_MergeMem()) {
+  if (ctl == nullptr || ctl->is_top() || !is<MergeMemNode>(mem)) {
     return false;
   }
   if (ctl->is_Region()) {
@@ -1634,12 +1633,12 @@ void CallRuntimeNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs
 
 void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
 #ifdef ASSERT
-  assert(tf()->range_sig()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte == _num_bits,
+  assert(tf()->range_sig()->field_at(TypeFunc::Parms)->as_vect()->length_in_bytes() * BitsPerByte == _num_bits,
          "return vector size must match");
   const TypeTuple* d = tf()->domain_sig();
   for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
     Node* arg = in(i);
-    assert(arg->bottom_type()->is_vect()->length_in_bytes() * BitsPerByte == _num_bits,
+    assert(arg->bottom_type()->as_vect()->length_in_bytes() * BitsPerByte == _num_bits,
            "vector argument size must match");
   }
 #endif
@@ -2134,7 +2133,7 @@ Node* AllocateNode::make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem) {
   if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
     Node* klass_node = in(AllocateNode::KlassNode);
     Node* proto_adr = phase->transform(AddPNode::make_with_base(phase->C->top(), klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
-    mark_node = LoadNode::make(*phase, control, mem, proto_adr, phase->type(proto_adr)->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
+    mark_node = LoadNode::make(*phase, control, mem, proto_adr, phase->type(proto_adr)->as_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
   } else {
     // For now only enable fast locking for non-array types
     mark_node = phase->MakeConX(markWord::prototype().value());
@@ -2334,11 +2333,10 @@ static Node *next_control(Node *ctrl) {
 //
 bool AbstractLockNode::find_matching_unlock(const Node* ctrl, LockNode* lock,
                                             GrowableArray<AbstractLockNode*> &lock_ops) {
-  ProjNode *ctrl_proj = (ctrl->is_Proj()) ? ctrl->as_Proj() : nullptr;
+  ProjNode* ctrl_proj = ctrl->isa_Proj();
   if (ctrl_proj != nullptr && ctrl_proj->_con == TypeFunc::Control) {
-    Node *n = ctrl_proj->in(0);
-    if (n != nullptr && n->is_Unlock()) {
-      UnlockNode *unlock = n->as_Unlock();
+    Node* n = ctrl_proj->in(0);
+    if (UnlockNode* unlock = isa<UnlockNode>(n); unlock != nullptr) {
       Node* lock_obj = lock->obj_node();
       Node* unlock_obj = unlock->obj_node();
       if (lock_obj->eqv_uncast(unlock_obj) &&
@@ -2373,8 +2371,7 @@ bool AbstractLockNode::find_lock_and_unlock_through_if(Node* node, LockNode* loc
           lock1_node = proj->unique_out();
         }
       }
-      if (lock1_node != nullptr && lock1_node->is_Lock()) {
-        LockNode *lock1 = lock1_node->as_Lock();
+      if (LockNode* lock1 = isa<LockNode>(lock1_node); lock1 != nullptr) {
         Node* lock_obj = lock->obj_node();
         Node* lock1_obj = lock1->obj_node();
         if (lock_obj->eqv_uncast(lock1_obj) &&
@@ -2728,12 +2725,12 @@ bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeO
     return dest_t->instance_id() == t_oop->instance_id();
   }
 
-  if (dest_t->isa_instptr() && !dest_t->is_instptr()->instance_klass()->equals(phase->C->env()->Object_klass())) {
+  if (dest_t->is_instptr() && !dest_t->as_instptr()->instance_klass()->equals(phase->C->env()->Object_klass())) {
     // clone
-    if (t_oop->isa_aryptr()) {
+    if (t_oop->is_aryptr()) {
       return false;
     }
-    if (!t_oop->isa_instptr()) {
+    if (!t_oop->is_instptr()) {
       return true;
     }
     if (dest_t->maybe_java_subtype_of(t_oop) || t_oop->maybe_java_subtype_of(dest_t)) {
@@ -2743,23 +2740,23 @@ bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeO
     return false;
   }
 
-  if (dest_t->isa_aryptr()) {
+  if (dest_t->is_aryptr()) {
     // arraycopy or array clone
-    if (t_oop->isa_instptr()) {
+    if (t_oop->is_instptr()) {
       return false;
     }
-    if (!t_oop->isa_aryptr()) {
+    if (!t_oop->is_aryptr()) {
       return true;
     }
 
-    const Type* elem = dest_t->is_aryptr()->elem();
+    const Type* elem = dest_t->as_aryptr()->elem();
     if (elem == Type::BOTTOM) {
       // An array but we don't know what elements are
       return true;
     }
 
-    dest_t = dest_t->is_aryptr()->with_field_offset(Type::OffsetBot)->add_offset(Type::OffsetBot)->is_oopptr();
-    t_oop = t_oop->is_aryptr()->with_field_offset(Type::OffsetBot);
+    dest_t = dest_t->as_aryptr()->with_field_offset(Type::OffsetBot)->add_offset(Type::OffsetBot)->as_oopptr();
+    t_oop = t_oop->as_aryptr()->with_field_offset(Type::OffsetBot);
     uint dest_alias = phase->C->get_alias_index(dest_t);
     uint t_oop_alias = phase->C->get_alias_index(t_oop);
 
