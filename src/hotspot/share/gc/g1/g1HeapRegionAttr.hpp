@@ -90,7 +90,7 @@ public:
 
   void set_old()                       { _type = Old; }
   void clear_humongous_candidate()     {
-    assert(is_humongous_candidate(), "must be");
+    assert(is_humongous(), "must be");
     _type = HumongousNonCandidate;
   }
 
@@ -119,8 +119,8 @@ public:
 // quickly reclaim humongous objects. For the latter, at the start of GC, by adding
 // it as a humongous candidate we enable special handling for that region.
 // During the reference iteration closures, when we see a humongous region candidate,
-// we then simply mark it as referenced, i.e. live, and change it to a non-humongous
-// candidate to prevent further processing on it.
+// we then simply mark it as referenced, i.e. live, and change it to a humongous
+// non-candidate to prevent further processing on it.
 //
 // This means that this does NOT completely correspond to the information stored
 // in a G1HeapRegion, but only to what is interesting for the current young collection.

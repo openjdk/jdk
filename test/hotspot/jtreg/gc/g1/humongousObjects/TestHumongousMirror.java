@@ -31,6 +31,7 @@ import java.nio.file.Paths;
 
 /**
  * @test gc.g1.humongousObjects.TestHumongousMirror
+ * @bug 8075229
  * @summary Checks that a humongous mirror is not reclaimed eagerly as long as a CLD has a reference to it.
  * @requires vm.gc.G1
  * @requires vm.opt.G1HeapRegionSize == "null" | vm.opt.G1HeapRegionSize == "1M"
@@ -56,8 +57,8 @@ public class TestHumongousMirror {
     public static void main(String[] args) throws Exception {
         final Path workDir = Paths.get("");
 
-        // 65522 statics make the mirror of the class humongous.
-        String c = Helpers.generate(className, null, null, 0, 65522);
+        // 65523 statics make the mirror of the class humongous on both 32 and 64 bit VMs.
+        String c = Helpers.generate(className, null, null, 0, 65523);
         Helpers.compileClass(className, workDir, c);
 
         Class<?> clazz = Class.forName(className, false, null);

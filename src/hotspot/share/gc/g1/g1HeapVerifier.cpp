@@ -724,13 +724,18 @@ public:
         _failures = true;
         return true;
       }
-      if (hr->is_continues_humongous() && region_attr.is_humongous_candidate()) {
+      if (hr->is_starts_humongous() && !region_attr.is_humongous()) {
+        log_error(gc, verify)("## inconsistent region attr type %s for humongous starts region %u", region_attr.get_type_str(), i);
+        _failures = true;
+        return true;
+      }
+      if (hr->is_continues_humongous() && region_attr.is_humongous()) {
         log_error(gc, verify)("## inconsistent region attr type %s for continues humongous region %u", region_attr.get_type_str(), i);
         _failures = true;
         return true;
       }
     } else {
-      if (region_attr.is_humongous_candidate()) {
+      if (region_attr.is_humongous()) {
         log_error(gc, verify)("## inconsistent region attr type %s for non-humongous region %u", region_attr.get_type_str(), i);
         _failures = true;
         return true;

@@ -196,6 +196,8 @@ private:
   void clear_modified_or_humongous_oops()      { _has_modified_or_humongous_oops = false; }
  public:
   void record_modified_oops()                  { _has_modified_or_humongous_oops = true; }
+  bool has_modified_oops()                     { return _has_modified_or_humongous_oops; }
+
   void record_humongous_oops()                 { _has_modified_or_humongous_oops = true; }
   bool has_modified_or_humongous_oops()        { return _has_modified_or_humongous_oops; }
 

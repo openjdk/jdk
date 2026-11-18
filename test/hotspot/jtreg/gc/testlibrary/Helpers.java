@@ -124,7 +124,7 @@ public class Helpers {
      * @param fieldCount  count of long fields
      * @return class text
      */
-    public static String generate(String className, String superClass, String constructor, long fieldCount) {
+    public static String generate(String className, String superClass, String constructor, int fieldCount) {
         return generate(className, superClass, constructor, fieldCount, 0);
     }
 
@@ -150,7 +150,7 @@ public class Helpers {
      * @param staticFieldCount count of static long field
      * @return class text
      */
-    public static String generate(String className, String superClass, String constructor, long fieldCount, long staticFieldCount) {
+    public static String generate(String className, String superClass, String constructor, int fieldCount, int staticFieldCount) {
         return new StringBuilder()
                 .append(String.format("public class %s%s {\n", className, superClass == null ? ""
                         : " extends " + superClass))
@@ -172,7 +172,7 @@ public class Helpers {
      * @param fieldCount count of long fields
      * @return generated fields
      */
-    private static String fieldsGenerator(long fieldCount) {
+    private static String fieldsGenerator(int fieldCount) {
         StringBuilder fieldsBuilder = new StringBuilder("");
 
         for (int i = 0; i < fieldCount; ++i) {
@@ -193,7 +193,7 @@ public class Helpers {
      * @param staticFieldCount count of static long fields
      * @return generated fields
      */
-    private static String staticsGenerator(long staticFieldCount) {
+    private static String staticsGenerator(int staticFieldCount) {
         StringBuilder staticsBuilder = new StringBuilder("");
 
         for (int i = 0; i < staticFieldCount; ++i) {

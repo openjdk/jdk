@@ -121,7 +121,7 @@ class CLDScanClosure: public CLDClosure {
   void do_cld(ClassLoaderData* cld) {
     // If the cld has not been dirtied we know that there's
     // no references into  the young gen and we can skip it.
-    if (!cld->has_modified_or_humongous_oops()) {
+    if (!cld->has_modified_oops()) {
       return;
     }
 
