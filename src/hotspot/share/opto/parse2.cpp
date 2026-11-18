@@ -3038,7 +3038,11 @@ void Parse::do_one_bytecode() {
     assert(constant.is_loaded(), "constant is not loaded");
     const Type* con_type = Type::make_from_constant(constant);
     if (con_type != nullptr) {
-      push_node(con_type->basic_type(), makecon(con_type));
+      Node* con = makecon(con_type);
+      if (con_type->is_valueklassptr()) {
+        con = ValueTypeNode::make_from_oop(this, con, con_type->value_klass());
+      }
+      push_node(con_type->basic_type(), con);
     }
     break;
   }

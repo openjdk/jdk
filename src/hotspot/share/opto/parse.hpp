@@ -534,6 +534,10 @@ class Parse : public GraphKit {
   // Helper function to setup Ideal Call nodes
   void do_call();
 
+  Node* null_assert_for_unloaded_type(Node* value, ciType* unloaded_type,
+                                      const char* reason, bool trap_at_next_bci,
+                                      ciMethod* callee = nullptr);
+
   // Helper function to uncommon-trap or bailout for non-compilable call-sites
   bool can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass *klass);
 

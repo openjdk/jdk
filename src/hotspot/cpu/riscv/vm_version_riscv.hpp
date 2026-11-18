@@ -40,6 +40,20 @@ class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend RiscvHwprobe;
+
+ public:
+  enum class AtomicAccessMode : uint8_t {
+    RVWMO,
+    RVWMO_ZALASR,
+    ZTSO
+  };
+
+  enum class AtomicCasMode : uint8_t {
+    BASELINE,
+    ZACAS,
+    ZACAS_ZABHA
+  };
+
  private:
 
   // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
@@ -77,7 +91,10 @@ class VM_Version : public Abstract_VM_Version {
 
   #define UPDATE_DEFAULT(flag)           \
   void update_flag() {                   \
-    assert(enabled(), "Must be.");       \
+    if (!enabled()) {                    \
+      FLAG_SET_ERGO(flag, false);        \
+      return;                            \
+    }                                    \
     if (FLAG_IS_DEFAULT(flag)) {         \
       FLAG_SET_DEFAULT(flag, true);      \
     } else {                             \
@@ -90,7 +107,10 @@ class VM_Version : public Abstract_VM_Version {
 
   #define UPDATE_DEFAULT_DEP(flag, dep0, ...)                                                               \
   void update_flag() {                                                                                      \
-      assert(enabled(), "Must be.");                                                                        \
+      if (!enabled()) {                                                                                     \
+        FLAG_SET_ERGO(flag, false);                                                                         \
+        return;                                                                                             \
+      }                                                                                                     \
       DEBUG_ONLY(verify_deps(dep0, ##__VA_ARGS__));                                                         \
       if (FLAG_IS_DEFAULT(flag)) {                                                                          \
         if (deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                        \
@@ -414,6 +434,25 @@ private:
       }
       return true;
     }
+
+    // Is this a super set of features_to_test?
+    bool super_set_of(RVExtFeatures* features_to_test) {
+      for (int i = 0; i < element_count(); i++) {
+        if ((_features_bitmap[i] | features_to_test->_features_bitmap[i]) != _features_bitmap[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Returns features present in this but not in features_to_test
+    RVExtFeatures features_not_in(RVExtFeatures* features_to_test) {
+      RVExtFeatures result;
+      for (int i = 0; i < element_count(); i++) {
+        result._features_bitmap[i] = _features_bitmap[i] & (~(features_to_test->_features_bitmap[i]));
+      }
+      return result;
+    }
   };
 
   // enable extensions based on profile, current supported profiles:
@@ -493,9 +532,13 @@ private:
   // Null terminated list
   static RVFeatureValue* _feature_list[];
   static RVExtFeatures* _rv_ext_features;
+  static RVExtFeatures _rv_ext_features_disabled_by_aot_cache;
 
   // Enables features in _feature_list
   static void setup_cpu_available_features();
+
+  static void apply_aot_cache_cpu_features();
+
   // Helper for specific queries
   static void os_aux_features();
   static char* os_uarch_additional_features();
@@ -508,18 +551,23 @@ private:
   static uint32_t cpu_vector_length();
   static uint32_t _initial_vector_length;
 
-  // Native AtomicAccess dispatches on this instead of UseZalasr. UseZalasr is
-  // set from command-line and extension detection before VM_Version::initialize()
-  // runs the toolchain-psABI and UseZtso mutual-exclusion checks, so during
-  // startup UseZalasr may be transiently true even on configurations where those
-  // checks would later disable it. AtomicAccess is invoked from os::init_2,
-  // vm_init_globals, ObjectSynchronizer::initialize and other subsystems that
-  // run before init_globals() calls VM_Version_init(), so dispatching on
-  // UseZalasr directly can either SIGILL (CPU lacks the extension) or emit
-  // Zalasr sequences that later get paired with the incompatible pre-psABI
-  // atomics mapping. This flag is false by default and is latched to the final
-  // UseZalasr value after all validation completes.
-  static bool _use_zalasr_atomics;
+  // Native AtomicAccess dispatches on this instead of reading UseZalasr and
+  // UseZtso separately. UseZalasr is set from command-line and extension
+  // detection before VM_Version::initialize() runs the toolchain-psABI and
+  // UseZtso mutual-exclusion checks, so during startup it may be transiently
+  // true even on configurations where those checks would later disable it.
+  // AtomicAccess is invoked from os::init_2, vm_init_globals,
+  // ObjectSynchronizer::initialize and other subsystems that run before
+  // init_globals() calls VM_Version_init(), so dispatching on UseZalasr
+  // directly can either SIGILL (CPU lacks the extension) or emit Zalasr
+  // sequences that later get paired with the incompatible pre-psABI atomics
+  // mapping. This mode is RVWMO by default and is latched to the final flag
+  // values after all validation completes.
+  static AtomicAccessMode _atomic_access_mode;
+
+  // Keep native CAS on the baseline ISA until CPU feature initialization
+  // completes, then latch the final Zacas/Zabha configuration.
+  static AtomicCasMode _atomic_cas_mode;
 
   static void common_initialize();
 
@@ -534,7 +582,8 @@ private:
 
   static uint32_t initial_vector_length() { return _initial_vector_length; }
 
-  static bool use_zalasr_atomics() { return _use_zalasr_atomics; }
+  static AtomicAccessMode atomic_access_mode() { return _atomic_access_mode; }
+  static AtomicCasMode atomic_cas_mode() { return _atomic_cas_mode; }
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
@@ -568,9 +617,11 @@ private:
   // AOT Code Cache support
   static int  cpu_features_size();
   static void store_cpu_features(void* buf);
+  static void get_cpu_features_disabled_by_aot_cache(void* buf);
   static bool verify_aot_code_cache_features(void* features_buffer);
   static void get_cpu_features_name(void* features_buffer, stringStream& ss);
   static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss);
+  static int cpu_features_alignment() { return alignof(RVExtFeatures); }
 
  private:
   static void print_feature_name(stringStream& ss, RVFeatureValue* feature);

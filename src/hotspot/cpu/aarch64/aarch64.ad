@@ -1183,13 +1183,13 @@ class CallStubImpl {
   //--------------------------------------------------------------
 
  public:
-  // Size of call trampoline stub.
-  static uint size_call_trampoline() {
+  // Size of call stub.
+  static uint size_call_stub() {
     return MacroAssembler::max_trampoline_stub_size();
   }
 
-  // number of relocations needed by a call trampoline stub
-  static uint reloc_call_trampoline() {
+  // Number of relocations needed by a call stub.
+  static uint reloc_call_stub() {
     return 5; // metadata; call dest; trampoline address; trampoline destination; trampoline_owner_metadata
   }
 };
@@ -16522,7 +16522,7 @@ instruct expandBitsL_reg(iRegLNoSp dst, iRegL src, iRegL mask,
 %}
 
 
-instruct expandBitsL_memcon(iRegINoSp dst, memory8 mem, immL mask,
+instruct expandBitsL_memcon(iRegLNoSp dst, memory8 mem, immL mask,
                          vRegF tdst, vRegF tsrc, vRegF tmask) %{
   match(Set dst (ExpandBits (LoadL mem) mask));
   effect(TEMP tdst, TEMP tsrc, TEMP tmask);

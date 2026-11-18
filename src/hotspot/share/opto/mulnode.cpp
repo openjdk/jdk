@@ -838,13 +838,11 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* in1 = in(1);
   int op = in1->Opcode();
 
-  // Are we masking a long that was converted from an int with a mask
-  // that fits in 32-bits?  Commute them and use an AndINode.  Don't
-  // convert masks which would cause a sign extension of the integer
-  // value.  This check includes UI2L masks (0x00000000FFFFFFFF) which
-  // would be optimized away later in Identity.
-  if (op == Op_ConvI2L && (mask & UCONST64(0xFFFFFFFF80000000)) == 0) {
-    Node* andi = new AndINode(in1->in(1), phase->intcon(mask));
+  // If the mask is a sign extension of a 32-bit value, commute the AND
+  // with the conversion:
+  //   ConvI2L(x) & mask => ConvI2L(x & (jint)mask)
+  if (op == Op_ConvI2L && mask == (jlong)(jint)mask) {
+    Node* andi = new AndINode(in1->in(1), phase->intcon((jint)mask));
     andi = phase->transform(andi);
     return new ConvI2LNode(andi);
   }
@@ -1143,13 +1141,29 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
-  // Check for ((x & ((1<<(32-c0))-1)) << c0) which ANDs off high bits
-  // before shifting them away.
-  const jlong bits_mask = max_unsigned_integer(bt) >> con;
-  assert(bt != T_INT || bits_mask == right_n_bits(num_bits - con), "inconsistent");
-  if (add1_op == Op_And(bt) &&
-      phase->type(add1->in(2)) == TypeInteger::make(bits_mask, bt)) {
-    return LShiftNode::make(add1->in(1), in(2), bt);
+  // (x & mask) << con => x << con, where mask is known to have all bits that
+  // survive the shift set; additional bits are shifted away.
+  const julong bits_mask = max_unsigned_integer(bt) >> con;
+  assert(bt != T_INT || bits_mask == right_n_bits<julong>(num_bits - con), "inconsistent");
+  if (add1_op == Op_And(bt)) {
+    // Either operand of the commutative And can be the mask.
+    for (uint i = 1; i <= 2; i++) {
+      const TypeInteger* mask_t = phase->type(add1->in(i))->isa_integer(bt);
+      if (mask_t == nullptr) {
+        // AND operands have the matching integer type unless they are TOP.
+        // Thus nullptr means TOP here; leave the dead AND for dead-code cleanup.
+        break;
+      }
+      uint64_t known_ones;
+      if (bt == T_INT) {
+        known_ones = mask_t->is_int()->_bits._ones;
+      } else {
+        known_ones = mask_t->is_long()->_bits._ones;
+      }
+      if ((known_ones & bits_mask) == bits_mask) {
+        return LShiftNode::make(add1->in(3 - i), in(2), bt);
+      }
+    }
   }
 
   // Collapse nested left-shifts with constant rhs:
