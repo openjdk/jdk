@@ -2907,8 +2907,10 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
 
   // Long input: full m4 groups at fixed vl, then one vl-bounded
   // compare covering the tail.
-  bind(LARGE);
+
   const int large_loop_size = 4 * MaxVectorSize;
+
+  bind(LARGE);
   vsetvli(tmp1, x0, sew, Assembler::m4, Assembler::ma, Assembler::ta);
 
   bind(LOOP);
