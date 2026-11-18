@@ -53,7 +53,7 @@ private:
   CardTable::CardValue*   _card_table;
 
   // Thread-local allocation buffer for object evacuations.
-  // Used by GC workers.
+  // Used by GC worker threads.
   // In generational mode, it is exclusive to the young generation.
   PLAB* _gclab;
   size_t _gclab_size;
