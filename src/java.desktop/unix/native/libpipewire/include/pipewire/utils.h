@@ -5,10 +5,6 @@
 #ifndef PIPEWIRE_UTILS_H
 #define PIPEWIRE_UTILS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 #include <sys/un.h>
@@ -16,14 +12,19 @@ extern "C" {
 # include <sys/mount.h>
 #endif
 #include <errno.h>
-
-#ifndef ENODATA
-#define ENODATA 9919
-#endif
+#include <sys/types.h>
 
 #include <spa/utils/cleanup.h>
 #include <spa/utils/defs.h>
 #include <spa/pod/pod.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef ENODATA
+#define ENODATA 9919
+#endif
 
 /** \defgroup pw_utils Utilities
  *
@@ -60,25 +61,25 @@ char *
 pw_strip(char *str, const char *whitespace);
 
 #if !defined(strndupa)
-# define strndupa(s, n)                                      \
-    ({                                          \
-        const char *__old = (s);                          \
-        size_t __len = strnlen(__old, (n));                      \
-        char *__new = (char *) __builtin_alloca(__len + 1);              \
-        memcpy(__new, __old, __len);                          \
-        __new[__len] = '\0';                              \
-        __new;                                      \
-    })
+# define strndupa(s, n)								      \
+	({									      \
+		const char *__old = (s);					      \
+		size_t __len = strnlen(__old, (n));				      \
+		char *__new = (char *) __builtin_alloca(__len + 1);		      \
+		memcpy(__new, __old, __len);					      \
+		__new[__len] = '\0';						      \
+		__new;								      \
+	})
 #endif
 
 #if !defined(strdupa)
-# define strdupa(s)                                      \
-    ({                                          \
-        const char *__old = (s);                          \
-        size_t __len = strlen(__old) + 1;                      \
-        char *__new = (char *) alloca(__len);                      \
-        (char *) memcpy(__new, __old, __len);                      \
-    })
+# define strdupa(s)								      \
+	({									      \
+		const char *__old = (s);					      \
+		size_t __len = strlen(__old) + 1;				      \
+		char *__new = (char *) alloca(__len);				      \
+		(char *) memcpy(__new, __old, __len);				      \
+	})
 #endif
 
 SPA_WARN_UNUSED_RESULT
@@ -93,7 +94,7 @@ void* pw_reallocarray(void *ptr, size_t nmemb, size_t size);
 #ifdef PW_ENABLE_DEPRECATED
 #define PW_DEPRECATED(v)        (v)
 #else
-#define PW_DEPRECATED(v)    ({ __typeof__(v) _v SPA_DEPRECATED = (v); (void)_v; (v); })
+#define PW_DEPRECATED(v)	({ __typeof__(v) _v SPA_DEPRECATED = (v); (void)_v; (v); })
 #endif /* PW_ENABLE_DEPRECATED */
 
 /**
@@ -101,7 +102,7 @@ void* pw_reallocarray(void *ptr, size_t nmemb, size_t size);
  */
 
 SPA_DEFINE_AUTO_CLEANUP(pw_strv, char **, {
-    spa_clear_ptr(*thing, pw_free_strv);
+	spa_clear_ptr(*thing, pw_free_strv);
 })
 
 #ifdef __cplusplus

@@ -5,6 +5,11 @@
 #ifndef SPA_PARAM_VIDEO_FORMAT_H
 #define SPA_PARAM_VIDEO_FORMAT_H
 
+#include <spa/param/format.h>
+#include <spa/param/video/raw.h>
+#include <spa/param/video/dsp.h>
+#include <spa/param/video/encoded.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,20 +19,15 @@ extern "C" {
  * \{
  */
 
-#include <spa/param/format.h>
-#include <spa/param/video/raw.h>
-#include <spa/param/video/dsp.h>
-#include <spa/param/video/encoded.h>
-
 struct spa_video_info {
-    uint32_t media_type;
-    uint32_t media_subtype;
-    union {
-        struct spa_video_info_raw raw;
-        struct spa_video_info_dsp dsp;
-        struct spa_video_info_h264 h264;
-        struct spa_video_info_mjpg mjpg;
-    } info;
+	uint32_t media_type;
+	uint32_t media_subtype;
+	union {
+		struct spa_video_info_raw raw;
+		struct spa_video_info_dsp dsp;
+		struct spa_video_info_h264 h264;
+		struct spa_video_info_mjpg mjpg;
+	} info;
 };
 
 /**
