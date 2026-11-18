@@ -159,6 +159,16 @@ void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
   __ branch_optimized(Assembler::bcondAlways, _continuation);
 }
 
+// Implementation of StoreFlatNonatomicFieldStub
+
+StoreFlatNonatomicFieldStub::StoreFlatNonatomicFieldStub(LIR_Opr dest, LIR_Opr src, LIR_Opr field_entry, CodeEmitInfo* info) {
+  Unimplemented();
+}
+
+void StoreFlatNonatomicFieldStub::emit_code(LIR_Assembler* ce) {
+  Unimplemented();
+}
+
 // Implementation of StoreFlattenedArrayStub
 
 StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr value, CodeEmitInfo* info) {

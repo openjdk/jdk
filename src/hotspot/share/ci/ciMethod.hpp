@@ -278,6 +278,7 @@ class ciMethod : public ciMetadata {
                                    ProfilePtrKind& left_ptr, ProfilePtrKind& right_ptr,
                                    bool& left_value_type, bool& right_value_type);
   ciField*      get_field_at_bci( int bci, bool &will_link);
+  address       resolved_field_entry_at_bci(int bci);
   ciMethod*     get_method_at_bci(int bci, bool &will_link, ciSignature* *declared_signature);
   ciMethod*     get_method_at_bci(int bci) {
     bool ignored_will_link;

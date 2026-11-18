@@ -82,6 +82,8 @@ public:
   bool is_naturally_atomic(bool null_free);
   int field_map_offset() const;
   ciConstant get_field_map() const;
+  // Conservatively require completed initialization before using the null-reset value.
+  bool has_null_reset_value() { return is_initialized(); }
   ciConstant get_null_reset_value();
   int get_null_reset_value_offset();
   ArrayDescription array_description_of_array_properties(const ArrayProperties&);

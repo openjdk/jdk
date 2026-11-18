@@ -47,6 +47,7 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -942,6 +943,17 @@ ciField* ciMethod::get_field_at_bci(int bci, bool &will_link) {
   iter.reset_to_bci(bci);
   iter.next();
   return iter.get_field(will_link);
+}
+
+// ------------------------------------------------------------------
+// ciMethod::resolved_field_entry_at_bci
+address ciMethod::resolved_field_entry_at_bci(int bci) {
+  VM_ENTRY_MARK;
+  ciBytecodeStream iter(this);
+  iter.reset_to_bci(bci);
+  iter.next();
+  ResolvedFieldEntry* entry = get_Method()->constants()->resolved_field_entry_at(iter.get_field_index());
+  return entry->is_resolved(iter.cur_bc()) ? reinterpret_cast<address>(entry) : nullptr;
 }
 
 // ------------------------------------------------------------------

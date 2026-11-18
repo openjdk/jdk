@@ -140,6 +140,7 @@
   do_blob(new_null_free_array)                                         \
   do_blob(new_multi_array)                                             \
   do_blob(load_flat_array)                                             \
+  do_blob(store_flat_nonatomic_field)                                  \
   do_blob(store_flat_array)                                            \
   do_blob(substitutability_check)                                      \
   do_blob(buffer_value_args)                                           \
