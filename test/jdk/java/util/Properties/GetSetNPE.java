@@ -25,7 +25,7 @@
  * @test
  * @summary Confirm that nulls passed to Properties.setProperty() throw NPE
  * @bug 8293451
- * @run junit SetPropNPE
+ * @run junit GetSetNPE
  */
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Properties;
 import org.junit.jupiter.api.Test;
 
-public class SetPropNPE {
+public class GetSetNPE {
     @Test
     public void testSetPropertyNPEs() {
         final Properties p = new Properties();
@@ -41,5 +41,9 @@ public class SetPropNPE {
         assertThrows(NullPointerException.class, () -> p.setProperty("key", null));
         assertThrows(NullPointerException.class, () -> p.setProperty(null, null));
         assertTrue(p.isEmpty());
+
+        assertThrows(NullPointerException.class, () -> p.getProperty(null));
+        assertThrows(NullPointerException.class, () -> p.getProperty(null, "default"));
+        p.getProperty("key", null); // null defaultValue is OK
     }
 }
