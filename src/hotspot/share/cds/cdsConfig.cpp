@@ -61,6 +61,7 @@ bool CDSConfig::_has_temp_aot_config_file = false;
 bool CDSConfig::_old_cds_flags_used = false;
 bool CDSConfig::_new_aot_flags_used = false;
 bool CDSConfig::_disable_heap_dumping = false;
+bool CDSConfig::_using_alternate_system_loader = false;
 bool CDSConfig::_is_at_aot_safepoint = false;
 
 const char* CDSConfig::_default_archive_path = nullptr;
@@ -108,6 +109,11 @@ void CDSConfig::ergo_initialize() {
   }
 
   AOTMapLogger::ergo_initialize();
+
+  if (using_alternate_system_loader() && (is_dumping_aot_configuration() || is_dumping_aot_cache())) {
+    log_warning(aot)("AOT optimizations are curtailed because -Djava.system.class.loader=%s is specified",
+        Arguments::get_property("java.system.class.loader"));
+  }
 
   setup_compiler_args();
 
@@ -321,10 +327,6 @@ void CDSConfig::ergo_init_classic_archive_paths() {
   }
 }
 
-bool CDSConfig::using_alternate_system_loader() {
-  return Arguments::get_property("java.system.class.loader") != nullptr;
-}
-
 void CDSConfig::check_internal_module_property(const char* key, const char* value) {
   if (Arguments::is_incompatible_cds_internal_module_property(key)) {
     disable_full_module_graph();
@@ -338,6 +340,10 @@ void CDSConfig::check_incompatible_property(const char* key, const char* value) 
     "jdk.module.showModuleResolution",
     "jdk.module.validation"
   };
+
+  if (strcmp(key, "java.system.class.loader") == 0) {
+    _using_alternate_system_loader = true;
+  }
 
   for (const char* property : incompatible_properties) {
     if (strcmp(key, property) == 0) {
@@ -794,11 +800,8 @@ void CDSConfig::setup_compiler_args() {
   if (is_dumping_aot_configuration()) {
     // --- AOT training
     if (using_alternate_system_loader()) {
-      log_warning(aot)("AOT optimizations are curtailed because -Djava.system.class.loader=%s is specified",
-        Arguments::get_property("java.system.class.loader"));
       FLAG_SET_ERGO(AOTRecordTraining, false);
-    } else {
-      FLAG_SET_ERGO_IF_DEFAULT(AOTRecordTraining, true);
+      FLAG_SET_ERGO(AOTReplayTraining, false);
     }
 
     if (!AOTClassLinking) { // Note: is_dumping_aot_linked_classes() is false in training run.
@@ -806,6 +809,7 @@ void CDSConfig::setup_compiler_args() {
       return;
     }
 
+    FLAG_SET_ERGO_IF_DEFAULT(AOTRecordTraining, true);
     if (is_using_archive()) {
       // Re-training
       FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
@@ -821,11 +825,6 @@ void CDSConfig::setup_compiler_args() {
     disable_dumping_aot_code(); // No AOT code generation during training run
   } else if (is_dumping_aot_cache()) {
     // --- AOT assembly
-    if (using_alternate_system_loader()) {
-      log_warning(aot)("AOT optimizations are curtailed because -Djava.system.class.loader=%s is specified",
-        Arguments::get_property("java.system.class.loader"));
-    }
-
     if (!is_dumping_aot_linked_classes()) {
       disable_profile_and_compiled_code();
       return;
