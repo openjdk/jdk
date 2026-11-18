@@ -4898,45 +4898,32 @@ private:
   // include 'phi'.  Violating this assumption corrupts the edge rewiring
   // in Phase 3 (specifically the "prev" back-reference at index i-1).
   Node* do_reassociate_chain(Node* node, int opcode, PhiNode* phi, uint chain_length) {
-    // Accumulate chain of nodes to apply transformation
-    Unique_Node_List<Node> chain_nodes;
+    // Accumulate inputs
+    Unique_Node_List<Node> input_nodes;
     Node* n = node;
     for (uint i = 0; i < chain_length; i++) {
-      chain_nodes.push(n);
-      if (n->in(1)->Opcode() == opcode) {
-        n = n->in(1);
-      } else {
-        n = n->in(2);
-      }
+      Node* left = n->in(1);
+      Node* input = left->Opcode() == opcode || left == phi ? n->in(2) : left;
+      input_nodes.push(input);
+      n = n->in(left->Opcode() == opcode ? 1 : 2);
     }
 
-    // Clone nodes ahead of transformation
-    Node_List<Node> cloned_nodes(chain_length);
-    for (uint i = 0; i < chain_nodes.size(); i++) {
-      Node* n = chain_nodes.at(i);
-      Node* copy = n->clone();
-      cloned_nodes.map(n->_idx, copy);
-      _phase->register_new_node(copy, _loop->head());
+    // Rewire
+    Node* head = node->clone();
+    head->set_req(2, phi);
+    Node* prev = head;
+    for (uint i = 0; i < chain_length - 1; i++) {
+      Node* input = input_nodes.at(i);
+      Node* cloned = node->clone();
+      cloned->set_req(2, input);
+      prev->set_req(1, cloned);
+      _phase->register_new_node(prev, _loop->head());
+      prev = cloned;
     }
+    prev->set_req(1, input_nodes.at(chain_length - 1));
+    _phase->register_new_node(prev, _loop->head());
 
-    // Update edges
-    for (uint i = 0; i < chain_nodes.size(); i++) {
-      Node* chain_node = chain_nodes.at(i);
-      Node* cloned = cloned_nodes[chain_node->_idx];
-      if (phi == chain_node->in(1) || phi == chain_node->in(2)) {
-        int not_phi_index = phi == chain_node->in(1) ? 2 : 1;
-        Node* prev = chain_nodes.at(i - 1);
-        int prev_chain_index = prev->in(1)->Opcode() == opcode ? 1 : 2;
-        Node* cloned_prev = cloned_nodes[prev->_idx];
-        cloned_prev->set_req(prev_chain_index, chain_node->in(not_phi_index));
-        cloned->set_req(not_phi_index, cloned_nodes[chain_nodes.at(0)->_idx]);
-      } else {
-        int index = chain_node->in(1)->Opcode() == opcode ? 1 : 2;
-        cloned->set_req(index, cloned_nodes[chain_node->in(index)->_idx]);
-      }
-    }
-
-    return cloned_nodes[chain_nodes.at(chain_length - 1)->_idx];
+    return head;
   }
 };
 
