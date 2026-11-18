@@ -118,12 +118,6 @@ class MacroAssembler: public Assembler {
                                          bool add_relocation = true, bool emit_dummy_addr = false) {
     calculate_address_from_global_toc(dst, target(addr), hi16, lo16, add_relocation, emit_dummy_addr, false);
   }
-  inline void calculate_address_from_global_toc_hi16only(Register dst, address addr) {
-    calculate_address_from_global_toc(dst, addr, true, false);
-  };
-  inline void calculate_address_from_global_toc_lo16only(Register dst, address addr) {
-    calculate_address_from_global_toc(dst, addr, false, true);
-  };
 
   inline static bool is_calculate_address_from_global_toc_at(address a, address bound);
   // Returns address of first instruction in sequence.
