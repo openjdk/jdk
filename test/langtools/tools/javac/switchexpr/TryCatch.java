@@ -28,6 +28,9 @@
  * @compile TryCatch.java
  * @run main TryCatch
  */
+
+import java.util.Objects;
+
 public class TryCatch {
     public static void main(String[] args) {
         {
@@ -368,6 +371,15 @@ public class TryCatch {
                 }
             }
         }
+
+        assertEquals("test", testCastedSwitchExpression(0, "test"));
+
+        try {
+            testCastedSwitchExpression(0, 1);
+            throw new AssertionError("Expected a ClassCastException, but got none.");
+        } catch (ClassCastException cce) {
+            //ok
+        }
     }
 
     static class FieldHolder {
@@ -497,6 +509,18 @@ public class TryCatch {
         };
     }
 
+    static String testCastedSwitchExpression(int i, Object value) {
+        return (String) switch (i) {
+            default -> {
+                try {
+                    yield value;
+                } catch (RuntimeException e) {
+                    yield "fallback";
+                }
+            }
+        };
+    }
+
     private int id(int i) {
         return i;
     }
@@ -514,6 +538,13 @@ public class TryCatch {
             throw new RuntimeException();
         }
         return i;
+    }
+
+    private static void assertEquals(Object expected, Object actual) {
+        if (!Objects.equals(expected, actual)) {
+            throw new AssertionError("Expected: " + expected +
+                                     ", actual: " + actual);
+        }
     }
 
     enum E {

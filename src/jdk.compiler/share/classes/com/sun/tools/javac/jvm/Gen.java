@@ -1312,7 +1312,7 @@ public class Gen extends JCTree.Visitor {
         } finally {
             inCondSwitchExpression = prevInCondSwitchExpression;
         }
-        result = items.makeStackItem(pt);
+        result = items.makeStackItem(tree.type);
     }
 
     private void doHandleSwitchExpression(JCSwitchExpression tree) {
@@ -1341,7 +1341,7 @@ public class Gen extends JCTree.Visitor {
                     item.store();
                 }
                 if (!inCondSwitchExpression) {
-                    switchResult = makeTemp(pt);
+                    switchResult = makeTemp(tree.type);
                 } //if inCondSwitchExpression is true, the switchResult variable is not used in visitYield
             }
             int prevLetExprStart = code.setLetExprStackPos(code.state.stacksize);
@@ -1938,7 +1938,7 @@ public class Gen extends JCTree.Visitor {
                         Code.mergeChains(switchExpressionFalseChain, falseJumps);
             }
         } else {
-            genExpr(tree.value, pt).load();
+            genExpr(tree.value, tree.target.type).load();
             if (switchResult != null)
                 switchResult.store();
 
