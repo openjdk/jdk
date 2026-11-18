@@ -1640,10 +1640,9 @@ JVMState* UncommonTrapCallGenerator::generate(JVMState* jvms) {
     // Don't allow uncommon_trap to override our decision to recompile in the event
     // of a class cast failure for a monomorphic call as it will never let us convert
     // the call to either bi-morphic or megamorphic and can lead to unc-trap loops
-    bool keep_exact_action = true;
-    kit.uncommon_trap(_reason, _action, nullptr, "monomorphic vcall checkcast", false, keep_exact_action);
+    kit.uncommon_trap_exact(_reason, _action, nullptr, "monomorphic vcall checkcast");
   } else {
-    kit.uncommon_trap(_reason, _action);
+    kit.uncommon_trap_exact(_reason, _action);
   }
   return kit.transfer_exceptions_into_jvms();
 }

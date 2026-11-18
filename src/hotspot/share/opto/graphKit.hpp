@@ -748,9 +748,12 @@ class GraphKit : public Phase {
   Node* uncommon_trap(Deoptimization::DeoptReason reason,
                      Deoptimization::DeoptAction action,
                      ciKlass* klass = nullptr, const char* reason_string = nullptr,
-                     bool must_throw = false, bool keep_exact_action = false) {
+                     bool must_throw = false) {
+    assert(action != Deoptimization::Action_reinterpret &&
+           action != Deoptimization::Action_maybe_recompile,
+           "use uncommon_trap_exact() or uncommon_trap_maybe_none()");
     return uncommon_trap(Deoptimization::make_trap_request(reason, action),
-                  klass, reason_string, must_throw, keep_exact_action);
+                  klass, reason_string, must_throw);
   }
 
   // Bail out to the interpreter and keep exact action (avoid switching to Action_none).
@@ -760,6 +763,17 @@ class GraphKit : public Phase {
                            bool must_throw = false) {
     return uncommon_trap(Deoptimization::make_trap_request(reason, action),
                   klass, reason_string, must_throw, /*keep_exact_action=*/true);
+  }
+
+  // Relaxed counterpart of uncommon_trap_exact(): the action may be replaced with
+  // Action_none on too many recompiles. Use it where the recompile limit is known
+  // not to be exceeded, or where a possible deoptimization storm is not a concern.
+  Node* uncommon_trap_maybe_none(Deoptimization::DeoptReason reason,
+                                 Deoptimization::DeoptAction action,
+                                 ciKlass* klass = nullptr, const char* reason_string = nullptr,
+                                 bool must_throw = false) {
+    return uncommon_trap(Deoptimization::make_trap_request(reason, action),
+                         klass, reason_string, must_throw, /*keep_exact_action=*/false);
   }
 
   // SP when bytecode needs to be reexecuted.

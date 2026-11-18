@@ -650,9 +650,9 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason,
   // are no local exception handlers.  This should cut down on register
   // allocation time and code size, by drastically reducing the number
   // of in-edges on the call to the uncommon trap.
-  uncommon_trap(reason, Deoptimization::Action_maybe_recompile,
-                (ciKlass*) nullptr, (char*) nullptr,
-                true /*must_throw*/);
+  uncommon_trap_maybe_none(reason, Deoptimization::Action_maybe_recompile,
+                           (ciKlass*) nullptr, (char*) nullptr,
+                           true /*must_throw*/);
 }
 
 bool GraphKit::is_builtin_throw_hot(Deoptimization::DeoptReason reason) {
@@ -1415,9 +1415,9 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
 #ifndef PRODUCT
         if (WizardMode) { tty->print("Null check of unloaded "); klass->print(); tty->cr(); }
 #endif
-        uncommon_trap(Deoptimization::Reason_unloaded,
-                      Deoptimization::Action_reinterpret,
-                      klass, "!loaded");
+        uncommon_trap_maybe_none(Deoptimization::Reason_unloaded,
+                                 Deoptimization::Action_reinterpret,
+                                 klass, "!loaded");
         return top();
       }
 
@@ -3429,7 +3429,7 @@ void GraphKit::guard_klass_being_initialized(Node* klass) {
   Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
 
   { BuildCutout unless(this, tst, PROB_MAX);
-    uncommon_trap(Deoptimization::Reason_initialized, Deoptimization::Action_reinterpret);
+    uncommon_trap_maybe_none(Deoptimization::Reason_initialized, Deoptimization::Action_reinterpret);
   }
 }
 
@@ -3463,9 +3463,9 @@ void GraphKit::clinit_barrier(ciInstanceKlass* ik, ciMethod* context) {
   } else if (ik->is_initialized()) {
     return; // no barrier needed
   } else {
-    uncommon_trap(Deoptimization::Reason_uninitialized,
-                  Deoptimization::Action_reinterpret,
-                  nullptr);
+    uncommon_trap_maybe_none(Deoptimization::Reason_uninitialized,
+                             Deoptimization::Action_reinterpret,
+                             nullptr);
   }
 }
 
@@ -4474,8 +4474,8 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     Node* bol_lh = _gvn.transform( new BoolNode(cmp_lh, BoolTest::eq) );
     { BuildCutout unless(this, bol_lh, PROB_MAX);
       inc_sp(nargs);
-      uncommon_trap(Deoptimization::Reason_class_check,
-                    Deoptimization::Action_maybe_recompile);
+      uncommon_trap_exact(Deoptimization::Reason_class_check,
+                          Deoptimization::Action_maybe_recompile);
     }
     layout_val = nullptr;
     layout_is_con = true;
@@ -4749,7 +4749,7 @@ void GraphKit::add_parse_predicate(Deoptimization::DeoptReason reason, const int
     PreserveJVMState pjvms(this);
     set_control(if_false);
     inc_sp(nargs);
-    uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
+    uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
   }
   Node* if_true = _gvn.transform(new IfTrueNode(parse_predicate));
   set_control(if_true);

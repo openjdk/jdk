@@ -435,8 +435,8 @@ void Parse::load_interpreter_state(Node* osr_buf) {
     // E.g., Object x = coldAtFirst() && notReached()? "str": new Integer(123).
     // This x will be typed as Integer if notReached is not yet linked.
     // It could also happen due to a problem in ciTypeFlow analysis.
-    uncommon_trap(Deoptimization::Reason_constraint,
-                  Deoptimization::Action_reinterpret);
+    uncommon_trap_maybe_none(Deoptimization::Reason_constraint,
+                             Deoptimization::Action_reinterpret);
     set_map(types_are_good);
   }
 }
@@ -1729,9 +1729,9 @@ void Parse::do_one_block() {
         // dead catch block
         // Emit an uncommon trap instead of processing the block.
         set_parse_bci(block()->start());
-        uncommon_trap(Deoptimization::Reason_unreached,
-                      Deoptimization::Action_reinterpret,
-                      nullptr, "dead catch block");
+        uncommon_trap_maybe_none(Deoptimization::Reason_unreached,
+                                 Deoptimization::Action_reinterpret,
+                                 nullptr, "dead catch block");
         return;
       }
     }

@@ -393,9 +393,9 @@ Node* Parse::prepare_array_addressing(BasicType type, int vals, const Type*& ele
     // The class is unloaded.  We have to run this bytecode in the interpreter.
     ciKlass* klass = arytype->unloaded_klass();
 
-    uncommon_trap(Deoptimization::Reason_unloaded,
-                  Deoptimization::Action_reinterpret,
-                  klass, "!loaded array");
+    uncommon_trap_maybe_none(Deoptimization::Reason_unloaded,
+                             Deoptimization::Action_reinterpret,
+                             klass, "!loaded array");
     return top();
   }
 
@@ -643,10 +643,10 @@ void Parse::jump_if_true_fork(IfNode *iff, int dest_bci_if_true, bool unc) {
     set_control( iftrue );
     if (unc) {
       repush_if_args();
-      uncommon_trap(Deoptimization::Reason_unstable_if,
-                    Deoptimization::Action_reinterpret,
-                    nullptr,
-                    "taken always");
+      uncommon_trap_exact(Deoptimization::Reason_unstable_if,
+                          Deoptimization::Action_reinterpret,
+                          nullptr,
+                          "taken always");
     } else {
       assert(dest_bci_if_true != never_reached, "inconsistent dest");
       merge_new_path(dest_bci_if_true);
@@ -665,10 +665,10 @@ void Parse::jump_if_false_fork(IfNode *iff, int dest_bci_if_true, bool unc) {
     set_control( iffalse );
     if (unc) {
       repush_if_args();
-      uncommon_trap(Deoptimization::Reason_unstable_if,
-                    Deoptimization::Action_reinterpret,
-                    nullptr,
-                    "taken never");
+      uncommon_trap_exact(Deoptimization::Reason_unstable_if,
+                          Deoptimization::Action_reinterpret,
+                          nullptr,
+                          "taken never");
     } else {
       assert(dest_bci_if_true != never_reached, "inconsistent dest");
       merge_new_path(dest_bci_if_true);
@@ -684,10 +684,10 @@ void Parse::jump_if_always_fork(int dest_bci, bool unc) {
   // False branch, use existing map and control()
   if (unc) {
     repush_if_args();
-    uncommon_trap(Deoptimization::Reason_unstable_if,
-                  Deoptimization::Action_reinterpret,
-                  nullptr,
-                  "taken never");
+    uncommon_trap_exact(Deoptimization::Reason_unstable_if,
+                        Deoptimization::Action_reinterpret,
+                        nullptr,
+                        "taken never");
   } else {
     assert(dest_bci != never_reached, "inconsistent dest");
     merge_new_path(dest_bci);
@@ -1818,9 +1818,9 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
       tty->print_cr("Never-taken edge stops compilation at bci %d", bci());
     }
     repush_if_args(); // to gather stats on loop
-    uncommon_trap(Deoptimization::Reason_unreached,
-                  Deoptimization::Action_reinterpret,
-                  nullptr, "cold");
+    uncommon_trap_maybe_none(Deoptimization::Reason_unreached,
+                             Deoptimization::Action_reinterpret,
+                             nullptr, "cold");
     if (C->eliminate_boxing()) {
       // Mark the successor blocks as parsed
       branch_block->next_path_num();
@@ -1893,9 +1893,9 @@ void Parse::do_if(BoolTest::mask btest, Node* c, bool can_trap, bool new_path, N
       tty->print_cr("Never-taken edge stops compilation at bci %d", bci());
     }
     repush_if_args(); // to gather stats on loop
-    uncommon_trap(Deoptimization::Reason_unreached,
-                  Deoptimization::Action_reinterpret,
-                  nullptr, "cold");
+    uncommon_trap_maybe_none(Deoptimization::Reason_unreached,
+                             Deoptimization::Action_reinterpret,
+                             nullptr, "cold");
     if (C->eliminate_boxing()) {
       // Mark the successor blocks as parsed
       branch_block->next_path_num();
@@ -2643,10 +2643,10 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block
 
   if (can_trap && path_is_suitable_for_uncommon_trap(prob)) {
     repush_if_args();
-    Node* call = uncommon_trap(Deoptimization::Reason_unstable_if,
-                  Deoptimization::Action_reinterpret,
-                  nullptr,
-                  (is_fallthrough ? "taken always" : "taken never"));
+    Node* call = uncommon_trap_exact(Deoptimization::Reason_unstable_if,
+                                     Deoptimization::Action_reinterpret,
+                                     nullptr,
+                                     (is_fallthrough ? "taken always" : "taken never"));
 
     if (call != nullptr) {
       C->record_unstable_if_trap(new UnstableIfTrap(call->as_CallStaticJava(), path));

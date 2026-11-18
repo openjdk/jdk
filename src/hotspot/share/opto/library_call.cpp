@@ -1453,8 +1453,8 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   Node* int_ch_bol = _gvn.transform(new BoolNode(int_ch_cmp, BoolTest::ge));
   {
     BuildCutout unless(this, int_ch_bol, PROB_MAX);
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_maybe_recompile);
+    uncommon_trap_exact(Deoptimization::Reason_intrinsic,
+                        Deoptimization::Action_maybe_recompile);
   }
   if (stopped()) {
     return true;
@@ -4723,8 +4723,8 @@ bool LibraryCallKit::inline_Class_cast() {
     // Set IO and memory because gen_checkcast may override them when buffering value types
     set_i_o(io);
     set_all_memory(mem);
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_maybe_recompile);
+    uncommon_trap_exact(Deoptimization::Reason_intrinsic,
+                        Deoptimization::Action_maybe_recompile);
   }
   if (!stopped()) {
     set_result(res);
@@ -5216,8 +5216,8 @@ bool LibraryCallKit::inline_native_getLength() {
   if (non_array != nullptr) {
     PreserveJVMState pjvms(this);
     set_control(non_array);
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_maybe_recompile);
+    uncommon_trap_exact(Deoptimization::Reason_intrinsic,
+                        Deoptimization::Action_maybe_recompile);
   }
 
   // If control is dead, only non-array-path is taken.
@@ -5406,8 +5406,8 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
 void LibraryCallKit::bail_out_from_array_copyOf(RegionNode* bailout_region) {
   PreserveJVMState pjvms(this);
   set_control(_gvn.transform(bailout_region));
-  uncommon_trap(Deoptimization::Reason_intrinsic,
-                Deoptimization::Action_maybe_recompile);
+  uncommon_trap_exact(Deoptimization::Reason_intrinsic,
+                      Deoptimization::Action_maybe_recompile);
 }
 
 bool LibraryCallKit::should_bail_out_on_non_ref_arrays(const TypeAryPtr* src_type, const TypeKlassPtr* dest_klass_type) {
@@ -6331,8 +6331,8 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       if (obj_type->value_klass()->is_cloneable()) {
         set_result(obj);
       } else {
-        uncommon_trap(Deoptimization::Reason_intrinsic,
-                      Deoptimization::Action_maybe_recompile);
+        uncommon_trap_maybe_none(Deoptimization::Reason_intrinsic,
+                                 Deoptimization::Action_maybe_recompile);
       }
       return true;
     }
@@ -6763,8 +6763,8 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
   assert(trap_request != 0, "no valid UCT trap request");
   PreserveJVMState pjvms(this);
   set_control(uncommon_trap_call->in(0));
-  uncommon_trap(Deoptimization::trap_request_reason(trap_request),
-                Deoptimization::trap_request_action(trap_request));
+  uncommon_trap_maybe_none(Deoptimization::trap_request_reason(trap_request),
+                           Deoptimization::trap_request_action(trap_request));
   assert(stopped(), "Should be stopped");
   _gvn.hash_delete(uncommon_trap_call);
   uncommon_trap_call->set_req(0, top()); // not used anymore, kill it
