@@ -26,9 +26,9 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
 /**
  * ANEWARRAY - Create new array of references
  *
- * <PRE>
+ * <pre>
  * Stack: ..., count -&gt; ..., arrayref
- * </PRE>
+ * </pre>
  */
 public class ANEWARRAY extends CPInstruction implements LoadClass, AllocationInstruction, ExceptionThrower, StackConsumer, StackProducer {
 
@@ -38,15 +38,20 @@ public class ANEWARRAY extends CPInstruction implements LoadClass, AllocationIns
     ANEWARRAY() {
     }
 
+    /**
+     * Constructs an ANEWARRAY instruction.
+     *
+     * @param index index into the constant pool.
+     */
     public ANEWARRAY(final int index) {
         super(com.sun.org.apache.bcel.internal.Const.ANEWARRAY, index);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {

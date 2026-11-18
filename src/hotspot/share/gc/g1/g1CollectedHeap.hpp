@@ -39,6 +39,7 @@
 #include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
+#include "gc/g1/g1HumongousCardSetGroups.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
@@ -82,7 +83,6 @@ class GCMemoryManager;
 class G1HeapRegion;
 class MemoryPool;
 class nmethod;
-class PartialArrayStateManager;
 class ReferenceProcessor;
 class STWGCTimer;
 class WorkerThreads;
@@ -798,11 +798,16 @@ private:
   // All old gen collection set candidate regions.
   G1CollectionSetCandidates _collection_set_candidates;
 
+  G1HumongousCardSetGroups _humongous_card_set_groups;
+
 public:
   G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
 
   G1CollectionSetCandidates* collection_set_candidates() { return &_collection_set_candidates; }
   const G1CollectionSetCandidates* collection_set_candidates() const { return &_collection_set_candidates; }
+
+  G1HumongousCardSetGroups* humongous_card_set_groups() { return &_humongous_card_set_groups; }
+  const G1HumongousCardSetGroups* humongous_card_set_groups() const { return &_humongous_card_set_groups; }
 
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
@@ -818,9 +823,8 @@ public:
   // The concurrent refiner.
   G1ConcurrentRefine* _cr;
 
-  // Reusable parallel task queues and partial array manager.
+  // Reusable parallel task queues.
   G1ScannerTasksQueueSet* _task_queues;
-  PartialArrayStateManager* _partial_array_state_manager;
 
   // ("Weak") Reference processing support.
   //
@@ -885,8 +889,6 @@ public:
 
   G1ScannerTasksQueueSet* task_queues() const;
   G1ScannerTasksQueue* task_queue(uint i) const;
-
-  PartialArrayStateManager* partial_array_state_manager() const;
 
   // Create a G1CollectedHeap.
   // Must call the initialize method afterwards.

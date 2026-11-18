@@ -86,7 +86,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc">calendario minguo</type>
 			<type key="calendar" type="roc" scope="core">minguo</type>
 			<type key="collation" type="ducet">orden de clasificación de Unicode predeterminado</type>
-			<type key="collation" type="phonetic" scope="core">fonético</type>
 			<type key="collation" type="stroke" scope="core">trazos</type>
 			<type key="collation" type="unihan" scope="core">trazos radicales</type>
 			<type key="lw" type="breakall" scope="core">dividir todo</type>
@@ -127,24 +126,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
-				<months>
-					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">ene</month>
-							<month type="2">feb</month>
-							<month type="3">mar</month>
-							<month type="4">abr</month>
-							<month type="5">may</month>
-							<month type="6">jun</month>
-							<month type="7">jul</month>
-							<month type="8">ago</month>
-							<month type="9">sep</month>
-							<month type="10">oct</month>
-							<month type="11">nov</month>
-							<month type="12">dic</month>
-						</monthWidth>
-					</monthContext>
-				</months>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="narrow">
@@ -257,9 +238,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="G">E d 'de' MMM 'de' y G – E d 'de' MMM 'de' y G</greatestDifference>
 							<greatestDifference id="M">E d 'de' MMM – E d 'de' MMM 'de' y G</greatestDifference>
 							<greatestDifference id="y">E d 'de' MMM 'de' y – E d 'de' MMM 'de' y G</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
@@ -468,9 +446,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Fort_Nelson">
 				<exemplarCity>Fort Nelson</exemplarCity>
 			</zone>
-			<zone type="Africa/Conakry">
-				<exemplarCity>Conakri</exemplarCity>
-			</zone>
 			<zone type="Asia/Atyrau">
 				<exemplarCity>Atirau</exemplarCity>
 			</zone>
@@ -499,11 +474,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Christmas">
 				<long>
 					<standard>hora de la isla de Navidad</standard>
-				</long>
-			</metazone>
-			<metazone type="Cocos">
-				<long>
-					<standard>hora de las Islas Cocos</standard>
 				</long>
 			</metazone>
 			<metazone type="Cook">
@@ -551,19 +521,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>hora de las Islas Gilbert</standard>
 				</long>
 			</metazone>
-			<metazone type="Marshall_Islands">
-				<long>
-					<standard>hora de las Islas Marshall</standard>
-				</long>
-			</metazone>
 			<metazone type="Pyongyang">
 				<long>
 					<standard>hora de Pyongyang</standard>
-				</long>
-			</metazone>
-			<metazone type="Solomon">
-				<long>
-					<standard>hora de las Islas Salomón</standard>
 				</long>
 			</metazone>
 			<metazone type="Wake">

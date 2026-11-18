@@ -6912,7 +6912,8 @@ public class ByteVector64Tests extends AbstractVectorTest {
             String str = av.toString();
 
             byte subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
-            Assert.assertTrue(str.equals(Arrays.toString(subarr)), "at index " + i + ", string should be = " + Arrays.toString(subarr) + ", but is = " + str);
+            String expectedStr = Arrays.toString(subarr);
+            Assert.assertTrue(str.equals(expectedStr), "at index " + i + ", string should be = " + expectedStr + ", but is = " + str);
         }
     }
 

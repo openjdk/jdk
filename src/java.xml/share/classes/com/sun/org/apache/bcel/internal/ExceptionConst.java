@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,16 +26,30 @@ import jdk.xml.internal.Utils;
  * Exception constants.
  *
  * @since 6.0 (intended to replace the InstructionConstant interface)
- * @LastModified: Sept 2025
+ * @LastModified: Nov 2026
  */
 public final class ExceptionConst {
 
     /**
      * Enum corresponding to the various Exception Class arrays, used by
-     * {@link ExceptionConst#createExceptions(EXCS, Class...)}
+     * {@link ExceptionConst#createExceptions(EXCS, Class...)}.
      */
     public enum EXCS {
-        EXCS_CLASS_AND_INTERFACE_RESOLUTION, EXCS_FIELD_AND_METHOD_RESOLUTION, EXCS_INTERFACE_METHOD_RESOLUTION, EXCS_STRING_RESOLUTION, EXCS_ARRAY_EXCEPTION,
+
+        /** Exception class and interface resolution. */
+        EXCS_CLASS_AND_INTERFACE_RESOLUTION,
+
+        /** Exception field and method resolution. */
+        EXCS_FIELD_AND_METHOD_RESOLUTION,
+
+        /** Exception interface method resolution. */
+        EXCS_INTERFACE_METHOD_RESOLUTION,
+
+        /** Exception string resolution. */
+        EXCS_STRING_RESOLUTION,
+
+        /** Exception array exception. */
+        EXCS_ARRAY_EXCEPTION,
     }
 
     /**
@@ -52,34 +66,71 @@ public final class ExceptionConst {
      * Super class of any linking exception (aka Linkage Error)
      */
     public static final Class<LinkageError> LINKING_EXCEPTION = LinkageError.class;
-    /**
-     * Linking Exceptions
-     */
+
+    /** Exception class: ClassCircularityError. */
     public static final Class<ClassCircularityError> CLASS_CIRCULARITY_ERROR = ClassCircularityError.class;
+
+    /**
+     * Linking Exceptions.
+     */
+
+    /** Exception class: ClassFormatError. */
     public static final Class<ClassFormatError> CLASS_FORMAT_ERROR = ClassFormatError.class;
+
+    /** Exception class: ExceptionInInitializerError. */
     public static final Class<ExceptionInInitializerError> EXCEPTION_IN_INITIALIZER_ERROR = ExceptionInInitializerError.class;
+
+    /** Exception class: IncompatibleClassChangeError. */
     public static final Class<IncompatibleClassChangeError> INCOMPATIBLE_CLASS_CHANGE_ERROR = IncompatibleClassChangeError.class;
+
+    /** Exception class: AbstractMethodError. */
     public static final Class<AbstractMethodError> ABSTRACT_METHOD_ERROR = AbstractMethodError.class;
+
+    /** Exception class: IllegalAccessError. */
     public static final Class<IllegalAccessError> ILLEGAL_ACCESS_ERROR = IllegalAccessError.class;
+
+    /** Exception class: InstantiationError. */
     public static final Class<InstantiationError> INSTANTIATION_ERROR = InstantiationError.class;
+
+    /** Exception class: NoSuchFieldError. */
     public static final Class<NoSuchFieldError> NO_SUCH_FIELD_ERROR = NoSuchFieldError.class;
+
+    /** Exception class: NoSuchMethodError. */
     public static final Class<NoSuchMethodError> NO_SUCH_METHOD_ERROR = NoSuchMethodError.class;
+
+    /** Exception class: NoClassDefFoundError. */
     public static final Class<NoClassDefFoundError> NO_CLASS_DEF_FOUND_ERROR = NoClassDefFoundError.class;
+
+    /** Exception class: UnsatisfiedLinkError. */
     public static final Class<UnsatisfiedLinkError> UNSATISFIED_LINK_ERROR = UnsatisfiedLinkError.class;
 
+    /** Exception class: VerifyError. */
     public static final Class<VerifyError> VERIFY_ERROR = VerifyError.class;
     /* UnsupportedClassVersionError is new in JDK 1.2 */
 //    public static final Class UnsupportedClassVersionError = UnsupportedClassVersionError.class;
-    /**
-     * Run-Time Exceptions
-     */
+
+    /** Exception class: NullPointerException. */
     public static final Class<NullPointerException> NULL_POINTER_EXCEPTION = NullPointerException.class;
+
+    /**
+     * Run-Time Exceptions.
+     */
+
+    /** Exception class: ArrayIndexOutOfBoundsException. */
     public static final Class<ArrayIndexOutOfBoundsException> ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION = ArrayIndexOutOfBoundsException.class;
+
+    /** Exception class: ArithmeticException. */
     public static final Class<ArithmeticException> ARITHMETIC_EXCEPTION = ArithmeticException.class;
+
+    /** Exception class: NegativeArraySizeException. */
     public static final Class<NegativeArraySizeException> NEGATIVE_ARRAY_SIZE_EXCEPTION = NegativeArraySizeException.class;
+
+    /** Exception class: ClassCastException. */
     public static final Class<ClassCastException> CLASS_CAST_EXCEPTION = ClassCastException.class;
 
+    /** Exception class: IllegalMonitorStateException. */
     public static final Class<IllegalMonitorStateException> ILLEGAL_MONITOR_STATE = IllegalMonitorStateException.class;
+
     /**
      * Pre-defined exception arrays according to chapters 5.1-5.4 of the Java Virtual Machine Specification
      */
@@ -104,9 +155,9 @@ public final class ExceptionConst {
     /**
      * Creates a copy of the specified Exception Class array combined with any additional Exception classes.
      *
-     * @param type the basic array type
-     * @param extraClasses additional classes, if any
-     * @return the merged array
+     * @param type The basic array type.
+     * @param extraClasses additional classes, if any.
+     * @return The merged array.
      */
     public static Class<?>[] createExceptions(final EXCS type, final Class<?>... extraClasses) {
         switch (type) {
@@ -129,4 +180,9 @@ public final class ExceptionConst {
     private static Class<?>[] mergeExceptions(final Class<?>[] input, final Class<?>... extraClasses) {
         return Utils.arraysAppend(input, extraClasses);
     }
+
+    /** Private constructor - utility class. */
+    public ExceptionConst() {
+    }
+
 }

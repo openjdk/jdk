@@ -163,6 +163,9 @@ class MethodCounters : public Metadata {
   MethodTrainingData* method_training_data() const {
     return reinterpret_cast<MethodTrainingData*>(_method_training_data);
   }
+  void clear_method_training_data() {
+    _method_training_data = nullptr;
+  }
   bool init_method_training_data(MethodTrainingData* td) {
     MethodTrainingData* cur = method_training_data();
     if (cur == td) {
@@ -180,8 +183,6 @@ class MethodCounters : public Metadata {
     return _aot_preload_code_entry;
   }
 
-  void remove_unshareable_info();
-  void restore_unshareable_info(TRAPS);
 #endif
 
   // Printing

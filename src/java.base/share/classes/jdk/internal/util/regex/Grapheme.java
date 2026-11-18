@@ -35,9 +35,9 @@ public final class Grapheme {
      * <p>
      * See Unicode Standard Annex #29 Unicode Text Segmentation for the specification
      * for the extended grapheme cluster boundary rules. The following implementation
-     * is based on the annex for Unicode version 17.0.
+     * is based on the annex for Unicode version 18.0.
      *
-     * @spec http://www.unicode.org/reports/tr29/tr29-47.html
+     * @spec http://www.unicode.org/reports/tr29/tr29-49.html
      * @param src the {@code CharSequence} to be scanned
      * @param off offset to start looking for the next boundary in the src
      * @param limit limit offset in the src (exclusive)
@@ -57,10 +57,13 @@ public final class Grapheme {
             int t1 = getType(ch1);
 
             // GB9c
-            if (IndicConjunctBreak.isConsonant(ch0)) {
+            if (IndicConjunctBreak.isLinker(ch0)) {
                 var advance = checkIndicConjunctBreak(src, ret, limit);
                 if (advance >= 0) {
                     ret += advance;
+                    ch0 = Character.codePointBefore(src, ret);
+                    t0 = getType(ch0);
+                    gb11 = false;
                     continue;
                 }
             }
@@ -301,34 +304,24 @@ public final class Grapheme {
     }
 
     /**
-     * Checks for a possible GB9c Indic Conjunct Break sequence. If it is
-     * repetitive, e.g., Consonant1/Linker1/Consonant2/Linker2/Consonant3, only
-     * the first part of the sequence (Consonant1/Linker1/Consonant2) is
-     * recognized. The rest is analyzed in the next iteration of the grapheme
-     * cluster boundary search.
+     * Checks for a possible GB9c sequence: Linker Extend* x Consonant.
+     * The Linker has already been consumed by the caller.
      *
      * @param src the source char sequence
-     * @param index the index that points to the starting Linking Consonant
+     * @param index the index immediately after the Linker
      * @param limit limit to the char sequence
      * @return the advance in index if the indic conjunct break sequence
      *      is found, it will be negative if the sequence is not found
      */
     private static int checkIndicConjunctBreak(CharSequence src, int index, int limit) {
-        boolean linkerFound = false;
         int advance = 0;
 
         while (index + advance < limit) {
             int ch1 = Character.codePointAt(src, index + advance);
             advance += Character.charCount(ch1);
 
-            if (IndicConjunctBreak.isLinker(ch1)) {
-                linkerFound = true;
-            } else if (IndicConjunctBreak.isConsonant(ch1)) {
-                if (linkerFound) {
-                    return advance;
-                } else {
-                    break;
-                }
+            if (IndicConjunctBreak.isConsonant(ch1)) {
+                return advance;
             } else if (!IndicConjunctBreak.isExtend(ch1)) {
                 break;
             }

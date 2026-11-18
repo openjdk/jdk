@@ -194,6 +194,27 @@ public final class TimeZoneNameUtility {
             .getExplicitDstOffsets();
     }
 
+    /**
+     * {@return the localized GMT (zero) format with fallback}
+     * CLDR removed {@code gmtZeroFormat} element as of v49, it falls back
+     * to {@code gmtFormat} with the placeholder removed, or "GMT".
+     * {@code gmtZeroFormat} is checked first for compatibility, even though
+     * it is not in the spec (DTD still defines it).
+     * @param locale the locale
+     */
+    public static String gmtZeroFormat(Locale locale) {
+        if (LocaleProviderAdapter.forType(CLDR) instanceof CLDRLocaleProviderAdapter ca) {
+            var rb = ca.getLocaleResources(locale).getJavaTimeFormatData();
+            if (rb.containsKey("timezone.gmtZeroFormat")) {
+                return rb.getString("timezone.gmtZeroFormat");
+            } else if (rb.containsKey("timezone.gmtFormat")) {
+                return rb.getString("timezone.gmtFormat").replace("{0}", "").trim();
+            }
+        }
+
+        return "GMT";
+    }
+
     private static String[] retrieveDisplayNamesImpl(String id, Locale locale) {
         LocaleServiceProviderPool pool =
             LocaleServiceProviderPool.getPool(TimeZoneNameProvider.class);

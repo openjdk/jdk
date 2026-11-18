@@ -620,7 +620,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
       predString->print("- %d) ", stride);
     }
     // Check if (limit - stride) may overflow
-    const TypeInt* limit_type = _igvn.type(limit)->isa_int();
+    const TypeInt* limit_type = _igvn.type(limit)->as_int();
     jint limit_lo = limit_type->_lo;
     jint limit_hi = limit_type->_hi;
     if ((stride > 0 && (java_subtract(limit_lo, stride) < limit_lo)) ||
@@ -687,7 +687,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
       }
     }
     // Check if (max_idx_expr + offset) may overflow
-    const TypeInt* offset_type = _igvn.type(offset)->isa_int();
+    const TypeInt* offset_type = _igvn.type(offset)->as_int();
     jint lo = java_add(idx_type->_lo, offset_type->_lo);
     jint hi = java_add(idx_type->_hi, offset_type->_hi);
     if (overflow || (lo > hi) ||
@@ -763,7 +763,7 @@ bool PhaseIdealLoop::loop_predication_should_follow_branches(IdealLoopTree* loop
       if (head->is_CountedLoop()) {
         CountedLoopNode* cl = head->as_CountedLoop();
         if (cl->phi() != nullptr) {
-          const TypeInt* t = _igvn.type(cl->phi())->is_int();
+          const TypeInt* t = _igvn.type(cl->phi())->as_int();
           float worst_case_trip_cnt = ((float)t->_hi - t->_lo) / ABS((float)cl->stride_con());
           if (worst_case_trip_cnt < loop_trip_cnt) {
             loop_trip_cnt = worst_case_trip_cnt;
@@ -1034,7 +1034,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, const IfP
     Node*          idx    = cmp->in(1);
     assert(!invar.is_invariant(idx), "index is variant");
     Node* range = cmp->in(2);
-    assert(range->Opcode() == Op_LoadRange || iff->is_RangeCheck() || _igvn.type(range)->is_int()->_lo >= 0, "must be");
+    assert(range->Opcode() == Op_LoadRange || iff->is_RangeCheck() || _igvn.type(range)->as_int()->_lo >= 0, "must be");
     assert(invar.is_invariant(range), "range must be invariant");
     int scale    = 1;
     Node* offset = zero;
