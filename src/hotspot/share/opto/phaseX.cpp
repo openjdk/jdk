@@ -2071,7 +2071,7 @@ void PhaseIterGVN::make_dependent_paths_dead_if_top(Node* dead_node, const Type*
           if (n->in(0) != nullptr && n->in(0)->in(0) != nullptr && n->in(0)->in(0)->is_CountedLoopEnd()) {
             CountedLoopEndNode* cle = n->in(0)->in(0)->as_CountedLoopEnd();
             CountedLoopNode* cl = cle->loopnode();
-            if (cl != nullptr) {
+            if (cl != nullptr && cl->is_strip_mined()) {
               SafePointNode* sfpt = cl->outer_safepoint();
               if (sfpt == n) {
                 replace_input_of(cle, 1, intcon(0));
