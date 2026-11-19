@@ -32,8 +32,8 @@
 
 void ShenandoahTaskQueue::push(ShenandoahTask task) {
   if (!_chunk->push(task)) {
-    _qs->push_shared(_chunk);
-    _chunk = _qs->pop_free();
+    _qs->flip_to_shared(_chunk);
+    _chunk = _qs->flip_from_free();
     bool succ = _chunk->push(task);
     assert(succ, "Must succeed");
   }
@@ -44,9 +44,9 @@ bool ShenandoahTaskQueue::pop(ShenandoahTask& task) {
     return true;
   }
 
-  auto chunk = _qs->pop_shared();
+  auto chunk = _qs->flip_from_shared();
   if (chunk != nullptr) {
-    _qs->push_free(_chunk);
+    _qs->flip_to_free(_chunk);
     _chunk = chunk;
     return _chunk->pop(task);
   }
@@ -56,9 +56,9 @@ bool ShenandoahTaskQueue::pop(ShenandoahTask& task) {
 
 inline void ShenandoahTaskQueue::share_work() {
   if (_chunk->is_sliceable()) {
-    auto top_chunk = _qs->pop_free();
+    auto top_chunk = _qs->flip_from_free();
     _chunk->slice_top(top_chunk);
-    _qs->push_shared(_chunk);
+    _qs->flip_to_shared(_chunk);
     _chunk = top_chunk;
   }
 }
@@ -71,7 +71,7 @@ inline size_t ShenandoahTaskQueueSet::allocated() {
   return _chunks_allocated.load_relaxed();
 }
 
-inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::pop_shared() {
+inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::flip_from_shared() {
   if (_shared_count.load_relaxed() == 0) {
     return nullptr;
   }
@@ -83,7 +83,7 @@ inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::pop_shared() {
   return chunk_at(idx);
 }
 
-inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::pop_free() {
+inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::flip_from_free() {
   size_t idx = find_and_claim(_free_bm);
   if (idx == _max_chunks) {
     return allocate_chunk();
@@ -91,7 +91,7 @@ inline ShenandoahTaskQueueChunk* ShenandoahTaskQueueSet::pop_free() {
   return chunk_at(idx);
 }
 
-inline void ShenandoahTaskQueueSet::push_shared(ShenandoahTaskQueueChunk* chunk) {
+inline void ShenandoahTaskQueueSet::flip_to_shared(ShenandoahTaskQueueChunk* chunk) {
   assert(!chunk->is_empty(), "Do not share empty chunks");
   // For the sake of proper termination, we need to bump shared work count
   // before publishing the chunk.
@@ -101,7 +101,7 @@ inline void ShenandoahTaskQueueSet::push_shared(ShenandoahTaskQueueChunk* chunk)
   assert(succ, "Must succeed");
 }
 
-inline void ShenandoahTaskQueueSet::push_free(ShenandoahTaskQueueChunk* chunk) {
+inline void ShenandoahTaskQueueSet::flip_to_free(ShenandoahTaskQueueChunk* chunk) {
   assert(chunk->is_empty(), "Do not free non-empty chunks");
   size_t idx = index_of(chunk);
   bool succ = _free_bm.par_set_bit(idx, memory_order_release);

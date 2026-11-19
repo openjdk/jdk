@@ -39,12 +39,12 @@ void ShenandoahTaskQueueChunk::clear() {
 
 ShenandoahTaskQueue::ShenandoahTaskQueue(ShenandoahTaskQueueSet* qs) :
   _qs(qs) {
-  _chunk = _qs->pop_free();
+  _chunk = _qs->flip_from_free();
 }
 
 ShenandoahTaskQueue::~ShenandoahTaskQueue() {
   _chunk->clear();
-  _qs->push_free(_chunk);
+  _qs->flip_to_free(_chunk);
 }
 
 bool ShenandoahTaskQueue::is_empty() {
@@ -57,8 +57,8 @@ void ShenandoahTaskQueue::clear() {
 
 void ShenandoahTaskQueue::flush_to_shared() {
   if (!_chunk->is_empty()) {
-    _qs->push_shared(_chunk);
-    _chunk = _qs->pop_free();
+    _qs->flip_to_shared(_chunk);
+    _chunk = _qs->flip_from_free();
   }
 }
 

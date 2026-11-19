@@ -361,11 +361,11 @@ public:
   ShenandoahTaskQueueSet(uint queue_count);
   ~ShenandoahTaskQueueSet();
 
-  inline ShenandoahTaskQueueChunk* pop_shared();
-  inline ShenandoahTaskQueueChunk* pop_free();
+  inline ShenandoahTaskQueueChunk* flip_from_shared();
+  inline ShenandoahTaskQueueChunk* flip_from_free();
 
-  inline void push_shared(ShenandoahTaskQueueChunk* chunk);
-  inline void push_free(ShenandoahTaskQueueChunk* chunk);
+  inline void flip_to_shared(ShenandoahTaskQueueChunk* chunk);
+  inline void flip_to_free(ShenandoahTaskQueueChunk* chunk);
 
   ShenandoahTaskQueue* queue(uint i) {
     return _queues[i];
