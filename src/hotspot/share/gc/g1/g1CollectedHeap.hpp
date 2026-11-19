@@ -154,8 +154,6 @@ class G1CollectedHeap : public CollectedHeap {
   friend class VMStructs;
 
 private:
-  // Maximum number of regions in the heap.
-  static const size_t MaxNumRegions = INT_MAX;
   // GC Overhead Limit functionality related members.
   //
   // The goal is to return null for allocations prematurely (before really going
