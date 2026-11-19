@@ -412,7 +412,7 @@ bool AOTSystemDictionary::check_self_exclusion(InstanceKlass* k) {
 
 const char* AOTSystemDictionary::check_self_exclusion_helper(InstanceKlass* k, bool& log_warning) {
   assert_lock_strong(DumpTimeTable_lock);
-  if (CDSConfig::using_alternate_system_loader() && !k->defined_by_boot_loader()) {
+  if (k->excluded_by_alternate_system_loader()) {
     return "Not defined in boot class loader";
   }
 

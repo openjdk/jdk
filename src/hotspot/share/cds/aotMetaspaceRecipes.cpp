@@ -160,7 +160,7 @@ void AOTMetaspaceRecipes::apply_recipes_for_constantpool(JavaThread* current) {
     int flags = _flags->at(i);
     if (cp_indices != nullptr) {
       InstanceKlass* ik = InstanceKlass::cast(_all_klasses->at(i));
-      if (CDSConfig::using_alternate_system_loader() && !ik->defined_by_boot_loader()) {
+      if (ik->excluded_by_alternate_system_loader()) {
         continue;
       }
       if (ik->is_loaded()) {
@@ -190,7 +190,7 @@ void AOTMetaspaceRecipes::load_all_classes(TRAPS) {
     Klass* k = _all_klasses->at(i);
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (CDSConfig::using_alternate_system_loader() && !ik->defined_by_boot_loader()) {
+      if (ik->excluded_by_alternate_system_loader()) {
         // Avoid loading unregistered classes when using an alternate system class loader
         assert(!CDSConfig::is_dumping_aot_linked_classes(), "must be");
         continue;
@@ -228,7 +228,7 @@ void AOTMetaspaceRecipes::link_all_classes(TRAPS) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (!ik->defined_by_other_loaders() && !ik->is_hidden()) {
         // Only classes defined by the boot loader can be loaded when using an alternate system loader.
-        if (CDSConfig::using_alternate_system_loader() && !ik->defined_by_boot_loader()) {
+        if (ik->excluded_by_alternate_system_loader()) {
           continue;
         }
         assert(ik->is_loaded(), "must be");
@@ -245,7 +245,7 @@ void AOTMetaspaceRecipes::initialize_all_safe_classes(TRAPS) {
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (!ik->defined_by_other_loaders() && !ik->is_hidden()) {
-        if (CDSConfig::using_alternate_system_loader() && !ik->defined_by_boot_loader()) {
+        if (ik->excluded_by_alternate_system_loader()) {
           continue;
         }
         assert(ik->is_linked(), "must be");
