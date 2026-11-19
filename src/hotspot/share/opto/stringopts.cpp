@@ -1930,8 +1930,8 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
           // Negative int -> uncommon trap.
           PreserveJVMState pjvms(&kit);
           kit.set_control(__ IfFalse(iff));
-          kit.uncommon_trap_maybe_none(Deoptimization::Reason_intrinsic,
-                                       Deoptimization::Action_maybe_recompile);
+          kit.uncommon_trap(Deoptimization::Reason_intrinsic,
+                            Deoptimization::Action_maybe_recompile, nullptr, nullptr, false, /*keep_exact_action=*/false);
         }
         kit.set_control(__ IfTrue(iff));
         break;

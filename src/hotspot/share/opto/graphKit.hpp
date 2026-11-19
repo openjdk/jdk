@@ -754,46 +754,18 @@ class GraphKit : public Phase {
   // The optional klass is the one causing the trap.
   // The optional reason is debug information written to the compile log.
   // Optional must_throw is the same as with add_safepoint_edges.
- private:
-  // Use uncommon_trap(), uncommon_trap_exact() or uncommon_trap_maybe_none() instead.
+  // keep_exact_action == false allows replacing the action with Action_none.
   Node* uncommon_trap(int trap_request,
-                     ciKlass* klass, const char* reason_string,
-                     bool must_throw, bool keep_exact_action);
- public:
+                     ciKlass* klass = nullptr, const char* reason_string = nullptr,
+                     bool must_throw = false, bool keep_exact_action = true);
 
   // Shorthand, to avoid saying "Deoptimization::" so many times.
   Node* uncommon_trap(Deoptimization::DeoptReason reason,
-                      Deoptimization::DeoptAction action,
-                      ciKlass* klass = nullptr, const char* reason_string = nullptr,
-                      bool must_throw = false) {
-    assert(action != Deoptimization::Action_reinterpret &&
-           action != Deoptimization::Action_maybe_recompile,
-           "use uncommon_trap_exact() or uncommon_trap_maybe_none()");
+                     Deoptimization::DeoptAction action,
+                     ciKlass* klass = nullptr, const char* reason_string = nullptr,
+                     bool must_throw = false, bool keep_exact_action = true) {
     return uncommon_trap(Deoptimization::make_trap_request(reason, action),
-                         klass, reason_string, must_throw, /*keep_exact_action=*/false);
-  }
-
-  // Bail out to the interpreter and keep exact action (avoid switching to Action_none).
-  Node* uncommon_trap_exact(Deoptimization::DeoptReason reason,
-                           Deoptimization::DeoptAction action,
-                           ciKlass* klass = nullptr, const char* reason_string = nullptr,
-                           bool must_throw = false) {
-    return uncommon_trap(Deoptimization::make_trap_request(reason, action),
-                  klass, reason_string, must_throw, /*keep_exact_action=*/true);
-  }
-
-  // Relaxed counterpart of uncommon_trap_exact(): the action may be replaced with
-  // Action_none on too many recompiles. Every call site is a potential source of
-  // deoptimization storms.
-  Node* uncommon_trap_maybe_none(Deoptimization::DeoptReason reason,
-                                 Deoptimization::DeoptAction action,
-                                 ciKlass* klass = nullptr, const char* reason_string = nullptr,
-                                 bool must_throw = false) {
-    return uncommon_trap(Deoptimization::make_trap_request(reason, action),
-                         klass, reason_string, must_throw, /*keep_exact_action=*/false);
-  }
-  Node* uncommon_trap_maybe_none(int trap_request) {
-    return uncommon_trap(trap_request, nullptr, nullptr, false, /*keep_exact_action=*/false);
+                  klass, reason_string, must_throw, keep_exact_action);
   }
 
   // SP when bytecode needs to be reexecuted.

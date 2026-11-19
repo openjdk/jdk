@@ -557,9 +557,9 @@ bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* kl
       ResourceMark rm;
       log_debug(aot, compilation)("Emitting uncommon trap (cannot compile call site) in AOT code for %s", holder_klass->name()->as_klass_external_name());
     }
-    uncommon_trap_maybe_none(Deoptimization::Reason_uninitialized,
-                             Deoptimization::Action_reinterpret,
-                             holder_klass);
+    uncommon_trap(Deoptimization::Reason_uninitialized,
+                  Deoptimization::Action_reinterpret,
+                  holder_klass, nullptr, false, /*keep_exact_action=*/false);
     return true;
   }
 
@@ -993,9 +993,9 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
       // Emit an uncommon trap instead of processing the block.
       set_bci(handler_bci);
       push_ex_oop(ex_oop);
-      uncommon_trap_maybe_none(Deoptimization::Reason_unloaded,
-                               Deoptimization::Action_reinterpret,
-                               extype->instance_klass(), "!loaded exception");
+      uncommon_trap(Deoptimization::Reason_unloaded,
+                    Deoptimization::Action_reinterpret,
+                    extype->instance_klass(), "!loaded exception", false, /*keep_exact_action=*/false);
       set_bci(iter().cur_bci()); // put it back
       continue;
     }

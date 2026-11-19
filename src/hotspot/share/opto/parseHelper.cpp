@@ -232,9 +232,9 @@ Node* Parse::array_store_check(const Type*& elemtype) {
       // Only do it if the check does not always pass/fail
       if (!bol->is_Con()) {
         { BuildCutout unless(this, bol, PROB_MAX);
-          uncommon_trap_exact(reason,
-                              Deoptimization::Action_maybe_recompile,
-                              extak->exact_klass());
+          uncommon_trap(reason,
+                        Deoptimization::Action_maybe_recompile,
+                        extak->exact_klass());
         }
         // Cast array klass to exactness
         replace_in_map(array_klass, con);

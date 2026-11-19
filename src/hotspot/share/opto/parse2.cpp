@@ -395,9 +395,9 @@ Node* Parse::prepare_array_addressing(BasicType type, int vals, const Type*& ele
     // The class is unloaded.  We have to run this bytecode in the interpreter.
     ciKlass* klass = arytype->unloaded_klass();
 
-    uncommon_trap_maybe_none(Deoptimization::Reason_unloaded,
-                             Deoptimization::Action_reinterpret,
-                             klass, "!loaded array");
+    uncommon_trap(Deoptimization::Reason_unloaded,
+                  Deoptimization::Action_reinterpret,
+                  klass, "!loaded array", false, /*keep_exact_action=*/false);
     return top();
   }
 
@@ -534,7 +534,7 @@ Node* Parse::cast_to_speculative_array_type(Node* const array, const TypeAryPtr*
     } else if (!slow_ctl->is_top()) {
       { PreserveJVMState pjvms(this);
         set_control(slow_ctl);
-        uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+        uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
       }
       replace_in_map(array, casted_array);
       array_type = _gvn.type(casted_array)->as_aryptr();
@@ -581,7 +581,7 @@ Node* Parse::speculate_non_null_free_array(Node* const array, const TypeAryPtr*&
   if (!null_free_array) {
     { // Deoptimize if null-free array
       BuildCutout unless(this, null_free_array_test(array, /* null_free = */ false), PROB_MAX);
-      uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+      uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
     }
     assert(!stopped(), "null-free array should have been caught earlier");
     Node* casted_array = _gvn.transform(new CheckCastPPNode(control(), array, array_type->cast_to_not_null_free()));
@@ -614,7 +614,7 @@ Node* Parse::speculate_non_flat_array(Node* const array, const TypeAryPtr* const
   if (!flat_array) {
     { // Deoptimize if flat array
       BuildCutout unless(this, flat_array_test(array, /* flat = */ false), PROB_MAX);
-      uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+      uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
     }
     assert(!stopped(), "flat array should have been caught earlier");
     Node* casted_array = _gvn.transform(new CheckCastPPNode(control(), array, array_type->cast_to_not_flat()));
@@ -645,10 +645,10 @@ void Parse::jump_if_true_fork(IfNode *iff, int dest_bci_if_true, bool unc) {
     set_control( iftrue );
     if (unc) {
       repush_if_args();
-      uncommon_trap_exact(Deoptimization::Reason_unstable_if,
-                          Deoptimization::Action_reinterpret,
-                          nullptr,
-                          "taken always");
+      uncommon_trap(Deoptimization::Reason_unstable_if,
+                    Deoptimization::Action_reinterpret,
+                    nullptr,
+                    "taken always");
     } else {
       assert(dest_bci_if_true != never_reached, "inconsistent dest");
       merge_new_path(dest_bci_if_true);
@@ -667,10 +667,10 @@ void Parse::jump_if_false_fork(IfNode *iff, int dest_bci_if_true, bool unc) {
     set_control( iffalse );
     if (unc) {
       repush_if_args();
-      uncommon_trap_exact(Deoptimization::Reason_unstable_if,
-                          Deoptimization::Action_reinterpret,
-                          nullptr,
-                          "taken never");
+      uncommon_trap(Deoptimization::Reason_unstable_if,
+                    Deoptimization::Action_reinterpret,
+                    nullptr,
+                    "taken never");
     } else {
       assert(dest_bci_if_true != never_reached, "inconsistent dest");
       merge_new_path(dest_bci_if_true);
@@ -686,10 +686,10 @@ void Parse::jump_if_always_fork(int dest_bci, bool unc) {
   // False branch, use existing map and control()
   if (unc) {
     repush_if_args();
-    uncommon_trap_exact(Deoptimization::Reason_unstable_if,
-                        Deoptimization::Action_reinterpret,
-                        nullptr,
-                        "taken never");
+    uncommon_trap(Deoptimization::Reason_unstable_if,
+                  Deoptimization::Action_reinterpret,
+                  nullptr,
+                  "taken never");
   } else {
     assert(dest_bci != never_reached, "inconsistent dest");
     merge_new_path(dest_bci);
@@ -1820,9 +1820,9 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
       tty->print_cr("Never-taken edge stops compilation at bci %d", bci());
     }
     repush_if_args(); // to gather stats on loop
-    uncommon_trap_maybe_none(Deoptimization::Reason_unreached,
-                             Deoptimization::Action_reinterpret,
-                             nullptr, "cold");
+    uncommon_trap(Deoptimization::Reason_unreached,
+                  Deoptimization::Action_reinterpret,
+                  nullptr, "cold", false, /*keep_exact_action=*/false);
     if (C->eliminate_boxing()) {
       // Mark the successor blocks as parsed
       branch_block->next_path_num();
@@ -1895,9 +1895,9 @@ void Parse::do_if(BoolTest::mask btest, Node* c, bool can_trap, bool new_path, N
       tty->print_cr("Never-taken edge stops compilation at bci %d", bci());
     }
     repush_if_args(); // to gather stats on loop
-    uncommon_trap_maybe_none(Deoptimization::Reason_unreached,
-                             Deoptimization::Action_reinterpret,
-                             nullptr, "cold");
+    uncommon_trap(Deoptimization::Reason_unreached,
+                  Deoptimization::Action_reinterpret,
+                  nullptr, "cold", false, /*keep_exact_action=*/false);
     if (C->eliminate_boxing()) {
       // Mark the successor blocks as parsed
       branch_block->next_path_num();
@@ -2070,7 +2070,7 @@ void Parse::acmp_type_check_or_trap(Node** non_null_input, ciKlass* input_type, 
     PreserveJVMState pjvms(this);
     inc_sp(2);
     set_control(slow_ctl);
-    uncommon_trap_exact(reason, Deoptimization::Action_maybe_recompile);
+    uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
   }
 }
 
@@ -2091,7 +2091,7 @@ void Parse::acmp_type_check(Node* input, const TypeOopPtr* tinput, ProfilePtrKin
       // No specific type, check for value type
       BuildCutout unless(this, value_type_test(cast, /* is_value = */ false), PROB_MAX);
       inc_sp(2);
-      uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+      uncommon_trap(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
     }
   }
 
@@ -2606,7 +2606,6 @@ bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
     return false;
   }
   return seems_never_taken(prob) &&
-         // Skip optimization if recompile limit is exceeded to avoid deopts without recompilation.
          !C->too_many_traps_or_recompiles(method(), bci(), Deoptimization::Reason_unstable_if);
 }
 
@@ -2642,10 +2641,10 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block
 
   if (can_trap && path_is_suitable_for_uncommon_trap(prob)) {
     repush_if_args();
-    Node* call = uncommon_trap_exact(Deoptimization::Reason_unstable_if,
-                                     Deoptimization::Action_reinterpret,
-                                     nullptr,
-                                     (is_fallthrough ? "taken always" : "taken never"));
+    Node* call = uncommon_trap(Deoptimization::Reason_unstable_if,
+                  Deoptimization::Action_reinterpret,
+                  nullptr,
+                  (is_fallthrough ? "taken always" : "taken never"));
 
     if (call != nullptr) {
       C->record_unstable_if_trap(new UnstableIfTrap(call->as_CallStaticJava(), path));

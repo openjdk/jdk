@@ -61,9 +61,9 @@ void Parse::do_field_access(bool is_get, bool is_field) {
   ciInstanceKlass* field_holder = field->holder();
   if (!is_get && field->is_call_site_target() &&
       !(method()->holder() == field_holder && method()->is_object_constructor())) {
-    uncommon_trap_maybe_none(Deoptimization::Reason_unhandled,
-                             Deoptimization::Action_reinterpret,
-                             nullptr, "put to call site target field");
+    uncommon_trap(Deoptimization::Reason_unhandled,
+                  Deoptimization::Action_reinterpret,
+                  nullptr, "put to call site target field", false, /*keep_exact_action=*/false);
     return;
   }
 
@@ -363,16 +363,16 @@ void Parse::do_newarray() {
   // Check that array_klass object is loaded
   if (!array_klass->is_loaded()) {
     // Generate uncommon_trap for unloaded array_class
-    uncommon_trap_maybe_none(Deoptimization::Reason_unloaded,
-                             Deoptimization::Action_reinterpret,
-                             array_klass);
+    uncommon_trap(Deoptimization::Reason_unloaded,
+                  Deoptimization::Action_reinterpret,
+                  array_klass, nullptr, false, /*keep_exact_action=*/false);
     return;
   } else if (array_klass->element_klass() != nullptr &&
              array_klass->element_klass()->is_value_klass() &&
              !array_klass->element_klass()->as_value_klass()->is_initialized()) {
-    uncommon_trap_maybe_none(Deoptimization::Reason_uninitialized,
-                             Deoptimization::Action_reinterpret,
-                             nullptr);
+    uncommon_trap(Deoptimization::Reason_uninitialized,
+                  Deoptimization::Action_reinterpret,
+                  nullptr, nullptr, false, /*keep_exact_action=*/false);
     return;
   }
 
@@ -444,9 +444,9 @@ void Parse::do_multianewarray() {
   }
   if (elem_klass != nullptr && elem_klass->is_value_klass() && !elem_klass->as_value_klass()->is_initialized()) {
     inc_sp(ndimensions);
-    uncommon_trap_maybe_none(Deoptimization::Reason_uninitialized,
-                             Deoptimization::Action_reinterpret,
-                             nullptr);
+    uncommon_trap(Deoptimization::Reason_uninitialized,
+                  Deoptimization::Action_reinterpret,
+                  nullptr, nullptr, false, /*keep_exact_action=*/false);
     return;
   }
 
