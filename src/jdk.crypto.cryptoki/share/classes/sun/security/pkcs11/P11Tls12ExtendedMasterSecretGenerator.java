@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -35,7 +37,7 @@ import static sun.security.pkcs11.TemplateManager.O_GENERATE;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
- * KeyGenerator for the TLS extended master secret.
+ * KeyGenerator for the TLS 1.2 extended master secret.
  * See RFC 7627 for further details.
  *
  * @since x.x
@@ -45,7 +47,7 @@ public final class P11Tls12ExtendedMasterSecretGenerator extends KeyGeneratorSpi
     // See RFC 5246, section 8.1 Computing the Master Secret
     private static final int TLS_MASTER_SECRET_LEN = 48;
 
-    private static final String MSG = "TlsExtendedMasterSecretGenerator must be "
+    private static final String MSG = "Tls12ExtendedMasterSecretGenerator must be "
             + "initialized using a TlsMasterSecretParameterSpec";
 
     private final Token token;
@@ -129,7 +131,7 @@ public final class P11Tls12ExtendedMasterSecretGenerator extends KeyGeneratorSpi
     protected SecretKey engineGenerateKey() {
         if (spec == null) {
             throw new IllegalStateException(
-                    "TlsExtendedMasterSecretGenerator must be initialized");
+                    "Tls12ExtendedMasterSecretGenerator must be initialized");
         }
 
         CK_MECHANISM ckMechanism = new CK_MECHANISM(

@@ -703,7 +703,7 @@ static const char* describe_sa_flags(int flags, char* buffer, size_t size) {
 
   const unsigned int unknown_flag = ~(SA_NOCLDSTOP |
                                       SA_ONSTACK   |
-                                      SA_NOCLDSTOP |
+                                      SA_RESETHAND |
                                       SA_RESTART   |
                                       SA_SIGINFO   |
                                       SA_NOCLDWAIT |

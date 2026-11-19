@@ -866,6 +866,7 @@ inline void Assembler::mtvsrdd( VectorSRegister d, Register a, Register b)   { e
 inline void Assembler::mfvsrd(  Register d, VectorSRegister a)               { emit_int32( MFVSRD_OPCODE  | vsrs(a)  | ra(d)); }
 inline void Assembler::mfvsrld( Register d, VectorSRegister a)               { emit_int32( MFVSRLD_OPCODE | vsrs(a)  | ra(d)); }
 inline void Assembler::mtvsrwz( VectorSRegister d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d) | ra(a)); }
+inline void Assembler::mtvsrws( VectorSRegister d, Register a)               { emit_int32( MTVSRWS_OPCODE | vsrt(d) | ra(a)); }
 inline void Assembler::mfvsrwz( Register d, VectorSRegister a)               { emit_int32( MFVSRWZ_OPCODE | vsrs(a) | ra(d)); }
 inline void Assembler::xxspltib(VectorSRegister d, int ui8)                  { emit_int32( XXSPLTIB_OPCODE | vsrt(d) | imm8(ui8)); }
 inline void Assembler::xxspltw( VectorSRegister d, VectorSRegister b, int ui2)           { emit_int32( XXSPLTW_OPCODE | vsrt(d) | vsrb(b) | xxsplt_uim(uimm(ui2,2))); }
@@ -888,6 +889,7 @@ inline void Assembler::xvnegdp( VectorSRegister d, VectorSRegister b)           
 inline void Assembler::xvsqrtsp(VectorSRegister d, VectorSRegister b)                    { emit_int32( XVSQRTSP_OPCODE| vsrt(d) | vsrb(b)); }
 inline void Assembler::xvsqrtdp(VectorSRegister d, VectorSRegister b)                    { emit_int32( XVSQRTDP_OPCODE| vsrt(d) | vsrb(b)); }
 inline void Assembler::xscvdpspn(VectorSRegister d, VectorSRegister b)                   { emit_int32( XSCVDPSPN_OPCODE | vsrt(d) | vsrb(b)); }
+inline void Assembler::xscvspdpn(VectorSRegister d, VectorSRegister b)                   { emit_int32( XSCVSPDPN_OPCODE | vsrt(d) | vsrb(b)); }
 inline void Assembler::xvadddp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVADDDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvsubdp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVSUBDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvmulsp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMULSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
@@ -934,6 +936,8 @@ inline void Assembler::xxswapd( VectorSRegister d, VectorSRegister a)           
 // Vector-Scalar (VSX) instructions.
 inline void Assembler::mtfprd(  FloatRegister   d, Register a)      { emit_int32( MTVSRD_OPCODE  | frt(d)  | ra(a)); }
 inline void Assembler::mtfprwa( FloatRegister   d, Register a)      { emit_int32( MTVSRWA_OPCODE | frt(d)  | ra(a)); }
+inline void Assembler::mtfprwz( FloatRegister   d, Register a)      { emit_int32( MTVSRWZ_OPCODE | frt(d)  | ra(a)); }
+inline void Assembler::mtfprws( FloatRegister   d, Register a)      { emit_int32( MTVSRWS_OPCODE | frt(d)  | ra(a)); }
 inline void Assembler::mffprd(  Register        a, FloatRegister d) { emit_int32( MFVSRD_OPCODE  | frt(d)  | ra(a)); }
 
 inline void Assembler::vpkpx(   VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPKPX_OPCODE   | vrt(d) | vra(a) | vrb(b)); }

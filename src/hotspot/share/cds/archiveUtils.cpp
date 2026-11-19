@@ -25,6 +25,7 @@
 #include "cds/aotCompressedPointers.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -34,7 +35,6 @@
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -410,7 +410,7 @@ char* DumpRegion::allocate_metaspace_obj(size_t num_bytes, address src, Metaspac
 
   char* oldtop = top();
   if (is_instance_class) {
-    SystemDictionaryShared::validate_before_archiving((InstanceKlass*)src);
+    AOTSystemDictionary::validate_before_archiving((InstanceKlass*)src);
     allocate(RuntimeClassInfoPtrSize);
   }
 
@@ -448,15 +448,15 @@ void DumpRegion::report_gaps(DumpAllocStats* stats) {
   }
 }
 
-void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
+void DumpRegion::append_intptr_t(intptr_t n) {
+  if (AOTWriteClosureDisabler::is_active()) {
+    n = 0;
+  }
   assert(is_aligned(_top, sizeof(intptr_t)), "bad alignment");
   intptr_t *p = (intptr_t*)_top;
   char* newtop = _top + sizeof(intptr_t);
   expand_top_to(newtop);
   *p = n;
-  if (need_to_mark) {
-    ArchivePtrMarker::mark_pointer(p);
-  }
 }
 
 void DumpRegion::print(size_t total_bytes) const {
@@ -498,10 +498,34 @@ void DumpRegion::pack(DumpRegion* next) {
   }
 }
 
+int AOTWriteClosureDisabler::_active_count = 0;
+
+AOTWriteClosureDisabler::AOTWriteClosureDisabler(bool is_active)
+  : _is_active(is_active)
+{
+  if (_is_active) {
+    precond(CDSConfig::is_redumping_aot_configuration());
+    _active_count ++;
+  }
+}
+
+AOTWriteClosureDisabler::~AOTWriteClosureDisabler() {
+  if (_is_active) {
+    _active_count --;
+  }
+  assert(_active_count >= 0, "must be");
+}
+
 void WriteClosure::do_ptr(void** p) {
-  address ptr = *(address*)p;
-  AOTCompressedPointers::narrowPtr narrowp = AOTCompressedPointers::encode(ptr);
-  _dump_region->append_intptr_t(checked_cast<intptr_t>(narrowp), false);
+  if (AOTWriteClosureDisabler::is_active()) {
+    // Note: a null pointer is represented with the value 0 in AOTCompressedPointers.
+    assert(checked_cast<intptr_t>(AOTCompressedPointers::null()) == 0, "must be");
+    _dump_region->append_intptr_t(0);
+  } else {
+    address ptr = *(address*)p;
+    AOTCompressedPointers::narrowPtr narrowp = AOTCompressedPointers::encode(ptr);
+    _dump_region->append_intptr_t(checked_cast<intptr_t>(narrowp));
+  }
 }
 
 void ReadClosure::do_ptr(void** p) {
@@ -537,7 +561,7 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
   if (ClassListWriter::is_enabled()) {
     if (LambdaProxyClassDictionary::is_supported_invokedynamic(bootstrap_specifier)) {
       const constantPoolHandle& pool = bootstrap_specifier->pool();
-      if (SystemDictionaryShared::is_builtin_loader(pool->pool_holder()->class_loader_data())) {
+      if (AOTSystemDictionary::is_builtin_loader(pool->pool_holder()->class_loader_data())) {
         // Currently lambda proxy classes are supported only for the built-in loaders.
         ResourceMark rm(THREAD);
         int pool_index = bootstrap_specifier->bss_index();

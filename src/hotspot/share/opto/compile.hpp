@@ -738,7 +738,7 @@ public:
   void begin_method();
   void end_method();
 
-  void print_method(CompilerPhaseType compile_phase, int level, Node* n = nullptr);
+  void print_method(CompilerPhaseType compile_phase, int level, const Node* n = nullptr);
 
   Stress& stress() { return _stress; }
 
@@ -782,20 +782,8 @@ public:
 
   ConnectionGraph* congraph()                   { return _congraph;}
   void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
-  void add_macro_node(Node * n) {
-    //assert(n->is_macro(), "must be a macro node");
-    assert(!_macro_nodes.contains(n), "duplicate entry in expand list");
-    _macro_nodes.append(n);
-  }
-  void remove_macro_node(Node* n) {
-    // this function may be called twice for a node so we can only remove it
-    // if it's still existing.
-    _macro_nodes.remove_if_existing(n);
-    // Remove from coarsened locks list if present
-    if (coarsened_count() > 0) {
-      remove_coarsened_lock(n);
-    }
-  }
+  void add_macro_node(Node* n);
+  void remove_macro_node(Node* n);
   void add_expensive_node(Node* n);
   void remove_expensive_node(Node* n) {
     _expensive_nodes.remove_if_existing(n);
@@ -1092,6 +1080,7 @@ public:
   bool should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms);
   bool should_delay_vector_inlining(ciMethod* call_method, JVMState* jvms);
   bool should_delay_vector_reboxing_inlining(ciMethod* call_method, JVMState* jvms);
+  bool should_inline_vector_fallback(ciMethod* call_method);
 
   // Helper functions to identify inlining potential at call-site
   ciMethod* optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klass,
@@ -1187,7 +1176,7 @@ public:
   void remove_useless_nodes(GrowableArray<N*>& node_list, const Unique_Node_List<Node>& useful);
 
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, const Unique_Node_List<Node>& useful);
-  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead);
+  void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, CallNode* dead);
 
   void remove_useless_coarsened_locks(const Unique_Node_List<Node>& useful);
 

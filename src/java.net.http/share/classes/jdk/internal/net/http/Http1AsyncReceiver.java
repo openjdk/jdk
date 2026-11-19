@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,7 @@ package jdk.internal.net.http;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -623,15 +620,7 @@ class Http1AsyncReceiver {
 
         if (queue.isEmpty()) return b;
 
-        // sanity check: we shouldn't have queued the same
-        // buffer twice.
         ByteBuffer[] qbb = queue.toArray(new ByteBuffer[queue.size()]);
-
-// the assertion looks suspicious, more investigation needed
-//
-//        assert java.util.stream.Stream.of(qbb)
-//                .collect(Collectors.toSet())
-//                .size() == qbb.length : debugQBB(qbb);
 
         // compute the number of bytes in the queue, the number of bytes
         // in the initial buffer
@@ -701,33 +690,6 @@ class Http1AsyncReceiver {
                        + " pos=" + bb.position() + " limit=" + bb.limit());
 
         return b;
-    }
-
-    private String debugQBB(ByteBuffer[] qbb) {
-        StringBuilder msg = new StringBuilder();
-        List<ByteBuffer> lbb = Arrays.asList(qbb);
-        Set<ByteBuffer> sbb = new HashSet<>(Arrays.asList(qbb));
-
-        int uniquebb = sbb.size();
-        msg.append("qbb: ").append(lbb.size())
-           .append(" (unique: ").append(uniquebb).append("), ")
-           .append("duplicates: ");
-        String sep = "";
-        for (ByteBuffer b : lbb) {
-            if (!sbb.remove(b)) {
-                msg.append(sep)
-                   .append(b)
-                   .append("[remaining=")
-                   .append(b.remaining())
-                   .append(", position=")
-                   .append(b.position())
-                   .append(", capacity=")
-                   .append(b.capacity())
-                   .append("]");
-                sep = ", ";
-            }
-        }
-        return msg.toString();
     }
 
     volatile String dbgTag;

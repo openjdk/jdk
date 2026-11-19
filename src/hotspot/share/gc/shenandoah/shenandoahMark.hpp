@@ -45,9 +45,10 @@ protected:
   ShenandoahObjToScanQueueSet* const _task_queues;
   ShenandoahObjToScanQueueSet* const _old_gen_task_queues;
   bool const _string_dedup;
+  bool const _bootstrapping;
 
 protected:
-  ShenandoahMark(ShenandoahGeneration* generation);
+  ShenandoahMark(ShenandoahGeneration* generation, bool bootstrapping);
 
 public:
   template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
@@ -96,8 +97,9 @@ private:
   ALWAYSINLINE
   static void mark_non_generational_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
 
+  template <class T>
   ALWAYSINLINE
-  static void mark_ref(ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak, oop obj);
+  static void mark_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak, oop obj);
 
   ALWAYSINLINE
   static void dedup_string(oop obj, StringDedup::Requests* const req);

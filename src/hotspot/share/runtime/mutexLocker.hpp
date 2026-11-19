@@ -126,14 +126,14 @@ extern Mutex*   NmtVirtualMemory_lock;           // guards NMT virtual memory up
 #if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
 #endif
-extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::_dumptime_table
+extern Mutex*   DumpTimeTable_lock;              // AOTSystemDictionary::_dumptime_table
 extern Mutex*   CDSLambda_lock;                  // LambdaProxyClassDictionary::find_lambda_proxy_class
 extern Mutex*   DumpRegion_lock;                 // Symbol::operator new(size_t sz, int len)
 extern Mutex*   ClassListFile_lock;              // ClassListWriter()
 extern Mutex*   UnregisteredClassesTable_lock;   // UnregisteredClassesTableTable
 extern Mutex*   LambdaFormInvokers_lock;         // Protecting LambdaFormInvokers::_lambdaform_lines
 extern Mutex*   ScratchObjects_lock;             // Protecting _scratch_xxx_table in heapShared.cpp
-extern Mutex*   FinalImageRecipes_lock;          // Protecting the tables used by FinalImageRecipes.
+extern Mutex*   AOTMetaspaceRecipes_lock;        // Protecting the tables used by AOTMetaspaceRecipes.
 #endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table

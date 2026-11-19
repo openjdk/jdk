@@ -26,7 +26,7 @@ import java.util.Objects;
 import com.sun.org.apache.bcel.internal.classfile.LineNumber;
 
 /**
- * This class represents a line number within a method, i.e., give an instruction a line number corresponding to the
+ * This class represents a line number within a method, that is, give an instruction a line number corresponding to the
  * source code line.
  *
  * @see LineNumber
@@ -42,7 +42,8 @@ public class LineNumberGen implements InstructionTargeter, Cloneable {
     /**
      * Create a line number.
      *
-     * @param ih instruction handle to reference
+     * @param ih instruction handle to reference.
+     * @param srcLine source line number.
      */
     public LineNumberGen(final InstructionHandle ih, final int srcLine) {
         setInstruction(ih);
@@ -59,13 +60,18 @@ public class LineNumberGen implements InstructionTargeter, Cloneable {
     }
 
     /**
-     * @return true, if ih is target of this line number
+     * @return true, if ih is target of this line number.
      */
     @Override
     public boolean containsTarget(final InstructionHandle ih) {
         return this.ih == ih;
     }
 
+    /**
+     * Gets the instruction handle.
+     *
+     * @return The instruction handle.
+     */
     public InstructionHandle getInstruction() {
         return ih;
     }
@@ -75,28 +81,45 @@ public class LineNumberGen implements InstructionTargeter, Cloneable {
      *
      * This relies on that the instruction list has already been dumped to byte code or that the 'setPositions' methods
      * has been called for the instruction list.
+     *
+     * @return The line number attribute.
      */
     public LineNumber getLineNumber() {
         return new LineNumber(ih.getPosition(), srcLine);
     }
 
+    /**
+     * Gets the source line number.
+     *
+     * @return The source line number.
+     */
     public int getSourceLine() {
         return srcLine;
     }
 
+    /**
+     * Sets the instruction handle.
+     *
+     * @param instructionHandle The instruction handle to set.
+     */
     public void setInstruction(final InstructionHandle instructionHandle) { // TODO could be package-protected?
         Objects.requireNonNull(instructionHandle, "instructionHandle");
         BranchInstruction.notifyTarget(this.ih, instructionHandle, this);
         this.ih = instructionHandle;
     }
 
+    /**
+     * Sets the source line number.
+     *
+     * @param srcLine The source line number to set.
+     */
     public void setSourceLine(final int srcLine) { // TODO could be package-protected?
         this.srcLine = srcLine;
     }
 
     /**
-     * @param oldIh old target
-     * @param newIh new target
+     * @param oldIh old target.
+     * @param newIh new target.
      */
     @Override
     public void updateTarget(final InstructionHandle oldIh, final InstructionHandle newIh) {

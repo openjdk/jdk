@@ -152,7 +152,12 @@ public final class EventWriter {
 
     private void putStringValue(String s) {
         int length = s.length();
-        if (isValidForSize(1 + 5 + 3 * length)) {
+        long size = 1L + 5L + 3L * length;
+        if (size > Integer.MAX_VALUE) {
+            valid = false;
+            return;
+        }
+        if (isValidForSize((int)size)) {
             putUncheckedByte(StringParser.Encoding.CHAR_ARRAY.byteValue()); // 1 byte
             putUncheckedInt(length); // max 5 bytes
             for (int i = 0; i < length; i++) {

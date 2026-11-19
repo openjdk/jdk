@@ -540,7 +540,10 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     assert(child_childenv > STDERR_FILENO);
 
     /* Slot in dup2 file actions. */
-    posix_spawn_file_actions_init(&file_actions);
+    rval = posix_spawn_file_actions_init(&file_actions);
+    if (rval != 0) {
+        return -1;
+    }
 
 #ifdef __APPLE__
     /* On MacOS, posix_spawn does not behave in a POSIX-conform way in that the
@@ -561,6 +564,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
         /* Order matters: stderr may be redirected to stdout, so this dup2 must happen after the stdout one. */
         call_posix_spawn_file_actions_adddup2(&file_actions, child_stderr, STDERR_FILENO) != 0)
     {
+        posix_spawn_file_actions_destroy(&file_actions);
         return -1;
     }
 
@@ -570,6 +574,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
         call_posix_spawn_file_actions_adddup2(&file_actions, child_fail, FAIL_FILENO) != 0 ||
         call_posix_spawn_file_actions_adddup2(&file_actions, tmp_child_childenv, CHILDENV_FILENO) != 0)
     {
+        posix_spawn_file_actions_destroy(&file_actions);
         return -1;
     }
 
@@ -580,6 +585,8 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     c->redirectErrorStream = false;
 
     rval = posix_spawn(&resultPid, helperpath, &file_actions, 0, (char * const *) hlpargs, environ);
+
+    posix_spawn_file_actions_destroy(&file_actions);
 
     if (rval != 0) {
         return -1;

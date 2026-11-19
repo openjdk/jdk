@@ -249,7 +249,7 @@ public class JShell implements AutoCloseable {
         }
 
         /**
-         * Sets the console for the running evalution.
+         * Sets the console for the running evaluation.
          * <p>
          * The default, if this is not set, is no console ({@code System.console()}
          * will return {@code null} while running a snippet).

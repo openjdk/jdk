@@ -161,18 +161,12 @@ static struct ps_prochandle* get_proc_handle(JNIEnv* env, jobject this_obj) {
 
 #if defined(amd64)
     #define hsdb_thread_state_t     x86_thread_state64_t
-    #define hsdb_float_state_t      x86_float_state64_t
     #define HSDB_THREAD_STATE       x86_THREAD_STATE64
-    #define HSDB_FLOAT_STATE        x86_FLOAT_STATE64
     #define HSDB_THREAD_STATE_COUNT x86_THREAD_STATE64_COUNT
-    #define HSDB_FLOAT_STATE_COUNT  x86_FLOAT_STATE64_COUNT
 #elif defined(aarch64)
     #define hsdb_thread_state_t     arm_thread_state64_t
-    #define hsdb_float_state_t      arm_neon_state64_t
     #define HSDB_THREAD_STATE       ARM_THREAD_STATE64
-    #define HSDB_FLOAT_STATE        ARM_NEON_STATE64
     #define HSDB_THREAD_STATE_COUNT ARM_THREAD_STATE64_COUNT
-    #define HSDB_FLOAT_STATE_COUNT  ARM_NEON_STATE64_COUNT
 #else
     #error UNSUPPORTED_ARCH
 #endif

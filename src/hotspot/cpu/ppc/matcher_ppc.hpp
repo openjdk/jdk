@@ -113,6 +113,10 @@
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
+  // Use MachUncommonTrapNode for representing uncommon trap sequences.
+  // This is an alternative to representing uncommon traps as runtime calls.
+  static const bool use_mach_uncommon_trap_node = false;
+
   // Do floats take an entire double register or just half?
   //
   // A float occupies a ppc64 double register. For the allocator, a

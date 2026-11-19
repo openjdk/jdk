@@ -96,7 +96,8 @@ void ShenandoahRegulatorThread::regulate_young_and_global_cycles() {
       if (should_start_metaspace_gc() && request_concurrent_gc(_heap->global_generation())) {
         // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
         _global_heuristics->log_trigger("%s", GCCause::to_string(GCCause::_metadata_GC_threshold));
-      } else if (_old_heuristics->should_start_gc() && request_concurrent_gc(_heap->global_generation())) {
+      } else if (ShenandoahHeuristicsFlag::value() != ShenandoahHeuristicsFlag::Heuristic::PASSIVE
+                && _old_heuristics->should_start_gc() && request_concurrent_gc(_heap->global_generation())) {
         log_debug(gc, thread)("Heuristics request for global collection accepted.");
       } else if (start_young_cycle()) {
         log_debug(gc, thread)("Heuristics request for young collection accepted.");
@@ -133,11 +134,13 @@ void ShenandoahRegulatorThread::regulator_sleep() {
 }
 
 bool ShenandoahRegulatorThread::start_old_cycle() const {
-  return _old_heuristics->should_start_gc() && request_concurrent_gc(_heap->old_generation());
+  return ShenandoahHeuristicsFlag::value() != ShenandoahHeuristicsFlag::Heuristic::PASSIVE
+      && _old_heuristics->should_start_gc() && request_concurrent_gc(_heap->old_generation());
 }
 
 bool ShenandoahRegulatorThread::start_young_cycle() const {
-  return _young_heuristics->should_start_gc() && request_concurrent_gc(_heap->young_generation());
+  return ShenandoahHeuristicsFlag::value() != ShenandoahHeuristicsFlag::Heuristic::PASSIVE
+      && _young_heuristics->should_start_gc() && request_concurrent_gc(_heap->young_generation());
 }
 
 bool ShenandoahRegulatorThread::request_concurrent_gc(ShenandoahGeneration* generation) const {
@@ -163,12 +166,11 @@ void ShenandoahRegulatorThread::stop_service() {
   log_debug(gc)("%s: Stop requested.", name());
 }
 
-bool ShenandoahRegulatorThread::should_start_metaspace_gc() {
+bool ShenandoahRegulatorThread::should_start_metaspace_gc() const {
   // The generational mode can, at present, only unload classes during a global
   // cycle. For this reason, we treat an oom in metaspace as a _trigger_ for a
   // global cycle. But, we check other prerequisites before starting a gc that won't
   // unload anything.
-  return ClassUnloadingWithConcurrentMark
-      && _global_heuristics->can_unload_classes()
+  return _global_heuristics->can_unload_classes()
       && _global_heuristics->has_metaspace_oom();
 }
