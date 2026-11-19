@@ -278,8 +278,8 @@ class ShenandoahTaskQueueChunk {
   // Target 1x4K page per chunk for full chunks.
   static const int MAX_SIZE = 511;
 
-  // Split the chunks down to 4 tasks if needed.
-  static const int MIN_SIZE = 4;
+  // Split the chunks down to this size if needed.
+  static const int MIN_SIZE = 1;
 
   size_t _top;
   ShenandoahTask _tasks[MAX_SIZE];
