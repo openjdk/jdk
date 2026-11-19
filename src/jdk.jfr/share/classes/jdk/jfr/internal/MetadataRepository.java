@@ -311,6 +311,7 @@ public final class MetadataRepository {
         awaitEpochMilliShift();
         JVM.setOutput(filename);
         long chunkStart = JVMSupport.getChunkStartNanos();
+        lastMillis = Utils.epochNanosToInstant(chunkStart).toEpochMilli();
         if (filename != null) {
             RepositoryFiles.notifyNewFile();
         }
