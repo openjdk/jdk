@@ -1896,8 +1896,10 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
 // Split instance or boxed field load through Phi.
 Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_id) {
   if (req() > 3) {
-    assert(is_LoadVector() && Opcode() != Op_LoadVector, "load has too many inputs");
-    // LoadVector subclasses such as LoadVectorMasked have extra inputs that the logic below doesn't take into account
+    assert(Opcode() == Op_LoadLSpecial ||
+           (is_LoadVector() && Opcode() != Op_LoadVector), "load has too many inputs");
+    // LoadVector subclasses such as LoadVectorMasked and LoadLSpecial
+    // have extra inputs that the logic below doesn't take into account
     return nullptr;
   }
   Node* mem     = in(Memory);

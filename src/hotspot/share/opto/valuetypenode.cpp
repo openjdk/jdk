@@ -2182,7 +2182,15 @@ void LoadFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
          "invalid layout for %s: oop_off_1=%d, oop_off_2=%d",
          _vk->name()->as_utf8(), oop_off_1, oop_off_2);
 
-  bool needs_special = UseShenandoahGC && (oop_off_1 != -1);
+  bool has_oops = (oop_off_1 != -1);
+
+  // Epsilon: does not care about oop loads.
+  // Serial/Parallel: do not care about oop loads.
+  // G1: does not care about oop loads.
+  // Shenandoah: LBE, needs special handling.
+  // Z: does not produce flat atomics on this shape.
+  assert(!has_oops || !UseZGC, "ZGC does not have special loads with oops");
+  bool needs_special = has_oops && UseShenandoahGC;
 
   BasicType payload_bt = _vk->atomic_size_to_basic_type(_null_free);
   assert(!needs_special || payload_bt == T_LONG, "Unexpected payload type");
@@ -2443,7 +2451,15 @@ void StoreFlatNode::expand_atomic(PhaseIterGVN& igvn) const {
   assert((oop_off_1 == -1) == oop_1->is_top(), "oop_off_1 == -1 iff. oop_1 is top, but oop_off_1=%d, is oop_1 top=%d", oop_off_1, oop_1->is_top());
   assert((oop_off_2 == -1) == oop_2->is_top(), "oop_off_2 == -1 iff. oop_2 is top, but oop_off_2=%d, is oop_2 top=%d", oop_off_2, oop_2->is_top());
 
-  bool needs_special = (UseG1GC || UseShenandoahGC) && (oop_off_1 != -1);
+  bool has_oops = (oop_off_1 != -1);
+
+  // Epsilon: does not care about oop stores.
+  // Serial/Parallel: handle it separately.
+  // G1: LBE, needs special handling.
+  // Shenandoah: LBE, needs special handling.
+  // Z: does not produce flat atomics on this shape.
+  assert(!has_oops || !UseZGC, "ZGC does not have special stores with oops");
+  bool needs_special = has_oops && (UseG1GC || UseShenandoahGC);
 
   BasicType payload_bt = vk->atomic_size_to_basic_type(_null_free);
   assert(!needs_special || payload_bt == T_LONG, "Unexpected payload type");

@@ -568,7 +568,8 @@ uint ShenandoahBarrierSetC2::estimated_barrier_size(const Node* node) const {
 
   if ((bd & ~ShenandoahBitCardMark) != 0) {
     // Hot-patched GC state checks are either a single nop or a jump.
-    nodes += 1;
+    // Pessimistically assume special nodes have barriers for each offset.
+    nodes += is_Special(node->Opcode()) ? 2 : 1;
   }
 
   if ((bd & ShenandoahBitCardMark) != 0) {
@@ -577,11 +578,6 @@ uint ShenandoahBarrierSetC2::estimated_barrier_size(const Node* node) const {
     if (UseCondCardMark) {
       nodes += 4;
     }
-  }
-
-  if (is_Special(node->Opcode())) {
-    // Pessimistically assume special nodes have twice the barriers.
-    nodes *= 2;
   }
 
   return nodes;
