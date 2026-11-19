@@ -34,7 +34,7 @@
  *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ShenandoahGCHeuristics=passive
  *      -XX:ShenandoahGenerationalMinTenuringAge=1 -XX:ShenandoahGenerationalMaxTenuringAge=1
  *      -Xmx128M -Xms128M -ea
  *      gc.shenandoah.generational.TestGenerationalReferenceProcessing young
@@ -52,7 +52,7 @@
  *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ShenandoahGCHeuristics=passive
  *      -XX:ShenandoahGenerationalMinTenuringAge=1 -XX:ShenandoahGenerationalMaxTenuringAge=1
  *      -Xmx128M -Xms128M -ea
  *      gc.shenandoah.generational.TestGenerationalReferenceProcessing old
@@ -70,7 +70,7 @@
  *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ShenandoahGCHeuristics=passive
  *      -XX:ShenandoahGenerationalMinTenuringAge=1 -XX:ShenandoahGenerationalMaxTenuringAge=1
  *      -Xmx128M -Xms128M -ea
  *      gc.shenandoah.generational.TestGenerationalReferenceProcessing young
@@ -88,7 +88,7 @@
  *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ShenandoahGCHeuristics=passive
  *      -XX:ShenandoahGenerationalMinTenuringAge=1 -XX:ShenandoahGenerationalMaxTenuringAge=1
  *      -Xmx128M -Xms128M -ea
  *      gc.shenandoah.generational.TestGenerationalReferenceProcessing old
