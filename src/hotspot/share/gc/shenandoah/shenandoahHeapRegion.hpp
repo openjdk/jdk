@@ -259,44 +259,16 @@ private:
   HeapWord* const _end;
   uint32_t const _index;
 
-  Atomic<RegionState> _state;
-  HeapWord* _new_top;
-  HeapWord* _top_before_promoted;
-  HeapWord* _top_at_evac_start;
-
-  // For old regions not selected as collection set candidates
-  HeapWord* _coalesce_and_fill_boundary;
-
-  size_t _mixed_candidate_garbage_words;
-
-  double _empty_time;
-
-  Atomic<size_t> _critical_pins;
-
-  Atomic<HeapWord*> _update_watermark;
-
-  HeapWord* _top;
-
-  // Lab allocation counters, in heap words. Their sum is bounded by region_size_words()
-  // only count allocations between bottom() and top(); reset_alloc_metadata() resets them to zero whenever top is reset.
-  uint32_t _tlab_allocs;
-  uint32_t _gclab_allocs;
-  uint32_t _plab_allocs;
-
   // If this is a humongous region, this index identifies the corresponding humongous start region.
   // If this is not a humongous region, this field is not used. In debug builds, it is assigned the value
   // UndefinedRegionIndex to facilitate debugging of state machine.
   uint32_t _humongous_start_region_index;
 
-  // Live data can include humongous region size.
-  Atomic<size_t> _live_data;
+  Atomic<RegionState> _state;
 
   // Set when an evacuation failure self-forwarded at least one object in this
   // region. The flag is cleared when the region is partially recycled during final-update-refs.
   Atomic<bool> _has_self_forwards;
-
-  // Used to indicate that the region is being recycled; see try_recycle*()
-  Atomic<bool> _recycling;
 
   // Region age, clamped at markWord::max_age
   uint8_t _age;
@@ -305,6 +277,35 @@ private:
   bool _needs_bitmap_reset;
 
   bool _promoted_in_place;
+
+  HeapWord* _new_top;
+  HeapWord* _top_before_promoted;
+  HeapWord* _top_at_evac_start;
+
+  double _empty_time;
+
+  size_t _mixed_candidate_garbage_words;
+
+  // For old regions not selected as collection set candidates
+  HeapWord* _coalesce_and_fill_boundary;
+
+  Atomic<size_t> _critical_pins;
+
+  Atomic<HeapWord*> _update_watermark;
+
+  HeapWord* _top;
+
+  // Live data can include humongous region size.
+  Atomic<size_t> _live_data;
+
+  // Lab allocation counters, in heap words. Their sum is bounded by region_size_words()
+  // only count allocations between bottom() and top(); reset_alloc_metadata() resets them to zero whenever top is reset.
+  uint32_t _tlab_allocs;
+  uint32_t _gclab_allocs;
+  uint32_t _plab_allocs;
+
+  // Used to indicate that the region is being recycled; see try_recycle*()
+  Atomic<bool> _recycling;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
