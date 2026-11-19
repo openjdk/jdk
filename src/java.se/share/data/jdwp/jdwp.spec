@@ -2626,7 +2626,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "signature without access to the local variable table information.) "
         "<p>"
         "When preview features are enabled on the target VM, OPAQUE_FRAME "
-        " is returned if slot 0 is requested and the specified frame is a "
+        "is returned if slot 0 is requested and the specified frame is a "
         "constructor frame whose declaring class or any of its superclasses has  "
         "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
         "strictly-initialized<sup>PREVIEW</sup></a> instance fields. "
@@ -2654,11 +2654,11 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_FRAMEID)
             (Error INVALID_SLOT)
             (Error OPAQUE_FRAME      "Unable to get the value of local variables in the frame. "
-                        "For example,  the frame is executing a native method, "
-                        " or slot 0 is requested and the specified frame is a "
-                        "constructor frame whose declaring class or any of its superclasses has  "
-                        "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
-                        "strictly-initialized<sup>PREVIEW</sup></a> instance fields. ")
+                                     "For example, the frame is executing a native method, "
+                                     "or slot 0 is requested and the specified frame is a "
+                                     "constructor frame whose declaring class or any of its superclasses has  "
+                                     "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
+                                     "strictly-initialized<sup>PREVIEW</sup></a> instance fields. ")
             (Error VM_DEAD)
         )
     )
