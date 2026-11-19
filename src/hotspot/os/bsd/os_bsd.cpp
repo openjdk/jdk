@@ -841,6 +841,7 @@ void os::Bsd::clock_init() {
 jlong os::javaTimeNanos() {
   const uint64_t tm = mach_absolute_time();
   const uint64_t now = (tm * Bsd::_timebase_info.numer) / Bsd::_timebase_info.denom;
+// On Aarch64 we trust the monotonicity of the time value. For x86_64 we ensure the time does not go backwards.
 #ifdef AARCH64
   return now;
 #else
