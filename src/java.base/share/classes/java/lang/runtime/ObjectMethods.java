@@ -43,6 +43,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 import static java.util.Objects.requireNonNull;
@@ -59,6 +62,8 @@ import static java.util.Objects.requireNonNull;
 public final class ObjectMethods {
 
     private ObjectMethods() { }
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private static final int MAX_STRING_CONCAT_SLOTS = 20;
 
@@ -257,7 +262,11 @@ public final class ObjectMethods {
                 }
             });
 
-            var specializerLookup = lookup.defineHiddenClass(bytes, true, MethodHandles.Lookup.ClassOption.STRONG);
+            // Relinking after redefinition or retransformation can leave obsolete
+            // specializers behind. Allow them to unload independently of the loader.
+            var specializerLookup = JLA.hasBeenRedefined(lookup.lookupClass())
+                    ? lookup.defineHiddenClass(bytes, true)
+                    : lookup.defineHiddenClass(bytes, true, MethodHandles.Lookup.ClassOption.STRONG);
 
             for (int i = 0; i < size; i++) {
                 if (equalators[i] == null) {
@@ -333,7 +342,11 @@ public final class ObjectMethods {
                 }
             });
 
-            var specializerLookup = lookup.defineHiddenClass(bytes, true, MethodHandles.Lookup.ClassOption.STRONG);
+            // Relinking after redefinition or retransformation can leave obsolete
+            // specializers behind. Allow them to unload independently of the loader.
+            var specializerLookup = JLA.hasBeenRedefined(lookup.lookupClass())
+                    ? lookup.defineHiddenClass(bytes, true)
+                    : lookup.defineHiddenClass(bytes, true, MethodHandles.Lookup.ClassOption.STRONG);
 
             for (int i = 0; i < size; i++) {
                 if (hashers[i] == null) {
