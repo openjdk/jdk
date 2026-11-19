@@ -760,6 +760,11 @@ void AllocateNode::dump_spec(outputStream* st) const {
     st->print(" allocationKlass:");
     alloc_klass->print_name_on(st);
   }
+  st->print(" is_scalar_replaceable=%s escape_state=%s"
+            " is_allocation_MemBar_redundant=%s",
+            _is_scalar_replaceable ? "true" : "false",
+            PointsToNode::esc_name(_escape_state),
+            _is_allocation_MemBar_redundant ? "true" : "false");
   if (jvms() != nullptr) {
     jvms()->dump_spec(st);
   }

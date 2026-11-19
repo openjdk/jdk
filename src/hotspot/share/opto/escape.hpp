@@ -237,6 +237,7 @@ public:
   void dump(bool print_state=true, outputStream* out=tty, bool newline=true) const;
   void dump_header(bool print_state=true, outputStream* out=tty) const;
   const char* esc_name() const;
+  static const char* esc_name(PointsToNode::EscapeState es);
 #endif
 
 };

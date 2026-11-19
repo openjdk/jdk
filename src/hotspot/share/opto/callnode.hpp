@@ -1185,7 +1185,7 @@ public:
     _escape_state = escape_state;
   }
 
-  // True when MemBar for new is redundant with MemBar at initialzer exit
+  // True when MemBar for new is redundant with MemBar at initializer exit
   bool _is_allocation_MemBar_redundant;
 
   virtual uint size_of() const; // Size is bigger

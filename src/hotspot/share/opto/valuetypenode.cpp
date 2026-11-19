@@ -1377,20 +1377,23 @@ ValueTypeNode* ValueTypeNode::allocate_fields(GraphKit* kit) {
 }
 
 // Replace a buffer allocation by a dominating allocation
-static bool replace_allocation(PhaseIterGVN* igvn, Node* res, Node* dom) {
+static bool replace_allocation(PhaseIterGVN* igvn, AllocateNode* alloc_res, Node* dom) {
+
+  Node* res = alloc_res->result_cast();
+  assert(res != nullptr && res->is_CheckCastPP(), "allocation must have a unique CheckCastPP");
+
   // Replace the buffer allocation only if the dominating allocation's escape
-  // state is equal to or worse than the replaced allocation's. Otherwise,
-  // the replacement worsens the escape state of the dominating allocation (due
-  // to its now extended lifetime), breaks escape state monotonicity (see
-  // AllocateNode::set_escape_state), and could subsequently invalidate earlier
-  // optimizations that depend on the dominating allocation's more permissive
-  // previous escape state.
-  AllocateNode* alloc_res = AllocateNode::Ideal_allocation(res);
+  // state is known (alloc_dom != nullptr) and equal to or worse than the
+  // replaced allocation's. Otherwise, the replacement worsens the escape state
+  // of the dominating allocation (due to its now extended lifetime), breaks
+  // escape state monotonicity (see AllocateNode::set_escape_state), and could
+  // subsequently invalidate earlier optimizations that depend on the dominating
+  // allocation's more permissive previous escape state.
   AllocateNode* alloc_dom = AllocateNode::Ideal_allocation(dom);
-  if (alloc_res == nullptr || alloc_dom == nullptr ||
-      alloc_res->escape_state() > alloc_dom->escape_state()) {
+  if (alloc_dom == nullptr || alloc_res->escape_state() > alloc_dom->escape_state()) {
     return false;
   }
+
   // Remove initializing stores and GC barriers
   for (DUIterator_Fast imax, i = res->fast_outs(imax); i < imax; i++) {
     Node* use = res->fast_out(i);
@@ -1463,7 +1466,7 @@ Node* ValueTypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         if (alloc != nullptr && alloc->in(AllocateNode::ValueType) == this && !alloc->is_scalar_replaceable()) {
           // Found a re-allocation
           Node* res = alloc->result_cast();
-          if (is<CheckCastPPNode>(res) && replace_allocation(igvn, res, oop)) {
+          if (is<CheckCastPPNode>(res) && replace_allocation(igvn, alloc, oop)) {
             // Replace allocation by oop and unlink AllocateNode
             igvn->replace_input_of(alloc, AllocateNode::ValueType, igvn->C->top());
             --i; --imax;
@@ -1954,8 +1957,11 @@ void ValueTypeNode::initialize_fields(GraphKit* kit, MultiNode* multi, uint& bas
   }
 }
 
-// Search for multiple allocations of this value type and try to replace them by dominating allocations.
-// Equivalent ValueTypeNodes are merged by GVN, so we just need to search for AllocateNode users to find redundant allocations.
+// Search for multiple allocations of this value type and try to replace them by
+// dominating allocations. Equivalent ValueTypeNodes are merged by GVN, so we
+// just need to search for AllocateNode users to find redundant allocations.
+// Note that allocation escape state matters. We cannot replace an allocation if
+// the dominating allocation has a better escape state.
 void ValueTypeNode::remove_redundant_allocations(PhaseIdealLoop* phase) const {
   PhaseIterGVN* igvn = &phase->igvn();
   // Search for allocations of this value type. Ignore scalar replaceable ones, they
@@ -1979,7 +1985,7 @@ void ValueTypeNode::remove_redundant_allocations(PhaseIdealLoop* phase) const {
           }
         }
       }
-      if (res_dom != res && replace_allocation(igvn, res, res_dom)) {
+      if (res_dom != res && replace_allocation(igvn, alloc, res_dom)) {
         // Replace allocation by dominating one.
         // The result of the dominated allocation is now unused and will be removed
         // later in PhaseMacroExpand::eliminate_allocate_node to not confuse loop opts.

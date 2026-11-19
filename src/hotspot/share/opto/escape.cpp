@@ -5752,6 +5752,10 @@ const char* PointsToNode::esc_name() const {
   return esc_names[(int)escape_state()];
 }
 
+const char* PointsToNode::esc_name(PointsToNode::EscapeState es) {
+  return esc_names[(int)es];
+}
+
 void PointsToNode::dump_header(bool print_state, outputStream* out) const {
   NodeType nt = node_type();
   out->print("%s(%d) ", node_type_names[(int) nt], _pidx);
