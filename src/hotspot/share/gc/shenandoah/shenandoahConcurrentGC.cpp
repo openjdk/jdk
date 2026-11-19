@@ -1323,6 +1323,7 @@ void ShenandoahConcurrentGC::op_cleanup_complete() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup(),
                               "cleanup complete.");
   ShenandoahHeap::heap()->recycle_trash();
+  generation()->trim_queues();
 }
 
 void ShenandoahConcurrentGC::op_reset_after_collect() {

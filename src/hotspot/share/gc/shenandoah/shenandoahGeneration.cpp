@@ -354,6 +354,10 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   }
 }
 
+void ShenandoahGeneration::trim_queues() {
+  _task_queues->trim();
+}
+
 size_t ShenandoahGeneration::available() const {
   size_t result = available(max_capacity());
   return result;

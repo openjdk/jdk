@@ -220,7 +220,6 @@ void ShenandoahConcurrentMark::concurrent_mark() {
     }
   }
   assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");
-  log_info(gc, ergo)("%zu task chunks allocated", task_queues()->allocated());
 }
 
 void ShenandoahConcurrentMark::finish_mark() {

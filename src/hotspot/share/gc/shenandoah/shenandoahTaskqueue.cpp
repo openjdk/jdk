@@ -61,17 +61,44 @@ void ShenandoahTaskQueue::flush_to_shared() {
   }
 }
 
-ShenandoahTaskQueueSegment::ShenandoahTaskQueueSegment() : _free_bm(0), _shared_bm(0) {
+void ShenandoahTaskQueue::compact() {
+  if (_chunk->is_empty()) {
+    _qs->flip_to_free(_chunk);
+    _chunk = _qs->flip_from_free();
+  }
+}
+
+ShenandoahTaskQueueSegment::ShenandoahTaskQueueSegment(size_t seg_idx) :
+  _free_bm(right_n_bits(SEGMENT_SIZE)), _shared_bm(0) {
+  for (size_t i = 0; i < SEGMENT_SIZE; i++) {
+    ::new (&_chunks[i]) ShenandoahTaskQueueChunk((seg_idx << SEGMENT_SIZE_SHIFT) + i);
+  }
+}
+
+void ShenandoahTaskQueueSegment::clear() {
+  uint64_t shared = _shared_bm.load_relaxed();
+  for (uint64_t m = shared; m != 0; m &= m - 1) {
+    _chunks[count_trailing_zeros(m)].clear();
+  }
+  _shared_bm.store_relaxed(0);
+  _free_bm.store_relaxed(_free_bm.load_relaxed() | shared);
+}
+
+bool ShenandoahTaskQueueSegment::are_all_free() const {
+  return _shared_bm.load_relaxed() == 0 &&
+         _free_bm.load_relaxed() == (uint64_t)right_n_bits(SEGMENT_SIZE);
 }
 
 ShenandoahTaskQueueSet::ShenandoahTaskQueueSet(uint queue_count) :
   _queue_count(queue_count),
+  _num_segments(0),
   _shared_count(0) {
 
   // Size up for the absolute worst case: one 8-byte task per smallest 8-byte object
   size_t alignment = MAX3(CHUNK_SIZE, os::vm_allocation_granularity(), os::vm_page_size());
   _max_segments = align_up(MaxHeapSize, alignment) / CHUNK_SIZE / ShenandoahTaskQueueSegment::SEGMENT_SIZE;
-  _segments = NEW_C_HEAP_ARRAY(ShenandoahTaskQueueSegment, _max_segments, mtGC);
+  _segments = NEW_C_HEAP_ARRAY(ShenandoahTaskQueueSegment*, _max_segments, mtGC);
+  memset(_segments, 0, _max_segments * sizeof(ShenandoahTaskQueueSegment*));
 
   _queues = NEW_C_HEAP_ARRAY(ShenandoahTaskQueue*, _queue_count, mtGC);
   for (size_t i = 0; i < _queue_count; i++) {
@@ -84,6 +111,10 @@ ShenandoahTaskQueueSet::~ShenandoahTaskQueueSet() {
     delete _queues[i];
   }
   FREE_C_HEAP_ARRAY(_queues);
+
+  for (size_t s = 0; s < _num_segments.load_relaxed(); s++) {
+    delete _segments[s];
+  }
   FREE_C_HEAP_ARRAY(_segments);
 }
 
@@ -105,14 +136,27 @@ void ShenandoahTaskQueueSet::clear() {
     q->clear();
   }
 
-  size_t end = chunks_end();
-  for (size_t idx = _shared_bm.find_first_set_bit(0, end); idx < end;
-              idx = _shared_bm.find_first_set_bit(idx + 1, end)) {
-    chunk_at(idx)->clear();
-    _shared_bm.clear_bit(idx);
-    _free_bm.set_bit(idx);
+  for (size_t s = 0; s < _num_segments.load_relaxed(); s++) {
+    _segments[s]->clear();
   }
   _shared_count.store_relaxed(0);
+}
+
+void ShenandoahTaskQueueSet::trim() {
+  // Rearrange the chunks to the left-most segments.
+  for (size_t i = 0; i < _queue_count; i++) {
+    queue(i)->compact();
+  }
+
+  // Delete free segments from the tail.
+  size_t min = align_up(_queue_count, ShenandoahTaskQueueSegment::SEGMENT_SIZE) / ShenandoahTaskQueueSegment::SEGMENT_SIZE + 1;
+  size_t s = _num_segments.load_relaxed() - 1;
+  while (s > min && _segments[s]->are_all_free()) {
+    delete _segments[s];
+    AtomicAccess::store(&_segments[s], (ShenandoahTaskQueueSegment*)nullptr);
+    _num_segments.fetch_then_sub((size_t)1);
+    s--;
+  }
 }
 
 void ShenandoahTaskQueueSet::flush_to_shared() {

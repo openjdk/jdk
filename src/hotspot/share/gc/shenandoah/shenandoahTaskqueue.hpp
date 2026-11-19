@@ -285,6 +285,7 @@ class ShenandoahTaskQueueChunk {
   size_t _index;
 
 public:
+  ShenandoahTaskQueueChunk() {}
   ShenandoahTaskQueueChunk(size_t index) : _top(0), _index(index) {}
 
   ALWAYSINLINE
@@ -319,6 +320,7 @@ public:
   bool pop(ShenandoahTask& task);
 
   void flush_to_shared();
+  void compact();
   void clear();
 
   bool is_empty();
@@ -332,40 +334,45 @@ public:
   static const int SEGMENT_SIZE = 1 << SEGMENT_SIZE_SHIFT;
   static_assert(SEGMENT_SIZE <= 64, "Bitmap encoding");
 
+  shenandoah_padding(0);
   Atomic<uint64_t> _free_bm;
+  shenandoah_padding(1);
   Atomic<uint64_t> _shared_bm;
+  shenandoah_padding(2);
 
   ShenandoahTaskQueueChunk _chunks[SEGMENT_SIZE];
 
-  ShenandoahTaskQueueSegment();
+  ShenandoahTaskQueueSegment(size_t seg_idx);
 
   inline ShenandoahTaskQueueChunk* flip_from(Atomic<uint64_t>* bm);
   inline ShenandoahTaskQueueChunk* flip_from_shared();
   inline ShenandoahTaskQueueChunk* flip_from_free();
 
+  inline void flip_to(ShenandoahTaskQueueChunk* chunk, Atomic<uint64_t>* bm);
   inline void flip_to_shared(ShenandoahTaskQueueChunk* chunk);
   inline void flip_to_free(ShenandoahTaskQueueChunk* chunk);
+
+  bool are_all_free() const;
+
+  void clear();
 };
 
 class ShenandoahTaskQueueSet : public CHeapObj<mtGC> {
   static const size_t CHUNK_SIZE = sizeof(ShenandoahTaskQueueChunk);
-  static const size_t COMMIT_CHUNKS = 16;
   static_assert(is_power_of_2(CHUNK_SIZE));
 
   ShenandoahTaskQueue** _queues;
   size_t _queue_count;
 
-  ShenandoahTaskQueueSegment* _segments;
+  ShenandoahTaskQueueSegment** _segments;
+  Atomic<size_t> _num_segments;
   size_t _max_segments;
 
   shenandoah_padding(0);
   Atomic <size_t> _shared_count;
   shenandoah_padding(1);
 
-  inline size_t find_and_claim(BitMapView& bm);
-
-  ShenandoahTaskQueueSegment* allocate_segment();
-  ShenandoahTaskQueueChunk* chunk_at(size_t idx);
+  inline ShenandoahTaskQueueSegment* try_grow(size_t n);
 
 public:
   ShenandoahTaskQueueSet(uint queue_count);
@@ -386,6 +393,7 @@ public:
 
   void clear();
   void flush_to_shared();
+  void trim();
 
 };
 
