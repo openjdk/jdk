@@ -940,7 +940,6 @@ class MethodTrainingData : public TrainingData {
   };
   TrainingIteration _iterations[2]; // CURRENT and NEXT
   // metadata snapshots of final state:
-  MethodCounters* _final_counters;
   MethodData*     _final_profile;
 
   int _invocation_count;

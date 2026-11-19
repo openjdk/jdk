@@ -26,6 +26,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "asm/register.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciValueKlass.hpp"
@@ -3664,6 +3665,14 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
                              enum atomic_memory_order order,
                              bool weak,
                              Register result) {
+  // Be careful to not use overlapping register with rscratch1 and result
+  assert_different_registers(rscratch1, addr);
+  assert_different_registers(rscratch1, expected);
+  assert_different_registers(rscratch1, new_val);
+  assert_different_registers(result, addr);
+  assert_different_registers(result, expected);
+  assert_different_registers(result, new_val);
+
   bool acquire, release;
 
   switch (order) {

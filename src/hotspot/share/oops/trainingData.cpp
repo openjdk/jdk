@@ -233,7 +233,7 @@ void MethodTrainingData::print_on(outputStream* st, bool name_only) const {
   if (_iterations[NEXT]._level_mask) {
     st->print(" LMN%d", _iterations[NEXT]._level_mask);
   }
-  st->print(" mc=%p mdo=%p", _final_counters, _final_profile);
+  st->print(" mdo=%p", _final_profile);
 }
 
 CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
@@ -437,7 +437,6 @@ void MethodTrainingData::prepare(Visitor& visitor) {
   visitor.visit_later(klass());
   // Assembly must retain the profile captured during recording.
   if (need_data() && has_holder()) {
-    _final_counters = holder()->method_counters();
     _final_profile  = holder()->method_data();
     assert(_final_profile == nullptr || _final_profile->method() == holder(), "");
     _invocation_count = holder()->invocation_count();
@@ -727,7 +726,6 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
         counters->clear_method_training_data();
       }
       _final_profile = nullptr;
-      _final_counters = nullptr;
       _holder = nullptr;
       key()->make_empty();
     }
@@ -960,7 +958,6 @@ void MethodTrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
     iter->push(&(_iterations[NEXT]._last_toplevel_compiles[i]));
   }
   iter->push(&_final_profile);
-  iter->push(&_final_counters);
 }
 
 void CompileTrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
@@ -990,9 +987,6 @@ void KlassTrainingData::remove_unshareable_info() {
 
 void MethodTrainingData::remove_unshareable_info() {
   TrainingData::remove_unshareable_info();
-  if (_final_counters != nullptr) {
-    _final_counters->remove_unshareable_info();
-  }
   if (_final_profile != nullptr) {
     _final_profile->remove_unshareable_info();
   }

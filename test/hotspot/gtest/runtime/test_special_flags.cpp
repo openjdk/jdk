@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 // The test will only fail late in the release cycle as a reminder,
 // in case it has been forgotten.
 #ifdef ASSERT
-TEST_VM(DISABLED_special_flags, verify_special_flags) {
+TEST_VM(special_flags, verify_special_flags) {
   ASSERT_TRUE(Arguments::verify_special_jvm_flags(true)) << "Special flag verification failed";
 }
 #endif

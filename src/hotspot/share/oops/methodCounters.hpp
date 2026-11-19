@@ -183,8 +183,6 @@ class MethodCounters : public Metadata {
     return _aot_preload_code_entry;
   }
 
-  void remove_unshareable_info();
-  void restore_unshareable_info(TRAPS);
 #endif
 
   // Printing
