@@ -4238,44 +4238,53 @@ The AOT cache can be used with the following command-line options:
      from *configfile* and writes the optimization artifacts into *cachefile*.
      Note that the application itself is not executed in this phase.
 
--   `required`: Execute the application in the Production phase.
-     `-XX:AOTCache=`*cachefile* must be specified. The JVM tries to
-     load *cachefile* as the AOT cache.
+  -   `required`: Execute the application in the Production phase.
+       `-XX:AOTCache=`*cachefile* must be specified. The JVM tries to
+       load *cachefile* as the AOT cache.
 
-     The loading of an AOT cache can fail for a number of reasons:
+       The loading of an AOT cache can fail for a number of reasons:
 
-     - You are trying to use the AOT cache with an incompatible application, JDK release,
-       or OS/CPU.
+       - You are trying to use the AOT cache with an incompatible application, JDK release,
+         or OS/CPU.
 
-     - The specified *cachefile* does not exist or is not accessible.
+       - The specified *cachefile* does not exist or is not accessible.
 
-     - Incompatible JVM options are used (for example, certain JVMTI options).
+       - Incompatible JVM options are used (for example, certain JVMTI options).
 
-       Since the AOT cache is an optimization feature, there's no guarantee that it will be
-       compatible with all possible JVM options. See [JEP 483](https://openjdk.org/jeps/483),
-       section **Consistency of training and subsequent runs** for a representative
-       list of scenarios that may be incompatible with the AOT cache.
+         Since the AOT cache is an optimization feature, there's no guarantee that it will be
+         compatible with all possible JVM options. See [JEP 483](https://openjdk.org/jeps/483),
+         section **Consistency of training and subsequent runs** for a representative
+         list of scenarios that may be incompatible with the AOT cache.
 
-       These scenarios usually involve arbitrary modification of classes for diagnostic
-       purposes and are typically not relevant for production environments.
+         These scenarios usually involve arbitrary modification of classes for diagnostic
+         purposes and are typically not relevant for production environments.
 
-     When the AOT cache fails to load:
+       When the AOT cache fails to load:
 
-     - If `AOTMode` was originally `auto`, the JVM will continue execution without using the
-       AOT cache. This is the recommended mode for production environments, especially
-       when you may not have complete control of the command-line (e.g., your
-       application's launch script may allow users to inject options to the command-line).
-       This allows your application to function correctly, although sometimes it may not
-       benefit from the AOT cache.
+       - If `AOTMode` was originally `auto`, the JVM will continue execution without using the
+         AOT cache. This is the recommended mode for production environments, especially
+         when you may not have complete control of the command-line (e.g., your
+         application's launch script may allow users to inject options to the command-line).
+         This allows your application to function correctly, although sometimes it may not
+         benefit from the AOT cache.
 
-     - If `AOTMode` was originally `required`, the JVM will print an error message and exit immediately. This
-       mode should be used only as a "fail-fast" debugging aid to check if your command-line
-       options are compatible with the AOT cache. An alternative is to run your application with
-       `-XX:AOTMode=auto -Xlog:aot` to see if the AOT cache can be used or not.
+       - If `AOTMode` was originally `required`, the JVM will print an error message and exit immediately. This
+         mode should be used only as a "fail-fast" debugging aid to check if your command-line
+         options are compatible with the AOT cache. An alternative is to run your application with
+         `-XX:AOTMode=auto -Xlog:aot` to see if the AOT cache can be used or not.
 
-     In production environments, `-XX:AOTMode=required` should be used with care. Your application may
-     fail to launch if an incompatible VM option is added without your knowledge. For example,
-     a cloud provider might run your JVM with a JVMTI class-file load hook for monitoring purposes.
+       In production environments, `-XX:AOTMode=required` should be used with care. Your application may
+       fail to launch if an incompatible VM option is added without your knowledge. For example,
+       a cloud provider might run your JVM with a JVMTI class-file load hook for monitoring purposes.
+
+      To debug why a cache failed to load, the AOT Settings can be checked. These are the JVM's internal states
+      related to AOT that are determined by JVM options and/or CPU capabilities. They can be used
+      to determine whether a JVM is able to load an AOT cache. To diff and compare the required versus
+      the actual settings, the following log arguments can be used:
+
+      - `-Xlog:aot+setting+required` to print AOT settings that are required to load the AOT cache
+      
+      - `-Xlog:aot+setting+selected` to print AOT settings that are selected by the current JVM
 
 
 [`-XX:+AOTClassLinking`]{#-XX__AOTClassLinking}

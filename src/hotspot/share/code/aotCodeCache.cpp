@@ -947,12 +947,12 @@ inline void print_config_value(outputStream* st, const char* name, uintx value) 
 
 template <typename T>
 void log_config_values(T saved, T current, const char* name) {
-  if (log_is_enabled(Info, aot, verify, codecache)) {
-    LogStreamHandle(Info, aot, verify, codecache) cache_config_out;
+  if (log_is_enabled(Info, aot, setting, required)) {
+    LogStreamHandle(Info, aot, setting, required) cache_config_out;
     print_config_value(&cache_config_out, name, saved);
   }
-  if (log_is_enabled(Info, aot, verify, os)) {
-    LogStreamHandle(Info, aot, verify, os) os_config_out;
+  if (log_is_enabled(Info, aot, setting, selected)) {
+    LogStreamHandle(Info, aot, setting, selected) os_config_out;
     print_config_value(&os_config_out, name, current);
   }
 }

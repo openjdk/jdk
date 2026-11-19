@@ -1951,13 +1951,13 @@ bool FileMapInfo::validate_aot_class_linking() {
   // Output aot cache config and actual jvm config to compare
   // this will allow you to create two files with the configuration
   // and make an easy diff between them
-  if (log_is_enabled(Info, aot, verify, codecache)) {
-    LogStreamHandle(Info, aot, verify, codecache) cache_config_out;
+  if (log_is_enabled(Info, aot, setting, required)) {
+    LogStreamHandle(Info, aot, setting, required) cache_config_out;
 
     print(&cache_config_out, true, false);
   }
-  if (log_is_enabled(Info, aot, verify, os)) {
-    LogStreamHandle(Info, aot, verify, os) os_config_out;
+  if (log_is_enabled(Info, aot, setting, selected)) {
+    LogStreamHandle(Info, aot, setting, selected) os_config_out;
     print(&os_config_out, true, true);
   }
   // These checks need to be done after FileMapInfo::initialize(), which gets called before Universe::heap()
