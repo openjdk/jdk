@@ -150,26 +150,26 @@ public:
       _partial_obj_size = (region_sz_t) words;
     }
 
-    inline void set_destination_count(uint count);
+    void set_destination_count(uint count);
 
-    inline void set_completed();
-    inline bool available_to_normal();
+    void set_completed();
+    bool available_to_normal();
 
     // These are atomic.
     void add_live_obj(size_t words) {
       assert(words <= RegionSize - live_obj_size(), "overflow");
       _live_obj_size.add_then_fetch(static_cast<region_sz_t>(words));
     }
-    inline void decrement_destination_count();
-    inline bool try_mark_normal();
-    inline bool try_complete_filled_shadow();
+    void decrement_destination_count();
+    bool try_mark_normal();
+    bool try_complete_filled_shadow();
 
     // Mark the current region as shadow to enter the shadow processing path.
-    inline bool try_mark_shadow();
+    bool try_mark_shadow();
     // Finish shadow filling. Returns true if the caller must copy back immediately.
-    inline bool finish_shadow_fill();
+    bool finish_shadow_fill();
     // Special case: see PSParallelCompact::fill_and_update_shadow_region.
-    inline void shadow_to_normal();
+    void shadow_to_normal();
     bool is_init() const { return state_status(state()) == status_init; }
     bool is_normal() const { return state_status(state()) == status_normal; }
     bool is_shadow() const { return state_status(state()) == status_shadow; }
@@ -306,93 +306,6 @@ private:
   RegionData*     _region_data;
   size_t          _region_count;
 };
-
-inline void
-ParallelCompactData::RegionData::set_destination_count(uint count)
-{
-  assert(count <= max_destination_count, "count too large");
-  const state_t old_state = state();
-  assert(state_status(old_state) == status_init, "cannot reset processed region");
-  _state.store_relaxed(with_dest_count(old_state, static_cast<state_t>(count)));
-}
-
-inline void ParallelCompactData::RegionData::decrement_destination_count()
-{
-  state_t old_state = _state.fetch_then_sub(static_cast<state_t>(1));
-  assert(state_dest_count(old_state) > 0, "count would go negative");
-}
-
-inline void ParallelCompactData::RegionData::set_completed()
-{
-  const state_t old_state = state();
-  assert(state_status(old_state) == status_normal, "can only complete normal regions");
-  _state.store_relaxed(with_status(old_state, status_completed));
-}
-
-inline bool ParallelCompactData::RegionData::available_to_normal()
-{
-  const state_t old_state = state();
-  assert(state_status(old_state) == status_init, "initial regions must be unprocessed");
-  if (state_dest_count(old_state) == 0) {
-    _state.store_relaxed(make_state(0, status_normal));
-    return true;
-  }
-  return false;
-}
-
-inline bool ParallelCompactData::RegionData::try_mark_normal()
-{
-  assert(available(), "region must have no remaining destination dependencies");
-  return _state.compare_set(make_state(0, status_init), make_state(0, status_normal));
-}
-
-inline bool ParallelCompactData::RegionData::try_complete_filled_shadow()
-{
-  assert(available(), "region must have no remaining destination dependencies");
-  return _state.compare_set(make_state(0, status_filled_shadow), make_state(0, status_completed));
-}
-
-inline bool ParallelCompactData::RegionData::try_mark_shadow() {
-  state_t old_state = state();
-  while (true) {
-    if (state_dest_count(old_state) == 0 ||
-        state_status(old_state) != status_init) {
-      return false;
-    }
-    const state_t new_state = with_status(old_state, status_shadow);
-    if (_state.compare_set(old_state, new_state)) {
-      return true;
-    }
-    old_state = state();
-  }
-}
-
-inline bool ParallelCompactData::RegionData::finish_shadow_fill() {
-  state_t old_state = state();
-  while (true) {
-    state_t new_state;
-    bool copy_now = false;
-    assert(state_status(old_state) == status_shadow, "must be shadow");
-    if (state_dest_count(old_state) == 0) {
-      new_state = with_status(old_state, status_completed);
-      copy_now = true;
-    } else {
-      new_state = with_status(old_state, status_filled_shadow);
-    }
-    if (_state.compare_set(old_state, new_state)) {
-      return copy_now;
-    }
-    old_state = state();
-  }
-}
-
-void ParallelCompactData::RegionData::shadow_to_normal() {
-  assert(available(), "region must have no remaining destination dependencies");
-  const state_t old_state = make_state(0, status_shadow);
-  const state_t new_state = make_state(0, status_normal);
-  bool result = _state.compare_set(old_state, new_state);
-  assert(result, "Fail to mark the region as normal");
-}
 
 inline ParallelCompactData::RegionData*
 ParallelCompactData::region(size_t region_idx) const

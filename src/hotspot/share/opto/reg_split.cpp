@@ -575,8 +575,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   }
 
   // Keep track of DEFS & Phis for later passes
-  Node_List defs(split_arena, 8);
-  Node_List phis(split_arena, 16);
+  Node_List<Node> defs(split_arena, 8);
+  Node_List<PhiNode> phis(split_arena, 16);
 
   //----------PASS 1----------
   //----------Propagation & Node Insertion Code----------
@@ -670,7 +670,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       for( insidx = 1; insidx <= b->end_idx(); insidx++ ) {
         n1 = b->get_node(insidx);
         // bail if this is not a phi
-        phi = n1->is_Phi() ? n1->as_Phi() : nullptr;
+        phi = n1->isa_Phi();
         if( phi == nullptr ) {
           // Keep track of index of first non-PhiNode instruction in block
           non_phi = insidx;
@@ -959,7 +959,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               insidx += b->number_of_nodes()-old_size;
             }
 
-            MachNode *mach = n->is_Mach() ? n->as_Mach() : nullptr;
+            MachNode* mach = n->isa_Mach();
             // Base pointers and oopmap references do not care where they live.
             if ((inpidx >= oopoff) ||
                 (mach && mach->ideal_Opcode() == Op_AddP && inpidx == AddPNode::Base)) {
@@ -1328,8 +1328,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   // Walk the phis list to patch inputs, split phis, and name phis
   uint lrgs_before_phi_split = maxlrg;
   for( insidx = 0; insidx < phis.size(); insidx++ ) {
-    Node *phi = phis.at(insidx);
-    assert(phi->is_Phi(),"This list must only contain Phi Nodes");
+    PhiNode* phi = phis.at(insidx);
     Block *b = _cfg.get_block_for_node(phi);
     // Grab the live range number
     uint lidx = _lrg_map.find_id(phi);

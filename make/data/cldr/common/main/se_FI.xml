@@ -398,6 +398,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric" draft="provisional">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
+						<intervalFormatFallback draft="provisional">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
@@ -1021,7 +1025,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>{0} GMT</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat type="daylight">{0} geasseáigi</regionFormat>
 			<regionFormat type="standard">{0} dálveáigi</regionFormat>
 			<zone type="Etc/UTC">
@@ -1071,11 +1074,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Helsinki">
 				<exemplarCity>Helsset</exemplarCity>
 			</zone>
-			<zone type="Europe/London">
-				<long>
-					<daylight>Brihtalaš geasseáigi</daylight>
-				</long>
-			</zone>
 			<zone type="America/Danmarkshavn">
 				<exemplarCity>Dánmárkkuhámman</exemplarCity>
 			</zone>
@@ -1084,11 +1082,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Atlantic/South_Georgia">
 				<exemplarCity>Lulli-Georgia</exemplarCity>
-			</zone>
-			<zone type="Europe/Dublin">
-				<long>
-					<daylight>Irlánddalaš dálveáigi</daylight>
-				</long>
 			</zone>
 			<zone type="Europe/Isle_of_Man">
 				<exemplarCity>Mansuolu</exemplarCity>
@@ -1341,6 +1334,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Brasilia áigi</generic>
 					<standard>Brasilia dálveáigi</standard>
 					<daylight>Brasilia geasseáigi</daylight>
+				</long>
+			</metazone>
+			<metazone type="British">
+				<long>
+					<daylight>Brihtalaš geasseáigi</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -1601,6 +1599,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Irana áigi</generic>
 					<standard>Irana dálveáigi</standard>
 					<daylight>Irana geasseáigi</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irish">
+				<long>
+					<daylight>Irlánddalaš dálveáigi</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
@@ -1881,9 +1884,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa áigi</generic>
 					<standard>Samoa dálveáigi</standard>
-					<daylight>Samoa geasseáigi</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">

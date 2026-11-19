@@ -80,19 +80,25 @@ void CardTableBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) 
     for (int i = 0; i < vk->nof_nonstatic_fields(); i++) {
       ciField* field = vk->nonstatic_field_at(i);
       if (!field->type()->is_primitive_type()) {
+        assert(UseCompressedOops && access.type() == T_LONG, "unexpected oop in payload");
         int inner_off = field->offset_in_bytes() - vk->payload_offset();
         int off = access.offset().opr().as_jint() + inner_off;
         LIRAccess inner_access(access.gen(), decorators, access.base(), LIR_OprFact::intConst(off), field->type()->basic_type(), access.patch_emit_info(), access.access_emit_info());
 
-        // Shift long value to extract the narrow oop field value and zero-extend
+        // Shift long value to extract the narrow oop field value and decode it
+#ifdef VM_LITTLE_ENDIAN
+        int shift = inner_off << LogBitsPerByte;
+#else
+        int shift = (type2aelembytes(T_LONG) - type2aelembytes(T_OBJECT) - inner_off) << LogBitsPerByte;
+#endif
         LIR_Opr field_val = access.gen()->new_register(T_LONG);
         access.gen()->lir()->unsigned_shift_right(value,
-                                                  LIR_OprFact::intConst(inner_off << LogBitsPerByte),
+                                                  LIR_OprFact::intConst(shift),
                                                   field_val, LIR_Opr::illegalOpr());
         LIR_Opr mask = access.gen()->load_immediate((julong) max_juint, T_LONG);
         access.gen()->lir()->logical_and(field_val, mask, field_val);
         LIR_Opr oop_val = access.gen()->new_register(T_OBJECT);
-        access.gen()->lir()->move(field_val, oop_val);
+        access.gen()->lir()->decode_heap_oop(field_val, oop_val);
 
         assert(!is_array && !on_anonymous, "not supported");
         post_barrier(inner_access, access.base().opr(), oop_val);
@@ -184,7 +190,6 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Op
   }
 
   LIR_Address* card_addr;
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     // load the card table address from the AOT Runtime Constants area
     LIR_Opr byte_map_base_adr = LIR_OprFact::intptrConst(AOTRuntimeConstants::card_table_base_address());
@@ -193,9 +198,7 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Op
     LIR_Address* byte_map_base_indirect = new LIR_Address(byte_map_base_reg, 0, T_LONG);
     __ move(byte_map_base_indirect, byte_map_base_reg);
     card_addr = new LIR_Address(tmp, byte_map_base_reg, T_BYTE);
-  } else
-#endif
-  if (gen->can_inline_as_constant(card_table_base)) {
+  } else if (gen->can_inline_as_constant(card_table_base)) {
     card_addr = new LIR_Address(tmp, card_table_base->as_jint(), T_BYTE);
   } else {
     card_addr = new LIR_Address(tmp, gen->load_constant(card_table_base), T_BYTE);

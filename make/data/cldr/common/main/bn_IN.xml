@@ -16,7 +16,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ksh">কোলোনিয়ান</language>
 		</languages>
 		<territories>
-			<territory type="018">দক্ষিণাঞ্চলীয় আফ্রিকা</territory>
 			<territory type="202">সাহারা-নিম্ন আফ্রিকা</territory>
 			<territory type="CD" alt="variant">কঙ্গো (DRC)</territory>
 			<territory type="NZ" alt="variant">আওটেয়ারোয়া নিউজিল্যান্ড</territory>
@@ -132,6 +131,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</calendars>
 	</dates>
 	<numbers>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<currencyFormats numberSystem="beng">
 			<currencyFormatLength>
 				<currencyFormat type="standard">

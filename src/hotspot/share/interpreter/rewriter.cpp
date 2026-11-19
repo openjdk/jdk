@@ -101,6 +101,14 @@ void Rewriter::restore_bytecodes(Thread* thread) {
     scan_method(thread, method, true, &invokespecial_error);
     assert(!invokespecial_error, "reversing should not get an invokespecial error");
   }
+
+  // These need to be reset in case we want to rewrite again.
+  _invokedynamic_index = 0;
+  _field_entry_index = 0;
+  _method_entry_index = 0;
+  _initialized_indy_entries.clear();
+  _initialized_field_entries.clear();
+  _initialized_method_entries.clear();
 }
 
 // Creates a constant pool cache given a CPC map
@@ -124,7 +132,6 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   _pool->initialize_resolved_references(loader_data, _resolved_references_map,
                                         _resolved_reference_limit,
                                         THREAD);
-#if INCLUDE_CDS
   if (!HAS_PENDING_EXCEPTION && CDSConfig::is_dumping_archive()) {
     if (_pool->pool_holder()->in_aot_cache()) {
       assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
@@ -133,7 +140,6 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
       // need to save its CpCaches.
     }
   }
-#endif
 
   // Clean up constant pool cache if initialize_resolved_references() failed.
   if (HAS_PENDING_EXCEPTION) {
@@ -568,11 +574,9 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
 }
 
 void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
-#if INCLUDE_CDS
   if (klass->in_aot_cache()) {
     assert(!klass->is_rewritten(), "rewritten classes in the AOT cache cannot be rewritten again");
   }
-#endif // INCLUDE_CDS
   ResourceMark rm(THREAD);
   constantPoolHandle cpool(THREAD, klass->constants());
   Rewriter     rw(klass, cpool, klass->methods(), CHECK);

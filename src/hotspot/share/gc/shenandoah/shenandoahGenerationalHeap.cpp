@@ -60,8 +60,8 @@ protected:
     ShenandoahInitLogger::print_gc_specific();
 
     ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-    log_info(gc, init)("Young Heuristics: %s", heap->young_generation()->heuristics()->name());
-    log_info(gc, init)("Old Heuristics: %s", heap->old_generation()->heuristics()->name());
+    log_info(gc, init)("Young Heuristics: %s", ShenandoahGCHeuristics);
+    log_info(gc, init)("Old Heuristics: %s", ShenandoahGCHeuristics);
   }
 };
 
@@ -117,6 +117,11 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   _old_generation = new ShenandoahOldGeneration(max_workers());
   _young_generation->initialize_heuristics(mode());
   _old_generation->initialize_heuristics(mode());
+}
+
+bool ShenandoahGenerationalHeap::wait_for_old_collection(uint timeout_seconds) {
+  const auto gen_ctrl_thread = static_cast<ShenandoahGenerationalControlThread*>(_control_thread);
+  return gen_ctrl_thread->wait_for_gc_cycle(GCCause::_shenandoah_concurrent_gc, old_generation(), timeout_seconds);
 }
 
 void ShenandoahGenerationalHeap::initialize_serviceability() {

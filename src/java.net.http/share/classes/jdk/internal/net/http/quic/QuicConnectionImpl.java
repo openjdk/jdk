@@ -1122,12 +1122,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         }
 
         private long bumpMaxData() {
-            long newMaxData = processedData + desiredBufferSize;
+            var processedData = this.processedData;
+            long newMaxData = processedData >= MAX_VL_INTEGER - desiredBufferSize
+                    ? MAX_VL_INTEGER
+                    : processedData + desiredBufferSize;
             long maxData = this.maxData;
-            if (newMaxData - maxData < (desiredBufferSize / 5)) {
-                return 0;
-            }
-            while (maxData < newMaxData) {
+            while (maxData < newMaxData) {                                      // CAS-loop on `maxData`
+                if (newMaxData != MAX_VL_INTEGER &&                             // Do not skip the final clamp-to-max bump
+                        newMaxData - maxData < (desiredBufferSize / 5)) {       // Skip small ordinary bumps
+                    break;
+                }
                 if (MAX_RCV_DATA.compareAndSet(this, maxData, newMaxData))
                     return newMaxData;
                 maxData = this.maxData;
@@ -1136,7 +1140,12 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         }
 
         public boolean needSendMaxData() {
-             return maxData - processedData < desiredBufferSize/2;
+            long maxData = this.maxData;
+            // `maxData` is the value that was already sent to the peer.
+            // `bumpMaxData()` clamps `maxData` at `MAX_VL_INTEGER`.
+            // Once `maxData == MAX_VL_INTEGER`, there is no larger legal value to advertise.
+            return maxData < MAX_VL_INTEGER &&
+                    maxData - processedData < (desiredBufferSize / 2);
         }
 
         String logTag() { return logTag.get(); }

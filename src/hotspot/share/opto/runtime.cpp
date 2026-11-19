@@ -251,9 +251,6 @@ const TypeFunc* OptoRuntime::_updateBytesAdler32_Type             = nullptr;
 const TypeFunc* OptoRuntime::_osr_end_Type                        = nullptr;
 const TypeFunc* OptoRuntime::_register_finalizer_Type             = nullptr;
 const TypeFunc* OptoRuntime::_vthread_transition_Type             = nullptr;
-#if INCLUDE_JFR
-const TypeFunc* OptoRuntime::_class_id_load_barrier_Type          = nullptr;
-#endif // INCLUDE_JFR
 const TypeFunc* OptoRuntime::_dtrace_method_entry_exit_Type       = nullptr;
 const TypeFunc* OptoRuntime::_dtrace_object_alloc_Type            = nullptr;
 
@@ -2239,22 +2236,6 @@ static const TypeFunc* make_register_finalizer_Type() {
   return TypeFunc::make(domain, range);
 }
 
-#if INCLUDE_JFR
-static const TypeFunc* make_class_id_load_barrier_Type() {
-  // create input type (domain)
-  const Type **fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::KLASS;
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms + 1, fields);
-
-  // create result type (range)
-  fields = TypeTuple::fields(0);
-
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms + 0, fields);
-
-  return TypeFunc::make(domain,range);
-}
-#endif // INCLUDE_JFR
-
 //-----------------------------------------------------------------------------
 static const TypeFunc* make_dtrace_method_entry_exit_Type() {
   // create input type (domain)
@@ -2450,9 +2431,6 @@ void OptoRuntime::initialize_types() {
   _osr_end_Type                       = make_osr_end_Type();
   _register_finalizer_Type            = make_register_finalizer_Type();
   _vthread_transition_Type            = make_vthread_transition_Type();
-  JFR_ONLY(
-    _class_id_load_barrier_Type       = make_class_id_load_barrier_Type();
-  )
   _dtrace_method_entry_exit_Type      = make_dtrace_method_entry_exit_Type();
   _dtrace_object_alloc_Type           = make_dtrace_object_alloc_Type();
 }

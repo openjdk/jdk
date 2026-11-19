@@ -98,6 +98,10 @@ VM_ShenandoahFullGC::VM_ShenandoahFullGC(GCCause::Cause gc_cause, ShenandoahFull
   : VM_ShenandoahReferenceOperation(full_gc->generation()), _gc_cause(gc_cause), _full_gc(full_gc) {
 }
 
+bool VM_ShenandoahFullGC::allow_nested_vm_operations() const {
+  return !ShenandoahHeap::heap()->is_full_gc_in_progress();
+}
+
 void VM_ShenandoahFullGC::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Full GC", SvcGCMarker::FULL);
   set_active_generation();

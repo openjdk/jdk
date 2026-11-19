@@ -31,7 +31,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ann">isi-Obolo</language>
 			<language type="anp">isi-Angika</language>
 			<language type="ar">isi-Arabic</language>
-			<language type="ar_001">Isi-Arabic Esivamile Sesimanje</language>
 			<language type="arn">isi-Mapuche</language>
 			<language type="arp">isi-Arapaho</language>
 			<language type="ars">isi-Najdi Arabic</language>
@@ -45,7 +44,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="az">isi-Azerbaijani</language>
 			<language type="az" alt="short">isi-Azeria</language>
 			<language type="ba">isi-Bashkir</language>
-			<language type="bal">IsiBaluchi</language>
+			<language type="bal">isiBaluchi</language>
 			<language type="ban">isi-Balinese</language>
 			<language type="bas">isi-Basaa</language>
 			<language type="be">isi-Belarusian</language>
@@ -100,8 +99,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="dar">isi-Dargwa</language>
 			<language type="dav">isi-Taita</language>
 			<language type="de">isi-German</language>
-			<language type="de_AT">isi-Austrian German</language>
-			<language type="de_CH">Isi-Swiss High German</language>
 			<language type="dgr">isi-Dogrib</language>
 			<language type="dje">isi-Zarma</language>
 			<language type="doi">isi-Dogri</language>
@@ -249,10 +246,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">isi-Lezghian</language>
 			<language type="lg">isi-Ganda</language>
 			<language type="li">isi-Limburgish</language>
-			<language type="lij">IsiLigurian</language>
+			<language type="lij">isi-Ligurian</language>
 			<language type="lil">isi-Lillooet</language>
 			<language type="lkt">isi-Lakota</language>
-			<language type="lmo">IsiLombard</language>
+			<language type="lmo">isi-Lombard</language>
 			<language type="ln">isi-Lingala</language>
 			<language type="lo">isi-Lao</language>
 			<language type="lou">isi-Louisiana Creole</language>
@@ -344,6 +341,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pcm">isi-Nigerian Pidgin</language>
 			<language type="pis">Pijin</language>
 			<language type="pl">isi-Polish</language>
+			<language type="pms">isi-Piedmontese</language>
 			<language type="pqm">Maliseet-Passamaquoddy</language>
 			<language type="prg">isi-Prussian</language>
 			<language type="ps">isi-Pashto</language>
@@ -466,7 +464,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">isi-Wu Chinese</language>
 			<language type="xal">isi-Kalmyk</language>
 			<language type="xh">isiXhosa</language>
-			<language type="xnr">Kangri</language>
+			<language type="xnr">isi-Kangri</language>
 			<language type="xog">isi-Soga</language>
 			<language type="yav">isi-Yangben</language>
 			<language type="ybb">isi-Yemba</language>
@@ -475,13 +473,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">isi-Nheengatu</language>
 			<language type="yue">isi-Cantonese</language>
 			<language type="yue" alt="menu">isi-Chinese, Cantonese</language>
-			<language type="za">IsiZhuang</language>
+			<language type="za">isiZhuang</language>
 			<language type="zgh">isi-Moroccan Tamazight esivamile</language>
 			<language type="zh">isi-Chinese</language>
 			<language type="zh" alt="menu">isi-Chinese, Mandarin</language>
 			<language type="zh_Hans">isi-Chinese (esenziwe-lula)</language>
-			<language type="zh_Hans" alt="long">Isi-Chinese Esenziwe Lula</language>
-			<language type="zh_Hant">Isi-Chinese Sasendulo</language>
 			<language type="zh_Hant" alt="long">isi-Chinese (sasendulo)</language>
 			<language type="zu">isiZulu</language>
 			<language type="zun">isi-Zuni</language>
@@ -773,7 +769,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ES">i-Spain</territory>
 			<territory type="ET">i-Ethiopia</territory>
 			<territory type="EU">i-European Union</territory>
-			<territory type="EZ">I-Eurozone</territory>
+			<territory type="EZ">i-Eurozone</territory>
 			<territory type="FI">i-Finland</territory>
 			<territory type="FJ">i-Fiji</territory>
 			<territory type="FK">i-Falkland Islands</territory>
@@ -803,7 +799,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="GY">i-Guyana</territory>
 			<territory type="HK">i-Hong Kong SAR China</territory>
 			<territory type="HK" alt="short">i-Hong Kong</territory>
-			<territory type="HM">I-Heard &amp; McDonald Island</territory>
+			<territory type="HM">i-Heard &amp; McDonald Island</territory>
 			<territory type="HN">i-Honduras</territory>
 			<territory type="HR">i-Croatia</territory>
 			<territory type="HT">i-Haiti</territory>
@@ -948,8 +944,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TZ">i-Tanzania</territory>
 			<territory type="UA">i-Ukraine</territory>
 			<territory type="UG">i-Uganda</territory>
-			<territory type="UM">I-U.S. Outlying Islands</territory>
-			<territory type="UN">I-United Nations</territory>
+			<territory type="UM">i-U.S. Outlying Islands</territory>
+			<territory type="UN">i-United Nations</territory>
 			<territory type="UN" alt="short">ifulegi</territory>
 			<territory type="US">i-United States</territory>
 			<territory type="US" alt="short">i-U.S</territory>
@@ -1092,18 +1088,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="collation">Uhlelo lokuhlunga</key>
 			<key type="colNormalization">Ukuhlelwa Okulinganisiwe</key>
 			<key type="colNumeric">Ukuhlelwa Ngezinombolo</key>
+			<key type="colReorder">Umbhalo</key>
 			<key type="colStrength">Amandla Okuhlelwa</key>
 			<key type="currency">Imali</key>
+			<key type="d0">Transform Destination</key>
+			<key type="dx">Dictionary Break Exclusions</key>
 			<key type="em">Emoji Presentation</key>
+			<key type="fw">Usuku lokuqala lweviki</key>
+			<key type="h0">Mixed-in</key>
 			<key type="hc">Umjikelezo wehora (12 vs 24</key>
+			<key type="i0">Indlela Yokufaka</key>
+			<key type="k0">Ikhibhodi</key>
+			<key type="kv">Okuphezulu Kuzitshiwe</key>
 			<key type="lb">I-Line Break Style</key>
 			<key type="lw">Umugqa Uyanqamuka phakathi Kwamagama</key>
+			<key type="m0">Guqula Imithetho</key>
 			<key type="ms">Isistimu yokulinganisa</key>
+			<key type="mu">Iyunithi Yokulinganisa</key>
 			<key type="numbers">Izinombolo</key>
+			<key type="rg">Region For Supplemental Data</key>
+			<key type="s0">Transform Source</key>
+			<key type="sd">Region Subdivision</key>
 			<key type="ss">Sentence Break After Abbr.</key>
+			<key type="t">Transform</key>
+			<key type="t0">Machine Translated</key>
 			<key type="timezone">Isikhathi Sendawo</key>
 			<key type="va">Okokwehlukanisa Kwasendaweni</key>
 			<key type="x">Yokusetshenziswa Ngasese</key>
+			<key type="x0">Private-Use Transform</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">ikhalenda lesi-Buddhist</type>
@@ -1123,15 +1135,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">Ikhalenda lesi-Hebrew</type>
 			<type key="calendar" type="hebrew" scope="core">Hebrew</type>
 			<type key="calendar" type="indian">i-Indian National Calender</type>
+			<type key="calendar" type="indian" scope="core">Indian National</type>
 			<type key="calendar" type="islamic">Ikhalenda lesi-Hijri</type>
 			<type key="calendar" type="islamic" scope="core">Hijri</type>
 			<type key="calendar" type="islamic-civil">Ikhalenda lesiHijri (tabular, civil epoch)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Hijri (tabular, civil epoch)</type>
 			<type key="calendar" type="islamic-rgsa" draft="provisional">Ikhalenda yesi-Islamic (Saudi Arabia, sighting)</type>
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijri, Saudi Arabia sighting</type>
 			<type key="calendar" type="islamic-tbla" draft="provisional">Ikhalenda yesi-Islamic (tabular, astronomical epoch)</type>
+			<type key="calendar" type="islamic-tbla" scope="core">Hijri (tabular, astronomical epoch)</type>
 			<type key="calendar" type="islamic-umalqura">Ikhalenda lesiHijri (Umm al-Qura))</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hijri (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Ikhalenda le-ISO-8601</type>
+			<type key="calendar" type="iso8601" scope="core">Gregorian</type>
 			<type key="calendar" type="japanese">Ikhalenda lesi-Japanese</type>
 			<type key="calendar" type="japanese" scope="core">Japanese</type>
 			<type key="calendar" type="persian">Ikhalenda lesi-Persian</type>
@@ -1147,43 +1163,72 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colBackwards" type="no">Hlela Izindlela Zokuphimisela Ngokujwayelekile</type>
 			<type key="colBackwards" type="yes">Ukuhlelwa Kokuphimisela Kuhlehlisiwe</type>
 			<type key="colCaseFirst" type="lower">Hlela Okwezinhlamvu Eziphansi Kuqala</type>
+			<type key="colCaseFirst" type="lower" scope="core">Lowercase</type>
 			<type key="colCaseFirst" type="no">Hlela Ngokwenhlamvu Ezejwayelekile</type>
+			<type key="colCaseFirst" type="no" scope="core">Lowercase</type>
 			<type key="colCaseFirst" type="upper">Hlela Izinhlamvu Ezinkulu Kuqala</type>
+			<type key="colCaseFirst" type="upper" scope="core">Uppercase</type>
 			<type key="colCaseLevel" type="no">Hlela Okungancikile Ezinkinobhweni</type>
 			<type key="colCaseLevel" type="yes">Hlela Okuncike Ekumeni Kwezinkinobho</type>
 			<type key="collation" type="compat">Ukuhlunga Kwangaphambilini, ngokusebenzisana</type>
+			<type key="collation" type="compat" scope="core">Ukuhambisana</type>
 			<type key="collation" type="dictionary">Uhlelo Lokuhlunga Lesichazamazwi</type>
+			<type key="collation" type="dictionary" scope="core">Isichazamazwi</type>
 			<type key="collation" type="ducet">Ukuhlunga okuzenzakalelayo kwe-Unicode</type>
 			<type key="collation" type="ducet" scope="core">Default Unicode</type>
 			<type key="collation" type="emoji">Uhlelo Lokuhlunga le-Emoji</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
 			<type key="collation" type="eor">Imithetho Yokuhlunga ye-European</type>
+			<type key="collation" type="eor" scope="core">Imithetho yase-Europe</type>
 			<type key="collation" type="phonebook">Ukuhlunga kwebhuku lefoni</type>
+			<type key="collation" type="phonebook" scope="core">Ifonibhuku</type>
 			<type key="collation" type="phonetic">Hlela Ngokwefonetiki</type>
+			<type key="collation" type="phonetic" scope="core">Ifonetiki</type>
 			<type key="collation" type="pinyin">Ukuhlunga nge-Pinyin</type>
+			<type key="collation" type="pinyin" scope="core">Pinyin</type>
 			<type key="collation" type="search">Usesho olujwayelekile</type>
 			<type key="collation" type="search" scope="core">Sesha</type>
 			<type key="collation" type="searchjl">Sesha nge-Hangul Ongwaqa Basekuqaleni</type>
+			<type key="collation" type="searchjl" scope="core">Korean initial consonant</type>
 			<type key="collation" type="standard">I-oda yokuhlunga ejwayelekile</type>
 			<type key="collation" type="standard" scope="core">Standard</type>
 			<type key="collation" type="stroke">Ukuhlunga kwe-Stroke</type>
+			<type key="collation" type="stroke" scope="core">Stroke</type>
 			<type key="collation" type="traditional">Ukuhlunga ngokisiko</type>
+			<type key="collation" type="traditional" scope="core">Traditional</type>
 			<type key="collation" type="unihan">Ukuhlunga kwe-Radical-Stroke</type>
+			<type key="collation" type="unihan" scope="core">Radical-Stroke</type>
 			<type key="collation" type="zhuyin">Ukuhlunga kwe-Zhuyin</type>
+			<type key="collation" type="zhuyin" scope="core">Zhuyin</type>
 			<type key="colNormalization" type="no">Hlela Ngaphandle Kokulinganisa</type>
 			<type key="colNormalization" type="yes">Ukuhlelwa Khekhodi Enye Kulinganisiwe</type>
 			<type key="colNumeric" type="no">Hlela Izinhlamvu Zenombolo Ngazinye</type>
 			<type key="colNumeric" type="yes">Hlela Izinhlamvu Ngokwezinombolo</type>
+			<type key="colReorder" type="currency" scope="core">Imali</type>
+			<type key="colReorder" type="digit" scope="core">Amadijithi</type>
+			<type key="colReorder" type="punct" scope="core">Izimpawu zokuloba</type>
+			<type key="colReorder" type="space" scope="core">Whitespace</type>
+			<type key="colReorder" type="symbol" scope="core">Uphawu</type>
 			<type key="colStrength" type="identical">Hlela konke</type>
+			<type key="colStrength" type="identical" scope="core">Konke</type>
 			<type key="colStrength" type="primary">Hlela Izinhlamvu Zaphansi Kuphela</type>
+			<type key="colStrength" type="primary" scope="core">Base Letters Only</type>
 			<type key="colStrength" type="quaternary">Hlola Ukuphimisela/Ukuma kwezinhlamvu/Ububanzi/i-Kana</type>
+			<type key="colStrength" type="quaternary" scope="core">Base, Accents, Case, Variants, Kana</type>
 			<type key="colStrength" type="secondary">Hlela Ukuphimisela</type>
+			<type key="colStrength" type="secondary" scope="core">Base, Accents</type>
 			<type key="colStrength" type="tertiary">Hlela Ukuphimisela/Ukuma kwezinhlamvu/Ububanzi</type>
+			<type key="colStrength" type="tertiary" scope="core">Base, Accents, Case, Variants</type>
 			<type key="d0" type="fwidth">i-Fullwidth</type>
 			<type key="d0" type="hwidth">Ubude obuhhafu</type>
 			<type key="d0" type="npinyin">Okwezinombolo</type>
 			<type key="em" type="default" scope="core">Default</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
 			<type key="em" type="text" scope="core">Umbhalo</type>
+			<type key="hc" type="c12">isistimu yamahora angu-12</type>
+			<type key="hc" type="c12" scope="core">12</type>
+			<type key="hc" type="c24">isistimu yamahora angu-24</type>
+			<type key="hc" type="c24" scope="core">24</type>
 			<type key="hc" type="h11">isistimu yamahora angu-12 (0-11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">isistimu yamahora angu-12 (1-12)</type>
@@ -1192,6 +1237,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">isistimu yamahora angu-24 (1-24)</type>
 			<type key="hc" type="h24" scope="core">24 (1–24)</type>
+			<type key="kv" type="currency" scope="core">Shift Spaces, izimpawu zokuloba, zonke izimpawu</type>
+			<type key="kv" type="punct" scope="core">Shift spaces, izimpawu zokuloba</type>
+			<type key="kv" type="space" scope="core">Shift spaces, izimpawu zokuloba</type>
+			<type key="kv" type="symbol" scope="core">Shift spaces, izimpawu zokuloba, izimpawu okungezona ezemali</type>
 			<type key="lb" type="loose">i-Line Break Style exegayo</type>
 			<type key="lb" type="loose" scope="core">Khulula</type>
 			<type key="lb" type="normal">i-Line Break Style ekahle</type>
@@ -1213,8 +1262,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="ahom">Izinombolo ze-Ahom</type>
 			<type key="numbers" type="arab">amadijithi esi-Arabic-Indic</type>
 			<type key="numbers" type="arabext">amadijithi esi-Arabic-Indic eluliwe</type>
+			<type key="numbers" type="arabext" scope="core">I-Arabic-Indic Eyeluliwe</type>
 			<type key="numbers" type="armn">izinombolo zesi-Armenian</type>
 			<type key="numbers" type="armnlow">izinombolo ezincane zesi-Armenian</type>
+			<type key="numbers" type="armnlow" scope="core">Ofeleba abancane be-Armenian</type>
 			<type key="numbers" type="bali">Izinombolo ze-Balinese</type>
 			<type key="numbers" type="beng">izinombolo zesi-Bengali</type>
 			<type key="numbers" type="brah">Izinombolo ze-Brahmi</type>
@@ -1225,56 +1276,80 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="diak">Izinombolo ze-Dives Akuru</type>
 			<type key="numbers" type="ethi">izinombolo zesi-Ethiopic</type>
 			<type key="numbers" type="finance">Izinombolo Zezomnotho</type>
+			<type key="numbers" type="finance" scope="core">Ezezimali</type>
 			<type key="numbers" type="fullwide">ububanzi obugcwele bamadijithi</type>
+			<type key="numbers" type="fullwide" scope="core">Ububanzi obugcwele</type>
 			<type key="numbers" type="geor">izinombolo zesi-Georgian</type>
 			<type key="numbers" type="gong">Izinombolo ze-Gunjala Gondi</type>
 			<type key="numbers" type="gonm">Izinombolo ze-Masaram Gondi</type>
 			<type key="numbers" type="grek">izinombolo zesi-Greek</type>
 			<type key="numbers" type="greklow">izinombolo ezincane zesi-Greek</type>
+			<type key="numbers" type="greklow" scope="core">Ofeleba abancane besiGreek</type>
 			<type key="numbers" type="gujr">amadijithi esi-Gujarati</type>
 			<type key="numbers" type="guru">amadijithi esi-Gurmukhi</type>
+			<type key="numbers" type="hanidays" scope="core">Han-character day-of-month numbering for traditional calendars</type>
 			<type key="numbers" type="hanidec">izinombolo zezinombolo zesi-Chinese</type>
+			<type key="numbers" type="hanidec" scope="core">Isistimu yedesimali yokuma kusetshenziswa ama-ideograph ezinombolo zesiChinese njengamadijithi</type>
 			<type key="numbers" type="hans">izinombolo ezicacile zesi-Chinese</type>
 			<type key="numbers" type="hansfin">izinombolo ezicacile zezezimali zesi-Chinese</type>
+			<type key="numbers" type="hansfin" scope="core">Ezezimali zesiChinese esenziwe lula</type>
 			<type key="numbers" type="hant">izinombolo zosiko zesi-Chinese</type>
 			<type key="numbers" type="hantfin">izinombolo zosiko zezezimali zesi-Chinese</type>
+			<type key="numbers" type="hantfin" scope="core">Ezezimali Zosiko zesiChinese</type>
 			<type key="numbers" type="hebr">izinombolo zesi-Hebrew</type>
 			<type key="numbers" type="hmng">Izinombolo ze-Pahawh Hmong</type>
 			<type key="numbers" type="hmnp">Izinombolo ze-Nyiakeng Puachue Hmong</type>
 			<type key="numbers" type="java">Izinombolo ze-Javanese</type>
 			<type key="numbers" type="jpan">izinombolo zesi-Japanese</type>
 			<type key="numbers" type="jpanfin">izinombolo zezezimali zesi-Japanese</type>
+			<type key="numbers" type="jpanfin" scope="core">Ezezimali zesiJapanese</type>
+			<type key="numbers" type="jpanyear" scope="core">Japanese first-year Gannen numbering</type>
 			<type key="numbers" type="kali">Izinombolo ze-Kayah Li</type>
 			<type key="numbers" type="khmr">amadijithi esi-Khmer</type>
 			<type key="numbers" type="knda">amadijithi esi-Kannada</type>
 			<type key="numbers" type="lana">Izinombolo ze-Tai Tham Hora</type>
 			<type key="numbers" type="lanatham">Izinombolo ze-Tai Tham Tham</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (ecclesiastical)</type>
 			<type key="numbers" type="laoo">amadijithi esi-Lao</type>
 			<type key="numbers" type="latn">amadijithi ase-Western</type>
 			<type key="numbers" type="lepc">Izinombolo ze-Lepcha</type>
 			<type key="numbers" type="limb">Izinombolo ze-Limbu</type>
 			<type key="numbers" type="mathbold">Izinombolo ze-Mathematical Bold</type>
+			<type key="numbers" type="mathbold" scope="core">Mathematical bold</type>
 			<type key="numbers" type="mathdbl">Izinombolo ze-Mathematical Double-Struck</type>
+			<type key="numbers" type="mathdbl" scope="core">Mathematical double-struck</type>
 			<type key="numbers" type="mathmono">Izinombolo ze-Mathematical Monospace</type>
+			<type key="numbers" type="mathmono" scope="core">Mathematical monospace</type>
 			<type key="numbers" type="mathsanb">Izinombolo ze-Mathematical Sans-Serif Bold</type>
+			<type key="numbers" type="mathsanb" scope="core">Mathematical sans-serif bold</type>
 			<type key="numbers" type="mathsans">Izinombolo ze-Mathematical Sans-Serif</type>
+			<type key="numbers" type="mathsans" scope="core">Mathematical sans-serif</type>
 			<type key="numbers" type="mlym">amadijithi esi-Malayalam</type>
 			<type key="numbers" type="modi">Izinombolo ze-Modi</type>
 			<type key="numbers" type="mong">i-Mongolian Digits</type>
 			<type key="numbers" type="mroo">Izinombolo ze-Mro</type>
 			<type key="numbers" type="mtei">Izinombolo ze-Meetei Mayek</type>
 			<type key="numbers" type="mymr">amadijithi esi-Maynmar</type>
+			<type key="numbers" type="mymrepka" scope="core">Myanmar Eastern Pwo Karen</type>
+			<type key="numbers" type="mymrpao" scope="core">Myanmar Pao</type>
 			<type key="numbers" type="mymrshan">Izinombolo ze-Myanmar Shan</type>
+			<type key="numbers" type="mymrshan" scope="core">Myanmar Shan</type>
 			<type key="numbers" type="mymrtlng">Izinombolo ze-Myanmar Tai Laing</type>
+			<type key="numbers" type="mymrtlng" scope="core">Myanmar Tai Laing</type>
 			<type key="numbers" type="native">Izinkinobho Zasendaweni</type>
+			<type key="numbers" type="native" scope="core">Native digits</type>
 			<type key="numbers" type="nkoo">Izinombolo ze-N’Ko</type>
 			<type key="numbers" type="olck">Izinombolo ze-Ol Chiki</type>
 			<type key="numbers" type="orya">Amadijithi ase-Odia</type>
 			<type key="numbers" type="osma">Izinombolo ze-Osmanya</type>
+			<type key="numbers" type="outlined" scope="core">Outlined</type>
 			<type key="numbers" type="rohg">Izinombolo ze-Hanifi Rohingya</type>
 			<type key="numbers" type="roman">izinombolo zesi-Roman</type>
+			<type key="numbers" type="roman" scope="core">Roman uppercase</type>
 			<type key="numbers" type="romanlow">izinombolo zesi-Tamil</type>
+			<type key="numbers" type="romanlow" scope="core">Roman lowercase</type>
 			<type key="numbers" type="saur">Izinombolo ze-Saurashtra</type>
+			<type key="numbers" type="segment" scope="core">Segmented</type>
 			<type key="numbers" type="shrd">Izinombolo ze-Sharada</type>
 			<type key="numbers" type="sind">Izinombolo ze-Khudawadi</type>
 			<type key="numbers" type="sinh">Izinombolo ze-Sinhala Lith</type>
@@ -1284,17 +1359,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="talu">Izinombolo ze-New Tai Lue</type>
 			<type key="numbers" type="taml">izinombolo zesi-Tamil</type>
 			<type key="numbers" type="tamldec">amadijithi esi-Tamil</type>
+			<type key="numbers" type="tamldec" scope="core">Modern Tamil</type>
 			<type key="numbers" type="telu">amadijithi esi-Telegu</type>
 			<type key="numbers" type="thai">amadijithi esi-Thai</type>
 			<type key="numbers" type="tibt">amadijithi esi-Tibetan</type>
 			<type key="numbers" type="tirh">Izinombolo ze-Tirhuta</type>
 			<type key="numbers" type="traditional">Izinombolo Ezijwayelekile</type>
+			<type key="numbers" type="traditional" scope="core">Traditional numerals</type>
 			<type key="numbers" type="vaii">Izinhlazu Zezinombolo ze-Vai</type>
 			<type key="numbers" type="wara">Izinombolo ze-Warang Citi</type>
 			<type key="numbers" type="wcho">Izinombolo ze-Wancho</type>
 			<type key="ss" type="none" scope="core">Cishiwe</type>
 			<type key="ss" type="standard" scope="core">Vuliwe</type>
+			<type key="t0" type="und">Unspecified Machine Translation</type>
+			<type key="va" type="posix" scope="core">POSIX variant</type>
 		</types>
+		<typeValues>
+			<typeValue type="no">Cishiwe</typeValue>
+			<typeValue type="yes">Vuliwe</typeValue>
+		</typeValues>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">i-Metric</measurementSystemName>
 			<measurementSystemName type="UK">i-UK</measurementSystemName>
@@ -1425,22 +1508,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMMEd">E, MMM d, y G</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Md">M/d</dateFormatItem>
-						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yM">yM</dateFormatItem>
-						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
-						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
+						<dateFormatItem id="yMd">M-d-y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, M-d-y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
-						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">M/d/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, MMM d, y G</dateFormatItem>
@@ -1449,6 +1527,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0}–{1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
 							<greatestDifference id="h">h–h a</greatestDifference>
@@ -1467,50 +1548,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="a">h a – h a v</greatestDifference>
 							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="M">
-							<greatestDifference id="M">M–M</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">M/d – M/d</greatestDifference>
 							<greatestDifference id="M">M/d – M/d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, M/d – E, M/d</greatestDifference>
-							<greatestDifference id="M">E, M/d – E, M/d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM–MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">MMM d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
 							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y">y–y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y</greatestDifference>
-							<greatestDifference id="y">M/y – M/y</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">M/d/y – M/d/y</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y</greatestDifference>
 							<greatestDifference id="y">M/d/y – M/d/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, M/d/y – E, M/d/y</greatestDifference>
-							<greatestDifference id="M">E, M/d/y – E, M/d/y</greatestDifference>
 							<greatestDifference id="y">E, M/d/y – E, M/d/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
 							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
 							<greatestDifference id="M">MMM d – MMM d, y</greatestDifference>
 							<greatestDifference id="y">MMM d, y – MMM d, y</greatestDifference>
 						</intervalFormatItem>
@@ -1518,10 +1572,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">E, MMM d – E, MMM d, y</greatestDifference>
 							<greatestDifference id="M">E, MMM d – E, MMM d, y</greatestDifference>
 							<greatestDifference id="y">E, MMM d, y – E, MMM d, y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1679,7 +1729,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>M/d/yy</pattern>
+							<pattern>y-MM-dd</pattern>
 							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -1731,7 +1781,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
@@ -1741,78 +1790,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="contributed">MMMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="contributed">EEE, MMMM d, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h">h – h a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH – HH</greatestDifference>
-						</intervalFormatItem>
+						<intervalFormatRanges>
+							<intervalFormatRange type="non-numeric">{0} – {1}</intervalFormatRange>
+						</intervalFormatRanges>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="h">h – h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH – HH v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="M">
-							<greatestDifference id="M">M – M</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Md">
-							<greatestDifference id="d">M/d – M/d</greatestDifference>
-							<greatestDifference id="M">M/d – M/d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, M/d – E, M/d</greatestDifference>
-							<greatestDifference id="M">E, M/d – E, M/d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
 							<greatestDifference id="M">E, MMM d – E, MMM d</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y</greatestDifference>
-							<greatestDifference id="y">M/y – M/y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">M/d/y – M/d/y</greatestDifference>
-							<greatestDifference id="M">M/d/y – M/d/y</greatestDifference>
-							<greatestDifference id="y">M/d/y – M/d/y</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, M/d/y – E, M/d/y</greatestDifference>
-							<greatestDifference id="M">E, M/d/y – E, M/d/y</greatestDifference>
 							<greatestDifference id="y">E, M/d/y – E, M/d/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM – MMM y</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">MMM d – d, y</greatestDifference>
 							<greatestDifference id="M">MMM d – MMM d, y</greatestDifference>
 							<greatestDifference id="y">MMM d, y – MMM d, y</greatestDifference>
 						</intervalFormatItem>
@@ -1839,18 +1850,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">kulo nyaka</relative>
 				<relative type="1">unyaka ozayo</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">onyakeni ongu-{0} ozayo</relativeTimePattern>
+					<relativeTimePattern count="one">eminyakeni engu-{0} ezayo</relativeTimePattern>
 					<relativeTimePattern count="other">eminyakeni engu-{0} ezayo</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} unyaka odlule</relativeTimePattern>
+					<relativeTimePattern count="one">{0} iminyaka edlule</relativeTimePattern>
 					<relativeTimePattern count="other">{0} iminyaka edlule</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">eminyakeni engu-{0} ezayo</relativeTimePattern>
+					<relativeTimePattern count="other">eminyakeni engu-{0} ezayo</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} unyaka odlule</relativeTimePattern>
+					<relativeTimePattern count="one">{0} iminyaka edlule</relativeTimePattern>
 					<relativeTimePattern count="other">{0} unyaka odlule</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">eminyakeni engu-{0} ezayo</relativeTimePattern>
+					<relativeTimePattern count="other">eminyakeni engu-{0} ezayo</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter">
@@ -1859,15 +1880,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">le kota</relative>
 				<relative type="1">ikota ezayo</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">kwikota engu-{0} ezayo</relativeTimePattern>
+					<relativeTimePattern count="one">kumakota angu-{0} ezayo</relativeTimePattern>
 					<relativeTimePattern count="other">kumakota angu-{0} ezayo</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ikota edlule</relativeTimePattern>
+					<relativeTimePattern count="one">{0} amakota adlule</relativeTimePattern>
 					<relativeTimePattern count="other">{0} amakota adlule</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">kumakota angu-{0} ezayo</relativeTimePattern>
+					<relativeTimePattern count="other">kumakota angu-{0} ezayo</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} amakota adlule</relativeTimePattern>
 					<relativeTimePattern count="other">{0} amakota edlule</relativeTimePattern>
@@ -1885,7 +1910,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">le nyanga</relative>
 				<relative type="1">inyanga ezayo</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">enyangeni engu-{0}</relativeTimePattern>
+					<relativeTimePattern count="one">ezinyangeni ezingu-{0} ezizayo</relativeTimePattern>
 					<relativeTimePattern count="other">ezinyangeni ezingu-{0} ezizayo</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
@@ -1915,18 +1940,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">leli viki</relative>
 				<relative type="1">iviki elizayo</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">evikini elingu-{0}</relativeTimePattern>
+					<relativeTimePattern count="one">emavikini angu-{0}</relativeTimePattern>
 					<relativeTimePattern count="other">emavikini angu-{0}</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">evikini elingu-{0} eledlule</relativeTimePattern>
+					<relativeTimePattern count="one">amaviki angu-{0} edlule</relativeTimePattern>
 					<relativeTimePattern count="other">amaviki angu-{0} edlule</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>evikini le-{0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<relativeTime type="future">
-					<relativeTimePattern count="one">evikini elingu-{0} elizayo</relativeTimePattern>
+					<relativeTimePattern count="one">emavikini angu-{0} ezayo</relativeTimePattern>
 					<relativeTimePattern count="other">emavikini angu-{0} ezayo</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
@@ -1951,39 +1976,49 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="1">kusasa</relative>
 				<relative type="2">usuku olulandela olwakusasa</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">osukwini olungu-{0} oluzayo</relativeTimePattern>
+					<relativeTimePattern count="one">ezinsukwini ezingu-{0} ezizayo</relativeTimePattern>
 					<relativeTimePattern count="other">ezinsukwini ezingu-{0} ezizayo</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">osukwini olungu-{0} olwedlule</relativeTimePattern>
+					<relativeTimePattern count="one">ezinsukwini ezingu-{0} ezedlule.</relativeTimePattern>
 					<relativeTimePattern count="other">ezinsukwini ezingu-{0} ezedlule.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="day-short">
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} usuku olwedlule</relativeTimePattern>
+					<relativeTimePattern count="one">{0} izinsuku ezedlule</relativeTimePattern>
 					<relativeTimePattern count="other">{0} izinsuku ezedlule</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="dayOfYear-short">
-				<displayName>usuku lonyaka</displayName>
+			<field type="day-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ezinsukwini ezingu-{0} ezizayo</relativeTimePattern>
+					<relativeTimePattern count="other">ezinsukwini ezingu-{0} ezizayo</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} izinsuku ezedlule</relativeTimePattern>
+					<relativeTimePattern count="other">{0} izinsuku ezedlule</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>Day Of Year</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>Usuku evikini</displayName>
 			</field>
-			<field type="weekdayOfMonth">
-				<displayName>usuku lwenyanga</displayName>
+			<field type="weekdayOfMonth-short">
+				<displayName>Weekday Of Month</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">iSonto eledlule</relative>
 				<relative type="0">kuleli Sonto</relative>
 				<relative type="1">iSonto elizayo</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">kwiSonto elingu-{0}</relativeTimePattern>
+					<relativeTimePattern count="one">kumaSonto angu-{0}</relativeTimePattern>
 					<relativeTimePattern count="other">kumaSonto angu-{0}</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} iSonto eledlule</relativeTimePattern>
+					<relativeTimePattern count="one">{0} amaSonto edlule</relativeTimePattern>
 					<relativeTimePattern count="other">{0} amaSonto edlule</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2002,11 +2037,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">kulo Msombuluko</relative>
 				<relative type="1">uMsombuluko ozayo</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">ngoMsombuluko o-{0}</relativeTimePattern>
+					<relativeTimePattern count="one">ngeMisombuluko e-{0}</relativeTimePattern>
 					<relativeTimePattern count="other">ngeMisombuluko e-{0}</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">ngoMsombuluko o-{0} odlule</relativeTimePattern>
+					<relativeTimePattern count="one">ngeMsombuluko e-{0} edlule</relativeTimePattern>
 					<relativeTimePattern count="other">ngeMsombuluko e-{0} edlule</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2025,11 +2060,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">kulo Lwesibili</relative>
 				<relative type="1">uLwesibili oluzayo</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">ngoLwesibili olu-{0}</relativeTimePattern>
+					<relativeTimePattern count="one">ngoLwezibili abangu-{0}</relativeTimePattern>
 					<relativeTimePattern count="other">ngoLwezibili abangu-{0}</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">ngoLwesibili ongu-{0} owedlule</relativeTimePattern>
+					<relativeTimePattern count="one">ngoLwezibili abangu-{0} abedlule</relativeTimePattern>
 					<relativeTimePattern count="other">ngoLwezibili abangu-{0} abedlule</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2048,11 +2083,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">kulo Lwesithathu</relative>
 				<relative type="1">uLwesithathu oluzayo</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">ngoLwesithathu o-{0}</relativeTimePattern>
+					<relativeTimePattern count="one">ngoLwezithathu abangu-{0}</relativeTimePattern>
 					<relativeTimePattern count="other">ngoLwezithathu abangu-{0}</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">ngoLwesithathu olungu-{0} olwedlule</relativeTimePattern>
+					<relativeTimePattern count="one">ngoLwezithathu abangu-{0} abedlule</relativeTimePattern>
 					<relativeTimePattern count="other">ngoLwezithathu abangu-{0} abedlule</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2071,11 +2106,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">kulo Lwesine</relative>
 				<relative type="1">uLwesine oluzayo</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">ngoLwesine olu-{0}</relativeTimePattern>
+					<relativeTimePattern count="one">ngoLwezine abangu-{0}</relativeTimePattern>
 					<relativeTimePattern count="other">ngoLwezine abangu-{0}</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">ngoLwesine olu-{0} olwedlule</relativeTimePattern>
+					<relativeTimePattern count="one">ngoLwezine abangu-{0} abedlule</relativeTimePattern>
 					<relativeTimePattern count="other">ngoLwezine abangu-{0} abedlule</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2120,11 +2155,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">kulo Mgqibelo</relative>
 				<relative type="1">uMgqibelo ozayo</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">ngoMgqibelo o-{0}</relativeTimePattern>
+					<relativeTimePattern count="one">ngeMgqibelo engu-{0}</relativeTimePattern>
 					<relativeTimePattern count="other">ngeMgqibelo engu-{0}</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">ngoMgqibelo o-{0} odlule</relativeTimePattern>
+					<relativeTimePattern count="one">ngeMgqibelo engu-{0} edlule</relativeTimePattern>
 					<relativeTimePattern count="other">ngeMgqibelo engu-{0} edlule</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2145,17 +2180,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Ihora</displayName>
 				<relative type="0">leli hora</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">ehoreni elingu-{0} elizayo</relativeTimePattern>
+					<relativeTimePattern count="one">emahoreni angu-{0} ezayo</relativeTimePattern>
 					<relativeTimePattern count="other">emahoreni angu-{0} ezayo</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ihora eledlule</relativeTimePattern>
+					<relativeTimePattern count="one">emahoreni angu-{0} edlule</relativeTimePattern>
 					<relativeTimePattern count="other">emahoreni angu-{0} edlule</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="hour-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">emahoreni angu-{0} ezayo</relativeTimePattern>
+					<relativeTimePattern count="other">emahoreni angu-{0} ezayo</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="hour-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">emahoreni angu-{0} ezayo</relativeTimePattern>
+					<relativeTimePattern count="other">emahoreni angu-{0} ezayo</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ihora eledlule</relativeTimePattern>
+					<relativeTimePattern count="one">{0} amphora edlule</relativeTimePattern>
 					<relativeTimePattern count="other">{0} amahora edlule</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2163,11 +2208,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Iminithi</displayName>
 				<relative type="0">leli minithi</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">kuminithi elingu-{0} elizayo</relativeTimePattern>
+					<relativeTimePattern count="one">kumaminithi angu-{0} ezayo</relativeTimePattern>
 					<relativeTimePattern count="other">kumaminithi angu-{0} ezayo</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} iminithi eledlule</relativeTimePattern>
+					<relativeTimePattern count="one">{0} amaminithi edlule</relativeTimePattern>
+					<relativeTimePattern count="other">{0} amaminithi edlule</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">kumaminithi angu-{0} ezayo</relativeTimePattern>
+					<relativeTimePattern count="other">kumaminithi angu-{0} ezayo</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">kumaminithi angu-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">kumaminithi angu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} amaminithi edlule</relativeTimePattern>
 					<relativeTimePattern count="other">{0} amaminithi edlule</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2175,11 +2236,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Isekhondi</displayName>
 				<relative type="0">manje</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">kusekhondi elingu-{0} elizayo</relativeTimePattern>
+					<relativeTimePattern count="one">kumasekhondi angu-{0} ezayo</relativeTimePattern>
 					<relativeTimePattern count="other">kumasekhondi angu-{0} ezayo</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} isekhondi eledlule</relativeTimePattern>
+					<relativeTimePattern count="one">{0} amasekhondi edlule</relativeTimePattern>
+					<relativeTimePattern count="other">{0} amasekhondi edlule</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">kumasekhondi angu-{0} ezayo</relativeTimePattern>
+					<relativeTimePattern count="other">kumasekhondi angu-{0} ezayo</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} amasekhondi edlule</relativeTimePattern>
+					<relativeTimePattern count="other">{0} amasekhondi edlule</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">kumasekhondi angu-{0} ezayo</relativeTimePattern>
+					<relativeTimePattern count="other">kumasekhondi angu-{0} ezayo</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} amasekhondi edlule</relativeTimePattern>
 					<relativeTimePattern count="other">{0} amasekhondi edlule</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2662,9 +2743,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>i-Libreville</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
-				<long>
-					<daylight>isikhathi sase-British sasehlobo</daylight>
-				</long>
 				<exemplarCity>i-London</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
@@ -2755,9 +2833,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>i-Jayapura</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
-				<long>
-					<daylight>isikhathi sase-Irish esivamile</daylight>
-				</long>
 				<exemplarCity>i-Dublin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
@@ -2852,9 +2927,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Beirut">
 				<exemplarCity>i-Beirut</exemplarCity>
-			</zone>
-			<zone type="America/St_Lucia">
-				<exemplarCity>I-St. Lucia</exemplarCity>
 			</zone>
 			<zone type="Europe/Vaduz">
 				<exemplarCity>i-Vaduz</exemplarCity>
@@ -3444,6 +3516,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Harare">
 				<exemplarCity>i-Harare</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>Acre Time</generic>
+					<standard>Acre Standard Time</standard>
+					<daylight>Acre Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Isikhathi sase-Afghanistan</standard>
@@ -3626,6 +3705,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Isikhathi sase-Brasilia sasehlobo</daylight>
 				</long>
 			</metazone>
+			<metazone type="British">
+				<long>
+					<generic>Isikhathi sase-British</generic>
+					<daylight>Isikhathi sase-British sasehlobo</daylight>
+				</long>
+			</metazone>
 			<metazone type="Brunei">
 				<long>
 					<standard>Isikhathi sase-Brunei Darussalam</standard>
@@ -3799,6 +3884,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Isikhathi sase-Greenwich Mean</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Isikhathi saseGreenland</generic>
+					<standard>Greenland Standard Time</standard>
+					<daylight>Greenland Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Isikhathi sase-East Greenland</generic>
@@ -3825,13 +3917,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Hawaii">
 				<long>
-					<standard>Isikhathi sase-Hawaii-Aleutia esijwayelekile</standard>
+					<standard>Isikhathi saseHawaii</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Isikhathi sase-Hawaii-Aleutia</generic>
-					<standard>Isikhathi sase-Hawaii-Aleutia esijwayelekile</standard>
+					<standard>Isikhathi saseHawaii-Aleutia Esijwayelekile</standard>
 					<daylight>Isikhathi sase-Hawaii-Aleutia sasemini</daylight>
 				</long>
 			</metazone>
@@ -3886,6 +3978,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Isikhathi sase-Iran sasemini</daylight>
 				</long>
 			</metazone>
+			<metazone type="Irish">
+				<long>
+					<generic>Isikhathi sase-Irish</generic>
+					<daylight>Isikhathi sase-Irish esivamile</daylight>
+				</long>
+			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Isikhathi sase-Irkutsk</generic>
@@ -3909,9 +4007,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic>esase-Petropavlovsk-Kamchatski Time</generic>
-					<standard>esase-Petropavlovsk-Kamchatski Standard Time</standard>
-					<daylight>esase-Petropavlovsk-Kamchatski Summer Time</daylight>
+					<generic>Esase-Petropavlovsk-Kamchatski Time</generic>
+					<standard>Esase-Petropavlovsk-Kamchatski Standard Time</standard>
+					<daylight>Esase-Petropavlovsk-Kamchatski Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan">
@@ -4180,14 +4278,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<generic>esase-Samara Time</generic>
 					<standard>esase-Samara Standard Time</standard>
-					<daylight>esase-Samara Summer Time</daylight>
+					<daylight>Isikhathi Sasehlobo eSamara</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Isikhathi sase-Samoa</generic>
 					<standard>Isikhathi sase-Samoa esivamile</standard>
-					<daylight>Isikhathi sase-Samoa sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4254,6 +4350,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Isikhathi sase-Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Türkiye Time</generic>
+					<standard>Türkiye Standard Time</standard>
+					<daylight>Türkiye Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Isikhathi sase-Turkmenistan</generic>
@@ -4271,6 +4374,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Isikhathi sase-Uruguay</generic>
 					<standard>Isikhathi sase-Uruguay esijwayelekile</standard>
 					<daylight>Isikhathi sase-Uruguay sasehlobo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard>Ürümqi Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -4541,8 +4649,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="CNH">
 				<displayName>i-CNH</displayName>
-				<displayName count="one">i-Chinese yuan (offshore)</displayName>
-				<displayName count="other">i-CNH</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>i-Chinese Yuan</displayName>
@@ -4904,7 +5010,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="TTD">
 				<displayName>i-Trinidad and Tobago Dollar</displayName>
-				<displayName count="one">i-Trinidad and Tobago dollar</displayName>
+				<displayName count="one">i-Trinidad &amp; Tobago dollar</displayName>
 				<displayName count="other">i-Trinidad &amp; Tobago dollars</displayName>
 			</currency>
 			<currency type="TWD">
@@ -4954,9 +5060,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>i-East Caribbean Dollar</displayName>
 			</currency>
 			<currency type="XCG">
-				<displayName>Caribbean guilder</displayName>
-				<displayName count="one">Caribbean guilder</displayName>
-				<displayName count="other">Caribbean guilders</displayName>
+				<displayName>i-Caribbean guilder</displayName>
+				<displayName count="one">I-Caribbean guilder</displayName>
+				<displayName count="other">ama-Caribbean guilders</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>i-West African CFA Franc</displayName>
@@ -4983,9 +5089,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>i-Zambian Kwacha</displayName>
 			</currency>
 			<currency type="ZWG">
-				<displayName>Zimbabwean Gold</displayName>
-				<displayName count="one">Zimbabwean gold</displayName>
-				<displayName count="other">Zimbabwean gold</displayName>
+				<displayName>igolide laseZimbabwe</displayName>
+				<displayName count="one">igolide laseZimbabwe</displayName>
+				<displayName count="other">igolide laseZimbabwe</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -5004,9 +5110,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p-2">
 				<unitPrefixPattern>centi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-3">
-				<unitPrefixPattern>milli{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-6">
 				<unitPrefixPattern>micro{0}</unitPrefixPattern>
@@ -5034,15 +5137,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p2">
 				<unitPrefixPattern>hecto{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p3">
-				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p6">
-				<unitPrefixPattern>mega{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p9">
-				<unitPrefixPattern>giga{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p12">
 				<unitPrefixPattern>tera{0}</unitPrefixPattern>
@@ -5138,8 +5232,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="digital-bit">
 				<displayName>bits</displayName>
-				<unitPattern count="one">{0} i-bit</unitPattern>
-				<unitPattern count="other">{0} ama-bits</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<unitPattern count="one">{0} dec</unitPattern>
@@ -5179,8 +5271,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-joule">
 				<displayName>joule</displayName>
-				<unitPattern count="one">{0} i-joule</unitPattern>
-				<unitPattern count="other">{0} J</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<unitPattern count="one">{0} MP</unitPattern>
@@ -5188,7 +5278,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>amachashazi ngesenthimitha</displayName>
-				<unitPattern count="one">{0} ichashazi ngesenthimitha</unitPattern>
+				<unitPattern count="one">{0} ichashazi ngesentimitha</unitPattern>
 				<unitPattern count="other">{0} amachashazi ngesethimitha</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
@@ -5215,14 +5305,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>knot</displayName>
 				<unitPattern count="one">{0} amafindo</unitPattern>
 				<unitPattern count="other">{0} amafindo</unitPattern>
-			</unit>
-			<unit type="volume-dessert-spoon">
-				<unitPattern count="one">{0} sipuni dessert</unitPattern>
-				<unitPattern count="other">{0} dstspn</unitPattern>
-			</unit>
-			<unit type="volume-dessert-spoon-imperial">
-				<unitPattern count="one">{0} Imp. isipuni dessert</unitPattern>
-				<unitPattern count="other">{0} dstspn Imp</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<unitPattern count="one">{0} Imp. quart</unitPattern>
@@ -5305,7 +5387,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-second">
 				<displayName>amasekhondi</displayName>
-				<unitPattern count="one">{0} sekhondi</unitPattern>
+				<unitPattern count="one">{0} sec</unitPattern>
 				<unitPattern count="other">{0} sec</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">

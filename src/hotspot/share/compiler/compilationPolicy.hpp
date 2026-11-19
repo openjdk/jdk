@@ -377,7 +377,6 @@ class CompilationPolicy : AllStatic {
   static CompLevel initial_compile_level(const methodHandle& method);
   // Return highest level possible
   static CompLevel highest_compile_level();
-  static void dump();
 };
 
 #endif // SHARE_COMPILER_COMPILATIONPOLICY_HPP

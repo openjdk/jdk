@@ -61,7 +61,7 @@ import jdk.test.lib.jfr.TestClassLoader;
  *      jdk.jfr.event.runtime.TestAgentEvent
  *      testJavaStatic
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Djdk.attach.allowAttachSelf=true
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf=true
  *      jdk.jfr.event.runtime.TestAgentEvent
  *      testJavaDynamic
  *

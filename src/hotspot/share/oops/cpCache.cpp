@@ -23,13 +23,12 @@
  */
 
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -409,9 +408,9 @@ void ConstantPoolCache::remove_unshareable_info() {
   _archived_references_index = -1;
   if (CDSConfig::is_dumping_heap()) {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(constant_pool());
-    oop rr = HeapShared::scratch_resolved_references(src_cp);
+    oop rr = AOTHeap::scratch_resolved_references(src_cp);
     if (rr != nullptr) {
-      _archived_references_index = HeapShared::append_root(rr);
+      _archived_references_index = AOTHeap::append_root(rr);
     }
   }
 #endif
@@ -434,7 +433,7 @@ void ConstantPoolCache::iterate_resolved_field_entries_with_archivability_check(
       resolved = true;
     }
 
-    bool archivable = (resolved && !CDSConfig::is_dumping_preimage_static_archive() &&
+    bool archivable = (resolved && !CDSConfig::is_dumping_aot_configuration() &&
                        AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index));
 
     // The state of strict static field accesses is reset in InstanceKlass::remove_unshareable_info
@@ -500,7 +499,7 @@ void ConstantPoolCache::iterate_resolved_method_entries_with_archivability_check
                     (rme->is_resolved(Bytecodes::_invokestatic) && VM_Version::supports_fast_class_init_checks());
 
     const char* rejection_reason = nullptr;
-    bool archivable = (resolved && !CDSConfig::is_dumping_preimage_static_archive() &&
+    bool archivable = (resolved && !CDSConfig::is_dumping_aot_configuration() &&
                        can_archive_resolved_method(src_cp, rme, rejection_reason));
     f(cp, src_cp, cp_index, rme, resolved, archivable, rejection_reason);
   }
@@ -557,7 +556,7 @@ void ConstantPoolCache::iterate_resolved_indy_entries_with_archivability_check(F
     ResolvedIndyEntry* rie = _resolved_indy_entries->adr_at(i);
     int cp_index = rie->constant_pool_index();
     bool resolved = rie->is_resolved();
-    bool archivable = (resolved && !CDSConfig::is_dumping_preimage_static_archive() &&
+    bool archivable = (resolved && !CDSConfig::is_dumping_aot_configuration() &&
                        AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index));
     f(cp, src_cp, i, cp_index, rie, resolved, archivable);
   }
@@ -698,7 +697,6 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
   set_reference_map(nullptr);
-#if INCLUDE_CDS
   if (_resolved_indy_entries != nullptr) {
     MetadataFactory::free_array<ResolvedIndyEntry>(data, _resolved_indy_entries);
     _resolved_indy_entries = nullptr;
@@ -711,7 +709,6 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
     MetadataFactory::free_array<ResolvedMethodEntry>(data, _resolved_method_entries);
     _resolved_method_entries = nullptr;
   }
-#endif
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -719,12 +716,12 @@ oop ConstantPoolCache::archived_references() {
   if (_archived_references_index < 0) {
     return nullptr;
   }
-  return HeapShared::get_root(_archived_references_index);
+  return AOTHeap::get_root(_archived_references_index);
 }
 
 void ConstantPoolCache::clear_archived_references() {
   if (_archived_references_index >= 0) {
-    HeapShared::clear_root(_archived_references_index);
+    AOTHeap::clear_root(_archived_references_index);
     _archived_references_index = -1;
   }
 }

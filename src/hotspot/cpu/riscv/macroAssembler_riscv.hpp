@@ -525,8 +525,8 @@ class MacroAssembler: public Assembler {
     return false;
   }
 
-  address emit_reloc_call_address_stub(int insts_call_instruction_offset, address target);
-  static int max_reloc_call_address_stub_size();
+  address emit_address_stub(int insts_call_instruction_offset, address target);
+  static int max_address_stub_size();
 
   void emit_static_call_stub();
   static int static_call_stub_size();
@@ -1402,8 +1402,8 @@ INSN(sd_release, sd, sd_rl);
   //     address stub:
   //       <64-bit destination address>
   //
-  //    To change the destination we simply atomically store the new
-  //    address in the stub section.
+  //    Retargeting atomically updates the address slot and may replace the final
+  //    jalr with jal, or vice versa, via optimize_call().
   //    There is a benign race in that the other thread might observe the old
   //    64-bit destination address before it observes the new address. That does
   //    not matter because the destination method has been invalidated, so there
@@ -1535,8 +1535,6 @@ INSN(sd_release, sd, sd_rl);
   address zero_words(Register ptr, Register cnt);
   void fill_words(Register base, Register cnt, Register value);
   void zero_memory(Register addr, Register len, Register tmp);
-  void zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2);
-
   void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt);
   void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt, Register tmp);
 
@@ -1559,6 +1557,13 @@ INSN(sd_release, sd, sd_rl);
 
   // Helper routine processing the slow path of NaN when converting float to float16
   void float_to_float16_NaN(Register dst, FloatRegister src, Register tmp1, Register tmp2);
+
+  // j.l.Float.float16ToFloat and j.l.Float.floatToFloat16, with the NaN handling
+  // emitted inline. C2 uses C2_MacroAssembler::float16_to_float() and
+  // C2_MacroAssembler::float_to_float16() instead, which keep it out of line.
+  // Both clobber t0 and t1.
+  void flt16_to_flt(FloatRegister dst, Register src);
+  void flt_to_flt16(Register dst, FloatRegister src, FloatRegister ftmp);
 
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
@@ -1749,9 +1754,8 @@ public:
                    int* receiver_offset);
 
 #ifdef ASSERT
-  // Template short-hand support to clean-up after a failed call to trampoline
-  // call generation (see trampoline_call() below), when a set of Labels must
-  // be reset (before returning).
+  // Reset labels that would otherwise remain unbound when returning
+  // after a failed reloc_call().
   template<typename Label, typename... More>
   void reset_labels(Label& lbl, More&... more) {
     lbl.reset(); reset_labels(more...);

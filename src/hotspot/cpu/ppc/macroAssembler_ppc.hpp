@@ -118,12 +118,6 @@ class MacroAssembler: public Assembler {
                                          bool add_relocation = true, bool emit_dummy_addr = false) {
     calculate_address_from_global_toc(dst, target(addr), hi16, lo16, add_relocation, emit_dummy_addr, false);
   }
-  inline void calculate_address_from_global_toc_hi16only(Register dst, address addr) {
-    calculate_address_from_global_toc(dst, addr, true, false);
-  };
-  inline void calculate_address_from_global_toc_lo16only(Register dst, address addr) {
-    calculate_address_from_global_toc(dst, addr, false, true);
-  };
 
   inline static bool is_calculate_address_from_global_toc_at(address a, address bound);
   // Returns address of first instruction in sequence.
@@ -131,11 +125,19 @@ class MacroAssembler: public Assembler {
   static address get_address_of_calculate_address_from_global_toc_at(address a, address addr);
 
 #ifdef _LP64
+ private:
+  static bool _compressed_oops_fit_in_31_bits;
+
+ public:
+  static void initialize_compressed_oops_fit_in_31_bits();
+  inline static bool compressed_oops_fit_in_31_bits() {
+    return _compressed_oops_fit_in_31_bits;
+  }
   // Patch narrow oop constant.
-  inline static bool is_set_narrow_oop(address a, address bound);
+  inline static bool is_set_narrow_oop(address a, address lower_bound);
   // Returns address of first instruction in sequence.
-  static address patch_set_narrow_oop(address a, address bound, narrowOop data);
-  static narrowOop get_narrow_oop(address a, address bound);
+  static address patch_set_narrow_oop(address a, address lower_bound, narrowOop data);
+  static narrowOop get_narrow_oop(address a, address lower_bound);
 #endif
 
   inline static bool is_load_const_at(address a);
@@ -185,6 +187,9 @@ class MacroAssembler: public Assembler {
   // Convert between half precision float encoded into a short and a float in a FloatRegister.
   void inline f2hf(Register dst, FloatRegister src, FloatRegister tmp);
   void inline hf2f(FloatRegister dst, Register src);
+  // Bitwise move between an int and a float (reinterpret, not a numeric conversion).
+  void inline intBitsToFloat(FloatRegister dst, Register src);
+  void inline floatToIntBits(Register dst, FloatRegister src, FloatRegister tmp);
 
   inline void pd_patch_instruction(address branch, address target, const char* file, int line);
   NOT_PRODUCT(static void pd_print_patched_instruction(address branch);)

@@ -22,11 +22,11 @@
  *
  */
 
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/dictionary.hpp"
@@ -84,7 +84,6 @@ bool vmClasses::contain(Klass* k) {
 bool vmClasses::resolve(vmClassID id, TRAPS) {
   InstanceKlass** klassp = &_klasses[as_int(id)];
 
-#if INCLUDE_CDS
   if (CDSConfig::is_using_archive() && !JvmtiExport::should_post_class_prepare()) {
     InstanceKlass* k = *klassp;
     assert(k->defined_by_boot_loader(), "must be");
@@ -93,7 +92,6 @@ bool vmClasses::resolve(vmClassID id, TRAPS) {
     resolve_shared_class(k, loader_data, Handle(), CHECK_false);
     return true;
   }
-#endif // INCLUDE_CDS
 
   if (!is_loaded(*klassp)) {
     int sid = vm_class_name_ids[as_int(id)];
@@ -125,11 +123,9 @@ void vmClasses::resolve_all(TRAPS) {
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
   ClassLoader::classLoader_init2(THREAD);
 
-#if INCLUDE_CDS
   if (CDSConfig::is_using_aot_linked_classes()) {
     AOTLinkedClassBulkLoader::preload_classes(THREAD);
   }
-#endif
 
   // Preload commonly used klasses
   vmClassID scan = vmClassID::FIRST;
@@ -139,7 +135,7 @@ void vmClasses::resolve_all(TRAPS) {
 #if INCLUDE_CDS
   if (CDSConfig::is_using_archive()) {
 #if INCLUDE_CDS_JAVA_HEAP
-    if (HeapShared::is_loading() && HeapShared::is_loading_mapping_mode()) {
+    if (AOTHeap::is_loading() && AOTHeap::is_loading_mapping_mode()) {
       // It's unsafe to access the archived heap regions before they
       // are fixed up, so we must do the fixup as early as possible
       // before the archived java objects are accessed by functions
@@ -155,8 +151,8 @@ void vmClasses::resolve_all(TRAPS) {
       // Mirrors are restored after java.lang.Class is loaded.
       AOTMappedHeapLoader::fixup_region();
     }
-    if (HeapShared::is_archived_heap_in_use() && !CDSConfig::is_using_full_module_graph()) {
-      // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
+    if (AOTHeap::is_archived_heap_in_use() && !CDSConfig::is_using_full_module_graph()) {
+      // Need to remove all the archived java.lang.Module objects from AOTHeap::roots().
       AOTModules::clear_archived_oops();
     }
 #endif // INCLUDE_CDS_JAVA_HEAP

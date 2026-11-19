@@ -851,7 +851,7 @@ void Metaspace::global_initialize() {
   LogTarget(Info, gc, metaspace) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    CDS_ONLY(AOTMetaspace::print_on(&ls);)
+    AOTMetaspace::print_on(&ls);
     Metaspace::print_compressed_class_space(&ls);
     CompressedKlassPointers::print_mode(&ls);
   }

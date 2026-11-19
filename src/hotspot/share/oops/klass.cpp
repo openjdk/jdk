@@ -22,16 +22,16 @@
  *
  */
 
+#include "cds/aotHeap.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -135,7 +135,7 @@ void Klass::set_name(Symbol* n) {
   }
 
   if (CDSConfig::is_dumping_archive() && is_instance_klass()) {
-    SystemDictionaryShared::init_dumptime_info(InstanceKlass::cast(this));
+    AOTSystemDictionary::init_dumptime_info(InstanceKlass::cast(this));
   }
 }
 
@@ -816,7 +816,7 @@ void Klass::remove_java_mirror() {
     Klass* src_k = ArchiveBuilder::current()->get_source_addr(this);
     oop orig_mirror = src_k->java_mirror();
     if (orig_mirror == nullptr) {
-      assert(CDSConfig::is_dumping_final_static_archive(), "sanity");
+      assert(CDSConfig::is_dumping_with_input_archive(), "sanity");
       if (is_instance_klass()) {
         assert(InstanceKlass::cast(this)->defined_by_other_loaders(), "sanity");
       } else {
@@ -826,9 +826,9 @@ void Klass::remove_java_mirror() {
         assert(InstanceKlass::cast(k)->defined_by_other_loaders(), "sanity");
       }
     } else {
-      oop scratch_mirror = HeapShared::scratch_java_mirror(orig_mirror);
+      oop scratch_mirror = AOTHeap::scratch_java_mirror(orig_mirror);
       if (scratch_mirror != nullptr) {
-        _archived_mirror_index = HeapShared::append_root(scratch_mirror);
+        _archived_mirror_index = AOTHeap::append_root(scratch_mirror);
       }
     }
   }
@@ -880,7 +880,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(aot, mirror)("%s has raw archived mirror", external_name());
-    if (HeapShared::is_archived_heap_in_use()) {
+    if (AOTHeap::is_archived_heap_in_use()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);
@@ -908,12 +908,12 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
 #if INCLUDE_CDS_JAVA_HEAP
 oop Klass::archived_java_mirror() {
   assert(has_archived_mirror_index(), "must have archived mirror");
-  return HeapShared::get_root(_archived_mirror_index);
+  return AOTHeap::get_root(_archived_mirror_index);
 }
 
 void Klass::clear_archived_mirror_index() {
   if (_archived_mirror_index >= 0) {
-    HeapShared::clear_root(_archived_mirror_index);
+    AOTHeap::clear_root(_archived_mirror_index);
   }
   _archived_mirror_index = -1;
 }
@@ -1070,31 +1070,12 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
 void Klass::validate_array_description(const ArrayDescription& ad) {
   if (is_identity_class() || is_array_klass() || is_interface() ||
       (is_instance_klass() && InstanceKlass::cast(this)->access_flags().is_abstract())) {
-    assert(ad._layout_kind == LayoutKind::REFERENCE, "Cannot support flattening");
-    assert(ad._kind == KlassKind::RefArrayKlassKind, "Must be a reference array");
+    assert(!ad.is_flat(), "Cannot support flattening");
   } else {
     assert(is_value_klass(), "Must be");
     ValueKlass* vk = ValueKlass::cast(this);
-    switch(ad._layout_kind) {
-      case LayoutKind::BUFFERED:
-        fatal("Invalid layout for an array");
-        break;
-      case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-        assert(vk->has_null_free_atomic_layout(), "Sanity check");
-        break;
-      case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
-        assert(vk->has_null_free_non_atomic_layout(), "Sanity check");
-        break;
-      case LayoutKind::NULLABLE_ATOMIC_FLAT:
-        assert(vk->has_nullable_atomic_layout(), "Sanity check");
-        break;
-      case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
-        assert(vk->has_nullable_non_atomic_layout(), "Sanity check)");
-        break;
-      case LayoutKind::REFERENCE:
-        break;
-      default:
-        ShouldNotReachHere();
+    if (ad.is_flat()) {
+      assert(vk->is_layout_supported(ad.flat_layout().layout_kind()), "Sanity check");
     }
   }
 }

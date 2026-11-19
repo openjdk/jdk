@@ -1301,15 +1301,15 @@ class CallStubImpl {
 
  public:
 
-  // Size of call trampoline stub.
+  // Size of call stub.
   // This doesn't need to be accurate to the byte, but it
   // must be larger than or equal to the real size of the stub.
-  static uint size_call_trampoline() {
+  static uint size_call_stub() {
     return MacroAssembler::trampoline_stub_size;
   }
 
-  // number of relocations needed by a call trampoline stub
-  static uint reloc_call_trampoline() {
+  // Number of relocations needed by a call stub.
+  static uint reloc_call_stub() {
     return 5;
   }
 
@@ -1336,35 +1336,21 @@ int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
 }
 
-bool MachConstantBaseNode::requires_postalloc_expand() const { return true; }
-void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
-  iRegLdstOper *op_dst = new iRegLdstOper();
-  MachNode *m1 = new loadToc_hiNode();
-  MachNode *m2 = new loadToc_loNode();
-
-  m1->add_req(nullptr);
-  m2->add_req(nullptr, m1);
-  m1->_opnds[0] = op_dst;
-  m2->_opnds[0] = op_dst;
-  m2->_opnds[1] = op_dst;
-  ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-  ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-  nodes->push(m1);
-  nodes->push(m2);
-}
-
 void MachConstantBaseNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {
-  // Is postalloc expanded.
-  ShouldNotReachHere();
+  Register dst = as_Register(ra_->get_encode(this));
+  __ calculate_address_from_global_toc(dst, __ method_toc());
 }
 
 uint MachConstantBaseNode::size(PhaseRegAlloc* ra_) const {
-  return 0;
+  return 8;
 }
 
 #ifndef PRODUCT
 void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
-  st->print("-- \t// MachConstantBaseNode (empty encoding)");
+  char reg_str[128];
+  ra_->dump_register(this, reg_str, sizeof(reg_str));
+  st->print("ADDIS   %s, R29, DISP.hi \t// MachConstantBaseNode: load TOC hi\n\t"
+            "ADDI    %s, %s, DISP.lo \t// load TOC lo", reg_str, reg_str, reg_str);
 }
 #endif
 
@@ -1696,7 +1682,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
   if (src_lo == dst_lo && src_hi == dst_hi)
     return size;            // Self copy, no move.
 
-  if (bottom_type()->isa_vect() != nullptr && ideal_reg() == Op_VecX) {
+  if (bottom_type()->is_vect() && ideal_reg() == Op_VecX) {
     int src_offset = ra_->reg2offset(src_lo);
     int dst_offset = ra_->reg2offset(dst_lo);
     DEBUG_ONLY(int algm = MIN2(RegMask::num_registers(ideal_reg()), (int)Matcher::stack_alignment_in_slots()) * VMRegImpl::stack_slot_size);
@@ -2565,7 +2551,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     nodes._large_lo = m2;
     nodes._small = nullptr;
     nodes._last = nodes._large_lo;
-    assert(m2->bottom_type()->isa_long(), "must be long");
+    assert(m2->bottom_type()->is_long(), "must be long");
   } else {
     loadConLNode *m2 = new loadConLNode();
 
@@ -2588,7 +2574,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     nodes._large_lo = nullptr;
     nodes._small = m2;
     nodes._last = nodes._small;
-    assert(m2->bottom_type()->isa_long(), "must be long");
+    assert(m2->bottom_type()->is_long(), "must be long");
   }
 
   return nodes;
@@ -2660,7 +2646,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     nodes._replicated = m4;
     nodes._small = nullptr;
     nodes._last = nodes._replicated;
-    assert(m2->bottom_type()->isa_long(), "must be long");
+    assert(m2->bottom_type()->is_long(), "must be long");
   } else {
     loadConLNode *m2 = new  loadConLNode();
     mtvsrdNode *m3 = new  mtvsrdNode();
@@ -2697,7 +2683,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     nodes._moved = m3;
     nodes._replicated = m4;
     nodes._last = nodes._replicated;
-    assert(m2->bottom_type()->isa_long(), "must be long");
+    assert(m2->bottom_type()->is_long(), "must be long");
   }
 
   return nodes;
@@ -2721,7 +2707,7 @@ encode %{
 
     // some asserts
     assert(nodes->length() >= 1, "must have created at least 1 node");
-    assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
+    assert(loadConLNodes._last->bottom_type()->is_long(), "must be long");
   %}
 
   enc_class enc_load_long_constP(iRegLdst dst, immP src, iRegLdst toc) %{
@@ -2828,7 +2814,7 @@ encode %{
 
       nodes->push(m1);
       nodes->push(m2);
-      assert(m2->bottom_type()->isa_ptr(), "must be ptr");
+      assert(m2->bottom_type()->is_ptr(), "must be ptr");
     } else {
       loadConPNode *m2 = new loadConPNode();
 
@@ -2844,7 +2830,7 @@ encode %{
       ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
 
       nodes->push(m2);
-      assert(m2->bottom_type()->isa_ptr(), "must be ptr");
+      assert(m2->bottom_type()->is_ptr(), "must be ptr");
     }
   %}
 
@@ -2918,88 +2904,6 @@ encode %{
     __ stfd($src$$FloatRegister, Idisp, $mem$$base$$Register);
   %}
 
-  enc_class postalloc_expand_encode_oop(iRegNdst dst, iRegPdst src, flagsReg crx) %{
-    cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
-    encodeP_subNode    *n_sub_base = new encodeP_subNode();
-    encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
-    cond_set_0_oopNode *n_cond_set = new cond_set_0_oopNode();
-
-    n_compare->add_req(n_region, n_src);
-    n_compare->_opnds[0] = op_crx;
-    n_compare->_opnds[1] = op_src;
-    n_compare->_opnds[2] = new immL16Oper(0);
-
-    n_sub_base->add_req(n_region, n_src);
-    n_sub_base->_opnds[0] = op_dst;
-    n_sub_base->_opnds[1] = op_src;
-    n_sub_base->_bottom_type = _bottom_type;
-
-    n_shift->add_req(n_region, n_sub_base);
-    n_shift->_opnds[0] = op_dst;
-    n_shift->_opnds[1] = op_dst;
-    n_shift->_bottom_type = _bottom_type;
-
-    n_cond_set->add_req(n_region, n_compare, n_shift);
-    n_cond_set->_opnds[0] = op_dst;
-    n_cond_set->_opnds[1] = op_crx;
-    n_cond_set->_opnds[2] = op_dst;
-    n_cond_set->_bottom_type = _bottom_type;
-
-    ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-    ra_->set_pair(n_sub_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n_compare);
-    nodes->push(n_sub_base);
-    nodes->push(n_shift);
-    nodes->push(n_cond_set);
-
-    assert(!(ra_->is_oop(this)), "sanity"); // This is not supposed to be GC'ed.
-  %}
-
-  enc_class postalloc_expand_decode_oop(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
-    decodeN_shiftNode *n_shift    = new decodeN_shiftNode();
-    cmpN_reg_imm0Node *n_compare  = new cmpN_reg_imm0Node();
-
-    n_compare->add_req(n_region, n_src);
-    n_compare->_opnds[0] = op_crx;
-    n_compare->_opnds[1] = op_src;
-    n_compare->_opnds[2] = new immN_0Oper(TypeNarrowOop::NULL_PTR);
-
-    n_shift->add_req(n_region, n_src);
-    n_shift->_opnds[0] = op_dst;
-    n_shift->_opnds[1] = op_src;
-    n_shift->_bottom_type = _bottom_type;
-
-    decodeN_addNode *n_add_base = new decodeN_addNode();
-    n_add_base->add_req(n_region, n_shift);
-    n_add_base->_opnds[0] = op_dst;
-    n_add_base->_opnds[1] = op_dst;
-    n_add_base->_bottom_type = _bottom_type;
-
-    cond_set_0_ptrNode *n_cond_set = new cond_set_0_ptrNode();
-    n_cond_set->add_req(n_region, n_compare, n_add_base);
-    n_cond_set->_opnds[0] = op_dst;
-    n_cond_set->_opnds[1] = op_crx;
-    n_cond_set->_opnds[2] = op_dst;
-    n_cond_set->_bottom_type = _bottom_type;
-
-    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-    ra_->set_oop(n_cond_set, true);
-
-    ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-    ra_->set_pair(n_add_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n_compare);
-    nodes->push(n_shift);
-    nodes->push(n_add_base);
-    nodes->push(n_cond_set);
-
-  %}
-
   // This enc_class is needed so that scheduler gets proper
   // input mapping for latency computation.
   enc_class enc_andc(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
@@ -3021,14 +2925,6 @@ encode %{
     __ li($dst$$Register, $zero$$constant);
     __ beq($crx$$CondRegister, done);
     __ li($dst$$Register, $notzero$$constant);
-    __ bind(done);
-  %}
-
-  enc_class enc_cmove_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL mem ) %{
-    int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
-    Label done;
-    __ bso($crx$$CondRegister, done);
-    __ ld($dst$$Register, Idisp, $mem$$base$$Register);
     __ bind(done);
   %}
 
@@ -3104,7 +3000,7 @@ encode %{
     if (loadConLNodes._last)     nodes->push(loadConLNodes._last);
 
     assert(nodes->length() >= 1, "must have created at least 1 node");
-    assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
+    assert(loadConLNodes._last->bottom_type()->is_long(), "must be long");
   %}
 
   enc_class postalloc_expand_load_replF_constant_vsx(vecX dst, immF src, iRegLdst toc, iRegLdst tmp) %{
@@ -3772,6 +3668,15 @@ operand immN() %{
   match(ConN);
 
   op_cost(10);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immN_31bit() %{
+  predicate(MacroAssembler::compressed_oops_fit_in_31_bits());
+  match(ConN);
+
+  op_cost(5);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -4493,76 +4398,6 @@ operand indOffset16NarrowAlg4_klass(iRegNsrc reg, immL16Alg4 offset) %{
     index(0x0);
     scale(0x0);
     disp($offset);
-  %}
-%}
-
-//----------Special Memory Operands--------------------------------------------
-// Stack Slot Operand
-//
-// This operand is used for loading and storing temporary values on
-// the stack where a match requires a value to flow through memory.
-operand stackSlotI(sRegI reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegI);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotL(sRegL reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegL);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotP(sRegP reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegP);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotF(sRegF reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegF);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
-  %}
-%}
-
-operand stackSlotD(sRegD reg) %{
-  constraint(ALLOC_IN_RC(stack_slots));
-  op_cost(100);
-  //match(RegD);
-  format %{ "[sp+$reg]" %}
-  interface(MEMORY_INTER) %{
-    base(0x1);   // R1_SP
-    index(0x0);
-    scale(0x0);
-    disp($reg);  // Stack Offset
   %}
 %}
 
@@ -5393,33 +5228,6 @@ instruct loadD_unaligned(regD dst, memory mem) %{
 
 //----------Constants--------------------------------------------------------
 
-// Load MachConstantTableBase: add hi offset to global toc.
-// TODO: Handle hidden register r29 in bundler!
-instruct loadToc_hi(iRegLdst dst) %{
-  effect(DEF dst);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "ADDIS   $dst, R29, DISP.hi \t// load TOC hi" %}
-  size(4);
-  ins_encode %{
-    __ calculate_address_from_global_toc_hi16only($dst$$Register, __ method_toc());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Load MachConstantTableBase: add lo offset to global toc.
-instruct loadToc_lo(iRegLdst dst, iRegLdst src) %{
-  effect(DEF dst, USE src);
-  ins_cost(DEFAULT_COST);
-
-  format %{ "ADDI    $dst, $src, DISP.lo \t// load TOC lo" %}
-  size(4);
-  ins_encode %{
-    __ calculate_address_from_global_toc_lo16only($dst$$Register, __ method_toc());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 // Load 16-bit integer constant 0xssss????
 instruct loadConI16(iRegIdst dst, immI16 src) %{
   match(Set dst src);
@@ -5666,14 +5474,17 @@ instruct rldicl(iRegLdst dst, iRegLsrc src, immI16 shift, immI16 mask_begin) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Optimize DecodeN for disjoint base.
-// Load base of compressed oops into a register
-instruct loadBase(iRegLdst dst) %{
-  effect(DEF dst);
+instruct loadConN_31bit(iRegNdst dst, immN_31bit src) %{
+  match(Set dst src);
+  ins_cost(DEFAULT_COST*2);
 
-  format %{ "LoadConst $dst, heapbase" %}
+  format %{ "LIS/ORI $dst, $src" %}
+  size(8);
   ins_encode %{
-    __ load_const_optimized($dst$$Register, CompressedOops::base(), R0);
+    AddressLiteral addrlit = __ constant_oop_address((jobject)$src$$constant);
+    __ lis($dst$$Register, 0);                              // Will get patched.
+    __ relocate(addrlit.rspec(), /*compressed format*/ 1);
+    __ ori($dst$$Register, $dst$$Register, 0);              // Will get patched.
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6101,66 +5912,6 @@ instruct storeD(memory mem, regD src) %{
 
 // Convert oop pointer into compressed form.
 
-// Nodes for postalloc expand.
-
-// Shift node for expand.
-instruct encodeP_shift(iRegNdst dst, iRegNsrc src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (EncodeP src));
-  predicate(false);
-
-  format %{ "SRDI    $dst, $src, 3 \t// encode" %}
-  size(4);
-  ins_encode %{
-    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Add node for expand.
-instruct encodeP_sub(iRegPdst dst, iRegPdst src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (EncodeP src));
-  predicate(false);
-
-  format %{ "SUB     $dst, $src, oop_base \t// encode" %}
-  ins_encode %{
-    __ sub_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Conditional sub base.
-instruct cond_sub_base(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (EncodeP (Binary crx src1)));
-  predicate(false);
-
-  format %{ "BEQ     $crx, done\n\t"
-            "SUB     $dst, $src1, heapbase \t// encode: subtract base if != nullptr\n"
-            "done:" %}
-  ins_encode %{
-    Label done;
-    __ beq($crx$$CondRegister, done);
-    __ sub_const_optimized($dst$$Register, $src1$$Register, CompressedOops::base(), R0);
-    __ bind(done);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cond_set_0_oop(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (EncodeP (Binary crx src1)));
-  predicate(false);
-
-  format %{ "CMOVE   $dst, $crx eq, 0, $src1 \t// encode: preserve 0" %}
-  size(4);
-  ins_encode %{
-    __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal, $src1$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 // Disjoint narrow oop base.
 instruct encodeP_Disjoint(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
@@ -6175,15 +5926,21 @@ instruct encodeP_Disjoint(iRegNdst dst, iRegPsrc src) %{
 %}
 
 // shift != 0, base != 0
-instruct encodeP_Ex(iRegNdst dst, flagsReg crx, iRegPsrc src) %{
+instruct encodeP(iRegNdst dst, flagsReg crx, iRegPsrc src) %{
   match(Set dst (EncodeP src));
   effect(TEMP crx);
   predicate(n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base_overlaps());
 
-  format %{ "EncodeP $dst, $crx, $src \t// postalloc expanded" %}
-  postalloc_expand( postalloc_expand_encode_oop(dst, src, crx));
+  format %{ "EncodeP $dst, $crx, $src" %}
+  ins_encode %{
+    __ cmpdi($crx$$CondRegister, $src$$Register, 0);
+    __ sub_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
+    __ srdi($dst$$Register, $dst$$Register, CompressedOops::shift());
+    __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // shift != 0, base != 0
@@ -6202,7 +5959,6 @@ instruct encodeP_not_null(iRegNdst dst, iRegPsrc src) %{
 %}
 
 // shift != 0, base == 0
-// TODO: This is the same as encodeP_shift. Merge!
 instruct encodeP_not_null_base_null(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
   predicate(CompressedOops::shift() != 0 &&
@@ -6232,82 +5988,23 @@ instruct encodeP_narrow_oop_shift_0(iRegNdst dst, iRegPsrc src) %{
 
 // Decode nodes.
 
-// Shift node for expand.
-instruct decodeN_shift(iRegPdst dst, iRegPsrc src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (DecodeN src));
-  predicate(false);
-
-  format %{ "SLDI    $dst, $src, #3 \t// DecodeN" %}
-  size(4);
-  ins_encode %{
-    __ sldi($dst$$Register, $src$$Register, CompressedOops::shift());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Add node for expand.
-instruct decodeN_add(iRegPdst dst, iRegPdst src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (DecodeN src));
-  predicate(false);
-
-  format %{ "ADD     $dst, $src, heapbase \t// DecodeN, add oop base" %}
-  ins_encode %{
-    __ add_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// conditianal add base for expand
-instruct cond_add_base(iRegPdst dst, flagsRegSrc crx, iRegPsrc src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  // NOTICE that the rule is nonsense - we just have to make sure that:
-  //  - _matrule->_rChild->_opType == "DecodeN" (see InstructForm::captures_bottom_type() in formssel.cpp)
-  //  - we have to match 'crx' to avoid an "illegal USE of non-input: flagsReg crx" error in ADLC.
-  match(Set dst (DecodeN (Binary crx src)));
-  predicate(false);
-
-  format %{ "BEQ     $crx, done\n\t"
-            "ADD     $dst, $src, heapbase \t// DecodeN: add oop base if $src != nullptr\n"
-            "done:" %}
-  ins_encode %{
-    Label done;
-    __ beq($crx$$CondRegister, done);
-    __ add_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
-    __ bind(done);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cond_set_0_ptr(iRegPdst dst, flagsRegSrc crx, iRegPsrc src1) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  // NOTICE that the rule is nonsense - we just have to make sure that:
-  //  - _matrule->_rChild->_opType == "DecodeN" (see InstructForm::captures_bottom_type() in formssel.cpp)
-  //  - we have to match 'crx' to avoid an "illegal USE of non-input: flagsReg crx" error in ADLC.
-  match(Set dst (DecodeN (Binary crx src1)));
-  predicate(false);
-
-  format %{ "CMOVE   $dst, $crx eq, 0, $src1 \t// decode: preserve 0" %}
-  size(4);
-  ins_encode %{
-    __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal, $src1$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 //  shift != 0, base != 0
-instruct decodeN_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
+instruct decodeN(iRegPdst dst, iRegNsrc src, flagsRegCR0 cr0) %{
   match(Set dst (DecodeN src));
-  predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
-             n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
+  predicate((n->bottom_type()->as_oopptr()->ptr() != TypePtr::NotNull &&
+             n->bottom_type()->as_oopptr()->ptr() != TypePtr::Constant) &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base() != nullptr);
-  ins_cost(4 * DEFAULT_COST); // Should be more expensive than decodeN_Disjoint_isel_Ex.
-  effect(TEMP crx);
+  ins_cost(4 * DEFAULT_COST); // Should be more expensive than decodeN_Disjoint_isel.
+  effect(TEMP cr0);
 
-  format %{ "DecodeN $dst, $src \t// Kills $crx, postalloc expanded" %}
-  postalloc_expand( postalloc_expand_decode_oop(dst, src, crx) );
+  format %{ "DecodeN $dst, $src \t// decode nullable narrow oop" %}
+  ins_encode %{
+    __ sldi_($dst$$Register, $src$$Register, CompressedOops::shift());
+    __ add_const_optimized($dst$$Register, $dst$$Register, CompressedOops::base(), R0);
+    __ isel_0($dst$$Register, CR0, Assembler::equal);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // shift != 0, base == 0
@@ -6325,112 +6022,47 @@ instruct decodeN_nullBase(iRegPdst dst, iRegNsrc src) %{
 %}
 
 // Optimize DecodeN for disjoint base.
-// Shift narrow oop and or it into register that already contains the heap base.
-// Base == dst must hold, and is assured by construction in postaloc_expand.
-instruct decodeN_mergeDisjoint(iRegPdst dst, iRegNsrc src, iRegLsrc base) %{
-  match(Set dst (DecodeN src));
-  effect(TEMP base);
-  predicate(false);
-
-  format %{ "RLDIMI  $dst, $src, shift, 32-shift \t// DecodeN (disjoint base)" %}
-  size(4);
-  ins_encode %{
-    __ rldimi($dst$$Register, $src$$Register, CompressedOops::shift(), 32-CompressedOops::shift());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Optimize DecodeN for disjoint base.
 // This node requires only one cycle on the critical path.
-// We must postalloc_expand as we can not express use_def effects where
-// the used register is L and the def'ed register P.
-instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
+instruct decodeN_Disjoint_notNull(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
   effect(TEMP_DEF dst);
-  predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
-             n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
+  predicate((n->bottom_type()->as_oopptr()->ptr() == TypePtr::NotNull ||
+             n->bottom_type()->as_oopptr()->ptr() == TypePtr::Constant) &&
             CompressedOops::base_disjoint());
   ins_cost(DEFAULT_COST);
 
   format %{ "MOV     $dst, heapbase \t\n"
             "RLDIMI  $dst, $src, shift, 32-shift \t// decode with disjoint base" %}
-  postalloc_expand %{
-    loadBaseNode *n1 = new loadBaseNode();
-    n1->add_req(nullptr);
-    n1->_opnds[0] = op_dst;
-
-    decodeN_mergeDisjointNode *n2 = new decodeN_mergeDisjointNode();
-    n2->add_req(n_region, n_src, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_src;
-    n2->_opnds[2] = op_dst;
-    n2->_bottom_type = _bottom_type;
-
-    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-    ra_->set_oop(n2, true);
-
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n1);
-    nodes->push(n2);
+  ins_encode %{
+    __ load_const_optimized($dst$$Register, CompressedOops::base(), R0);
+    __ rldimi($dst$$Register, $src$$Register, CompressedOops::shift(), 32-CompressedOops::shift());
   %}
+  ins_pipe(pipe_class_default);
 %}
 
-instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
+instruct decodeN_Disjoint_isel(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
   match(Set dst (DecodeN src));
   effect(TEMP_DEF dst, TEMP crx);
-  predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
-             n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
+  predicate((n->bottom_type()->as_oopptr()->ptr() != TypePtr::NotNull &&
+             n->bottom_type()->as_oopptr()->ptr() != TypePtr::Constant) &&
             CompressedOops::base_disjoint());
-  ins_cost(3 * DEFAULT_COST);
+  ins_cost(3 * DEFAULT_COST); // Has a lower latency than decodeN because of a better ILP.
 
   format %{ "DecodeN  $dst, $src \t// decode with disjoint base using isel" %}
-  postalloc_expand %{
-    loadBaseNode *n1 = new loadBaseNode();
-    n1->add_req(nullptr);
-    n1->_opnds[0] = op_dst;
-
-    cmpN_reg_imm0Node *n_compare  = new cmpN_reg_imm0Node();
-    n_compare->add_req(n_region, n_src);
-    n_compare->_opnds[0] = op_crx;
-    n_compare->_opnds[1] = op_src;
-    n_compare->_opnds[2] = new immN_0Oper(TypeNarrowOop::NULL_PTR);
-
-    decodeN_mergeDisjointNode *n2 = new decodeN_mergeDisjointNode();
-    n2->add_req(n_region, n_src, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_src;
-    n2->_opnds[2] = op_dst;
-    n2->_bottom_type = _bottom_type;
-
-    cond_set_0_ptrNode *n_cond_set = new cond_set_0_ptrNode();
-    n_cond_set->add_req(n_region, n_compare, n2);
-    n_cond_set->_opnds[0] = op_dst;
-    n_cond_set->_opnds[1] = op_crx;
-    n_cond_set->_opnds[2] = op_dst;
-    n_cond_set->_bottom_type = _bottom_type;
-
-    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-    ra_->set_oop(n_cond_set, true);
-
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n1);
-    nodes->push(n_compare);
-    nodes->push(n2);
-    nodes->push(n_cond_set);
+  ins_encode %{
+    __ load_const_optimized($dst$$Register, CompressedOops::base(), R0);
+    __ cmplwi($crx$$CondRegister, $src$$Register, 0);
+    __ rldimi($dst$$Register, $src$$Register, CompressedOops::shift(), 32-CompressedOops::shift());
+    __ isel_0($dst$$Register, $crx$$CondRegister, Assembler::equal);
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 // src != 0, shift != 0, base != 0
 instruct decodeN_notNull_addBase(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
-  predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
-             n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
+  predicate((n->bottom_type()->as_oopptr()->ptr() == TypePtr::NotNull ||
+             n->bottom_type()->as_oopptr()->ptr() == TypePtr::Constant) &&
             CompressedOops::shift() != 0 &&
             CompressedOops::base() != nullptr);
   ins_cost(2 * DEFAULT_COST);
@@ -8329,7 +7961,7 @@ instruct lShiftL_regI_immGE32(iRegLdst dst, iRegIorL2I src1, uimmI6_ge32 src2) %
 // Shift amounts >= 32 are handled by lShiftL_regI_immGE32.
 instruct scaledPositiveI2L_lShiftL_convI2L_reg_imm6(iRegLdst dst, iRegIorL2I src1, uimmI5 src2) %{
   match(Set dst (LShiftL (ConvI2L src1) src2));
-  predicate(((ConvI2LNode*)(_kids[0]->_leaf))->type()->is_long()->is_positive_int());
+  predicate(((ConvI2LNode*)(_kids[0]->_leaf))->type()->as_long()->is_positive_int());
 
   format %{ "SLDI    $dst, i2l(positive_int($src1)), $src2" %}
   size(4);
@@ -9176,17 +8808,25 @@ instruct andcL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 
 //----------Moves between int/long and float/double----------------------------
 //
-// The following rules move values from int/long registers/stack-locations
-// to float/double registers/stack-locations and vice versa, without doing any
-// conversions. These rules are used to implement the bit-conversion methods
-// of java.lang.Float etc., e.g.
+// The following rules move values from int/long registers to float/double
+// registers and vice versa, without doing any value conversion. These rules are
+// used to implement the bit-conversion methods of java.lang.Float etc., e.g.
 //   int   floatToIntBits(float value)
 //   float intBitsToFloat(int bits)
 
-instruct moveL2D_reg(regD dst, iRegLsrc src) %{
-  match(Set dst (MoveL2D src));
+instruct moveD2L_reg_reg(iRegLdst dst, regD src) %{
+  match(Set dst (MoveD2L src));
+  format %{ "MFFPRD  $dst, $src \t// MoveD2L" %}
+  size(4);
+  ins_encode %{
+    __ mffprd($dst$$Register, $src$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
-  format %{ "MTFPRD  $dst, $src" %}
+instruct moveL2D_reg_reg(regD dst, iRegLsrc src) %{
+  match(Set dst (MoveL2D src));
+  format %{ "MTFPRD  $dst, $src \t// MoveL2D" %}
   size(4);
   ins_encode %{
     __ mtfprd($dst$$FloatRegister, $src$$Register);
@@ -9207,128 +8847,38 @@ instruct moveI2D_reg(regD dst, iRegIsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-//---------- Chain stack slots between similar types --------
-
-// These are needed so that the rules below can match.
-
-// Load integer from stack slot
-instruct stkI_to_regI(iRegIdst dst, stackSlotI src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LWZ     $dst, $src" %}
-  size(4);
-  ins_encode( enc_lwz(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Store integer to stack slot
-instruct regI_to_stkI(stackSlotI dst, iRegIsrc src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STW     $src, $dst \t// stk" %}
-  size(4);
-  ins_encode( enc_stw(src, dst) ); // rs=rt
-  ins_pipe(pipe_class_memory);
-%}
-
-// Load long from stack slot
-instruct stkL_to_regL(iRegLdst dst, stackSlotL src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LD      $dst, $src \t// long" %}
-  size(4);
-  ins_encode( enc_ld(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Store long to stack slot
-instruct regL_to_stkL(stackSlotL dst, iRegLsrc src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STD     $src, $dst \t// long" %}
-  size(4);
-  ins_encode( enc_std(src, dst) ); // rs=rt
-  ins_pipe(pipe_class_memory);
-%}
-
 //----------Moves between int and float
-
-// Move float value from float stack-location to integer register.
-instruct moveF2I_stack_reg(iRegIdst dst, stackSlotF src) %{
+instruct moveF2I_reg_reg(iRegIdst dst, regF src, regF tmp) %{
   match(Set dst (MoveF2I src));
-  ins_cost(MEMORY_REF_COST);
+  effect(TEMP tmp);
 
-  format %{ "LWZ     $dst, $src \t// MoveF2I" %}
-  size(4);
-  ins_encode( enc_lwz(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Move float value from float register to integer stack-location.
-instruct moveF2I_reg_stack(stackSlotI dst, regF src) %{
-  match(Set dst (MoveF2I src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STFS    $src, $dst \t// MoveF2I" %}
-  size(4);
-  ins_encode( enc_stfs(src, dst) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Move integer value from integer stack-location to float register.
-instruct moveI2F_stack_reg(regF dst, stackSlotI src) %{
-  match(Set dst (MoveI2F src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LFS     $dst, $src \t// MoveI2F" %}
-  size(4);
+  format %{ "XSCVDPSPN $tmp, $src \t// MoveF2I\n\t"
+            "MFVSRWZ   $dst, $tmp" %}
+  size(8);
   ins_encode %{
-    int Idisp = $src$$disp + frame_slots_bias($src$$base, ra_);
-    __ lfs($dst$$FloatRegister, Idisp, $src$$base$$Register);
+    __ floatToIntBits($dst$$Register, $src$$FloatRegister, $tmp$$FloatRegister);
   %}
-  ins_pipe(pipe_class_memory);
+  ins_pipe(pipe_class_default);
 %}
 
-// Move integer value from integer register to float stack-location.
-instruct moveI2F_reg_stack(stackSlotF dst, iRegIorL2I src) %{
+instruct moveI2F_reg_reg(regF dst, iRegIorL2I src) %{
   match(Set dst (MoveI2F src));
-  ins_cost(MEMORY_REF_COST);
 
-  format %{ "STW     $src, $dst \t// MoveI2F" %}
-  size(4);
-  ins_encode( enc_stw(src, dst) );
-  ins_pipe(pipe_class_memory);
+  format %{ $$template
+    if (PowerArchitecturePPC64 >= 9) {
+      $$emit$$"MTVSRWS   $dst, $src \t// MoveI2F\n\t"
+    } else {
+      $$emit$$"MTVSRWZ   $dst, $src \t// MoveI2F\n\t"
+      $$emit$$"XXSPLTW   $dst, $dst, 1\n\t"
+    }
+    $$emit$$"XSCVSPDPN $dst, $dst"
+  %}
+  size((PowerArchitecturePPC64 >= 9 ? 8 : 12));
+  ins_encode %{
+    __ intBitsToFloat($dst$$FloatRegister, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
 %}
-
-
-//----------Moves between long and double
-
-// Move double value from double stack-location to long register.
-instruct moveD2L_stack_reg(iRegLdst dst, stackSlotD src) %{
-  match(Set dst (MoveD2L src));
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-  format %{ "LD      $dst, $src \t// MoveD2L" %}
-  ins_encode( enc_ld(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Move double value from double register to long stack-location.
-instruct moveD2L_reg_stack(stackSlotL dst, regD src) %{
-  match(Set dst (MoveD2L src));
-  effect(DEF dst, USE src);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STFD    $src, $dst \t// MoveD2L" %}
-  size(4);
-  ins_encode( enc_stfd(src, dst) );
-  ins_pipe(pipe_class_memory);
-%}
-
 
 //----------Register Move Instructions-----------------------------------------
 
@@ -9696,17 +9246,6 @@ instruct convL2I_reg(iRegIdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVI   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
 instruct cmovI_bso_reg_con0(iRegIdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE crx, USE src);
@@ -9814,17 +9353,6 @@ instruct zeroExtendL_regL(iRegLdst dst, iRegLsrc src, immL_32bits mask) %{
   ins_encode %{
     __ clrldi($dst$$Register, $src$$Register, 32);
   %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVL   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
 %}
 
@@ -9960,7 +9488,7 @@ instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
 
   expand %{
     regD tmpD;
-    moveL2D_reg(tmpD, src);
+    moveL2D_reg_reg(tmpD, src);
     convL2FRaw_regF(dst, tmpD);          // Convert to float.
   %}
 %}
@@ -9991,7 +9519,7 @@ instruct convL2D_reg_mtfprd_Ex(regD dst, iRegLsrc src) %{
 
   expand %{
     regD tmpD;
-    moveL2D_reg(tmpD, src);
+    moveL2D_reg_reg(tmpD, src);
     convL2DRaw_regD(dst, tmpD);          // Convert to double.
   %}
 %}
@@ -10381,22 +9909,6 @@ instruct cmpP_reg_null(flagsReg crx, iRegP_N2P src1, immP_0or1 src2) %{
   size(4);
   ins_encode %{
     __ cmpldi($crx$$CondRegister, $src1$$Register, (int)((short)($src2$$constant & 0xFFFF)));
-  %}
-  ins_pipe(pipe_class_compare);
-%}
-
-// Used in postalloc expand.
-instruct cmpP_reg_imm16(flagsReg crx, iRegPsrc src1, immL16 src2) %{
-  // This match rule prevents reordering of node before a safepoint.
-  // This only makes sense if this instructions is used exclusively
-  // for the expansion of EncodeP!
-  match(Set crx (CmpP src1 src2));
-  predicate(false);
-
-  format %{ "CMPDI   $crx, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    __ cmpdi($crx$$CondRegister, $src1$$Register, $src2$$constant);
   %}
   ins_pipe(pipe_class_compare);
 %}
@@ -11056,7 +10568,7 @@ instruct indexOf_imm1_char_U(iRegIdst result, iRegPsrc haystack, iRegIorL2I hayc
 
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needleImm;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr;
 #ifdef VM_LITTLE_ENDIAN
@@ -11089,7 +10601,7 @@ instruct indexOf_imm1_char_L(iRegIdst result, iRegPsrc haystack, iRegIorL2I hayc
 
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needleImm;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -11115,7 +10627,7 @@ instruct indexOf_imm1_char_UL(iRegIdst result, iRegPsrc haystack, iRegIorL2I hay
 
   ins_encode %{
     immPOper *needleOper = (immPOper *)$needleImm;
-    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    const TypeOopPtr* t = needleOper->type()->as_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -11134,15 +10646,15 @@ instruct indexOf_imm1_U(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
   effect(USE_KILL needle, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(180);
 
   format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
     jchar chr;
 #ifdef VM_LITTLE_ENDIAN
@@ -11168,15 +10680,15 @@ instruct indexOf_imm1_L(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
   effect(USE_KILL needle, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(180);
 
   format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -11195,15 +10707,15 @@ instruct indexOf_imm1_UL(iRegIdst result, iRegPsrc haystack, iRegIorL2I haycnt,
   effect(USE_KILL needle, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(180);
 
   format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
     jchar chr = (jchar)needle_values->element_value(0).as_byte();
     __ string_indexof_char($result$$Register,
@@ -11261,15 +10773,15 @@ instruct indexOf_imm_U(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(250);
 
   format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
 
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
@@ -11288,15 +10800,15 @@ instruct indexOf_imm_L(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(250);
 
   format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
 
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
@@ -11315,15 +10827,15 @@ instruct indexOf_imm_UL(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
-            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->as_aryptr()->const_oop()->is_type_array());
   ins_cost(250);
 
   format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
   ins_encode %{
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
-    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    ciTypeArray* needle_values = ndl->bottom_type()->as_aryptr()->const_oop()->as_type_array();
 
     __ string_indexof($result$$Register,
                       $haystack$$Register, $haycnt$$Register,
@@ -12370,19 +11882,18 @@ instruct repl4I_immIminus1(vecX dst, immI_minus1 src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Move float to int register via stack, replicate.
+// Move float to int register, replicate.
 instruct repl2F_reg_Ex(iRegLdst dst, regF src) %{
   match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 2 &&
             Matcher::vector_element_basic_type(n) == T_FLOAT);
-  ins_cost(2 * MEMORY_REF_COST + DEFAULT_COST);
+  ins_cost(3 * DEFAULT_COST);
   expand %{
-    stackSlotL tmpS;
     iRegIdst tmpI;
-    moveF2I_reg_stack(tmpS, src);   // Move float to stack.
-    moveF2I_stack_reg(tmpI, tmpS);  // Move stack to int reg.
-    moveReg(dst, tmpI);             // Move int to long reg.
-    repl32(dst);                    // Replicate bitpattern.
+    regF tmpF;
+    moveF2I_reg_reg(tmpI, src, tmpF); // Move float bits to int reg.
+    moveReg(dst, tmpI);               // Move int to long reg.
+    repl32(dst);                      // Replicate bitpattern.
   %}
 %}
 

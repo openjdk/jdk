@@ -38,6 +38,7 @@
  *   -XX:CompileCommand=dontinline,TestSharedCloseDeopts::outOfLine
  *   -XX:CompileCommand=dontinline,TestSharedCloseDeopts::payloadWithAccess
  *   -XX:CompileCommand=dontinline,TestSharedCloseDeopts::payloadWithoutAccess
+ *   -XX:CompileCommand=dontinline,TestSharedCloseDeopts$Holder::shouldHold
  *   -XX:-UseOnStackReplacement
  *   -XX:-BackgroundCompilation
  *   -Xlog:foreign+deoptimization=trace:file=test_deopts.txt:none
@@ -82,9 +83,9 @@ public class TestSharedCloseDeopts {
     static {
         try {
             PAYLOAD_WITH_ACCESS_METHOD = TestSharedCloseDeopts.class.getDeclaredMethod("payloadWithAccess",
-                    MemorySegment.Scope.class, MemorySegment.class, AtomicBoolean.class);
+                    MemorySegment.Scope.class, MemorySegment.class, Holder.class);
             PAYLOAD_WITHOUT_ACCESS_METHOD = TestSharedCloseDeopts.class.getDeclaredMethod("payloadWithoutAccess",
-                    MemorySegment.Scope.class, MemorySegment.class, AtomicBoolean.class);
+                    MemorySegment.Scope.class, MemorySegment.class, Holder.class);
             try (InputStream stream = TestSharedCloseDeopts.class
                     .getResourceAsStream("TestSharedCloseDeopts.class")) {
                 TEST_CLASS_MODEL = ClassFile.of().parse(stream.readAllBytes());
@@ -104,7 +105,8 @@ public class TestSharedCloseDeopts {
         for (TestCase testCase : (Iterable<TestCase>) () -> cases().iterator()) {
             // do a dry run to compile the payload* methods
             // and reduce other noise due to uncommon traps triggering
-            AtomicBoolean hold = new AtomicBoolean();
+            Holder holder = new Holder(false);
+            holder.toggleOutput(true);
             AtomicBoolean shouldCallPayload = new AtomicBoolean(true);
             AtomicReference<Throwable> uncaughtException = new AtomicReference<>();
             try (Arena arena = Arena.ofShared()) {
@@ -114,19 +116,18 @@ public class TestSharedCloseDeopts {
                     .uncaughtExceptionHandler((_, ex) -> uncaughtException.set(ex))
                     .start(() -> {
                         while (shouldCallPayload.getAcquire()) {
-                            testCase.payload().run(segment.scope(), segment, hold);
+                            testCase.payload().run(segment.scope(), segment, holder);
                         }
                     });
 
-                // await compilation while polluting the profile to avoid
-                // uncommon trap deopt as result of loop backedge test
+                // Await compilation while polluting the profile to avoid
+                // uncommon trap deopt as result of loop backedge test.
+                // The Holder::shouldHold method will toggle the value
+                // it returns on each invocation to make sure we see both
+                // true and false in the profile.
                 NMethod code;
                 do {
                     assertTrue(WB.isMethodCompilable(testCase.method(), C2_COMPILED_LEVEL, false));
-                    for (int i = 0; i < 100_000; i++) {
-                        hold.setRelease(true);
-                        hold.setRelease(false);
-                    }
                     code = NMethod.get(testCase.method(), false);
                 } while (code == null || code.comp_level != C2_COMPILED_LEVEL);
                 assertEquals(testCase.hasAccess(), code.has_scoped_access);
@@ -148,7 +149,8 @@ public class TestSharedCloseDeopts {
         // clear log file for this test case
         Files.writeString(LOG_FILE, "", StandardOpenOption.TRUNCATE_EXISTING);
 
-        AtomicBoolean hold = new AtomicBoolean(true); // hold worker thread in loop
+        Holder holder = new Holder(true); // hold worker thread in loop
+        holder.toggleOutput(false);
         AtomicReference<Throwable> uncaughtException = new AtomicReference<>();
         Thread workerThread;
         int deoptCountBeforeClose;
@@ -158,11 +160,11 @@ public class TestSharedCloseDeopts {
             workerThread = Thread.ofPlatform()
                 .name("Test-Worker")
                 .uncaughtExceptionHandler((_, ex) -> uncaughtException.set(ex))
-                .start(() ->  testCase.payload.run(segment.scope(), segment, hold));
+                .start(() ->  testCase.payload.run(segment.scope(), segment, holder));
             waitUntilThreadIsAtSafepoint(workerThread, testCase.method().getName(), testCase.callLineNumber());
             // double check that we're still good to go
             NMethod code = NMethod.get(testCase.method(), false);
-            assertNotNull(code);
+            assertNotNull(code, "Payload was deoptimized");
             assertEquals(C2_COMPILED_LEVEL, code.comp_level);
             assertEquals(testCase.hasAccess(), code.has_scoped_access);
             deoptCountBeforeClose = WB.getDeoptCount(SHARED_SCOPE_CLOSED_DEOPT_REASON, null);
@@ -171,7 +173,7 @@ public class TestSharedCloseDeopts {
         int deoptCountAfterClose = WB.getDeoptCount(SHARED_SCOPE_CLOSED_DEOPT_REASON, null);
         assertEquals(deoptCountBeforeClose + (testCase.hasAccess() ? 1 : 0), deoptCountAfterClose);
 
-        hold.setRelease(false); // release thread from loop
+        holder.toggleOutput(true); // release thread from loop
         workerThread.join();
         if (uncaughtException.get() != null) {
             throw uncaughtException.get();
@@ -187,10 +189,9 @@ public class TestSharedCloseDeopts {
     }
 
     // simulate a safepoint in a method with a scoped access
-    public static MemorySegment.Scope payloadWithAccess(MemorySegment.Scope scope, MemorySegment segment,
-                                                        AtomicBoolean hold) {
+    public static MemorySegment.Scope payloadWithAccess(MemorySegment.Scope scope, MemorySegment segment, Holder holder) {
         segment.set(ValueLayout.JAVA_INT, 0L, 42);
-        while (hold.getAcquire()) {
+        while (holder.shouldHold()) {
             // conditionally hold at the post call safepoint
             outOfLine();
         }
@@ -198,9 +199,8 @@ public class TestSharedCloseDeopts {
     }
 
     // same but without a scoped access
-    public static MemorySegment.Scope payloadWithoutAccess(MemorySegment.Scope scope, MemorySegment segment,
-                                                           AtomicBoolean hold) {
-        while (hold.getAcquire()) {
+    public static MemorySegment.Scope payloadWithoutAccess(MemorySegment.Scope scope, MemorySegment segment, Holder holder) {
+        while (holder.shouldHold()) {
             outOfLine();
         }
         return scope;
@@ -211,7 +211,28 @@ public class TestSharedCloseDeopts {
 
     // test helpers
     public interface Payload {
-        MemorySegment.Scope run(MemorySegment.Scope scope, MemorySegment segment, AtomicBoolean hold);
+        MemorySegment.Scope run(MemorySegment.Scope scope, MemorySegment segment, Holder holder);
+    }
+
+    public static class Holder {
+        private boolean shouldHold;
+        private volatile boolean toggleOutput;
+
+        public Holder(boolean shouldHold) {
+            this.shouldHold = shouldHold;
+        }
+
+        public boolean shouldHold() {
+            boolean val = this.shouldHold;
+            if (toggleOutput) {
+                this.shouldHold = !val;
+            }
+            return val;
+        }
+
+        public void toggleOutput(boolean val) {
+            this.toggleOutput = val;
+        }
     }
 
     public record TestCase(Method method, int callLineNumber, Payload payload, boolean hasAccess) {}

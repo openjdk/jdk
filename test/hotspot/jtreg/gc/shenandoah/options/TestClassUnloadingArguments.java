@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @summary Test that loop mining arguments are sane
+ * @summary Test ClassUnloading flag sanity
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run driver TestClassUnloadingArguments
@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestClassUnloadingArguments {
 
-    public static void testWith(String msg, boolean cu, boolean cuConc, String... args) throws Exception {
+    public static void testWith(String msg, boolean cu, String... args) throws Exception {
         String[] cmds = Arrays.copyOf(args, args.length + 3);
         cmds[args.length] = "-Xmx128m";
         cmds[args.length + 1] = "-XX:+PrintFlagsFinal";
@@ -46,63 +46,23 @@ public class TestClassUnloadingArguments {
         OutputAnalyzer output = ProcessTools.executeLimitedTestJava(cmds);
         output.shouldHaveExitValue(0);
         output.shouldContain("ClassUnloading");
-        output.shouldContain("ClassUnloadingWithConcurrentMark");
 
         Asserts.assertEQ(output.firstMatch("(.+?) ClassUnloading.+?= (.+?) (.+?)", 2),
                 Boolean.toString(cu),
                 msg + ", but got wrong ClassUnloading");
-        Asserts.assertEQ(output.firstMatch("(.+?) ClassUnloadingWithConcurrentMark.+?= (.+?) (.+?)", 2),
-                Boolean.toString(cuConc),
-                msg + ", but got wrong ClassUnloadingWithConcurrentMark");
     }
 
     public static void main(String[] args) throws Exception {
-        testDefaultGC();
-        testShenandoah();
-    }
-
-    public static void testDefaultGC() throws Exception {
-        testWith("Default GC should have class unloading enabled",
-                true, true);
-
-        testWith("Default GC should disable everything",
-                false, false,
-                "-XX:-ClassUnloading");
-
-        testWith("Default GC should disable conc unload",
-                true, false,
-                "-XX:-ClassUnloadingWithConcurrentMark");
-
-        testWith("Default GC should not let conc unload to be enabled separately",
-                false, false,
-                "-XX:-ClassUnloading",
-                "-XX:+ClassUnloadingWithConcurrentMark");
-    }
-
-    public static void testShenandoah() throws Exception {
-        testWith("Shenandoah GC should have class unloading enabled",
-                true, true,
+        testWith("Shenandoah GC should have class unloading enabled by default",
+                true,
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UseShenandoahGC");
 
         testWith("Shenandoah GC should disable everything",
-                false, false,
+                false,
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UseShenandoahGC",
                 "-XX:-ClassUnloading");
-
-        testWith("Shenandoah GC should enable conc unload",
-                true, true,
-                "-XX:+UnlockExperimentalVMOptions",
-                "-XX:+UseShenandoahGC",
-                "-XX:+ClassUnloadingWithConcurrentMark");
-
-        testWith("Shenandoah GC should not let conc unload to be enabled separately",
-                false, false,
-                "-XX:+UnlockExperimentalVMOptions",
-                "-XX:+UseShenandoahGC",
-                "-XX:-ClassUnloading",
-                "-XX:+ClassUnloadingWithConcurrentMark");
     }
 
 }

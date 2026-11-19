@@ -451,7 +451,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _tasks(nullptr),
   _task_queues(new G1CMTaskQueueSet(_max_num_tasks)),
   _terminator(_max_num_tasks, _task_queues),
-  _partial_array_state_manager(new PartialArrayStateManager(_max_num_tasks)),
 
   _first_overflow_barrier_sync(),
   _second_overflow_barrier_sync(),
@@ -552,10 +551,6 @@ bool G1ConcurrentMark::is_in_marking_or_rebuild() const {
 
 bool G1ConcurrentMark::is_in_reset_for_next_cycle() const {
   return cm_thread()->is_in_reset_for_next_cycle();
-}
-
-PartialArrayStateManager* G1ConcurrentMark::partial_array_state_manager() const {
-  return _partial_array_state_manager;
 }
 
 G1ConcurrentMarkThread* G1ConcurrentMark::cm_thread() const {
@@ -871,21 +866,18 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
 
   clear_bitmap(_concurrent_workers, true);
 
-  reset_partial_array_state_manager();
+  reset_partial_array_splitters();
 
   // Should not have changed state yet (even if a Full GC interrupted us).
   guarantee(is_in_reset_for_next_cycle(), "invariant");
 }
 
-void G1ConcurrentMark::reset_partial_array_state_manager() {
+void G1ConcurrentMark::reset_partial_array_splitters() {
+  // All concurrent and remark workers have stopped using partial-array states.
+  // Reset every splitter before marking resumes: stolen tasks may have placed
+  // slots from one splitter's arena on another splitter's free-list.
   for (uint i = 0; i < _max_num_tasks; ++i) {
-    _tasks[i]->unregister_partial_array_splitter();
-  }
-
-  partial_array_state_manager()->reset();
-
-  for (uint i = 0; i < _max_num_tasks; ++i) {
-    _tasks[i]->register_partial_array_splitter();
+    _tasks[i]->reset_partial_array_splitter();
   }
 }
 
@@ -1410,14 +1402,15 @@ void G1ConcurrentMark::remark() {
       log_debug(gc,ergo)("Running %s using %u workers for %u regions in heap", cl.name(), num_workers, _g1h->num_active_regions());
       _g1h->workers()->run_task(&cl, num_workers);
 
-      log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
+      log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected rebuild targets %u",
                                       _g1h->num_active_regions(), cl.total_selected_for_rebuild());
 
       _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
 
       if (_needs_remembered_set_rebuild) {
-        GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected = cl.sort_and_prune_old_selected();
-        _g1h->collection_set_candidates()->set_candidates_from_marking(selected);
+        GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected_old = cl.sort_and_prune_selected();
+        _g1h->collection_set_candidates()->set_candidates_from_marking(selected_old);
+        _g1h->humongous_card_set_groups()->add_for_rebuild(cl.humongous_selected());
       }
     }
 
@@ -1493,20 +1486,6 @@ void G1ConcurrentMark::compute_new_sizes() {
   _g1h->monitoring_support()->update_sizes();
 }
 
-class G1UpdateRegionsAfterRebuild : public G1HeapRegionClosure {
-  G1CollectedHeap* _g1h;
-
-public:
-  G1UpdateRegionsAfterRebuild(G1CollectedHeap* g1h) : _g1h(g1h) { }
-
-  bool do_heap_region(G1HeapRegion* r) override {
-    // Update the remset tracking state from updating to complete
-    // if remembered sets have been rebuilt.
-    _g1h->policy()->remset_tracker()->update_after_rebuild(r);
-    return false;
-  }
-};
-
 void G1ConcurrentMark::cleanup() {
   assert_at_safepoint_on_vm_thread();
 
@@ -1526,8 +1505,8 @@ void G1ConcurrentMark::cleanup() {
     // Update the remset tracking information as well as marking all regions
     // as fully parsable.
     GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking After Rebuild", _gc_timer_cm);
-    G1UpdateRegionsAfterRebuild cl(_g1h);
-    _g1h->heap_region_iterate(&cl);
+    _g1h->collection_set_candidates()->after_rebuild();
+    _g1h->humongous_card_set_groups()->after_rebuild();
   } else {
     log_debug(gc, phases)("No Remembered Sets to update after rebuild");
   }
@@ -1960,7 +1939,7 @@ public:
 
   void operator()(G1TaskQueueEntry task_entry) const {
     oop obj = task_entry.is_partial_array_state()
-            ? task_entry.to_partial_array_state()->source()
+            ? task_entry.to_partial_array_state()->array()
             : task_entry.to_oop();
     guarantee(oopDesc::is_oop(obj),
               "Non-oop " PTR_FORMAT ", location: %s, index: %d",
@@ -2262,14 +2241,8 @@ void G1CMTask::reset_for_restart() {
   TASKQUEUE_STATS_ONLY(_task_queue->stats.reset());
 }
 
-void G1CMTask::register_partial_array_splitter() {
-
-  ::new (&_partial_array_splitter) PartialArraySplitter(_cm->partial_array_state_manager(),
-                                                        _cm->max_num_tasks());
-}
-
-void G1CMTask::unregister_partial_array_splitter() {
-  _partial_array_splitter.~PartialArraySplitter();
+void G1CMTask::reset_partial_array_splitter() {
+  _partial_array_splitter.reset();
 }
 
 bool G1CMTask::should_exit_termination() {
@@ -2450,26 +2423,25 @@ size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
   process_klass(obj->klass());
 
   size_t array_length = obj->length();
-  size_t initial_chunk_size = _partial_array_splitter.start(_task_queue, obj, nullptr, array_length, ObjArrayMarkingStride);
+  PartialArraySplitter::Claim chunk = _partial_array_splitter.start(_task_queue, obj, array_length, ObjArrayMarkingStride);
 
-  process_array_chunk(obj, 0, initial_chunk_size);
+  process_array_chunk(chunk._array, chunk._start, chunk._end);
 
+  const size_t chunk_len = chunk._end - chunk._start;
   // Include object header size
   if (obj->is_refArray()) {
-    return refArrayOopDesc::object_size(checked_cast<int>(initial_chunk_size));
+    return refArrayOopDesc::object_size(checked_cast<int>(chunk_len));
   } else {
     FlatArrayKlass* fak = FlatArrayKlass::cast(obj->klass());
-    return flatArrayOopDesc::object_size(fak->layout_helper(), checked_cast<int>(initial_chunk_size));
+    return flatArrayOopDesc::object_size(fak->layout_helper(), checked_cast<int>(chunk_len));
   }
 }
 
 size_t G1CMTask::process_partial_array(const G1TaskQueueEntry& task, bool stolen) {
   PartialArrayState* state = task.to_partial_array_state();
-  // Access state before release by claim().
-  objArrayOop obj = oop_cast<objArrayOop>(state->source());
-
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, _task_queue, stolen);
+  objArrayOop obj = claim._array;
 
   process_array_chunk(obj, claim._start, claim._end);
 
@@ -3027,7 +2999,7 @@ G1CMTask::G1CMTask(uint worker_id,
   _cm(cm),
   _mark_bitmap(nullptr),
   _task_queue(task_queue),
-  _partial_array_splitter(_cm->partial_array_state_manager(), _cm->max_num_tasks()),
+  _partial_array_splitter(_cm->max_num_tasks()),
   _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize),
   _calls(0),
   _time_target_ms(0.0),

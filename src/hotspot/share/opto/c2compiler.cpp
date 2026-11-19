@@ -146,7 +146,9 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool do_locks_coarsening = EliminateLocks;
   bool do_superword = UseSuperWord;
   bool do_stringopts = OptimizeStringConcat;
+  bool aot_compile = env->is_aot_compile();
   bool for_aot_preload = (task->compile_reason() == CompileTask::Reason_AOTCompileForPreload);
+  assert(!for_aot_preload || aot_compile, "sanity");
   assert(!for_aot_preload || (ClassInitBarrierMode > 0), "sanity");
 
   while (!env->failing()) {
@@ -160,6 +162,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
                     do_locks_coarsening,
                     do_superword,
                     do_stringopts,
+                    aot_compile,
                     for_aot_preload,
                     install_code);
     Compile C(env, target, entry_bci, options, directive);
@@ -307,6 +310,9 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_bigIntegerLeftShiftWorker:
     if (StubRoutines::bigIntegerLeftShift() == nullptr) return false;
+    break;
+  case vmIntrinsics::_quad_keccak:
+    if (StubRoutines::quad_keccak() == nullptr) return false;
     break;
   case vmIntrinsics::_encodeAsciiArray:
     if (!Matcher::match_rule_supported(Op_EncodeISOArray) || !Matcher::supports_encode_ascii_array) return false;
@@ -832,7 +838,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_sha5_implCompress:
   case vmIntrinsics::_sha3_implCompress:
   case vmIntrinsics::_double_keccak:
-  case vmIntrinsics::_quad_keccak:
   case vmIntrinsics::_digestBase_implCompressMB:
   case vmIntrinsics::_multiplyToLen:
   case vmIntrinsics::_squareToLen:

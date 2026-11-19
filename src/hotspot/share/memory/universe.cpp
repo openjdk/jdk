@@ -22,11 +22,11 @@
  *
  */
 
+#include "cds/aotHeap.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotModules.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
@@ -111,7 +111,6 @@ class LatestMethodCache {
 };
 
 static LatestMethodCache _finalizer_register_cache;         // Finalizer.register()
-static LatestMethodCache _loader_addClass_cache;            // ClassLoader.addClass()
 static LatestMethodCache _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError()
 static LatestMethodCache _throw_no_such_method_error_cache; // Unsafe.throwNoSuchMethodError()
 static LatestMethodCache _do_stack_walk_cache;              // AbstractStackWalker.doStackWalk()
@@ -217,12 +216,12 @@ public:
 
 #if INCLUDE_CDS_JAVA_HEAP
   void store_in_cds() {
-    _archived_root_index = HeapShared::archive_exception_instance(instance());
+    _archived_root_index = AOTHeap::archive_exception_instance(instance());
   }
 
   void load_from_cds() {
     if (_archived_root_index >= 0) {
-      oop obj = HeapShared::get_root(_archived_root_index);
+      oop obj = AOTHeap::get_root(_archived_root_index);
       assert(obj != nullptr, "must be");
       _instance = OopHandle(Universe::vm_global(), obj);
     }
@@ -325,11 +324,11 @@ void Universe::archive_exception_instances() {
 }
 
 void Universe::load_archived_object_instances() {
-  if (HeapShared::is_archived_heap_in_use()) {
+  if (AOTHeap::is_archived_heap_in_use()) {
     for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
       int index = _archived_basic_type_mirror_indices[i];
       if (!is_reference_type((BasicType)i) && index >= 0) {
-        oop mirror_oop = HeapShared::get_root(index);
+        oop mirror_oop = AOTHeap::get_root(index);
         assert(mirror_oop != nullptr, "must be");
         _basic_type_mirrors[i] = OopHandle(vm_global(), mirror_oop);
       }
@@ -351,7 +350,7 @@ void Universe::serialize(SerializeClosure* f) {
 #if INCLUDE_CDS_JAVA_HEAP
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     f->do_int(&_archived_basic_type_mirror_indices[i]);
-    // if f->reading(): We can't call HeapShared::get_root() yet, as the heap
+    // if f->reading(): We can't call AOTHeap::get_root() yet, as the heap
     // contents may need to be relocated. _basic_type_mirrors[i] will be
     // updated later in Universe::load_archived_object_instances().
   }
@@ -459,16 +458,13 @@ void Universe::genesis(TRAPS) {
     s = StringTable::intern("-2147483648", CHECK);
     _the_min_jint_string = OopHandle(vm_global(), s);
 
-#if INCLUDE_CDS
     if (CDSConfig::is_using_archive()) {
       // Verify shared interfaces array.
       assert(_the_array_interfaces_array->at(0) ==
              vmClasses::Cloneable_klass(), "u3");
       assert(_the_array_interfaces_array->at(1) ==
              vmClasses::Serializable_klass(), "u3");
-    } else
-#endif
-    {
+    } else {
       // Set up shared interfaces array.  (Do this before supers are set up.)
       _the_array_interfaces_array->at_put(0, vmClasses::Cloneable_klass());
       _the_array_interfaces_array->at_put(1, vmClasses::Serializable_klass());
@@ -558,7 +554,7 @@ void Universe::genesis(TRAPS) {
 void Universe::initialize_basic_type_mirrors(TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_using_archive() &&
-      HeapShared::is_archived_heap_in_use() &&
+      AOTHeap::is_archived_heap_in_use() &&
       _basic_type_mirrors[T_INT].resolve() != nullptr) {
     // check that all basic type mirrors are mapped also
     for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
@@ -581,7 +577,7 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
     }
   }
   if (CDSConfig::is_dumping_heap()) {
-    HeapShared::init_scratch_objects_for_basic_type_mirrors(CHECK);
+    AOTHeap::init_scratch_objects_for_basic_type_mirrors(CHECK);
   }
 }
 
@@ -920,23 +916,20 @@ jint universe_init() {
     Threads::add(main_thread);
   }
 
-  HeapShared::initialize_writing_mode();
+  AOTHeap::initialize_writing_mode();
 
   // Create the string table before the AOT object archive is loaded,
   // as it might need to access the string table.
   StringTable::create_table();
 
-#if INCLUDE_CDS
   if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.)
     AOTMetaspace::initialize_shared_spaces();
   }
-#endif
 
   ClassLoaderData::init_null_class_loader_data();
 
-#if INCLUDE_CDS
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_using_full_module_graph()) {
     AOTModules::restore_archived_entries_for_null_class_loader_data();
@@ -945,7 +938,6 @@ jint universe_init() {
   if (CDSConfig::is_dumping_archive()) {
     CDSConfig::prepare_for_dumping();
   }
-#endif
 
   SymbolTable::create_table();
 
@@ -1082,7 +1074,6 @@ Method* LatestMethodCache::get_method() {
 }
 
 Method* Universe::finalizer_register_method()        { return _finalizer_register_cache.get_method(); }
-Method* Universe::loader_addClass_method()           { return _loader_addClass_cache.get_method(); }
 Method* Universe::throw_illegal_access_error()       { return _throw_illegal_access_error_cache.get_method(); }
 Method* Universe::throw_no_such_method_error()       { return _throw_no_such_method_error_cache.get_method(); }
 Method* Universe::do_stack_walk_method()             { return _do_stack_walk_cache.get_method(); }
@@ -1111,12 +1102,6 @@ void Universe::initialize_known_methods(JavaThread* current) {
                           vmClasses::internal_Unsafe_klass(),
                           "throwNoSuchMethodError",
                           vmSymbols::void_method_signature(), true);
-
-  // Set up method for registering loaded classes in class loader vector
-  _loader_addClass_cache.init(current,
-                          vmClasses::ClassLoader_klass(),
-                          "addClass",
-                          vmSymbols::class_void_signature(), false);
 
   // Set up method for stack walking
   _do_stack_walk_cache.init(current,
@@ -1211,9 +1196,7 @@ bool universe_post_init() {
   // Complete initialization
   Universe::heap()->post_initialize();
 
-#if INCLUDE_CDS
   AOTMetaspace::post_initialize(CHECK_false);
-#endif
   return true;
 }
 

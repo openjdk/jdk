@@ -25,22 +25,22 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotCompressedPointers.hpp"
+#include "cds/aotHeap.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotModules.hpp"
+#include "cds/aotSystemDictionary.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/heapShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "jvm.h"
@@ -528,14 +528,14 @@ void ArchiveBuilder::gather_source_objs() {
 bool ArchiveBuilder::is_excluded(Klass* klass) {
   if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    return SystemDictionaryShared::is_excluded_class(ik);
+    return AOTSystemDictionary::is_excluded_class(ik);
   } else if (klass->is_objArray_klass()) {
     Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
     if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache_static_region(bottom)) {
       // The bottom class is in the static archive so it's clearly not excluded.
       return false;
     } else if (bottom->is_instance_klass()) {
-      return SystemDictionaryShared::is_excluded_class(InstanceKlass::cast(bottom));
+      return AOTSystemDictionary::is_excluded_class(InstanceKlass::cast(bottom));
     }
   }
 
@@ -547,8 +547,9 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
   if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(obj)) {
     // Don't dump existing shared metadata again.
     return point_to_it;
+  } else if (ref->type() == MetaspaceClosureType::MethodCountersType) {
+    return set_to_null;
   } else if (ref->type() == MetaspaceClosureType::MethodDataType ||
-             ref->type() == MetaspaceClosureType::MethodCountersType ||
              ref->type() == MetaspaceClosureType::KlassTrainingDataType ||
              ref->type() == MetaspaceClosureType::MethodTrainingDataType ||
              ref->type() == MetaspaceClosureType::CompileTrainingDataType) {
@@ -642,6 +643,12 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
                                                    src_info->read_only(), &_alloc_stats);
 
   memcpy(dest, src, bytes);
+  if (CDSConfig::is_redumping_aot_configuration() && src_info->type() == MetaspaceClosureType::ClassType) {
+    // This class might have been aot-initialized in the input AOT cache, but we never
+    // aot-initialize classes in the output AOT configuration file.
+    Klass* k = (Klass*)dest;
+    k->clear_has_aot_initialized_mirror();
+  }
 
   // Update the hash of buffered sorted symbols for static dump so that the symbols have deterministic contents
   if (CDSConfig::is_dumping_static_archive() && (src_info->type() == MetaspaceClosureType::SymbolType)) {
@@ -844,10 +851,10 @@ void ArchiveBuilder::make_klasses_shareable() {
           assert(0, "shouldn't happen");
         }
         if (CDSConfig::is_dumping_method_handles()) {
-          assert(HeapShared::is_archivable_hidden_klass(ik), "sanity");
+          assert(AOTHeap::is_archivable_hidden_klass(ik), "sanity");
         } else {
           // Legacy CDS support for lambda proxies
-          CDS_JAVA_HEAP_ONLY(assert(HeapShared::is_lambda_proxy_klass(ik), "sanity");)
+          CDS_JAVA_HEAP_ONLY(assert(AOTHeap::is_lambda_proxy_klass(ik), "sanity");)
         }
       } else if (ik->defined_by_boot_loader()) {
         type = "boot";
@@ -957,9 +964,6 @@ void ArchiveBuilder::make_training_data_shareable() {
     } else if (info.type() == MetaspaceClosureType::MethodDataType) {
       MethodData* buffered_mdo = (MethodData*)info.buffered_addr();
       buffered_mdo->remove_unshareable_info();
-    } else if (info.type() == MetaspaceClosureType::MethodCountersType) {
-      MethodCounters* buffered_mc = (MethodCounters*)info.buffered_addr();
-      buffered_mc->remove_unshareable_info();
     }
   };
   _src_obj_table.iterate_all(clean_td);
@@ -1170,7 +1174,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, AOTMappedHeapInfo* mapp
   if (log_is_enabled(Info, aot, map)) {
     AOTMapLogger::dumptime_log(this, mapinfo, mapped_heap_info, streamed_heap_info, bitmap, bitmap_size_in_bytes);
   }
-  CDS_JAVA_HEAP_ONLY(HeapShared::destroy_archived_object_cache());
+  CDS_JAVA_HEAP_ONLY(AOTHeap::destroy_archived_object_cache());
   FREE_C_HEAP_ARRAY(bitmap);
 }
 

@@ -22,10 +22,10 @@
  *
  */
 
+#include "cds/aotHeap.inline.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaClassesImpl.hpp"
@@ -963,7 +963,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   }
 
   if (k->in_aot_cache() && k->has_archived_mirror_index()) {
-    if (HeapShared::is_archived_heap_in_use()) {
+    if (AOTHeap::is_archived_heap_in_use()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1092,7 +1092,7 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
     if (k->is_typeArray_klass()) {
       BasicType type = TypeArrayKlass::cast(k)->element_type();
       if (is_scratch) {
-        comp_mirror = Handle(THREAD, HeapShared::scratch_java_mirror(type));
+        comp_mirror = Handle(THREAD, AOTHeap::scratch_java_mirror(type));
       } else {
         comp_mirror = Handle(THREAD, Universe::java_mirror(type));
       }
@@ -1101,7 +1101,7 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
       Klass* element_klass = ObjArrayKlass::cast(k)->element_klass();
       assert(element_klass != nullptr, "Must have an element klass");
       if (is_scratch) {
-        comp_mirror = Handle(THREAD, HeapShared::scratch_java_mirror(element_klass));
+        comp_mirror = Handle(THREAD, AOTHeap::scratch_java_mirror(element_klass));
       } else {
         comp_mirror = Handle(THREAD, element_klass->java_mirror());
       }
@@ -1208,7 +1208,7 @@ void java_lang_Class::create_scratch_mirror(Klass* k, TRAPS) {
     release_set_array_klass(comp_mirror(), k);
   }
 
-  HeapShared::set_scratch_java_mirror(k, mirror());
+  AOTHeap::set_scratch_java_mirror(k, mirror());
 }
 
 // Returns true if the mirror is updated, false if no archived mirror
@@ -1265,7 +1265,12 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   }
 
   if (CDSConfig::is_dumping_heap() && (!k->is_refined_objArray_klass())) {
-    create_scratch_mirror(k, CHECK_(false));
+    if (!CDSConfig::can_allocate_scratch_oops()) {
+      // Will be created later inside AOTLinkedClassBulkLoader::link_classes_impl().
+      assert(CDSConfig::is_redumping_aot_configuration(), "must be");
+    } else {
+      create_scratch_mirror(k, CHECK_(false));
+    }
   }
 
   return true;
@@ -1499,7 +1504,7 @@ BasicType java_lang_Class::primitive_type(oop java_class) {
 #ifdef ASSERT
   if (CDSConfig::is_dumping_heap()) {
     oop mirror = Universe::java_mirror(type);
-    oop scratch_mirror = HeapShared::scratch_java_mirror(type);
+    oop scratch_mirror = AOTHeap::scratch_java_mirror(type);
     assert(java_class == mirror || java_class == scratch_mirror, "must be consistent");
   } else {
     assert(Universe::java_mirror(type) == java_class, "must be consistent");
