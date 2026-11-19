@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import javax.net.ssl.SSLSession;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
@@ -220,6 +221,10 @@ public interface Http2TestExchange {
      */
     default long waitForMaxPushId(long pushId) throws InterruptedException {
         return VariableLengthEncoder.MAX_ENCODED_INTEGER;
+    }
+
+    default void setCancelPushListener(Consumer<Long> listener) {
+        throw new UnsupportedOperationException("setCancelPushListener with " + getExchangeVersion());
     }
 
     default Encoder qpackEncoder() {
