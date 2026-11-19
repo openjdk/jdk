@@ -484,7 +484,6 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       if (vk->can_be_returned_as_fields()) {
         address unpack_handler = vk->unpack_handler();
         assert(unpack_handler != nullptr, "must be");
-#if INCLUDE_CDS
         if (AOTCodeCache::is_on_for_dump()) {
           // in AOT compiled code call the unpack handler indirectly
           // via the klass. The handler's blob does not currently get
@@ -495,9 +494,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
           __ movptr(rdi, Address(rdi, ValueKlass::adr_members_offset()));
           __ movptr(rdi, Address(rdi, ValueKlass::unpack_handler_offset()));
           __ call(rdi);
-        } else
-#endif
-        {
+        } else {
           __ call(RuntimeAddress(unpack_handler));
         }
       }
@@ -599,7 +596,6 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
     case T_LONG: {
       assert(patch_code == lir_patch_none, "no patching handled here");
-#if INCLUDE_CDS
       if (AOTCodeCache::is_on_for_dump()) {
         address b = c->as_pointer();
         if (b == (address)ThreadIdentifier::unsafe_offset()) {
@@ -617,7 +613,6 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
           break;
         }
       }
-#endif
       __ movptr(dest->as_register_lo(), (intptr_t)c->as_jlong());
       break;
     }

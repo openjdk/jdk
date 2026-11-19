@@ -46,6 +46,9 @@ public:
   void finalize_relocations(nmethod* nm) override;
 
   void arm_all_nmethods() override;
+
+  oop oop_load_no_keepalive(const nmethod* nm, int index) override;
+  oop oop_load_phantom(const nmethod* nm, int index) override;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETNMETHOD_HPP

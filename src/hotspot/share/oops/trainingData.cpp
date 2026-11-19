@@ -80,7 +80,7 @@ void TrainingData::initialize() {
     });
   }
 
-  if (have_data() && AOTVerifyTrainingData) {
+  if (have_data()) {
     TrainingDataLocker l;
     verify();
   }
@@ -93,6 +93,9 @@ static void verify_archived_entry(TrainingData* td, const TrainingData::Key* k) 
 }
 
 void TrainingData::verify() {
+  if (!AOTVerifyTrainingData) {
+    return;
+  }
   if (have_data() && !need_data() && !assembling_data()) {
     archived_training_data_dictionary()->iterate_all([&](TrainingData* td) {
       if (td->is_KlassTrainingData()) {
@@ -591,9 +594,7 @@ void TrainingData::init_dumptime_table(TRAPS) {
     TrainingDataLocker::snapshot();
   }
 
-  if (AOTVerifyTrainingData) {
-    TrainingData::verify();
-  }
+  TrainingData::verify();
 }
 
 void TrainingData::dumptime_iterate_roots(MetaspaceClosure* it) {
