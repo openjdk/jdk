@@ -325,7 +325,7 @@ public class TestIntCountedLoopLongLimitTemplated {
     private static TemplateToken generateRunBodyCountingUp() {
         var template = Template.make(() -> scope(
                 """
-                    switch (G.uniformInts(0, 7).next()) {
+                    switch (G.uniformInts(0, 9).next()) {
                         case 0 -> {
                             init = G.uniformInts(-1000, 999).next();
                             limit = G.uniformLongs(-1000, 999).next();
@@ -354,6 +354,17 @@ public class TestIntCountedLoopLongLimitTemplated {
                             init = G.uniformInts(0, 999).next();
                             limit = G.uniformInts(-1000, init - 1).next();
                         }
+                        case 7 -> {
+                            init = G.uniformInts().next();
+                            limit = G.uniformLongs(Integer.MIN_VALUE, Integer.MAX_VALUE).next();
+                        }
+                        case 8 -> {
+
+                            init = G.uniformInts().next();
+                            limit = (G.uniformInts(0, 1).next() == 0)
+                                    ? (long) Integer.MAX_VALUE + G.uniformLongs(100, 1L << 40).next()
+                                    : (long) Integer.MIN_VALUE - G.uniformLongs(100, 1L << 40).next();
+                        }
                         default -> {
                             init = G.uniformInts(0, 999).next();
                             limit = init + G.uniformInts(0, 1).next();
@@ -366,7 +377,7 @@ public class TestIntCountedLoopLongLimitTemplated {
     private static TemplateToken generateRunBodyCountingDown() {
         var template = Template.make(() -> scope(
                 """
-                    switch (G.uniformInts(0, 7).next()) {
+                    switch (G.uniformInts(0, 9).next()) {
                         case 0 -> {
                             init = G.uniformInts(-1000, 999).next();
                             limit = G.uniformLongs(-1000, 999).next();
@@ -394,6 +405,16 @@ public class TestIntCountedLoopLongLimitTemplated {
                         case 6 -> {
                             init = G.uniformInts(-1000, -1).next();
                             limit = G.uniformInts(init + 1, 999).next();
+                        }
+                        case 7 -> {
+                            init = G.uniformInts().next();
+                            limit = G.uniformLongs(Integer.MIN_VALUE, Integer.MAX_VALUE).next();
+                        }
+                        case 8 -> {
+                            init = G.uniformInts().next();
+                            limit = (G.uniformInts(0, 1).next() == 0)
+                                    ? (long) Integer.MIN_VALUE - G.uniformLongs(100, 1L << 40).next()
+                                    : (long) Integer.MAX_VALUE + G.uniformLongs(100, 1L << 40).next();
                         }
                         default -> {
                             init = G.uniformInts(-1000, -1).next();
