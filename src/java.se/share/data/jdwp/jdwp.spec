@@ -2708,7 +2708,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "will contain the null object reference. "
         "<p>"
         "When preview features are enabled on the target VM, OPAQUE_FRAME "
-        " is returned if the specified frame is a "
+        "is returned if the specified frame is a "
         "constructor frame whose declaring class or any of its superclasses has  "
         "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
         "strictly-initialized<sup>PREVIEW</sup></a> instance fields. "
@@ -2723,10 +2723,10 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_THREAD)
             (Error INVALID_OBJECT)
             (Error INVALID_FRAMEID)
-            (Error OPAQUE_FRAME   "The specified frame is a "
-                                "constructor frame whose declaring class or any of its superclasses has  "
-                                "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
-                                "strictly-initialized<sup>PREVIEW</sup></a> instance fields. ")")
+            (Error OPAQUE_FRAME      "The specified frame is a constructor frame whose declaring "
+                                     "class or any of its superclasses has "
+                                     "<a href=../../api/java.base/java/lang/reflect/Field.html#isStrictInit()>"
+                                     "strictly-initialized<sup>PREVIEW</sup></a> instance fields.")
             (Error VM_DEAD)
         )
     )
