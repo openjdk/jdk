@@ -97,13 +97,13 @@ public interface StackFrame extends Mirror, Locatable {
      * The {@link ObjectReference} for 'this' is only available for
      * non-native instance methods.
      * <p>
-     *  {@link OpaqueFrameException} is thrown if this stack frame is for a
+     * {@link OpaqueFrameException} is thrown if this stack frame is for a
      * constructor whose declaring class or any of its superclasses has
      * {@linkplain java.lang.reflect.Field#isStrictInit() strictly-initialized}
      * instance fields.
      *
      * @apiNote The instance fields of {@linkplain Class#isValue() value classes}
-     * are strictly-initialized. Consequently,  {@link OpaqueFrameException} will be
+     * are strictly-initialized. Consequently, {@link OpaqueFrameException} will be
      * thrown if this stack frame is for a constructor whose declaring class or any of its
      * superclasses is a value class.
      *
