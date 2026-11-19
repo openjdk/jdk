@@ -2685,10 +2685,12 @@ static bool is_vector_mask_not_operand_in_andnot_pattern(Node* n, Node* m) {
 
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
+  const bool has_unique_use = m->outcnt() == 1;
   if (is_vshift_con_pattern(n, m) ||
-      is_vector_bitwise_not_pattern(n, m) ||
-      is_vector_mask_not_operand_in_andnot_pattern(n, m) ||
-      is_valid_sve_arith_imm_pattern(n, m) ||
+      (has_unique_use &&
+       (is_vector_bitwise_not_pattern(n, m) ||
+        is_vector_mask_not_operand_in_andnot_pattern(n, m) ||
+        is_valid_sve_arith_imm_pattern(n, m))) ||
       is_encode_and_store_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
