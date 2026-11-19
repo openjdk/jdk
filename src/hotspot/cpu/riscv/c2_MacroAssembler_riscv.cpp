@@ -2872,16 +2872,16 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
                                         bool islatin, Label &DIFF) {
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
 
-  Label COMPARE_ONCE, COMPARE_M4, LARGE, LOOP, SAME;
-  // Callers reserve v4-v11 as implicit vector TEMP operands in their .ad rules.
-  // v4 and v8 start non-overlapping register groups aligned for LMUL=m4.
+  Label COMPARE_ONCE, COMPARE_M2, LARGE, LOOP, SAME;
+  // Callers reserve v4-v7 as implicit vector TEMP operands in their .ad rules.
+  // v4 and v6 start non-overlapping register groups aligned for LMUL=m2.
   const VectorRegister va = v4;
-  const VectorRegister vb = v8;
+  const VectorRegister vb = v6;
   const int elems_m1 = MaxVectorSize / (islatin ? 1 : 2);
 
   // Short input: one vl-bounded m1 compare, no loop.
   mv(tmp1, elems_m1);
-  bgt(cnt, tmp1, COMPARE_M4);
+  bgt(cnt, tmp1, COMPARE_M2);
   vsetvli(tmp1, cnt, sew, Assembler::m1, Assembler::ma, Assembler::ta);
   bind(COMPARE_ONCE);
   vlex_v(va, a1, sew);
@@ -2891,20 +2891,20 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   bgez(tmp2, DIFF);
   j(SAME);
 
-  // Medium input: one vl-bounded m4 compare.
-  bind(COMPARE_M4);
-  mv(tmp1, 4 * elems_m1);
+  // Medium input: one vl-bounded m2 compare.
+  bind(COMPARE_M2);
+  mv(tmp1, 2 * elems_m1);
   bgt(cnt, tmp1, LARGE);
-  vsetvli(tmp1, cnt, sew, Assembler::m4, Assembler::ma, Assembler::ta);
+  vsetvli(tmp1, cnt, sew, Assembler::m2, Assembler::ma, Assembler::ta);
   j(COMPARE_ONCE);
 
-  // Long input: full m4 groups at fixed vl, then one vl-bounded
+  // Long input: full m2 groups at fixed vl, then one vl-bounded
   // compare covering the tail.
 
-  const int large_loop_size = 4 * MaxVectorSize;
+  const int large_loop_size = 2 * MaxVectorSize;
 
   bind(LARGE);
-  vsetvli(tmp1, x0, sew, Assembler::m4, Assembler::ma, Assembler::ta);
+  vsetvli(tmp1, x0, sew, Assembler::m2, Assembler::ma, Assembler::ta);
 
   bind(LOOP);
   vlex_v(va, a1, sew);
@@ -2918,8 +2918,8 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   bge(cnt, tmp1, LOOP);
   beqz(cnt, SAME);
 
-  // Tail: one vl-bounded m4 compare covers the rest.
-  vsetvli(tmp1, cnt, sew, Assembler::m4, Assembler::ma, Assembler::ta);
+  // Tail: one vl-bounded m2 compare covers the rest.
+  vsetvli(tmp1, cnt, sew, Assembler::m2, Assembler::ma, Assembler::ta);
   j(COMPARE_ONCE);
 
   bind(SAME);

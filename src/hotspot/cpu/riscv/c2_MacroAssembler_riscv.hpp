@@ -32,7 +32,7 @@
   // Return true if the phase output is in the scratch emit size mode.
   virtual bool in_scratch_emit_size() override;
 
-  // Clobbers v4-v11.
+  // Clobbers v4-v7.
   void element_compare(Register r1, Register r2,
                        Register result, Register cnt,
                        Register tmp1, Register tmp2,
