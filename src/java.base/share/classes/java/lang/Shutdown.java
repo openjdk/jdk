@@ -47,7 +47,8 @@ class Shutdown {
     // (0) Console restore hook
     // (1) ApplicationShutdownHooks that invokes all registered application
     //     shutdown hooks and waits until they finish
-    // (2) DeleteOnExit hook
+    // (2) I/O poller threads supporting virtual threads doing blocking I/O
+    // (3) DeleteOnExit hook
     private static final int MAX_SYSTEM_HOOKS = 10;
     private static final Runnable[] hooks = new Runnable[MAX_SYSTEM_HOOKS];
 
@@ -64,10 +65,10 @@ class Shutdown {
      * Add a new system shutdown hook.  Checks the shutdown state and
      * the hook itself, but does not do any security checks.
      *
-     * The registerShutdownInProgress parameter should be false except
-     * registering the DeleteOnExitHook since the first file may
-     * be added to the delete on exit list by the application shutdown
-     * hooks.
+     * It is expected that registerShutdownInProgress is false for the hook
+     * that runs application shutdown hooks. It may be true for other hooks,
+     * e.g. DeleteOnExitHook, as the first invocation of File.deleteOnExit
+     * may occur in an application shutdown hook.
      *
      * @param slot  the slot in the shutdown hook array, whose element
      *              will be invoked in order during shutdown

@@ -561,7 +561,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * @spec https://www.rfc-editor.org/info/rfc6067
  *      RFC 6067: BCP 47 Extension U
  * @spec https://www.unicode.org/reports/tr35
- *      Unicode Locale Data Markup Language (LDML)
+ *      Unicode Common Locale Data {@literal &} Rules (CLDR)
  * @see Builder
  * @see ResourceBundle
  * @see java.text.Format

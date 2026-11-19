@@ -547,8 +547,9 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
   if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(obj)) {
     // Don't dump existing shared metadata again.
     return point_to_it;
+  } else if (ref->type() == MetaspaceClosureType::MethodCountersType) {
+    return set_to_null;
   } else if (ref->type() == MetaspaceClosureType::MethodDataType ||
-             ref->type() == MetaspaceClosureType::MethodCountersType ||
              ref->type() == MetaspaceClosureType::KlassTrainingDataType ||
              ref->type() == MetaspaceClosureType::MethodTrainingDataType ||
              ref->type() == MetaspaceClosureType::CompileTrainingDataType) {
@@ -963,9 +964,6 @@ void ArchiveBuilder::make_training_data_shareable() {
     } else if (info.type() == MetaspaceClosureType::MethodDataType) {
       MethodData* buffered_mdo = (MethodData*)info.buffered_addr();
       buffered_mdo->remove_unshareable_info();
-    } else if (info.type() == MetaspaceClosureType::MethodCountersType) {
-      MethodCounters* buffered_mc = (MethodCounters*)info.buffered_addr();
-      buffered_mc->remove_unshareable_info();
     }
   };
   _src_obj_table.iterate_all(clean_td);

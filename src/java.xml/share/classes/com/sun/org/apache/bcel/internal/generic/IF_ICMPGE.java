@@ -24,9 +24,9 @@ package com.sun.org.apache.bcel.internal.generic;
 /**
  * IF_ICMPGE - Branch if int comparison succeeds
  *
- * <PRE>
+ * <pre>
  * Stack: ..., value1, value2 -&gt; ...
- * </PRE>
+ * </pre>
  */
 public class IF_ICMPGE extends IfInstruction {
 
@@ -36,15 +36,20 @@ public class IF_ICMPGE extends IfInstruction {
     IF_ICMPGE() {
     }
 
+    /**
+     * Constructs an IF_ICMPGE instruction.
+     *
+     * @param target The target instruction.
+     */
     public IF_ICMPGE(final InstructionHandle target) {
         super(com.sun.org.apache.bcel.internal.Const.IF_ICMPGE, target);
     }
 
     /**
      * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
-     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
+     * methods according to the class hierarchy in descending order, that is, the most specific visitXXX() call comes last.
      *
-     * @param v Visitor object
+     * @param v Visitor object.
      */
     @Override
     public void accept(final Visitor v) {
@@ -55,7 +60,7 @@ public class IF_ICMPGE extends IfInstruction {
     }
 
     /**
-     * @return negation of instruction
+     * @return negation of instruction.
      */
     @Override
     public IfInstruction negate() {

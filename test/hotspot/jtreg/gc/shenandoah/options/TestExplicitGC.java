@@ -121,9 +121,6 @@ public class TestExplicitGC {
             for (String p : full) {
                 output.shouldContain(p);
             }
-            for (String p : concNormal) {
-                output.shouldNotContain(p);
-            }
         }
     }
 }

@@ -837,13 +837,11 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     assert(index < cpool->cache()->resolved_indy_entries_length(), "impossible");
     ResolvedIndyEntry* indy_info = cpool->resolved_indy_entry_at(index);
     Method* adapter = indy_info->method();
-#if INCLUDE_CDS
     if (is_aot_compile() && !AOTConstantPoolResolver::is_resolution_deterministic(cpool(), indy_info->constant_pool_index())) {
       // This is an indy callsite that was resolved as a side effect of VM bootstrap, but
       // it cannot be cached in the resolved state, so AOT code should not reference it.
       adapter = nullptr;
     }
-#endif
     // Resolved if the adapter is non null.
     if (adapter != nullptr) {
       return get_method(adapter);
@@ -1050,17 +1048,13 @@ bool ciEnv::is_compilation_valid(JavaThread* thread, ciMethod* target, bool inst
 }
 
 void ciEnv::make_code_usable(JavaThread* thread, ciMethod* target, bool aot_preload, int entry_bci, AOTCodeEntry* aot_code_entry, nmethod* nm) {
+  precond(!is_aot_compile());
   methodHandle method(thread, target->get_Method());
 
   if (entry_bci == InvocationEntryBci) {
     // With TieredCompilation OFF we still have two versions
     // of AOT code and also JIT compilation.
-    // During assembly phase we need to replace previous
-    // AOT preload code with normal AOT code to check
-    // success of compilation in AOTCompileIterator.
-    // After JDK-8380476 FIXME: AOT compiler should not be installing
-    // nmethods on the Method::code pointer. Find other way to report success.
-    if (TieredCompilation || AOTCodeCache::is_using_code() || is_aot_compile()) {
+    if (TieredCompilation || AOTCodeCache::is_using_code()) {
       // If there is an old version we're done with it
       nmethod* old = method->code();
       if (TraceMethodReplacement && old != nullptr) {
@@ -1312,17 +1306,22 @@ void ciEnv::register_method(ciMethod* target,
             nm->set_aot_preloaded(true);
           }
         }
-        // After JDK-8380476 FIXME: The AOT compiler runs in a special AOT assembly
-        // phase, not part of any Java application.  The compiled code is not
-        // runnable in this instance of the JVM.  For consistency of access,
-        // we will fall through to make_code_usable and link the Method::code
-        // field to the new nmethod nm.  But this would be a mistake if (for
-        // any reason) the compiled method were to be invoked in this JVM
-        // instance.  Consider returning at this point, relying only on
-        // AOTCodeCache::store_nmethod to keep track of the new nmethod.
       }
 #endif
-      make_code_usable(THREAD, target, /* aot_preload */ false, entry_bci, /* aot_code_entry */ nullptr, nm);
+      if (is_aot_compile()) {
+        // The AOT compiler runs in a special AOT assembly phase,
+        // not part of any Java application.  The compiled code is not
+        // runnable in this instance of the JVM. Don't publish it in
+        // Method::_code.
+        // AOTCodeCache::store_nmethod() already cached the code and
+        // its copy in CodeCache is not needed any more. Move it from
+        // `not_installed` state so normal GC CodeCache unloading can
+        // reclaim it.
+        MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+        nm->make_in_use();
+      } else {
+        make_code_usable(THREAD, target, /* aot_preload */ false, entry_bci, /* aot_code_entry */ nullptr, nm);
+      }
     }
   }
 

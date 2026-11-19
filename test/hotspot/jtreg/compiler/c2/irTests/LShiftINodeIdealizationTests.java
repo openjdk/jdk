@@ -104,6 +104,7 @@ public class LShiftINodeIdealizationTests {
         assertResult(max, max);
     }
 
+    @DontCompile
     private void assertResult(int a, int b) {
         otherInput = b;
         Asserts.assertEQ(((a >> 4) & b) << 4, testLShiftOfAndOfRShiftSameCon(a));

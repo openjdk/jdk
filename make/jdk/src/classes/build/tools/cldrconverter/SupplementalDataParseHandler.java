@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,11 @@
 
 package build.tools.cldrconverter;
 
+import static build.tools.cldrconverter.CLDRConverter.CALENDAR_FIRSTDAY_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.CALENDAR_MINDAYS_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.PARENT_LOCALE_PREFIX;
+import static build.tools.cldrconverter.CLDRConverter.SPPL_LDML_DTD_SYSTEM_ID;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -38,7 +43,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Handles parsing of files in Locale Data Markup Language for supplementalData.xml
+ * Handles parsing of files in Common Locale Data {@literal &} Rules for supplementalData.xml
  * and produces a map that uses the keys and values of JRE locale data.
  */
 
@@ -89,9 +94,9 @@ class SupplementalDataParseHandler extends AbstractLDMLHandler<Object> {
     Map<String, Object> getData(String id) {
         Map<String, Object> values = new HashMap<>();
         if ("root".equals(id)) {
-            parentLocalesMap.forEach((k, v) -> values.put(CLDRConverter.PARENT_LOCALE_PREFIX + k, v));
-            firstDayMap.forEach((k, v) -> values.put(CLDRConverter.CALENDAR_FIRSTDAY_PREFIX + v, k));
-            minDaysMap.forEach((k, v) -> values.put(CLDRConverter.CALENDAR_MINDAYS_PREFIX + v, k));
+            parentLocalesMap.forEach((k, v) -> values.put(PARENT_LOCALE_PREFIX + k, v));
+            firstDayMap.forEach((k, v) -> values.put(CALENDAR_FIRSTDAY_PREFIX + v, k));
+            minDaysMap.forEach((k, v) -> values.put(CALENDAR_MINDAYS_PREFIX + v, k));
             inputSkeletonMap.get("preferred").forEach((k, v) ->
                     values.merge(Bundle.DATEFORMATITEM_INPUT_REGIONS_PREFIX + "preferred",
                             k + ":" + v.stream().collect(Collectors.joining(" ")) + ";",
@@ -107,7 +112,7 @@ class SupplementalDataParseHandler extends AbstractLDMLHandler<Object> {
     @Override
     public InputSource resolveEntity(String publicID, String systemID) throws IOException, SAXException {
         // avoid HTTP traffic to unicode.org
-        if (systemID.startsWith(CLDRConverter.SPPL_LDML_DTD_SYSTEM_ID)) {
+        if (systemID.startsWith(SPPL_LDML_DTD_SYSTEM_ID)) {
             return new InputSource((new File(CLDRConverter.LOCAL_SPPL_LDML_DTD)).toURI().toString());
         }
         return null;

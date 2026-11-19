@@ -697,7 +697,6 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
   set_reference_map(nullptr);
-#if INCLUDE_CDS
   if (_resolved_indy_entries != nullptr) {
     MetadataFactory::free_array<ResolvedIndyEntry>(data, _resolved_indy_entries);
     _resolved_indy_entries = nullptr;
@@ -710,7 +709,6 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
     MetadataFactory::free_array<ResolvedMethodEntry>(data, _resolved_method_entries);
     _resolved_method_entries = nullptr;
   }
-#endif
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

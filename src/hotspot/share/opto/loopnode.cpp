@@ -83,7 +83,7 @@ bool LoopNode::is_valid_counted_loop(BasicType bt) const {
         le->true_proj_or_null() == l->in(LoopNode::LoopBackControl)) {
       Node* phi  = l->phi();
       IfFalseNode* exit = le->false_proj_or_null();
-      if (exit != nullptr && phi != nullptr && phi->is_Phi() &&
+      if (exit != nullptr && is<PhiNode>(phi) &&
           phi->in(LoopNode::LoopBackControl) == l->incr() &&
           le->loopnode() == l && le->stride_is_con()) {
         return true;
@@ -179,7 +179,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
     // that doesn't branch to an UNC, we stop. The code that process
     // expensive nodes will notice the loop and skip over it to try to
     // move the node further up.
-    if (ctl->is_CountedLoop() && ctl->in(1) != nullptr && ctl->in(1)->in(0) != nullptr && ctl->in(1)->in(0)->is_If()) {
+    if (ctl->is_CountedLoop() && ctl->in(1) != nullptr && Node::is<IfNode>(ctl->in(1)->in(0))) {
       if (!ctl->in(1)->as_Proj()->is_uncommon_trap_if_pattern()) {
         break;
       }
@@ -686,7 +686,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, const Node* he
         // code that relies on mm. Clear that extra state here.
         if (mms.alias_idx() != Compile::AliasIdxBot &&
             (loop != get_loop(ctrl_or_self(mms.memory())) ||
-             (mms.adr_type()->isa_oop_ptr() && mms.adr_type()->is_known_instance()))) {
+             (mms.adr_type()->is_oopptr() && mms.adr_type()->is_known_instance()))) {
           mm->set_memory_at(mms.alias_idx(), mem->as_MergeMem()->base_memory());
         }
       }
@@ -860,8 +860,8 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List<Node>& old_
   // Take what we know about the number of iterations of the long counted loop into account when computing the limit of
   // the inner loop.
   Node* init = head->init_trip();
-  const TypeInteger* lo = _igvn.type(init)->is_integer(bt);
-  const TypeInteger* hi = _igvn.type(limit)->is_integer(bt);
+  const TypeInteger* lo = _igvn.type(init)->as_integer(bt);
+  const TypeInteger* hi = _igvn.type(limit)->as_integer(bt);
   if (stride_con < 0) {
     swap(lo, hi);
   }
@@ -1282,7 +1282,7 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     // transformation happens by the time the counted loop is created (in a subsequent pass of loop opts), C2 knows
     // enough about the loop's limit that it doesn't try to add loop limit check predicates.
     const Predicates predicates(entry_control);
-    const TypeLong* new_limit_t = new_limit->Value(&_igvn)->is_long();
+    const TypeLong* new_limit_t = new_limit->Value(&_igvn)->as_long();
     new_limit = ConstraintCastNode::make_cast_for_basic_type(predicates.entry(), new_limit,
                                                              TypeLong::make(0, new_limit_t->_hi, new_limit_t->_widen),
                                                              ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, bt);
@@ -3013,7 +3013,7 @@ bool CountedLoopConverter::stress_long_counted_loop() {
       }
       Node* in_clone = old_new[in->_idx];
       if (in_clone == nullptr) {
-        assert(igvn->type(in)->isa_int(), "");
+        assert(igvn->type(in)->is_int(), "");
         in_clone = new ConvI2LNode(in);
         igvn->register_new_node_with_optimizer(in_clone);
         _phase->set_subtree_ctrl(in_clone, false);
@@ -3100,7 +3100,7 @@ bool CountedLoopConverter::is_counted_loop() {
 
   // Check iv is not overflowing
   Node* init_trip = _structure.phi()->in(LoopNode::EntryControl);
-  const TypeInteger* init_t = igvn->type(init_trip)->is_integer(_iv_bt);
+  const TypeInteger* init_t = igvn->type(init_trip)->as_integer(_iv_bt);
   if (is_iv_overflowing(init_t, stride_con, _structure.iv_incr().phi_incr(), _structure.exit_test().mask())) {
     return false;
   }
@@ -3298,7 +3298,7 @@ bool CountedLoopConverter::is_counted_loop() {
   //            there is no overflow of the iv phi after the first iteration. In this case, we don't need to check (ii)
   //            again and can skip the predicate.
 
-  const TypeInteger* limit_t = igvn->type(_structure.limit())->is_integer(_iv_bt);
+  const TypeInteger* limit_t = igvn->type(_structure.limit())->as_integer(_iv_bt);
   StrideOverflowState stride_overflow_state = check_stride_overflow(_structure.final_limit_correction(), limit_t, _iv_bt);
 
   Node* init_control = _head->in(LoopNode::EntryControl);
@@ -3435,7 +3435,7 @@ bool CountedLoopConverter::is_iv_overflowing(const TypeInteger* init_t, jlong st
 
 bool CountedLoopConverter::LoopStructure::is_infinite_loop() const {
   PhaseIterGVN& igvn = _phase->igvn();
-  const TypeInteger* limit_t = igvn.type(limit())->is_integer(_iv_bt);
+  const TypeInteger* limit_t = igvn.type(limit())->as_integer(_iv_bt);
 
   if (_truncated_increment.outer_trunc() != nullptr) {
     // When there is a truncation, we must be sure that after the truncation
@@ -3455,7 +3455,7 @@ bool CountedLoopConverter::LoopStructure::is_infinite_loop() const {
     // If the array is longer then this is an endless loop
     //  - No transformation can be done.
 
-    const TypeInteger* incr_t = igvn.type(_iv_incr.incr())->is_integer(_iv_bt);
+    const TypeInteger* incr_t = igvn.type(_iv_incr.incr())->as_integer(_iv_bt);
     if (limit_t->hi_as_long() > incr_t->hi_as_long()) {
       // if the limit can have a higher value than the increment (before the phi)
       return true;
@@ -3722,7 +3722,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
         outer_le->set_req(0, sfpt_clone);
 
         Node* polladdr = sfpt_clone->in(TypeFunc::Parms);
-        if (polladdr != nullptr && polladdr->is_Load()) {
+        if (Node::is<LoadNode>(polladdr)) {
           // Polling load should be pinned outside inner loop.
           Node* new_polladdr = polladdr->clone();
           new_polladdr->set_req(0, iffalse);
@@ -3807,7 +3807,7 @@ bool CountedLoopConverter::has_dominating_loop_limit_check(Node* init_trip, Node
   IfTrueNode* if_true = new IfTrueNode(iff);
   Node* dominated_iff = _igvn.transform(iff);
   // ConI node? Found dominating test (IfNode::dominated_by() returns a ConI node).
-  const bool found_dominating_test = dominated_iff != nullptr && dominated_iff->is_ConI();
+  const bool found_dominating_test = Node::is<ConINode>(dominated_iff);
 
   // Kill the If with its projections again in the next IGVN round by cutting it off from the graph.
   _igvn.replace_input_of(iff, 0, _phase->C->top());
@@ -3892,7 +3892,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
     Node* inner_out = sfpt->in(0);
     CountedLoopEndNode* cle = inner_out->in(0)->as_CountedLoopEnd();
     assert(cle == inner->loopexit_or_null(), "mismatch");
-    bool has_skeleton = outer_le->in(1)->bottom_type()->singleton() && outer_le->in(1)->bottom_type()->is_int()->get_con() == 0;
+    bool has_skeleton = outer_le->in(1)->bottom_type()->singleton() && outer_le->in(1)->bottom_type()->as_int()->get_con() == 0;
     if (has_skeleton) {
       assert(expect_skeleton == 1 || expect_skeleton == -1, "unexpected skeleton node");
       assert(outer->outcnt() == 2, "only control nodes");
@@ -3970,7 +3970,7 @@ void CountedLoopNode::dump_spec(outputStream *st) const {
 
 //=============================================================================
 jlong BaseCountedLoopEndNode::stride_con() const {
-  return stride()->bottom_type()->is_integer(bt())->get_con_as_long(bt());
+  return stride()->bottom_type()->as_integer(bt())->get_con_as_long(bt());
 }
 
 
@@ -3993,14 +3993,14 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
   if (limit_t  == Type::TOP) return Type::TOP;
   if (stride_t == Type::TOP) return Type::TOP;
 
-  int stride_con = stride_t->is_int()->get_con();
+  int stride_con = stride_t->as_int()->get_con();
   if (stride_con == 1)
     return bottom_type();  // Identity
 
-  if (init_t->is_int()->is_con() && limit_t->is_int()->is_con()) {
+  if (init_t->as_int()->is_con() && limit_t->as_int()->is_con()) {
     // Use jlongs to avoid integer overflow.
-    jlong init_con   =  init_t->is_int()->get_con();
-    jlong limit_con  = limit_t->is_int()->get_con();
+    jlong init_con   =  init_t->as_int()->get_con();
+    jlong limit_con  = limit_t->as_int()->get_con();
     int  stride_m   = stride_con - (stride_con > 0 ? 1 : -1);
     jlong trip_count = (limit_con - init_con + stride_m)/stride_con;
     jlong final_con  = init_con + stride_con*trip_count;
@@ -4032,7 +4032,7 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(in(Stride)) == Type::TOP)
     return nullptr;  // Dead
 
-  int stride_con = phase->type(in(Stride))->is_int()->get_con();
+  int stride_con = phase->type(in(Stride))->as_int()->get_con();
   if (stride_con == 1)
     return nullptr;  // Identity
 
@@ -4043,8 +4043,8 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return nullptr;
   }
 
-  const TypeInt* init_t  = phase->type(in(Init) )->is_int();
-  const TypeInt* limit_t = phase->type(in(Limit))->is_int();
+  const TypeInt* init_t  = phase->type(in(Init) )->as_int();
+  const TypeInt* limit_t = phase->type(in(Limit))->as_int();
   jlong stride_p;
   jlong lim, ini;
   julong max;
@@ -4108,7 +4108,7 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //------------------------------Identity---------------------------------------
 // If stride == 1 return limit node.
 Node* LoopLimitNode::Identity(PhaseGVN* phase) {
-  int stride_con = phase->type(in(Stride))->is_int()->get_con();
+  int stride_con = phase->type(in(Stride))->as_int()->get_con();
   if (stride_con == 1 || stride_con == -1)
     return in(Limit);
   return this;
@@ -4139,7 +4139,7 @@ void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
         n1->in(2)->is_Con()) {
       // Unsigned truncation.
       // Pattern: ((i+1) & mask)
-      jint mask = n1->in(2)->bottom_type()->is_int()->get_con();
+      jint mask = n1->in(2)->bottom_type()->as_int()->get_con();
       switch (mask) {
         case 0x7fff: // Unsigned 15-bit truncation. For historical reasons.
           t1 = n1;
@@ -4149,11 +4149,10 @@ void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
           break;
       }
     } else if (n1op == Op_RShiftI &&
-               n1->in(1) != nullptr &&
-               n1->in(1)->Opcode() == Op_LShiftI &&
+               Node::is_exact<Op_LShiftI>(n1->in(1)) &&
                n1->in(2) == n1->in(1)->in(2) &&
                n1->in(2)->is_Con()) {
-      jint shift = n1->in(2)->bottom_type()->is_int()->get_con();
+      jint shift = n1->in(2)->bottom_type()->as_int()->get_con();
       // %%% This check should match any shift in [1..31].
       if (shift == 16 || shift == 8) {
         t1 = n1;
@@ -4195,9 +4194,9 @@ IfNode* CountedLoopNode::find_multiversion_if_from_multiversion_fast_main_loop()
 }
 
 LoopNode* CountedLoopNode::skip_strip_mined(int expect_skeleton) {
-  if (is_strip_mined() && in(EntryControl) != nullptr && in(EntryControl)->is_OuterStripMinedLoop()) {
+  if (auto osmln = isa<OuterStripMinedLoopNode>(in(EntryControl)); osmln != nullptr && is_strip_mined()) {
     verify_strip_mined(expect_skeleton);
-    return in(EntryControl)->as_Loop();
+    return osmln;
   }
   return this;
 }
@@ -4205,10 +4204,7 @@ LoopNode* CountedLoopNode::skip_strip_mined(int expect_skeleton) {
 OuterStripMinedLoopNode* CountedLoopNode::outer_loop() const {
   assert(is_strip_mined(), "not a strip mined loop");
   Node* c = in(EntryControl);
-  if (c == nullptr || c->is_top() || !c->is_OuterStripMinedLoop()) {
-    return nullptr;
-  }
-  return c->as_OuterStripMinedLoop();
+  return isa<OuterStripMinedLoopNode>(c);
 }
 
 IfTrueNode* OuterStripMinedLoopNode::outer_loop_tail() const {
@@ -4552,7 +4548,7 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     return;
   }
   jlong short_scaled_iters = LoopStripMiningIterShortLoop * ABS(stride);
-  const TypeInt* inner_iv_t = igvn->type(inner_iv_phi)->is_int();
+  const TypeInt* inner_iv_t = igvn->type(inner_iv_phi)->as_int();
   jlong iter_estimate = (jlong)inner_iv_t->_hi - (jlong)inner_iv_t->_lo;
   assert(iter_estimate > 0, "broken");
   if (iter_estimate <= short_scaled_iters) {
@@ -4797,7 +4793,7 @@ bool OuterStripMinedLoopEndNode::is_expanded(PhaseGVN *phase) const {
     IfTrueNode* backedge = true_proj_or_null();
     if (backedge != nullptr) {
       Node* head = backedge->unique_ctrl_out_or_null();
-      if (head != nullptr && head->is_OuterStripMinedLoop()) {
+      if (is<OuterStripMinedLoopNode>(head)) {
         if (head->find_out_with(Op_Phi) != nullptr) {
           return true;
         }
@@ -4830,7 +4826,7 @@ Node *OuterStripMinedLoopEndNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //       } while ( i < 10)
 //
 const TypeInt* CountedLoopConverter::filtered_type(Node* n, Node* n_ctrl) {
-  assert(n && n->bottom_type()->is_int(), "must be int");
+  assert(n != nullptr && n->bottom_type()->is_int(), "must be int");
   const TypeInt* filtered_t = nullptr;
   if (!n->is_Phi()) {
     assert(n_ctrl != nullptr || n_ctrl == _phase->C->top(), "valid control");
@@ -4850,7 +4846,7 @@ const TypeInt* CountedLoopConverter::filtered_type(Node* n, Node* n_ctrl) {
           if (filtered_t == nullptr) {
             filtered_t = val_t;
           } else {
-            filtered_t = filtered_t->meet(val_t)->is_int();
+            filtered_t = filtered_t->meet(val_t)->as_int();
           }
         } else {
           // We found no constriant, so we have to assume that this path
@@ -4863,9 +4859,9 @@ const TypeInt* CountedLoopConverter::filtered_type(Node* n, Node* n_ctrl) {
 
   // The filtered type may be worse than what we already know
   // about n, so take the intersection.
-  const TypeInt* n_t = _phase->igvn().type(n)->is_int();
+  const TypeInt* n_t = _phase->igvn().type(n)->as_int();
   if (filtered_t != nullptr) {
-    n_t = n_t->join(filtered_t)->is_int();
+    n_t = n_t->join(filtered_t)->as_int();
   }
   return n_t;
 }
@@ -4877,7 +4873,7 @@ const TypeInt* CountedLoopConverter::filtered_type(Node* n, Node* n_ctrl) {
 //       as if we returned TypeInt::INT.
 const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, Node* use_ctrl) {
   if (val->is_Con()) {
-     return val->bottom_type()->is_int();
+     return val->bottom_type()->as_int();
   }
   uint if_limit = 10; // Max number of dominating if's visited
   const TypeInt* rtn_t = nullptr;
@@ -4896,7 +4892,7 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
             rtn_t = if_t;
           } else {
             const Type* join_t = rtn_t->join(if_t);
-            if (!join_t->isa_int()) {
+            if (!join_t->is_int()) {
               // We may have encountered multiple if conditions, that have no
               // overlap, and produce an empty/top type. Returning nullptr
               // is conservative, it means we do not constrain the type, which
@@ -4904,7 +4900,7 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
               assert(join_t->empty(), "top");
               return nullptr;
             }
-            rtn_t = join_t->is_int();
+            rtn_t = join_t->as_int();
           }
         }
       }
@@ -4926,7 +4922,7 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
 // Dump special per-node info
 #ifndef PRODUCT
 void CountedLoopEndNode::dump_spec(outputStream *st) const {
-  if( in(TestValue) != nullptr && in(TestValue)->is_Bool() ) {
+  if (is<BoolNode>(in(TestValue))) {
     BoolTest bt( test_trip()); // Added this for g++.
 
     st->print("[");
@@ -7643,19 +7639,19 @@ OpaqueZeroTripGuardNode* CountedLoopNode::is_canonical_loop_entry() {
   }
   Node* ctrl = skip_assertion_predicates_with_halt();
 
-  if (ctrl == nullptr || (!ctrl->is_IfTrue() && !ctrl->is_IfFalse())) {
+  if (!is<IfTrueNode>(ctrl) && !is<IfFalseNode>(ctrl)) {
     return nullptr;
   }
   Node* iffm = ctrl->in(0);
-  if (iffm == nullptr || iffm->Opcode() != Op_If) {
+  if (!is_exact<Op_If>(iffm)) {
     return nullptr;
   }
   Node* bolzm = iffm->in(1);
-  if (bolzm == nullptr || !bolzm->is_Bool()) {
+  if (!is<BoolNode>(bolzm)) {
     return nullptr;
   }
   Node* cmpzm = bolzm->in(1);
-  if (cmpzm == nullptr || !cmpzm->is_Cmp()) {
+  if (!is<CmpNode>(cmpzm)) {
     return nullptr;
   }
 
@@ -7668,7 +7664,7 @@ OpaqueZeroTripGuardNode* CountedLoopNode::is_canonical_loop_entry() {
   bool found_opaque = false;
   for (uint i = 1; i < cmpzm->req(); i++) {
     Node* opnd = cmpzm->in(i);
-    if (opnd && opnd->is_Opaque1()) {
+    if (is<Opaque1Node>(opnd)) {
       found_opaque = true;
       break;
     }
@@ -8166,7 +8162,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   // which can inhibit range check elimination.
   if (least != early) {
     Node* ctrl_out = least->unique_ctrl_out_or_null();
-    if (ctrl_out != nullptr && ctrl_out->is_Loop() &&
+    if (Node::is<LoopNode>(ctrl_out) &&
         least == ctrl_out->in(LoopNode::EntryControl) &&
         (ctrl_out->is_CountedLoop() || ctrl_out->is_OuterStripMinedLoop())) {
       Node* least_dom = idom(least);
@@ -8176,8 +8172,8 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     }
   }
   // Don't extend live ranges of raw oops
-  if (least != early && n->is_ConstraintCast() && n->in(1)->bottom_type()->isa_rawptr() &&
-      !n->bottom_type()->isa_rawptr()) {
+  if (least != early && n->is_ConstraintCast() && n->in(1)->bottom_type()->is_rawptr() &&
+      !n->bottom_type()->is_rawptr()) {
     least = early;
   }
 

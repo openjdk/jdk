@@ -223,14 +223,11 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   // Test for in-cset
   if (is_strong) {
-#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump()) {
       __ ld(t1, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
       __ lwu(t0, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
       __ srl(t0, x10, t0);
-    } else
-#endif
-    {
+    } else {
       __ mv(t1, ShenandoahHeap::in_cset_fast_test_addr());
       __ srli(t0, x10, ShenandoahHeapRegion::region_size_bytes_shift_jint());
     }
@@ -449,14 +446,11 @@ void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembl
 void ShenandoahBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& L_error) {
   assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
-#if INCLUDE_CDS
   if (AOTCodeCache::is_on_for_dump()) {
     __ ld(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
     __ andr(tmp1, obj, tmp2);
     __ ld(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
-  } else
-#endif
-  {
+  } else {
     __ mv(tmp2, (intptr_t) Universe::verify_oop_mask());
     __ andr(tmp1, obj, tmp2);
     __ mv(tmp2, (intptr_t) Universe::verify_oop_bits());
@@ -716,7 +710,7 @@ void ShenandoahBarrierSetAssembler::compare_and_set_c2(const MachNode* node, Mac
 
 void ShenandoahBarrierSetAssembler::get_and_set_c2(const MachNode* node, MacroAssembler* masm, Register preval,
     Register newval, Register addr, Register tmp1, Register tmp2, Register tmp3, bool is_acquire) {
-  const bool is_narrow = node->bottom_type()->isa_narrowoop();
+  const bool is_narrow = node->bottom_type()->is_narrowoop();
 
   ShenandoahBarrierStubC2::load_store_pre(masm, node, Address(addr, 0), tmp1, tmp2, tmp3, is_narrow);
 

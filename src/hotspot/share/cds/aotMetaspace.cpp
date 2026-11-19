@@ -346,8 +346,28 @@ void AOTMetaspace::open_output_mapinfo() {
   _output_mapinfo->open_as_output();
 }
 
+static void get_cpu_features_name_disabled_by_aot_cache(stringStream& ss) {
+  void* buffer = os::malloc(VM_Version::cpu_features_size(), mtInternal);
+  VM_Version::get_cpu_features_disabled_by_aot_cache(buffer);
+  VM_Version::get_cpu_features_name(buffer, ss);
+  os::free(buffer);
+}
+
 // Called by universe_post_init()
 void AOTMetaspace::post_initialize(TRAPS) {
+  if (UseAOTCacheCpuFeaturesOnly) {
+    ResourceMark rm;
+    stringStream ss;
+    get_cpu_features_name_disabled_by_aot_cache(ss);
+    if (!ss.is_empty()) {
+      const char* ergo_msg = "";
+      if (FLAG_IS_ERGO(UseAOTCacheCpuFeaturesOnly)) {
+        ergo_msg = " (enabled ergonomically)";
+      }
+      log_warning(aot)("Some CPU features are turned off by UseAOTCacheCpuFeaturesOnly%s and it can impact the performance", ergo_msg);
+      log_warning(aot)("CPU features disabled are: %s", ss.as_string());
+    }
+  }
   if (CDSConfig::is_using_archive()) {
     FileMapInfo *static_mapinfo = FileMapInfo::static_input_archive();
     FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_input_archive();
@@ -1202,7 +1222,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
       // Let's run the AOT compiler.
       CDSConfig::enable_dumping_aot_code();
       log_info(aot)("Compiling AOT code with %d compiler threads", (int)CICompilerCount);
-      AOTCompileBroker::compile_aot_code(&builder, CHECK);
+      AOTCompileBroker::compile_aot_code(CHECK);
       log_info(aot)("Finished compiling AOT code");
       CDSConfig::disable_dumping_aot_code();
     }
@@ -1638,6 +1658,16 @@ void AOTMetaspace::get_aot_code_region_size() {
   }
 }
 
+char* AOTMetaspace::get_archived_cpu_features() {
+  char* cpu_features = nullptr;
+  FileMapInfo* static_mapinfo = get_static_archive();
+  if ((static_mapinfo != nullptr) &&
+      (static_mapinfo->cpu_features_size() == VM_Version::cpu_features_size())) {
+    cpu_features = (char *)static_mapinfo->archived_cpu_features();
+  }
+  return cpu_features;
+}
+
 FileMapInfo* AOTMetaspace::get_static_archive() {
   if (has_static_archive_validation_failed()) {
     return nullptr;
@@ -1692,13 +1722,14 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
     return MAP_ARCHIVE_MMAP_FAILURE;
   }
 
-  PRODUCT_ONLY(if (ArchiveRelocationMode == 1 && use_requested_addr) {
-      // For product build only -- this is for benchmarking the cost of doing relocation.
-      // For debug builds, the check is done below, after reserving the space, for better test coverage
-      // (see comment below).
+  if (ArchiveRelocationMode == 1 && use_requested_addr) {
+    if (AOTStressArchiveUnmapping) {
+      aot_log_info(aot)("Map at requested address to stress test unmapping");
+    } else {
       aot_log_info(aot)("ArchiveRelocationMode == 1: always map archive(s) at an alternative address");
       return MAP_ARCHIVE_MMAP_FAILURE;
-    });
+    }
+  }
 
   if (ArchiveRelocationMode == 2 && !use_requested_addr) {
     aot_log_info(aot)("ArchiveRelocationMode == 2: never map archive(s) at an alternative address");
@@ -1811,19 +1842,18 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
     MapArchiveResult dynamic_result = (static_result == MAP_ARCHIVE_SUCCESS) ?
                                      map_archive(dynamic_mapinfo, mapped_base_address, archive_space_rs) : MAP_ARCHIVE_OTHER_FAILURE;
 
-    DEBUG_ONLY(if (ArchiveRelocationMode == 1 && use_requested_addr) {
-      // This is for simulating mmap failures at the requested address. In
-      //  debug builds, we do it here (after all archives have possibly been
-      //  mapped), so we can thoroughly test the code for failure handling
-      //  (releasing all allocated resource, etc).
-      aot_log_info(aot)("ArchiveRelocationMode == 1: always map archive(s) at an alternative address");
+    if (ArchiveRelocationMode == 1 && use_requested_addr && AOTStressArchiveUnmapping) {
+      // This is for simulating mmap failures at the requested address. We do it here
+      // (after all archives have possibly been mapped), so we can thoroughly test the
+      // code for failure handling (releasing all allocated resource, etc).
+      aot_log_info(aot)("Simulate mapping failure to stress test unmapping");
       if (static_result == MAP_ARCHIVE_SUCCESS) {
         static_result = MAP_ARCHIVE_MMAP_FAILURE;
       }
       if (dynamic_result == MAP_ARCHIVE_SUCCESS) {
         dynamic_result = MAP_ARCHIVE_MMAP_FAILURE;
       }
-    });
+    }
 
     if (static_result == MAP_ARCHIVE_SUCCESS) {
       if (dynamic_result == MAP_ARCHIVE_SUCCESS) {
