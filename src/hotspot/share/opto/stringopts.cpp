@@ -554,7 +554,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       }
       // Find the constructor call
       Node* result = alloc->result_cast();
-      if (result == nullptr || !result->is_CheckCastPP() || alloc->in(TypeFunc::Memory)->is_top()) {
+      if (!Node::is<CheckCastPPNode>(result) || alloc->in(TypeFunc::Memory)->is_top()) {
         // strange looking allocation
 #ifndef PRODUCT
         if (PrintOptimizeStringConcat) {
@@ -932,8 +932,8 @@ bool StringConcat::validate_mem_flow() {
               ctrl = copy->is_copy();
             } else { // a cast
               assert(ctrl->req() == 3 &&
-                     ctrl->in(1) != nullptr && ctrl->in(1)->is_Proj() &&
-                     ctrl->in(2) != nullptr && ctrl->in(2)->is_Proj() &&
+                     Node::is<ProjNode>(ctrl->in(1)) &&
+                     Node::is<ProjNode>(ctrl->in(2)) &&
                      ctrl->in(1)->in(0) == ctrl->in(2)->in(0) &&
                      ctrl->in(1)->in(0) != nullptr && ctrl->in(1)->in(0)->is_If(),
                      "must be a simple diamond");
@@ -1160,10 +1160,10 @@ bool StringConcat::validate_control_flow() {
         continue;
       }
       if (ptr->req() == 3 &&
-          ptr->in(1) != nullptr && ptr->in(1)->is_Proj() &&
-          ptr->in(2) != nullptr && ptr->in(2)->is_Proj() &&
+          Node::is<ProjNode>(ptr->in(1)) &&
+          Node::is<ProjNode>(ptr->in(2)) &&
           ptr->in(1)->in(0) == ptr->in(2)->in(0) &&
-          ptr->in(1)->in(0) != nullptr && ptr->in(1)->in(0)->is_If()) {
+          Node::is<IfNode>(ptr->in(1)->in(0))) {
         // Simple diamond.
         // XXX should check for possibly merging stores.  simple data merges are ok.
         // The IGVN will make this simple diamond go away when it
@@ -1452,7 +1452,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   Node* ch = __ AddI(r, __ intcon('0'));
   Node* st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
                                 ch, bt, MemNode::unordered, false /* require_atomic_access */,
-                                false /* unaligned */, (bt != T_BYTE) /* mismatched */);
+                                false /* unaligned */, (bt != T_BYTE) /* mismatched */, false, false, 0);
 
   iff = kit.create_and_map_if(head, __ Bool(__ CmpI(q, __ intcon(0)), BoolTest::ne),
                               PROB_FAIR, COUNT_UNKNOWN);
@@ -1491,7 +1491,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
     Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
     st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
                             sign, bt, MemNode::unordered, false /* require_atomic_access */, false /* unaligned */,
-                            (bt != T_BYTE) /* mismatched */);
+                            (bt != T_BYTE) /* mismatched */, false, false, 0);
 
     final_merge->init_req(merge_index + 1, kit.control());
     final_mem->init_req(merge_index + 1, st);

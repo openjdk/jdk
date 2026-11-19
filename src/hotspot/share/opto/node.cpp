@@ -1356,8 +1356,8 @@ bool Node::should_process_when_disconnect_output(Node* output) const {
 //--------------------------find_exact_control---------------------------------
 // Skip Proj and CatchProj nodes chains. Check for Null and Top.
 Node* Node::find_exact_control(Node* ctrl) {
-  if (ctrl == nullptr && this->is_Region())
-    ctrl = this->as_Region()->is_copy();
+  if (auto this_as_region = isa<RegionNode>(this); ctrl == nullptr && this_as_region != nullptr)
+    ctrl = this_as_region->is_copy();
 
   if (ctrl != nullptr && ctrl->is_CatchProj()) {
     if (ctrl->as_CatchProj()->_con == CatchProjNode::fall_through_index)
@@ -1366,7 +1366,7 @@ Node* Node::find_exact_control(Node* ctrl) {
       ctrl = ctrl->in(0);
   }
 
-  if (ctrl != nullptr && ctrl->is_Proj())
+  if (is<ProjNode>(ctrl))
     ctrl = ctrl->in(0);
 
   return ctrl;
@@ -2969,7 +2969,7 @@ bool Node::is_iteratively_computed() {
   if (ideal_reg()) { // does operation have a result register?
     for (uint i = 1; i < req(); i++) {
       Node* n = in(i);
-      if (n != nullptr && n->is_Phi()) {
+      if (is<PhiNode>(n)) {
         for (uint j = 1; j < n->req(); j++) {
           if (n->in(j) == this) {
             return true;
