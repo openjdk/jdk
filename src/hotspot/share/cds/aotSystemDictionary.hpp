@@ -91,7 +91,7 @@
 [3] Identifying the category of archived classes
 
     BUILTIN:              (C->aot_class_location_id() >= 0)
-    UNREGISTERED:         (C->aot_class_location_id() == UNREGISTERED_INDEX (-9999))
+    UNREGISTERED:         (C->aot_class_location_id() == AOTClassLocationID::UNREGISTERED (-9999))
 
 [4] Lookup of archived classes at run time:
 
@@ -105,16 +105,9 @@
         (name, clsfile_len, clsfile_crc32).
 
 ===============================================================================*/
-#define UNREGISTERED_INDEX -9999
 
-class BootstrapInfo;
 class ClassFileStream;
-class ConstantPoolCache;
 class Dictionary;
-class DumpTimeClassInfo;
-class DumpTimeSharedClassTable;
-class RunTimeClassInfo;
-class RunTimeSharedDictionary;
 
 template <typename E> class GrowableArray;
 
@@ -269,7 +262,9 @@ public:
   static bool check_linking_constraints(Thread* current, InstanceKlass* klass) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                      Handle loader1, Handle loader2) NOT_CDS_RETURN;
-  static bool is_builtin(const InstanceKlass* k);
+  static bool is_builtin(const InstanceKlass* k) {
+    return !k->defined_by_other_loaders();
+  }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
   static InstanceKlass* get_unregistered_class(Symbol* name);
   static void copy_unregistered_class_size_and_crc32(InstanceKlass* klass, DumpTimeClassInfo* dt_info);

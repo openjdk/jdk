@@ -600,10 +600,6 @@ Klass* AOTSystemDictionary::find_verification_constraint_bottom_class(InstanceKl
   return constraint_class;
 }
 
-bool AOTSystemDictionary::is_builtin(const InstanceKlass* k) {
-  return (k->aot_class_location_id() != AOTClassLocationID::UNREGISTERED);
-}
-
 bool AOTSystemDictionary::is_builtin_loader(ClassLoaderData* loader_data) {
   oop class_loader = loader_data->class_loader();
   return (class_loader == nullptr ||

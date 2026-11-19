@@ -995,8 +995,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
                                                     PackageEntry* pkg_entry,
                                                     Handle class_loader) {
   assert(!ik->defined_by_other_loaders(), "this function should be called for built-in classes only");
-  const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(ik->aot_class_location_id());
-  assert(cl != nullptr, "AOT class for built-in loaders must have a location");
+  const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_not_null(ik);
   if (!Universe::is_module_initialized()) {
     assert(cl != nullptr, "must be");
     // At this point, no modules have been defined yet. KlassSubGraphInfo::check_allowed_klass()
@@ -1277,7 +1276,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // For boot loader, ensure that GetSystemPackage knows that a class in this
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
-    PackageEntry::set_boot_classpath_index(ik, AOTClassLocationConfig::get_path_index(ik));
+    PackageEntry::set_boot_classpath_index(ik, AOTClassLocationConfig::runtime()->get_boot_classpath_index(ik));
   }
 
   // notify a class loaded from shared object

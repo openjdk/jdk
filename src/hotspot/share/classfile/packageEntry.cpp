@@ -197,15 +197,8 @@ void PackageEntry::pack_qualified_exports() {
   }
 }
 
-// Function set_classpath_index ensures that for a non-null _package_entry
-// of the InstanceKlass, the entry is in the boot loader's package entry table.
-// It then sets the classpath_index in the package entry record.
-//
-// The classpath_index field is used to find the entry on the boot loader class
-// path for packages with classes loaded by the boot loader from -Xbootclasspath/a
-// in an unnamed module.  It is also used to indicate (for all packages whose
-// classes are loaded by the boot loader) that at least one of the package's
-// classes has been loaded.
+// Update ik->package()->_boot_classpath_index to be used by ClassLoader::get_system_package()
+// and PackageEntryTable::get_system_packages().
 void PackageEntry::set_boot_classpath_index(InstanceKlass* ik, s2 index) {
   assert(ik->class_loader_data() == ClassLoaderData::the_null_class_loader_data(), "used only for boot loader");
   PackageEntry* entry = ik->package();

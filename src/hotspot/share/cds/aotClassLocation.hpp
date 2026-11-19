@@ -190,7 +190,7 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
 
   bool is_valid_path_index(int path_index, InstanceKlass* ik);
   static int get_path_index_from_table(const char* path, bool is_named_module);
-  static int get_path_index(InstanceKlass* ik, const ClassFileStream* stream);
+  static int compute_path_index(InstanceKlass* ik, const ClassFileStream* stream);
   static void update_aot_class_location_id(InstanceKlass* ik, int path_index, bool redefined);
   static void record_hidden_class(InstanceKlass* ik);
 
@@ -272,7 +272,7 @@ public:
   }
 
   const AOTClassLocation* class_location_at(int index) const;
-  const AOTClassLocation* class_location_at(AOTClassLocationID id) const;
+  const AOTClassLocation* class_location_not_null(const InstanceKlass* ik) const;
   AOTClassLocationID get_module_location_id(Symbol* location) const;
 
   // Functions used only during dumptime
@@ -314,6 +314,7 @@ public:
   bool validate(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const;
 
   static int get_path_index(const InstanceKlass* ik);
+  int get_boot_classpath_index(const InstanceKlass* ik) const;
   static bool is_modules_image(InstanceKlass* ik);
   static void print();
 };

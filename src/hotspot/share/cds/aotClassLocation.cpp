@@ -762,21 +762,24 @@ void AOTClassLocationConfig::add_class_location(JavaThread* current, GrowableCla
   }
 }
 
-AOTClassLocation const* AOTClassLocationConfig::class_location_at(int index) const {
+const AOTClassLocation* AOTClassLocationConfig::class_location_at(int index) const {
   return _class_locations->at(index);
 }
 
-AOTClassLocation const* AOTClassLocationConfig::class_location_at(AOTClassLocationID id) const {
-  int index = to_path_index(id);
-  if (index < 0) {
-    return nullptr;
-  } else {
-    return class_location_at(index);
-  }
+const AOTClassLocation* AOTClassLocationConfig::class_location_not_null(const InstanceKlass* ik) const {
+  int index = to_path_index(ik->aot_class_location_id());
+  assert(index >= 0, "must be aot class for built-in loaders");
+  return class_location_at(index);
 }
 
 int AOTClassLocationConfig::get_path_index(const InstanceKlass* ik) {
   return to_path_index(ik->aot_class_location_id());
+}
+
+int AOTClassLocationConfig::get_boot_classpath_index(const InstanceKlass* ik) const {
+  int index = to_path_index(ik->aot_class_location_id());
+  assert(index >= 0 && index < boot_cp_end_index(), "sanity");
+  return index;
 }
 
 bool AOTClassLocationConfig::is_modules_image(InstanceKlass* ik) {
@@ -902,7 +905,7 @@ void AOTClassLocationConfig::on_klass_creation(InstanceKlass* ik, const ClassFil
     return;
   }
 
-  int path_index = get_path_index(ik, stream);
+  int path_index = compute_path_index(ik, stream);
   if (CDSConfig::is_dumping_aot_configuration() || CDSConfig::is_dumping_dynamic_archive()) {
     if (!dumptime()->is_valid_path_index(path_index, ik)) {
       path_index = -1;
@@ -958,7 +961,7 @@ void AOTClassLocationConfig::record_hidden_class(InstanceKlass* ik) {
   }
 }
 
-int AOTClassLocationConfig::get_path_index(InstanceKlass* ik, const ClassFileStream* stream) {
+int AOTClassLocationConfig::compute_path_index(InstanceKlass* ik, const ClassFileStream* stream) {
   assert(CDSConfig::is_dumping_archive(), "");
   const char* src = stream->source();
   if (src == nullptr) {
