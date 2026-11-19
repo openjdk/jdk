@@ -1464,7 +1464,7 @@ public:
           "checked in can_speculatively_narrow_limit()");
         return _limit_t_in_int_range;
       }
-      return igvn.type(_raw_limit)->is_integer(bt);
+      return igvn.type(_raw_limit)->as_integer(bt);
     }
 
     bool can_speculatively_narrow_limit(PhaseIterGVN& igvn) {
@@ -1477,7 +1477,7 @@ public:
         // The limit must overlap with the int range; otherwise narrowing is provably impossible.
         const Type* narrowed = TypeLong::INT->filter(igvn.type(_raw_limit));
         assert (narrowed != Type::TOP, "IGVN should have folded the CmpL/ConvI2L away");
-        _limit_t_in_int_range = narrowed->is_long();
+        _limit_t_in_int_range = narrowed->as_long();
       }
 
       return _should_speculatively_narrow_limit;
