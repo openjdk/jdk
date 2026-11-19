@@ -948,24 +948,6 @@ public:
   }
 };
 
-
-class ShenandoahScanRememberedTask : public WorkerTask {
- private:
-  ShenandoahObjToScanQueueSet* _queue_set;
-  ShenandoahReferenceProcessor* _rp;
-  ShenandoahRegionChunkIterator* _work_list;
-  bool _is_concurrent;
-
- public:
-  ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
-                               ShenandoahReferenceProcessor* rp,
-                               ShenandoahRegionChunkIterator* work_list,
-                               bool is_concurrent);
-
-  void work(uint worker_id);
-  void do_work(uint worker_id);
-};
-
 // After Full GC is done, reconstruct the remembered set by iterating over OLD regions,
 // registering all objects between bottom() and top(), and dirtying the cards containing
 // cross-generational pointers.

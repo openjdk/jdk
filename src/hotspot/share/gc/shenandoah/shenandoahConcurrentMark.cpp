@@ -132,6 +132,8 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
   WorkerThreads* workers = heap->workers();
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
 
+  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
+
   switch (_generation->type()) {
     case YOUNG: {
       auto old_queues = _bootstrapping ? old_task_queues() : nullptr;
@@ -227,6 +229,13 @@ void ShenandoahConcurrentMark::concurrent_mark() {
       break;
     }
   }
+
+  if (gen_type == YOUNG && ShenandoahEnableCardStats) {
+    ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
+    assert(scanner != nullptr, "Not generational");
+    scanner->log_card_stats(nworkers, CARD_STAT_SCAN_RS);
+  }
+
   assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");
 }
 

@@ -152,14 +152,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   {
     ShenandoahBreakpointMarkScope breakpoint_mark_scope(cause);
 
-    // Reset task queue stats here, rather than in mark_concurrent_roots,
-    // because remembered set scan will `push` oops into the queues and
-    // resetting after this happens will lose those counts.
-    TASKQUEUE_STATS_ONLY(_mark.task_queues()->reset_taskqueue_stats());
-
-    // Concurrent remembered set scanning
-    // entry_scan_remembered_set();
-
     // Concurrent mark roots
     entry_mark_roots();
     if (check_cancellation_and_abort()) {
@@ -468,24 +460,6 @@ void ShenandoahConcurrentGC::entry_reset() {
                                 ShenandoahWorkerPolicy::calc_workers_for_conc_reset(),
                                 msg);
     op_reset();
-  }
-}
-
-void ShenandoahConcurrentGC::entry_scan_remembered_set() {
-  if (_generation->is_young()) {
-    ShenandoahHeap* const heap = ShenandoahHeap::heap();
-    TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-
-    SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent remembered set scanning", "");
-    ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::init_scan_rset);
-    EventMark em("%s", msg);
-
-    ShenandoahWorkerScope scope(heap->workers(),
-                                ShenandoahWorkerPolicy::calc_workers_for_rs_scanning(),
-                                msg);
-
-    heap->try_inject_alloc_failure();
-    _generation->scan_remembered_set(true /* is_concurrent */);
   }
 }
 
