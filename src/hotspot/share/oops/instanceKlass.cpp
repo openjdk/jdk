@@ -3343,13 +3343,6 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
   }
   return true;
 }
-
-bool InstanceKlass::excluded_by_alternate_system_loader() const {
-  // When using an alternate system loader, there are no guarantees that
-  // the loader will delegate to built in loaders, so only the boot classes
-  // should be archived and restored.
-  return CDSConfig::using_alternate_system_loader() && !defined_by_boot_loader();
-}
 #endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI

@@ -1200,7 +1200,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   Symbol* class_name = ik->name();
 
   // Avoid loading non-boot classes when an alternate system class loader is used.
-  if (ik->excluded_by_alternate_system_loader()) {
+  if (AOTSystemDictionary::is_excluded_by_alternate_system_loader(ik)) {
     return nullptr;
   }
 

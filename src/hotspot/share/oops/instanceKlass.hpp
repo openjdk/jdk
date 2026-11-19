@@ -1264,7 +1264,6 @@ public:
   void init_shared_package_entry();
   bool can_be_verified_at_dumptime() const;
   void compute_has_loops_flag_for_methods();
-  bool excluded_by_alternate_system_loader() const;
 #endif
   bool     has_init_deps_processed() const { return _misc_flags.has_init_deps_processed(); }
   void set_has_init_deps_processed() {
