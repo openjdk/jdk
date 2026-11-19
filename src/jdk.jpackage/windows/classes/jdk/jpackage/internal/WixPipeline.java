@@ -36,9 +36,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.ShortPathUtils.adjustPath;
-import static jdk.jpackage.internal.WixFragmentBuilder.Arch;
-import static jdk.jpackage.internal.WixFragmentBuilder.getArch;
+import jdk.internal.util.Architecture;
 import jdk.jpackage.internal.util.PathUtils;
 
 /**
@@ -186,18 +184,6 @@ final class WixPipeline {
     }
 
     private void buildMsiWix4(Path msi) throws IOException {
-        var mergedSrcWixVars = sources.stream().map(wixSource -> {
-            return Optional.ofNullable(wixSource.variables).orElseGet(
-                    Collections::emptyMap).entrySet().stream();
-        }).flatMap(Function.identity()).collect(Collectors.toMap(
-                Map.Entry::getKey, Map.Entry::getValue));
-
-        var archString = switch (WixFragmentBuilder.getArch()) {
-            case Arch.X64 -> "x64";
-            case Arch.X86 -> "x86";
-            case Arch.AARCH64 -> "arm64";
-            case Arch.OTHER -> throw new IOException("Unsupported architecture.");
-        };
 
         List<String> cmdline = new ArrayList<>(List.of(
                 toolset.getToolPath(WixTool.Wix4).toString(),
@@ -206,7 +192,7 @@ final class WixPipeline {
                 "-pdbtype", "none",
                 "-intermediatefolder", wixObjDir.toString(),
                 "-ext", "WixToolset.Util.wixext",
-                "-arch", archString
+                "-arch", wix4Arch()
         ));
 
         cmdline.addAll(lightOptions);
@@ -220,6 +206,17 @@ final class WixPipeline {
         cmdline.addAll(List.of("-out", msi.toString()));
 
         execute(cmdline);
+    }
+
+    // Value of the "-arch" option of the WiX v4+ "build" command for the current platform
+    private static String wix4Arch() {
+        return switch (Architecture.current()) {
+            case X64 -> "x64";
+            case X86 -> "x86";
+            case AARCH64 -> "arm64";
+            default -> throw new UnsupportedOperationException(
+                    String.format("Unsupported architecture: %s", Architecture.current()));
+        };
     }
 
     private void buildMsiWix3(Path msi) throws IOException {
@@ -246,18 +243,12 @@ final class WixPipeline {
         Path wixObj = wixObjDir.toAbsolutePath().resolve(PathUtils.replaceSuffix(
                 wixSource.path.getFileName(), ".wixobj"));
 
-        var archString = switch (WixFragmentBuilder.getArch()) {
-            case Arch.X64 -> "x64";
-            case Arch.X86 -> "x86";
-            case Arch.AARCH64, Arch.OTHER -> throw new IOException("Unsupported architecture.");
-        };
-
         List<String> cmdline = new ArrayList<>(List.of(
                 toolset.getToolPath(WixTool.Candle3).toString(),
                 "-nologo",
                 wixSource.path.toString(),
                 "-ext", "WixUtilExtension",
-                "-arch", archString,
+                "-arch", WixFragmentBuilder.is64Bit() ? "x64" : "x86",
                 "-out", wixObj.toString()
         ));
 
