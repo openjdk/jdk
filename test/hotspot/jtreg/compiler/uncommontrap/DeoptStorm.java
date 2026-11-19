@@ -51,6 +51,8 @@ public class DeoptStorm {
         // Parent process: spawn child with deopt logging enabled and validate output.
         String className = DeoptStorm.class.getName();
         String[] procArgs = {
+            "-Xbatch",
+            "-XX:-TieredCompilation",
             "-XX:PerMethodRecompilationCutoff=2",
             "-XX:CompileCommand=dontinline,compiler.uncommontrap.DeoptStorm::*",
             "-Xlog:deoptimization=debug",
@@ -75,8 +77,12 @@ public class DeoptStorm {
         data = new char[max_index + 1];
         data[max_index] = 'a';
         iteration = 0;
+        int stormCalls = 1000;
         for (int i = 0; i < 100_000_000; i++) {
             deoptStorm();
+            if (max_index == 1 && --stormCalls == 0) {
+                break;
+            }
         }
     }
 
