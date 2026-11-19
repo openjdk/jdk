@@ -4277,14 +4277,14 @@ The AOT cache can be used with the following command-line options:
        fail to launch if an incompatible VM option is added without your knowledge. For example,
        a cloud provider might run your JVM with a JVMTI class-file load hook for monitoring purposes.
 
-      To debug why a cache failed to load, the AOT Settings can be checked. These are the JVM's internal states
-      related to AOT that are determined by JVM options and/or CPU capabilities. They can be used
-      to determine whether a JVM is able to load an AOT cache. To diff and compare the required versus
-      the actual settings, the following log arguments can be used:
+       To debug why a cache failed to load, the AOT Settings can be checked. These are the JVM's internal states
+       related to AOT that are determined by JVM options and/or CPU capabilities. They can be used
+       to determine whether a JVM is able to load an AOT cache. To diff and compare the required versus
+       the actual settings, the following log arguments can be used:
 
-      - `-Xlog:aot+setting+required` to print AOT settings that are required to load the AOT cache
-      
-      - `-Xlog:aot+setting+selected` to print AOT settings that are selected by the current JVM
+       - `-Xlog:aot+setting+required` to print AOT settings that are required to load the AOT cache
+
+       - `-Xlog:aot+setting+selected` to print AOT settings that are selected by the current JVM
 
 
 [`-XX:+AOTClassLinking`]{#-XX__AOTClassLinking}
