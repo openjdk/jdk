@@ -79,7 +79,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/synchronizer.hpp"
-#include "services/classLoadingService.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/finalizerService.hpp"
 #include "services/threadService.hpp"
@@ -1281,9 +1280,6 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
     s2 path_index = ik->shared_classpath_index();
     ik->set_classpath_index(path_index);
   }
-
-  // notify a class loaded from shared object
-  ClassLoadingService::notify_class_loaded(ik, true /* shared class */);
 
   if (CDSConfig::is_dumping_with_input_archive()) {
     AOTSystemDictionary::init_dumptime_info_from_input_archive(ik);

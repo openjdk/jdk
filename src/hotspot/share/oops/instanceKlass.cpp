@@ -1775,6 +1775,8 @@ bool InstanceKlass::has_strict_instance_fields_in_hierarchy() const {
 void InstanceKlass::add_to_hierarchy(JavaThread* current) {
   assert(!SafepointSynchronize::is_at_safepoint(), "must NOT be at safepoint");
 
+  ClassLoadingService::notify_class_loaded(this, in_aot_cache());
+
   DeoptimizationScope deopt_scope;
   {
     MutexLocker ml(current, Compile_lock);
