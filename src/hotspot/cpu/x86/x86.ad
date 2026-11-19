@@ -2840,6 +2840,7 @@ class HandlerImpl {
 
 inline Assembler::AvxVectorLen vector_length_encoding(int bytes) {
   switch(bytes) {
+    case  2: // fall-through, 16-bit masked payload for 2-lane vectors
     case  4: // fall-through
     case  8: // fall-through
     case 16: return Assembler::AVX_128bit;
@@ -3443,11 +3444,8 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       if (size_in_bits == 256 && UseAVX < 2) {
         return false; // Implementation limitation
       }
-      // fallthrough
+      break;
     case Op_VectorStoreMask:
-      if (vlen == 2) {
-        return false; // Implementation limitation
-      }
       break;
     case Op_PopulateIndex:
       if (size_in_bits > 256 && !VM_Version::supports_avx512bw()) {
@@ -3915,8 +3913,8 @@ int Matcher::max_vector_size(const BasicType bt) {
 }
 int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
-  // Min size which can be loaded into vector is 4 bytes.
-  int size = (type2aelembytes(bt) == 1) ? 4 : 2;
+  // Min vector length is 2 elements; 16-bit mask payloads for 2-lane long/double
+  int size = 2;
   // Support for calling svml double64 vectors
   if (bt == T_DOUBLE) {
     size = 1;
@@ -3941,6 +3939,7 @@ int Matcher::scalable_vector_reg_size(const BasicType bt) {
 uint Matcher::vector_ideal_reg(int size) {
   assert(MaxVectorSize >= size, "");
   switch(size) {
+    case  2: return Op_VecS; // 16-bit mask payload occupies a 32-bit vector register
     case  4: return Op_VecS;
     case  8: return Op_VecD;
     case 16: return Op_VecX;
@@ -18340,6 +18339,7 @@ instruct storeV(memory mem, vec src) %{
   format %{ "store_vector $mem,$src\n\t" %}
   ins_encode %{
     switch (Matcher::vector_length_in_bytes(this, $src)) {
+      case  2: __ pextrw   ($mem$$Address, $src$$XMMRegister, 0); break;
       case  4: __ movdl    ($mem$$Address, $src$$XMMRegister); break;
       case  8: __ movq     ($mem$$Address, $src$$XMMRegister); break;
       case 16: __ movdqu   ($mem$$Address, $src$$XMMRegister); break;
