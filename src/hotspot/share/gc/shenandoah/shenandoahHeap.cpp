@@ -353,9 +353,9 @@ jint ShenandoahHeap::initialize() {
   //
   // Create regions and region sets
   //
-  static_assert(sizeof(ShenandoahHeapRegion) <= 2 * SHENANDOAH_CACHE_LINE_SIZE,
-                "Performance: should take at most two cache lines");
   size_t region_granule = align_up(sizeof(ShenandoahHeapRegion), SHENANDOAH_CACHE_LINE_SIZE);
+  assert(region_granule == 2 * SHENANDOAH_CACHE_LINE_SIZE,
+         "Performance: should take exactly two cache lines: %zu", region_granule);
   size_t region_storage_size_orig = region_granule * _num_regions;
   size_t region_storage_size = align_up(region_storage_size_orig,
                                         MAX2(region_page_size, os::vm_allocation_granularity()));
