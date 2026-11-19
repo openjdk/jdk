@@ -846,13 +846,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   JFR_ONLY(Jfr::on_create_vm_3();)
 
 #if INCLUDE_MANAGEMENT
-  bool start_agent = true;
-#if INCLUDE_CDS
-  start_agent = !CDSConfig::is_dumping_aot_cache();
+  bool start_agent = !CDSConfig::is_dumping_aot_cache();
   if (!start_agent) {
     log_info(aot)("Not starting management agent during creation of AOT cache.");
   }
-#endif // INCLUDE_CDS
   if (start_agent) {
     Management::initialize(THREAD);
 

@@ -1363,6 +1363,7 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
         const char* target_name = method->name_and_sig_as_C_string();
         log.print_cr("Missing entry for '%s' (comp_level %d, id: " UINT32_FORMAT_X_0 ")", target_name, (uint)comp_level, id);
       }
+      return nullptr;
 #ifdef ASSERT
     } else {
       assert(!entry->has_clinit_barriers(), "only preload code should have clinit barriers");
@@ -1373,8 +1374,30 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
 #endif
     }
 
+    if (entry->not_entrant()) {
+      return nullptr;
+    }
+
+    // There is harmless concurrency here when reading fields in the AOTCodeEntry.
+    // The _loaded field is monotonic. It is set in nmethod::new_nmethod under
+    // CodeCache_lock while ciEnv::register_aot_method holds MethodCompileQueue_lock.
+    // We might race with other threads which quickly queue and then load
+    // the method, and harmlessly conclude that this code entry is still loadable.
+    // Even if we manage to queue a second load concurrently,
+    // CompileBroker::compile_method_base checks, under the MCQ lock, with
+    // compilation_is_in_queue and compilation_is_complete, to avoid duplicate work.
+    if (entry->is_loaded()) {
+      return nullptr; // AOT code for this entry was loaded already by other thread.
+    }
+
+    if (entry->is_verified()) {
+      // With VerifyAOTCode AOT code is only verified without installation
+      assert(VerifyAOTCode, "sanity");
+      return nullptr; // AOT code was already verified
+    }
+
 #ifdef COMPILER2
-    if (entry != nullptr && entry->has_vectors() && !EnableVectorSupport) {
+    if (entry->has_vectors() && !EnableVectorSupport) {
       log_debug(aot, codecache, nmethod)("AOT Tier4 code skipped: incompatible EnableVectorSupport: true vs current %u", EnableVectorSupport);
       return nullptr;
     }
