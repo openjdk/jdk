@@ -27,22 +27,43 @@ import java.lang.reflect.Array;
 import java.util.Objects;
 
 /*
- * @test
+ * @test id=avx2
  * @bug 8394825
- * @summary Check large array copies across the non-temporal store path and the
- *          fallback paths.
+ * @summary Check array copies with the AVX2 non-temporal store path enabled,
+ *          disabled, and with the vectorized fallback disabled.
  * @requires os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*"
  *
  * @run main/othervm/timeout=600 -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100
  *      -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:ArrayCopyNonTemporalThreshold=65536
- *      compiler.arraycopy.TestArrayCopyNonTemporal
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100
  *      -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:ArrayCopyNonTemporalThreshold=0
- *      compiler.arraycopy.TestArrayCopyNonTemporal
+ *      ${test.main.class}
  * @run main/othervm/timeout=600 -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100
  *      -XX:UseAVX=2 -XX:-UseUnalignedLoadStores -XX:+UnlockDiagnosticVMOptions
  *      -XX:ArrayCopyNonTemporalThreshold=65536
- *      compiler.arraycopy.TestArrayCopyNonTemporal
+ *      ${test.main.class}
+ */
+
+/*
+ * @test id=avx3
+ * @bug 8394825
+ * @summary Check array copies with the AVX-512 path forced.
+ * @requires os.simpleArch == "x64" & vm.cpu.features ~= ".*avx512.*"
+ *
+ * @run main/othervm/timeout=600 -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100
+ *      -XX:UseAVX=3
+ *      ${test.main.class}
+ */
+
+/*
+ * @test id=non-x64
+ * @bug 8394825
+ * @summary Check array copies on platforms without the x86 intrinsics.
+ * @requires os.simpleArch != "x64"
+ *
+ * @run main/othervm/timeout=600 -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100
+ *      ${test.main.class}
  */
 
 public class TestArrayCopyNonTemporal {
