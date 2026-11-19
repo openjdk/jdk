@@ -28,6 +28,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 void ShenandoahTaskQueue::push(ShenandoahTask task) {
   if (!_chunk->push(task)) {

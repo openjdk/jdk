@@ -23,9 +23,10 @@
  */
 
 
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "memory/memoryReserver.hpp"
+#include "utilities/bitMap.inline.hpp"
 #include "utilities/spinYield.hpp"
 
 bool ShenandoahTaskQueueChunk::is_empty() {
@@ -151,6 +152,9 @@ void ShenandoahTaskQueueSet::expand_to(size_t idx) {
     _chunks_committed.release_store(target);
   }
 }
+
+ShenandoahTaskTerminator::ShenandoahTaskTerminator(int workers, ShenandoahTaskQueueSet *queues) :
+  _heap(ShenandoahHeap::heap()), _queues(queues), _active_workers(workers), _total_workers(workers) {}
 
 bool ShenandoahTaskTerminator::offer_termination(bool cancellable) {
   _active_workers.fetch_then_sub((size_t)1, memory_order_relaxed);

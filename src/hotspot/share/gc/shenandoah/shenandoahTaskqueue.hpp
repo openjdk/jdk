@@ -33,6 +33,7 @@
 #include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/debug.hpp"
 
 class ShenandoahTaskQueueSet;
@@ -386,8 +387,7 @@ class ShenandoahTaskTerminator {
   size_t _total_workers;
 
 public:
-  ShenandoahTaskTerminator(int workers, ShenandoahTaskQueueSet* queues) :
-    _heap(ShenandoahHeap::heap()), _queues(queues), _active_workers(workers), _total_workers(workers) {}
+  ShenandoahTaskTerminator(int workers, ShenandoahTaskQueueSet* queues);
 
   bool offer_termination(bool cancellable);
   bool has_waiters();
