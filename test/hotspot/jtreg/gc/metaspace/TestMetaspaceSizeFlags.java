@@ -68,8 +68,10 @@ public class TestMetaspaceSizeFlags {
     testMax2XFlagValues(MAX_ALIGNMENT);
     // Test MaxMetaspaceSize=0 and verify a range failure.
     testMaxMetaspaceSizeIsOutOfRange(0);
-    // Test a too small MaxMetaspaceSize and verify an OOM.
-    testMaxMetaspaceSizeIsTooSmall(4 * K);
+    // Testing a too small MaxMetaspaceSize and verifying an OOME
+    // is done by runtime/Metaspace/MaxMetaspaceSizeTest.java so
+    // we don't repeat that test here.
+    //
     // Specifying MaxMetaspaceSize < default MetaspaceSize on the
     // cmd line silently lowers MetaspaceSize to MaxMetaspaceSize.
     testMaxMetaspaceSizeLTDefaultMetaspaceSize(LOWER_THAN_DEFAULT1);
@@ -151,12 +153,6 @@ public class TestMetaspaceSizeFlags {
     runAndFailWithRangeFailure(command, value);
   }
 
-  private static void testMaxMetaspaceSizeIsTooSmall(long value) throws Exception {
-    List<String> command = new ArrayList<String>();
-    command.addFirst("-XX:MaxMetaspaceSize=" + value);
-    runAndFailWithOOM(command, value);
-  }
-
   private static void testMaxMetaspaceSizeLTDefaultMetaspaceSize(long maxMetaspaceSize) throws Exception {
     List<String> command = new ArrayList<String>();
     command.addFirst("-XX:MaxMetaspaceSize=" + maxMetaspaceSize);
@@ -191,22 +187,6 @@ public class TestMetaspaceSizeFlags {
     // With MaxMetaspaceSize specified first, we'll see this:
     // MetaspaceSize (67108864) must be less than or equal to MaxMetaspaceSize (33554432)
     // Improperly specified VM option 'MetaspaceSize=67108864'
-  }
-
-  private static void runAndFailWithOOM(List<String> command, long value) throws Exception {
-    command.addLast("-XX:+HeapDumpOnOutOfMemoryError");
-    OutputAnalyzer output = run(command);
-    output.shouldContain("java.lang.OutOfMemoryError: Metaspace");
-    output.shouldContain("Error occurred during initialization of VM");
-    output.shouldNotHaveExitValue(0);
-
-    // The original test case for 8395825 is this java cmd:
-    //   java -XX:MaxMetaspaceSize=0 -XX:+HeapDumpOnOutOfMemoryError -version
-    // We try to reproduce that failure mode with this java cmd:
-    //   java -XX:MaxMetaspaceSize=4k -XX:+HeapDumpOnOutOfMemoryError -version
-    System.err.println("START 8395825 DEBUG OUTPUT");
-    output.reportDiagnosticSummary();
-    System.err.println("END 8395825 DEBUG OUTPUT");
   }
 
   private static void runAndFailWithRangeFailure(List<String> command, long value) throws Exception {

@@ -28,7 +28,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test MaxMetaspaceSizeTest
  * @requires vm.bits == 64 & vm.opt.final.UseCompressedOops == true
  * @requires vm.flagless
- * @bug 8087291
+ * @bug 8087291 8395825
  * @library /test/lib
  * @run driver MaxMetaspaceSizeTest
  */
@@ -38,7 +38,7 @@ public class MaxMetaspaceSizeTest {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-Xshare:off",
             "-Xmx1g",
-            "-XX:MaxMetaspaceSize=4K",
+            "-XX:MaxMetaspaceSize=128K",
             "-XX:CompressedClassSpaceSize=1g",
             "--version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
