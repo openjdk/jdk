@@ -199,6 +199,11 @@ void PackageEntry::pack_qualified_exports() {
 
 // Update ik->package()->_boot_classpath_index to be used by ClassLoader::get_system_package()
 // and PackageEntryTable::get_system_packages().
+//
+// Java packages are represented by instances of java.lang.Package. However, during JVM bootstrap,
+// some VM classes are loaded before java.lang.Package can be instantiated. Instead,
+// these java.lang.Package objects are created later by jdk.internal.loader.BootLoader.packages(),
+// which eventually calls into PackageEntryTable::get_system_packages().
 void PackageEntry::set_boot_classpath_index(InstanceKlass* ik, s2 index) {
   assert(ik->class_loader_data() == ClassLoaderData::the_null_class_loader_data(), "used only for boot loader");
   PackageEntry* entry = ik->package();

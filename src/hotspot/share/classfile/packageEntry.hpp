@@ -107,9 +107,9 @@ private:
   // Indicates if package is exported unqualifiedly or to all unnamed. Access to
   // this field is protected by the Module_lock.
   int _export_flags;
-  // Used by ClassLoader::get_system_package() to get the code source of
-  // a package in the boot loader. -1 means no boot class has even been loaded into
-  // this package.
+  // Used by ClassLoader::get_system_package() and PackageEntryTable::get_system_packages()
+  // to get the code source of a package in the boot loader. -1 means no boot class has
+  // ever been loaded into this package.
   s2 _boot_classpath_index;
   bool _must_walk_exports;
   // Contains list of modules this package is qualifiedly exported to.  Access
