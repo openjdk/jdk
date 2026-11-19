@@ -194,20 +194,6 @@ inline T riscv_cmpxchg_byte_fallback(T volatile* dest __attribute__((unused)),
 }
 
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
-template<>
-template<typename T>
-inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
-                                                      T compare_value,
-                                                      T exchange_value,
-                                                      atomic_memory_order order) const {
-  if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
-    return riscv_amocas<1>(dest, compare_value, exchange_value, order);
-  }
-  return riscv_cmpxchg_byte_fallback(dest, compare_value, exchange_value, order);
-}
-#endif
-
-#ifndef FULL_COMPILER_ATOMIC_SUPPORT
 // The implementation of `__atomic_compare_exchange` lacks sign extensions
 // in GCC 13.2 and lower when using with 32-bit unsigned integers on RV64,
 // so we should implement it manually.
@@ -289,7 +275,7 @@ inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest _
                                                               atomic_memory_order order) const {
 
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
-  static_assert(byte_size > 4);
+  static_assert(byte_size == 1 || byte_size > 4);
 #endif
 
   static_assert(byte_size == sizeof(T));
@@ -429,8 +415,9 @@ inline T riscv_amoxor_byte(T volatile* dest, T bits, atomic_memory_order order) 
 }
 
 template<>
-class AtomicAccess::PlatformBitops<1, true> {
-  template<bool return_new, typename T, typename Op>
+class AtomicAccess::PlatformBitops<1, true>
+  : public PostfetchBitopsUsingPrefetch {
+  template<typename T, typename Op>
   T bitop_fallback(T volatile* dest, atomic_memory_order order, Op operation) const {
     T fetched_value = AtomicAccess::load(dest);
     T old_value;
@@ -440,11 +427,7 @@ class AtomicAccess::PlatformBitops<1, true> {
       new_value = operation(old_value);
       fetched_value = riscv_cmpxchg_byte_fallback(dest, old_value, new_value, order);
     } while (old_value != fetched_value);
-    if constexpr (return_new) {
-      return new_value;
-    } else {
-      return fetched_value;
-    }
+    return fetched_value;
   }
 
 public:
@@ -453,7 +436,7 @@ public:
     if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
       return riscv_amoand_byte(dest, bits, order);
     }
-    return bitop_fallback<false>(dest, order, [&](T value) -> T { return value & bits; });
+    return bitop_fallback(dest, order, [&](T value) -> T { return value & bits; });
   }
 
   template<typename T>
@@ -461,7 +444,7 @@ public:
     if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
       return riscv_amoor_byte(dest, bits, order);
     }
-    return bitop_fallback<false>(dest, order, [&](T value) -> T { return value | bits; });
+    return bitop_fallback(dest, order, [&](T value) -> T { return value | bits; });
   }
 
   template<typename T>
@@ -469,31 +452,7 @@ public:
     if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
       return riscv_amoxor_byte(dest, bits, order);
     }
-    return bitop_fallback<false>(dest, order, [&](T value) -> T { return value ^ bits; });
-  }
-
-  template<typename T>
-  T and_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
-    if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
-      return riscv_amoand_byte(dest, bits, order) & bits;
-    }
-    return bitop_fallback<true>(dest, order, [&](T value) -> T { return value & bits; });
-  }
-
-  template<typename T>
-  T or_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
-    if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
-      return riscv_amoor_byte(dest, bits, order) | bits;
-    }
-    return bitop_fallback<true>(dest, order, [&](T value) -> T { return value | bits; });
-  }
-
-  template<typename T>
-  T xor_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
-    if (VM_Version::atomic_cas_mode() == VM_Version::AtomicCasMode::ZACAS_ZABHA) {
-      return riscv_amoxor_byte(dest, bits, order) ^ bits;
-    }
-    return bitop_fallback<true>(dest, order, [&](T value) -> T { return value ^ bits; });
+    return bitop_fallback(dest, order, [&](T value) -> T { return value ^ bits; });
   }
 };
 
