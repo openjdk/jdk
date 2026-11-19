@@ -887,9 +887,6 @@ private:
   const Type* const _type;      // What kind of value is loaded?
   uint8_t _barrier_data;        // Bit field with barrier information
   virtual uint size_of() const; // Size is bigger
-#ifdef ASSERT
-  const TypePtr* _adr_type;     // What kind of memory is being addressed?
-#endif // ASSERT
 public:
   LoadStoreNode(Node* c, Node* mem, Node* adr, Node* val, const Type* rt, uint required);
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }

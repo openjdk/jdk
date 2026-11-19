@@ -4358,7 +4358,6 @@ LoadStoreNode::LoadStoreNode(Node* c, Node* mem, Node* adr, Node* val, const Typ
   init_req(MemNode::Address, adr);
   init_req(MemNode::ValueIn, val);
   init_class_id(Class_LoadStore);
-  DEBUG_ONLY(_adr_type = MemNode::calculate_adr_type(adr->bottom_type()); out_adr_type();)
 }
 
 //------------------------------Value-----------------------------------------
@@ -4383,8 +4382,7 @@ const Type* LoadStoreNode::Value(PhaseGVN* phase) const {
 }
 
 const TypePtr* LoadStoreNode::out_adr_type_impl() const {
-  const TypePtr* cross_check = DEBUG_ONLY(_adr_type) NOT_DEBUG(nullptr);
-  return MemNode::calculate_adr_type(in(MemNode::Address)->bottom_type(), cross_check);
+  return MemNode::calculate_adr_type(in(MemNode::Address)->bottom_type());
 }
 
 uint LoadStoreNode::ideal_reg() const {
@@ -4444,14 +4442,11 @@ void LoadStoreNode::dump_spec(outputStream* st) const {
     // node is dead
     return;
   }
-#ifndef ASSERT
-  // fake the missing field
-  const TypePtr* _adr_type = in(MemNode::Address)->bottom_type()->isa_ptr();
-#endif
-  MemNode::dump_adr_type(_adr_type, st);
+  const TypePtr* adr_type = MemNode::calculate_adr_type(in(MemNode::Address)->bottom_type());
+  MemNode::dump_adr_type(adr_type, st);
 
   Compile* C = Compile::current();
-  if (C->alias_type(_adr_type)->is_volatile()) {
+  if (adr_type != nullptr && C->alias_type(adr_type)->is_volatile()) {
     st->print(" Volatile!");
   }
   st->print(" barrier(0x%x)", _barrier_data);
