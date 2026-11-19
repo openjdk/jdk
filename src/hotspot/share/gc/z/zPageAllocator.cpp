@@ -2924,7 +2924,7 @@ void ZPageAllocator::notify_out_of_memory() {
     }
 
     if (!is_vm_created()) {
-      ZUnlocker<ZLock> locker(&_lock);
+      ZUnlocker<ZLock> unlocker(&_lock);
       Universe::heap()->oom_safepoint_during_initialization();
       ShouldNotReachHere();
     }
